@@ -4859,6 +4859,11 @@ void* picture_analysis_kernel(void *input_ptr)
 #if HARD_CODE_SC_SETTING
             picture_control_set_ptr->sc_content_detected = EB_TRUE;
 #endif
+
+#if SC_SETTINGS_OFF
+            picture_control_set_ptr->sc_content_detected = EB_FALSE;
+#endif
+
             // Hold the 64x64 variance and mean in the reference frame
             uint32_t sb_index;
             for (sb_index = 0; sb_index < picture_control_set_ptr->sb_total_count; ++sb_index) {
