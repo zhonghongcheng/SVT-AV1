@@ -1321,6 +1321,10 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
 #endif
 
+#if TRANSFORM_SEARCH_OFF
+    picture_control_set_ptr->tx_search_level = TX_SEARCH_OFF;
+#endif
+
     // Set tx search skip weights (MAX_MODE_COST: no skipping; 0: always skipping)
 #if NEW_PRESETS
     if (picture_control_set_ptr->tx_search_level == TX_SEARCH_ENC_DEC)
