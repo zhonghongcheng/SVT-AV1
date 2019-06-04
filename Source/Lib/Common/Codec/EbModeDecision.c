@@ -5121,7 +5121,13 @@ void  inject_intra_candidates(
 #if !M9_INTRA
     angleDeltaCandidateCount = disable_angle_refinement ? 1: angleDeltaCandidateCount;
 #endif
-    for (openLoopIntraCandidate = intra_mode_start; openLoopIntraCandidate <= intra_mode_end ; ++openLoopIntraCandidate) {
+
+#if INTRA_DC_ONLY
+    openLoopIntraCandidate = intra_mode_start;
+#else
+    for (openLoopIntraCandidate = intra_mode_start; openLoopIntraCandidate <= intra_mode_end ; ++openLoopIntraCandidate) 
+#endif
+	{
         if (av1_is_directional_mode((PredictionMode)openLoopIntraCandidate)) {
             if (!disable_angle_prediction) {
                 for (angleDeltaCounter = 0; angleDeltaCounter < angleDeltaCandidateCount; ++angleDeltaCounter) {
