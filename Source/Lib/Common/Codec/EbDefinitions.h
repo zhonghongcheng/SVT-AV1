@@ -34,6 +34,22 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+	// FBA - Intra Debugging
+#define QPS_OFF							  1
+#define Rate_EST_UPDATE_OFF               0
+#define SSSE_OFF                          0
+#define SHUT_FILTERING                    0 // CDEF RESTORATION DLF // FBA - Original macro commented out below. 
+#define RDOQ_OFF						  0
+#define TRANSFORM_SEARCH_OFF	          0
+#define	INTRA_DC_ONLY                     0
+#define NSQ_OFF                           0
+#define SC_SETTINGS_OFF                   0	
+#define HARD_CODE_DEPTH                   0
+
+
+
+
 #define ALT_REF_SUPPORT                   1// ALT_REF main flag
 
 #if ALT_REF_SUPPORT
@@ -97,7 +113,7 @@ extern "C" {
 #define MOD_M0                            0 // Sub-SAD for @ HME and ME, 12 NFL, frequency see
 #define HARD_CODE_SC_SETTING              0
 #define MR_MODE                           0
-#define SHUT_FILTERING                    0 // CDEF RESTORATION DLF
+//#define SHUT_FILTERING                    0 // CDEF RESTORATION DLF
 #define M8_SKIP_BLK                       1
 #define M8_OIS                            1
 #define QUICK_ME_CLEANUP                  1
