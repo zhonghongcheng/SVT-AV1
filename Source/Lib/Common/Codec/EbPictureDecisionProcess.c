@@ -1013,6 +1013,10 @@ EbErrorType signal_derivation_multi_processes_oq(
         picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
 #endif
 
+#if NSQ_OFF
+        picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
+#endif
+
 #if MEMORY_FOOTPRINT_OPT_ME_MV
     if (picture_control_set_ptr->nsq_search_level > NSQ_SEARCH_OFF)
         assert(sequence_control_set_ptr->nsq_present == 1 && "use nsq_present 1");
