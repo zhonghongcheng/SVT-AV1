@@ -1788,7 +1788,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->global_mv_injection = 1;
     else
         context_ptr->global_mv_injection = 0;
-
+#if TURN_OFF_SUB_PEL // global_mv
+    context_ptr->global_mv_injection = 0;
+#endif
 #if NEW_NEAREST_NEW_INJECTION
     if (picture_control_set_ptr->enc_mode == ENC_M0)
         context_ptr->new_nearest_near_comb_injection = 1;
@@ -1828,6 +1830,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
 #endif
         context_ptr->warped_motion_injection = 1;
+#if TURN_OFF_SUB_PEL // warped_motion
+    context_ptr->warped_motion_injection = 0;
+#endif
 #else
     if (picture_control_set_ptr->enc_mode <= ENC_M5)
         context_ptr->warped_motion_injection = 1;

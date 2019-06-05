@@ -3707,7 +3707,9 @@ void  inject_inter_candidates(
             use_close_loop_me,
             close_loop_me_index);
     }
-
+#if TURN_OFF_SUB_PEL // 3x3Candidates
+    inject_newmv_candidate = 0;
+#endif
     if (inject_newmv_candidate) {
 #if BASE_LAYER_REF || MRP_REF_MODE
         if (isCompoundEnabled) {
