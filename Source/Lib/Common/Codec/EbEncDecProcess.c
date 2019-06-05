@@ -1788,7 +1788,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->global_mv_injection = 1;
     else
         context_ptr->global_mv_injection = 0;
-
+#if TURN_OFF_SUB_PEL // global_mv
+    context_ptr->global_mv_injection = 0;
+#endif
 #if NEW_NEAREST_NEW_INJECTION
     if (picture_control_set_ptr->enc_mode == ENC_M0)
         context_ptr->new_nearest_near_comb_injection = 1;
@@ -1828,6 +1830,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
 #endif
         context_ptr->warped_motion_injection = 1;
+
+#if TURN_OFF_SUB_PEL // warped_motion
+    context_ptr->warped_motion_injection = 0;
+#endif
 #else
     if (picture_control_set_ptr->enc_mode <= ENC_M5)
         context_ptr->warped_motion_injection = 1;
@@ -1835,11 +1841,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->warped_motion_injection = 0;
 #endif
 
-        // Set unipred3x3 injection
-        // Level                Settings
-        // 0                    OFF
-        // 1                    ON FULL
-        // 2                    Reduced set
+    // Set unipred3x3 injection
+    // Level                Settings
+    // 0                    OFF
+    // 1                    ON FULL
+    // 2                    Reduced set
 #if NEW_PRESETS
 #if SCREEN_CONTENT_SETTINGS
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
@@ -1980,19 +1986,19 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
 
 #if NEW_PRESETS
-    // Derive redundant block
+        // Derive redundant block
 #if SCREEN_CONTENT_SETTINGS
-        if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
-            if (picture_control_set_ptr->enc_mode <= ENC_M1)
-                context_ptr->redundant_blk = EB_TRUE;
-            else
-                context_ptr->redundant_blk = EB_FALSE;
-        else
-#endif
-            if (picture_control_set_ptr->enc_mode <= ENC_M5)
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        if (picture_control_set_ptr->enc_mode <= ENC_M1)
             context_ptr->redundant_blk = EB_TRUE;
         else
             context_ptr->redundant_blk = EB_FALSE;
+    else
+#endif
+        if (picture_control_set_ptr->enc_mode <= ENC_M5)
+        context_ptr->redundant_blk = EB_TRUE;
+    else
+        context_ptr->redundant_blk = EB_FALSE;
 #endif
 
     return return_error;

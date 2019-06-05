@@ -3893,7 +3893,10 @@ void* picture_decision_kernel(void *input_ptr)
 #endif
                                     picture_control_set_ptr->use_subpel_flag = 1;
 #endif
+#if TURN_OFF_SUB_PEL // ME
+                                picture_control_set_ptr->use_subpel_flag = 0;
 
+#endif
                                 picture_control_set_ptr->use_src_ref = EB_FALSE;
                                 picture_control_set_ptr->enable_in_loop_motion_estimation_flag = EB_FALSE;
                                 picture_control_set_ptr->limit_ois_to_dc_mode_flag = EB_FALSE;
