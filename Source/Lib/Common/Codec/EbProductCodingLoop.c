@@ -4762,6 +4762,12 @@ EbBool allowed_ns_cu(
             }
         }
     }
+
+
+#if TURN_OFF_BLK_4
+     if (context_ptr->blk_geom->bheight == 4 || context_ptr->blk_geom->bwidth == 4)          
+        ret = 0;
+#endif
     return ret;
 }
 

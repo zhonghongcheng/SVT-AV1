@@ -47,6 +47,7 @@ extern "C" {
 #define SC_SETTINGS_OFF                   0	
 #define HARD_CODE_DEPTH                   0
 #define TURN_OFF_SUB_PEL                  0 // 1. Subpel ME / 2. 3x3Candidates injection / 3. Warped and golbal mv 
+#define TURN_OFF_BLK_4                    0 //  Turn OFF 4xN and Nx4
 
 
 
