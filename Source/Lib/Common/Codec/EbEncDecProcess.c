@@ -1801,6 +1801,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->new_nearest_near_comb_injection = 1;
     else
         context_ptr->new_nearest_near_comb_injection = 0;
+#if TURN_OFF_NEAREST_NEW
+    context_ptr->new_nearest_near_comb_injection = 0;
+#endif
 #endif
 #if ENHANCED_Nx4_4xN_NEW_MV
     if (picture_control_set_ptr->enc_mode == ENC_M0)

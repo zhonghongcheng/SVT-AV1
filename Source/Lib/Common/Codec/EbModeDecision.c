@@ -3121,6 +3121,7 @@ void  inject_inter_candidates(
 
 #if INJ_MVP
     uint32_t refIt;
+#if !TURN_OFF_NEAR_NEAREST
     //all of ref pairs: (1)single-ref List0  (2)single-ref List1  (3)compound Bi-Dir List0-List1  (4)compound Uni-Dir List0-List0  (5)compound Uni-Dir List1-List1
     for (refIt = 0; refIt < picture_control_set_ptr->parent_pcs_ptr->tot_ref_frame_types; ++refIt) {
         MvReferenceFrame ref_frame_pair = picture_control_set_ptr->parent_pcs_ptr->ref_frame_type_arr[refIt];
@@ -3131,6 +3132,7 @@ void  inject_inter_candidates(
             ref_frame_pair,
             &canTotalCnt);
     }
+#endif
 #else
 
     InjectAv1MvpCandidates(
