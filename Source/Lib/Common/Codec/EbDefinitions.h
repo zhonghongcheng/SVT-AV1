@@ -46,12 +46,12 @@ extern "C" {
 #define NSQ_OFF                           0
 #define SC_SETTINGS_OFF                   0	
 #define HARD_CODE_DEPTH                   0
-#define TURN_OFF_SUB_PEL                  0 // 1. Subpel ME / 2. 3x3Candidates injection / 3. Warped and golbal mv 
 #define TURN_OFF_BLK_4                    0 //  Turn OFF 4xN and Nx4
 
 // FBA - Inter Debugging
-#define WARPED_OFF                        1 // Disable Warped motion candidates
-
+#define WARPED_OFF                        0 // Disable warped motion candidate injection
+#define GLOBAL_OFF                        0 // Disable global motion candidate injection
+#define TURN_OFF_SUB_PEL                  0 // 1. Subpel ME / 2. 3x3Candidates injection / 3. Warped and golbal mv 
 
 
 
