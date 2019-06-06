@@ -1840,6 +1840,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->warped_motion_injection = 0;
 #endif
 
+#if WARPED_OFF
+    context_ptr->warped_motion_injection = 0;
+#endif
+
         // Set unipred3x3 injection
         // Level                Settings
         // 0                    OFF
