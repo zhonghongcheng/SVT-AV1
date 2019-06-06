@@ -5381,6 +5381,9 @@ EbErrorType ProductGenerateMdCandidatesCu(
 }
     //----------------------
     // Intra
+#if TURN_OFF_INTRA_INTERFRAME
+    if (slice_type == I_SLICE) 
+#endif
     if (context_ptr->blk_geom->sq_size < 128) {
 #if M9_INTRA
         if (picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode >= 5 && context_ptr->blk_geom->sq_size > 4 && context_ptr->blk_geom->shape == PART_N)
