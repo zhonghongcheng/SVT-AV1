@@ -1109,6 +1109,10 @@ EbErrorType signal_derivation_multi_processes_oq(
         picture_control_set_ptr->interpolation_search_level = IT_SEARCH_OFF;
 #endif
 
+#if INTERPOLATION_SEARCH_OFF
+	picture_control_set_ptr->interpolation_search_level = IT_SEARCH_OFF;
+#endif
+
     // Loop filter Level                            Settings
     // 0                                            OFF
     // 1                                            CU-BASED

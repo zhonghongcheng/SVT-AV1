@@ -36,21 +36,21 @@ extern "C" {
 #endif
 
 // FBA - Intra Debugging
-#define QPS_OFF							  1
-#define Rate_EST_UPDATE_OFF               0
-#define SSSE_OFF                          0
-#define SHUT_FILTERING                    0 // CDEF RESTORATION DLF // FBA - Original macro commented out below. 
-#define RDOQ_OFF						  0
-#define TRANSFORM_SEARCH_OFF	          0
+#define QPS_OFF							  0
+#define Rate_EST_UPDATE_OFF               1
+#define SSSE_OFF                          1
+#define SHUT_FILTERING                    1 // CDEF RESTORATION DLF // FBA - Original macro commented out below. 
+#define RDOQ_OFF						  1
+#define TRANSFORM_SEARCH_OFF	          1
 #define	INTRA_DC_ONLY                     0
-#define NSQ_OFF                           0
+#define NSQ_OFF                           1
 #define SC_SETTINGS_OFF                   0	
 #define HARD_CODE_DEPTH                   0
-#define TURN_OFF_BLK_4                    0 //  Turn OFF 4xN and Nx4
+#define TURN_OFF_BLK_4                    1 //  Turn OFF 4xN and Nx4
 
 // FBA - Inter Debugging
-#define WARPED_OFF                        0 // Disable warped motion candidate injection
-#define GLOBAL_OFF                        0 // Disable global motion candidate injection
+#define WARPED_OFF                        1 // Disable warped motion candidate injection
+#define GLOBAL_OFF                        1 // Disable global motion candidate injection
 #define TURN_OFF_SUB_PEL                  0 // 1. Subpel ME / 2. 3x3Candidates injection / 3. Warped and golbal mv 
 
 
