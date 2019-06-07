@@ -3077,6 +3077,9 @@ void  inject_inter_candidates(
 #if !ENHANCED_Nx4_4xN_NEW_MV
     IntMv  bestPredmv[2] = { {0}, {0} };
 #endif
+#if TURN_OFF_NEW_NEW
+    allow_bipred  = EB_FALSE;
+#endif
     uint8_t sq_index = LOG2F(context_ptr->blk_geom->sq_size) - 2;
     uint8_t inject_newmv_candidate = 1;
 

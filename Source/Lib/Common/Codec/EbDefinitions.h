@@ -56,6 +56,7 @@ extern "C" {
 #define INTERPOLATION_SEARCH_OFF		  0 // Disable interpolation search. 
 #define TURN_OFF_NEAREST_NEW              0 //  Turn OFF nearest_new, new_nearest 
 #define TURN_OFF_NEAR_NEAREST             0 //  Turn OFF nearest_nearest, near_near, and near and nearest 
+#define TURN_OFF_NEW_NEW                  0 //  Turn OFF new_new
 #define TURN_OFF_INTRA_INTERFRAME         0 //  Turn OFF intra pred in inter frames
 
 
