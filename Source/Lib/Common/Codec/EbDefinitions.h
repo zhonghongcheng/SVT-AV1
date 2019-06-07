@@ -47,6 +47,7 @@ extern "C" {
 #define SC_SETTINGS_OFF                   0	
 #define HARD_CODE_DEPTH                   0
 #define TURN_OFF_BLK_4                    1 //  Turn OFF 4xN and Nx4
+#define QPS_ADAPTATION_OFF                1    
 
 // FBA - Inter Debugging
 #define WARPED_OFF                        1 // Disable warped motion candidate injection

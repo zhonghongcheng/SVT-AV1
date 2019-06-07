@@ -3304,7 +3304,13 @@ enum {
 #define FAST_MOVING_KF_GROUP_THRESH 5
 #define MAX_QPS_COMP_I        60
 #define MAX_QPS_COMP_NONI    200
-#define QPS_SW_THRESH          8
+
+#if QPS_ADAPTATION_OFF
+#define QPS_SW_THRESH        100
+#else 
+#define QPS_SW_THRESH        8
+#endif
+
 #endif
 
 #define ASSIGN_MINQ_TABLE(bit_depth, name)                   \
