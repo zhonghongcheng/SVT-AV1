@@ -291,7 +291,8 @@ extern "C" {
 #define EIGTH_PEL_MV                                    0
 #define DISABLE_NSQ_TABLE_FOR_M0                        1 // On wil disable the nsq_table ordering algrithm. This is a temporarily adoption that will be disable once we comeup with a better ordreing mecanisme when MRP i ON.
 #define IMPROVED_SUBPEL_SEARCH                          1
-#define CAPPED_ME_CANDIDATES_NUM                        1  // Capped the ME-output adaptively based on the block size
+#define CAPPED_ME_CANDIDATES_NUM                        1 // Capped the ME-output adaptively based on the block size
+#define APPLY_3X3_FOR_BEST_ME                           1 // Might need to be restricted to M0
 
 #if IMPROVED_SUBPEL_SEARCH
 typedef enum ME_HP_MODE { 
