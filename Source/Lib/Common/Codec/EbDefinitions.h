@@ -293,6 +293,13 @@ extern "C" {
 #define IMPROVED_SUBPEL_SEARCH                          1
 #define CAPPED_ME_CANDIDATES_NUM                        1 // Capped the ME-output adaptively based on the block size
 #define APPLY_3X3_FOR_BEST_ME                           1 // Might need to be restricted to M0
+#define DECOUPLED_FAST_LOOP                             1
+
+#if DECOUPLED_FAST_LOOP
+#define     INTRA_NFL       10
+#define     INTER_NEW_NFL   10
+#define     INTER_PRED_NFL  10
+#endif
 
 #if IMPROVED_SUBPEL_SEARCH
 typedef enum ME_HP_MODE { 
@@ -354,7 +361,11 @@ enum {
 #else
 #define MAX_TXB_COUNT                             4 // Maximum number of transform blocks.
 #endif
+#if DECOUPLED_FAST_LOOP
+#define MAX_NFL                                   488 //MODE_DECISION_CANDIDATE_MAX_COUNT
+#else
 #define MAX_NFL                                   40
+#endif
 #define MAX_LAD                                   120 // max lookahead-distance 2x60fps
 #define ROUND_UV(x) (((x)>>3)<<3)
 #define AV1_PROB_COST_SHIFT 9

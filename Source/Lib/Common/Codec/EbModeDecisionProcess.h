@@ -183,8 +183,13 @@ extern "C" {
 #endif
         uint8_t                         pu_itr;
         uint8_t                         cu_size_log2;
+#if DECOUPLED_FAST_LOOP
+        uint32_t                         best_candidate_index_array[MAX_NFL + 2];
+        uint32_t                         sorted_candidate_index_array[MAX_NFL];
+#else
         uint8_t                         best_candidate_index_array[MAX_NFL + 2];
         uint8_t                         sorted_candidate_index_array[MAX_NFL];
+#endif
         uint16_t                        cu_origin_x;
         uint16_t                        cu_origin_y;
 #if !OPT_LOSSLESS_0

@@ -751,6 +751,9 @@ void set_nfl(
         context_ptr->full_recon_search_count = nfl_non_ref[nfl_index];
 #endif
 
+#if DECOUPLED_FAST_LOOP
+    context_ptr->full_recon_search_count = MAX_NFL;
+#endif
     ASSERT(context_ptr->full_recon_search_count <= MAX_NFL);
 }
 
@@ -4161,7 +4164,19 @@ void AV1PerformFullLoop(
     uint32_t       best_inter_luma_zero_coeff;
     uint64_t      bestfullCost;
     uint32_t      fullLoopCandidateIndex;
+#if DECOUPLED_FAST_LOOP
+    uint32_t       candidateIndex;
+
+    uint32_t nfl_intra_cnt = 0;
+    uint32_t nfl_inter_new_cnt = 0;
+    uint32_t nfl_inter_pred_cnt = 0;
+
+    uint32_t max_nfl_intra      = INTRA_NFL;
+    uint32_t max_nfl_inter_new  = INTER_NEW_NFL;
+    uint32_t max_nfl_inter_pred = INTER_PRED_NFL;
+#else
     uint8_t       candidateIndex;
+#endif
 
     uint64_t      y_full_distortion[DIST_CALC_TOTAL];
     uint32_t      count_non_zero_coeffs[3][MAX_NUM_OF_TU_PER_CU];
@@ -4186,7 +4201,11 @@ void AV1PerformFullLoop(
 #else
         candidateIndex = context_ptr->best_candidate_index_array[fullLoopCandidateIndex];
 #endif
+#if DECOUPLED_FAST_LOOP
+        uint32_t best_fastLoop_candidate_index = context_ptr->sorted_candidate_index_array[fullLoopCandidateIndex];
+#else
         uint8_t best_fastLoop_candidate_index = context_ptr->sorted_candidate_index_array[fullLoopCandidateIndex];
+#endif
 
         // initialize TU Split
         y_full_distortion[DIST_CALC_RESIDUAL] = 0;
@@ -4204,7 +4223,32 @@ void AV1PerformFullLoop(
                 return;
             }
         }
+#if DECOUPLED_FAST_LOOP
+        if (picture_control_set_ptr->slice_type != I_SLICE) {
+            if (nfl_intra_cnt >= max_nfl_intra && candidate_ptr->type == INTRA_MODE) {
+                *candidateBuffer->full_cost_ptr = MAX_MODE_COST;
+                continue;
+            }
+            if (nfl_inter_new_cnt >= max_nfl_inter_new && candidate_ptr->type == INTER_MODE && candidate_ptr->is_new_mv) {
+                *candidateBuffer->full_cost_ptr = MAX_MODE_COST;
+                continue;
+            }
+            if (nfl_inter_pred_cnt >= max_nfl_inter_pred && candidate_ptr->type == INTER_MODE && candidate_ptr->is_new_mv == 0) {
+                *candidateBuffer->full_cost_ptr = MAX_MODE_COST;
+                continue;
+            }
 
+            if (candidate_ptr->type == INTRA_MODE) {
+                nfl_intra_cnt++;
+            }
+            if (candidate_ptr->type == INTER_MODE && candidate_ptr->is_new_mv) {
+                nfl_inter_new_cnt++;
+            }
+            if (candidate_ptr->type == INTER_MODE && candidate_ptr->is_new_mv == 0) {
+                max_nfl_inter_pred++;
+            }
+        }
+#endif
         candidate_ptr->full_distortion = 0;
 
         memset(candidate_ptr->eob[0], 0, sizeof(uint16_t));
@@ -5720,7 +5764,11 @@ void md_encode_block(
     const BlockGeom                          *blk_geom = context_ptr->blk_geom;
     ModeDecisionCandidateBuffer            *candidateBuffer;
     ModeDecisionCandidate                  *fast_candidate_array = context_ptr->fast_candidate_array;
+#if DECOUPLED_FAST_LOOP
+    uint32_t                                   candidateIndex;
+#else
     uint8_t                                   candidateIndex;
+#endif
     uint32_t                                  fastCandidateTotalCount;
     EbAsm                                     asm_type = sequence_control_set_ptr->encode_context_ptr->asm_type;
     uint32_t                                  best_intra_mode = EB_INTRA_MODE_INVALID;
