@@ -14391,6 +14391,9 @@ extern "C" {
         uint8_t                               nsq_max_shapes_md; // max number of shapes to be tested in MD
         uint8_t                              sc_content_detected;
         uint8_t                              ibc_mode;
+#if APPLY_TX_SEARCH_SHORTCUTS_TO_ATB
+        uint64_t                              atb_weight;
+#endif
 #if SETUP_SKIP
         SkipModeInfo                         skip_mode_info;
 #endif

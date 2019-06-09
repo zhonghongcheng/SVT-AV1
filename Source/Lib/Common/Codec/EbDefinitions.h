@@ -300,7 +300,7 @@ extern "C" {
 #define     INTER_NEW_NFL   10
 #define     INTER_PRED_NFL  10
 #endif
-
+#define APPLY_TX_SEARCH_SHORTCUTS_TO_ATB                1
 #if IMPROVED_SUBPEL_SEARCH
 typedef enum ME_HP_MODE { 
     EX_HP_MODE = 0, 

@@ -271,7 +271,9 @@ uint8_t  circ_inc(uint8_t max, uint8_t off, uint8_t input)
 #define OTH 64
 #define FC_SKIP_TX_SR_TH025                     125 // Fast cost skip tx search threshold.
 #define FC_SKIP_TX_SR_TH010                     110 // Fast cost skip tx search threshold.
-
+#if APPLY_TX_SEARCH_SHORTCUTS_TO_ATB
+#define FC_SKIP_ATB_SR_TH040                    140 
+#endif
  /************************************************
   * Picture Analysis Context Constructor
   ************************************************/
@@ -1409,6 +1411,13 @@ EbErrorType signal_derivation_multi_processes_oq(
         picture_control_set_ptr->skip_tx_search = 0;
     else
         picture_control_set_ptr->skip_tx_search = 1;
+#endif
+
+#if APPLY_TX_SEARCH_SHORTCUTS_TO_ATB
+    if (MR_MODE)
+        picture_control_set_ptr->atb_weight = MAX_MODE_COST;
+    else
+        picture_control_set_ptr->atb_weight = FC_SKIP_ATB_SR_TH040; 
 #endif
 
     // Intra prediction modes                       Settings

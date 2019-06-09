@@ -2456,6 +2456,19 @@ static void CflPrediction(
     }
 #endif
 }
+
+#if APPLY_TX_SEARCH_SHORTCUTS_TO_ATB
+uint8_t get_skip_atb_flag(
+    uint64_t                 ref_fast_cost,
+    uint64_t                 cu_cost,
+    uint64_t                 weight)
+{
+    //NM: Skip ATB search when the fast cost of the current mode candidate is substansially
+    // Larger than the best fast_cost 
+    uint8_t  tx_atb_skip_fag = cu_cost >= ((ref_fast_cost * weight) / 100) ? 1 : 0;
+    return tx_atb_skip_fag;
+}
+#endif
 uint8_t get_skip_tx_search_flag(
 #if BYPASS_USELESS_TX_SEARCH
     const BlockGeom *blk_geom,
@@ -4353,7 +4366,13 @@ void AV1PerformFullLoop(
 #if ATB_MD
         uint8_t end_tx_depth = get_end_tx_depth(context_ptr, picture_control_set_ptr->parent_pcs_ptr->atb_mode, candidate_ptr, context_ptr->blk_geom->bsize, candidateBuffer->candidate_ptr->type);
         // Transform partitioning path (INTRA Luma)
+#if APPLY_TX_SEARCH_SHORTCUTS_TO_ATB
+        uint8_t  atb_search_skip_fag = get_skip_atb_flag( ref_fast_cost, *candidateBuffer->fast_cost_ptr, picture_control_set_ptr->parent_pcs_ptr->atb_weight);
+        atb_search_skip_fag = (picture_control_set_ptr->parent_pcs_ptr->skip_tx_search && best_fastLoop_candidate_index > NFL_TX_TH) ? 1 : atb_search_skip_fag;
+        if (picture_control_set_ptr->parent_pcs_ptr->atb_mode && end_tx_depth && candidateBuffer->candidate_ptr->type == INTRA_MODE && candidateBuffer->candidate_ptr->use_intrabc == 0 && atb_search_skip_fag == 0) {
+#else
         if (picture_control_set_ptr->parent_pcs_ptr->atb_mode && end_tx_depth && candidateBuffer->candidate_ptr->type == INTRA_MODE && candidateBuffer->candidate_ptr->use_intrabc == 0) {
+#endif
             perform_intra_tx_partitioning(
                 candidateBuffer,
                 context_ptr,
