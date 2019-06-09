@@ -4183,10 +4183,15 @@ void AV1PerformFullLoop(
     uint32_t nfl_intra_cnt = 0;
     uint32_t nfl_inter_new_cnt = 0;
     uint32_t nfl_inter_pred_cnt = 0;
-
+#if OPT_NFL_SETTINGS
+    uint32_t max_nfl_intra      = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTRA_NFL       : 3;
+    uint32_t max_nfl_inter_new  = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_NEW_NFL   : 3;
+    uint32_t max_nfl_inter_pred = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL  : 4;
+#else
     uint32_t max_nfl_intra      = INTRA_NFL;
     uint32_t max_nfl_inter_new  = INTER_NEW_NFL;
     uint32_t max_nfl_inter_pred = INTER_PRED_NFL;
+#endif
 #else
     uint8_t       candidateIndex;
 #endif

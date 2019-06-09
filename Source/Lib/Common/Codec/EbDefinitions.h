@@ -147,7 +147,7 @@ extern "C" {
 #define RC_FEEDBACK                       1 // Feedback from previous base layer is received before starting the next base layer frame
 #endif
 #define RED_CU                            1 // Bypass redundant CU
-#define NSQ_ME_OPT                        0 // NSQ ME Restructuring
+#define NSQ_ME_OPT                        1 // NSQ ME Restructuring
 #define BYPASS_USELESS_TX_SEARCH          0
 // Testing MACROS
 #define M9_NEAR_INJECTION                 0
@@ -294,14 +294,20 @@ extern "C" {
 #define CAPPED_ME_CANDIDATES_NUM                        1 // Capped the ME-output adaptively based on the block size
 #define APPLY_3X3_FOR_BEST_ME                           1 // Might need to be restricted to M0
 #define DECOUPLED_FAST_LOOP                             1
-
+#define OPT_NFL_SETTINGS                                1 // Used NRF 3,3,4 and Ref 8,8,8 NFL settings
 #if DECOUPLED_FAST_LOOP
+#if OPT_NFL_SETTINGS
+#define     INTRA_NFL       8
+#define     INTER_NEW_NFL   8
+#define     INTER_PRED_NFL  8
+#else
 #define     INTRA_NFL       10
 #define     INTER_NEW_NFL   10
 #define     INTER_PRED_NFL  10
 #endif
+#endif
 #define APPLY_TX_SEARCH_SHORTCUTS_TO_ATB                1
-#define ENABLE_SKIP_REDUNDANT_BLOCK                     0
+#define ENABLE_SKIP_REDUNDANT_BLOCK                     1
 #if IMPROVED_SUBPEL_SEARCH
 typedef enum ME_HP_MODE { 
     EX_HP_MODE = 0, 
