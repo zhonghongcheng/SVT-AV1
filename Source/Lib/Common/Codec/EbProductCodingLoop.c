@@ -6350,6 +6350,9 @@ EB_EXTERN EbErrorType mode_decision_sb(
         }
         else
 #endif
+#if FIX_ATB_SUPPORT
+        {
+#endif
 #if ATB_SUPPORT
         // Initialize tx_depth
         cu_ptr->tx_depth = 0;
@@ -6366,6 +6369,9 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #endif
             lcuAddr,
             bestCandidateBuffers);
+#if FIX_ATB_SUPPORT
+        }
+#endif
 
         if (blk_geom->nsi + 1 == blk_geom->totns)
             d1_non_square_block_decision(context_ptr);
