@@ -34,6 +34,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
+#define BEST_Q_M0                         0 // disable all shortcuts into M0
 #define ALT_REF_SUPPORT                   1// ALT_REF main flag
 
 #if ALT_REF_SUPPORT
@@ -291,23 +294,39 @@ extern "C" {
 #define EIGTH_PEL_MV                                    0
 #define DISABLE_NSQ_TABLE_FOR_M0                        1 // On wil disable the nsq_table ordering algrithm. This is a temporarily adoption that will be disable once we comeup with a better ordreing mecanisme when MRP i ON.
 #define IMPROVED_SUBPEL_SEARCH                          1
+#define DECOUPLED_FAST_LOOP                             1
+#define FIX_ATB_SUPPORT                                 0 // ENABLE_SKIP_REDUNDANT_BLOCK
+
+#if BEST_Q_M0
+#if DECOUPLED_FAST_LOOP
+#define IMPROVED_NFL_SETTINGS                           1 // Used NRF 10,10,10 and Ref 20,20,20 NFL settings
+#endif
+#else
 #define CAPPED_ME_CANDIDATES_NUM                        1 // Capped the ME-output adaptively based on the block size
 #define APPLY_3X3_FOR_BEST_ME                           1 // Might need to be restricted to M0
-#define DECOUPLED_FAST_LOOP                             1
+#define APPLY_TX_SEARCH_SHORTCUTS_TO_ATB                1
 #define OPT_NFL_SETTINGS                                1 // Used NRF 3,3,4 and Ref 8,8,8 NFL settings
+#endif
+
 #if DECOUPLED_FAST_LOOP
 #if OPT_NFL_SETTINGS
 #define     INTRA_NFL       8
 #define     INTER_NEW_NFL   8
 #define     INTER_PRED_NFL  8
 #else
+#if IMPROVED_NFL_SETTINGS
+#define     INTRA_NFL       20
+#define     INTER_NEW_NFL   20
+#define     INTER_PRED_NFL  20
+#else
 #define     INTRA_NFL       10
 #define     INTER_NEW_NFL   10
 #define     INTER_PRED_NFL  10
 #endif
 #endif
-#define APPLY_TX_SEARCH_SHORTCUTS_TO_ATB                1
-#define FIX_ATB_SUPPORT                                 0 // ENABLE_SKIP_REDUNDANT_BLOCK
+#endif
+
+
 #if IMPROVED_SUBPEL_SEARCH
 typedef enum ME_HP_MODE { 
     EX_HP_MODE = 0, 
