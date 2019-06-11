@@ -571,15 +571,39 @@ void av1_quantize_fp_facade(
     TranLow *dqcoeff_ptr,
     uint16_t *eob_ptr,
     const ScanOrder *sc,
-    const QuantParam *qparam)  {
+    const QuantParam *qparam) {
 
     const QmVal *qm_ptr = qparam->qmatrix;
     const QmVal *iqm_ptr = qparam->iqmatrix;
 
-    quantize_fp_helper_c(coeff_ptr, n_coeffs, p->zbin_QTX, p->round_fp_QTX,
-        p->quant_fp_QTX, p->quant_shift_QTX, qcoeff_ptr,
-        dqcoeff_ptr, p->dequant_QTX, eob_ptr, sc->scan,
-        sc->iscan, qm_ptr, iqm_ptr, qparam->log_scale);
+    if (qm_ptr || iqm_ptr)
+        quantize_fp_helper_c(coeff_ptr, n_coeffs, p->zbin_QTX, p->round_fp_QTX,
+            p->quant_fp_QTX, p->quant_shift_QTX, qcoeff_ptr,
+            dqcoeff_ptr, p->dequant_QTX, eob_ptr, sc->scan,
+            sc->iscan, qm_ptr, iqm_ptr, qparam->log_scale);
+    else {
+        switch (qparam->log_scale) {
+        case 0:
+            av1_quantize_fp(coeff_ptr, n_coeffs, p->zbin_QTX, p->round_fp_QTX,
+                p->quant_fp_QTX, p->quant_shift_QTX, qcoeff_ptr,
+                dqcoeff_ptr, p->dequant_QTX, eob_ptr, sc->scan,
+                sc->iscan);
+            break;
+        case 1:
+            av1_quantize_fp_32x32(coeff_ptr, n_coeffs, p->zbin_QTX, p->round_fp_QTX,
+                p->quant_fp_QTX, p->quant_shift_QTX, qcoeff_ptr,
+                dqcoeff_ptr, p->dequant_QTX, eob_ptr, sc->scan,
+                sc->iscan);
+            break;
+        case 2:
+            av1_quantize_fp_64x64(coeff_ptr, n_coeffs, p->zbin_QTX, p->round_fp_QTX,
+                p->quant_fp_QTX, p->quant_shift_QTX, qcoeff_ptr,
+                dqcoeff_ptr, p->dequant_QTX, eob_ptr, sc->scan,
+                sc->iscan);
+            break;
+        default: assert(0);
+        }
+    }
 }
 
 
@@ -1951,7 +1975,7 @@ void av1_quantize_inv_quantize(
 #if ENABLE_QUANT_FP
     EbBool perform_quantize_fp = EB_TRUE;
 #else
-    EbBool perform_quantize_fp = EB_FALSE;
+    EbBool perform_quantize_fp = picture_control_set_ptr->enc_mode == ENC_M0 ? EB_TRUE : EB_FALSE;
 #endif
 
     if (perform_rdoq && perform_quantize_fp && !is_inter)
