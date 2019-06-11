@@ -295,6 +295,7 @@ extern "C" {
 #define IMPROVED_SUBPEL_SEARCH                          1
 #define DECOUPLED_FAST_LOOP                             1
 #define FIX_ATB_SUPPORT                                 0 // ENABLE_SKIP_REDUNDANT_BLOCK
+#define FIX_TX_SEARCH_FOR_MR_MODE                       1
 
 #if BEST_Q_M0
 #define DOWN_SAMPLING_FILTERING                         1 // Use down-sampling filtering (instead of down-sampling decimation) for 1/16th and 1/4th reference frame(s) generation @ ME and temporal filtering search, added the multi-mode signal down_sampling_method_me_search; filtering if M0, and decimation for M1 & higher
