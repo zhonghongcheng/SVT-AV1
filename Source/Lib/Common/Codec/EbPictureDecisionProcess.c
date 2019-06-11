@@ -937,7 +937,9 @@ EbErrorType signal_derivation_multi_processes_oq(
         if (picture_control_set_ptr->pic_depth_mode < PIC_SQ_DEPTH_MODE)
             assert(sequence_control_set_ptr->nsq_present == 1 && "use nsq_present 1");
 #endif
-
+#if NSQ_OFF
+        picture_control_set_ptr->pic_depth_mode = PIC_SQ_DEPTH_MODE;
+#endif
     picture_control_set_ptr->max_number_of_pus_per_sb = (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE) ? MAX_ME_PU_COUNT : SQUARE_PU_COUNT;
 
     // NSQ search Level                               Settings
