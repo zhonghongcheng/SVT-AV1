@@ -49,6 +49,8 @@ extern "C" {
 
 #define MRP_SUPPORT                       1// MRP Main Flag
 
+#define DOWN_SAMPLING_FILTERING           0 // Use down-sampling filtering (instead of down-sampling decimation) for 1/16th and 1/4th reference frame(s) generation @ ME and temporal filtering search, added the multi-mode signal down_sampling_method_me_search; filtering if M0, and decimation for M1 & higher
+#define DECIMATION_BUG_FIX                0 // Removed HME Level0 check @ 1/16th decimation to guarantee valid ZZ SAD and SCD data when HME Level0 is OFF
 
 #define RDOQ_INTRA                        1 // Enable RDOQ INTRA (RDOQ INTER already active) 
 #define DC_SIGN_CONTEXT_EP                1 // Fixed DC level derivation & update @ encode pass
@@ -2892,6 +2894,14 @@ void(*ErrorHandler)(
 #endif
 #define INVALID_POC                                 (((uint32_t) (~0)) - (((uint32_t) (~0)) >> 1))
 #define MAX_ELAPSED_IDR_COUNT                       1024
+
+#if DOWN_SAMPLING_FILTERING
+typedef enum DownSamplingMethod
+{
+    ME_FILTERED_DOWNSAMPLED = 0,
+    ME_DECIMATED_DOWNSAMPLED = 1
+} DownSamplingMethod;
+#endif
 
 //***Segments***
 #define EB_SEGMENT_MIN_COUNT                        1
