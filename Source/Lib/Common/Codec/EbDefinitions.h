@@ -49,9 +49,6 @@ extern "C" {
 
 #define MRP_SUPPORT                       1// MRP Main Flag
 
-#define DOWN_SAMPLING_FILTERING           0 // Use down-sampling filtering (instead of down-sampling decimation) for 1/16th and 1/4th reference frame(s) generation @ ME and temporal filtering search, added the multi-mode signal down_sampling_method_me_search; filtering if M0, and decimation for M1 & higher
-#define DECIMATION_BUG_FIX                0 // Removed HME Level0 check @ 1/16th decimation to guarantee valid ZZ SAD and SCD data when HME Level0 is OFF
-
 #define RDOQ_INTRA                        1 // Enable RDOQ INTRA (RDOQ INTER already active) 
 #define DC_SIGN_CONTEXT_EP                1 // Fixed DC level derivation & update @ encode pass
 #define SPATIAL_SSE_TX_SEARCH             1 // Spatial SSE @ the full loop Tx search
@@ -300,6 +297,9 @@ extern "C" {
 #define FIX_ATB_SUPPORT                                 0 // ENABLE_SKIP_REDUNDANT_BLOCK
 
 #if BEST_Q_M0
+#define DOWN_SAMPLING_FILTERING                         1 // Use down-sampling filtering (instead of down-sampling decimation) for 1/16th and 1/4th reference frame(s) generation @ ME and temporal filtering search, added the multi-mode signal down_sampling_method_me_search; filtering if M0, and decimation for M1 & higher
+#define DECIMATION_BUG_FIX                              1 // Removed HME Level0 check @ 1/16th decimation to guarantee valid ZZ SAD and SCD data when HME Level0 is OFF
+#define ENABLE_QUANT_FP                                 1
 #if DECOUPLED_FAST_LOOP
 #define IMPROVED_NFL_SETTINGS                           1 // Used NRF 10,10,10 and Ref 20,20,20 NFL settings
 #endif
@@ -308,6 +308,9 @@ extern "C" {
 #define APPLY_3X3_FOR_BEST_ME                           1 // Might need to be restricted to M0
 #define APPLY_TX_SEARCH_SHORTCUTS_TO_ATB                1
 #define OPT_NFL_SETTINGS                                1 // Used NRF 3,3,4 and Ref 8,8,8 NFL settings
+#define DOWN_SAMPLING_FILTERING                         1 // Use down-sampling filtering (instead of down-sampling decimation) for 1/16th and 1/4th reference frame(s) generation @ ME and temporal filtering search, added the multi-mode signal down_sampling_method_me_search; filtering if M0, and decimation for M1 & higher
+#define DECIMATION_BUG_FIX                              1 // Removed HME Level0 check @ 1/16th decimation to guarantee valid ZZ SAD and SCD data when HME Level0 is OFF
+
 #endif
 
 #if DECOUPLED_FAST_LOOP
