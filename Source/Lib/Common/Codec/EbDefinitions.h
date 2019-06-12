@@ -36,7 +36,7 @@ extern "C" {
 #endif
 
 
-#define BEST_Q_M0                         0 // disable all shortcuts into M0
+#define BEST_Q_M0                         1 // disable all shortcuts into M0
 #define ALT_REF_SUPPORT                   1// ALT_REF main flag
 
 #if ALT_REF_SUPPORT
@@ -304,23 +304,25 @@ extern "C" {
 #define DECIMATION_BUG_FIX                              1 // Removed HME Level0 check @ 1/16th decimation to guarantee valid ZZ SAD and SCD data when HME Level0 is OFF
 #define ENABLE_QUANT_FP                                 1
 #if DECOUPLED_FAST_LOOP
-#define IMPROVED_NFL_SETTINGS                           1 // Used NRF 10,10,10 and Ref 20,20,20 NFL settings
+#define IMPROVED_NFL_SETTINGS                           1 // Used NRF 8,8,8 and Ref 16,16,16 NFL settings
 #endif
+#define APPLY_3X3_FOR_BEST_ME                           1 // Might need to be restricted to M0
+#if APPLY_3X3_FOR_BEST_ME 
+#define BEST_CANDIDATE_COUNT                            4
+#endif
+#define USE_MR_SP                                       0 
+#define USE_MR_CHROMA                                   0
+#define USE_MR_ATB                                      0
+#define ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH           1 // TUNED FILTER STRENGTH FOR LUMA AND CHROMA
 #else
 #define CAPPED_ME_CANDIDATES_NUM                        1 // Capped the ME-output adaptively based on the block size
-#define APPLY_3X3_FOR_BEST_ME                           1 // Might need to be restricted to M0
+#if CAPPED_ME_CANDIDATES_NUM
+#define START_ME_CANDIDATE_COUNT                        7           // for 64x64, -1 for 32x32, -2 for 16x16, -3 for 8x8
+#endif
 #define APPLY_TX_SEARCH_SHORTCUTS_TO_ATB                1
 #define OPT_NFL_SETTINGS                                1 // Used NRF 3,3,4 and Ref 8,8,8 NFL settings
 #define DOWN_SAMPLING_FILTERING                         1 // Use down-sampling filtering (instead of down-sampling decimation) for 1/16th and 1/4th reference frame(s) generation @ ME and temporal filtering search, added the multi-mode signal down_sampling_method_me_search; filtering if M0, and decimation for M1 & higher
 #define DECIMATION_BUG_FIX                              1 // Removed HME Level0 check @ 1/16th decimation to guarantee valid ZZ SAD and SCD data when HME Level0 is OFF
-#endif
-
-#if CAPPED_ME_CANDIDATES_NUM
-#define START_ME_CANDIDATE_COUNT                        7           // for 64x64, -1 for 32x32, -2 for 16x16, -3 for 8x8
-#endif
-
-#if APPLY_3X3_FOR_BEST_ME 
-#define BEST_CANDIDATE_COUNT                            1
 #endif
 
 #if DECOUPLED_FAST_LOOP
@@ -330,9 +332,9 @@ extern "C" {
 #define     INTER_PRED_NFL  8
 #else
 #if IMPROVED_NFL_SETTINGS
-#define     INTRA_NFL       20
-#define     INTER_NEW_NFL   20
-#define     INTER_PRED_NFL  20
+#define     INTRA_NFL       16
+#define     INTER_NEW_NFL   16
+#define     INTER_PRED_NFL  16
 #else
 #define     INTRA_NFL       10
 #define     INTER_NEW_NFL   10
@@ -341,11 +343,8 @@ extern "C" {
 #endif
 #endif
 
-
-
 #define OPT_IFS                                         0 // DISABLE INTERPOLATION SEARCH WHEN ALL MVs (x and y) ARE INTEGER.
 #define IFS_EARLY_EXIT                                  0 // EARLY EXIT FROM INTERPOLATION SEARCH BASED ON THE DISTORTION OF THE REGULAR-FILTER (x and y) ARE INTEGER.
-#define ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH           0 // TUNED FILTER STRENGTH FOR LUMA AND CHROMA
 
 #if IMPROVED_SUBPEL_SEARCH
 typedef enum ME_HP_MODE { 
