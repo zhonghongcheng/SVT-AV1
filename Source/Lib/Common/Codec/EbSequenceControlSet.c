@@ -517,6 +517,7 @@ extern EbErrorType sb_params_init(
                 EB_TRUE;
         }
 
+#if  !INCOMPLETE_SB_FIX
          uint16_t max_block_count = sequence_control_set_ptr->max_block_cnt;
 
         for (md_scan_block_index = 0; md_scan_block_index < max_block_count; md_scan_block_index++) {
@@ -524,13 +525,13 @@ extern EbErrorType sb_params_init(
 
             if (blk_geom->shape != PART_N)
                 blk_geom = get_blk_geom_mds(blk_geom->sqi_mds);
-
             sequence_control_set_ptr->sb_params_array[sb_index].block_is_inside_md_scan[md_scan_block_index] =
                 ((sequence_control_set_ptr->sb_params_array[sb_index].origin_x + blk_geom->origin_x + blk_geom->bwidth > sequence_control_set_ptr->seq_header.max_frame_width) ||
                 (sequence_control_set_ptr->sb_params_array[sb_index].origin_y + blk_geom->origin_y + blk_geom->bheight > sequence_control_set_ptr->seq_header.max_frame_height)) ?
                 EB_FALSE :
                 EB_TRUE;
         }
+#endif
     }
 
     sequence_control_set_ptr->picture_width_in_sb = pictureLcuWidth;
@@ -572,7 +573,26 @@ EbErrorType sb_geom_init(SequenceControlSet * sequence_control_set_ptr)
 
         for (md_scan_block_index = 0; md_scan_block_index < max_block_count ; md_scan_block_index++) {
             const BlockGeom * blk_geom = get_blk_geom_mds(md_scan_block_index);
+#if INCOMPLETE_SB_FIX
+            sequence_control_set_ptr->sb_geom[sb_index].block_is_allowed[md_scan_block_index] =
+                ((sequence_control_set_ptr->sb_geom[sb_index].origin_x + blk_geom->origin_x + blk_geom->bwidth / 2 < sequence_control_set_ptr->seq_header.max_frame_width) &&
+                (sequence_control_set_ptr->sb_geom[sb_index].origin_y + blk_geom->origin_y + blk_geom->bheight / 2 < sequence_control_set_ptr->seq_header.max_frame_height)) ?
+                EB_TRUE :
+                EB_FALSE;
 
+            // Temporary if the cropped with is not 4, 8, 16, 32, 64 and 128, the block is not allowed. To be removed after intrinsic functions for NxM spatial_full_distortion_kernel_func_ptr_array are added
+            int32_t cropped_width = MIN(blk_geom->bwidth, sequence_control_set_ptr->seq_header.max_frame_width - (sequence_control_set_ptr->sb_geom[sb_index].origin_x + blk_geom->origin_x));
+            if (cropped_width != 4 && cropped_width != 8 && cropped_width != 16 && cropped_width != 32 && cropped_width != 64 && cropped_width != 128)
+                sequence_control_set_ptr->sb_geom[sb_index].block_is_allowed[md_scan_block_index] = EB_FALSE;
+
+            if (blk_geom->shape != PART_N)
+                blk_geom = get_blk_geom_mds(blk_geom->sqi_mds);
+            sequence_control_set_ptr->sb_geom[sb_index].block_is_inside_md_scan[md_scan_block_index] =
+                ((sequence_control_set_ptr->sb_geom[sb_index].origin_x >= sequence_control_set_ptr->seq_header.max_frame_width) ||
+                (sequence_control_set_ptr->sb_geom[sb_index].origin_y >= sequence_control_set_ptr->seq_header.max_frame_height)) ?
+                EB_FALSE :
+                EB_TRUE;
+#else
             if (blk_geom->shape != PART_N)
                 blk_geom = get_blk_geom_mds(blk_geom->sqi_mds);
 
@@ -581,6 +601,7 @@ EbErrorType sb_geom_init(SequenceControlSet * sequence_control_set_ptr)
                 (sequence_control_set_ptr->sb_geom[sb_index].origin_y + blk_geom->origin_y + blk_geom->bheight > sequence_control_set_ptr->seq_header.max_frame_height)) ?
                 EB_FALSE :
                 EB_TRUE;
+#endif
         }
     }
 

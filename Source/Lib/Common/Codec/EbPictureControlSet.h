@@ -13940,7 +13940,9 @@ extern "C" {
         uint8_t   height;
         uint8_t   is_complete_sb;
         EbBool    raster_scan_cu_validity[CU_MAX_COUNT];
+#if !INCOMPLETE_SB_FIX
         EbBool    block_is_inside_md_scan[BLOCK_MAX_COUNT_SB_128];
+#endif
         uint8_t   potential_logo_sb;
         uint8_t   is_edge_sb;
     } SbParams;
@@ -13955,6 +13957,9 @@ extern "C" {
         uint8_t    height;
         uint8_t    is_complete_sb;
         EbBool     block_is_inside_md_scan[BLOCK_MAX_COUNT_SB_128];
+#if INCOMPLETE_SB_FIX
+        EbBool     block_is_allowed[BLOCK_MAX_COUNT_SB_128];
+#endif
     } SbGeom;
 
     typedef struct CuStat
