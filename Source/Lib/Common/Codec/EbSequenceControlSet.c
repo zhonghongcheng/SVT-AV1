@@ -216,6 +216,15 @@ EbErrorType eb_sequence_control_set_ctor(
     uint8_t temporal_layer_index;
     for (temporal_layer_index = 0; temporal_layer_index < 5; temporal_layer_index++) {
         sequence_control_set_ptr->total_count[temporal_layer_index] = 0;
+#if ADP_BQ
+        sequence_control_set_ptr->nsq_level0_count[temporal_layer_index] = 0;
+        sequence_control_set_ptr->nsq_level1_count[temporal_layer_index] = 0;
+        sequence_control_set_ptr->nsq_level2_count[temporal_layer_index] = 0;
+        sequence_control_set_ptr->nsq_level3_count[temporal_layer_index] = 0;
+        sequence_control_set_ptr->nsq_level4_count[temporal_layer_index] = 0;
+        sequence_control_set_ptr->nsq_level5_count[temporal_layer_index] = 0;
+        sequence_control_set_ptr->nsq_level6_count[temporal_layer_index] = 0;
+#endif
         sequence_control_set_ptr->sq_search_count[temporal_layer_index] = 0;
         sequence_control_set_ptr->sq_non4_search_count[temporal_layer_index] = 0;
         sequence_control_set_ptr->mdc_count[temporal_layer_index] = 0;

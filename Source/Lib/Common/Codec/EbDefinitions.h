@@ -49,6 +49,8 @@ extern "C" {
 
 #define MRP_SUPPORT                       1// MRP Main Flag
 
+#define ADP_BQ                            0 // Added the ability to perform ADP for best quality mode
+
 #define RDOQ_INTRA                        1 // Enable RDOQ INTRA (RDOQ INTER already active) 
 #define DC_SIGN_CONTEXT_EP                1 // Fixed DC level derivation & update @ encode pass
 #define SPATIAL_SSE_TX_SEARCH             1 // Spatial SSE @ the full loop Tx search
@@ -3284,7 +3286,12 @@ typedef enum EbPictureDepthMode
     PIC_SQ_NON4_DEPTH_MODE      = 3, // SQ:  SB size -> 8x8
 #if OPT_LOSSLESS_0
     PIC_OPEN_LOOP_DEPTH_MODE = 4, // Early Inter Depth Decision:  SB size -> 8x8
-    PIC_SB_SWITCH_DEPTH_MODE = 5  // Adaptive Depth Partitioning
+#if ADP_BQ
+    PIC_SB_SWITCH_SQ_DEPTH_MODE  = 5, // Adaptive Depth Partitioning SQ   
+    PIC_SB_SWITCH_NSQ_DEPTH_MODE = 6  // Adaptive Depth Partitioning NSQ 
+#else
+    PIC_SB_SWITCH_DEPTH_MODE    = 5  // Adaptive Depth Partitioning
+#endif
 #else
     PIC_BDP_DEPTH_MODE          = 4,
     PIC_LIGHT_BDP_DEPTH_MODE    = 5,
@@ -3294,11 +3301,28 @@ typedef enum EbPictureDepthMode
 } EbPictureDepthMode;
 
 #define EB_SB_DEPTH_MODE              uint8_t
+#if ADP_BQ
+// ADP for NSQ
+#define SB_NSQ_LEVEL_6_DEPTH_MODE           1
+#define SB_NSQ_LEVEL_5_DEPTH_MODE           2
+#define SB_NSQ_LEVEL_4_DEPTH_MODE           3
+#define SB_NSQ_LEVEL_3_DEPTH_MODE           4
+#define SB_NSQ_LEVEL_2_DEPTH_MODE           5
+#define SB_NSQ_LEVEL_1_DEPTH_MODE           6
+#define SB_NSQ_LEVEL_0_DEPTH_MODE           7
+// ADP for SQ
 #define SB_SQ_BLOCKS_DEPTH_MODE             1
 #define SB_SQ_NON4_BLOCKS_DEPTH_MODE        2
 #define SB_OPEN_LOOP_DEPTH_MODE             3
 #define SB_FAST_OPEN_LOOP_DEPTH_MODE        4
 #define SB_PRED_OPEN_LOOP_DEPTH_MODE        5
+#else
+#define SB_SQ_BLOCKS_DEPTH_MODE             1
+#define SB_SQ_NON4_BLOCKS_DEPTH_MODE        2
+#define SB_OPEN_LOOP_DEPTH_MODE             3
+#define SB_FAST_OPEN_LOOP_DEPTH_MODE        4
+#define SB_PRED_OPEN_LOOP_DEPTH_MODE        5
+#endif
 
 typedef enum EbIntrA4x4SearchMethod
 {
