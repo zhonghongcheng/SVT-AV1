@@ -887,7 +887,14 @@ EbErrorType signal_derivation_multi_processes_oq(
 
 #endif
         if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#if ADP_BQ
+            if (picture_control_set_ptr->slice_type == I_SLICE)
+                picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
+            else
+                picture_control_set_ptr->pic_depth_mode = PIC_SB_SWITCH_NSQ_DEPTH_MODE;
+#else
             picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
+#endif
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
             if (picture_control_set_ptr->slice_type == I_SLICE)
                 picture_control_set_ptr->pic_depth_mode = PIC_ALL_C_DEPTH_MODE;
@@ -899,7 +906,11 @@ EbErrorType signal_derivation_multi_processes_oq(
             if (picture_control_set_ptr->slice_type == I_SLICE)
                 picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
             else
+#if ADP_BQ
+                picture_control_set_ptr->pic_depth_mode = PIC_SB_SWITCH_SQ_DEPTH_MODE;
+#else
                 picture_control_set_ptr->pic_depth_mode = PIC_SB_SWITCH_DEPTH_MODE;
+#endif
 #else
         if (picture_control_set_ptr->enc_mode <= ENC_M2)
             picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
@@ -928,8 +939,20 @@ EbErrorType signal_derivation_multi_processes_oq(
             assert(sequence_control_set_ptr->nsq_present == 1 && "use nsq_present 1");
 #endif
 
-    picture_control_set_ptr->max_number_of_pus_per_sb = (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE) ? MAX_ME_PU_COUNT : SQUARE_PU_COUNT;
+#if ADP_BQ
+        picture_control_set_ptr->max_number_of_pus_per_sb = (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE || picture_control_set_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE) ? MAX_ME_PU_COUNT : SQUARE_PU_COUNT;
+#else
+        picture_control_set_ptr->max_number_of_pus_per_sb = (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE) ? MAX_ME_PU_COUNT : SQUARE_PU_COUNT;
+#endif
 
+#if ADP_BQ
+        // Set nsq_search_level and nsq_max_shapes_md to invalid if ADP
+        if (picture_control_set_ptr->pic_depth_mode == PIC_SB_SWITCH_SQ_DEPTH_MODE || picture_control_set_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE) {
+            picture_control_set_ptr->nsq_search_level = ~0;
+            picture_control_set_ptr->nsq_max_shapes_md = ~0;
+        }
+        else {
+#endif
     // NSQ search Level                               Settings
     // NSQ_SEARCH_OFF                                 OFF
     // NSQ_SEARCH_LEVEL1                              Allow only NSQ Inter-NEAREST/NEAR/GLOBAL if parent SQ has no coeff + reordering nsq_table number and testing only 1 NSQ SHAPE
@@ -1045,6 +1068,10 @@ EbErrorType signal_derivation_multi_processes_oq(
         if (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE) picture_control_set_ptr->pic_depth_mode = PIC_SQ_DEPTH_MODE;
     if (picture_control_set_ptr->pic_depth_mode > PIC_SQ_DEPTH_MODE)
         assert(picture_control_set_ptr->nsq_search_level == NSQ_SEARCH_OFF);
+
+#if ADP_BQ
+    }
+#endif
     // Interpolation search Level                     Settings
     // 0                                              OFF
     // 1                                              Interpolation search at inter-depth

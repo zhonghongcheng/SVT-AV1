@@ -545,10 +545,24 @@ void* packetization_kernel(void *input_ptr)
 #if ADP_STATS_PER_LAYER
             if (queueEntryPtr->picture_number == sequence_control_set_ptr->static_config.frames_to_be_encoded - 1) {
                 uint8_t layerIndex;
+#if ADP_BQ
+                SVT_LOG("\nnsq_level0_count\tnsq_level1_count\tnsq_level2_count\tnsq_level3_count\tnsq_level4_count\tnsq_level5_count\tnsq_level6_count\tnsq_search_count\tsq_non4_search_count\tmdc_count\tpred_count\tpred1_nfl_count");
+#else
                 SVT_LOG("\nsq_search_count\tsq_non4_search_count\tmdc_count\tpred_count\tpred1_nfl_count");
+#endif
                 for (layerIndex = 0; layerIndex < 5; layerIndex++) {
                     SVT_LOG("\n/***************************Layer %d Stats ********************************/\n", layerIndex);
                     if (sequence_control_set_ptr->total_count[layerIndex]) {
+#if ADP_BQ
+                        SVT_LOG("%d\t", ((sequence_control_set_ptr->nsq_level0_count[layerIndex] * 100) / sequence_control_set_ptr->total_count[layerIndex]));
+                        SVT_LOG("%d\t", ((sequence_control_set_ptr->nsq_level1_count[layerIndex] * 100) / sequence_control_set_ptr->total_count[layerIndex]));
+                        SVT_LOG("%d\t", ((sequence_control_set_ptr->nsq_level2_count[layerIndex] * 100) / sequence_control_set_ptr->total_count[layerIndex]));
+                        SVT_LOG("%d\t", ((sequence_control_set_ptr->nsq_level3_count[layerIndex] * 100) / sequence_control_set_ptr->total_count[layerIndex]));
+                        SVT_LOG("%d\t", ((sequence_control_set_ptr->nsq_level4_count[layerIndex] * 100) / sequence_control_set_ptr->total_count[layerIndex]));
+                        SVT_LOG("%d\t", ((sequence_control_set_ptr->nsq_level5_count[layerIndex] * 100) / sequence_control_set_ptr->total_count[layerIndex]));
+                        SVT_LOG("%d\t", ((sequence_control_set_ptr->nsq_level6_count[layerIndex] * 100) / sequence_control_set_ptr->total_count[layerIndex]));
+
+#endif
                         SVT_LOG("%d\t", ((sequence_control_set_ptr->sq_search_count[layerIndex] * 100) / sequence_control_set_ptr->total_count[layerIndex]));
                         SVT_LOG("%d\t", ((sequence_control_set_ptr->sq_non4_search_count[layerIndex] * 100) / sequence_control_set_ptr->total_count[layerIndex]));
                         SVT_LOG("%d\t", ((sequence_control_set_ptr->mdc_count[layerIndex] * 100) / sequence_control_set_ptr->total_count[layerIndex]));
