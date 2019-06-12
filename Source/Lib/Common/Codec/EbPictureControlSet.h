@@ -14410,7 +14410,7 @@ extern "C" {
         struct PictureParentControlSet      *alt_ref_ppcs_ptr;
 #endif
 #if ALTREF_FILTERING_SUPPORT
-#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
         uint8_t                               altref_strength_y;
         uint8_t                               altref_strength_uv;
 #else
