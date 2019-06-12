@@ -311,7 +311,14 @@ extern "C" {
 #define OPT_NFL_SETTINGS                                1 // Used NRF 3,3,4 and Ref 8,8,8 NFL settings
 #define DOWN_SAMPLING_FILTERING                         1 // Use down-sampling filtering (instead of down-sampling decimation) for 1/16th and 1/4th reference frame(s) generation @ ME and temporal filtering search, added the multi-mode signal down_sampling_method_me_search; filtering if M0, and decimation for M1 & higher
 #define DECIMATION_BUG_FIX                              1 // Removed HME Level0 check @ 1/16th decimation to guarantee valid ZZ SAD and SCD data when HME Level0 is OFF
+#endif
 
+#if CAPPED_ME_CANDIDATES_NUM
+#define START_ME_CANDIDATE_COUNT                        7           // for 64x64, -1 for 32x32, -2 for 16x16, -3 for 8x8
+#endif
+
+#if APPLY_3X3_FOR_BEST_ME 
+#define BEST_CANDIDATE_COUNT                            1
 #endif
 
 #if DECOUPLED_FAST_LOOP

@@ -3942,7 +3942,7 @@ void* picture_decision_kernel(void *input_ptr)
                                     picture_control_set_ptr->use_subpel_flag = 1;
 #endif
 #if IMPROVED_SUBPEL_SEARCH
-                                if (MR_MODE) {
+                                if (MR_MODE) { // SUBPEL
                                     picture_control_set_ptr->half_pel_mode =
                                         EX_HP_MODE;
                                     picture_control_set_ptr->quarter_pel_mode =

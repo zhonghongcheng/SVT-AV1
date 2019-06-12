@@ -677,7 +677,7 @@ void Unipred3x3CandidatesInjection(
 #if MD_INJECTION
     //const MeLcuResults_t *meResults = pictureControlSetPtr->ParentPcsPtr->meResultsPtr[lcuAddr];
 #if APPLY_3X3_FOR_BEST_ME
-    total_me_cnt = MIN(total_me_cnt, 1);
+    total_me_cnt = MIN(total_me_cnt, BEST_CANDIDATE_COUNT);
 #endif
     for (uint8_t me_candidate_index = 0; me_candidate_index < total_me_cnt; ++me_candidate_index)
     {
@@ -789,7 +789,7 @@ void Unipred3x3CandidatesInjection(
 #if MD_INJECTION
 //const MeLcuResults_t *meResults = pictureControlSetPtr->ParentPcsPtr->meResultsPtr[lcuAddr];
 #if APPLY_3X3_FOR_BEST_ME
-    total_me_cnt = MIN(total_me_cnt, 1);
+    total_me_cnt = MIN(total_me_cnt, BEST_CANDIDATE_COUNT);
 #endif
     for (uint8_t me_candidate_index = 0; me_candidate_index < total_me_cnt; ++me_candidate_index)
     {
@@ -948,7 +948,7 @@ void Bipred3x3CandidatesInjection(
 #if MD_INJECTION
        //const MeLcuResults_t *meResults = pictureControlSetPtr->ParentPcsPtr->meResultsPtr[lcuAddr];
 #if APPLY_3X3_FOR_BEST_ME
-        total_me_cnt = MIN(total_me_cnt, 1);
+        total_me_cnt = MIN(total_me_cnt, BEST_CANDIDATE_COUNT);
 #endif
         for (uint8_t me_candidate_index = 0; me_candidate_index < total_me_cnt; ++me_candidate_index)
         {

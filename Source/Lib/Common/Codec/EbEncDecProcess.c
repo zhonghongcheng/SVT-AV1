@@ -1309,7 +1309,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
 #endif
 #if CHROMA_SEARCH_MR    
-    if (MR_MODE)
+    if (1) // chroma
         context_ptr->chroma_level = CHROMA_MODE_0;
     else
 #endif
