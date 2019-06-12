@@ -914,7 +914,11 @@ void av1_apply_temporal_filter_sse4_1(
         int y_pre_stride, const uint8_t *u_src, const uint8_t *v_src,
         int uv_src_stride, const uint8_t *u_pre, const uint8_t *v_pre,
         int uv_pre_stride, unsigned int block_width, unsigned int block_height,
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+        int ss_x, int ss_y, int strength_y,int strength_uv, const int *blk_fw, int use_whole_blk,
+#else
         int ss_x, int ss_y, int strength, const int *blk_fw, int use_whole_blk,
+#endif
         uint32_t *y_accum, uint16_t *y_count, uint32_t *u_accum, uint16_t *u_count,
         uint32_t *v_accum, uint16_t *v_count) {
     const unsigned int chroma_height = block_height >> ss_y,
@@ -939,7 +943,12 @@ void av1_apply_temporal_filter_sse4_1(
     assert(block_height % 2 == 0 && "block height must be even");
     assert((ss_x == 0 || ss_x == 1) && (ss_y == 0 || ss_y == 1) &&
            "invalid chroma subsampling");
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+    assert(strength_y >= 0 && strength_y <= 6 && "invalid temporal filter strength_y");
+    assert(strength_uv >= 0 && strength_uv <= 6 && "invalid temporal filter strength_uv");
+#else
     assert(strength >= 0 && strength <= 6 && "invalid temporal filter strength");
+#endif
     assert(blk_fw[0] >= 0 && "filter weight must be positive");
     assert(
             (use_whole_blk || (blk_fw[1] >= 0 && blk_fw[2] >= 0 && blk_fw[3] >= 0)) &&
@@ -980,15 +989,30 @@ void av1_apply_temporal_filter_sse4_1(
     u_dist_ptr = u_dist + 1;
     v_dist_ptr = v_dist + 1;
 
+    
+
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+         av1_apply_temporal_filter_luma(
+            y_src, y_src_stride, y_pre, y_pre_stride, u_src, v_src, uv_src_stride,
+            u_pre, v_pre, uv_pre_stride, block_width, block_height, ss_x, ss_y,
+            strength_y, blk_fw_ptr, use_whole_blk, y_accum, y_count, y_dist_ptr,
+            u_dist_ptr, v_dist_ptr);
+
+          av1_apply_temporal_filter_chroma(
+            y_src, y_src_stride, y_pre, y_pre_stride, u_src, v_src, uv_src_stride,
+            u_pre, v_pre, uv_pre_stride, block_width, block_height, ss_x, ss_y,
+            strength_uv, blk_fw_ptr, use_whole_blk, u_accum, u_count, v_accum, v_count,
+            y_dist_ptr, u_dist_ptr, v_dist_ptr);
+#else
     av1_apply_temporal_filter_luma(
             y_src, y_src_stride, y_pre, y_pre_stride, u_src, v_src, uv_src_stride,
             u_pre, v_pre, uv_pre_stride, block_width, block_height, ss_x, ss_y,
             strength, blk_fw_ptr, use_whole_blk, y_accum, y_count, y_dist_ptr,
             u_dist_ptr, v_dist_ptr);
-
     av1_apply_temporal_filter_chroma(
             y_src, y_src_stride, y_pre, y_pre_stride, u_src, v_src, uv_src_stride,
             u_pre, v_pre, uv_pre_stride, block_width, block_height, ss_x, ss_y,
             strength, blk_fw_ptr, use_whole_blk, u_accum, u_count, v_accum, v_count,
             y_dist_ptr, u_dist_ptr, v_dist_ptr);
+#endif
 }

@@ -333,6 +333,11 @@ extern "C" {
 #endif
 
 
+
+#define OPT_IFS                                         0 // DISABLE INTERPOLATION SEARCH WHEN ALL MVs (x and y) ARE INTEGER.
+#define IFS_EARLY_EXIT                                  0 // EARLY EXIT FROM INTERPOLATION SEARCH BASED ON THE DISTORTION OF THE REGULAR-FILTER (x and y) ARE INTEGER.
+#define ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH           0 // TUNED FILTER STRENGTH FOR LUMA AND CHROMA
+
 #if IMPROVED_SUBPEL_SEARCH
 typedef enum ME_HP_MODE { 
     EX_HP_MODE = 0, 

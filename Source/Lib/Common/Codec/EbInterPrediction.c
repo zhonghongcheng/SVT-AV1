@@ -3632,8 +3632,11 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
         NULL, NULL, NULL);
 
     *rd = RDCOST(md_context_ptr->full_lambda/*x->rdmult*/, *switchable_rate + tmp_rate, tmp_dist);
-
+#if IFS_EARLY_EXIT
+    if ((assign_filter == SWITCHABLE) && (tmp_dist < ((md_context_ptr->blk_geom->bheight * md_context_ptr->blk_geom->bwidth) << 8))) { 
+#else
     if (assign_filter == SWITCHABLE) {
+#endif
         // do interp_filter search
 
         if (av1_is_interp_needed(candidate_buffer_ptr, picture_control_set_ptr, md_context_ptr->blk_geom->bsize) /*&& av1_is_interp_search_needed(xd)*/) {
@@ -4259,6 +4262,26 @@ EbErrorType inter_pu_prediction_av1(
     int32_t skip_txfm_sb = 0;
     int32_t rs = 0;
     int64_t rd = INT64_MAX;
+
+#if OPT_IFS
+    if (mv_unit.pred_direction == 0) {
+        if (mv_unit.mv[0].x % 8 == 0 && mv_unit.mv[0].y % 8 == 0)
+            md_context_ptr->skip_interpolation_search = 1;
+    }
+    if (mv_unit.pred_direction == 1) {
+        if (mv_unit.mv[1].x % 8 == 0 && mv_unit.mv[1].y % 8 == 0)
+            md_context_ptr->skip_interpolation_search = 1;
+    }
+    if (mv_unit.pred_direction == 0) {
+        if (mv_unit.mv[0].x % 8 == 0 && 
+            mv_unit.mv[0].y % 8 == 0 &&
+            mv_unit.mv[1].x % 8 == 0 && 
+            mv_unit.mv[1].y % 8 == 0)
+            md_context_ptr->skip_interpolation_search = 1;
+    }
+    if (!av1_is_interp_needed(candidate_buffer_ptr, picture_control_set_ptr, md_context_ptr->blk_geom->bsize))
+        md_context_ptr->skip_interpolation_search = 1;
+#endif
 
     if (candidate_buffer_ptr->candidate_ptr->use_intrabc)
     {
