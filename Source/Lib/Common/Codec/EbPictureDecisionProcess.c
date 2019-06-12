@@ -4255,7 +4255,7 @@ void* picture_decision_kernel(void *input_ptr)
                                     picture_control_set_ptr->tf_segments_total_count = (uint16_t)(picture_control_set_ptr->tf_segments_column_count  * picture_control_set_ptr->tf_segments_row_count);
 
                                     picture_control_set_ptr->temp_filt_seg_acc = 0;
-#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH  
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH  
                                     picture_control_set_ptr->altref_strength_y = 2;// sequence_control_set_ptr->static_config.altref_strength;
                                     picture_control_set_ptr->altref_strength_uv = 0;
 #else

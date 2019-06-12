@@ -69,7 +69,7 @@ typedef void(*TempFilteringType)(const uint8_t *y_src,
                                  unsigned int block_height,
                                  int ss_x,
                                  int ss_y,
-#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
                                  int strength_y,
                                  int strength_uv,
 #else
@@ -98,7 +98,7 @@ void apply_filtering_c(const uint8_t *y_src,
                        unsigned int block_height,
                        int ss_x,
                        int ss_y,
-#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
                        int strength_y,
                        int strength_uv,
 #else
@@ -496,7 +496,7 @@ void apply_filtering_c(const uint8_t *y_src,
                         unsigned int block_height,
                         int ss_x,
                         int ss_y,
-#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
                         int strength_y,
                         int strength_uv,
 #else
@@ -514,7 +514,7 @@ void apply_filtering_c(const uint8_t *y_src,
     unsigned int i, j, k, m;
     int idx, idy;
     int modifier;
-#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
     const int rounding_y = (1 << strength_y) >> 1;
     const int rounding_uv = (1 << strength_uv) >> 1;
 #else
@@ -578,7 +578,7 @@ void apply_filtering_c(const uint8_t *y_src,
             modifier += v_diff_sse[uv_r * uv_block_width + uv_c];
 
             y_index += 2;
-#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
             modifier = adjust_modifier(modifier, y_index, rounding_y, strength_y, filter_weight);
 #else
             modifier = adjust_modifier(modifier, y_index, rounding, strength, filter_weight);
@@ -626,7 +626,7 @@ void apply_filtering_c(const uint8_t *y_src,
 
                 u_mod += y_diff;
                 v_mod += y_diff;
-#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
                 u_mod = adjust_modifier(u_mod, cr_index, rounding_uv, strength_uv, filter_weight);
                 v_mod = adjust_modifier(v_mod, cr_index, rounding_uv, strength_uv, filter_weight);
 #else
@@ -661,7 +661,7 @@ void apply_filtering_block(int block_row,
                            unsigned int block_height,
                            int ss_x, // chroma sub-sampling in x
                            int ss_y, // chroma sub-sampling in y
-#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
                            int altref_strength_y,
                            int altref_strength_uv,
 #else
@@ -725,7 +725,7 @@ void apply_filtering_block(int block_row,
                                block_height,
                                ss_x,
                                ss_y,
-#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
                                altref_strength_y,
                                altref_strength_uv,
 #else
@@ -1160,7 +1160,7 @@ void uni_motion_compensation(MeContext* context_ptr,
 // Produce the filtered alt-ref picture
 static EbErrorType produce_temporally_filtered_pic(PictureParentControlSet **list_picture_control_set_ptr,
                                             EbPictureBufferDesc **list_input_picture_ptr,
-#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
                                             uint8_t altref_strength_y,
                                             uint8_t altref_strength_uv,
 #else
@@ -1418,7 +1418,7 @@ static EbErrorType produce_temporally_filtered_pic(PictureParentControlSet **lis
                                                   BH>>1,
                                                   1, // chroma sub-sampling in x
                                                   1, // chroma sub-sampling in y
-#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
                                                   altref_strength_y,
                                                   altref_strength_uv,
 #else
@@ -1547,7 +1547,7 @@ static double estimate_noise(EbByte src, uint16_t width, uint16_t height,
 
 // Apply buffer limits and context specific adjustments to arnr filter.
 static void adjust_filter_params(EbPictureBufferDesc *input_picture_ptr,
-#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
                         uint8_t *altref_strength_y,
                         uint8_t *altref_strength_uv,
 #else
@@ -1557,7 +1557,7 @@ static void adjust_filter_params(EbPictureBufferDesc *input_picture_ptr,
     EbByte src;
     double noiselevel;
     int nframes = *altref_nframes;
-#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
     int strength_y = *altref_strength_y, adj_strength_y=strength_y;
     int strength_uv= *altref_strength_uv, adj_strength_uv=strength_uv;
 #else
@@ -1599,14 +1599,14 @@ static void adjust_filter_params(EbPictureBufferDesc *input_picture_ptr,
             noiselevel_adj = 0;
         else
             noiselevel_adj = 1;
-#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
         adj_strength_y += noiselevel_adj;
         adj_strength_uv += noiselevel_adj;
 #else
         adj_strength += noiselevel_adj;
 #endif
     }
-#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
     if(adj_strength_y > 0)
         strength_y = adj_strength_y;
     else
@@ -1627,7 +1627,7 @@ static void adjust_filter_params(EbPictureBufferDesc *input_picture_ptr,
     // according to 1st pass statistics
 
     *altref_nframes = (uint8_t)nframes;
-#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
     *altref_strength_y = (uint8_t)strength_y;
     *altref_strength_uv = (uint8_t)strength_uv;
 #else
@@ -1721,7 +1721,7 @@ void init_temporal_filtering(PictureParentControlSet **list_picture_control_set_
                                     PictureParentControlSet *picture_control_set_ptr_central,
                                     MotionEstimationContext_t *me_context_ptr,
                                     int32_t segment_index) {
-#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
     uint8_t altref_strength_y, altref_strength_uv, altref_nframes, index_center;
 #else
     uint8_t altref_strength, altref_nframes, index_center;
@@ -1731,7 +1731,7 @@ void init_temporal_filtering(PictureParentControlSet **list_picture_control_set_
 
     // number of frames to filter
     altref_nframes = picture_control_set_ptr_central->altref_nframes;
-#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
     altref_strength_y = picture_control_set_ptr_central->altref_strength_y;
     altref_strength_uv = picture_control_set_ptr_central->altref_strength_uv;
 #else
@@ -1751,7 +1751,7 @@ void init_temporal_filtering(PictureParentControlSet **list_picture_control_set_
         picture_control_set_ptr_central->temp_filt_prep_done = 1;
 
         // adjust filter parameter based on the estimated noise of the picture
-#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
         adjust_filter_params(input_picture_ptr, &altref_strength_y,&altref_strength_uv, &altref_nframes);
 #else
         adjust_filter_params(input_picture_ptr, &altref_strength, &altref_nframes);
@@ -1795,7 +1795,7 @@ void init_temporal_filtering(PictureParentControlSet **list_picture_control_set_
                           (picture_control_set_ptr_central->enhanced_picture_ptr->origin_y / 2)*picture_control_set_ptr_central->enhanced_picture_ptr->stride_cr;
 
 #if !LIBAOM_FILTERING
-#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
     produce_temporally_filtered_pic(list_picture_control_set_ptr, list_input_picture_ptr, picture_control_set_ptr_central->altref_strength_y, picture_control_set_ptr_central->altref_strength_uv, altref_nframes, alt_ref_buffer, (MotionEstimationContext_t *) me_context_ptr,segment_index);
 #else
     produce_temporally_filtered_pic(list_picture_control_set_ptr, list_input_picture_ptr, picture_control_set_ptr_central->altref_strength, altref_nframes, alt_ref_buffer, (MotionEstimationContext_t *) me_context_ptr,segment_index);

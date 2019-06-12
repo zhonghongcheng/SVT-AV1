@@ -914,7 +914,7 @@ void av1_apply_temporal_filter_sse4_1(
         int y_pre_stride, const uint8_t *u_src, const uint8_t *v_src,
         int uv_src_stride, const uint8_t *u_pre, const uint8_t *v_pre,
         int uv_pre_stride, unsigned int block_width, unsigned int block_height,
-#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
         int ss_x, int ss_y, int strength_y,int strength_uv, const int *blk_fw, int use_whole_blk,
 #else
         int ss_x, int ss_y, int strength, const int *blk_fw, int use_whole_blk,
@@ -943,7 +943,7 @@ void av1_apply_temporal_filter_sse4_1(
     assert(block_height % 2 == 0 && "block height must be even");
     assert((ss_x == 0 || ss_x == 1) && (ss_y == 0 || ss_y == 1) &&
            "invalid chroma subsampling");
-#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
     assert(strength_y >= 0 && strength_y <= 6 && "invalid temporal filter strength_y");
     assert(strength_uv >= 0 && strength_uv <= 6 && "invalid temporal filter strength_uv");
 #else
@@ -991,7 +991,7 @@ void av1_apply_temporal_filter_sse4_1(
 
     
 
-#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
          av1_apply_temporal_filter_luma(
             y_src, y_src_stride, y_pre, y_pre_stride, u_src, v_src, uv_src_stride,
             u_pre, v_pre, uv_pre_stride, block_width, block_height, ss_x, ss_y,
