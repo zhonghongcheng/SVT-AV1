@@ -14410,7 +14410,12 @@ extern "C" {
         struct PictureParentControlSet      *alt_ref_ppcs_ptr;
 #endif
 #if ALTREF_FILTERING_SUPPORT
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTHH
+        uint8_t                               altref_strength_y;
+        uint8_t                               altref_strength_uv;
+#else
         uint8_t                               altref_strength;
+#endif
         int32_t                               pic_decision_reorder_queue_idx;
         struct PictureParentControlSet       *temp_filt_pcs_list[15];
         EbHandle temp_filt_done_semaphore;
