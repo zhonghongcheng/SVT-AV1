@@ -941,7 +941,7 @@ EbErrorType signal_derivation_multi_processes_oq(
     // NSQ_SEARCH_FULL                                Allow NSQ Intra-FULL and Inter-FULL
 
 #if NEW_PRESETS
-        if (MR_MODE)
+        if (MR_MODE) // NSQ
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_FULL;
 #if SCREEN_CONTENT_SETTINGS
         else if (sc_content_detected)
@@ -975,7 +975,7 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
 #else
-    if (MR_MODE)
+    if (MR_MODE) // NSQ
         picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_FULL;
     else if (picture_control_set_ptr->enc_mode == ENC_M0)
         picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL6;
@@ -1053,7 +1053,7 @@ EbErrorType signal_derivation_multi_processes_oq(
     // 4                                              Interpolation search at fast loop
 
 #if NEW_PRESETS
-        if (MR_MODE)
+        if (MR_MODE) // Interpolation
             picture_control_set_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP;
 #if SCREEN_CONTENT_SETTINGS
         else if (sc_content_detected)
@@ -1077,7 +1077,7 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
             picture_control_set_ptr->interpolation_search_level = IT_SEARCH_OFF;
 #else
-    if (MR_MODE)
+    if (MR_MODE) // Interpolation
         picture_control_set_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP;
     else if (picture_control_set_ptr->enc_mode == ENC_M0)
         picture_control_set_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;
@@ -1329,16 +1329,23 @@ EbErrorType signal_derivation_multi_processes_oq(
 
     // Set tx search skip weights (MAX_MODE_COST: no skipping; 0: always skipping)
 #if NEW_PRESETS
-    if (picture_control_set_ptr->tx_search_level == TX_SEARCH_ENC_DEC)
+#if FIX_TX_SEARCH_FOR_MR_MODE
+    if (MR_MODE) // tx weight
         picture_control_set_ptr->tx_weight = MAX_MODE_COST;
-    else if (!MR_MODE && picture_control_set_ptr->enc_mode <= ENC_M1)
-        picture_control_set_ptr->tx_weight = FC_SKIP_TX_SR_TH025;
-    else if (!MR_MODE){
-        if (picture_control_set_ptr->is_used_as_reference_flag)
+#endif
+    else{
+        if (picture_control_set_ptr->tx_search_level == TX_SEARCH_ENC_DEC)
+            picture_control_set_ptr->tx_weight = MAX_MODE_COST;
+        else if (!MR_MODE && picture_control_set_ptr->enc_mode <= ENC_M1)
             picture_control_set_ptr->tx_weight = FC_SKIP_TX_SR_TH025;
-        else
-            picture_control_set_ptr->tx_weight = FC_SKIP_TX_SR_TH010;
+        else if (!MR_MODE){
+            if (picture_control_set_ptr->is_used_as_reference_flag)
+                picture_control_set_ptr->tx_weight = FC_SKIP_TX_SR_TH025;
+            else
+                picture_control_set_ptr->tx_weight = FC_SKIP_TX_SR_TH010;
+        }
     }
+
 #else
 #if SCREEN_CONTENT_SETTINGS
     if (sc_content_detected)
@@ -1517,9 +1524,6 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
     }
 
-    if (MR_MODE)
-        picture_control_set_ptr->intra_pred_mode = 0;
-
 #if RED_CU_DEBUG
     picture_control_set_ptr->intra_pred_mode = 0;
 #endif
@@ -1559,7 +1563,10 @@ EbErrorType signal_derivation_multi_processes_oq(
 #if SHUT_ATB
             picture_control_set_ptr->atb_mode = 0;
 #else
-            picture_control_set_ptr->atb_mode = 1;
+            if (MR_MODE) // ATB
+                picture_control_set_ptr->atb_mode = 2;
+            else
+                picture_control_set_ptr->atb_mode = 1;
 #endif
         else
             picture_control_set_ptr->atb_mode = 0;
@@ -3084,8 +3091,10 @@ void  Av1GenerateRpsInfo(
 ***************************************************************************************************/
 void perform_simple_picture_analysis_for_overlay(PictureParentControlSet     *picture_control_set_ptr) {
     EbPictureBufferDesc           *input_padded_picture_ptr;
+#if !DOWN_SAMPLING_FILTERING
     EbPictureBufferDesc           *quarter_decimated_picture_ptr;
     EbPictureBufferDesc           *sixteenth_decimated_picture_ptr;
+#endif
     EbPictureBufferDesc           *input_picture_ptr;
     EbPaReferenceObject           *paReferenceObject;
     uint32_t                        picture_width_in_sb;
@@ -3096,8 +3105,10 @@ void perform_simple_picture_analysis_for_overlay(PictureParentControlSet     *pi
     input_picture_ptr               = picture_control_set_ptr->enhanced_picture_ptr;
     paReferenceObject               = (EbPaReferenceObject*)picture_control_set_ptr->pa_reference_picture_wrapper_ptr->object_ptr;
     input_padded_picture_ptr        = (EbPictureBufferDesc*)paReferenceObject->input_padded_picture_ptr;
-    quarter_decimated_picture_ptr   = (EbPictureBufferDesc*)paReferenceObject->quarter_decimated_picture_ptr;
+#if !DOWN_SAMPLING_FILTERING
+    quarter_decimated_picture_ptr = (EbPictureBufferDesc*)paReferenceObject->quarter_decimated_picture_ptr;
     sixteenth_decimated_picture_ptr = (EbPictureBufferDesc*)paReferenceObject->sixteenth_decimated_picture_ptr;
+#endif
 
     picture_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
     pictureHeighInLcu   = (sequence_control_set_ptr->seq_header.max_frame_height + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
@@ -3109,6 +3120,13 @@ void perform_simple_picture_analysis_for_overlay(PictureParentControlSet     *pi
         input_picture_ptr);
 
     // Pre processing operations performed on the input picture
+#if DOWN_SAMPLING_FILTERING
+    PicturePreProcessingOperations(
+        picture_control_set_ptr,
+        sequence_control_set_ptr,
+        sb_total_count,
+        sequence_control_set_ptr->encode_context_ptr->asm_type);
+#else
     PicturePreProcessingOperations(
         picture_control_set_ptr,
         input_picture_ptr,
@@ -3117,6 +3135,7 @@ void perform_simple_picture_analysis_for_overlay(PictureParentControlSet     *pi
         sixteenth_decimated_picture_ptr,
         sb_total_count,
         sequence_control_set_ptr->encode_context_ptr->asm_type);
+#endif
 
     if (input_picture_ptr->color_format >= EB_YUV422) {
         // Jing: Do the conversion of 422/444=>420 here since it's multi-threaded kernel
@@ -3130,21 +3149,41 @@ void perform_simple_picture_analysis_for_overlay(PictureParentControlSet     *pi
     // Pad input picture to complete border LCUs
     PadPictureToMultipleOfLcuDimensions(
         input_padded_picture_ptr);
+#if DOWN_SAMPLING_FILTERING
+    // 1/4 & 1/16 input picture decimation
+    DownsampleDecimationInputPicture(
+        picture_control_set_ptr,
+        input_padded_picture_ptr,
+        (EbPictureBufferDesc*)paReferenceObject->quarter_decimated_picture_ptr,
+        (EbPictureBufferDesc*)paReferenceObject->sixteenth_decimated_picture_ptr);
 
+    // 1/4 & 1/16 input picture downsampling through filtering
+    if (sequence_control_set_ptr->down_sampling_method_me_search == ME_FILTERED_DOWNSAMPLED) {
+        DownsampleFilteringInputPicture(
+            picture_control_set_ptr,
+            input_padded_picture_ptr,
+            (EbPictureBufferDesc*)paReferenceObject->quarter_filtered_picture_ptr,
+            (EbPictureBufferDesc*)paReferenceObject->sixteenth_filtered_picture_ptr);
+    }
+#else
     // 1/4 & 1/16 input picture decimation
     DecimateInputPicture(
         picture_control_set_ptr,
         input_padded_picture_ptr,
         quarter_decimated_picture_ptr,
         sixteenth_decimated_picture_ptr);
-
+#endif
     // Gathering statistics of input picture, including Variance Calculation, Histogram Bins
     GatheringPictureStatistics(
         sequence_control_set_ptr,
         picture_control_set_ptr,
         picture_control_set_ptr->chroma_downsampled_picture_ptr, //420 input_picture_ptr
         input_padded_picture_ptr,
+#if DOWN_SAMPLING_FILTERING
+        paReferenceObject->sixteenth_decimated_picture_ptr, // Hsan: always use decimated until studying the trade offs 
+#else
         sixteenth_decimated_picture_ptr,
+#endif
         sb_total_count,
         sequence_control_set_ptr->encode_context_ptr->asm_type);
 

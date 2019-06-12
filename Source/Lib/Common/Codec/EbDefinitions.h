@@ -34,6 +34,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
+#define BEST_Q_M0                         0 // disable all shortcuts into M0
 #define ALT_REF_SUPPORT                   1// ALT_REF main flag
 
 #if ALT_REF_SUPPORT
@@ -45,7 +48,6 @@ extern "C" {
 #define ADAPTIVE_QP_SCALING               1 // Adaptive QP scaling. Change the QP based on the content.
 
 #define MRP_SUPPORT                       1// MRP Main Flag
-
 
 #define RDOQ_INTRA                        1 // Enable RDOQ INTRA (RDOQ INTER already active) 
 #define DC_SIGN_CONTEXT_EP                1 // Fixed DC level derivation & update @ encode pass
@@ -291,23 +293,46 @@ extern "C" {
 #define EIGTH_PEL_MV                                    0
 #define DISABLE_NSQ_TABLE_FOR_M0                        1 // On wil disable the nsq_table ordering algrithm. This is a temporarily adoption that will be disable once we comeup with a better ordreing mecanisme when MRP i ON.
 #define IMPROVED_SUBPEL_SEARCH                          1
+#define DECOUPLED_FAST_LOOP                             1
+#define FIX_ATB_SUPPORT                                 0 // ENABLE_SKIP_REDUNDANT_BLOCK
+#define FIX_TX_SEARCH_FOR_MR_MODE                       1
+
+#if BEST_Q_M0
+#define DOWN_SAMPLING_FILTERING                         1 // Use down-sampling filtering (instead of down-sampling decimation) for 1/16th and 1/4th reference frame(s) generation @ ME and temporal filtering search, added the multi-mode signal down_sampling_method_me_search; filtering if M0, and decimation for M1 & higher
+#define DECIMATION_BUG_FIX                              1 // Removed HME Level0 check @ 1/16th decimation to guarantee valid ZZ SAD and SCD data when HME Level0 is OFF
+#define ENABLE_QUANT_FP                                 1
+#if DECOUPLED_FAST_LOOP
+#define IMPROVED_NFL_SETTINGS                           1 // Used NRF 10,10,10 and Ref 20,20,20 NFL settings
+#endif
+#else
 #define CAPPED_ME_CANDIDATES_NUM                        1 // Capped the ME-output adaptively based on the block size
 #define APPLY_3X3_FOR_BEST_ME                           1 // Might need to be restricted to M0
-#define DECOUPLED_FAST_LOOP                             1
+#define APPLY_TX_SEARCH_SHORTCUTS_TO_ATB                1
 #define OPT_NFL_SETTINGS                                1 // Used NRF 3,3,4 and Ref 8,8,8 NFL settings
+#define DOWN_SAMPLING_FILTERING                         1 // Use down-sampling filtering (instead of down-sampling decimation) for 1/16th and 1/4th reference frame(s) generation @ ME and temporal filtering search, added the multi-mode signal down_sampling_method_me_search; filtering if M0, and decimation for M1 & higher
+#define DECIMATION_BUG_FIX                              1 // Removed HME Level0 check @ 1/16th decimation to guarantee valid ZZ SAD and SCD data when HME Level0 is OFF
+
+#endif
+
 #if DECOUPLED_FAST_LOOP
 #if OPT_NFL_SETTINGS
 #define     INTRA_NFL       8
 #define     INTER_NEW_NFL   8
 #define     INTER_PRED_NFL  8
 #else
+#if IMPROVED_NFL_SETTINGS
+#define     INTRA_NFL       20
+#define     INTER_NEW_NFL   20
+#define     INTER_PRED_NFL  20
+#else
 #define     INTRA_NFL       10
 #define     INTER_NEW_NFL   10
 #define     INTER_PRED_NFL  10
 #endif
 #endif
-#define APPLY_TX_SEARCH_SHORTCUTS_TO_ATB                1
-#define ENABLE_SKIP_REDUNDANT_BLOCK                     0
+#endif
+
+
 
 #define OPT_IFS                                         0 // DISABLE INTERPOLATION SEARCH WHEN ALL MVs (x and y) ARE INTEGER.
 #define IFS_EARLY_EXIT                                  0 // EARLY EXIT FROM INTERPOLATION SEARCH BASED ON THE DISTORTION OF THE REGULAR-FILTER (x and y) ARE INTEGER.
@@ -2878,6 +2903,14 @@ void(*ErrorHandler)(
 #endif
 #define INVALID_POC                                 (((uint32_t) (~0)) - (((uint32_t) (~0)) >> 1))
 #define MAX_ELAPSED_IDR_COUNT                       1024
+
+#if DOWN_SAMPLING_FILTERING
+typedef enum DownSamplingMethod
+{
+    ME_FILTERED_DOWNSAMPLED = 0,
+    ME_DECIMATED_DOWNSAMPLED = 1
+} DownSamplingMethod;
+#endif
 
 //***Segments***
 #define EB_SEGMENT_MIN_COUNT                        1
