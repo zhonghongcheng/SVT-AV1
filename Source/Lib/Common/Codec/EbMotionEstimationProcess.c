@@ -676,10 +676,19 @@ void* motion_estimation_kernel(void *input_ptr)
                         // Load the 1/16 decimated SB from the 1/16 decimated input to the 1/16 intermediate SB buffer
                         if (picture_control_set_ptr->enable_hme_level0_flag) {
                             bufferIndex = (sixteenth_picture_ptr->origin_y + (sb_origin_y >> 2)) * sixteenth_picture_ptr->stride_y + sixteenth_picture_ptr->origin_x + (sb_origin_x >> 2);
-
+#if HME_LEVEL_O_CHROMA
+                            uint32_t bufferChromaIndex = ((sixteenth_picture_ptr->origin_y >> 1) + (sb_origin_y >> 3)) * (sixteenth_picture_ptr->stride_y >> 1) + (sixteenth_picture_ptr->origin_x >> 1) + (sb_origin_x >> 3);
+#endif
                             {
                                 uint8_t  *framePtr = &sixteenth_picture_ptr->buffer_y[bufferIndex];
                                 uint8_t  *localPtr = context_ptr->me_context_ptr->sixteenth_sb_buffer;
+#if HME_LEVEL_O_CHROMA
+                                uint8_t  *frameCbPtr = &sixteenth_picture_ptr->buffer_cb[bufferChromaIndex];
+                                uint8_t  *localCbPtr = context_ptr->me_context_ptr->sixteenth_cb_sb_buffer;
+
+                                uint8_t  *frameCrPtr = &sixteenth_picture_ptr->buffer_cr[bufferChromaIndex];
+                                uint8_t  *localCrPtr = context_ptr->me_context_ptr->sixteenth_cr_sb_buffer;
+#endif
 #if USE_SAD_HMEL0
                                 if (context_ptr->me_context_ptr->hme_search_method == FULL_SAD_SEARCH) {
                                     for (lcuRow = 0; lcuRow < (sb_height >> 2); lcuRow += 1) {
@@ -687,6 +696,17 @@ void* motion_estimation_kernel(void *input_ptr)
                                         localPtr += 16;
                                         framePtr += sixteenth_picture_ptr->stride_y;
                                     }
+#if HME_LEVEL_O_CHROMA
+                                    for (lcuRow = 0; lcuRow < (sb_height >> 3); lcuRow += 1) {
+                                        EB_MEMCPY(localCbPtr, frameCbPtr, (sb_width >> 3) * sizeof(uint8_t));
+                                        localCbPtr += 8;
+                                        frameCbPtr += sixteenth_picture_ptr->stride_cb;
+
+                                        EB_MEMCPY(localCrPtr, frameCrPtr, (sb_width >> 3) * sizeof(uint8_t));
+                                        localCrPtr += 8;
+                                        frameCrPtr += sixteenth_picture_ptr->stride_cr;
+                                    }
+#endif
                                 }
                                 else {
                                     for (lcuRow = 0; lcuRow < (sb_height >> 2); lcuRow += 2) {

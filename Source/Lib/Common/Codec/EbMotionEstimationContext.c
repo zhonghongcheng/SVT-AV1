@@ -52,6 +52,10 @@ EbErrorType me_context_ctor(
 
     (*object_dbl_ptr)->sixteenth_sb_buffer_stride = (BLOCK_SIZE_64 >> 2);
     EB_ALLIGN_MALLOC(uint8_t *, (*object_dbl_ptr)->sixteenth_sb_buffer, sizeof(uint8_t) * (BLOCK_SIZE_64 >> 2) * (*object_dbl_ptr)->sixteenth_sb_buffer_stride, EB_A_PTR);
+#if HME_LEVEL_O_CHROMA
+    EB_ALLIGN_MALLOC(uint8_t *, (*object_dbl_ptr)->sixteenth_cb_sb_buffer, sizeof(uint8_t) * (BLOCK_SIZE_64 >> 3) * (*object_dbl_ptr)->sixteenth_sb_buffer_stride >> 1, EB_A_PTR);
+    EB_ALLIGN_MALLOC(uint8_t *, (*object_dbl_ptr)->sixteenth_cr_sb_buffer, sizeof(uint8_t) * (BLOCK_SIZE_64 >> 3) * (*object_dbl_ptr)->sixteenth_sb_buffer_stride >> 1, EB_A_PTR);
+#endif
 #if REDUCE_ME_SEARCH_AREA
     (*object_dbl_ptr)->interpolated_stride = MIN((uint16_t)MAX_SEARCH_AREA_WIDTH, (uint16_t)(max_input_luma_width + (PAD_VALUE << 1)));
 #else

@@ -42,6 +42,26 @@ extern "C" {
         int16_t   search_area_width,
         int16_t   search_area_height);
 
+#if HME_LEVEL_O_CHROMA
+    void sad_loop_kernel_level_0_all(
+        uint8_t  *src,
+        uint8_t  *src_cb,
+        uint8_t  *src_cr,
+        uint32_t  src_stride,
+        uint8_t  *ref,
+        uint8_t  *ref_cb,
+        uint8_t  *ref_cr,
+        uint32_t  ref_stride,
+        uint32_t  height,
+        uint32_t  width,
+        uint64_t *best_sad,
+        int16_t  *x_search_center,
+        int16_t  *y_search_center,
+        uint32_t  src_stride_raw,
+        int16_t   search_area_width,
+        int16_t   search_area_height);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

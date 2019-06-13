@@ -113,7 +113,66 @@ void sad_loop_kernel(
 
     return;
 }
+#if HME_LEVEL_O_CHROMA
+void sad_loop_kernel_level_0_all(
+    uint8_t  *src,
+    uint8_t  *src_cb,
+    uint8_t  *src_cr,
+    uint32_t  src_stride,
+    uint8_t  *ref,
+    uint8_t  *ref_cb,
+    uint8_t  *ref_cr,
+    uint32_t  ref_stride,
+    uint32_t  height,
+    uint32_t  width,
+    uint64_t *best_sad,
+    int16_t *x_search_center,
+    int16_t *y_search_center,
+    uint32_t  src_stride_raw,
+    int16_t search_area_width,
+    int16_t search_area_height)
+{
+    int16_t xSearchIndex;
+    int16_t ySearchIndex;
 
+    *best_sad = 0xffffff;
+
+    for (ySearchIndex = 0; ySearchIndex < search_area_height; ySearchIndex++)
+    {
+        for (xSearchIndex = 0; xSearchIndex < search_area_width; xSearchIndex++)
+        {
+            uint32_t x, y;
+            uint32_t sad = 0;
+
+            for (y = 0; y < height; y++)
+            {
+                for (x = 0; x < width; x++)
+                    sad += EB_ABS_DIFF(src[y*src_stride + x], ref[xSearchIndex + y * ref_stride + x]);
+            }
+
+            for (y = 0; y < (height >> 1); y++)
+            {
+                for (x = 0; x < (width >> 1); x++) {
+                    sad += EB_ABS_DIFF(src_cb[y * (src_stride >> 1) + x], ref_cb[(xSearchIndex >> 1) + x + ((ySearchIndex >> 1) + y) * (ref_stride >> 1)]);
+                    sad += EB_ABS_DIFF(src_cr[y * (src_stride >> 1) + x], ref_cr[(xSearchIndex >> 1) + x + ((ySearchIndex >> 1) + y) * (ref_stride >> 1)]);
+                }
+            }
+
+            // Update results
+            if (sad < *best_sad)
+            {
+                *best_sad = sad;
+                *x_search_center = xSearchIndex;
+                *y_search_center = ySearchIndex;
+            }
+        }
+
+        ref += src_stride_raw;
+    }
+
+    return;
+}
+#endif
 /* Sum the difference between every corresponding element of the buffers. */
 static INLINE uint32_t sad_inline_c(const uint8_t *a, int a_stride,
     const uint8_t *b, int b_stride, int width, int height) {

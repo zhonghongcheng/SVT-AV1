@@ -328,6 +328,10 @@ extern "C" {
         uint8_t                      *quarter_sb_buffer;
         uint32_t                      quarter_sb_buffer_stride;
         uint8_t                      *sixteenth_sb_buffer;
+#if HME_LEVEL_O_CHROMA
+        uint8_t                      *sixteenth_cb_sb_buffer;
+        uint8_t                      *sixteenth_cr_sb_buffer;
+#endif
         uint32_t                      sixteenth_sb_buffer_stride;
         uint8_t                      *integer_buffer_ptr[MAX_NUM_OF_REF_PIC_LIST][MAX_REF_IDX];
         uint8_t                      *pos_b_buffer[MAX_NUM_OF_REF_PIC_LIST][MAX_REF_IDX];

@@ -6231,7 +6231,30 @@ void HmeLevel0(
     xTopLeftSearchRegion = ((int16_t)sixteenthRefPicPtr->origin_x + origin_x) + x_search_area_origin;
     yTopLeftSearchRegion = ((int16_t)sixteenthRefPicPtr->origin_y + origin_y) + y_search_area_origin;
     searchRegionIndex = xTopLeftSearchRegion + yTopLeftSearchRegion * sixteenthRefPicPtr->stride_y;
+#if HME_LEVEL_O_CHROMA
+    uint32_t searchRegionChromaIndex = (xTopLeftSearchRegion >> 1) + (yTopLeftSearchRegion >> 1) * (sixteenthRefPicPtr->stride_y >> 1);
 
+    sad_loop_kernel_level_0_all(
+        &context_ptr->sixteenth_sb_buffer[0],
+        context_ptr->sixteenth_cb_sb_buffer,
+        context_ptr->sixteenth_cr_sb_buffer,
+        context_ptr->sixteenth_sb_buffer_stride,
+        &sixteenthRefPicPtr->buffer_y[searchRegionIndex],
+        &sixteenthRefPicPtr->buffer_cb[searchRegionChromaIndex],
+        &sixteenthRefPicPtr->buffer_cr[searchRegionChromaIndex],
+        (context_ptr->hme_search_method == FULL_SAD_SEARCH) ? sixteenthRefPicPtr->stride_y : sixteenthRefPicPtr->stride_y * 2,
+        (context_ptr->hme_search_method == FULL_SAD_SEARCH) ? sb_height : sb_height >> 1,
+        sb_width,
+        /* results */
+        level0BestSad,
+        xLevel0SearchCenter,
+        yLevel0SearchCenter,
+        /* range */
+        sixteenthRefPicPtr->stride_y,
+        search_area_width,
+        search_area_height
+    );
+#else
     if (((sb_width & 7) == 0) || (sb_width == 4))
     {
         if (((search_area_width & 15) == 0) && (asm_type == ASM_AVX2))
@@ -6314,7 +6337,7 @@ void HmeLevel0(
                 search_area_height
         );
     }
-
+#endif
     *level0BestSad = (context_ptr->hme_search_method == FULL_SAD_SEARCH) ?
                      *level0BestSad     :
                      *level0BestSad  * 2; // Multiply by 2 because considered only ever other line
