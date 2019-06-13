@@ -584,14 +584,44 @@ EbErrorType sb_geom_init(SequenceControlSet * sequence_control_set_ptr)
             int32_t cropped_width = MIN(blk_geom->bwidth, sequence_control_set_ptr->seq_header.max_frame_width - (sequence_control_set_ptr->sb_geom[sb_index].origin_x + blk_geom->origin_x));
             if (cropped_width != 4 && cropped_width != 8 && cropped_width != 16 && cropped_width != 32 && cropped_width != 64 && cropped_width != 128)
                 sequence_control_set_ptr->sb_geom[sb_index].block_is_allowed[md_scan_block_index] = EB_FALSE;
+            
+            if (sequence_control_set_ptr->static_config.enc_mode == ENC_M0) {
+                sequence_control_set_ptr->sb_geom[sb_index].block_is_allowed[md_scan_block_index] =
+                    ((sequence_control_set_ptr->sb_geom[sb_index].origin_x + blk_geom->origin_x + blk_geom->bwidth / 2 < sequence_control_set_ptr->seq_header.max_frame_width) &&
+                    (sequence_control_set_ptr->sb_geom[sb_index].origin_y + blk_geom->origin_y + blk_geom->bheight / 2 < sequence_control_set_ptr->seq_header.max_frame_height)) ?
+                    EB_TRUE :
+                    EB_FALSE;
 
-            if (blk_geom->shape != PART_N)
-                blk_geom = get_blk_geom_mds(blk_geom->sqi_mds);
-            sequence_control_set_ptr->sb_geom[sb_index].block_is_inside_md_scan[md_scan_block_index] =
-                ((sequence_control_set_ptr->sb_geom[sb_index].origin_x >= sequence_control_set_ptr->seq_header.max_frame_width) ||
-                (sequence_control_set_ptr->sb_geom[sb_index].origin_y >= sequence_control_set_ptr->seq_header.max_frame_height)) ?
-                EB_FALSE :
-                EB_TRUE;
+                // Temporary if the cropped with is not 4, 8, 16, 32, 64 and 128, the block is not allowed. To be removed after intrinsic functions for NxM spatial_full_distortion_kernel_func_ptr_array are added
+                int32_t cropped_width = MIN(blk_geom->bwidth, sequence_control_set_ptr->seq_header.max_frame_width - (sequence_control_set_ptr->sb_geom[sb_index].origin_x + blk_geom->origin_x));
+                if (cropped_width != 4 && cropped_width != 8 && cropped_width != 16 && cropped_width != 32 && cropped_width != 64 && cropped_width != 128)
+                    sequence_control_set_ptr->sb_geom[sb_index].block_is_allowed[md_scan_block_index] = EB_FALSE;
+
+                if (blk_geom->shape != PART_N)
+                    blk_geom = get_blk_geom_mds(blk_geom->sqi_mds);
+                sequence_control_set_ptr->sb_geom[sb_index].block_is_inside_md_scan[md_scan_block_index] =
+                    ((sequence_control_set_ptr->sb_geom[sb_index].origin_x >= sequence_control_set_ptr->seq_header.max_frame_width) ||
+                    (sequence_control_set_ptr->sb_geom[sb_index].origin_y >= sequence_control_set_ptr->seq_header.max_frame_height)) ?
+                    EB_FALSE :
+                    EB_TRUE;
+            }
+            else {
+                if (blk_geom->shape != PART_N)
+                    blk_geom = get_blk_geom_mds(blk_geom->sqi_mds);
+
+                sequence_control_set_ptr->sb_geom[sb_index].block_is_allowed[md_scan_block_index] =
+                    ((sequence_control_set_ptr->sb_geom[sb_index].origin_x + blk_geom->origin_x + blk_geom->bwidth > sequence_control_set_ptr->seq_header.max_frame_width) ||
+                    (sequence_control_set_ptr->sb_geom[sb_index].origin_y + blk_geom->origin_y + blk_geom->bheight > sequence_control_set_ptr->seq_header.max_frame_height)) ?
+                    EB_FALSE :
+                    EB_TRUE;
+                               
+                sequence_control_set_ptr->sb_geom[sb_index].block_is_inside_md_scan[md_scan_block_index] =
+                    ((sequence_control_set_ptr->sb_geom[sb_index].origin_x + blk_geom->origin_x + blk_geom->bwidth > sequence_control_set_ptr->seq_header.max_frame_width) ||
+                    (sequence_control_set_ptr->sb_geom[sb_index].origin_y + blk_geom->origin_y + blk_geom->bheight > sequence_control_set_ptr->seq_header.max_frame_height)) ?
+                    EB_FALSE :
+                    EB_TRUE;
+
+            }
 #else
             if (blk_geom->shape != PART_N)
                 blk_geom = get_blk_geom_mds(blk_geom->sqi_mds);
