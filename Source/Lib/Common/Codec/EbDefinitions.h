@@ -49,6 +49,11 @@ extern "C" {
 #define TURN_OFF_BLK_4                    1 //  Turn OFF 4xN and Nx4
 #define QPS_ADAPTATION_OFF                1    
 
+
+#define FORCE_00_MV                       1
+
+
+
 // FBA - Inter Debugging
 #define WARPED_OFF                        1 // Disable warped motion candidate injection
 #define GLOBAL_OFF                        1 // Disable global motion candidate injection

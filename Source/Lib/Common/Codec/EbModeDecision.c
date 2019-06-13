@@ -2157,9 +2157,13 @@ void inject_new_nearest_new_comb_candidates(
             {
                 //NEAREST_NEWMV
                 const MeLcuResults *me_results = picture_control_set_ptr->parent_pcs_ptr->me_results[context_ptr->me_sb_addr];
-
+#if FORCE_00_MV
+                int16_t to_inject_mv_x_l0 = 0;
+                int16_t to_inject_mv_y_l0 = 0;
+#else
                 int16_t to_inject_mv_x_l0 = context_ptr->md_local_cu_unit[context_ptr->blk_geom->blkidx_mds].ed_ref_mv_stack[ref_pair][0].this_mv.as_mv.col;
                 int16_t to_inject_mv_y_l0 = context_ptr->md_local_cu_unit[context_ptr->blk_geom->blkidx_mds].ed_ref_mv_stack[ref_pair][0].this_mv.as_mv.row;
+#endif
                 int16_t to_inject_mv_x_l1 = me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? (get_list_idx(rf[1]) << 2) : (get_list_idx(rf[1]) << 1)) + ref_idx_1].x_mv << 1;
                 int16_t to_inject_mv_y_l1 = me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? (get_list_idx(rf[1]) << 2) : (get_list_idx(rf[1]) << 1)) + ref_idx_1].y_mv << 1;
 
@@ -2233,9 +2237,13 @@ void inject_new_nearest_new_comb_candidates(
             {
                 //NEW_NEARESTMV
                 const MeLcuResults *me_results = picture_control_set_ptr->parent_pcs_ptr->me_results[context_ptr->me_sb_addr];
-
+#if FORCE_00_MV
+                int16_t to_inject_mv_x_l0 = 0;
+                int16_t to_inject_mv_y_l0 = 0;
+#else
                 int16_t to_inject_mv_x_l0 = me_results->me_mv_array[context_ptr->me_block_offset][ref_idx_0].x_mv << 1;
                 int16_t to_inject_mv_y_l0 = me_results->me_mv_array[context_ptr->me_block_offset][ref_idx_0].y_mv << 1;
+#endif
                 int16_t to_inject_mv_x_l1 = context_ptr->md_local_cu_unit[context_ptr->blk_geom->blkidx_mds].ed_ref_mv_stack[ref_pair][0].comp_mv.as_mv.col;
                 int16_t to_inject_mv_y_l1 = context_ptr->md_local_cu_unit[context_ptr->blk_geom->blkidx_mds].ed_ref_mv_stack[ref_pair][0].comp_mv.as_mv.row;
 
@@ -2668,9 +2676,14 @@ void inject_new_candidates(
         ************* */
         if (inter_direction == 0) {
 
-#if MEMORY_FOOTPRINT_OPT_ME_MV                               
+#if MEMORY_FOOTPRINT_OPT_ME_MV          
+#if FORCE_00_MV
+            int16_t to_inject_mv_x = 0;
+            int16_t to_inject_mv_y = 0;
+#else
             int16_t to_inject_mv_x = use_close_loop_me ? inloop_me_context->inloop_me_mv[0][0][close_loop_me_index][0] << 1 : me_results->me_mv_array[me_block_offset][list0_ref_index].x_mv << 1;
             int16_t to_inject_mv_y = use_close_loop_me ? inloop_me_context->inloop_me_mv[0][0][close_loop_me_index][1] << 1 : me_results->me_mv_array[me_block_offset][list0_ref_index].y_mv << 1;
+#endif
 #else
             int16_t to_inject_mv_x = use_close_loop_me ? inloop_me_context->inloop_me_mv[0][0][close_loop_me_index][0] << 1 : me_block_results_ptr->x_mv_l0 << 1;
             int16_t to_inject_mv_y = use_close_loop_me ? inloop_me_context->inloop_me_mv[0][0][close_loop_me_index][1] << 1 : me_block_results_ptr->y_mv_l0 << 1;
@@ -2760,8 +2773,13 @@ void inject_new_candidates(
             if (inter_direction == 1) {
 #if MEMORY_FOOTPRINT_OPT_ME_MV     
 #if FROM_7_TO_4_MV
+#if FORCE_00_MV
+                int16_t to_inject_mv_x = 0;
+                int16_t to_inject_mv_y = 0;
+#else
                 int16_t to_inject_mv_x = use_close_loop_me ? inloop_me_context->inloop_me_mv[1][0][close_loop_me_index][0] << 1 : me_results->me_mv_array[me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? 4 : 2) + list1_ref_index].x_mv << 1;
                 int16_t to_inject_mv_y = use_close_loop_me ? inloop_me_context->inloop_me_mv[1][0][close_loop_me_index][1] << 1 : me_results->me_mv_array[me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? 4 : 2) + list1_ref_index].y_mv << 1;
+#endif
 #else
                 int16_t to_inject_mv_x = use_close_loop_me ? inloop_me_context->inloop_me_mv[1][0][close_loop_me_index][0] << 1 : me_results->me_mv_array[me_block_offset][4 + list1_ref_index].x_mv << 1;
                 int16_t to_inject_mv_y = use_close_loop_me ? inloop_me_context->inloop_me_mv[1][0][close_loop_me_index][1] << 1 : me_results->me_mv_array[me_block_offset][4 + list1_ref_index].y_mv << 1;
@@ -2853,11 +2871,21 @@ void inject_new_candidates(
 
                 if (inter_direction == 2) {
 #if MEMORY_FOOTPRINT_OPT_ME_MV      
+#if FORCE_00_MV
+                    int16_t to_inject_mv_x_l0 = 0;
+                    int16_t to_inject_mv_y_l0 = 0;
+#else
                     int16_t to_inject_mv_x_l0 = use_close_loop_me ? inloop_me_context->inloop_me_mv[0][0][close_loop_me_index][0] << 1 : me_results->me_mv_array[me_block_offset][list0_ref_index].x_mv << 1;
                     int16_t to_inject_mv_y_l0 = use_close_loop_me ? inloop_me_context->inloop_me_mv[0][0][close_loop_me_index][1] << 1 : me_results->me_mv_array[me_block_offset][list0_ref_index].y_mv << 1;
+#endif
 #if FROM_7_TO_4_MV
+#if FORCE_00_MV
+                    int16_t to_inject_mv_x_l1 = 0;
+                    int16_t to_inject_mv_y_l1 = 0;
+#else
                     int16_t to_inject_mv_x_l1 = use_close_loop_me ? inloop_me_context->inloop_me_mv[1][0][close_loop_me_index][0] << 1 : me_results->me_mv_array[me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? (me_block_results_ptr->ref1_list << 2) : (me_block_results_ptr->ref1_list << 1)) + list1_ref_index].x_mv << 1;
                     int16_t to_inject_mv_y_l1 = use_close_loop_me ? inloop_me_context->inloop_me_mv[1][0][close_loop_me_index][1] << 1 : me_results->me_mv_array[me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? (me_block_results_ptr->ref1_list << 2) : (me_block_results_ptr->ref1_list << 1)) + list1_ref_index].y_mv << 1;
+#endif
 #else   
                     int16_t to_inject_mv_x_l1 = use_close_loop_me ? inloop_me_context->inloop_me_mv[1][0][close_loop_me_index][0] << 1 : me_results->me_mv_array[me_block_offset][(me_block_results_ptr->ref1_list << 2) + list1_ref_index].x_mv << 1;
                     int16_t to_inject_mv_y_l1 = use_close_loop_me ? inloop_me_context->inloop_me_mv[1][0][close_loop_me_index][1] << 1 : me_results->me_mv_array[me_block_offset][(me_block_results_ptr->ref1_list << 2) + list1_ref_index].y_mv << 1;

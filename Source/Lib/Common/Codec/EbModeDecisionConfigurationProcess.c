@@ -359,7 +359,12 @@ void SetGlobalMotionField(
         picture_control_set_ptr->parent_pcs_ptr->global_motion[frameIndex].wmmat[6] = 0;
         picture_control_set_ptr->parent_pcs_ptr->global_motion[frameIndex].wmmat[7] = 0;
     }
-
+#if FORCE_00_MV
+    picture_control_set_ptr->parent_pcs_ptr->panMvx = 0;
+    picture_control_set_ptr->parent_pcs_ptr->panMvy = 0;
+    picture_control_set_ptr->parent_pcs_ptr->tiltMvx = 0;
+    picture_control_set_ptr->parent_pcs_ptr->tiltMvy = 0;
+#endif
     //Update MV
     if (picture_control_set_ptr->parent_pcs_ptr->is_pan && picture_control_set_ptr->parent_pcs_ptr->is_tilt) {
         picture_control_set_ptr->parent_pcs_ptr->global_motion[LAST_FRAME].wmtype = TRANSLATION;
