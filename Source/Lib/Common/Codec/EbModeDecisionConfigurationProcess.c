@@ -95,13 +95,13 @@ static uint8_t intrabc_max_mesh_pct[MAX_MESH_SPEED + 1] = { 100, 100, 100,
 #define SQ_NON4_BLOCKS_SEARCH_COST  155
 #define SQ_BLOCKS_SEARCH_COST       190
 #if ADP_BQ
-#define SB_NSQ_LEVEL_0_SEARCH_COST  SQ_BLOCKS_SEARCH_COST
-#define SB_NSQ_LEVEL_1_SEARCH_COST  250
-#define SB_NSQ_LEVEL_2_SEARCH_COST  300
-#define SB_NSQ_LEVEL_3_SEARCH_COST  350
-#define SB_NSQ_LEVEL_4_SEARCH_COST  400
-#define SB_NSQ_LEVEL_5_SEARCH_COST  450
-#define SB_NSQ_LEVEL_6_SEARCH_COST  500
+#define SB_NSQ_LEVEL_0_SEARCH_COST  SQ_BLOCKS_SEARCH_COST // 4.0x faster than NSQ_LEVEL_6
+#define SB_NSQ_LEVEL_1_SEARCH_COST  200                   // 3.8x faster than NSQ_LEVEL_6      
+#define SB_NSQ_LEVEL_2_SEARCH_COST  253                   // 3.0x faster than NSQ_LEVEL_6
+#define SB_NSQ_LEVEL_3_SEARCH_COST  304                   // 2.5x faster than NSQ_LEVEL_6
+#define SB_NSQ_LEVEL_4_SEARCH_COST  362                   // 2.1x faster than NSQ_LEVEL_6         
+#define SB_NSQ_LEVEL_5_SEARCH_COST  422                   // 1.8x faster than NSQ_LEVEL_6  
+#define SB_NSQ_LEVEL_6_SEARCH_COST  760
 #endif
 
 #define HIGH_SB_SCORE             60000
@@ -1794,33 +1794,25 @@ EbErrorType derive_default_segments(
     ModeDecisionConfigurationContext *context_ptr){
     EbErrorType return_error = EB_ErrorNone;
 
-#if ADP_BQ
+#if ADP_BQ // --------
     if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE) {
 
-        if (context_ptr->budget > sequence_control_set_ptr->sb_tot_cnt * SB_NSQ_LEVEL_3_SEARCH_COST) {
-            context_ptr->number_of_segments = 5;
-            context_ptr->score_th[0] = (int8_t)((1 * 100) / context_ptr->number_of_segments);
-            context_ptr->score_th[1] = (int8_t)((2 * 100) / context_ptr->number_of_segments);
-            context_ptr->score_th[2] = (int8_t)((3 * 100) / context_ptr->number_of_segments);
-            context_ptr->score_th[3] = (int8_t)((4 * 100) / context_ptr->number_of_segments);
-            context_ptr->interval_cost[0] = context_ptr->cost_depth_mode[SB_NSQ_LEVEL_2_DEPTH_MODE - 1];
-            context_ptr->interval_cost[1] = context_ptr->cost_depth_mode[SB_NSQ_LEVEL_3_DEPTH_MODE - 1];
-            context_ptr->interval_cost[2] = context_ptr->cost_depth_mode[SB_NSQ_LEVEL_4_DEPTH_MODE - 1];
-            context_ptr->interval_cost[3] = context_ptr->cost_depth_mode[SB_NSQ_LEVEL_5_DEPTH_MODE - 1];
-            context_ptr->interval_cost[4] = context_ptr->cost_depth_mode[SB_NSQ_LEVEL_6_DEPTH_MODE - 1];
-        }
-        else {
-            context_ptr->number_of_segments = 5;
-            context_ptr->score_th[0] = (int8_t)((1 * 100) / context_ptr->number_of_segments);
-            context_ptr->score_th[1] = (int8_t)((2 * 100) / context_ptr->number_of_segments);
-            context_ptr->score_th[2] = (int8_t)((3 * 100) / context_ptr->number_of_segments);
-            context_ptr->score_th[3] = (int8_t)((4 * 100) / context_ptr->number_of_segments);
-            context_ptr->interval_cost[0] = context_ptr->cost_depth_mode[SB_NSQ_LEVEL_0_DEPTH_MODE - 1];
-            context_ptr->interval_cost[1] = context_ptr->cost_depth_mode[SB_NSQ_LEVEL_1_DEPTH_MODE - 1];
-            context_ptr->interval_cost[2] = context_ptr->cost_depth_mode[SB_NSQ_LEVEL_2_DEPTH_MODE - 1];
-            context_ptr->interval_cost[3] = context_ptr->cost_depth_mode[SB_NSQ_LEVEL_3_DEPTH_MODE - 1];
-            context_ptr->interval_cost[4] = context_ptr->cost_depth_mode[SB_NSQ_LEVEL_4_DEPTH_MODE - 1];
-        }
+        context_ptr->number_of_segments = 7;
+        context_ptr->score_th[0] = (int8_t)((1 * 100) / context_ptr->number_of_segments);
+        context_ptr->score_th[1] = (int8_t)((2 * 100) / context_ptr->number_of_segments);
+        context_ptr->score_th[2] = (int8_t)((3 * 100) / context_ptr->number_of_segments);
+        context_ptr->score_th[3] = (int8_t)((4 * 100) / context_ptr->number_of_segments);
+        context_ptr->score_th[4] = (int8_t)((5 * 100) / context_ptr->number_of_segments);
+        context_ptr->score_th[5] = (int8_t)((6 * 100) / context_ptr->number_of_segments);
+
+        context_ptr->interval_cost[0] = context_ptr->cost_depth_mode[SB_NSQ_LEVEL_0_DEPTH_MODE - 1];
+        context_ptr->interval_cost[1] = context_ptr->cost_depth_mode[SB_NSQ_LEVEL_1_DEPTH_MODE - 1];
+        context_ptr->interval_cost[2] = context_ptr->cost_depth_mode[SB_NSQ_LEVEL_2_DEPTH_MODE - 1];
+        context_ptr->interval_cost[3] = context_ptr->cost_depth_mode[SB_NSQ_LEVEL_3_DEPTH_MODE - 1];
+        context_ptr->interval_cost[4] = context_ptr->cost_depth_mode[SB_NSQ_LEVEL_4_DEPTH_MODE - 1];
+        context_ptr->interval_cost[5] = context_ptr->cost_depth_mode[SB_NSQ_LEVEL_5_DEPTH_MODE - 1];
+        context_ptr->interval_cost[6] = context_ptr->cost_depth_mode[SB_NSQ_LEVEL_6_DEPTH_MODE - 1];
+
     }
     else {
 #endif
@@ -1975,10 +1967,9 @@ void set_target_budget_oq(
     // Hsan: 3 segments [0,LOW_SB_SCORE], [LOW_SB_SCORE,MEDIUM_SB_SCORE] and [MEDIUM_SB_SCORE,U_150]
     uint32_t budget_per_sb;
 
-#if ADP_BQ
-    if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE) {
+#if ADP_BQ //------
+    if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE) {               
         budget_per_sb = ((context_ptr->sb_average_score * (SB_NSQ_LEVEL_6_SEARCH_COST - SB_NSQ_LEVEL_0_SEARCH_COST)) / HIGH_SB_SCORE) + SB_NSQ_LEVEL_0_SEARCH_COST;
-
         budget_per_sb = CLIP3(SB_NSQ_LEVEL_0_SEARCH_COST, SB_NSQ_LEVEL_6_SEARCH_COST, budget_per_sb);
     }
     else {
