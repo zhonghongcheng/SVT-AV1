@@ -1768,6 +1768,9 @@ void  derive_optimal_budget_per_sb(
             context_ptr->score_th[2] = MAX((context_ptr->score_th[2] - adjustement_step), 0);
             context_ptr->score_th[3] = MAX((context_ptr->score_th[3] - adjustement_step), 0);
             context_ptr->score_th[4] = MAX((context_ptr->score_th[4] - adjustement_step), 0);
+#if ADP_BQ
+            context_ptr->score_th[5] = MAX((context_ptr->score_th[5] - adjustement_step), 0);
+#endif
             final_shooting = UNDER_SHOOTING;
         }
         else {
@@ -1776,6 +1779,9 @@ void  derive_optimal_budget_per_sb(
             context_ptr->score_th[2] = (context_ptr->score_th[2] == 0) ? 0 : MIN(context_ptr->score_th[2] + adjustement_step, 100);
             context_ptr->score_th[3] = (context_ptr->score_th[3] == 0) ? 0 : MIN(context_ptr->score_th[3] + adjustement_step, 100);
             context_ptr->score_th[4] = (context_ptr->score_th[4] == 0) ? 0 : MIN(context_ptr->score_th[4] + adjustement_step, 100);
+#if ADP_BQ
+            context_ptr->score_th[5] = (context_ptr->score_th[5] == 0) ? 0 : MIN(context_ptr->score_th[5] + adjustement_step, 100);
+#endif
             final_shooting = OVER_SHOOTING;
         }
 
