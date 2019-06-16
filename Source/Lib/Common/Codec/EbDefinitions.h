@@ -349,6 +349,11 @@ extern "C" {
 #define OPT_IFS                                         0 // DISABLE INTERPOLATION SEARCH WHEN ALL MVs (x and y) ARE INTEGER.
 #define IFS_EARLY_EXIT                                  0 // EARLY EXIT FROM INTERPOLATION SEARCH BASED ON THE DISTORTION OF THE REGULAR-FILTER (x and y) ARE INTEGER.
 
+#define MV_REFINEMENT_AROUND_MV_PRED                    0
+#if  MV_REFINEMENT_AROUND_MV_PRED                               
+#define MV_REFINEMENT_AROUND_MV_PRED_T0                 1
+#endif
+
 #if IMPROVED_SUBPEL_SEARCH
 typedef enum ME_HP_MODE { 
     EX_HP_MODE = 0, 
@@ -410,7 +415,11 @@ enum {
 #define MAX_TXB_COUNT                             4 // Maximum number of transform blocks.
 #endif
 #if DECOUPLED_FAST_LOOP
+#if MV_REFINEMENT_AROUND_MV_PRED
+#define MAX_NFL                                   520
+#else
 #define MAX_NFL                                   488 //MODE_DECISION_CANDIDATE_MAX_COUNT
+#endif
 #else
 #define MAX_NFL                                   40
 #endif

@@ -1933,6 +1933,331 @@ void perform_fast_loop(
         MAX_CU_COST :
         *(candidateBufferPtrArrayBase[highestCostIndex]->fast_cost_ptr);
 }
+#if MV_REFINEMENT_AROUND_MV_PRED
+#define REFINMENT_OFFSET 7 
+
+void refinement_search(
+    PictureControlSet            *picture_control_set_ptr,
+    ModeDecisionContext          *context_ptr,
+    ModeDecisionCandidateBuffer **candidateBufferPtrArrayBase,
+    ModeDecisionCandidate        *fast_candidate_array,
+    EbPictureBufferDesc          *input_picture_ptr,
+    uint32_t                      inputOriginIndex,
+    uint32_t                      inputCbOriginIndex,
+    uint32_t                      inputCrOriginIndex,
+    CodingUnit                   *cu_ptr,
+    uint32_t                      cuOriginIndex,
+    uint32_t                      cuChromaOriginIndex,
+    uint32_t                      candidate_buffer_start_index,
+    EbBool                        use_ssd,
+    EbAsm                         asm_type,
+    uint8_t                       list_idx,
+    int8_t                        ref_idx,
+    int16_t                       mvx,
+    int16_t                       mvy)
+{
+    int32_t  fastLoopCandidateIndex;
+    uint64_t lumaFastDistortion;
+    uint64_t chromaFastDistortion;
+    IntMv  bestPredmv[2] = { {0}, {0} };
+    int32_t refinement_pos_x, refinement_pos_y;
+
+    // Use the 1st spot of the candidate buffer to hold cfl settings to use same kernel as MD for coef cost estimation
+    ModeDecisionCandidateBuffer  *candidateBuffer = &(context_ptr->candidate_buffer_ptr_array[0][0]);
+    candidateBuffer->candidate_ptr = &(context_ptr->fast_candidate_array[0]);
+
+    mvx = mvx >> 1;
+    mvy = mvy >> 1;
+
+    for (refinement_pos_x = -REFINMENT_OFFSET; refinement_pos_x <= REFINMENT_OFFSET; ++refinement_pos_x) {
+        for (refinement_pos_y = -REFINMENT_OFFSET; refinement_pos_y <= REFINMENT_OFFSET; ++refinement_pos_y) {
+
+            ModeDecisionCandidate       *candidate_ptr = candidateBuffer->candidate_ptr;
+            EbPictureBufferDesc         *prediction_ptr = candidateBuffer->prediction_ptr;
+
+            candidate_ptr->type = INTER_MODE;
+            candidate_ptr->distortion_ready = 0;
+            candidate_ptr->use_intrabc = 0;
+            candidate_ptr->merge_flag = EB_FALSE;
+            candidate_ptr->prediction_direction[0] = (EbPredDirection)list_idx;
+            candidate_ptr->inter_mode = NEWMV;
+            candidate_ptr->pred_mode = NEWMV;
+            candidate_ptr->motion_mode = SIMPLE_TRANSLATION;
+            candidate_ptr->is_compound = 0;
+            candidate_ptr->is_new_mv = 1;
+            candidate_ptr->is_zero_mv = 0;
+            candidate_ptr->drl_index = 0;
+            candidate_ptr->ref_mv_index = 0;
+            candidate_ptr->pred_mv_weight = 0;
+            candidate_ptr->ref_frame_type = svt_get_ref_frame_type(list_idx, ref_idx);
+            candidate_ptr->transform_type[PLANE_TYPE_Y] = DCT_DCT;
+            candidate_ptr->transform_type[PLANE_TYPE_UV] = DCT_DCT;
+            candidate_ptr->motion_vector_xl0 = list_idx == 0 ? (mvx + refinement_pos_x) << 1 : 0;
+            candidate_ptr->motion_vector_yl0 = list_idx == 0 ? (mvy + refinement_pos_y) << 1 : 0;
+            candidate_ptr->motion_vector_xl1 = list_idx == 1 ? (mvx + refinement_pos_x) << 1 : 0;
+            candidate_ptr->motion_vector_yl1 = list_idx == 1 ? (mvy + refinement_pos_y) << 1 : 0;
+            candidate_ptr->ref_frame_index_l0 = list_idx == 0 ? ref_idx : -1;
+            candidate_ptr->ref_frame_index_l1 = list_idx == 1 ? ref_idx : -1;
+            
+            ChooseBestAv1MvPred(
+                context_ptr,
+                candidate_ptr->md_rate_estimation_ptr,
+                context_ptr->cu_ptr,
+                candidate_ptr->ref_frame_type,
+                candidate_ptr->is_compound,
+                candidate_ptr->pred_mode,
+                candidate_ptr->motion_vector_xl0,
+                candidate_ptr->motion_vector_yl0,
+                0, 0,
+                &candidate_ptr->drl_index,
+                bestPredmv);
+            candidate_ptr->motion_vector_pred_x[list_idx] = bestPredmv[0].as_mv.col;
+            candidate_ptr->motion_vector_pred_y[list_idx] = bestPredmv[0].as_mv.row;
+
+            // Prediction
+            ProductMdFastPuPrediction(
+                picture_control_set_ptr,
+                candidateBuffer,
+                context_ptr,
+                candidate_ptr->type,
+                NULL,
+                0,
+                0,
+                asm_type);
+
+            // Distortion
+            // Y
+            if (use_ssd) {
+                candidateBuffer->candidate_ptr->luma_fast_distortion = lumaFastDistortion = spatial_full_distortion_kernel_func_ptr_array[asm_type][Log2f(context_ptr->blk_geom->bwidth) - 2](
+                    input_picture_ptr->buffer_y + inputOriginIndex,
+                    input_picture_ptr->stride_y,
+                    prediction_ptr->buffer_y + cuOriginIndex,
+                    prediction_ptr->stride_y,
+                    context_ptr->blk_geom->bwidth,
+                    context_ptr->blk_geom->bheight);
+            }
+            else {
+                assert((context_ptr->blk_geom->bwidth >> 3) < 17);
+                candidateBuffer->candidate_ptr->luma_fast_distortion = lumaFastDistortion = (nxm_sad_kernel_sub_sampled_func_ptr_array[asm_type][context_ptr->blk_geom->bwidth >> 3](
+                    input_picture_ptr->buffer_y + inputOriginIndex,
+                    input_picture_ptr->stride_y,
+                    prediction_ptr->buffer_y + cuOriginIndex,
+                    prediction_ptr->stride_y,
+                    context_ptr->blk_geom->bheight,
+                    context_ptr->blk_geom->bwidth));
+            }
+            if (context_ptr->blk_geom->has_uv && context_ptr->chroma_level <= CHROMA_MODE_1) {
+                if (use_ssd) {
+                    chromaFastDistortion = spatial_full_distortion_kernel_func_ptr_array[asm_type][Log2f(context_ptr->blk_geom->bwidth_uv) - 2]( //spatial_full_distortion_kernel(
+                        input_picture_ptr->buffer_cb + inputCbOriginIndex,
+                        input_picture_ptr->stride_cb,
+                        candidateBuffer->prediction_ptr->buffer_cb + cuChromaOriginIndex,
+                        prediction_ptr->stride_cb,
+                        context_ptr->blk_geom->bwidth_uv,
+                        context_ptr->blk_geom->bheight_uv);
+
+                    chromaFastDistortion += spatial_full_distortion_kernel_func_ptr_array[asm_type][Log2f(context_ptr->blk_geom->bwidth_uv) - 2]( //spatial_full_distortion_kernel(
+                        input_picture_ptr->buffer_cr + inputCrOriginIndex,
+                        input_picture_ptr->stride_cb,
+                        candidateBuffer->prediction_ptr->buffer_cr + cuChromaOriginIndex,
+                        prediction_ptr->stride_cr,
+                        context_ptr->blk_geom->bwidth_uv,
+                        context_ptr->blk_geom->bheight_uv);
+                }
+                else {
+                    assert((context_ptr->blk_geom->bwidth_uv >> 3) < 17);
+                    chromaFastDistortion = nxm_sad_kernel_sub_sampled_func_ptr_array[asm_type][context_ptr->blk_geom->bwidth_uv >> 3](
+                        input_picture_ptr->buffer_cb + inputCbOriginIndex,
+                        input_picture_ptr->stride_cb,
+                        candidateBuffer->prediction_ptr->buffer_cb + cuChromaOriginIndex,
+                        prediction_ptr->stride_cb,
+                        context_ptr->blk_geom->bheight_uv,
+                        context_ptr->blk_geom->bwidth_uv);
+
+                    chromaFastDistortion += nxm_sad_kernel_sub_sampled_func_ptr_array[asm_type][context_ptr->blk_geom->bwidth_uv >> 3](
+                        input_picture_ptr->buffer_cr + inputCrOriginIndex,
+                        input_picture_ptr->stride_cb,
+                        candidateBuffer->prediction_ptr->buffer_cr + cuChromaOriginIndex,
+                        prediction_ptr->stride_cr,
+                        context_ptr->blk_geom->bheight_uv,
+                        context_ptr->blk_geom->bwidth_uv);
+                }
+
+            }
+            else {
+                chromaFastDistortion = 0;
+            }
+            // Fast Cost
+#if LUMA_DISTORTION
+            *(candidateBuffer->fast_cost_ptr) = lumaFastDistortion;
+#else
+            *(candidateBuffer->fast_cost_ptr) = Av1ProductFastCostFuncTable[candidate_ptr->type](
+                cu_ptr,
+                candidateBuffer->candidate_ptr,
+                cu_ptr->qp,
+                lumaFastDistortion,
+                chromaFastDistortion,
+                use_ssd ? context_ptr->full_lambda : context_ptr->fast_lambda,
+                use_ssd,
+                picture_control_set_ptr,
+                &(context_ptr->md_local_cu_unit[context_ptr->blk_geom->blkidx_mds].ed_ref_mv_stack[candidate_ptr->ref_frame_type][0]),
+                context_ptr->blk_geom,
+                context_ptr->cu_origin_y >> MI_SIZE_LOG2,
+                context_ptr->cu_origin_x >> MI_SIZE_LOG2,
+#if MRP_COST_EST
+                1,
+#endif
+                context_ptr->intra_luma_left_mode,
+                context_ptr->intra_luma_top_mode);
+#endif
+
+            if (*(candidateBuffer->fast_cost_ptr) < context_ptr->best_cost[list_idx][ref_idx]) {
+
+                context_ptr->best_spatial_pred_mv[list_idx][ref_idx][0] = (mvx + refinement_pos_x) << 1;
+                context_ptr->best_spatial_pred_mv[list_idx][ref_idx][1] = (mvy + refinement_pos_y) << 1;
+                context_ptr->valid_refined_mv[list_idx][ref_idx] = 1;
+                context_ptr->best_cost[list_idx][ref_idx] = *(candidateBuffer->fast_cost_ptr);
+            }
+        }
+    }
+}
+void mvpred_refinement(
+    PictureControlSet            *picture_control_set_ptr,
+    ModeDecisionContext          *context_ptr,
+    ModeDecisionCandidateBuffer **candidateBufferPtrArrayBase,
+    ModeDecisionCandidate        *fast_candidate_array,
+    EbPictureBufferDesc          *input_picture_ptr,
+    uint32_t                      inputOriginIndex,
+    uint32_t                      inputCbOriginIndex,
+    uint32_t                      inputCrOriginIndex,
+    CodingUnit                   *cu_ptr,
+    uint32_t                      cuOriginIndex,
+    uint32_t                      cuChromaOriginIndex,
+    uint32_t                      candidate_buffer_start_index,
+    EbBool                        use_ssd,
+    EbAsm                         asm_type) {
+
+    uint64_t best_cost[2][4];
+    //init subpel
+    for (uint8_t listIndex = REF_LIST_0; listIndex < 2; ++listIndex) {
+        // Ref Picture Loop
+        for (uint8_t ref_pic_index = 0; ref_pic_index < 4; ++ref_pic_index) {
+            context_ptr->valid_refined_mv[listIndex][ref_pic_index] = 0;
+            context_ptr->best_cost[listIndex][ref_pic_index] = MAX_CU_COST;
+        }
+    }
+    const SequenceControlSet *sequence_control_set_ptr = (SequenceControlSet*)picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr;
+    const uint32_t             lcuAddr = context_ptr->sb_ptr->index;
+    ModeDecisionCandidate      *candidateArray = context_ptr->fast_candidate_array;
+    IntMv  bestPredmv[2] = { {0}, {0} };
+    generate_av1_mvp_table(
+        &context_ptr->sb_ptr->tile_info,
+        context_ptr,
+        context_ptr->cu_ptr,
+        context_ptr->blk_geom,
+        context_ptr->cu_origin_x,
+        context_ptr->cu_origin_y,
+#if MRP_MVP
+        picture_control_set_ptr->parent_pcs_ptr->ref_frame_type_arr,
+#if RPS_4L
+        picture_control_set_ptr->parent_pcs_ptr->tot_ref_frame_types,
+#else
+        (picture_control_set_ptr->parent_pcs_ptr->reference_mode == SINGLE_REFERENCE) ? 1 : picture_control_set_ptr->parent_pcs_ptr->tot_ref_frame_types,
+#endif
+#else
+        refFrames,
+        (picture_control_set_ptr->parent_pcs_ptr->reference_mode == SINGLE_REFERENCE) ? 1 : 3,
+#endif
+        picture_control_set_ptr);
+
+    uint32_t refIt;
+    for (refIt = 0; refIt < picture_control_set_ptr->parent_pcs_ptr->tot_ref_frame_types; ++refIt) {
+        MvReferenceFrame ref_pair = picture_control_set_ptr->parent_pcs_ptr->ref_frame_type_arr[refIt];
+        EbBool allow_compound = (picture_control_set_ptr->parent_pcs_ptr->reference_mode == SINGLE_REFERENCE || context_ptr->blk_geom->bwidth == 4 || context_ptr->blk_geom->bheight == 4) ? EB_FALSE : EB_TRUE;
+        uint8_t inj_mv;
+
+        ModeDecisionCandidate    *candidateArray = context_ptr->fast_candidate_array;
+        MacroBlockD  *xd = cu_ptr->av1xd;
+        uint8_t drli, maxDrlIndex;
+        IntMv    nearestmv[2], nearmv[2], ref_mv[2];
+
+        MvReferenceFrame rf[2];
+        av1_set_ref_frame(rf, ref_pair);
+
+        //single ref/list
+        if (rf[1] == NONE_FRAME)
+        {
+            MvReferenceFrame frame_type = rf[0];
+            uint8_t list_idx = get_list_idx(rf[0]);
+            uint8_t ref_idx = get_ref_frame_idx(rf[0]);
+
+            //NEAREST
+            int16_t nearest_mv_x = context_ptr->cu_ptr->ref_mvs[frame_type][0].as_mv.col;
+            int16_t nearest_mv_y = context_ptr->cu_ptr->ref_mvs[frame_type][0].as_mv.row;
+
+            refinement_search(
+                picture_control_set_ptr,
+                context_ptr,
+                candidateBufferPtrArrayBase,
+                fast_candidate_array,
+                input_picture_ptr,
+                inputOriginIndex,
+                inputCbOriginIndex,
+                inputCrOriginIndex,
+                cu_ptr,
+                cuOriginIndex,
+                cuChromaOriginIndex,
+                candidate_buffer_start_index,
+                use_ssd,
+                asm_type,
+                list_idx,
+                ref_idx,
+                nearest_mv_x,
+                nearest_mv_y);
+
+            //NEAR
+            maxDrlIndex = GetMaxDrlIndex(xd->ref_mv_count[frame_type], NEARMV);
+
+            for (drli = 0; drli < maxDrlIndex; drli++) {
+                get_av1_mv_pred_drl(
+                    context_ptr,
+                    cu_ptr,
+                    frame_type,
+                    0,
+                    NEARMV,
+                    drli,
+                    nearestmv,
+                    nearmv,
+                    ref_mv);
+
+                int16_t near_mv_x = nearmv[0].as_mv.col;
+                int16_t near_mv_y = nearmv[0].as_mv.row;
+                if (near_mv_x != nearest_mv_x && near_mv_y != nearest_mv_y) {
+                    refinement_search(
+                        picture_control_set_ptr,
+                        context_ptr,
+                        candidateBufferPtrArrayBase,
+                        fast_candidate_array,
+                        input_picture_ptr,
+                        inputOriginIndex,
+                        inputCbOriginIndex,
+                        inputCrOriginIndex,
+                        cu_ptr,
+                        cuOriginIndex,
+                        cuChromaOriginIndex,
+                        candidate_buffer_start_index,
+                        use_ssd,
+                        asm_type,
+                        list_idx,
+                        ref_idx,
+                        near_mv_x,
+                        near_mv_y);
+                }
+            }
+        }
+    }
+}
+#endif
 #if !OPT_LOSSLESS_0 && !DISABLE_OIS_USE
 void ProductConfigureChroma(
     PictureControlSet                 *picture_control_set_ptr,
@@ -5943,7 +6268,24 @@ void md_encode_block(
             }
         }
 #endif
-
+#if MV_REFINEMENT_AROUND_MV_PRED
+        if (picture_control_set_ptr->slice_type != I_SLICE)
+            mvpred_refinement(
+                picture_control_set_ptr,
+                context_ptr,
+                candidateBufferPtrArrayBase,
+                fast_candidate_array,
+                input_picture_ptr,
+                inputOriginIndex,
+                inputCbOriginIndex,
+                inputCbOriginIndex,
+                cu_ptr,
+                cuOriginIndex,
+                cuChromaOriginIndex,
+                0,
+                context_ptr->decoupled_fast_loop_search_method == SSD_SEARCH,
+                asm_type);
+#endif
         ProductGenerateMdCandidatesCu(
             context_ptr->sb_ptr,
             context_ptr,
