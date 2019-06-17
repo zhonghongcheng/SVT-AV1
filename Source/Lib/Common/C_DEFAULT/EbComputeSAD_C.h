@@ -42,7 +42,7 @@ extern "C" {
         int16_t   search_area_width,
         int16_t   search_area_height);
 
-#if HME_LEVEL_O_CHROMA
+#if HME_LEVEL_O_CHROMA 
     void sad_loop_kernel_level_0_all(
         uint8_t  *src,
         uint8_t  *src_cb,

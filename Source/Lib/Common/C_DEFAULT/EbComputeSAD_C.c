@@ -114,7 +114,7 @@ void sad_loop_kernel(
     return;
 }
 #if HME_LEVEL_O_CHROMA
-void sad_loop_kernel_level_0_all(
+void sad_loop_kernel_all(
     uint8_t  *src,
     uint8_t  *src_cb,
     uint8_t  *src_cr,

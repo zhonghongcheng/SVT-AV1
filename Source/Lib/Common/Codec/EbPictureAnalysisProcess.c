@@ -4754,6 +4754,41 @@ void DecimateInputPicture(
                 quarter_decimated_picture_ptr->height,
                 quarter_decimated_picture_ptr->origin_x,
                 quarter_decimated_picture_ptr->origin_y);
+
+
+#if HME_LEVEL_1_CHROMA
+            decimation_2d(
+                &input_padded_picture_ptr->buffer_cb[(input_padded_picture_ptr->origin_x >> 1) + (input_padded_picture_ptr->origin_y >> 1) * (input_padded_picture_ptr->stride_y >> 1)],
+                input_padded_picture_ptr->stride_cb,
+                input_padded_picture_ptr->width >> 1,
+                input_padded_picture_ptr->height >> 1,
+                &quarter_decimated_picture_ptr->buffer_cb[(quarter_decimated_picture_ptr->origin_x >> 1) + (quarter_decimated_picture_ptr->origin_y >> 1) * (quarter_decimated_picture_ptr->stride_y >> 1)],
+                quarter_decimated_picture_ptr->stride_cb,
+                2);
+            generate_padding(
+                &quarter_decimated_picture_ptr->buffer_cb[0],
+                quarter_decimated_picture_ptr->stride_cb,
+                quarter_decimated_picture_ptr->width >> 1,
+                quarter_decimated_picture_ptr->height >> 1,
+                quarter_decimated_picture_ptr->origin_x >> 1,
+                quarter_decimated_picture_ptr->origin_y >> 1);
+            decimation_2d(
+                &input_padded_picture_ptr->buffer_cr[(input_padded_picture_ptr->origin_x >> 1) + (input_padded_picture_ptr->origin_y >> 1) * (input_padded_picture_ptr->stride_y >> 1)],
+                input_padded_picture_ptr->stride_cr,
+                input_padded_picture_ptr->width >> 1,
+                input_padded_picture_ptr->height >> 1,
+                &quarter_decimated_picture_ptr->buffer_cr[(quarter_decimated_picture_ptr->origin_x >> 1) + (quarter_decimated_picture_ptr->origin_y >> 1) * (quarter_decimated_picture_ptr->stride_y >> 1)],
+                quarter_decimated_picture_ptr->stride_cr,
+                2);
+            generate_padding(
+                &quarter_decimated_picture_ptr->buffer_cr[0],
+                quarter_decimated_picture_ptr->stride_cr,
+                quarter_decimated_picture_ptr->width >> 1,
+                quarter_decimated_picture_ptr->height >> 1,
+                quarter_decimated_picture_ptr->origin_x >> 1,
+                quarter_decimated_picture_ptr->origin_y >> 1);
+#endif
+
         }
 #if !DECIMATION_BUG_FIX
         if (picture_control_set_ptr->enable_hme_level0_flag) {
@@ -4838,6 +4873,7 @@ void DecimateInputPicture(
         (sixteenth_decimated_picture_ptr->origin_x >> 1),
         (sixteenth_decimated_picture_ptr->origin_y >> 1));
 #endif
+
 #endif
 
 }
@@ -4901,7 +4937,7 @@ void DownsampleFilteringInputPicture(
                 input_padded_picture_ptr->stride_y,
                 input_padded_picture_ptr->width,
                 input_padded_picture_ptr->height,
-                &quarter_picture_ptr->buffer_y[quarter_picture_ptr->origin_x + quarter_picture_ptr->origin_x * quarter_picture_ptr->stride_y],
+                &quarter_picture_ptr->buffer_y[quarter_picture_ptr->origin_x + quarter_picture_ptr->origin_y * quarter_picture_ptr->stride_y],
                 quarter_picture_ptr->stride_y,
                 2);
             generate_padding(
@@ -4911,6 +4947,39 @@ void DownsampleFilteringInputPicture(
                 quarter_picture_ptr->height,
                 quarter_picture_ptr->origin_x,
                 quarter_picture_ptr->origin_y);
+
+#if HME_LEVEL_1_CHROMA
+            downsample_2d(
+                &input_padded_picture_ptr->buffer_cb[(input_padded_picture_ptr->origin_x >> 1) + (input_padded_picture_ptr->origin_y >> 1) * (input_padded_picture_ptr->stride_y >> 1)],
+                input_padded_picture_ptr->stride_cb,
+                input_padded_picture_ptr->width >> 1,
+                input_padded_picture_ptr->height >> 1,
+                &quarter_picture_ptr->buffer_cb[(quarter_picture_ptr->origin_x >> 1) + (quarter_picture_ptr->origin_y >> 1) * (quarter_picture_ptr->stride_y >> 1)],
+                quarter_picture_ptr->stride_cb,
+                2);
+            generate_padding(
+                &quarter_picture_ptr->buffer_cb[0],
+                quarter_picture_ptr->stride_cb,
+                quarter_picture_ptr->width >> 1,
+                quarter_picture_ptr->height >> 1,
+                quarter_picture_ptr->origin_x >> 1,
+                quarter_picture_ptr->origin_y >> 1);
+            downsample_2d(
+                &input_padded_picture_ptr->buffer_cr[(input_padded_picture_ptr->origin_x >> 1) + (input_padded_picture_ptr->origin_y >> 1) * (input_padded_picture_ptr->stride_y >> 1)],
+                input_padded_picture_ptr->stride_cr,
+                input_padded_picture_ptr->width >> 1,
+                input_padded_picture_ptr->height >> 1,
+                &quarter_picture_ptr->buffer_cr[(quarter_picture_ptr->origin_x >> 1) + (quarter_picture_ptr->origin_y >> 1) * (quarter_picture_ptr->stride_y >> 1)],
+                quarter_picture_ptr->stride_cr,
+                2);
+            generate_padding(
+                &quarter_picture_ptr->buffer_cr[0],
+                quarter_picture_ptr->stride_cr,
+                quarter_picture_ptr->width >> 1,
+                quarter_picture_ptr->height >> 1,
+                quarter_picture_ptr->origin_x >> 1,
+                quarter_picture_ptr->origin_y >> 1);
+#endif
 
         }
 

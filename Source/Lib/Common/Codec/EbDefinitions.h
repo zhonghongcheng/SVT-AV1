@@ -51,6 +51,8 @@ extern "C" {
 #define MRP_SUPPORT                       1// MRP Main Flag
 
 #define HME_LEVEL_O_CHROMA                1 // Add chroma info @ chroma level 0
+#define HME_LEVEL_1_CHROMA                1 // Add chroma info @ chroma level 1
+#define HME_LEVEL_2_CHROMA                1 // Add chroma info @ chroma level 2
 
 #define DOWN_SAMPLING_FILTERING           1 // Use down-sampling filtering (instead of down-sampling decimation) for 1/16th and 1/4th reference frame(s) generation @ ME and temporal filtering search, added the multi-mode signal down_sampling_method_me_search; filtering if M0, and decimation for M1 & higher
 #define DECIMATION_BUG_FIX                1 // Removed HME Level0 check @ 1/16th decimation to guarantee valid ZZ SAD and SCD data when HME Level0 is OFF

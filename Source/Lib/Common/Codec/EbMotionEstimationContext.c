@@ -46,10 +46,16 @@ EbErrorType me_context_ctor(
     // Intermediate LCU-sized buffer to retain the input samples
     (*object_dbl_ptr)->sb_buffer_stride = BLOCK_SIZE_64;
     EB_ALLIGN_MALLOC(uint8_t *, (*object_dbl_ptr)->sb_buffer, sizeof(uint8_t) * BLOCK_SIZE_64 * (*object_dbl_ptr)->sb_buffer_stride, EB_A_PTR);
-
+#if HME_LEVEL_2_CHROMA
+    EB_ALLIGN_MALLOC(uint8_t *, (*object_dbl_ptr)->sb_cb_buffer, sizeof(uint8_t) * (BLOCK_SIZE_64 >> 1) * (*object_dbl_ptr)->sb_buffer_stride >> 1, EB_A_PTR);
+    EB_ALLIGN_MALLOC(uint8_t *, (*object_dbl_ptr)->sb_cr_buffer, sizeof(uint8_t) * (BLOCK_SIZE_64 >> 1) * (*object_dbl_ptr)->sb_buffer_stride >> 1, EB_A_PTR);
+#endif
     (*object_dbl_ptr)->quarter_sb_buffer_stride = (BLOCK_SIZE_64 >> 1);
     EB_MALLOC(uint8_t *, (*object_dbl_ptr)->quarter_sb_buffer, sizeof(uint8_t) * (BLOCK_SIZE_64 >> 1) * (*object_dbl_ptr)->quarter_sb_buffer_stride, EB_N_PTR);
-
+#if HME_LEVEL_1_CHROMA
+    EB_ALLIGN_MALLOC(uint8_t *, (*object_dbl_ptr)->quarter_cb_sb_buffer, sizeof(uint8_t) * (BLOCK_SIZE_64 >> 2) * (*object_dbl_ptr)->quarter_sb_buffer_stride >> 1, EB_A_PTR);
+    EB_ALLIGN_MALLOC(uint8_t *, (*object_dbl_ptr)->quarter_cr_sb_buffer, sizeof(uint8_t) * (BLOCK_SIZE_64 >> 2) * (*object_dbl_ptr)->quarter_sb_buffer_stride >> 1, EB_A_PTR);
+#endif
     (*object_dbl_ptr)->sixteenth_sb_buffer_stride = (BLOCK_SIZE_64 >> 2);
     EB_ALLIGN_MALLOC(uint8_t *, (*object_dbl_ptr)->sixteenth_sb_buffer, sizeof(uint8_t) * (BLOCK_SIZE_64 >> 2) * (*object_dbl_ptr)->sixteenth_sb_buffer_stride, EB_A_PTR);
 #if HME_LEVEL_O_CHROMA

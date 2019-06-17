@@ -6234,7 +6234,7 @@ void HmeLevel0(
 #if HME_LEVEL_O_CHROMA
     uint32_t searchRegionChromaIndex = (xTopLeftSearchRegion >> 1) + (yTopLeftSearchRegion >> 1) * (sixteenthRefPicPtr->stride_y >> 1);
 
-    sad_loop_kernel_level_0_all(
+    sad_loop_kernel_all(
         &context_ptr->sixteenth_sb_buffer[0],
         context_ptr->sixteenth_cb_sb_buffer,
         context_ptr->sixteenth_cr_sb_buffer,
@@ -6433,6 +6433,29 @@ void HmeLevel1(
     yTopLeftSearchRegion = ((int16_t)quarterRefPicPtr->origin_y + origin_y) + y_search_area_origin;
     searchRegionIndex = xTopLeftSearchRegion + yTopLeftSearchRegion * quarterRefPicPtr->stride_y;
 
+#if HME_LEVEL_1_CHROMA
+    uint32_t searchRegionChromaIndex = (xTopLeftSearchRegion >> 1) + (yTopLeftSearchRegion >> 1) * (quarterRefPicPtr->stride_y >> 1);
+
+    sad_loop_kernel_all(
+        &context_ptr->quarter_sb_buffer[0],
+        context_ptr->quarter_cb_sb_buffer,
+        context_ptr->quarter_cr_sb_buffer,
+        (context_ptr->hme_search_method == FULL_SAD_SEARCH) ? context_ptr->quarter_sb_buffer_stride : context_ptr->quarter_sb_buffer_stride * 2,
+        &quarterRefPicPtr->buffer_y[searchRegionIndex],
+        &quarterRefPicPtr->buffer_cb[searchRegionChromaIndex],
+        &quarterRefPicPtr->buffer_cr[searchRegionChromaIndex],
+        (context_ptr->hme_search_method == FULL_SAD_SEARCH) ? quarterRefPicPtr->stride_y : quarterRefPicPtr->stride_y * 2,
+        (context_ptr->hme_search_method == FULL_SAD_SEARCH) ? sb_height : sb_height >> 1,
+        sb_width,
+        /* results */
+        level1BestSad,
+        xLevel1SearchCenter,
+        yLevel1SearchCenter,
+        /* range */
+        quarterRefPicPtr->stride_y,
+        search_area_width,
+        search_area_height);
+#else
     if (((sb_width & 7) == 0) || (sb_width == 4))
     {
         // Put the first search location into level0 results
@@ -6472,7 +6495,7 @@ void HmeLevel1(
                 search_area_height
         );
     }
-
+#endif
     *level1BestSad = (context_ptr->hme_search_method == FULL_SAD_SEARCH) ?
                      *level1BestSad :
                      *level1BestSad * 2; // Multiply by 2 because considered only ever other line
@@ -6571,6 +6594,32 @@ void HmeLevel2(
     xTopLeftSearchRegion = ((int16_t)refPicPtr->origin_x + origin_x) + x_search_area_origin;
     yTopLeftSearchRegion = ((int16_t)refPicPtr->origin_y + origin_y) + y_search_area_origin;
     searchRegionIndex = xTopLeftSearchRegion + yTopLeftSearchRegion * refPicPtr->stride_y;
+
+
+#if HME_LEVEL_2_CHROMA
+    // Put the first search location into level0 results
+    uint32_t searchRegionChromaIndex = (xTopLeftSearchRegion >> 1) + (yTopLeftSearchRegion >> 1) * (refPicPtr->stride_y >> 1);
+
+    sad_loop_kernel_all(
+        context_ptr->sb_src_ptr,
+        context_ptr->sb_cb_buffer,
+        context_ptr->sb_cr_buffer,
+        (context_ptr->hme_search_method == FULL_SAD_SEARCH) ? context_ptr->sb_src_stride : context_ptr->sb_src_stride * 2,
+        &refPicPtr->buffer_y[searchRegionIndex],
+        &refPicPtr->buffer_cb[searchRegionChromaIndex],
+        &refPicPtr->buffer_cr[searchRegionChromaIndex],
+        (context_ptr->hme_search_method == FULL_SAD_SEARCH) ? refPicPtr->stride_y : refPicPtr->stride_y * 2,
+        (context_ptr->hme_search_method == FULL_SAD_SEARCH) ? sb_height : sb_height >> 1,
+        sb_width,
+        /* results */
+        level2BestSad,
+        xLevel2SearchCenter,
+        yLevel2SearchCenter,
+        /* range */
+        refPicPtr->stride_y,
+        search_area_width,
+        search_area_height);
+#else
     if ((((sb_width & 7) == 0) && (sb_width != 40) && (sb_width != 56)))
     {
         // Put the first search location into level0 results
@@ -6611,6 +6660,7 @@ void HmeLevel2(
                 search_area_height
         );
     }
+#endif
 
     *level2BestSad = (context_ptr->hme_search_method == FULL_SAD_SEARCH) ?
                      *level2BestSad :

@@ -321,11 +321,19 @@ extern "C" {
 #endif
         // Intermediate LCU-sized buffer to retain the input samples
         uint8_t                      *sb_buffer;
+#if HME_LEVEL_2_CHROMA
+        uint8_t                      *sb_cb_buffer;
+        uint8_t                      *sb_cr_buffer;
+#endif
         uint8_t                      *sb_buffer_ptr;
         uint32_t                      sb_buffer_stride;
         uint8_t                      *sb_src_ptr;
         uint32_t                      sb_src_stride;
         uint8_t                      *quarter_sb_buffer;
+#if HME_LEVEL_1_CHROMA
+        uint8_t                      *quarter_cb_sb_buffer;
+        uint8_t                      *quarter_cr_sb_buffer;
+#endif
         uint32_t                      quarter_sb_buffer_stride;
         uint8_t                      *sixteenth_sb_buffer;
 #if HME_LEVEL_O_CHROMA

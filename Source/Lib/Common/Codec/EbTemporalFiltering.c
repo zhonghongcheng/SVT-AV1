@@ -267,7 +267,9 @@ void create_ME_context_and_picture_control(MotionEstimationContext_t *context_pt
                                             int blk_row,
                                             int blk_col){
     uint32_t lcuRow;
-
+#if HME_LEVEL_O_CHROMA
+    uint32_t bufferChromaIndex;
+#endif
     // set reference picture for alt-refs
     context_ptr->me_context_ptr->alt_ref_reference_ptr = (EbPaReferenceObject*)picture_control_set_ptr_frame->pa_reference_picture_wrapper_ptr->object_ptr;
     context_ptr->me_context_ptr->me_alt_ref = EB_TRUE;
@@ -330,15 +332,22 @@ void create_ME_context_and_picture_control(MotionEstimationContext_t *context_pt
 
     // Load the 1/4 decimated SB from the 1/4 decimated input to the 1/4 intermediate SB buffer
     bufferIndex = (quarter_pic_ptr->origin_y + (sb_origin_y >> 1)) * quarter_pic_ptr->stride_y + quarter_pic_ptr->origin_x + (sb_origin_x >> 1);
-
+#if HME_LEVEL_1_CHROMA
+    bufferChromaIndex = ((quarter_pic_ptr->origin_y >> 1) + (sb_origin_y >> 2)) * (quarter_pic_ptr->stride_y >> 1) + (quarter_pic_ptr->origin_x >> 1) + (sb_origin_x >> 2);
+#endif
     for (lcuRow = 0; lcuRow < (sb_height >> 1); lcuRow++) {
         EB_MEMCPY((&(context_ptr->me_context_ptr->quarter_sb_buffer[lcuRow * context_ptr->me_context_ptr->quarter_sb_buffer_stride])), (&(quarter_pic_ptr->buffer_y[bufferIndex + lcuRow * quarter_pic_ptr->stride_y])), (sb_width >> 1) * sizeof(uint8_t));
     }
-
+#if HME_LEVEL_1_CHROMA
+    for (lcuRow = 0; lcuRow < (sb_height >> 2); lcuRow++) {
+        EB_MEMCPY((&(context_ptr->me_context_ptr->quarter_cb_sb_buffer[lcuRow * (context_ptr->me_context_ptr->quarter_sb_buffer_stride >> 1)])), (&(quarter_pic_ptr->buffer_cb[bufferChromaIndex + lcuRow * (quarter_pic_ptr->stride_y >> 1)])), (sb_width >> 2) * sizeof(uint8_t));
+        EB_MEMCPY((&(context_ptr->me_context_ptr->quarter_cr_sb_buffer[lcuRow * (context_ptr->me_context_ptr->quarter_sb_buffer_stride >> 1)])), (&(quarter_pic_ptr->buffer_cr[bufferChromaIndex + lcuRow * (quarter_pic_ptr->stride_y >> 1)])), (sb_width >> 2) * sizeof(uint8_t));
+    }
+#endif
     // Load the 1/16 decimated SB from the 1/16 decimated input to the 1/16 intermediate SB buffer
     bufferIndex = (sixteenth_pic_ptr->origin_y + (sb_origin_y >> 2)) * sixteenth_pic_ptr->stride_y + sixteenth_pic_ptr->origin_x + (sb_origin_x >> 2);
 #if HME_LEVEL_O_CHROMA
-    uint32_t bufferChromaIndex = ((sixteenth_pic_ptr->origin_y >> 1) + (sb_origin_y >> 3)) * (sixteenth_pic_ptr->stride_y >> 1) + (sixteenth_pic_ptr->origin_x >> 1) + (sb_origin_x >> 3);
+    bufferChromaIndex = ((sixteenth_pic_ptr->origin_y >> 1) + (sb_origin_y >> 3)) * (sixteenth_pic_ptr->stride_y >> 1) + (sixteenth_pic_ptr->origin_x >> 1) + (sb_origin_x >> 3);
 #endif
     {
         uint8_t *framePtr = &(sixteenth_pic_ptr->buffer_y[bufferIndex]);
