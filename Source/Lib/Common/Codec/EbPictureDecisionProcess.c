@@ -1084,10 +1084,14 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP;
 #if SCREEN_CONTENT_SETTINGS
         else if (sc_content_detected)
+#if NEW_M0_SC
+            picture_control_set_ptr->interpolation_search_level = IT_SEARCH_OFF;
+#else
             if (picture_control_set_ptr->enc_mode <= ENC_M1)
                 picture_control_set_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;
             else
                 picture_control_set_ptr->interpolation_search_level = IT_SEARCH_OFF;
+#endif
 #endif
         else if (picture_control_set_ptr->enc_mode <= ENC_M1)
             picture_control_set_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;
@@ -1564,12 +1568,18 @@ EbErrorType signal_derivation_multi_processes_oq(
 #if M9_CU_8x8
 #if SCREEN_CONTENT_SETTINGS
         if (picture_control_set_ptr->sc_content_detected)
+#if NEW_M0_SC
+            picture_control_set_ptr->cu8x8_mode = (picture_control_set_ptr->temporal_layer_index > 0) ?
+            CU_8x8_MODE_1 :
+            CU_8x8_MODE_0;
+#else
             if (picture_control_set_ptr->enc_mode <= ENC_M1)
                 picture_control_set_ptr->cu8x8_mode = CU_8x8_MODE_0;
             else
                 picture_control_set_ptr->cu8x8_mode = (picture_control_set_ptr->temporal_layer_index > 0) ?
                 CU_8x8_MODE_1 :
                 CU_8x8_MODE_0;
+#endif
         else
 #endif
         if (picture_control_set_ptr->enc_mode <= ENC_M8)
@@ -3960,15 +3970,27 @@ void* picture_decision_kernel(void *input_ptr)
 #else
 #if SCREEN_CONTENT_SETTINGS
                                 if (picture_control_set_ptr->sc_content_detected)
+#if NEW_M0_SC
+                                    picture_control_set_ptr->use_subpel_flag = 0;
+#else
                                     if (picture_control_set_ptr->enc_mode <= ENC_M1)
                                         picture_control_set_ptr->use_subpel_flag = 1;
                                     else
                                         picture_control_set_ptr->use_subpel_flag = 0;
+#endif
                                 else
 #endif
                                     picture_control_set_ptr->use_subpel_flag = 1;
 #endif
 #if IMPROVED_SUBPEL_SEARCH
+#if NEW_M0_SC
+                                if (picture_control_set_ptr->sc_content_detected) {
+                                    picture_control_set_ptr->half_pel_mode = REFINMENT_HP_MODE;
+                                    picture_control_set_ptr->quarter_pel_mode = REFINMENT_QP_MODE;
+
+                                }else
+#endif
+
                                 if (MR_MODE || USE_MR_SP) { // SUBPEL
                                     picture_control_set_ptr->half_pel_mode =
                                         EX_HP_MODE;

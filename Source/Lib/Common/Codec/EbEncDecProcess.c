@@ -1457,10 +1457,14 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if NEW_PRESETS
 #if SCREEN_CONTENT_SETTINGS
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if NEW_M0_SC
+            context_ptr->warped_motion_injection = 0;
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
             context_ptr->warped_motion_injection = 1;
         else
             context_ptr->warped_motion_injection = 0;
+#endif
     else
 #endif
     context_ptr->warped_motion_injection = 1;

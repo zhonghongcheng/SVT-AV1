@@ -4814,6 +4814,82 @@ int av1_count_colors(const uint8_t *src, int stride, int rows, int cols,
         if (val_count[i]) ++n;
     return n;
 }
+#if SC_DETECTION
+extern aom_variance_fn_ptr_t mefn_ptr[BlockSizeS_ALL];
+
+// This is used as a reference when computing the source variance for the
+//  purposes of activity masking.
+// Eventually this should be replaced by custom no-reference routines,
+//  which will be faster.
+const uint8_t AV1_VAR_OFFS[MAX_SB_SIZE] = {
+  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+  128, 128, 128, 128, 128, 128, 128, 128
+};
+
+unsigned int av1_get_sby_perpixel_variance(const aom_variance_fn_ptr_t *fn_ptr, //const AV1_COMP *cpi,
+                                           const uint8_t *src,int stride,//const struct buf_2d *ref,
+                                           BlockSize bs) {
+  unsigned int sse;
+  const unsigned int var =
+      //cpi->fn_ptr[bs].vf(ref->buf, ref->stride, AV1_VAR_OFFS, 0, &sse);
+     fn_ptr->vf(src,  stride, AV1_VAR_OFFS, 0, &sse);
+  return ROUND_POWER_OF_TWO(var, num_pels_log2_lookup[bs]);
+}
+
+// Estimate if the source frame is screen content, based on the portion of
+// blocks that have no more than 4 (experimentally selected) luma colors.
+static void is_screen_content(PictureParentControlSet       *picture_control_set_ptr,const uint8_t *src, int use_hbd,
+    int stride, int width, int height) {
+    assert(src != NULL);
+    const int blk_w = 16;
+    const int blk_h = 16;
+    // These threshold values are selected experimentally.
+    const int color_thresh = 4;
+    const unsigned int var_thresh = 0;
+    // Counts of blocks with no more than color_thresh colors.
+    int counts_1 = 0;
+    // Counts of blocks with no more than color_thresh colors and variance larger
+    // than var_thresh.
+    int counts_2 = 0;
+
+    for (int r = 0; r + blk_h <= height; r += blk_h) {
+        for (int c = 0; c + blk_w <= width; c += blk_w) {
+            int count_buf[1 << 12];  // Maximum (1 << 12) color levels.
+            const int n_colors =
+                use_hbd ? 0 /*av1_count_colors_highbd(src + r * stride + c, stride, blk_w,
+                    blk_h, bd, count_buf)*/
+                : av1_count_colors(src + r * stride + c, stride, blk_w, blk_h,
+                    count_buf);
+            if (n_colors > 1 && n_colors <= color_thresh) {
+                ++counts_1;
+                //struct buf_2d buf;
+                //buf.stride = stride;
+                //buf.buf = (uint8_t *)src;
+                const aom_variance_fn_ptr_t *fn_ptr = &mefn_ptr[BLOCK_16X16];
+
+                const unsigned int var = 
+                               /* use_hbd
+                ? av1_high_get_sby_perpixel_variance(cpi, &buf, BLOCK_16X16, bd)
+                : */
+                    av1_get_sby_perpixel_variance(fn_ptr, src + r * stride + c,stride, BLOCK_16X16);
+
+                if (var > var_thresh) ++counts_2;
+            }
+
+        }
+    }
+
+    // The threshold is 10%. 
+    picture_control_set_ptr->sc_content_detected = (counts_1 * blk_h * blk_w * 10 > width * height) && ( counts_2 * blk_h * blk_w * 15 > width * height) ;
+}
+#else
 // Estimate if the source frame is screen content, based on the portion of
 // blocks that have no more than 4 (experimentally selected) luma colors.
 static int is_screen_content(const uint8_t *src, int use_hbd,
@@ -4837,7 +4913,7 @@ static int is_screen_content(const uint8_t *src, int use_hbd,
     // The threshold is 10%.
     return counts * blk_h * blk_w * 10 > width * height;
 }
-
+#endif
 #if DOWN_SAMPLING_FILTERING
 /************************************************
  * 1/4 & 1/16 input picture downsampling (filtering)
@@ -5046,6 +5122,15 @@ void* picture_analysis_kernel(void *input_ptr)
                 sb_total_count,
                 asm_type);
             if (sequence_control_set_ptr->static_config.screen_content_mode == 2){ // auto detect
+#if SC_DETECTION
+                is_screen_content(
+                    picture_control_set_ptr,
+                    input_picture_ptr->buffer_y + input_picture_ptr->origin_x + input_picture_ptr->origin_y*input_picture_ptr->stride_y,
+                    0,
+                    input_picture_ptr->stride_y,
+                    sequence_control_set_ptr->seq_header.max_frame_width, sequence_control_set_ptr->seq_header.max_frame_height);
+
+#else
                 picture_control_set_ptr->sc_content_detected = is_screen_content(
                     input_picture_ptr->buffer_y + input_picture_ptr->origin_x + input_picture_ptr->origin_y*input_picture_ptr->stride_y,
                     0,
@@ -5057,6 +5142,7 @@ void* picture_analysis_kernel(void *input_ptr)
                     else
                         picture_control_set_ptr->sc_content_detected = 0;
                 }
+#endif
             }
             else // off / on
                 picture_control_set_ptr->sc_content_detected = sequence_control_set_ptr->static_config.screen_content_mode;

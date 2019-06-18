@@ -199,10 +199,14 @@ EbErrorType signal_derivation_me_kernel_oq(
             context_ptr->me_context_ptr);
 #if SCREEN_CONTENT_SETTINGS
         if (picture_control_set_ptr->sc_content_detected)
+#if NEW_M0_SC
+            context_ptr->me_context_ptr->fractional_search_method = SUB_SAD_SEARCH;
+#else
             if (picture_control_set_ptr->enc_mode <= ENC_M1)
                 context_ptr->me_context_ptr->fractional_search_method = SSD_SEARCH ;
             else
                 context_ptr->me_context_ptr->fractional_search_method = SUB_SAD_SEARCH;
+#endif
         else
 #endif
         if (picture_control_set_ptr->enc_mode <= ENC_M6)
@@ -218,10 +222,14 @@ EbErrorType signal_derivation_me_kernel_oq(
 #endif
 #if SCREEN_CONTENT_SETTINGS
         if (picture_control_set_ptr->sc_content_detected)
+#if NEW_M0_SC
+            context_ptr->me_context_ptr->fractional_search64x64 = EB_FALSE;
+#else
             if (picture_control_set_ptr->enc_mode <= ENC_M1)
                 context_ptr->me_context_ptr->fractional_search64x64 = EB_TRUE;
             else
                 context_ptr->me_context_ptr->fractional_search64x64 = EB_FALSE;
+#endif
         else
             context_ptr->me_context_ptr->fractional_search64x64 = EB_TRUE;
 
