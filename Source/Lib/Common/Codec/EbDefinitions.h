@@ -39,8 +39,6 @@ extern "C" {
 #define SC_DETECTION                            1 // Change SC detection to blk based VAR. 
 #define NEW_M0_SC                               1 // Change M0 settings for SC . 
 
-
-
 #define BEST_Q_M0                         1 // disable all shortcuts into M0
 #define ALT_REF_SUPPORT                   1// ALT_REF main flag
 
@@ -87,6 +85,7 @@ extern "C" {
 #define INTRA64_FIX                       1 // Fix a bug where 64x64 are disabled for sub 720P
 #define CHROMA_SEARCH_MR                  1 // Enable chroma search for all layers in MR mode
 #define INCOMPLETE_SB_FIX                 1 // Handle the incomplete SBs properly based on the standard and consider all allowed blocks
+#define QPS_TUNING                        1 // Tune the QPS algorithm to consider ALR_REF filtering and movement of the pictures. Update to a more accurate QPS complexity metric
 /**********************************************************************************/
 
 // New  presets
