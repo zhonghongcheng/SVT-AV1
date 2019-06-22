@@ -172,7 +172,11 @@ static void populate_list_with_value(int *list, int nelements, const int value){
 }
 
 // get block filter weights using a distance metric
+#if WEIGHT_GENERATION_NOISE
+void get_blk_fw_using_dist(int const *me_32x32_subblock_sad, int const *me_16x16_subblock_sad, EbBool use_16x16_subblocks_only, int *blk_fw, int distortion_th_multiplier) {
+#else
 void get_blk_fw_using_dist(int const *me_32x32_subblock_sad, int const *me_16x16_subblock_sad, EbBool use_16x16_subblocks_only, int *blk_fw){
+#endif
     uint32_t blk_idx, idx_32x32;
 
     int me_sum_16x16_subblock_sad[4] = {0};
@@ -184,9 +188,15 @@ void get_blk_fw_using_dist(int const *me_32x32_subblock_sad, int const *me_16x16
 
             for (blk_idx = 0; blk_idx < N_16X16_BLOCKS; blk_idx++) {
                 if (subblocks_from32x32_to_16x16[blk_idx] == idx_32x32) {
+#if WEIGHT_GENERATION_NOISE
+                    blk_fw[blk_idx] = me_16x16_subblock_sad[blk_idx] < THRES_LOW
+                        ? 2
+                        : (me_16x16_subblock_sad[blk_idx] < (THRES_HIGH * distortion_th_multiplier)) ? 1 : 0;
+#else
                     blk_fw[blk_idx] = me_16x16_subblock_sad[blk_idx] < THRES_LOW
                                       ? 2
                                       : me_16x16_subblock_sad[blk_idx] < THRES_HIGH ? 1 : 0;
+#endif
                 }
             }
         }
@@ -1157,6 +1167,53 @@ void uni_motion_compensation(MeContext* context_ptr,
     }
 }
 
+
+// This is an adaptation of the mehtod in the following paper:
+// Shen-Chuan Tai, Shih-Ming Yang, "A fast method for image noise
+// estimation using Laplacian operator and adaptive edge detection,"
+// Proc. 3rd International Symposium on Communications, Control and
+// Signal Processing, 2008, St Julians, Malta.
+// Return noise estimate, or -1.0 if there was a failure
+// function from libaom
+// Standard bit depht input (=8 bits) to estimate the noise, I don't think there needs to be two methods for this
+// Operates on the Y component only
+static double estimate_noise(EbByte src, uint16_t width, uint16_t height,
+    uint16_t stride_y) {
+    int64_t sum = 0;
+    int64_t num = 0;
+
+    for (int i = 1; i < height - 1; ++i) {
+        for (int j = 1; j < width - 1; ++j) {
+            const int k = i * stride_y + j;
+            // Sobel gradients
+            const int Gx = (src[k - stride_y - 1] - src[k - stride_y + 1]) +
+                (src[k + stride_y - 1] - src[k + stride_y + 1]) +
+                2 * (src[k - 1] - src[k + 1]);
+            const int Gy = (src[k - stride_y - 1] - src[k + stride_y - 1]) +
+                (src[k - stride_y + 1] - src[k + stride_y + 1]) +
+                2 * (src[k - stride_y] - src[k + stride_y]);
+            const int Ga = abs(Gx) + abs(Gy);
+            if (Ga < EDGE_THRESHOLD) {  // Do not consider edge pixels to estimate the noise
+                // Find Laplacian
+                const int v =
+                    4 * src[k] -
+                    2 * (src[k - 1] + src[k + 1] + src[k - stride_y] + src[k + stride_y]) +
+                    (src[k - stride_y - 1] + src[k - stride_y + 1] + src[k + stride_y - 1] +
+                        src[k + stride_y + 1]);
+                sum += abs(v);
+                ++num;
+            }
+        }
+    }
+    // If very few smooth pels, return -1 since the estimate is unreliable
+    if (num < SMOOTH_THRESHOLD)
+        return -1.0;
+
+    const double sigma = (double)sum / (6 * num) * SQRT_PI_BY_2;
+
+    return sigma;
+}
+
 // Produce the filtered alt-ref picture
 static EbErrorType produce_temporally_filtered_pic(PictureParentControlSet **list_picture_control_set_ptr,
                                             EbPictureBufferDesc **list_input_picture_ptr,
@@ -1166,7 +1223,9 @@ static EbErrorType produce_temporally_filtered_pic(PictureParentControlSet **lis
 #else
                                             uint8_t altref_strength,
 #endif
+#if !ALTREF_DYNAMIC_WINDOW
                                             uint8_t altref_nframes,
+#endif
                                             uint8_t **alt_ref_buffer,
 #if QPS_TUNING
                                             uint64_t *filtered_sse,
@@ -1268,7 +1327,11 @@ static EbErrorType produce_temporally_filtered_pic(PictureParentControlSet **lis
             populate_list_with_value(blk_fw, 16, INIT_WEIGHT);
 
             // for every frame to filter
+#if ALTREF_DYNAMIC_WINDOW
+            for (int frame_index = index_center - picture_control_set_ptr_central->past_altref_nframes; frame_index < index_center + picture_control_set_ptr_central->future_altref_nframes + 1; frame_index++) {
+#else
             for (frame_index = 0; frame_index < altref_nframes; frame_index++) {
+#endif
                 // first position of the frame buffer according to frame index
                 src_frame_index[C_Y] = list_input_picture_ptr[frame_index]->buffer_y +
                         list_input_picture_ptr[frame_index]->origin_y*list_input_picture_ptr[frame_index]->stride_y +
@@ -1369,8 +1432,42 @@ static EbErrorType produce_temporally_filtered_pic(PictureParentControlSet **lis
                                       src_altref_index[C_Y],
                                       stride[C_Y]);
 
+#if WEIGHT_GENERATION_NOISE
+                    // Derive the noise level of the current SB 
+                    uint32_t sb_origin_x = (uint32_t)(blk_col * BW);
+                    uint32_t sb_origin_y = (uint32_t)(blk_row * BH);
+
+                    uint32_t sb_width = (input_picture_ptr_central->width - sb_origin_x) < BLOCK_SIZE_64 ? input_picture_ptr_central->width - sb_origin_x : BLOCK_SIZE_64;
+                    uint32_t sb_height = (input_picture_ptr_central->height - sb_origin_y) < BLOCK_SIZE_64 ? input_picture_ptr_central->height - sb_origin_y : BLOCK_SIZE_64;
+
+                    // Load the SB from the input to the intermediate SB buffer
+                    int bufferIndex = (input_picture_ptr_central->origin_y + sb_origin_y) * input_picture_ptr_central->stride_y + input_picture_ptr_central->origin_x + sb_origin_x;
+
+                    // Adjust the strength based on the noise level
+                    double central_sb_noiselevel = estimate_noise(
+                        &input_picture_ptr_central->buffer_y[bufferIndex],
+                        sb_width,
+                        sb_height,
+                        input_picture_ptr_central->stride_y);
+
+
+                    // Adjust the strength based on the noise level
+                    double predicted_sb_noiselevel = estimate_noise(
+                        pred[C_Y],
+                        sb_width,
+                        sb_height,
+                        stride_pred[C_Y]);
+
                     // Get sub-block filter weights depending on the SAD
+                    int distortion_th_multiplier = (central_sb_noiselevel >= 3.00) ?
+                        4 :
+                        (central_sb_noiselevel >= 2.50) ?
+                        3 : 1;
+
+                    get_blk_fw_using_dist(me_32x32_subblock_sad, me_16x16_subblock_sad, use_16x16_subblocks_only, blk_fw, distortion_th_multiplier);
+#else
                     get_blk_fw_using_dist(me_32x32_subblock_sad, me_16x16_subblock_sad, use_16x16_subblocks_only, blk_fw);
+#endif
                 }
 
 #if DEBUG_TF
@@ -1513,70 +1610,33 @@ static EbErrorType produce_temporally_filtered_pic(PictureParentControlSet **lis
     return EB_ErrorNone;
 }
 
-// This is an adaptation of the mehtod in the following paper:
-// Shen-Chuan Tai, Shih-Ming Yang, "A fast method for image noise
-// estimation using Laplacian operator and adaptive edge detection,"
-// Proc. 3rd International Symposium on Communications, Control and
-// Signal Processing, 2008, St Julians, Malta.
-// Return noise estimate, or -1.0 if there was a failure
-// function from libaom
-// Standard bit depht input (=8 bits) to estimate the noise, I don't think there needs to be two methods for this
-// Operates on the Y component only
-static double estimate_noise(EbByte src, uint16_t width, uint16_t height,
-                             uint16_t stride_y) {
-    int64_t sum = 0;
-    int64_t num = 0;
-
-    for (int i = 1; i < height - 1; ++i) {
-        for (int j = 1; j < width - 1; ++j) {
-            const int k = i * stride_y + j;
-            // Sobel gradients
-            const int Gx = (src[k - stride_y - 1] - src[k - stride_y + 1]) +
-                           (src[k + stride_y - 1] - src[k + stride_y + 1]) +
-                           2 * (src[k - 1] - src[k + 1]);
-            const int Gy = (src[k - stride_y - 1] - src[k + stride_y - 1]) +
-                           (src[k - stride_y + 1] - src[k + stride_y + 1]) +
-                           2 * (src[k - stride_y] - src[k + stride_y]);
-            const int Ga = abs(Gx) + abs(Gy);
-            if (Ga < EDGE_THRESHOLD) {  // Do not consider edge pixels to estimate the noise
-                // Find Laplacian
-                const int v =
-                        4 * src[k] -
-                        2 * (src[k - 1] + src[k + 1] + src[k - stride_y] + src[k + stride_y]) +
-                        (src[k - stride_y - 1] + src[k - stride_y + 1] + src[k + stride_y - 1] +
-                         src[k + stride_y + 1]);
-                sum += abs(v);
-                ++num;
-            }
-        }
-    }
-    // If very few smooth pels, return -1 since the estimate is unreliable
-    if (num < SMOOTH_THRESHOLD)
-        return -1.0;
-
-    const double sigma = (double)sum / (6 * num) * SQRT_PI_BY_2;
-
-    return sigma;
-}
-
 // Apply buffer limits and context specific adjustments to arnr filter.
+#if ALTREF_DYNAMIC_WINDOW
+static void adjust_filter_params(EbPictureBufferDesc *input_picture_ptr,
+    uint8_t *altref_strength_y,
+    uint8_t *altref_strength_uv) {
+#else
 static void adjust_filter_params(EbPictureBufferDesc *input_picture_ptr,
 #if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
-                        uint8_t *altref_strength_y,
-                        uint8_t *altref_strength_uv,
+    uint8_t *altref_strength_y,
+    uint8_t *altref_strength_uv,
 #else
-                        uint8_t *altref_strength,
+    uint8_t *altref_strength,
 #endif
-                        uint8_t *altref_nframes) {
+    uint8_t *altref_nframes) {
+#endif
     EbByte src;
     double noiselevel;
+#if !ALTREF_DYNAMIC_WINDOW
     int nframes = *altref_nframes;
+#endif
 #if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
     int strength_y = *altref_strength_y, adj_strength_y=strength_y;
     int strength_uv= *altref_strength_uv, adj_strength_uv=strength_uv;
 #else
     int strength = *altref_strength, adj_strength=strength;
 #endif
+#if !ALTREF_DYNAMIC_WINDOW
     int frames_fwd = (nframes - 1) >> 1;
     int frames_bwd;
 
@@ -1586,7 +1646,7 @@ static void adjust_filter_params(EbPictureBufferDesc *input_picture_ptr,
 
     // Set the baseline active filter size.
     nframes = frames_bwd + 1 + frames_fwd;
-
+#endif
     // adjust the starting point of buffer_y of the starting pixel values of the source picture
     src = input_picture_ptr->buffer_y +
             input_picture_ptr->origin_y*input_picture_ptr->stride_y +
@@ -1639,8 +1699,9 @@ static void adjust_filter_params(EbPictureBufferDesc *input_picture_ptr,
 
     // TODO: apply further refinements to the number of frames to filter and strength
     // according to 1st pass statistics
-
+#if !ALTREF_DYNAMIC_WINDOW
     *altref_nframes = (uint8_t)nframes;
+#endif
 #if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
     *altref_strength_y = (uint8_t)strength_y;
     *altref_strength_uv = (uint8_t)strength_uv;
@@ -1735,16 +1796,24 @@ void init_temporal_filtering(PictureParentControlSet **list_picture_control_set_
                                     PictureParentControlSet *picture_control_set_ptr_central,
                                     MotionEstimationContext_t *me_context_ptr,
                                     int32_t segment_index) {
+
 #if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
+#if ALTREF_DYNAMIC_WINDOW
+    uint8_t altref_strength_y, altref_strength_uv, index_center;
+#else
     uint8_t altref_strength_y, altref_strength_uv, altref_nframes, index_center;
+#endif
 #else
     uint8_t altref_strength, altref_nframes, index_center;
 #endif
+
     EbPictureBufferDesc *input_picture_ptr;
     uint8_t *alt_ref_buffer[COLOR_CHANNELS];
 
     // number of frames to filter
+#if !ALTREF_DYNAMIC_WINDOW
     altref_nframes = picture_control_set_ptr_central->altref_nframes;
+#endif
 #if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
     altref_strength_y = picture_control_set_ptr_central->altref_strength_y;
     altref_strength_uv = picture_control_set_ptr_central->altref_strength_uv;
@@ -1765,14 +1834,23 @@ void init_temporal_filtering(PictureParentControlSet **list_picture_control_set_
         picture_control_set_ptr_central->temp_filt_prep_done = 1;
 
         // adjust filter parameter based on the estimated noise of the picture
+
 #if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
+#if ALTREF_DYNAMIC_WINDOW
+        adjust_filter_params(input_picture_ptr, &altref_strength_y, &altref_strength_uv);
+#else
         adjust_filter_params(input_picture_ptr, &altref_strength_y,&altref_strength_uv, &altref_nframes);
+#endif
 #else
         adjust_filter_params(input_picture_ptr, &altref_strength, &altref_nframes);
 #endif
 
         // Pad chroma reference samples - once only per picture
+#if ALTREF_DYNAMIC_WINDOW
+        for (int i = index_center - picture_control_set_ptr_central->past_altref_nframes; i < index_center + picture_control_set_ptr_central->future_altref_nframes + 1; i++) {
+#else
         for (int i = 0; i < altref_nframes; i++) {
+#endif
             if (i != index_center) {
                 EbPictureBufferDesc *pic_ptr_ref = list_picture_control_set_ptr[i]->enhanced_picture_ptr;
 
@@ -1796,7 +1874,11 @@ void init_temporal_filtering(PictureParentControlSet **list_picture_control_set_
 
     // populate source frames picture buffer list
     EbPictureBufferDesc *list_input_picture_ptr[ALTREF_MAX_NFRAMES] = { NULL };
+#if ALTREF_DYNAMIC_WINDOW
+    for (int i = index_center - picture_control_set_ptr_central->past_altref_nframes; i < index_center + picture_control_set_ptr_central->future_altref_nframes + 1; i++)
+#else
     for(int i=0; i<altref_nframes; i++)
+#endif
         list_input_picture_ptr[i] = list_picture_control_set_ptr[i]->enhanced_picture_ptr;
     alt_ref_buffer[C_Y] = picture_control_set_ptr_central->enhanced_picture_ptr->buffer_y +
                           picture_control_set_ptr_central->enhanced_picture_ptr->origin_x +
@@ -1812,8 +1894,11 @@ void init_temporal_filtering(PictureParentControlSet **list_picture_control_set_
 #if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
 #if QPS_TUNING
     uint64_t filtered_sse, filtered_sse_uv;
+#if ALTREF_DYNAMIC_WINDOW
+    produce_temporally_filtered_pic(list_picture_control_set_ptr, list_input_picture_ptr, picture_control_set_ptr_central->altref_strength_y, picture_control_set_ptr_central->altref_strength_uv, alt_ref_buffer, &filtered_sse, &filtered_sse_uv, (MotionEstimationContext_t *)me_context_ptr, segment_index);
+#else
     produce_temporally_filtered_pic(list_picture_control_set_ptr, list_input_picture_ptr, picture_control_set_ptr_central->altref_strength_y, picture_control_set_ptr_central->altref_strength_uv, altref_nframes, alt_ref_buffer, &filtered_sse, &filtered_sse_uv, (MotionEstimationContext_t *)me_context_ptr, segment_index);
-
+#endif
 #else
     produce_temporally_filtered_pic(list_picture_control_set_ptr, list_input_picture_ptr, picture_control_set_ptr_central->altref_strength_y, picture_control_set_ptr_central->altref_strength_uv, altref_nframes, alt_ref_buffer, (MotionEstimationContext_t *) me_context_ptr,segment_index);
 #endif

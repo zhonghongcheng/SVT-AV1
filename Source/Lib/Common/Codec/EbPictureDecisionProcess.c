@@ -4277,7 +4277,56 @@ void* picture_decision_kernel(void *input_ptr)
                                         }
                                     }
                                 }
+#if ALTREF_DYNAMIC_WINDOW
+                                int index_center = (uint8_t)(picture_control_set_ptr->sequence_control_set_ptr->static_config.altref_nframes / 2);
 
+                                int pic_itr;
+
+                                // adjust the starting point of buffer_y of the starting pixel values of the source picture
+                                EbByte src = picture_control_set_ptr->temp_filt_pcs_list[index_center]->enhanced_picture_ptr->buffer_y +
+                                    picture_control_set_ptr->temp_filt_pcs_list[index_center]->enhanced_picture_ptr->origin_y*picture_control_set_ptr->temp_filt_pcs_list[index_center]->enhanced_picture_ptr->stride_y +
+                                    picture_control_set_ptr->temp_filt_pcs_list[index_center]->enhanced_picture_ptr->origin_x;
+
+                                int ahd;
+                                int regionInPictureWidthIndex;
+                                int regionInPictureHeightIndex;
+
+                                int ahd_th = (((sequence_control_set_ptr->seq_header.max_frame_width * sequence_control_set_ptr->seq_header.max_frame_height) * 50) / 100);
+
+                                // Accumulative histogram absolute differences between the central and past frame
+                                for (pic_itr = 0; pic_itr < num_past_pics; pic_itr++) {
+                                    ahd = 0;
+                                    for (regionInPictureWidthIndex = 0; regionInPictureWidthIndex < sequence_control_set_ptr->picture_analysis_number_of_regions_per_width; regionInPictureWidthIndex++) {
+                                        for (regionInPictureHeightIndex = 0; regionInPictureHeightIndex < sequence_control_set_ptr->picture_analysis_number_of_regions_per_height; regionInPictureHeightIndex++) {
+                                            for (int bin = 0; bin < HISTOGRAM_NUMBER_OF_BINS; ++bin) {
+                                                ahd += ABS((int32_t)picture_control_set_ptr->temp_filt_pcs_list[index_center]->picture_histogram[regionInPictureWidthIndex][regionInPictureHeightIndex][0][bin] - (int32_t)picture_control_set_ptr->temp_filt_pcs_list[pic_itr]->picture_histogram[regionInPictureWidthIndex][regionInPictureHeightIndex][0][bin]);
+                                            }
+                                        }
+                                    }
+
+                                    if (ahd < ahd_th)
+                                        break;
+                                }
+                                picture_control_set_ptr->past_altref_nframes = num_past_pics - pic_itr;
+
+
+                                // Accumulative histogram absolute differences between the central and past frame
+                                for (pic_itr = (index_center + actual_future_pics); pic_itr > index_center; pic_itr--) {
+                                    ahd = 0;
+                                    for (regionInPictureWidthIndex = 0; regionInPictureWidthIndex < sequence_control_set_ptr->picture_analysis_number_of_regions_per_width; regionInPictureWidthIndex++) {
+                                        for (regionInPictureHeightIndex = 0; regionInPictureHeightIndex < sequence_control_set_ptr->picture_analysis_number_of_regions_per_height; regionInPictureHeightIndex++) {
+                                            for (int bin = 0; bin < HISTOGRAM_NUMBER_OF_BINS; ++bin) {
+                                                ahd += ABS((int32_t)picture_control_set_ptr->temp_filt_pcs_list[index_center]->picture_histogram[regionInPictureWidthIndex][regionInPictureHeightIndex][0][bin] - (int32_t)picture_control_set_ptr->temp_filt_pcs_list[pic_itr]->picture_histogram[regionInPictureWidthIndex][regionInPictureHeightIndex][0][bin]);
+                                            }
+                                        }
+                                    }
+
+                                    if (ahd < ahd_th)
+                                        break;
+                                }
+                                picture_control_set_ptr->future_altref_nframes = pic_itr - index_center;
+                                printf("\nPOC %d\t PAST %d\t FUTURE %d\n", picture_control_set_ptr->picture_number, picture_control_set_ptr->past_altref_nframes, picture_control_set_ptr->future_altref_nframes);
+#else
                                 //set the actual_number of final pics
                                 altref_nframes = (uint8_t)(num_past_pics + 1 + actual_future_pics);
 
@@ -4288,7 +4337,7 @@ void* picture_decision_kernel(void *input_ptr)
                                     printf("%i   ", picture_control_set_ptr->temp_filt_pcs_list[tt]->picture_number);
                                 }*/
                                 picture_control_set_ptr->altref_nframes = altref_nframes;
-
+#endif
                                 //clock_t start_time;
                                 //start_time = clock();
 

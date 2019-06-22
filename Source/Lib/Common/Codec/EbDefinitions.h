@@ -64,6 +64,9 @@ extern "C" {
 #define FIXED_128x128_CONTEXT_UPDATE      1 // Fix txb_skip_context and dc_sign_context update for 128x128, and move txb_skip_context and dc_sign_context from CU to MD context 
 #define LOOP_FILTER_FIX                   1 // Use the existing loop filter multi-mode signal to control loop filter and removed the NRF checks @ Encode Pass and Loop Filter Processes 
 
+#define ALTREF_DYNAMIC_WINDOW             1 // Add the ability to use dynamic/asymmetric window for AltRef temporal filtering, add the ability to derive the activity within past and future frames @ picture decision, and add a logic to derive window size from activity.
+#define WEIGHT_GENERATION_NOISE           1 // Add noise information @ weight generation 
+
 #define ATB                               1 // ATB Main Flag
 #if ATB
 #define ATB_SUPPORT                       1 // Tranform block geometry, data structure(s), ..
