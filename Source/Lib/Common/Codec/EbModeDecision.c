@@ -537,7 +537,7 @@ void sort_fast_loop_candidates(
     struct ModeDecisionContext   *context_ptr,
     uint32_t                        buffer_total_count,
     ModeDecisionCandidateBuffer **buffer_ptr_array,
-#if DECOUPLED_FAST_LOOP
+#if DECOUPLED_FAST_LOOP || MD_CLASS
     uint32_t                        *best_candidate_index_array,
     uint32_t                        *sorted_candidate_index_array,
 #else
@@ -550,7 +550,7 @@ void sort_fast_loop_candidates(
     //  move the scratch candidates (MAX_CU_COST) to the last spots (if any)
     uint32_t best_candidate_start_index = 0;
     uint32_t best_candidate_end_index = buffer_total_count - 1;
-#if DECOUPLED_FAST_LOOP
+#if DECOUPLED_FAST_LOOP || MD_CLASS
     for (uint32_t full_buffer_index = 0; full_buffer_index < buffer_total_count; full_buffer_index++) {
 #else
     for (uint8_t full_buffer_index = 0; full_buffer_index < buffer_total_count; full_buffer_index++) {
@@ -581,7 +581,7 @@ void sort_fast_loop_candidates(
             if ((buffer_ptr_array[best_candidate_index_array[i]]->candidate_ptr->type == INTRA_MODE) &&
                 (buffer_ptr_array[best_candidate_index_array[j]]->candidate_ptr->type == INTER_MODE)) {
                 index = best_candidate_index_array[i];
-#if DECOUPLED_FAST_LOOP
+#if DECOUPLED_FAST_LOOP || MD_CLASS
                 best_candidate_index_array[i] = (uint32_t)best_candidate_index_array[j];
                 best_candidate_index_array[j] = (uint32_t)index;
 #else
@@ -596,11 +596,12 @@ void sort_fast_loop_candidates(
     // fl escape level 2: inter then intra
     for (i = 0; i < fullReconCandidateCount; ++i)
         sorted_candidate_index_array[i] = best_candidate_index_array[i];
+
     for (i = 0; i < fullReconCandidateCount - 1; ++i) {
         for (j = i + 1; j < fullReconCandidateCount; ++j) {
             if (*(buffer_ptr_array[sorted_candidate_index_array[j]]->fast_cost_ptr) < *(buffer_ptr_array[sorted_candidate_index_array[i]]->fast_cost_ptr)) {
                 index = sorted_candidate_index_array[i];
-#if DECOUPLED_FAST_LOOP
+#if DECOUPLED_FAST_LOOP || MD_CLASS
                 sorted_candidate_index_array[i] = (uint32_t)sorted_candidate_index_array[j];
                 sorted_candidate_index_array[j] = (uint32_t)index;
 #else
@@ -5731,13 +5732,46 @@ EbErrorType ProductGenerateMdCandidatesCu(
 #endif
     }
     *candidateTotalCountPtr = canTotalCnt;
+
+
+#if MD_CLASS
+
+	CAND_CLASS  cand_class_it;
+	memset(context_ptr->fast_cand_count, 0, CAND_CLASS_TOTAL * sizeof(uint32_t));
+
+	uint32_t cand_i;
+	for (cand_i = 0; cand_i < canTotalCnt; cand_i++)
+	{
+		ModeDecisionCandidate * cand_ptr = &context_ptr->fast_candidate_array[cand_i];
+		if (cand_ptr->type == INTRA_MODE) {
+			cand_ptr->cand_class = CAND_CLASS_0;
+			context_ptr->fast_cand_count[CAND_CLASS_0]++;
+		}
+		else if (cand_ptr->is_new_mv) {
+			cand_ptr->cand_class = CAND_CLASS_1;
+			context_ptr->fast_cand_count[CAND_CLASS_1]++;
+		}
+		else {
+			cand_ptr->cand_class = CAND_CLASS_2;
+			context_ptr->fast_cand_count[CAND_CLASS_2]++;
+		}
+	}
+
+	uint32_t fast_accum = 0;
+	for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
+		fast_accum += context_ptr->fast_cand_count[cand_class_it];
+	}
+	assert(fast_accum == canTotalCnt);
+#endif
+
+
     return EB_ErrorNone;
 }
 
 /***************************************
 * Full Mode Decision
 ***************************************/
-#if DECOUPLED_FAST_LOOP
+#if DECOUPLED_FAST_LOOP || MD_CLASS
     uint32_t product_full_mode_decision(
     struct ModeDecisionContext   *context_ptr,
     CodingUnit                   *cu_ptr,
@@ -5761,7 +5795,7 @@ uint8_t product_full_mode_decision(
 {
     UNUSED(bwidth);
     UNUSED(bheight);
-#if DECOUPLED_FAST_LOOP
+#if DECOUPLED_FAST_LOOP || MD_CLASS
     uint32_t                   candidateIndex;
     uint64_t                  lowestCost = 0xFFFFFFFFFFFFFFFFull;
     uint64_t                  lowestIntraCost = 0xFFFFFFFFFFFFFFFFull;

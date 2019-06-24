@@ -119,6 +119,11 @@ extern "C" {
 #endif
         EbBool                                 is_new_mv;
         EbBool                                 is_zero_mv;
+
+#if MD_CLASS
+		CAND_CLASS                             cand_class;
+#endif
+
 #if ATB_TX_TYPE_SUPPORT_PER_TU
         TxType                                 transform_type[MAX_TXB_COUNT];
         TxType                                 transform_type_uv;
@@ -272,7 +277,7 @@ extern "C" {
         uint64_t                       *full_cost_skip_ptr,
         uint64_t                       *full_cost_merge_ptr
     );
-#if DECOUPLED_FAST_LOOP
+#if DECOUPLED_FAST_LOOP || MD_CLASS
         uint32_t product_full_mode_decision(
         struct ModeDecisionContext   *context_ptr,
         CodingUnit                   *cu_ptr,
