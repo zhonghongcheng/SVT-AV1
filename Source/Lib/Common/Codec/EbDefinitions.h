@@ -67,6 +67,7 @@ extern "C" {
 #define ALTREF_DYNAMIC_WINDOW             1 // Add the ability to use dynamic/asymmetric window for AltRef temporal filtering, add the ability to derive the activity within past and future frames @ picture decision, and add a logic to derive window size from activity.
 #define WEIGHT_GENERATION_NOISE           0 // Add noise information @ weight generation 
 #define ALTREF_EIGHTH_PEL_SEARCH          1 // Add 1/8 search for temporal filtering
+#define ALTREF_AV1_SUBPEL                 0
 
 #define DECOUPLE_ALTREF_ME                1
 

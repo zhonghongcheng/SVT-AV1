@@ -883,10 +883,13 @@ void tf_inter_prediction(
                 signed short best_mv_y;
                 signed short mv_x = (_MVXT(context_ptr->p_best_mv16x16[mv_index])) << 1;
                 signed short mv_y = (_MVYT(context_ptr->p_best_mv16x16[mv_index])) << 1;
-
+#if ALTREF_AV1_SUBPEL
+                for (signed short i = -7; i <= 7; i++) {
+                    for (signed short j = -7; j <= 7; j++) {
+#else
                 for (signed short i = -1; i <= 1; i++) {
                     for (signed short j = -1; j <= 1; j++) {
-
+#endif
                         mv_unit.mv->x = mv_x + i;
                         mv_unit.mv->y = mv_y + j;
 
