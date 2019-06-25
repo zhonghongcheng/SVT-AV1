@@ -10285,8 +10285,11 @@ EB_EXTERN EbErrorType in_loop_motion_estimation_sblock(
             search_area_height,
             number_of_sb_quad,
             asm_type);
-
+#if DECOUPLE_ALTREF_ME
+        if (context_ptr->use_subpel_flag == 1) {
+#else
         if (picture_control_set_ptr->parent_pcs_ptr->use_subpel_flag == 1) {
+#endif
             // Move to the top left of the search region
             xTopLeftSearchRegion = (int16_t)(refPicPtr->origin_x + sb_origin_x) + x_search_area_origin;
             yTopLeftSearchRegion = (int16_t)(refPicPtr->origin_y + sb_origin_y) + y_search_area_origin;

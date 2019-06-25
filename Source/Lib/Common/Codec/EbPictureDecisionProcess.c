@@ -864,6 +864,12 @@ EbErrorType signal_derivation_multi_processes_oq(
     picture_control_set_ptr->enable_hme_level2_flag = enable_hme_level2_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][picture_control_set_ptr->enc_mode];
 #endif
 
+#if DECOUPLE_ALTREF_ME
+    picture_control_set_ptr->tf_enable_hme_level0_flag = tf_enable_hme_level0_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][picture_control_set_ptr->enc_mode];
+    picture_control_set_ptr->tf_enable_hme_level1_flag = tf_enable_hme_level1_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][picture_control_set_ptr->enc_mode];
+    picture_control_set_ptr->tf_enable_hme_level2_flag = tf_enable_hme_level2_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][picture_control_set_ptr->enc_mode];
+#endif
+
 #if NEW_PRESETS
 #if SCREEN_CONTENT_SETTINGS
         if (sc_content_detected)
@@ -3956,7 +3962,7 @@ void* picture_decision_kernel(void *input_ptr)
                                 TX_MODE_SELECT :
                                 TX_MODE_LARGEST;
 #endif
-
+#if !DECOUPLE_ALTREF_ME
                             // Set the default settings of  subpel
 #if M9_SUBPEL
                                 {
@@ -4008,6 +4014,7 @@ void* picture_decision_kernel(void *input_ptr)
                                     picture_control_set_ptr->quarter_pel_mode =
                                         REFINMENT_QP_MODE;
                                 }
+#endif
 #endif
                                 picture_control_set_ptr->use_src_ref = EB_FALSE;
                                 picture_control_set_ptr->enable_in_loop_motion_estimation_flag = EB_FALSE;

@@ -13715,12 +13715,21 @@ EbErrorType motion_estimate_lcu(
     uint32_t adjustSearchAreaDirection = 0;
 #endif
     // Configure HME level 0, level 1 and level 2 from static config parameters
+#if DECOUPLE_ALTREF_ME
+    EbBool enable_hme_level0_flag =
+        context_ptr->enable_hme_level0_flag;
+    EbBool enable_hme_level1_flag =
+        context_ptr->enable_hme_level1_flag;
+    EbBool enable_hme_level2_flag =
+        context_ptr->enable_hme_level2_flag;
+#else
     EbBool enable_hme_level0_flag =
         picture_control_set_ptr->enable_hme_level0_flag;
     EbBool enable_hme_level1_flag =
         picture_control_set_ptr->enable_hme_level1_flag;
     EbBool enable_hme_level2_flag =
         picture_control_set_ptr->enable_hme_level2_flag;
+#endif
     EbBool enableHalfPel32x32 = EB_FALSE;
     EbBool enableHalfPel16x16 = EB_FALSE;
     EbBool enableHalfPel8x8 = EB_FALSE;
@@ -13877,8 +13886,11 @@ EbErrorType motion_estimate_lcu(
                 }
                 // B - NO HME in boundaries
                 // C - Skip HME
-
+#if DECOUPLE_ALTREF_ME
+                if (context_ptr->enable_hme_flag &&
+#else
                 if (picture_control_set_ptr->enable_hme_flag &&
+#endif
                     /*B*/ sb_height ==
                         BLOCK_SIZE_64) {  //(searchCenterSad >
                                           // sequence_control_set_ptr->static_config.skipTier0HmeTh))
@@ -14844,7 +14856,11 @@ EbErrorType motion_estimate_lcu(
                                                            asm_type);
 #if IMPROVED_SUBPEL_SEARCH
                         context_ptr->full_quarter_pel_refinement = 0;
+#if DECOUPLE_ALTREF_ME
+                        if (context_ptr->half_pel_mode ==
+#else
                         if (picture_control_set_ptr->half_pel_mode ==
+#endif
                             EX_HP_MODE) {
                             // Move to the top left of the search region
                             xTopLeftSearchRegion =
@@ -14971,7 +14987,11 @@ EbErrorType motion_estimate_lcu(
                                 search_area_height,
                                 asm_type);
                         }
+#if DECOUPLE_ALTREF_ME
+                        if (context_ptr->quarter_pel_mode ==
+#else
                         if (picture_control_set_ptr->quarter_pel_mode ==
+#endif
                             EX_QP_MODE) {
                             // Quarter-Pel search
                             memcpy(context_ptr
@@ -15160,7 +15180,11 @@ EbErrorType motion_estimate_lcu(
                             // Interpolate the search region for Half-Pel Refinements
                             // H - AVC Style
 #if IMPROVED_SUBPEL_SEARCH
+#if DECOUPLE_ALTREF_ME
+                            if (context_ptr->half_pel_mode ==
+#else
                             if (picture_control_set_ptr->half_pel_mode ==
+#endif
                                 REFINMENT_HP_MODE) {
 #endif
                                 InterpolateSearchRegionAVC(
@@ -15248,7 +15272,11 @@ EbErrorType motion_estimate_lcu(
                                     enableHalfPel8x8);
 #if IMPROVED_SUBPEL_SEARCH
                             }
+#if DECOUPLE_ALTREF_ME
+                            if (context_ptr->quarter_pel_mode ==
+#else
                             if (picture_control_set_ptr->quarter_pel_mode ==
+#endif
                                 REFINMENT_QP_MODE) {
 #endif
 #if M0_ME_QUARTER_PEL_SEARCH
