@@ -2008,7 +2008,7 @@ void perform_fast_loop(
         *(candidateBufferPtrArrayBase[highestCostIndex]->fast_cost_ptr);
 }
 #if MV_REFINEMENT_AROUND_MV_PRED
-#define REFINMENT_OFFSET 7 
+#define REFINMENT_OFFSET 24 
 
 void refinement_search(
     PictureControlSet            *picture_control_set_ptr,
