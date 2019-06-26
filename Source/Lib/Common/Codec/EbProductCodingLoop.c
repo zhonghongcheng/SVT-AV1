@@ -2089,6 +2089,9 @@ void refinement_search(
             candidate_ptr->motion_vector_pred_y[list_idx] = bestPredmv[0].as_mv.row;
 
             // Prediction
+            uint8_t default_skip_interpolation_search = context_ptr->skip_interpolation_search;
+            context_ptr->skip_interpolation_search = 1;
+
             ProductMdFastPuPrediction(
                 picture_control_set_ptr,
                 candidateBuffer,
@@ -2098,9 +2101,9 @@ void refinement_search(
                 0,
                 0,
                 asm_type);
-
+            context_ptr->skip_interpolation_search = default_skip_interpolation_search;
+ 
             // Distortion
-            // Y
             if (use_ssd) {
                 candidateBuffer->candidate_ptr->luma_fast_distortion = lumaFastDistortion = spatial_full_distortion_kernel_func_ptr_array[asm_type][Log2f(context_ptr->blk_geom->bwidth) - 2](
                     input_picture_ptr->buffer_y + inputOriginIndex,
@@ -2120,70 +2123,9 @@ void refinement_search(
                     context_ptr->blk_geom->bheight,
                     context_ptr->blk_geom->bwidth));
             }
-            if (context_ptr->blk_geom->has_uv && context_ptr->chroma_level <= CHROMA_MODE_1) {
-                if (use_ssd) {
-                    chromaFastDistortion = spatial_full_distortion_kernel_func_ptr_array[asm_type][Log2f(context_ptr->blk_geom->bwidth_uv) - 2]( //spatial_full_distortion_kernel(
-                        input_picture_ptr->buffer_cb + inputCbOriginIndex,
-                        input_picture_ptr->stride_cb,
-                        candidateBuffer->prediction_ptr->buffer_cb + cuChromaOriginIndex,
-                        prediction_ptr->stride_cb,
-                        context_ptr->blk_geom->bwidth_uv,
-                        context_ptr->blk_geom->bheight_uv);
 
-                    chromaFastDistortion += spatial_full_distortion_kernel_func_ptr_array[asm_type][Log2f(context_ptr->blk_geom->bwidth_uv) - 2]( //spatial_full_distortion_kernel(
-                        input_picture_ptr->buffer_cr + inputCrOriginIndex,
-                        input_picture_ptr->stride_cb,
-                        candidateBuffer->prediction_ptr->buffer_cr + cuChromaOriginIndex,
-                        prediction_ptr->stride_cr,
-                        context_ptr->blk_geom->bwidth_uv,
-                        context_ptr->blk_geom->bheight_uv);
-                }
-                else {
-                    assert((context_ptr->blk_geom->bwidth_uv >> 3) < 17);
-                    chromaFastDistortion = nxm_sad_kernel_sub_sampled_func_ptr_array[asm_type][context_ptr->blk_geom->bwidth_uv >> 3](
-                        input_picture_ptr->buffer_cb + inputCbOriginIndex,
-                        input_picture_ptr->stride_cb,
-                        candidateBuffer->prediction_ptr->buffer_cb + cuChromaOriginIndex,
-                        prediction_ptr->stride_cb,
-                        context_ptr->blk_geom->bheight_uv,
-                        context_ptr->blk_geom->bwidth_uv);
-
-                    chromaFastDistortion += nxm_sad_kernel_sub_sampled_func_ptr_array[asm_type][context_ptr->blk_geom->bwidth_uv >> 3](
-                        input_picture_ptr->buffer_cr + inputCrOriginIndex,
-                        input_picture_ptr->stride_cb,
-                        candidateBuffer->prediction_ptr->buffer_cr + cuChromaOriginIndex,
-                        prediction_ptr->stride_cr,
-                        context_ptr->blk_geom->bheight_uv,
-                        context_ptr->blk_geom->bwidth_uv);
-                }
-
-            }
-            else {
-                chromaFastDistortion = 0;
-            }
-            // Fast Cost
-#if LUMA_DISTORTION
-            *(candidateBuffer->fast_cost_ptr) = lumaFastDistortion;
-#else
-            *(candidateBuffer->fast_cost_ptr) = Av1ProductFastCostFuncTable[candidate_ptr->type](
-                cu_ptr,
-                candidateBuffer->candidate_ptr,
-                cu_ptr->qp,
-                lumaFastDistortion,
-                chromaFastDistortion,
-                use_ssd ? context_ptr->full_lambda : context_ptr->fast_lambda,
-                use_ssd,
-                picture_control_set_ptr,
-                &(context_ptr->md_local_cu_unit[context_ptr->blk_geom->blkidx_mds].ed_ref_mv_stack[candidate_ptr->ref_frame_type][0]),
-                context_ptr->blk_geom,
-                context_ptr->cu_origin_y >> MI_SIZE_LOG2,
-                context_ptr->cu_origin_x >> MI_SIZE_LOG2,
-#if MRP_COST_EST
-                1,
-#endif
-                context_ptr->intra_luma_left_mode,
-                context_ptr->intra_luma_top_mode);
-#endif
+            // Fast Cost (only luma_fast_distortion now)
+            *(candidateBuffer->fast_cost_ptr) = candidateBuffer->candidate_ptr->luma_fast_distortion;
 
             if (*(candidateBuffer->fast_cost_ptr) < context_ptr->best_cost[list_idx][ref_idx]) {
 
@@ -6429,7 +6371,7 @@ void md_encode_block(
 				cuOriginIndex,
 				cuChromaOriginIndex,
 				0,
-				context_ptr->decoupled_fast_loop_search_method == SSD_SEARCH,
+                SSD_SEARCH,
 				asm_type);
 #endif
 		ProductGenerateMdCandidatesCu(
