@@ -14026,6 +14026,10 @@ extern "C" {
         EbBool                                eos_coming;
         uint8_t                               picture_qp;
         uint64_t                              picture_number;
+#if COMP_MODE
+		uint32_t                             cur_order_hint;
+		uint32_t                             ref_order_hint[7];
+#endif
 #if BASE_LAYER_REF
         uint64_t                              last_islice_picture_number;
 #endif
@@ -14211,6 +14215,19 @@ extern "C" {
         uint16_t                              full_sb_count;
         EbBool                                init_pred_struct_position_flag;
         int8_t                                hierarchical_layers_diff;
+#if DECOUPLE_ALTREF_ME
+        // HME Flags
+        EbBool                                enable_hme_flag;
+        EbBool                                enable_hme_level0_flag;
+        EbBool                                enable_hme_level1_flag;
+        EbBool                                enable_hme_level2_flag;
+
+        // HME Flags form Temporal Filtering
+        EbBool                                tf_enable_hme_flag;
+        EbBool                                tf_enable_hme_level0_flag;
+        EbBool                                tf_enable_hme_level1_flag;
+        EbBool                                tf_enable_hme_level2_flag;
+#else
         // ME Tools
         EbBool                                use_subpel_flag;
         EbBool                                enable_hme_flag;
@@ -14220,6 +14237,7 @@ extern "C" {
 #if IMPROVED_SUBPEL_SEARCH
         EbBool                                half_pel_mode;
         EbBool                                quarter_pel_mode;
+#endif
 #endif
         // MD
         EbEncMode                             enc_mode;
@@ -14238,6 +14256,11 @@ extern "C" {
 #endif
 #if ATB_SUPPORT
         uint8_t                               atb_mode;
+#endif
+#if COMP_MODE
+        uint8_t                               wedge_mode;
+
+
 #endif
         //**********************************************************************************************************//
         FrameType                            av1_frame_type;
@@ -14434,8 +14457,12 @@ extern "C" {
         uint8_t                               tf_segments_column_count;
         uint8_t                               tf_segments_row_count;
 #endif
+#if ALTREF_DYNAMIC_WINDOW
+        uint8_t                               past_altref_nframes;
+        uint8_t                               future_altref_nframes;
+#else
         uint8_t                               altref_nframes;
-
+#endif
 #if QPS_TUNING
         uint64_t                              filtered_sse; // the normalized SSE between filtered and original alt_ref with 8 bit precision.
                                                             // I Slice has the value of the next ALT_REF picture

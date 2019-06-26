@@ -14356,12 +14356,21 @@ EbErrorType motion_estimate_lcu(
     uint32_t adjustSearchAreaDirection = 0;
 #endif
     // Configure HME level 0, level 1 and level 2 from static config parameters
+#if DECOUPLE_ALTREF_ME
+    EbBool enable_hme_level0_flag =
+        context_ptr->enable_hme_level0_flag;
+    EbBool enable_hme_level1_flag =
+        context_ptr->enable_hme_level1_flag;
+    EbBool enable_hme_level2_flag =
+        context_ptr->enable_hme_level2_flag;
+#else
     EbBool enable_hme_level0_flag =
         picture_control_set_ptr->enable_hme_level0_flag;
     EbBool enable_hme_level1_flag =
         picture_control_set_ptr->enable_hme_level1_flag;
     EbBool enable_hme_level2_flag =
         picture_control_set_ptr->enable_hme_level2_flag;
+#endif
     EbBool enableHalfPel32x32 = EB_FALSE;
     EbBool enableHalfPel16x16 = EB_FALSE;
     EbBool enableHalfPel8x8 = EB_FALSE;
@@ -14518,8 +14527,11 @@ EbErrorType motion_estimate_lcu(
                 }
                 // B - NO HME in boundaries
                 // C - Skip HME
-
+#if DECOUPLE_ALTREF_ME
+                if (context_ptr->enable_hme_flag &&
+#else
                 if (picture_control_set_ptr->enable_hme_flag &&
+#endif
                     /*B*/ sb_height ==
                         BLOCK_SIZE_64) {  //(searchCenterSad >
                                           // sequence_control_set_ptr->static_config.skipTier0HmeTh))
@@ -15485,7 +15497,11 @@ EbErrorType motion_estimate_lcu(
                                                            asm_type);
 #if IMPROVED_SUBPEL_SEARCH
                         context_ptr->full_quarter_pel_refinement = 0;
+#if DECOUPLE_ALTREF_ME
+                        if (context_ptr->half_pel_mode ==
+#else
                         if (picture_control_set_ptr->half_pel_mode ==
+#endif
                             EX_HP_MODE) {
                             // Move to the top left of the search region
                             xTopLeftSearchRegion =
@@ -15612,7 +15628,11 @@ EbErrorType motion_estimate_lcu(
                                 search_area_height,
                                 asm_type);
                         }
+#if DECOUPLE_ALTREF_ME
+                        if (context_ptr->quarter_pel_mode ==
+#else
                         if (picture_control_set_ptr->quarter_pel_mode ==
+#endif
                             EX_QP_MODE) {
                             // Quarter-Pel search
                             memcpy(context_ptr
@@ -15748,321 +15768,337 @@ EbErrorType motion_estimate_lcu(
                     }
                 }
 
+#if ALTREF_AV1_SUBPEL
+                if (context_ptr->me_alt_ref == EB_FALSE) {
+#endif
 #if M9_SUBPEL_SELECTION
 
-                if (context_ptr->fractional_search_model == 0) {
+                    if (context_ptr->fractional_search_model == 0) {
+                        enableHalfPel32x32 = EB_TRUE;
+                        enableHalfPel16x16 = EB_TRUE;
+                        enableHalfPel8x8 = EB_TRUE;
+                        enableQuarterPel = EB_TRUE;
+                    }
+                    else if (context_ptr->fractional_search_model == 1) {
+                        suPelEnable(context_ptr,
+                            picture_control_set_ptr,
+                            listIndex,
+                            0,
+                            &enableHalfPel32x32,
+                            &enableHalfPel16x16,
+                            &enableHalfPel8x8);
+                        enableQuarterPel = EB_TRUE;
+                    }
+                    else {
+                        enableHalfPel32x32 = EB_FALSE;
+                        enableHalfPel16x16 = EB_FALSE;
+                        enableHalfPel8x8 = EB_FALSE;
+                        enableQuarterPel = EB_FALSE;
+                    }
+#else
                     enableHalfPel32x32 = EB_TRUE;
                     enableHalfPel16x16 = EB_TRUE;
                     enableHalfPel8x8 = EB_TRUE;
                     enableQuarterPel = EB_TRUE;
-                } else if (context_ptr->fractional_search_model == 1) {
-                    suPelEnable(context_ptr,
-                                picture_control_set_ptr,
-                                listIndex,
-                                0,
-                                &enableHalfPel32x32,
-                                &enableHalfPel16x16,
-                                &enableHalfPel8x8);
-                    enableQuarterPel = EB_TRUE;
-                } else {
-                    enableHalfPel32x32 = EB_FALSE;
-                    enableHalfPel16x16 = EB_FALSE;
-                    enableHalfPel8x8 = EB_FALSE;
-                    enableQuarterPel = EB_FALSE;
-                }
-#else
-                enableHalfPel32x32 = EB_TRUE;
-                enableHalfPel16x16 = EB_TRUE;
-                enableHalfPel8x8 = EB_TRUE;
-                enableQuarterPel = EB_TRUE;
-                if (picture_control_set_ptr->use_subpel_flag == 1) {
-                    enableQuarterPel = EB_TRUE;  // AMIR enable in M1
+                    if (picture_control_set_ptr->use_subpel_flag == 1) {
+                        enableQuarterPel = EB_TRUE;  // AMIR enable in M1
 #endif
-                if (enableHalfPel32x32 || enableHalfPel16x16 ||
-                    enableHalfPel8x8 || enableQuarterPel) {
-                    // if((picture_control_set_ptr->is_used_as_reference_flag ==
-                    // EB_TRUE)) {
-                    // Move to the top left of the search region
-                    xTopLeftSearchRegion =
-                        (int16_t)(refPicPtr->origin_x + sb_origin_x) +
-                        x_search_area_origin;
-                    yTopLeftSearchRegion =
-                        (int16_t)(refPicPtr->origin_y + sb_origin_y) +
-                        y_search_area_origin;
-                    searchRegionIndex =
-                        xTopLeftSearchRegion +
-                        yTopLeftSearchRegion * refPicPtr->stride_y;
+                        if (enableHalfPel32x32 || enableHalfPel16x16 ||
+                            enableHalfPel8x8 || enableQuarterPel) {
+                            // if((picture_control_set_ptr->is_used_as_reference_flag ==
+                            // EB_TRUE)) {
+                            // Move to the top left of the search region
+                            xTopLeftSearchRegion =
+                                (int16_t)(refPicPtr->origin_x + sb_origin_x) +
+                                x_search_area_origin;
+                            yTopLeftSearchRegion =
+                                (int16_t)(refPicPtr->origin_y + sb_origin_y) +
+                                y_search_area_origin;
+                            searchRegionIndex =
+                                xTopLeftSearchRegion +
+                                yTopLeftSearchRegion * refPicPtr->stride_y;
 
-                    // Interpolate the search region for Half-Pel Refinements
-                    // H - AVC Style
+                            // Interpolate the search region for Half-Pel Refinements
+                            // H - AVC Style
 #if IMPROVED_SUBPEL_SEARCH
-                    if (picture_control_set_ptr->half_pel_mode ==
-                        REFINMENT_HP_MODE) {
-#endif
-                        InterpolateSearchRegionAVC(
-                            context_ptr,
-                            listIndex,
-#if MRP_ME
-                            ref_pic_index,
-                            context_ptr->integer_buffer_ptr[listIndex]
-                                                           [ref_pic_index] +
-                                (ME_FILTER_TAP >> 1) +
-                                ((ME_FILTER_TAP >> 1) *
-                                 context_ptr
-                                     ->interpolated_full_stride[listIndex]
-                                                               [ref_pic_index]),
-                            context_ptr
-                                ->interpolated_full_stride[listIndex]
-                                                          [ref_pic_index],
+#if DECOUPLE_ALTREF_ME
+                            if (context_ptr->half_pel_mode ==
 #else
-                            context_ptr->integer_buffer_ptr[listIndex][0] +
-                                (ME_FILTER_TAP >> 1) +
-                                ((ME_FILTER_TAP >> 1) *
-                                 context_ptr
-                                     ->interpolated_full_stride[listIndex][0]),
-                            context_ptr->interpolated_full_stride[listIndex][0],
+                            if (picture_control_set_ptr->half_pel_mode ==
 #endif
-                            (uint32_t)search_area_width + (BLOCK_SIZE_64 - 1),
-                            (uint32_t)search_area_height + (BLOCK_SIZE_64 - 1),
-                            8,
-                            asm_type);
-
-                        // Half-Pel Refinement [8 search positions]
+                                REFINMENT_HP_MODE) {
+#endif
+                                InterpolateSearchRegionAVC(
+                                    context_ptr,
+                                    listIndex,
 #if MRP_ME
-                        HalfPelSearch_LCU(
-                            sequence_control_set_ptr,
-#if DISABLE_NSQ_FOR_NON_REF || DISABLE_NSQ
-                            picture_control_set_ptr,
+                                    ref_pic_index,
+                                    context_ptr->integer_buffer_ptr[listIndex]
+                                    [ref_pic_index] +
+                                    (ME_FILTER_TAP >> 1) +
+                                    ((ME_FILTER_TAP >> 1) *
+                                        context_ptr
+                                        ->interpolated_full_stride[listIndex]
+                                        [ref_pic_index]),
+                                    context_ptr
+                                    ->interpolated_full_stride[listIndex]
+                                    [ref_pic_index],
+#else
+                                    context_ptr->integer_buffer_ptr[listIndex][0] +
+                                    (ME_FILTER_TAP >> 1) +
+                                    ((ME_FILTER_TAP >> 1) *
+                                        context_ptr
+                                        ->interpolated_full_stride[listIndex][0]),
+                                    context_ptr->interpolated_full_stride[listIndex][0],
 #endif
-                            context_ptr,
+                                    (uint32_t)search_area_width + (BLOCK_SIZE_64 - 1),
+                                    (uint32_t)search_area_height + (BLOCK_SIZE_64 - 1),
+                                    8,
+                                    asm_type);
+
+                                // Half-Pel Refinement [8 search positions]
+#if MRP_ME
+                                HalfPelSearch_LCU(
+                                    sequence_control_set_ptr,
+#if DISABLE_NSQ_FOR_NON_REF || DISABLE_NSQ
+                                    picture_control_set_ptr,
+#endif
+                                    context_ptr,
 #if M0_HIGH_PRECISION_INTERPOLATION
 #if M0_SSD_HALF_QUARTER_PEL_BIPRED_SEARCH
-                            context_ptr->integer_buffer_ptr[listIndex]
-                                                           [ref_pic_index] +
-                                (ME_FILTER_PAD_DISTANCE >> 1) +
-                                ((ME_FILTER_PAD_DISTANCE >> 1) *
-                                 context_ptr
-                                     ->interpolated_full_stride[listIndex]
-                                                               [ref_pic_index]),
-                            context_ptr
-                                ->interpolated_full_stride[listIndex]
-                                                          [ref_pic_index],
+                                    context_ptr->integer_buffer_ptr[listIndex]
+                                    [ref_pic_index] +
+                                    (ME_FILTER_PAD_DISTANCE >> 1) +
+                                    ((ME_FILTER_PAD_DISTANCE >> 1) *
+                                        context_ptr
+                                        ->interpolated_full_stride[listIndex]
+                                        [ref_pic_index]),
+                                    context_ptr
+                                    ->interpolated_full_stride[listIndex]
+                                    [ref_pic_index],
 #endif
-                            &(context_ptr->pos_b_buffer
-                                  [listIndex][ref_pic_index]
-                                  [(ME_FILTER_PAD_DISTANCE >> 1) *
-                                   context_ptr->interpolated_stride]),
+                                    &(context_ptr->pos_b_buffer
+                                        [listIndex][ref_pic_index]
+                                        [(ME_FILTER_PAD_DISTANCE >> 1) *
+                                        context_ptr->interpolated_stride]),
 #else
 #if M0_SSD_HALF_QUARTER_PEL_BIPRED_SEARCH
-                            context_ptr->integer_buffer_ptr[listIndex]
-                                                           [ref_pic_index] +
-                                (ME_FILTER_TAP >> 1) +
-                                ((ME_FILTER_TAP >> 1) *
-                                 context_ptr
-                                     ->interpolated_full_stride[listIndex]
-                                                               [ref_pic_index]),
-                            context_ptr
-                                ->interpolated_full_stride[listIndex]
-                                                          [ref_pic_index],
+                                    context_ptr->integer_buffer_ptr[listIndex]
+                                    [ref_pic_index] +
+                                    (ME_FILTER_TAP >> 1) +
+                                    ((ME_FILTER_TAP >> 1) *
+                                        context_ptr
+                                        ->interpolated_full_stride[listIndex]
+                                        [ref_pic_index]),
+                                    context_ptr
+                                    ->interpolated_full_stride[listIndex]
+                                    [ref_pic_index],
 #endif
-                            &(context_ptr->pos_b_buffer
-                                  [listIndex][ref_pic_index]
-                                  [(ME_FILTER_TAP >> 1) *
-                                   context_ptr->interpolated_stride]),
+                                    &(context_ptr->pos_b_buffer
+                                        [listIndex][ref_pic_index]
+                                        [(ME_FILTER_TAP >> 1) *
+                                        context_ptr->interpolated_stride]),
 #endif
-                            &(context_ptr
-                                  ->pos_h_buffer[listIndex][ref_pic_index][1]),
-                            &(context_ptr
-                                  ->pos_j_buffer[listIndex][ref_pic_index][0]),
-                            x_search_area_origin,
-                            y_search_area_origin,
-                            asm_type,
-                            picture_control_set_ptr->cu8x8_mode ==
-                                CU_8x8_MODE_1,
-                            enableHalfPel32x32,
-                            enableHalfPel16x16,
-                            enableHalfPel8x8);
+                                    &(context_ptr
+                                        ->pos_h_buffer[listIndex][ref_pic_index][1]),
+                                    &(context_ptr
+                                        ->pos_j_buffer[listIndex][ref_pic_index][0]),
+                                    x_search_area_origin,
+                                    y_search_area_origin,
+                                    asm_type,
+                                    picture_control_set_ptr->cu8x8_mode ==
+                                    CU_8x8_MODE_1,
+                                    enableHalfPel32x32,
+                                    enableHalfPel16x16,
+                                    enableHalfPel8x8);
 #if IMPROVED_SUBPEL_SEARCH
-                    }
-                    if (picture_control_set_ptr->quarter_pel_mode ==
-                        REFINMENT_QP_MODE) {
+                            }
+#if DECOUPLE_ALTREF_ME
+                            if (context_ptr->quarter_pel_mode ==
+#else
+                            if (picture_control_set_ptr->quarter_pel_mode ==
+#endif
+                                REFINMENT_QP_MODE) {
 #endif
 #if M0_ME_QUARTER_PEL_SEARCH
-                        // Quarter-Pel Refinement [8 search positions]
-                        QuarterPelSearch_LCU(
-                            context_ptr,
+                                // Quarter-Pel Refinement [8 search positions]
+                                QuarterPelSearch_LCU(
+                                    context_ptr,
 #if M0_HIGH_PRECISION_INTERPOLATION
-                            context_ptr->integer_buffer_ptr[listIndex]
-                                                           [ref_pic_index] +
-                                (ME_FILTER_PAD_DISTANCE >> 1) +
-                                ((ME_FILTER_PAD_DISTANCE >> 1) *
-                                 context_ptr
-                                     ->interpolated_full_stride[listIndex]
-                                                               [ref_pic_index]),
-                            context_ptr
-                                ->interpolated_full_stride[listIndex]
-                                                          [ref_pic_index],
-                            &(context_ptr->pos_b_buffer
-                                  [listIndex][ref_pic_index]
-                                  [(ME_FILTER_PAD_DISTANCE >> 1) *
-                                   context_ptr
-                                       ->interpolated_stride]),  // points to b
-                                                                 // position of
-                                                                 // the figure
-                                                                 // above
+                                    context_ptr->integer_buffer_ptr[listIndex]
+                                    [ref_pic_index] +
+                                    (ME_FILTER_PAD_DISTANCE >> 1) +
+                                    ((ME_FILTER_PAD_DISTANCE >> 1) *
+                                        context_ptr
+                                        ->interpolated_full_stride[listIndex]
+                                        [ref_pic_index]),
+                                    context_ptr
+                                    ->interpolated_full_stride[listIndex]
+                                    [ref_pic_index],
+                                    &(context_ptr->pos_b_buffer
+                                        [listIndex][ref_pic_index]
+                                        [(ME_FILTER_PAD_DISTANCE >> 1) *
+                                        context_ptr
+                                        ->interpolated_stride]),  // points to b
+                                                                  // position of
+                                                                  // the figure
+                                                                  // above
 #else
-                            context_ptr->integer_buffer_ptr[listIndex]
-                                                           [ref_pic_index] +
-                                (ME_FILTER_TAP >> 1) +
-                                ((ME_FILTER_TAP >> 1) *
-                                 context_ptr
-                                     ->interpolated_full_stride[listIndex]
-                                                               [ref_pic_index]),
-                            context_ptr
-                                ->interpolated_full_stride[listIndex]
-                                                          [ref_pic_index],
-                            &(context_ptr->pos_b_buffer
-                                  [listIndex][ref_pic_index]
-                                  [(ME_FILTER_TAP >> 1) *
-                                   context_ptr
-                                       ->interpolated_stride]),  // points to b
-                                                                 // position of
-                                                                 // the figure
-                                                                 // above
+                                    context_ptr->integer_buffer_ptr[listIndex]
+                                    [ref_pic_index] +
+                                    (ME_FILTER_TAP >> 1) +
+                                    ((ME_FILTER_TAP >> 1) *
+                                        context_ptr
+                                        ->interpolated_full_stride[listIndex]
+                                        [ref_pic_index]),
+                                    context_ptr
+                                    ->interpolated_full_stride[listIndex]
+                                    [ref_pic_index],
+                                    &(context_ptr->pos_b_buffer
+                                        [listIndex][ref_pic_index]
+                                        [(ME_FILTER_TAP >> 1) *
+                                        context_ptr
+                                        ->interpolated_stride]),  // points to b
+                                                                  // position of
+                                                                  // the figure
+                                                                  // above
 #endif
-                            &(context_ptr
-                                  ->pos_h_buffer[listIndex][ref_pic_index]
-                                                [1]),  // points to h position
-                                                       // of the figure above
-                            &(context_ptr
-                                  ->pos_j_buffer[listIndex][ref_pic_index]
-                                                [0]),  // points to j position
-                                                       // of the figure above
-                            x_search_area_origin,
-                            y_search_area_origin,
-                            asm_type,
-                            picture_control_set_ptr->cu8x8_mode ==
-                                CU_8x8_MODE_1,
+                                    &(context_ptr
+                                        ->pos_h_buffer[listIndex][ref_pic_index]
+                                        [1]),  // points to h position
+                                               // of the figure above
+                                    &(context_ptr
+                                        ->pos_j_buffer[listIndex][ref_pic_index]
+                                        [0]),  // points to j position
+                                               // of the figure above
+                                    x_search_area_origin,
+                                    y_search_area_origin,
+                                    asm_type,
+                                    picture_control_set_ptr->cu8x8_mode ==
+                                    CU_8x8_MODE_1,
 #if M9_SUBPEL_SELECTION
-                            enableHalfPel32x32,
-                            enableHalfPel16x16,
-                            enableHalfPel8x8,
+                                    enableHalfPel32x32,
+                                    enableHalfPel16x16,
+                                    enableHalfPel8x8,
 #endif
-                            enableQuarterPel,
+                                    enableQuarterPel,
 #if DISABLE_NSQ_FOR_NON_REF || DISABLE_NSQ
 #if TEST5_DISABLE_NSQ_ME
-                            EB_FALSE);
+                                    EB_FALSE);
 #else
 #if ADP_BQ 
-                            picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE || picture_control_set_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE);
+                                    picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE || picture_control_set_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE);
 #else
-                            picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE);
+                                    picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE);
 #endif
 #endif
 #else
-                            sequence_control_set_ptr->static_config
-                                .ext_block_flag);
+                                    sequence_control_set_ptr->static_config
+                                    .ext_block_flag);
 #endif
 #endif
 #if IMPROVED_SUBPEL_SEARCH
-                    }
+                            }
 #endif
 #else
-                        HalfPelSearch_LCU(
-                            sequence_control_set_ptr,
-                            picture_control_set_ptr,
-                            context_ptr,
+                                HalfPelSearch_LCU(
+                                    sequence_control_set_ptr,
+                                    picture_control_set_ptr,
+                                    context_ptr,
 #if M0_HIGH_PRECISION_INTERPOLATION
-                            context_ptr->integer_buffer_ptr[listIndex][0] +
-                                (ME_FILTER_PAD_DISTANCE >> 1) +
-                                ((ME_FILTER_PAD_DISTANCE >> 1) *
-                                 context_ptr
-                                     ->interpolated_full_stride[listIndex][0]),
-                            context_ptr->interpolated_full_stride[listIndex][0],
-                            &(context_ptr->pos_b_buffer
-                                  [listIndex][0]
-                                  [(ME_FILTER_PAD_DISTANCE >> 1) *
-                                   context_ptr->interpolated_stride]),
+                                    context_ptr->integer_buffer_ptr[listIndex][0] +
+                                    (ME_FILTER_PAD_DISTANCE >> 1) +
+                                    ((ME_FILTER_PAD_DISTANCE >> 1) *
+                                        context_ptr
+                                        ->interpolated_full_stride[listIndex][0]),
+                                    context_ptr->interpolated_full_stride[listIndex][0],
+                                    &(context_ptr->pos_b_buffer
+                                        [listIndex][0]
+                                        [(ME_FILTER_PAD_DISTANCE >> 1) *
+                                        context_ptr->interpolated_stride]),
 #else
-                            context_ptr->integer_buffer_ptr[listIndex][0] +
-                                (ME_FILTER_TAP >> 1) +
-                                ((ME_FILTER_TAP >> 1) *
-                                 context_ptr
-                                     ->interpolated_full_stride[listIndex][0]),
-                            context_ptr->interpolated_full_stride[listIndex][0],
-                            &(context_ptr->pos_b_buffer
-                                  [listIndex][0]
-                                  [(ME_FILTER_TAP >> 1) *
-                                   context_ptr->interpolated_stride]),
+                                    context_ptr->integer_buffer_ptr[listIndex][0] +
+                                    (ME_FILTER_TAP >> 1) +
+                                    ((ME_FILTER_TAP >> 1) *
+                                        context_ptr
+                                        ->interpolated_full_stride[listIndex][0]),
+                                    context_ptr->interpolated_full_stride[listIndex][0],
+                                    &(context_ptr->pos_b_buffer
+                                        [listIndex][0]
+                                        [(ME_FILTER_TAP >> 1) *
+                                        context_ptr->interpolated_stride]),
 #endif
-                            &(context_ptr->pos_h_buffer[listIndex][0][1]),
-                            &(context_ptr->pos_j_buffer[listIndex][0][0]),
-                            x_search_area_origin,
-                            y_search_area_origin,
-                            asm_type,
-                            picture_control_set_ptr->cu8x8_mode ==
-                                CU_8x8_MODE_1,
-                            enableHalfPel32x32,
-                            enableHalfPel16x16,
-                            enableHalfPel8x8);
+                                    &(context_ptr->pos_h_buffer[listIndex][0][1]),
+                                    &(context_ptr->pos_j_buffer[listIndex][0][0]),
+                                    x_search_area_origin,
+                                    y_search_area_origin,
+                                    asm_type,
+                                    picture_control_set_ptr->cu8x8_mode ==
+                                    CU_8x8_MODE_1,
+                                    enableHalfPel32x32,
+                                    enableHalfPel16x16,
+                                    enableHalfPel8x8);
 
-                        // Quarter-Pel Refinement [8 search positions]
-                        QuarterPelSearch_LCU(
-                            context_ptr,
+                                // Quarter-Pel Refinement [8 search positions]
+                                QuarterPelSearch_LCU(
+                                    context_ptr,
 #if M0_HIGH_PRECISION_INTERPOLATION
-                            context_ptr->integer_buffer_ptr[listIndex][0] +
-                                (ME_FILTER_PAD_DISTANCE >> 1) +
-                                ((ME_FILTER_PAD_DISTANCE >> 1) *
-                                 context_ptr
-                                     ->interpolated_full_stride[listIndex][0]),
-                            context_ptr->interpolated_full_stride[listIndex][0],
-                            &(context_ptr->pos_b_buffer
-                                  [listIndex][0]
-                                  [(ME_FILTER_PAD_DISTANCE >> 1) *
-                                   context_ptr
-                                       ->interpolated_stride]),  // points to b
-                                                                 // position of
-                                                                 // the figure
-                                                                 // above
+                                    context_ptr->integer_buffer_ptr[listIndex][0] +
+                                    (ME_FILTER_PAD_DISTANCE >> 1) +
+                                    ((ME_FILTER_PAD_DISTANCE >> 1) *
+                                        context_ptr
+                                        ->interpolated_full_stride[listIndex][0]),
+                                    context_ptr->interpolated_full_stride[listIndex][0],
+                                    &(context_ptr->pos_b_buffer
+                                        [listIndex][0]
+                                        [(ME_FILTER_PAD_DISTANCE >> 1) *
+                                        context_ptr
+                                        ->interpolated_stride]),  // points to b
+                                                                  // position of
+                                                                  // the figure
+                                                                  // above
 #else
-                            context_ptr->integer_buffer_ptr[listIndex][0] +
-                                (ME_FILTER_TAP >> 1) +
-                                ((ME_FILTER_TAP >> 1) *
-                                 context_ptr
-                                     ->interpolated_full_stride[listIndex][0]),
-                            context_ptr->interpolated_full_stride[listIndex][0],
-                            &(context_ptr->pos_b_buffer
-                                  [listIndex][0]
-                                  [(ME_FILTER_TAP >> 1) *
-                                   context_ptr
-                                       ->interpolated_stride]),  // points to b
-                                                                 // position of
-                                                                 // the figure
-                                                                 // above
+                                    context_ptr->integer_buffer_ptr[listIndex][0] +
+                                    (ME_FILTER_TAP >> 1) +
+                                    ((ME_FILTER_TAP >> 1) *
+                                        context_ptr
+                                        ->interpolated_full_stride[listIndex][0]),
+                                    context_ptr->interpolated_full_stride[listIndex][0],
+                                    &(context_ptr->pos_b_buffer
+                                        [listIndex][0]
+                                        [(ME_FILTER_TAP >> 1) *
+                                        context_ptr
+                                        ->interpolated_stride]),  // points to b
+                                                                  // position of
+                                                                  // the figure
+                                                                  // above
 #endif
-                            &(context_ptr
-                                  ->pos_h_buffer[listIndex][0]
-                                                [1]),  // points to h position
-                                                       // of the figure above
-                            &(context_ptr
-                                  ->pos_j_buffer[listIndex][0]
-                                                [0]),  // points to j position
-                                                       // of the figure above
-                            x_search_area_origin,
-                            y_search_area_origin,
-                            asm_type,
-                            picture_control_set_ptr->cu8x8_mode ==
-                                CU_8x8_MODE_1,
+                                    &(context_ptr
+                                        ->pos_h_buffer[listIndex][0]
+                                        [1]),  // points to h position
+                                               // of the figure above
+                                    &(context_ptr
+                                        ->pos_j_buffer[listIndex][0]
+                                        [0]),  // points to j position
+                                               // of the figure above
+                                    x_search_area_origin,
+                                    y_search_area_origin,
+                                    asm_type,
+                                    picture_control_set_ptr->cu8x8_mode ==
+                                    CU_8x8_MODE_1,
 #if M9_SUBPEL_SELECTION
-                            enableHalfPel32x32,
-                            enableHalfPel16x16,
-                            enableHalfPel8x8,
+                                    enableHalfPel32x32,
+                                    enableHalfPel16x16,
+                                    enableHalfPel8x8,
 #endif
-                            enableQuarterPel,
-                            picture_control_set_ptr->pic_depth_mode <=
-                                PIC_ALL_C_DEPTH_MODE);
+                                    enableQuarterPel,
+                                    picture_control_set_ptr->pic_depth_mode <=
+                                    PIC_ALL_C_DEPTH_MODE);
 #endif
+                        }
+#if ALTREF_AV1_SUBPEL
                 }
+#endif
 #if MRP_ME
                 if (is_nsq_table_used && ref_pic_index == 0) {
 #else
@@ -16088,12 +16124,10 @@ EbErrorType motion_estimate_lcu(
         }
     }
 }
-
 #if ALTREF_FILTERING_SUPPORT
 
 if (context_ptr->me_alt_ref == EB_FALSE) {
 #endif
-
     // Bi-Prediction motion estimation loop
     for (pu_index = 0; pu_index < max_number_of_pus_per_sb; ++pu_index) {
         candidateIndex = 0;

@@ -588,7 +588,7 @@ EbErrorType load_default_buffer_configuration_settings(
         sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->motion_estimation_process_init_count =  MAX(MIN(20, core_count >> 1), core_count / 3));//1);//
         sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->source_based_operations_process_init_count     = MAX(MIN(3, core_count >> 1), core_count / 12));
         sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->mode_decision_configuration_process_init_count = MAX(MIN(3, core_count >> 1), core_count / 12));
-        sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->enc_dec_process_init_count                     = MAX(MIN(40, core_count >> 1), core_count));
+        sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->enc_dec_process_init_count                     = MAX(MIN(40, core_count >> 1), core_count));//1);//
         sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->entropy_coding_process_init_count              = MAX(MIN(3, core_count >> 1), core_count / 12));
         sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->dlf_process_init_count                         = MAX(MIN(40, core_count >> 1), core_count));
         sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->cdef_process_init_count                        = MAX(MIN(40, core_count >> 1), core_count));
@@ -973,6 +973,9 @@ EB_API EbErrorType eb_init_encoder(EbComponentType *svt_enc_component)
 
     av1_init_me_luts();
     init_fn_ptr();
+#if COMP_DIFF
+	av1_init_wedge_masks();
+#endif
 
     /************************************
     * Sequence Control Set

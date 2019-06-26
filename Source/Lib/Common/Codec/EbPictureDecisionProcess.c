@@ -217,6 +217,11 @@ void av1_setup_skip_mode_allowed(PictureParentControlSet  *parent_pcs_ptr) {
     //4 :BWD
     //5 :ALT2
     //6 :ALT
+#if COMP_MODE
+	parent_pcs_ptr->cur_order_hint = parent_pcs_ptr->picture_number % (1 << (parent_pcs_ptr->sequence_control_set_ptr->seq_header.order_hint_info.order_hint_bits));
+	for (uint8_t i = 0; i < 7; ++i)
+		parent_pcs_ptr->ref_order_hint[i] = ref_frame_arr_single[i].poc;
+#endif
 }
 #endif
 
@@ -862,6 +867,12 @@ EbErrorType signal_derivation_multi_processes_oq(
     picture_control_set_ptr->enable_hme_level0_flag = enable_hme_level0_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][picture_control_set_ptr->enc_mode];
     picture_control_set_ptr->enable_hme_level1_flag = enable_hme_level1_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][picture_control_set_ptr->enc_mode];
     picture_control_set_ptr->enable_hme_level2_flag = enable_hme_level2_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][picture_control_set_ptr->enc_mode];
+#endif
+
+#if DECOUPLE_ALTREF_ME
+    picture_control_set_ptr->tf_enable_hme_level0_flag = tf_enable_hme_level0_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][picture_control_set_ptr->enc_mode];
+    picture_control_set_ptr->tf_enable_hme_level1_flag = tf_enable_hme_level1_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][picture_control_set_ptr->enc_mode];
+    picture_control_set_ptr->tf_enable_hme_level2_flag = tf_enable_hme_level2_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][picture_control_set_ptr->enc_mode];
 #endif
 
 #if NEW_PRESETS
@@ -1608,6 +1619,17 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
             picture_control_set_ptr->atb_mode = 0;
 
+#endif
+
+
+#if COMP_MODE
+        // Set Wedge mode      Settings
+        // 0                 FULL: Full search
+        // 1                 Fast: If two predictors are very similar, skip wedge compound mode search
+        // 2                 Fast: estimate Wedge sign
+        // 3                 Fast: Mode 1 & Mode 2
+
+        picture_control_set_ptr->wedge_mode = 0;
 #endif
 
     return return_error;
@@ -3956,7 +3978,7 @@ void* picture_decision_kernel(void *input_ptr)
                                 TX_MODE_SELECT :
                                 TX_MODE_LARGEST;
 #endif
-
+#if !DECOUPLE_ALTREF_ME
                             // Set the default settings of  subpel
 #if M9_SUBPEL
                                 {
@@ -4008,6 +4030,7 @@ void* picture_decision_kernel(void *input_ptr)
                                     picture_control_set_ptr->quarter_pel_mode =
                                         REFINMENT_QP_MODE;
                                 }
+#endif
 #endif
                                 picture_control_set_ptr->use_src_ref = EB_FALSE;
                                 picture_control_set_ptr->enable_in_loop_motion_estimation_flag = EB_FALSE;
@@ -4277,7 +4300,56 @@ void* picture_decision_kernel(void *input_ptr)
                                         }
                                     }
                                 }
+#if ALTREF_DYNAMIC_WINDOW
+                                int index_center = (uint8_t)(picture_control_set_ptr->sequence_control_set_ptr->static_config.altref_nframes / 2);
 
+                                int pic_itr;
+
+                                // adjust the starting point of buffer_y of the starting pixel values of the source picture
+                                EbByte src = picture_control_set_ptr->temp_filt_pcs_list[index_center]->enhanced_picture_ptr->buffer_y +
+                                    picture_control_set_ptr->temp_filt_pcs_list[index_center]->enhanced_picture_ptr->origin_y*picture_control_set_ptr->temp_filt_pcs_list[index_center]->enhanced_picture_ptr->stride_y +
+                                    picture_control_set_ptr->temp_filt_pcs_list[index_center]->enhanced_picture_ptr->origin_x;
+
+                                int ahd;
+                                int regionInPictureWidthIndex;
+                                int regionInPictureHeightIndex;
+
+                                int ahd_th = (((sequence_control_set_ptr->seq_header.max_frame_width * sequence_control_set_ptr->seq_header.max_frame_height) * 50) / 100);
+
+                                // Accumulative histogram absolute differences between the central and past frame
+                                for (pic_itr = 0; pic_itr < num_past_pics; pic_itr++) {
+                                    ahd = 0;
+                                    for (regionInPictureWidthIndex = 0; regionInPictureWidthIndex < sequence_control_set_ptr->picture_analysis_number_of_regions_per_width; regionInPictureWidthIndex++) {
+                                        for (regionInPictureHeightIndex = 0; regionInPictureHeightIndex < sequence_control_set_ptr->picture_analysis_number_of_regions_per_height; regionInPictureHeightIndex++) {
+                                            for (int bin = 0; bin < HISTOGRAM_NUMBER_OF_BINS; ++bin) {
+                                                ahd += ABS((int32_t)picture_control_set_ptr->temp_filt_pcs_list[index_center]->picture_histogram[regionInPictureWidthIndex][regionInPictureHeightIndex][0][bin] - (int32_t)picture_control_set_ptr->temp_filt_pcs_list[pic_itr]->picture_histogram[regionInPictureWidthIndex][regionInPictureHeightIndex][0][bin]);
+                                            }
+                                        }
+                                    }
+
+                                    if (ahd < ahd_th)
+                                        break;
+                                }
+                                picture_control_set_ptr->past_altref_nframes = num_past_pics - pic_itr;
+
+
+                                // Accumulative histogram absolute differences between the central and past frame
+                                for (pic_itr = (index_center + actual_future_pics); pic_itr > index_center; pic_itr--) {
+                                    ahd = 0;
+                                    for (regionInPictureWidthIndex = 0; regionInPictureWidthIndex < sequence_control_set_ptr->picture_analysis_number_of_regions_per_width; regionInPictureWidthIndex++) {
+                                        for (regionInPictureHeightIndex = 0; regionInPictureHeightIndex < sequence_control_set_ptr->picture_analysis_number_of_regions_per_height; regionInPictureHeightIndex++) {
+                                            for (int bin = 0; bin < HISTOGRAM_NUMBER_OF_BINS; ++bin) {
+                                                ahd += ABS((int32_t)picture_control_set_ptr->temp_filt_pcs_list[index_center]->picture_histogram[regionInPictureWidthIndex][regionInPictureHeightIndex][0][bin] - (int32_t)picture_control_set_ptr->temp_filt_pcs_list[pic_itr]->picture_histogram[regionInPictureWidthIndex][regionInPictureHeightIndex][0][bin]);
+                                            }
+                                        }
+                                    }
+
+                                    if (ahd < ahd_th)
+                                        break;
+                                }
+                                picture_control_set_ptr->future_altref_nframes = pic_itr - index_center;
+                                printf("\nPOC %d\t PAST %d\t FUTURE %d\n", picture_control_set_ptr->picture_number, picture_control_set_ptr->past_altref_nframes, picture_control_set_ptr->future_altref_nframes);
+#else
                                 //set the actual_number of final pics
                                 altref_nframes = (uint8_t)(num_past_pics + 1 + actual_future_pics);
 
@@ -4288,7 +4360,7 @@ void* picture_decision_kernel(void *input_ptr)
                                     printf("%i   ", picture_control_set_ptr->temp_filt_pcs_list[tt]->picture_number);
                                 }*/
                                 picture_control_set_ptr->altref_nframes = altref_nframes;
-
+#endif
                                 //clock_t start_time;
                                 //start_time = clock();
 

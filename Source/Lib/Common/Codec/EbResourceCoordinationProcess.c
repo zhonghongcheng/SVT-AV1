@@ -91,12 +91,21 @@ EbErrorType signal_derivation_pre_analysis_oq(
     PictureParentControlSet  *picture_control_set_ptr) {
     EbErrorType return_error = EB_ErrorNone;
     uint8_t input_resolution = sequence_control_set_ptr->input_resolution;
-
+#if DECOUPLE_ALTREF_ME
+    uint8_t  hme_me_level = picture_control_set_ptr->enc_mode;
+#endif
     // Derive HME Flag
     if (sequence_control_set_ptr->static_config.use_default_me_hme) {
+#if !DECOUPLE_ALTREF_ME
         uint8_t  hme_me_level = picture_control_set_ptr->enc_mode;
-
+#endif
         picture_control_set_ptr->enable_hme_flag = EB_TRUE;
+
+#if DECOUPLE_ALTREF_ME
+        picture_control_set_ptr->enable_hme_level0_flag = enable_hme_level0_flag[0][input_resolution][hme_me_level] || enable_hme_level0_flag[1][input_resolution][hme_me_level];
+        picture_control_set_ptr->enable_hme_level1_flag = enable_hme_level1_flag[0][input_resolution][hme_me_level] || enable_hme_level1_flag[1][input_resolution][hme_me_level];
+        picture_control_set_ptr->enable_hme_level2_flag = enable_hme_level2_flag[0][input_resolution][hme_me_level] || enable_hme_level2_flag[1][input_resolution][hme_me_level];
+#else
 #if NEW_PRESETS
 #if SCREEN_CONTENT_SETTINGS
         picture_control_set_ptr->enable_hme_level0_flag = enable_hme_level0_flag[0][input_resolution][hme_me_level];
@@ -112,6 +121,7 @@ EbErrorType signal_derivation_pre_analysis_oq(
         picture_control_set_ptr->enable_hme_level1_flag = enable_hme_level1_flag[input_resolution][hme_me_level];
         picture_control_set_ptr->enable_hme_level2_flag = enable_hme_level2_flag[input_resolution][hme_me_level];
 #endif
+#endif
     }
     else {
         picture_control_set_ptr->enable_hme_flag = sequence_control_set_ptr->static_config.enable_hme_flag;
@@ -119,6 +129,18 @@ EbErrorType signal_derivation_pre_analysis_oq(
         picture_control_set_ptr->enable_hme_level1_flag = sequence_control_set_ptr->static_config.enable_hme_level1_flag;
         picture_control_set_ptr->enable_hme_level2_flag = sequence_control_set_ptr->static_config.enable_hme_level2_flag;
     }
+
+#if DECOUPLE_ALTREF_ME
+#if ALTREF_TEMPORAL_FILTERING
+    picture_control_set_ptr->tf_enable_hme_flag = EB_FALSE;
+#else
+    picture_control_set_ptr->tf_enable_hme_flag = EB_TRUE;
+#endif
+    picture_control_set_ptr->tf_enable_hme_level0_flag = tf_enable_hme_level0_flag[0][input_resolution][hme_me_level] || tf_enable_hme_level0_flag[1][input_resolution][hme_me_level];
+    picture_control_set_ptr->tf_enable_hme_level1_flag = tf_enable_hme_level1_flag[0][input_resolution][hme_me_level] || tf_enable_hme_level1_flag[1][input_resolution][hme_me_level];
+    picture_control_set_ptr->tf_enable_hme_level2_flag = tf_enable_hme_level2_flag[0][input_resolution][hme_me_level] || tf_enable_hme_level2_flag[1][input_resolution][hme_me_level];
+#endif
+
 #if NEW_PRESETS
     if (picture_control_set_ptr->enc_mode >= ENC_M8)
         sequence_control_set_ptr->seq_header.enable_restoration = 0;
@@ -667,6 +689,31 @@ void* resource_coordination_kernel(void *input_ptr)
                 PM_MODE_2 :
                 PM_MODE_1;
 
+#if COMP_MODE	
+            
+            // Set compound mode      Settings
+            // 0                 OFF: No compond mode search : AVG only
+            // 1                 ON: compond mode search: 4 modes
+            sequence_control_set_ptr->compound_mode = 0;
+
+
+			//sequence_control_set_ptr->order_hint_info_st.enable_order_hint = 1;
+			//sequence_control_set_ptr->order_hint_info_st.order_hint_bits_minus_1 = 6;
+
+			//if (sequence_control_set_ptr->static_config.enc_mode == ENC_M0)
+			if(sequence_control_set_ptr->compound_mode)
+			{
+                //sequence_control_set_ptr->seq_header.enable_interintra_compound = 1;
+				sequence_control_set_ptr->seq_header.order_hint_info.enable_jnt_comp = 1; //DISTANCE
+				sequence_control_set_ptr->seq_header.enable_masked_compound = 1; //DIFF+WEDGE
+				sequence_control_set_ptr->compound_types_to_try = MD_COMP_WEDGE;//  MD_COMP_DIST;//MD_COMP_AVG;//
+			}
+			else {
+				sequence_control_set_ptr->seq_header.order_hint_info.enable_jnt_comp = 0;  //these + inject only avg should give same m7 stream
+				sequence_control_set_ptr->seq_header.enable_masked_compound = 0;
+				sequence_control_set_ptr->compound_types_to_try = MD_COMP_AVG;
+			}
+#endif
             // Construct PM Trans Coeff Shaping
             if (context_ptr->sequence_control_set_instance_array[instance_index]->encode_context_ptr->initial_picture) {
                 if (sequence_control_set_ptr->pm_mode == PM_MODE_0)
