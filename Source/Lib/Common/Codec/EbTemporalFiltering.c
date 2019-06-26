@@ -906,6 +906,12 @@ void tf_inter_prediction(
                             0,//ref_frame_type,
                             &mv_unit,
                             0,//use_intrabc,
+#if COMP_MODE
+			                1,//compound_idx not used 
+#endif
+#if COMP_DIFF
+			                NULL,// interinter_comp not used
+#endif
                             pu_origin_x,
                             pu_origin_y,
                             bsize,
@@ -945,6 +951,12 @@ void tf_inter_prediction(
                     0,//ref_frame_type,
                     &mv_unit,
                     0,//use_intrabc,
+#if COMP_MODE
+			        1,//compound_idx not used 
+#endif
+#if COMP_DIFF
+			        NULL,// interinter_comp not used
+#endif
                     pu_origin_x,
                     pu_origin_y,
                     bsize,
