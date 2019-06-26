@@ -307,7 +307,23 @@ extern "C" {
 #define EIGTH_PEL_MV                                    0
 #define DISABLE_NSQ_TABLE_FOR_M0                        1 // On wil disable the nsq_table ordering algrithm. This is a temporarily adoption that will be disable once we comeup with a better ordreing mecanisme when MRP i ON.
 #define IMPROVED_SUBPEL_SEARCH                          1
-#define DECOUPLED_FAST_LOOP                             1
+
+
+#define  MD_CLASS                     1   //added the concept of class for each MD candidate. NFL is now per class.
+
+#if MD_CLASS
+typedef enum CAND_CLASS {
+	CAND_CLASS_0,
+	CAND_CLASS_1,
+	CAND_CLASS_2,
+	CAND_CLASS_TOTAL
+} CAND_CLASS;
+#else
+
+#define DECOUPLED_FAST_LOOP                            1     
+																	  
+#endif
+
 #define FIX_ATB_SUPPORT                                 0 // ENABLE_SKIP_REDUNDANT_BLOCK
 #define FIX_TX_SEARCH_FOR_MR_MODE                       1
 
@@ -315,7 +331,7 @@ extern "C" {
 #define DOWN_SAMPLING_FILTERING                         1 // Use down-sampling filtering (instead of down-sampling decimation) for 1/16th and 1/4th reference frame(s) generation @ ME and temporal filtering search, added the multi-mode signal down_sampling_method_me_search; filtering if M0, and decimation for M1 & higher
 #define DECIMATION_BUG_FIX                              1 // Removed HME Level0 check @ 1/16th decimation to guarantee valid ZZ SAD and SCD data when HME Level0 is OFF
 #define ENABLE_QUANT_FP                                 1
-#if DECOUPLED_FAST_LOOP
+#if DECOUPLED_FAST_LOOP || MD_CLASS
 #define IMPROVED_NFL_SETTINGS                           1 // Used NRF 8,8,8 and Ref 16,16,16 NFL settings
 #endif
 #define APPLY_3X3_FOR_BEST_ME                           1 // Might need to be restricted to M0
@@ -337,7 +353,7 @@ extern "C" {
 #define DECIMATION_BUG_FIX                              1 // Removed HME Level0 check @ 1/16th decimation to guarantee valid ZZ SAD and SCD data when HME Level0 is OFF
 #endif
 
-#if DECOUPLED_FAST_LOOP
+#if DECOUPLED_FAST_LOOP || MD_CLASS
 #if OPT_NFL_SETTINGS
 #define     INTRA_NFL       8
 #define     INTER_NEW_NFL   8
@@ -423,15 +439,26 @@ enum {
 #else
 #define MAX_TXB_COUNT                             4 // Maximum number of transform blocks.
 #endif
-#if DECOUPLED_FAST_LOOP
+#if DECOUPLED_FAST_LOOP /*|| MD_CLASS*/  //CHKn this is temp, and needed to get same behaviour for the I framewith the simulation code
 #if MV_REFINEMENT_AROUND_MV_PRED
 #define MAX_NFL                                   520
 #else
 #define MAX_NFL                                   488 //MODE_DECISION_CANDIDATE_MAX_COUNT
 #endif
 #else
+
+#if MD_CLASS
+#define MAX_NFL                                   65 //full loop all candidates in I slice
+#else
 #define MAX_NFL                                   40
 #endif
+#endif
+
+#if MD_CLASS
+#define MAX_NFL_BUFF                   (MAX_NFL + CAND_CLASS_TOTAL)  //need one extra temp buffer for each fast loop call.
+#endif
+
+
 #define MAX_LAD                                   120 // max lookahead-distance 2x60fps
 #define ROUND_UV(x) (((x)>>3)<<3)
 #define AV1_PROB_COST_SHIFT 9

@@ -1372,6 +1372,12 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->decoupled_fast_loop_search_method = FULL_SAD_SEARCH;
 #endif
 
+
+	//MD_CLASS
+	//context_ptr->decouple_intra_inter_fast_loop = 0;
+	//context_ptr->decoupled_fast_loop_search_method = FULL_SAD_SEARCH;// picture_control_set_ptr->enc_mode == ENC_M0 ? SSD_SEARCH : FULL_SAD_SEARCH;
+
+
     // Set the full loop escape level
     // Level                Settings
     // 0                    Off
@@ -1405,6 +1411,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->full_loop_escape = 1;
 #endif
+
+
+	//MD_CLASS
+	//context_ptr->full_loop_escape = 2;  //to use always the sorted array.
+
 
     // Set global MV injection
     // Level                Settings

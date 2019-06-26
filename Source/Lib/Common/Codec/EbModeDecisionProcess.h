@@ -187,8 +187,13 @@ extern "C" {
         uint32_t                         best_candidate_index_array[MAX_NFL + 2];
         uint32_t                         sorted_candidate_index_array[MAX_NFL];
 #else
+#if MD_CLASS
+		uint32_t                         best_candidate_index_array[MAX_NFL_BUFF];
+		uint32_t                         sorted_candidate_index_array[MAX_NFL];
+#else
         uint8_t                         best_candidate_index_array[MAX_NFL + 2];
         uint8_t                         sorted_candidate_index_array[MAX_NFL];
+#endif
 #endif
         uint16_t                        cu_origin_x;
         uint16_t                        cu_origin_y;
@@ -279,6 +284,10 @@ extern "C" {
         uint8_t                         chroma_level;
         PART                            nsq_table[NSQ_TAB_SIZE];
         uint8_t                         decoupled_fast_loop_search_method;
+#if MD_CLASS
+		uint32_t                       full_cand_count[CAND_CLASS_TOTAL]; //how many full candiates per class
+		uint32_t                       fast_cand_count[CAND_CLASS_TOTAL]; //how many ffast candiates per class
+#endif
         uint8_t                         decouple_intra_inter_fast_loop;
         uint8_t                         full_loop_escape;
         uint8_t                         global_mv_injection;
