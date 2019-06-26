@@ -31,6 +31,9 @@
 
 #include "av1me.h"
 #include "hash.h"
+#if COMP_DIFF
+#include "EbInterPrediction.h"
+#endif
 
 #if CHECK_CAND
 #define  INCRMENT_CAND_TOTAL_COUNT(cnt) cnt++; if(cnt>=MODE_DECISION_CANDIDATE_MAX_COUNT) printf(" ERROR: reaching limit for MODE_DECISION_CANDIDATE_MAX_COUNT %i\n",cnt);
@@ -39,6 +42,13 @@ int8_t av1_ref_frame_type(const MvReferenceFrame *const rf);
 /********************************************
 * Constants
 ********************************************/
+#if COMP_MODE
+
+static int32_t have_newmv_in_inter_mode(PredictionMode mode) {
+    return (mode == NEWMV || mode == NEW_NEWMV || mode == NEAREST_NEWMV ||
+        mode == NEW_NEARESTMV || mode == NEAR_NEWMV || mode == NEW_NEARMV);
+}
+#endif
 //static uint32_t  AntiContouringIntraMode[11] = { EB_INTRA_PLANAR, EB_INTRA_DC, EB_INTRA_HORIZONTAL, EB_INTRA_VERTICAL,
 //EB_INTRA_MODE_2, EB_INTRA_MODE_6, EB_INTRA_MODE_14, EB_INTRA_MODE_18, EB_INTRA_MODE_22, EB_INTRA_MODE_30, EB_INTRA_MODE_34 };
 
@@ -135,6 +145,80 @@ int32_t av1_mv_bit_cost(const MV *mv, const MV *ref, const int32_t *mvjcost,
     int32_t *mvcost[2], int32_t weight);
 #define MV_COST_WEIGHT 108
 
+#if COMP_MODE
+COMPOUND_TYPE to_av1_compound_lut[] = {
+    COMPOUND_AVERAGE,
+	COMPOUND_DISTWTD,
+	COMPOUND_DIFFWTD,
+	COMPOUND_WEDGE
+};
+
+void determine_compound_mode(
+	PictureControlSet            *picture_control_set_ptr,
+	ModeDecisionContext          *context_ptr,
+	ModeDecisionCandidate        *candidatePtr,
+	MD_COMP_TYPE                 cur_type) {
+
+
+	candidatePtr->interinter_comp.type = to_av1_compound_lut[cur_type];
+
+	if (cur_type == MD_COMP_AVG) {
+
+		candidatePtr->comp_group_idx = 0;
+		candidatePtr->compound_idx = 1;
+#if 0//COMP_AVG_DIST
+		if(candidatePtr->merge_flag ==0)
+			search_compound_avg_dist(
+				picture_control_set_ptr,
+				context_ptr,
+				candidatePtr);
+#endif
+	}
+	else if (cur_type == MD_COMP_DIST) {
+
+		candidatePtr->comp_group_idx = 0;
+		candidatePtr->compound_idx = 0;
+	}
+	else if (cur_type == MD_COMP_DIFF0) {
+
+		//printf("NOTHERRRRRRRRRRRR");;
+		candidatePtr->comp_group_idx = 1;
+		candidatePtr->compound_idx = 1;
+		candidatePtr->interinter_comp.mask_type = 55;
+#if COMP_DIFF
+		search_compound_diff_wedge(
+			picture_control_set_ptr,
+			context_ptr,
+			candidatePtr
+			);
+#endif
+	}
+	//else if (cur_type == MD_COMP_DIFF1) {
+	//	candidatePtr->comp_group_idx = 1;
+	//	candidatePtr->compound_idx = 1;
+	//	candidatePtr->interinter_comp.mask_type = 1;
+	//}
+	else if (cur_type == MD_COMP_WEDGE) {
+				
+		candidatePtr->comp_group_idx = 1;
+		candidatePtr->compound_idx = 1;
+		search_compound_diff_wedge(
+			picture_control_set_ptr,
+			context_ptr,
+			candidatePtr
+			); 
+
+		candidatePtr->interinter_comp.wedge_index = candidatePtr->interinter_comp.wedge_index;
+		candidatePtr->interinter_comp.wedge_sign = candidatePtr->interinter_comp.wedge_sign;
+	}
+	else {
+		printf("ERROR: not used comp type\n");
+	}
+
+
+
+}
+#endif
 void ChooseBestAv1MvPred(
     ModeDecisionContext            *context_ptr,
     struct MdRateEstimationContext      *md_rate_estimation_ptr,
@@ -941,6 +1025,14 @@ void Bipred3x3CandidatesInjection(
     ModeDecisionCandidate    *candidateArray = context_ptr->fast_candidate_array;
     EbBool isCompoundEnabled = (picture_control_set_ptr->parent_pcs_ptr->reference_mode == SINGLE_REFERENCE) ? 0 : 1;
     IntMv  bestPredmv[2] = { {0}, {0} };
+#if COMP_MODE
+    BlockSize bsize = context_ptr->blk_geom->bsize;                       // bloc size
+    MD_COMP_TYPE compound_types_to_try = picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->compound_types_to_try;
+	MD_COMP_TYPE cur_type; //BIP 3x3 MiSize >= BLOCK_8X8 && MiSize <= BLOCK_32X32)
+	MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize<= BLOCK_32X32 ) ? compound_types_to_try : 
+                                  (compound_types_to_try == MD_COMP_WEDGE )? MD_COMP_DIFF0 : 
+                                   picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->compound_types_to_try;//MD_COMP_DIST;// MD_COMP_AVG;//
+#endif
 
     if (isCompoundEnabled) {
         /**************
@@ -1005,6 +1097,22 @@ void Bipred3x3CandidatesInjection(
 #else
             if (context_ptr->injected_mv_count_bipred == 0 || is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1) == EB_FALSE) {
 #endif
+#if COMP_MODE	
+
+
+
+				
+                context_ptr->variance_ready = 0 ;			
+			        for (cur_type = MD_COMP_AVG; cur_type <= tot_comp_types ; cur_type++)
+				{
+                // If two predictors are very similar, skip wedge compound mode search
+                if (context_ptr->variance_ready)
+                    if (context_ptr->prediction_mse < 8 || (!have_newmv_in_inter_mode(NEW_NEWMV) && context_ptr->prediction_mse  < 64)) 
+                        continue;
+            //if (mse < 8 || (!have_newmv_in_inter_mode(this_mode) && mse < 64)) {
+            //  *comp_model_rd_cur = INT64_MAX;
+            //  r
+#endif
                 candidateArray[canTotalCnt].type = INTER_MODE;
                 candidateArray[canTotalCnt].distortion_ready = 0;
                 candidateArray[canTotalCnt].use_intrabc = 0;
@@ -1068,6 +1176,14 @@ void Bipred3x3CandidatesInjection(
             candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_0] = bestPredmv[0].as_mv.row;
             candidateArray[canTotalCnt].motion_vector_pred_x[REF_LIST_1] = bestPredmv[1].as_mv.col;
             candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_1] = bestPredmv[1].as_mv.row;
+#if COMP_MODE
+			//BIP 3x3
+			determine_compound_mode(
+				picture_control_set_ptr,
+				context_ptr,
+				&candidateArray[canTotalCnt],
+				cur_type);
+#endif
 #if CHECK_CAND
             INCRMENT_CAND_TOTAL_COUNT(canTotalCnt);
 #else
@@ -1081,6 +1197,9 @@ void Bipred3x3CandidatesInjection(
             context_ptr->injected_ref_type_bipred_array[context_ptr->injected_mv_count_bipred] = to_inject_ref_type;
 #endif
             ++context_ptr->injected_mv_count_bipred;
+#if COMP_MODE					
+				}
+#endif
         }
         }
 
@@ -1128,6 +1247,16 @@ void Bipred3x3CandidatesInjection(
             if (context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, to_inject_ref_type) == EB_FALSE) {
 #else
             if (context_ptr->injected_mv_count_bipred == 0 || is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1) == EB_FALSE) {
+#endif
+#if COMP_MODE	
+				
+                context_ptr->variance_ready = 0 ;			
+			        for (cur_type = MD_COMP_AVG; cur_type <= tot_comp_types ; cur_type++)
+				{
+                // If two predictors are very similar, skip wedge compound mode search
+                if (context_ptr->variance_ready)
+                    if (context_ptr->prediction_mse < 8 || (!have_newmv_in_inter_mode(NEW_NEWMV) && context_ptr->prediction_mse  < 64)) 
+                        continue;
 #endif
                 candidateArray[canTotalCnt].type = INTER_MODE;
                 candidateArray[canTotalCnt].distortion_ready = 0;
@@ -1193,6 +1322,14 @@ void Bipred3x3CandidatesInjection(
                 candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_0] = bestPredmv[0].as_mv.row;
                 candidateArray[canTotalCnt].motion_vector_pred_x[REF_LIST_1] = bestPredmv[1].as_mv.col;
                 candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_1] = bestPredmv[1].as_mv.row;
+#if COMP_MODE
+					//BIP 3x3
+					determine_compound_mode(
+						picture_control_set_ptr,
+						context_ptr,
+						&candidateArray[canTotalCnt],
+						cur_type);
+#endif
 #if CHECK_CAND
                 INCRMENT_CAND_TOTAL_COUNT(canTotalCnt);
 #else
@@ -1206,6 +1343,9 @@ void Bipred3x3CandidatesInjection(
                 context_ptr->injected_ref_type_bipred_array[context_ptr->injected_mv_count_bipred] = to_inject_ref_type;
 #endif
                 ++context_ptr->injected_mv_count_bipred;
+#if COMP_MODE	
+				}
+#endif
             }
         }
 #if MD_INJECTION
@@ -1613,6 +1753,15 @@ void inject_mvp_candidates_II(
 
     MvReferenceFrame rf[2];
     av1_set_ref_frame(rf, ref_pair);
+#if COMP_MODE
+
+    BlockSize bsize = context_ptr->blk_geom->bsize;                       // bloc size
+    MD_COMP_TYPE compound_types_to_try = picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->compound_types_to_try;
+	MD_COMP_TYPE cur_type; //BIP 3x3 MiSize >= BLOCK_8X8 && MiSize <= BLOCK_32X32)
+	MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize<= BLOCK_32X32 ) ? compound_types_to_try : 
+                                  (compound_types_to_try == MD_COMP_WEDGE )? MD_COMP_DIFF0 : 
+                                   picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->compound_types_to_try;//MD_COMP_DIST;// MD_COMP_AVG;//
+#endif
 
     //single ref/list
     if (rf[1] == NONE_FRAME)
@@ -1764,6 +1913,26 @@ void inject_mvp_candidates_II(
             inj_mv = context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, ref_pair) == EB_FALSE;
 
             if (inj_mv) {
+#if COMP_MODE		
+
+				
+                context_ptr->variance_ready = 0 ;			
+			        for (cur_type = MD_COMP_AVG; cur_type <= tot_comp_types ; cur_type++)			
+				{
+                // If two predictors are very similar, skip wedge compound mode search
+                if (context_ptr->variance_ready)
+                    if (context_ptr->prediction_mse < 8 || (!have_newmv_in_inter_mode(NEAREST_NEARESTMV) && context_ptr->prediction_mse  < 64)) 
+                        continue;
+
+#if ! COMP_DIFF
+					//NEAREST-NEAREST
+					determine_compound_mode(
+						picture_control_set_ptr,
+						context_ptr,
+						&candidateArray[canIdx],
+						cur_type);
+#endif
+#endif
                 candidateArray[canIdx].type = INTER_MODE;
                 candidateArray[canIdx].inter_mode = NEAREST_NEARESTMV;
                 candidateArray[canIdx].pred_mode = NEAREST_NEARESTMV;
@@ -1773,6 +1942,9 @@ void inject_mvp_candidates_II(
                 candidateArray[canIdx].use_intrabc = 0;
 
                 candidateArray[canIdx].merge_flag =
+#if COMP_MODE
+					cur_type == MD_COMP_AVG &&
+#endif
                     picture_control_set_ptr->parent_pcs_ptr->is_skip_mode_allowed &&
                     (rf[0] == picture_control_set_ptr->parent_pcs_ptr->skip_mode_info.ref_frame_idx_0 + 1) &&
                     (rf[1] == picture_control_set_ptr->parent_pcs_ptr->skip_mode_info.ref_frame_idx_1 + 1) ? EB_TRUE : EB_FALSE;
@@ -1799,6 +1971,14 @@ void inject_mvp_candidates_II(
                 candidateArray[canIdx].transform_type[PLANE_TYPE_UV] = DCT_DCT;
 #endif
 
+#if COMP_DIFF
+				//NEAREST-NEAREST
+				determine_compound_mode(
+					picture_control_set_ptr,
+					context_ptr,
+					&candidateArray[canIdx],
+					cur_type);
+#endif
                 context_ptr->injected_mv_x_bipred_l0_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_x_l0;
                 context_ptr->injected_mv_y_bipred_l0_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_y_l0;
                 context_ptr->injected_mv_x_bipred_l1_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_x_l1;
@@ -1807,6 +1987,9 @@ void inject_mvp_candidates_II(
                 ++context_ptr->injected_mv_count_bipred;
 
                 INCRMENT_CAND_TOTAL_COUNT(canIdx);
+#if COMP_MODE
+				}
+#endif
             }
 
             //NEAR_NEAR
@@ -1831,6 +2014,17 @@ void inject_mvp_candidates_II(
                 inj_mv = context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, ref_pair) == EB_FALSE;
 
                 if (inj_mv) {
+#if COMP_MODE	
+					
+                context_ptr->variance_ready = 0 ;			
+			        for (cur_type = MD_COMP_AVG; cur_type <= tot_comp_types ; cur_type++)
+					{
+                // If two predictors are very similar, skip wedge compound mode search
+                if (context_ptr->variance_ready)
+                    if (context_ptr->prediction_mse < 8 || (!have_newmv_in_inter_mode(NEAR_NEARMV) && context_ptr->prediction_mse  < 64)) 
+                        continue;
+
+#endif
                     candidateArray[canIdx].type = INTER_MODE;
                     candidateArray[canIdx].inter_mode = NEAR_NEARMV;
                     candidateArray[canIdx].pred_mode = NEAR_NEARMV;
@@ -1871,8 +2065,19 @@ void inject_mvp_candidates_II(
                     context_ptr->injected_mv_y_bipred_l1_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_y_l1;
                     context_ptr->injected_ref_type_bipred_array[context_ptr->injected_mv_count_bipred] = ref_pair;
                     ++context_ptr->injected_mv_count_bipred;
-
+#if COMP_MODE
+					//NEAR-NEAR
+					determine_compound_mode(
+						picture_control_set_ptr,
+						context_ptr,
+						&candidateArray[canIdx],
+						cur_type);
+#endif
                     INCRMENT_CAND_TOTAL_COUNT(canIdx);
+
+#if COMP_MODE					
+					}
+#endif
                 }
             }
         }
@@ -2186,7 +2391,20 @@ void inject_new_nearest_new_comb_candidates(
     uint8_t inj_mv;
     uint32_t                  canIdx = *candTotCnt;
     ModeDecisionCandidate    *candidateArray = context_ptr->fast_candidate_array;
+#if COMP_MODE
 
+    BlockSize bsize = context_ptr->blk_geom->bsize;                       // bloc size
+    MD_COMP_TYPE compound_types_to_try = picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->compound_types_to_try;
+	MD_COMP_TYPE cur_type; //BIP 3x3 MiSize >= BLOCK_8X8 && MiSize <= BLOCK_32X32)
+	MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize<= BLOCK_32X32 ) ? compound_types_to_try : 
+                                  (compound_types_to_try == MD_COMP_WEDGE )? MD_COMP_DIFF0 : 
+                                   picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->compound_types_to_try;//MD_COMP_DIST;// MD_COMP_AVG;//
+#endif
+#if NEW_NEAR_FIX
+	MacroBlockD  *xd = context_ptr->cu_ptr->av1xd;
+	uint8_t drli, maxDrlIndex;
+	IntMv    nearestmv[2], nearmv[2], ref_mv[2];
+#endif
     MvReferenceFrame rf[2];
     av1_set_ref_frame(rf, ref_pair);
 
@@ -2209,6 +2427,16 @@ void inject_new_nearest_new_comb_candidates(
 
                 if (inj_mv) {
 
+#if COMP_MODE					
+					
+                context_ptr->variance_ready = 0 ;			
+			        for (cur_type = MD_COMP_AVG; cur_type <= tot_comp_types ; cur_type++)
+					{
+                // If two predictors are very similar, skip wedge compound mode search
+                if (context_ptr->variance_ready)
+                    if (context_ptr->prediction_mse < 8 || (!have_newmv_in_inter_mode(NEAREST_NEWMV) && context_ptr->prediction_mse  < 64)) 
+                        continue;
+#endif
                     candidateArray[canIdx].type = INTER_MODE;
                     candidateArray[canIdx].inter_mode = NEAREST_NEWMV;
                     candidateArray[canIdx].pred_mode = NEAREST_NEWMV;
@@ -2240,6 +2468,20 @@ void inject_new_nearest_new_comb_candidates(
                     candidateArray[canIdx].transform_type[PLANE_TYPE_UV] = DCT_DCT;
 #endif
 
+#if NEW_NEAR_FIX					
+					get_av1_mv_pred_drl(
+						context_ptr,
+						context_ptr->cu_ptr,
+						candidateArray[canIdx].ref_frame_type,
+						candidateArray[canIdx].is_compound,
+						NEAREST_NEWMV,
+						0,//not needed drli,
+						nearestmv,
+						nearmv,
+						ref_mv);
+					candidateArray[canIdx].motion_vector_pred_x[REF_LIST_1] = ref_mv[1].as_mv.col;
+					candidateArray[canIdx].motion_vector_pred_y[REF_LIST_1] = ref_mv[1].as_mv.row;
+#else
                     IntMv  bestPredmv[2] = { {0}, {0} };
 
                     ChooseBestAv1MvPred(
@@ -2260,15 +2502,25 @@ void inject_new_nearest_new_comb_candidates(
                     candidateArray[canIdx].motion_vector_pred_y[REF_LIST_0] = bestPredmv[0].as_mv.row;
                     candidateArray[canIdx].motion_vector_pred_x[REF_LIST_1] = bestPredmv[1].as_mv.col;
                     candidateArray[canIdx].motion_vector_pred_y[REF_LIST_1] = bestPredmv[1].as_mv.row;
-
+#endif
                     context_ptr->injected_mv_x_bipred_l0_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_x_l0;
                     context_ptr->injected_mv_y_bipred_l0_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_y_l0;
                     context_ptr->injected_mv_x_bipred_l1_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_x_l1;
                     context_ptr->injected_mv_y_bipred_l1_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_y_l1;
                     context_ptr->injected_ref_type_bipred_array[context_ptr->injected_mv_count_bipred] = ref_pair;
                     ++context_ptr->injected_mv_count_bipred;
-
+#if COMP_MODE
+					//NEAREST_NEW
+					determine_compound_mode(
+						picture_control_set_ptr,
+						context_ptr,
+						&candidateArray[canIdx],
+						cur_type);
+#endif
                     INCRMENT_CAND_TOTAL_COUNT(canIdx);
+#if COMP_MODE
+					}
+#endif
                 }
             }
 
@@ -2285,7 +2537,16 @@ void inject_new_nearest_new_comb_candidates(
 
                 if (inj_mv)
                 {
-
+#if COMP_MODE					
+					
+                context_ptr->variance_ready = 0 ;			
+			        for (cur_type = MD_COMP_AVG; cur_type <= tot_comp_types ; cur_type++)
+					{
+                // If two predictors are very similar, skip wedge compound mode search
+                if (context_ptr->variance_ready)
+                    if (context_ptr->prediction_mse < 8 || (!have_newmv_in_inter_mode(NEW_NEARESTMV) && context_ptr->prediction_mse  < 64)) 
+                        continue;
+#endif
                     candidateArray[canIdx].type = INTER_MODE;
                     candidateArray[canIdx].inter_mode = NEW_NEARESTMV;
                     candidateArray[canIdx].pred_mode = NEW_NEARESTMV;
@@ -2317,6 +2578,20 @@ void inject_new_nearest_new_comb_candidates(
                     candidateArray[canIdx].transform_type[PLANE_TYPE_UV] = DCT_DCT;
 #endif
 
+#if NEW_NEAR_FIX					
+					get_av1_mv_pred_drl(
+						context_ptr,
+						context_ptr->cu_ptr,
+						candidateArray[canIdx].ref_frame_type,
+						candidateArray[canIdx].is_compound,
+						NEW_NEARESTMV,
+						0,//not needed drli,
+						nearestmv,
+						nearmv,
+						ref_mv);
+					candidateArray[canIdx].motion_vector_pred_x[REF_LIST_0] = ref_mv[0].as_mv.col;
+					candidateArray[canIdx].motion_vector_pred_y[REF_LIST_0] = ref_mv[0].as_mv.row;
+#else
                     IntMv  bestPredmv[2] = { {0}, {0} };
 
                     ChooseBestAv1MvPred(
@@ -2337,17 +2612,223 @@ void inject_new_nearest_new_comb_candidates(
                     candidateArray[canIdx].motion_vector_pred_y[REF_LIST_0] = bestPredmv[0].as_mv.row;
                     candidateArray[canIdx].motion_vector_pred_x[REF_LIST_1] = bestPredmv[1].as_mv.col;
                     candidateArray[canIdx].motion_vector_pred_y[REF_LIST_1] = bestPredmv[1].as_mv.row;
-
+#endif
                     context_ptr->injected_mv_x_bipred_l0_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_x_l0;
                     context_ptr->injected_mv_y_bipred_l0_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_y_l0;
                     context_ptr->injected_mv_x_bipred_l1_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_x_l1;
                     context_ptr->injected_mv_y_bipred_l1_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_y_l1;
                     context_ptr->injected_ref_type_bipred_array[context_ptr->injected_mv_count_bipred] = ref_pair;
                     ++context_ptr->injected_mv_count_bipred;
+#if COMP_MODE
+					//NEW_NEAREST
+					determine_compound_mode(
+						picture_control_set_ptr,
+						context_ptr,
+						&candidateArray[canIdx],
+						cur_type);
+#endif
+						INCRMENT_CAND_TOTAL_COUNT(canIdx);
 
-                    INCRMENT_CAND_TOTAL_COUNT(canIdx);
-                }
-            }
+#if COMP_MODE
+					}
+#endif
+
+				}
+			}
+#if NEW_NEAR_FIX
+		   //NEW_NEARMV	
+		    if (1) {
+				maxDrlIndex = GetMaxDrlIndex(xd->ref_mv_count[ref_pair], NEW_NEARMV);
+
+				for (drli = 0; drli < maxDrlIndex; drli++) {
+
+					get_av1_mv_pred_drl(
+						context_ptr,
+						context_ptr->cu_ptr,
+						ref_pair,
+						1,
+						NEW_NEARMV,
+						drli,
+						nearestmv,
+						nearmv,
+						ref_mv);
+					
+						//NEW_NEARMV
+						const MeLcuResults *me_results = picture_control_set_ptr->parent_pcs_ptr->me_results[context_ptr->me_sb_addr];
+
+						int16_t to_inject_mv_x_l0 = me_results->me_mv_array[context_ptr->me_block_offset][ref_idx_0].x_mv << 1;
+						int16_t to_inject_mv_y_l0 = me_results->me_mv_array[context_ptr->me_block_offset][ref_idx_0].y_mv << 1;
+						int16_t to_inject_mv_x_l1 = nearmv[1].as_mv.col;
+						int16_t to_inject_mv_y_l1 = nearmv[1].as_mv.row;
+
+						inj_mv = context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, ref_pair) == EB_FALSE;
+
+						if (inj_mv) {
+
+#if COMP_MODE					
+					    
+                context_ptr->variance_ready = 0 ;			
+			        for (cur_type = MD_COMP_AVG; cur_type <= tot_comp_types ; cur_type++)
+					    {
+                // If two predictors are very similar, skip wedge compound mode search
+                if (context_ptr->variance_ready)
+                    if (context_ptr->prediction_mse < 8 || (!have_newmv_in_inter_mode(NEW_NEARMV) && context_ptr->prediction_mse  < 64)) 
+                        continue;
+#endif
+							candidateArray[canIdx].type = INTER_MODE;
+							candidateArray[canIdx].inter_mode = NEW_NEARMV;
+							candidateArray[canIdx].pred_mode = NEW_NEARMV;
+							candidateArray[canIdx].motion_mode = SIMPLE_TRANSLATION;
+							candidateArray[canIdx].is_compound = 1;
+							candidateArray[canIdx].distortion_ready = 0;
+							candidateArray[canIdx].use_intrabc = 0;
+							candidateArray[canIdx].merge_flag = EB_FALSE;
+
+							candidateArray[canIdx].prediction_direction[0] = BI_PRED;
+							candidateArray[canIdx].is_new_mv = 0;
+							candidateArray[canIdx].is_zero_mv = 0;
+							candidateArray[canIdx].motion_vector_xl0 = to_inject_mv_x_l0;
+							candidateArray[canIdx].motion_vector_yl0 = to_inject_mv_y_l0;
+							candidateArray[canIdx].motion_vector_xl1 = to_inject_mv_x_l1;
+							candidateArray[canIdx].motion_vector_yl1 = to_inject_mv_y_l1;
+
+							candidateArray[canIdx].drl_index = drli;
+
+							candidateArray[canIdx].ref_mv_index = 0;
+							candidateArray[canIdx].pred_mv_weight = 0;
+							candidateArray[canIdx].ref_frame_type = ref_pair;
+							candidateArray[canIdx].ref_frame_index_l0 = ref_idx_0;
+							candidateArray[canIdx].ref_frame_index_l1 = ref_idx_1;
+#if ATB_TX_TYPE_SUPPORT_PER_TU
+							candidateArray[canIdx].transform_type[0] = DCT_DCT;
+							candidateArray[canIdx].transform_type_uv = DCT_DCT;
+#else
+							candidateArray[canIdx].transform_type[PLANE_TYPE_Y] = DCT_DCT;
+							candidateArray[canIdx].transform_type[PLANE_TYPE_UV] = DCT_DCT;
+#endif
+							candidateArray[canIdx].motion_vector_pred_x[REF_LIST_0] = ref_mv[0].as_mv.col;
+							candidateArray[canIdx].motion_vector_pred_y[REF_LIST_0] = ref_mv[0].as_mv.row;
+
+							context_ptr->injected_mv_x_bipred_l0_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_x_l0;
+							context_ptr->injected_mv_y_bipred_l0_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_y_l0;
+							context_ptr->injected_mv_x_bipred_l1_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_x_l1;
+							context_ptr->injected_mv_y_bipred_l1_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_y_l1;
+							context_ptr->injected_ref_type_bipred_array[context_ptr->injected_mv_count_bipred] = ref_pair;
+							++context_ptr->injected_mv_count_bipred;
+#if COMP_MODE
+					//NEW_NEARMV
+					determine_compound_mode(
+						picture_control_set_ptr,
+						context_ptr,
+						&candidateArray[canIdx],
+						cur_type);
+#endif
+							INCRMENT_CAND_TOTAL_COUNT(canIdx);
+#if COMP_MODE
+					}
+#endif
+
+						}				
+
+				}
+		   }
+
+		   //NEAR_NEWMV
+		  if (1) {
+			   maxDrlIndex = GetMaxDrlIndex(xd->ref_mv_count[ref_pair], NEAR_NEWMV);
+
+			   for (drli = 0; drli < maxDrlIndex; drli++) {
+
+
+				   get_av1_mv_pred_drl(
+					   context_ptr,
+					   context_ptr->cu_ptr,
+					   ref_pair,
+					   1,
+					   NEAR_NEWMV,
+					   drli,
+					   nearestmv,
+					   nearmv,
+					   ref_mv);
+
+
+				   //NEAR_NEWMV
+				   const MeLcuResults *me_results = picture_control_set_ptr->parent_pcs_ptr->me_results[context_ptr->me_sb_addr];
+
+				   int16_t to_inject_mv_x_l0 = nearmv[0].as_mv.col;
+				   int16_t to_inject_mv_y_l0 = nearmv[0].as_mv.row;
+				   int16_t to_inject_mv_x_l1 = me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? (get_list_idx(rf[1]) << 2) : (get_list_idx(rf[1]) << 1)) + ref_idx_1].x_mv << 1;//context_ptr->md_local_cu_unit[context_ptr->blk_geom->blkidx_mds].ed_ref_mv_stack[ref_pair][0].comp_mv.as_mv.col;
+				   int16_t to_inject_mv_y_l1 = me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? (get_list_idx(rf[1]) << 2) : (get_list_idx(rf[1]) << 1)) + ref_idx_1].y_mv << 1;//context_ptr->md_local_cu_unit[context_ptr->blk_geom->blkidx_mds].ed_ref_mv_stack[ref_pair][0].comp_mv.as_mv.row;
+
+				   inj_mv = context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, ref_pair) == EB_FALSE;
+
+				   if (inj_mv) {
+
+#if COMP_MODE		
+                context_ptr->variance_ready = 0 ;			
+			        for (cur_type = MD_COMP_AVG; cur_type <= tot_comp_types ; cur_type++)
+			        {
+                // If two predictors are very similar, skip wedge compound mode search
+                if (context_ptr->variance_ready)
+                    if (context_ptr->prediction_mse < 8 || (!have_newmv_in_inter_mode(NEAR_NEWMV) && context_ptr->prediction_mse  < 64)) 
+                        continue;
+#endif
+					   candidateArray[canIdx].type = INTER_MODE;
+					   candidateArray[canIdx].inter_mode = NEAR_NEWMV;
+					   candidateArray[canIdx].pred_mode = NEAR_NEWMV;
+					   candidateArray[canIdx].motion_mode = SIMPLE_TRANSLATION;
+					   candidateArray[canIdx].is_compound = 1;
+					   candidateArray[canIdx].distortion_ready = 0;
+					   candidateArray[canIdx].use_intrabc = 0;
+					   candidateArray[canIdx].merge_flag = EB_FALSE;
+
+					   candidateArray[canIdx].prediction_direction[0] = BI_PRED;
+					   candidateArray[canIdx].is_new_mv = 0;
+					   candidateArray[canIdx].is_zero_mv = 0;
+					   candidateArray[canIdx].motion_vector_xl0 = to_inject_mv_x_l0;
+					   candidateArray[canIdx].motion_vector_yl0 = to_inject_mv_y_l0;
+					   candidateArray[canIdx].motion_vector_xl1 = to_inject_mv_x_l1;
+					   candidateArray[canIdx].motion_vector_yl1 = to_inject_mv_y_l1;
+					   candidateArray[canIdx].drl_index = drli;
+					   candidateArray[canIdx].ref_mv_index = 0;
+					   candidateArray[canIdx].pred_mv_weight = 0;
+					   candidateArray[canIdx].ref_frame_type = ref_pair;
+					   candidateArray[canIdx].ref_frame_index_l0 = ref_idx_0;
+					   candidateArray[canIdx].ref_frame_index_l1 = ref_idx_1;
+#if ATB_TX_TYPE_SUPPORT_PER_TU
+					   candidateArray[canIdx].transform_type[0] = DCT_DCT;
+					   candidateArray[canIdx].transform_type_uv = DCT_DCT;
+#else
+					   candidateArray[canIdx].transform_type[PLANE_TYPE_Y] = DCT_DCT;
+					   candidateArray[canIdx].transform_type[PLANE_TYPE_UV] = DCT_DCT;
+#endif
+
+					   candidateArray[canIdx].motion_vector_pred_x[REF_LIST_1] = ref_mv[1].as_mv.col;
+					   candidateArray[canIdx].motion_vector_pred_y[REF_LIST_1] = ref_mv[1].as_mv.row;
+				
+
+					   context_ptr->injected_mv_x_bipred_l0_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_x_l0;
+					   context_ptr->injected_mv_y_bipred_l0_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_y_l0;
+					   context_ptr->injected_mv_x_bipred_l1_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_x_l1;
+					   context_ptr->injected_mv_y_bipred_l1_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_y_l1;
+					   context_ptr->injected_ref_type_bipred_array[context_ptr->injected_mv_count_bipred] = ref_pair;
+					   ++context_ptr->injected_mv_count_bipred;
+#if COMP_MODE
+					//NEAR_NEWMV
+					determine_compound_mode(
+						picture_control_set_ptr,
+						context_ptr,
+						&candidateArray[canIdx],
+						cur_type);
+#endif
+					   INCRMENT_CAND_TOTAL_COUNT(canIdx);
+#if COMP_MODE
+					}
+#endif
+				   }
+			   }
+		   }
+#endif
 
         }
     }
@@ -2697,6 +3178,15 @@ void inject_new_candidates(
     const MeLcuResults *me_results = picture_control_set_ptr->parent_pcs_ptr->me_results[me_sb_addr];
     uint8_t total_me_cnt = me_results->total_me_candidate_index[me_block_offset];
     const MeCandidate *me_block_results = me_results->me_candidate[me_block_offset];
+#if COMP_MODE
+
+    BlockSize bsize = context_ptr->blk_geom->bsize;                       // bloc size
+    MD_COMP_TYPE compound_types_to_try = picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->compound_types_to_try;
+	MD_COMP_TYPE cur_type; //BIP 3x3 MiSize >= BLOCK_8X8 && MiSize <= BLOCK_32X32)
+	MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize<= BLOCK_32X32 ) ? compound_types_to_try : 
+                                  (compound_types_to_try == MD_COMP_WEDGE )? MD_COMP_DIFF0 : 
+                                   picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->compound_types_to_try;//MD_COMP_DIST;// MD_COMP_AVG;//
+#endif
 
     for (uint8_t me_candidate_index = 0; me_candidate_index < total_me_cnt; ++me_candidate_index)
     {
@@ -2925,7 +3415,17 @@ void inject_new_candidates(
                     if (context_ptr->injected_mv_count_bipred == 0 || is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1) == EB_FALSE) {
 #endif
 
-                        candidateArray[canTotalCnt].type = INTER_MODE;
+#if COMP_MODE	
+                context_ptr->variance_ready = 0 ;
+						for (cur_type = MD_COMP_AVG; cur_type <= tot_comp_types ; cur_type++)
+						{
+                // If two predictors are very similar, skip wedge compound mode search
+                if (context_ptr->variance_ready)
+                    if (context_ptr->prediction_mse < 8 || (!have_newmv_in_inter_mode(NEW_NEWMV) && context_ptr->prediction_mse  < 64)) 
+                        continue;
+
+#endif
+							candidateArray[canTotalCnt].type = INTER_MODE;
 
                         candidateArray[canTotalCnt].distortion_ready = 0;
                         candidateArray[canTotalCnt].use_intrabc = 0;
@@ -2994,6 +3494,14 @@ void inject_new_candidates(
                         candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_0] = bestPredmv[0].as_mv.row;
                         candidateArray[canTotalCnt].motion_vector_pred_x[REF_LIST_1] = bestPredmv[1].as_mv.col;
                         candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_1] = bestPredmv[1].as_mv.row;
+#if COMP_MODE
+							//NEW_NEW
+							determine_compound_mode(
+								picture_control_set_ptr,
+								context_ptr,
+								&candidateArray[canTotalCnt],
+								cur_type);
+#endif
 #if CHECK_CAND
                         INCRMENT_CAND_TOTAL_COUNT(canTotalCnt);
 #else
@@ -3008,6 +3516,9 @@ void inject_new_candidates(
                         context_ptr->injected_ref_type_bipred_array[context_ptr->injected_mv_count_bipred] = to_inject_ref_type;
 #endif
                         ++context_ptr->injected_mv_count_bipred;
+#if COMP_MODE
+						}
+#endif
                     }
 
                     }
@@ -3018,7 +3529,9 @@ void inject_new_candidates(
     (*candidateTotalCnt) = canTotalCnt;
         }
 #endif
-
+#if COMP_MODE
+extern aom_variance_fn_ptr_t mefn_ptr[BlockSizeS_ALL];
+#endif
 #if MD_INJECTION
 void  inject_inter_candidates(
     PictureControlSet            *picture_control_set_ptr,
@@ -3124,6 +3637,16 @@ void  inject_inter_candidates(
 
 #if ADP_BQ 
     // to add the support for extra partitioning method here
+#endif
+
+#if COMP_MODE
+
+    BlockSize bsize = context_ptr->blk_geom->bsize;                       // bloc size
+    MD_COMP_TYPE compound_types_to_try = picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->compound_types_to_try;
+	MD_COMP_TYPE cur_type; //BIP 3x3 MiSize >= BLOCK_8X8 && MiSize <= BLOCK_32X32)
+	MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize<= BLOCK_32X32 ) ? compound_types_to_try : 
+                                  (compound_types_to_try == MD_COMP_WEDGE )? MD_COMP_DIFF0 : 
+                                   picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->compound_types_to_try;//MD_COMP_DIST;// MD_COMP_AVG;//
 #endif
 #if ADP_BQ
     if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE || (picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 && picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL)) {
@@ -3681,6 +4204,15 @@ void  inject_inter_candidates(
             if (context_ptr->injected_mv_count_bipred == 0 || is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1) == EB_FALSE) {
 #endif
 
+#if COMP_MODE	
+                context_ptr->variance_ready = 0 ;
+				for (cur_type = MD_COMP_AVG; cur_type <= tot_comp_types ; cur_type++)
+				{
+                // If two predictors are very similar, skip wedge compound mode search
+                if (context_ptr->variance_ready)
+                    if (context_ptr->prediction_mse < 8 || (!have_newmv_in_inter_mode(GLOBAL_GLOBALMV) && context_ptr->prediction_mse  < 64)) 
+                        continue;
+#endif
                 candidateArray[canTotalCnt].type = INTER_MODE;
                 candidateArray[canTotalCnt].distortion_ready = 0;
                 candidateArray[canTotalCnt].use_intrabc = 0;
@@ -3718,6 +4250,14 @@ void  inject_inter_candidates(
                 candidateArray[canTotalCnt].motion_vector_yl0 = to_inject_mv_y_l0;
                 candidateArray[canTotalCnt].motion_vector_xl1 = to_inject_mv_x_l1;
                 candidateArray[canTotalCnt].motion_vector_yl1 = to_inject_mv_y_l1;
+#if COMP_MODE
+					//GLOB-GLOB
+					determine_compound_mode(
+						picture_control_set_ptr,
+						context_ptr,
+						&candidateArray[canTotalCnt],
+						cur_type);
+#endif
 
 #if CHECK_CAND
                 INCRMENT_CAND_TOTAL_COUNT(canTotalCnt);
@@ -3733,6 +4273,9 @@ void  inject_inter_candidates(
                 context_ptr->injected_ref_type_bipred_array[context_ptr->injected_mv_count_bipred] = to_inject_ref_type;
 #endif
                 ++context_ptr->injected_mv_count_bipred;
+#if COMP_MODE
+				}
+#endif
             }
             }
         }
@@ -5747,14 +6290,27 @@ EbErrorType ProductGenerateMdCandidatesCu(
 			cand_ptr->cand_class = CAND_CLASS_0;
 			context_ptr->fast_cand_count[CAND_CLASS_0]++;
 		}
-		else if (cand_ptr->is_new_mv) {
-			cand_ptr->cand_class = CAND_CLASS_1;
-			context_ptr->fast_cand_count[CAND_CLASS_1]++;
-		}
-		else {
-			cand_ptr->cand_class = CAND_CLASS_2;
-			context_ptr->fast_cand_count[CAND_CLASS_2]++;
-		}
+#if COMP_FULL
+        else if ((cand_ptr->type == INTER_MODE && cand_ptr->is_compound == 0) ||
+                 (cand_ptr->type == INTER_MODE && cand_ptr->is_compound == 1 && cand_ptr->interinter_comp.type == COMPOUND_AVERAGE)) {
+
+#endif
+            if (cand_ptr->is_new_mv) {
+                cand_ptr->cand_class = CAND_CLASS_1;
+                context_ptr->fast_cand_count[CAND_CLASS_1]++;
+            }
+            else {
+                cand_ptr->cand_class = CAND_CLASS_2;
+                context_ptr->fast_cand_count[CAND_CLASS_2]++;
+            }
+#if COMP_FULL
+        }
+        else {            
+                cand_ptr->cand_class = CAND_CLASS_3;
+                context_ptr->fast_cand_count[CAND_CLASS_3]++;
+
+        }
+#endif
 	}
 
 	uint32_t fast_accum = 0;
@@ -5862,6 +6418,41 @@ uint8_t product_full_mode_decision(
     context_ptr->md_local_cu_unit[cu_ptr->mds_idx].count_non_zero_coeffs = candidate_ptr->count_non_zero_coeffs;
 
     cu_ptr->av1xd->use_intrabc = candidate_ptr->use_intrabc;
+#if COMP_MODE
+	if (cu_ptr->prediction_mode_flag == INTER_MODE && candidate_ptr->is_compound)
+	{
+		cu_ptr->interinter_comp.type = candidate_ptr->interinter_comp.type;
+		cu_ptr->interinter_comp.mask_type = candidate_ptr->interinter_comp.mask_type;
+		cu_ptr->interinter_comp.wedge_index = candidate_ptr->interinter_comp.wedge_index;
+		cu_ptr->interinter_comp.wedge_sign = candidate_ptr->interinter_comp.wedge_sign;
+	    //mmecpy? cu_ptr->interinter_comp.seg_mask = candidate_ptr->interinter_comp.seg_mask;
+		cu_ptr->compound_idx = candidate_ptr->compound_idx;
+		cu_ptr->comp_group_idx = candidate_ptr->comp_group_idx;
+		if (cu_ptr->interinter_comp.type == COMPOUND_AVERAGE)
+		{
+			if (cu_ptr->comp_group_idx != 0 || cu_ptr->compound_idx != 1)
+				printf("NOPPLLLL");
+		}
+		else {
+           //printf("NOPPLLLL");
+		}
+
+		//this TEMP
+		//if (/*context_ptr->blk_geom->bsize==BLOCK_16X16 &&*/ wedge_params_lookup[context_ptr->blk_geom->bsize].bits > 0 && candidate_ptr->merge_flag==0 && cu_ptr->interinter_comp.type == COMPOUND_AVERAGE) {
+		//	//cu_ptr->interinter_comp.type = COMPOUND_DIFFWTD;
+		//	//cu_ptr->comp_group_idx = 1;
+		//	//cu_ptr->compound_idx = 1;
+		//	//cu_ptr->interinter_comp.mask_type = 0;
+
+		//	cu_ptr->interinter_comp.type = COMPOUND_WEDGE;
+		//	cu_ptr->comp_group_idx = 1;
+		//	cu_ptr->compound_idx = 1;
+		//	cu_ptr->interinter_comp.wedge_index =  context_ptr->blk_geom->sq_size <= 16 ? 3 : 10;
+		//	cu_ptr->interinter_comp.wedge_sign = 0;
+
+		//}
+	}
+#endif
 
     // Set the PU level variables
     cu_ptr->interp_filters = candidate_ptr->interp_filters;
@@ -5938,6 +6529,22 @@ uint8_t product_full_mode_decision(
             pu_ptr->mv[REF_LIST_1].x = candidate_ptr->motion_vector_xl1;
             pu_ptr->mv[REF_LIST_1].y = candidate_ptr->motion_vector_yl1;
         }
+#if NEW_NEAR_FIX
+		if (pu_ptr->inter_pred_direction_index == UNI_PRED_LIST_0) {
+			cu_ptr->predmv[0].as_mv.col = candidate_ptr->motion_vector_pred_x[REF_LIST_0];
+			cu_ptr->predmv[0].as_mv.row = candidate_ptr->motion_vector_pred_y[REF_LIST_0];
+		}
+		else if (pu_ptr->inter_pred_direction_index == UNI_PRED_LIST_1) {
+			cu_ptr->predmv[0].as_mv.col = candidate_ptr->motion_vector_pred_x[REF_LIST_1];
+			cu_ptr->predmv[0].as_mv.row = candidate_ptr->motion_vector_pred_y[REF_LIST_1];
+		}
+		else if (pu_ptr->inter_pred_direction_index == BI_PRED) {
+			cu_ptr->predmv[0].as_mv.col = candidate_ptr->motion_vector_pred_x[REF_LIST_0];
+			cu_ptr->predmv[0].as_mv.row = candidate_ptr->motion_vector_pred_y[REF_LIST_0];
+			cu_ptr->predmv[1].as_mv.col = candidate_ptr->motion_vector_pred_x[REF_LIST_1];
+			cu_ptr->predmv[1].as_mv.row = candidate_ptr->motion_vector_pred_y[REF_LIST_1];
+		}
+#endif
 
         // The MV prediction indicies are recalcated by the EncDec.
         pu_ptr->mvd[REF_LIST_0].pred_idx = 0;

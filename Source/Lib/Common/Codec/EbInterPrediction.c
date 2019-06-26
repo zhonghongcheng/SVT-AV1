@@ -30,6 +30,9 @@
 #include "convolve.h"
 #include "aom_dsp_rtcd.h"
 
+#if COMP_DIFF
+#include "EbRateDistortionCost.h"
+#endif
 #define MVBOUNDLOW    36    //  (80-71)<<2 // 80 = ReferencePadding ; minus 71 is derived from the expression -64 + 1 - 8, and plus 7 is derived from expression -1 + 8
 #define MVBOUNDHIGH   348   //  (80+7)<<2
 #define REFPADD_QPEL  320   //  (16+64)<<2
@@ -123,6 +126,83 @@ sub_pel_filters_4[SUBPEL_SHIFTS]) = {
 
 #define MAX_FILTER_TAP 8
 
+#if COMP_MODE
+int get_relative_dist_enc(SeqHeader *seq_header, int ref_hint, int order_hint)
+{
+	int diff, m;
+	if (!seq_header->order_hint_info.enable_order_hint)
+		return 0;
+	diff = ref_hint - order_hint;
+	m = 1 << (seq_header->order_hint_info.order_hint_bits - 1);
+	diff = (diff & (m - 1)) - (diff & m);
+	return diff;
+}
+
+static const int quant_dist_weight[4][2] = {
+  { 2, 3 }, { 2, 5 }, { 2, 7 }, { 1, MAX_FRAME_DISTANCE }
+};
+static const int quant_dist_lookup_table[2][4][2] = {
+  { { 9, 7 }, { 11, 5 }, { 12, 4 }, { 13, 3 } },
+  { { 7, 9 }, { 5, 11 }, { 4, 12 }, { 3, 13 } },
+};
+
+void av1_dist_wtd_comp_weight_assign(
+	//const AV1_COMMON *cm,
+	//const MB_MODE_INFO *mbmi,
+	PictureControlSet  *picture_control_set_ptr,
+	int cur_frame_index ,
+    int bck_frame_index ,
+    int fwd_frame_index,
+	int compound_idx,
+	int order_idx,
+	int *fwd_offset, int *bck_offset,
+	int *use_dist_wtd_comp_avg,
+	int is_compound) {
+
+
+	assert(fwd_offset != NULL && bck_offset != NULL);
+	if (!is_compound || /*mbmi->*/compound_idx) {
+		*use_dist_wtd_comp_avg = 0;
+		return;
+	}
+
+	*use_dist_wtd_comp_avg = 1;
+	//const RefCntBuffer *const bck_buf = get_ref_frame_buf(cm, mbmi->ref_frame[0]);
+	//const RefCntBuffer *const fwd_buf = get_ref_frame_buf(cm, mbmi->ref_frame[1]);
+	//const int cur_frame_index = cm->cur_frame->order_hint;
+	//int bck_frame_index = 0, fwd_frame_index = 0;
+
+	//if (bck_buf != NULL) bck_frame_index = bck_buf->order_hint;
+	//if (fwd_buf != NULL) fwd_frame_index = fwd_buf->order_hint;
+
+	int d0 = clamp(abs(get_relative_dist_enc(&picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header, //&cm->seq_params.order_hint_info,
+		fwd_frame_index, cur_frame_index)),
+		0, MAX_FRAME_DISTANCE);
+	int d1 = clamp(abs(get_relative_dist_enc(&picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header, //&cm->seq_params.order_hint_info,
+		cur_frame_index, bck_frame_index)),
+		0, MAX_FRAME_DISTANCE);
+
+	const int order = d0 <= d1;
+
+	if (d0 == 0 || d1 == 0) {
+		*fwd_offset = quant_dist_lookup_table[order_idx][3][order];
+		*bck_offset = quant_dist_lookup_table[order_idx][3][1 - order];
+		return;
+	}
+
+	int i;
+	for (i = 0; i < 3; ++i) {
+		int c0 = quant_dist_weight[i][order];
+		int c1 = quant_dist_weight[i][!order];
+		int d0_c0 = d0 * c0;
+		int d1_c1 = d1 * c1;
+		if ((d0 > d1 && d0_c0 < d1_c1) || (d0 <= d1 && d0_c0 > d1_c1)) break;
+	}
+
+	*fwd_offset = quant_dist_lookup_table[order_idx][i][order];
+	*bck_offset = quant_dist_lookup_table[order_idx][i][1 - order];
+}
+#endif
 void av1_convolve_2d_sr_c(const uint8_t *src, int32_t src_stride, uint8_t *dst,
     int32_t dst_stride, int32_t w, int32_t h,
     InterpFilterParams *filter_params_x,
@@ -987,6 +1067,1546 @@ static void highbd_convolve_2d_for_intrabc(const uint16_t *src, int src_stride,
             conv_params, bd);
     }
 }
+#if COMP_DIFF
+
+#define USE_PRECOMPUTED_WEDGE_SIGN 1
+#define USE_PRECOMPUTED_WEDGE_MASK 1
+
+#if USE_PRECOMPUTED_WEDGE_MASK
+static const uint8_t wedge_master_oblique_odd[MASK_MASTER_SIZE] = {
+  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  2,  6,  18,
+  37, 53, 60, 63, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+  64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+};
+static const uint8_t wedge_master_oblique_even[MASK_MASTER_SIZE] = {
+  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  4,  11, 27,
+  46, 58, 62, 63, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+  64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+};
+static const uint8_t wedge_master_vertical[MASK_MASTER_SIZE] = {
+  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  2,  7,  21,
+  43, 57, 62, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+  64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+};
+
+
+void aom_convolve_copy_c(const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst,
+	ptrdiff_t dst_stride, const int16_t *filter_x,
+	int filter_x_stride, const int16_t *filter_y,
+	int filter_y_stride, int w, int h) {
+	int r;
+
+	(void)filter_x;
+	(void)filter_x_stride;
+	(void)filter_y;
+	(void)filter_y_stride;
+
+	for (r = h; r > 0; --r) {
+		memcpy(dst, src, w);
+		src += src_stride;
+		dst += dst_stride;
+	}
+}
+
+static void shift_copy(const uint8_t *src, uint8_t *dst, int shift, int width) {
+	if (shift >= 0) {
+		memcpy(dst + shift, src, width - shift);
+		memset(dst, src[0], shift);
+	}
+	else {
+		shift = -shift;
+		memcpy(dst, src + shift, width - shift);
+		memset(dst + width - shift, src[width - 1], shift);
+	}
+}
+#endif  // USE_PRECOMPUTED_WEDGE_MASK
+
+
+
+// [negative][direction]
+DECLARE_ALIGNED(
+16, static uint8_t,
+wedge_mask_obl[2][WEDGE_DIRECTIONS][MASK_MASTER_SIZE * MASK_MASTER_SIZE]);
+
+// 4 * MAX_WEDGE_SQUARE is an easy to compute and fairly tight upper bound
+// on the sum of all mask sizes up to an including MAX_WEDGE_SQUARE.
+DECLARE_ALIGNED(16, static uint8_t,
+wedge_mask_buf[2 * MAX_WEDGE_TYPES * 4 * MAX_WEDGE_SQUARE]);
+
+static void init_wedge_master_masks() {
+	int i, j;
+	const int w = MASK_MASTER_SIZE;
+	const int h = MASK_MASTER_SIZE;
+	const int stride = MASK_MASTER_STRIDE;
+	// Note: index [0] stores the masters, and [1] its complement.
+#if USE_PRECOMPUTED_WEDGE_MASK
+  // Generate prototype by shifting the masters
+	int shift = h / 4;
+	for (i = 0; i < h; i += 2) {
+		shift_copy(wedge_master_oblique_even,
+			&wedge_mask_obl[0][WEDGE_OBLIQUE63][i * stride], shift,
+			MASK_MASTER_SIZE);
+		shift--;
+		shift_copy(wedge_master_oblique_odd,
+			&wedge_mask_obl[0][WEDGE_OBLIQUE63][(i + 1) * stride], shift,
+			MASK_MASTER_SIZE);
+		memcpy(&wedge_mask_obl[0][WEDGE_VERTICAL][i * stride],
+			wedge_master_vertical,
+			MASK_MASTER_SIZE * sizeof(wedge_master_vertical[0]));
+		memcpy(&wedge_mask_obl[0][WEDGE_VERTICAL][(i + 1) * stride],
+			wedge_master_vertical,
+			MASK_MASTER_SIZE * sizeof(wedge_master_vertical[0]));
+	}
+#else
+	static const double smoother_param = 2.85;
+	const int a[2] = { 2, 1 };
+	const double asqrt = sqrt(a[0] * a[0] + a[1] * a[1]);
+	for (i = 0; i < h; i++) {
+		for (j = 0; j < w; ++j) {
+			int x = (2 * j + 1 - w);
+			int y = (2 * i + 1 - h);
+			double d = (a[0] * x + a[1] * y) / asqrt;
+			const int msk = (int)rint((1.0 + tanh(d / smoother_param)) * 32);
+			wedge_mask_obl[0][WEDGE_OBLIQUE63][i * stride + j] = msk;
+			const int mskx = (int)rint((1.0 + tanh(x / smoother_param)) * 32);
+			wedge_mask_obl[0][WEDGE_VERTICAL][i * stride + j] = mskx;
+		}
+	}
+#endif  // USE_PRECOMPUTED_WEDGE_MASK
+	for (i = 0; i < h; ++i) {
+		for (j = 0; j < w; ++j) {
+			const int msk = wedge_mask_obl[0][WEDGE_OBLIQUE63][i * stride + j];
+			wedge_mask_obl[0][WEDGE_OBLIQUE27][j * stride + i] = msk;
+			wedge_mask_obl[0][WEDGE_OBLIQUE117][i * stride + w - 1 - j] =
+				wedge_mask_obl[0][WEDGE_OBLIQUE153][(w - 1 - j) * stride + i] =
+				(1 << WEDGE_WEIGHT_BITS) - msk;
+			wedge_mask_obl[1][WEDGE_OBLIQUE63][i * stride + j] =
+				wedge_mask_obl[1][WEDGE_OBLIQUE27][j * stride + i] =
+				(1 << WEDGE_WEIGHT_BITS) - msk;
+			wedge_mask_obl[1][WEDGE_OBLIQUE117][i * stride + w - 1 - j] =
+				wedge_mask_obl[1][WEDGE_OBLIQUE153][(w - 1 - j) * stride + i] = msk;
+			const int mskx = wedge_mask_obl[0][WEDGE_VERTICAL][i * stride + j];
+			wedge_mask_obl[0][WEDGE_HORIZONTAL][j * stride + i] = mskx;
+			wedge_mask_obl[1][WEDGE_VERTICAL][i * stride + j] =
+				wedge_mask_obl[1][WEDGE_HORIZONTAL][j * stride + i] =
+				(1 << WEDGE_WEIGHT_BITS) - mskx;
+		}
+	}
+}
+
+#if !USE_PRECOMPUTED_WEDGE_SIGN
+// If the signs for the wedges for various blocksizes are
+// inconsistent flip the sign flag. Do it only once for every
+// wedge codebook.
+static void init_wedge_signs() {
+	BLOCK_SIZE sb_type;
+	memset(wedge_signflip_lookup, 0, sizeof(wedge_signflip_lookup));
+	for (sb_type = BLOCK_4X4; sb_type < BLOCK_SIZES_ALL; ++sb_type) {
+		const int bw = block_size_wide[sb_type];
+		const int bh = block_size_high[sb_type];
+		const wedge_params_type wedge_params = wedge_params_lookup[sb_type];
+		const int wbits = wedge_params.bits;
+		const int wtypes = 1 << wbits;
+		int i, w;
+		if (wbits) {
+			for (w = 0; w < wtypes; ++w) {
+				// Get the mask master, i.e. index [0]
+				const uint8_t *mask = get_wedge_mask_inplace(w, 0, sb_type);
+				int avg = 0;
+				for (i = 0; i < bw; ++i) avg += mask[i];
+				for (i = 1; i < bh; ++i) avg += mask[i * MASK_MASTER_STRIDE];
+				avg = (avg + (bw + bh - 1) / 2) / (bw + bh - 1);
+				// Default sign of this wedge is 1 if the average < 32, 0 otherwise.
+				// If default sign is 1:
+				//   If sign requested is 0, we need to flip the sign and return
+				//   the complement i.e. index [1] instead. If sign requested is 1
+				//   we need to flip the sign and return index [0] instead.
+				// If default sign is 0:
+				//   If sign requested is 0, we need to return index [0] the master
+				//   if sign requested is 1, we need to return the complement index [1]
+				//   instead.
+				wedge_params.signflip[w] = (avg < 32);
+			}
+		}
+	}
+}
+#endif  // !USE_PRECOMPUTED_WEDGE_SIGN
+
+static const uint8_t *get_wedge_mask_inplace(int wedge_index, int neg,
+	BLOCK_SIZE sb_type) {
+	const uint8_t *master;
+	const int bh = block_size_high[sb_type];
+	const int bw = block_size_wide[sb_type];
+	const wedge_code_type *a =
+		wedge_params_lookup[sb_type].codebook + wedge_index;
+	int woff, hoff;
+	const uint8_t wsignflip = wedge_params_lookup[sb_type].signflip[wedge_index];
+
+	assert(wedge_index >= 0 &&
+		wedge_index < (1 << get_wedge_bits_lookup(sb_type)));
+	woff = (a->x_offset * bw) >> 3;
+	hoff = (a->y_offset * bh) >> 3;
+	master = wedge_mask_obl[neg ^ wsignflip][a->direction] +
+		MASK_MASTER_STRIDE * (MASK_MASTER_SIZE / 2 - hoff) +
+		MASK_MASTER_SIZE / 2 - woff;
+	return master;
+}
+static void init_wedge_masks() {
+	uint8_t *dst = wedge_mask_buf;
+	BLOCK_SIZE bsize;
+	memset(wedge_masks, 0, sizeof(wedge_masks));
+	for (bsize = BLOCK_4X4; bsize < BlockSizeS_ALL; ++bsize) {
+		const uint8_t *mask;
+		const int bw = block_size_wide[bsize];
+		const int bh = block_size_high[bsize];
+		const wedge_params_type *wedge_params = &wedge_params_lookup[bsize];
+		const int wbits = wedge_params->bits;
+		const int wtypes = 1 << wbits;
+		int w;
+		if (wbits == 0) continue;
+		for (w = 0; w < wtypes; ++w) {
+			mask = get_wedge_mask_inplace(w, 0, bsize);
+			aom_convolve_copy_c(mask, MASK_MASTER_STRIDE, dst, bw, NULL, 0, NULL, 0, bw,
+				bh);
+			wedge_params->masks[0][w] = dst;
+			dst += bw * bh;
+
+			mask = get_wedge_mask_inplace(w, 1, bsize);
+			aom_convolve_copy_c(mask, MASK_MASTER_STRIDE, dst, bw, NULL, 0, NULL, 0, bw,
+				bh);
+			wedge_params->masks[1][w] = dst;
+			dst += bw * bh;
+		}
+		assert(sizeof(wedge_mask_buf) >= (size_t)(dst - wedge_mask_buf));
+	}
+}
+static INLINE int get_wedge_bits_lookup(BLOCK_SIZE sb_type) {
+	return wedge_params_lookup[sb_type].bits;
+}
+// Equation of line: f(x, y) = a[0]*(x - a[2]*w/8) + a[1]*(y - a[3]*h/8) = 0
+void av1_init_wedge_masks() {
+	init_wedge_master_masks();
+#if !USE_PRECOMPUTED_WEDGE_SIGN
+	init_wedge_signs();
+#endif  // !USE_PRECOMPUTED_WEDGE_SIGN
+	init_wedge_masks();
+}
+static void diffwtd_mask_d16(uint8_t *mask, int which_inverse, int mask_base,
+	const CONV_BUF_TYPE *src0, int src0_stride,
+	const CONV_BUF_TYPE *src1, int src1_stride, int h,
+	int w, ConvolveParams *conv_params, int bd) {
+	int round =
+		2 * FILTER_BITS - conv_params->round_0 - conv_params->round_1 + (bd - 8);
+	int i, j, m, diff;
+	for (i = 0; i < h; ++i) {
+		for (j = 0; j < w; ++j) {
+			diff = abs(src0[i * src0_stride + j] - src1[i * src1_stride + j]);
+			diff = ROUND_POWER_OF_TWO(diff, round);
+			m = clamp(mask_base + (diff / DIFF_FACTOR), 0, AOM_BLEND_A64_MAX_ALPHA);
+			mask[i * w + j] = which_inverse ? AOM_BLEND_A64_MAX_ALPHA - m : m;
+		}
+	}
+}
+
+void av1_build_compound_diffwtd_mask_d16_c(
+	uint8_t *mask, DIFFWTD_MASK_TYPE mask_type, const CONV_BUF_TYPE *src0,
+	int src0_stride, const CONV_BUF_TYPE *src1, int src1_stride, int h, int w,
+	ConvolveParams *conv_params, int bd) {
+	switch (mask_type) {
+	case DIFFWTD_38:
+		diffwtd_mask_d16(mask, 0, 38, src0, src0_stride, src1, src1_stride, h, w,
+			conv_params, bd);
+		break;
+	case DIFFWTD_38_INV:
+		diffwtd_mask_d16(mask, 1, 38, src0, src0_stride, src1, src1_stride, h, w,
+			conv_params, bd);
+		break;
+	default: assert(0);
+	}
+}
+// Blending with alpha mask. Mask values come from the range [0, 64],
+// as described for AOM_BLEND_A64 in aom_dsp/blend.h. src0 or src1 can
+// be the same as dst, or dst can be different from both sources.
+
+// NOTE(david.barker): The input and output of aom_blend_a64_d16_mask_c() are
+// in a higher intermediate precision, and will later be rounded down to pixel
+// precision.
+// Thus, in order to avoid double-rounding, we want to use normal right shifts
+// within this function, not ROUND_POWER_OF_TWO.
+// This works because of the identity:
+// ROUND_POWER_OF_TWO(x >> y, z) == ROUND_POWER_OF_TWO(x, y+z)
+//
+// In contrast, the output of the non-d16 functions will not be further rounded,
+// so we *should* use ROUND_POWER_OF_TWO there.
+
+void aom_lowbd_blend_a64_d16_mask_c(
+	uint8_t *dst, uint32_t dst_stride, const CONV_BUF_TYPE *src0,
+	uint32_t src0_stride, const CONV_BUF_TYPE *src1, uint32_t src1_stride,
+	const uint8_t *mask, uint32_t mask_stride, int w, int h, int subw, int subh,
+	ConvolveParams *conv_params) {
+	int i, j;
+	const int bd = 8;
+	const int offset_bits = bd + 2 * FILTER_BITS - conv_params->round_0;
+	const int round_offset = (1 << (offset_bits - conv_params->round_1)) +
+		(1 << (offset_bits - conv_params->round_1 - 1));
+	const int round_bits =
+		2 * FILTER_BITS - conv_params->round_0 - conv_params->round_1;
+
+	assert(IMPLIES((void *)src0 == dst, src0_stride == dst_stride));
+	assert(IMPLIES((void *)src1 == dst, src1_stride == dst_stride));
+
+	assert(h >= 4);
+	assert(w >= 4);
+	//assert(IS_POWER_OF_TWO(h));
+	//assert(IS_POWER_OF_TWO(w));
+
+	if (subw == 0 && subh == 0) {
+		for (i = 0; i < h; ++i) {
+			for (j = 0; j < w; ++j) {
+				int32_t res;
+				const int m = mask[i * mask_stride + j];
+				res = ((m * (int32_t)src0[i * src0_stride + j] +
+					(AOM_BLEND_A64_MAX_ALPHA - m) *
+					(int32_t)src1[i * src1_stride + j]) >>
+					AOM_BLEND_A64_ROUND_BITS);
+				res -= round_offset;
+				dst[i * dst_stride + j] =
+					clip_pixel(ROUND_POWER_OF_TWO(res, round_bits));
+			}
+		}
+	}
+	else if (subw == 1 && subh == 1) {
+		for (i = 0; i < h; ++i) {
+			for (j = 0; j < w; ++j) {
+				int32_t res;
+				const int m = ROUND_POWER_OF_TWO(
+					mask[(2 * i) * mask_stride + (2 * j)] +
+					mask[(2 * i + 1) * mask_stride + (2 * j)] +
+					mask[(2 * i) * mask_stride + (2 * j + 1)] +
+					mask[(2 * i + 1) * mask_stride + (2 * j + 1)],
+					2);
+				res = ((m * (int32_t)src0[i * src0_stride + j] +
+					(AOM_BLEND_A64_MAX_ALPHA - m) *
+					(int32_t)src1[i * src1_stride + j]) >>
+					AOM_BLEND_A64_ROUND_BITS);
+				res -= round_offset;
+				dst[i * dst_stride + j] =
+					clip_pixel(ROUND_POWER_OF_TWO(res, round_bits));
+			}
+		}
+	}
+	else if (subw == 1 && subh == 0) {
+		for (i = 0; i < h; ++i) {
+			for (j = 0; j < w; ++j) {
+				int32_t res;
+				const int m = AOM_BLEND_AVG(mask[i * mask_stride + (2 * j)],
+					mask[i * mask_stride + (2 * j + 1)]);
+				res = ((m * (int32_t)src0[i * src0_stride + j] +
+					(AOM_BLEND_A64_MAX_ALPHA - m) *
+					(int32_t)src1[i * src1_stride + j]) >>
+					AOM_BLEND_A64_ROUND_BITS);
+				res -= round_offset;
+				dst[i * dst_stride + j] =
+					clip_pixel(ROUND_POWER_OF_TWO(res, round_bits));
+			}
+		}
+	}
+	else {
+		for (i = 0; i < h; ++i) {
+			for (j = 0; j < w; ++j) {
+				int32_t res;
+				const int m = AOM_BLEND_AVG(mask[(2 * i) * mask_stride + j],
+					mask[(2 * i + 1) * mask_stride + j]);
+				res = ((int32_t)(m * (int32_t)src0[i * src0_stride + j] +
+					(AOM_BLEND_A64_MAX_ALPHA - m) *
+					(int32_t)src1[i * src1_stride + j]) >>
+					AOM_BLEND_A64_ROUND_BITS);
+				res -= round_offset;
+				dst[i * dst_stride + j] =
+					clip_pixel(ROUND_POWER_OF_TWO(res, round_bits));
+			}
+		}
+	}
+}
+static INLINE const uint8_t *av1_get_contiguous_soft_mask(int wedge_index,
+	int wedge_sign,
+	BLOCK_SIZE sb_type) {
+	return wedge_params_lookup[sb_type].masks[wedge_sign][wedge_index];
+}
+const uint8_t *av1_get_compound_type_mask(
+	const INTERINTER_COMPOUND_DATA *const comp_data, BLOCK_SIZE sb_type) {
+	assert(is_masked_compound_type(comp_data->type));
+	(void)sb_type;
+	switch (comp_data->type) {
+	case COMPOUND_WEDGE:
+		return av1_get_contiguous_soft_mask(comp_data->wedge_index,
+			comp_data->wedge_sign, sb_type);
+	case COMPOUND_DIFFWTD: return comp_data->seg_mask;
+	default: assert(0); return NULL;
+	}
+}
+static void build_masked_compound_no_round(
+	uint8_t *dst, int dst_stride, const CONV_BUF_TYPE *src0, int src0_stride,
+	const CONV_BUF_TYPE *src1, int src1_stride,
+	const INTERINTER_COMPOUND_DATA *const comp_data, BLOCK_SIZE sb_type, int h,
+	int w, ConvolveParams *conv_params) {
+	// Derive subsampling from h and w passed in. May be refactored to
+	// pass in subsampling factors directly.
+	const int subh = (2 << mi_size_high_log2[sb_type]) == h;
+	const int subw = (2 << mi_size_wide_log2[sb_type]) == w;
+	const uint8_t *mask = av1_get_compound_type_mask(comp_data, sb_type);
+/*	if (is_cur_buf_hbd(xd)) {
+		aom_highbd_blend_a64_d16_mask(dst, dst_stride, src0, src0_stride, src1,
+			src1_stride, mask, block_size_wide[sb_type],
+			w, h, subw, subh, conv_params, xd->bd);
+	}
+	else */{
+#if COMP_AVX
+		aom_lowbd_blend_a64_d16_mask(dst, dst_stride, src0, src0_stride, src1,
+			src1_stride, mask, block_size_wide[sb_type], w,
+			h, subw, subh, conv_params);
+#else
+		aom_lowbd_blend_a64_d16_mask_c(dst, dst_stride, src0, src0_stride, src1,
+			src1_stride, mask, block_size_wide[sb_type], w,
+			h, subw, subh, conv_params);
+#endif
+	}
+}
+void av1_make_masked_inter_predictor(
+	uint8_t                   *src_ptr,
+	uint32_t                   src_stride,
+	uint8_t                   *dst_ptr,
+	uint32_t                   dst_stride,
+	const BlockGeom           *blk_geom,
+	uint8_t                    bwidth,
+	uint8_t                    bheight,
+	InterpFilterParams        *filter_params_x,
+	InterpFilterParams        *filter_params_y,
+	int32_t                    subpel_x,
+	int32_t                    subpel_y,
+	ConvolveParams            *conv_params,
+	INTERINTER_COMPOUND_DATA  *comp_data,
+	uint8_t                    bitdepth,
+	uint8_t                    plane
+	)
+{
+	
+//We come here when we have a prediction done using regular path for the ref0 stored in conv_param.dst.
+//use regular path to generate a prediction for ref1 into  a temporary buffer, 
+//then  blend that temporary buffer with that from  the first reference.
+
+	DECLARE_ALIGNED(16, uint8_t, seg_mask[2 * MAX_SB_SQUARE]);
+	comp_data->seg_mask = seg_mask;
+
+
+#define INTER_PRED_BYTES_PER_PIXEL 2
+	DECLARE_ALIGNED(32, uint8_t,
+	tmp_buf[INTER_PRED_BYTES_PER_PIXEL * MAX_SB_SQUARE]);
+#undef INTER_PRED_BYTES_PER_PIXEL
+	uint8_t *tmp_dst =  tmp_buf;
+	const int tmp_buf_stride = MAX_SB_SIZE;
+
+	CONV_BUF_TYPE *org_dst = conv_params->dst;//save the ref0 prediction pointer
+	int org_dst_stride = conv_params->dst_stride;
+	CONV_BUF_TYPE *tmp_buf16 = (CONV_BUF_TYPE *)tmp_buf;
+	conv_params->dst = tmp_buf16;
+	conv_params->dst_stride = tmp_buf_stride;
+	assert(conv_params->do_average == 0);
+
+	convolve[subpel_x != 0][subpel_y != 0][1/* ????  is_compound*/](
+		src_ptr,
+		src_stride,
+		dst_ptr,
+		dst_stride,
+		bwidth,
+		bheight,
+		filter_params_x,
+		filter_params_y,
+		subpel_x,
+		subpel_y,
+		conv_params);
+
+	if (!plane && comp_data->type == COMPOUND_DIFFWTD) {
+		//CHKN  for DIFF: need to compute the mask  comp_data->seg_mask is the output computed from the two preds org_dst and tmp_buf16
+		//for WEDGE the mask is fixed from the table based on wedge_sign/index
+#if COMP_AVX
+		av1_build_compound_diffwtd_mask_d16(
+			comp_data->seg_mask, comp_data->mask_type, org_dst, org_dst_stride,
+			tmp_buf16, tmp_buf_stride, bheight, bwidth, conv_params, bitdepth);
+
+#else
+		av1_build_compound_diffwtd_mask_d16_c(
+			comp_data->seg_mask, comp_data->mask_type, org_dst, org_dst_stride,
+			tmp_buf16, tmp_buf_stride, bheight, bwidth, conv_params, bitdepth);
+#endif
+	}
+	
+	build_masked_compound_no_round(dst_ptr, dst_stride, org_dst, org_dst_stride,
+		tmp_buf16, tmp_buf_stride, comp_data,
+		blk_geom->bsize, bheight, bwidth, conv_params);
+
+
+}
+
+void aom_subtract_block_c(int rows, int cols, int16_t *diff,
+	ptrdiff_t diff_stride, const uint8_t *src,
+	ptrdiff_t src_stride, const uint8_t *pred,
+	ptrdiff_t pred_stride) {
+	int r, c;
+
+	for (r = 0; r < rows; r++) {
+		for (c = 0; c < cols; c++) diff[c] = src[c] - pred[c];
+
+		diff += diff_stride;
+		pred += pred_stride;
+		src += src_stride;
+	}
+}
+static void diffwtd_mask(uint8_t *mask, int which_inverse, int mask_base,
+	const uint8_t *src0, int src0_stride,
+	const uint8_t *src1, int src1_stride, int h, int w) {
+	int i, j, m, diff;
+	for (i = 0; i < h; ++i) {
+		for (j = 0; j < w; ++j) {
+			diff =
+				abs((int)src0[i * src0_stride + j] - (int)src1[i * src1_stride + j]);
+			m = clamp(mask_base + (diff / DIFF_FACTOR), 0, AOM_BLEND_A64_MAX_ALPHA);
+			mask[i * w + j] = which_inverse ? AOM_BLEND_A64_MAX_ALPHA - m : m;
+		}
+	}
+}
+void av1_build_compound_diffwtd_mask_c(uint8_t *mask,
+	DIFFWTD_MASK_TYPE mask_type,
+	const uint8_t *src0, int src0_stride,
+	const uint8_t *src1, int src1_stride,
+	int h, int w) {
+	switch (mask_type) {
+	case DIFFWTD_38:
+		diffwtd_mask(mask, 0, 38, src0, src0_stride, src1, src1_stride, h, w);
+		break;
+	case DIFFWTD_38_INV:
+		diffwtd_mask(mask, 1, 38, src0, src0_stride, src1, src1_stride, h, w);
+		break;
+	default: assert(0);
+	}
+}
+#define MAX_MASK_VALUE (1 << WEDGE_WEIGHT_BITS)
+
+/**
+ * Computes SSE of a compound predictor constructed from 2 fundamental
+ * predictors p0 and p1 using blending with mask.
+ *
+ * r1:  Residuals of p1.
+ *      (source - p1)
+ * d:   Difference of p1 and p0.
+ *      (p1 - p0)
+ * m:   The blending mask
+ * N:   Number of pixels
+ *
+ * 'r1', 'd', and 'm' are contiguous.
+ *
+ * Computes:
+ *  Sum((MAX_MASK_VALUE*r1 + mask*d)**2), which is equivalent to:
+ *  Sum((mask*r0 + (MAX_MASK_VALUE-mask)*r1)**2),
+ *    where r0 is (source - p0), and r1 is (source - p1), which is in turn
+ *    is equivalent to:
+ *  Sum((source*MAX_MASK_VALUE - (mask*p0 + (MAX_MASK_VALUE-mask)*p1))**2),
+ *    which is the SSE of the residuals of the compound predictor scaled up by
+ *    MAX_MASK_VALUE**2.
+ *
+ * Note that we clamp the partial term in the loop to 16 bits signed. This is
+ * to facilitate equivalent SIMD implementation. It should have no effect if
+ * residuals are within 16 - WEDGE_WEIGHT_BITS (=10) signed, which always
+ * holds for 8 bit input, and on real input, it should hold practically always,
+ * as residuals are expected to be small.
+ */
+uint64_t av1_wedge_sse_from_residuals_c(const int16_t *r1, const int16_t *d,
+	const uint8_t *m, int N) {
+	uint64_t csse = 0;
+	int i;
+
+	for (i = 0; i < N; i++) {
+		int32_t t = MAX_MASK_VALUE * r1[i] + m[i] * d[i];
+		t = clamp(t, INT16_MIN, INT16_MAX);
+		csse += t * t;
+	}
+	return ROUND_POWER_OF_TWO(csse, 2 * WEDGE_WEIGHT_BITS);
+}
+static const uint8_t bsize_curvfit_model_cat_lookup[BlockSizeS_ALL] = {
+  0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 3, 3, 0, 0, 1, 1, 2, 2
+};
+static int sse_norm_curvfit_model_cat_lookup(double sse_norm) {
+	return (sse_norm > 16.0);
+}
+static const double interp_rgrid_curv[4][65] = {
+  {
+	  0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+	  0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+	  0.000000,    23.801499,   28.387688,   33.388795,   42.298282,
+	  41.525408,   51.597692,   49.566271,   54.632979,   60.321507,
+	  67.730678,   75.766165,   85.324032,   96.600012,   120.839562,
+	  173.917577,  255.974908,  354.107573,  458.063476,  562.345966,
+	  668.568424,  772.072881,  878.598490,  982.202274,  1082.708946,
+	  1188.037853, 1287.702240, 1395.588773, 1490.825830, 1584.231230,
+	  1691.386090, 1766.822555, 1869.630904, 1926.743565, 2002.949495,
+	  2047.431137, 2138.486068, 2154.743767, 2209.242472, 2277.593051,
+	  2290.996432, 2307.452938, 2343.567091, 2397.654644, 2469.425868,
+	  2558.591037, 2664.860422, 2787.944296, 2927.552932, 3083.396602,
+	  3255.185579, 3442.630134, 3645.440541, 3863.327072, 4096.000000,
+  },
+  {
+	  0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+	  0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+	  0.000000,    8.998436,    9.439592,    9.731837,    10.865931,
+	  11.561347,   12.578139,   14.205101,   16.770584,   19.094853,
+	  21.330863,   23.298907,   26.901921,   34.501017,   57.891733,
+	  112.234763,  194.853189,  288.302032,  380.499422,  472.625309,
+	  560.226809,  647.928463,  734.155122,  817.489721,  906.265783,
+	  999.260562,  1094.489206, 1197.062998, 1293.296825, 1378.926484,
+	  1472.760990, 1552.663779, 1635.196884, 1692.451951, 1759.741063,
+	  1822.162720, 1916.515921, 1966.686071, 2031.647506, 2033.700134,
+	  2087.847688, 2161.688858, 2242.536028, 2334.023491, 2436.337802,
+	  2549.665519, 2674.193198, 2810.107395, 2957.594666, 3116.841567,
+	  3288.034655, 3471.360486, 3667.005616, 3875.156602, 4096.000000,
+  },
+  {
+	  0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+	  0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+	  0.000000,    2.377584,    2.557185,    2.732445,    2.851114,
+	  3.281800,    3.765589,    4.342578,    5.145582,    5.611038,
+	  6.642238,    7.945977,    11.800522,   17.346624,   37.501413,
+	  87.216800,   165.860942,  253.865564,  332.039345,  408.518863,
+	  478.120452,  547.268590,  616.067676,  680.022540,  753.863541,
+	  834.529973,  919.489191,  1008.264989, 1092.230318, 1173.971886,
+	  1249.514122, 1330.510941, 1399.523249, 1466.923387, 1530.533471,
+	  1586.515722, 1695.197774, 1746.648696, 1837.136959, 1909.075485,
+	  1975.074651, 2060.159200, 2155.335095, 2259.762505, 2373.710437,
+	  2497.447898, 2631.243895, 2775.367434, 2930.087523, 3095.673170,
+	  3272.393380, 3460.517161, 3660.313520, 3872.051464, 4096.000000,
+  },
+  {
+	  0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+	  0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+	  0.000000,    0.296997,    0.342545,    0.403097,    0.472889,
+	  0.614483,    0.842937,    1.050824,    1.326663,    1.717750,
+	  2.530591,    3.582302,    6.995373,    9.973335,    24.042464,
+	  56.598240,   113.680735,  180.018689,  231.050567,  266.101082,
+	  294.957934,  323.326511,  349.434429,  380.443211,  408.171987,
+	  441.214916,  475.716772,  512.900000,  551.186939,  592.364455,
+	  624.527378,  661.940693,  679.185473,  724.800679,  764.781792,
+	  873.050019,  950.299001,  939.292954,  1052.406153, 1033.893184,
+	  1112.182406, 1219.174326, 1337.296681, 1471.648357, 1622.492809,
+	  1790.093491, 1974.713858, 2176.617364, 2396.067465, 2633.327614,
+	  2888.661266, 3162.331876, 3454.602899, 3765.737789, 4096.000000,
+  },
+};
+
+static const double interp_dgrid_curv[2][65] = {
+  {
+	  16.000000, 15.962891, 15.925174, 15.886888, 15.848074, 15.808770,
+	  15.769015, 15.728850, 15.688313, 15.647445, 15.606284, 15.564870,
+	  15.525918, 15.483820, 15.373330, 15.126844, 14.637442, 14.184387,
+	  13.560070, 12.880717, 12.165995, 11.378144, 10.438769, 9.130790,
+	  7.487633,  5.688649,  4.267515,  3.196300,  2.434201,  1.834064,
+	  1.369920,  1.035921,  0.775279,  0.574895,  0.427232,  0.314123,
+	  0.233236,  0.171440,  0.128188,  0.092762,  0.067569,  0.049324,
+	  0.036330,  0.027008,  0.019853,  0.015539,  0.011093,  0.008733,
+	  0.007624,  0.008105,  0.005427,  0.004065,  0.003427,  0.002848,
+	  0.002328,  0.001865,  0.001457,  0.001103,  0.000801,  0.000550,
+	  0.000348,  0.000193,  0.000085,  0.000021,  0.000000,
+  },
+  {
+	  16.000000, 15.996116, 15.984769, 15.966413, 15.941505, 15.910501,
+	  15.873856, 15.832026, 15.785466, 15.734633, 15.679981, 15.621967,
+	  15.560961, 15.460157, 15.288367, 15.052462, 14.466922, 13.921212,
+	  13.073692, 12.222005, 11.237799, 9.985848,  8.898823,  7.423519,
+	  5.995325,  4.773152,  3.744032,  2.938217,  2.294526,  1.762412,
+	  1.327145,  1.020728,  0.765535,  0.570548,  0.425833,  0.313825,
+	  0.232959,  0.171324,  0.128174,  0.092750,  0.067558,  0.049319,
+	  0.036330,  0.027008,  0.019853,  0.015539,  0.011093,  0.008733,
+	  0.007624,  0.008105,  0.005427,  0.004065,  0.003427,  0.002848,
+	  0.002328,  0.001865,  0.001457,  0.001103,  0.000801,  0.000550,
+	  0.000348,  0.000193,  0.000085,  0.000021,  -0.000000,
+  },
+};
+static double interp_cubic(const double *p, double x) {
+	return p[1] + 0.5 * x *
+		(p[2] - p[0] +
+			x * (2.0 * p[0] - 5.0 * p[1] + 4.0 * p[2] - p[3] +
+				x * (3.0 * (p[1] - p[2]) + p[3] - p[0])));
+}
+void av1_model_rd_curvfit(BLOCK_SIZE bsize, double sse_norm, double xqr,
+	double *rate_f, double *distbysse_f) {
+	const double x_start = -15.5;
+	const double x_end = 16.5;
+	const double x_step = 0.5;
+	const double epsilon = 1e-6;
+	const int rcat = bsize_curvfit_model_cat_lookup[bsize];
+	const int dcat = sse_norm_curvfit_model_cat_lookup(sse_norm);
+	(void)x_end;
+
+	xqr = AOMMAX(xqr, x_start + x_step + epsilon);
+	xqr = AOMMIN(xqr, x_end - x_step - epsilon);
+	const double x = (xqr - x_start) / x_step;
+	const int xi = (int)floor(x);
+	const double xo = x - xi;
+
+	assert(xi > 0);
+
+	const double *prate = &interp_rgrid_curv[rcat][(xi - 1)];
+	*rate_f = interp_cubic(prate, xo);
+	const double *pdist = &interp_dgrid_curv[dcat][(xi - 1)];
+	*distbysse_f = interp_cubic(pdist, xo);
+}
+// Fits a curve for rate and distortion using as feature:
+// log2(sse_norm/qstep^2)
+static void model_rd_with_curvfit(
+	//const AV1_COMP *const cpi,
+	//const MACROBLOCK *const x,
+	PictureControlSet      *picture_control_set_ptr,
+	BLOCK_SIZE plane_bsize, int plane,
+	int64_t sse, int num_samples, int *rate,
+	int64_t *dist,
+	uint32_t rdmult
+    )
+{
+	
+	(void)plane_bsize;
+	//const MACROBLOCKD *const xd = &x->e_mbd;
+	//const struct macroblockd_plane *const pd = &xd->plane[plane];
+	const int dequant_shift = /*(is_cur_buf_hbd(xd)) ? xd->bd - 5 :*/ 3;
+
+	int32_t current_q_index = MAX(0, MIN(QINDEX_RANGE - 1, picture_control_set_ptr->parent_pcs_ptr->base_qindex));
+	Dequants *const dequants = &picture_control_set_ptr->parent_pcs_ptr->deq;
+	int16_t quantizer = dequants->y_dequant_Q3[current_q_index][1];
+
+	const int qstep = AOMMAX(quantizer /*pd->dequant_Q3[1]*/ >> dequant_shift, 1);
+
+	if (sse == 0) {
+		if (rate) *rate = 0;
+		if (dist) *dist = 0;
+		return;
+	}
+	aom_clear_system_state();
+	const double sse_norm = (double)sse / num_samples;
+	const double qstepsqr = (double)qstep * qstep;
+	const double xqr = log2(sse_norm / qstepsqr);
+
+	double rate_f, dist_by_sse_norm_f;
+	av1_model_rd_curvfit(plane_bsize, sse_norm, xqr, &rate_f,&dist_by_sse_norm_f);
+
+	const double dist_f = dist_by_sse_norm_f * sse_norm;
+	int rate_i = (int)(AOMMAX(0.0, rate_f * num_samples) + 0.5);
+	int64_t dist_i = (int64_t)(AOMMAX(0.0, dist_f * num_samples) + 0.5);
+	aom_clear_system_state();
+
+	// Check if skip is better
+	if (rate_i == 0) {
+		dist_i = sse << 4;
+	}
+	else if ( RDCOST( rdmult, rate_i, dist_i) >= RDCOST( rdmult, 0, sse << 4) ) {
+		rate_i = 0;
+		dist_i = sse << 4;
+	}
+
+	if (rate) *rate = rate_i;
+	if (dist) *dist = dist_i;
+}
+
+
+/**
+ * Compute the element-wise difference of the squares of 2 arrays.
+ *
+ * d: Difference of the squares of the inputs: a**2 - b**2
+ * a: First input array
+ * b: Second input array
+ * N: Number of elements
+ *
+ * 'd', 'a', and 'b' are contiguous.
+ *
+ * The result is saturated to signed 16 bits.
+ */
+void av1_wedge_compute_delta_squares_c(int16_t *d, const int16_t *a,
+                                       const int16_t *b, int N) {
+  int i;
+
+  for (i = 0; i < N; i++)
+    d[i] = clamp(a[i] * a[i] - b[i] * b[i], INT16_MIN, INT16_MAX);
+}
+
+uint64_t aom_sum_squares_i16_c(const int16_t *src, uint32_t n) {
+  uint64_t ss = 0;
+  do {
+    const int16_t v = *src++;
+    ss += v * v;
+  } while (--n);
+
+  return ss;
+}
+/**
+ * Choose the mask sign for a compound predictor.
+ *
+ * ds:    Difference of the squares of the residuals.
+ *        r0**2 - r1**2
+ * m:     The blending mask
+ * N:     Number of pixels
+ * limit: Pre-computed threshold value.
+ *        MAX_MASK_VALUE/2 * (sum(r0**2) - sum(r1**2))
+ *
+ * 'ds' and 'm' are contiguous.
+ *
+ * Returns true if the negated mask has lower SSE compared to the positive
+ * mask. Computation is based on:
+ *  Sum((mask*r0 + (MAX_MASK_VALUE-mask)*r1)**2)
+ *                                     >
+ *                                Sum(((MAX_MASK_VALUE-mask)*r0 + mask*r1)**2)
+ *
+ *  which can be simplified to:
+ *
+ *  Sum(mask*(r0**2 - r1**2)) > MAX_MASK_VALUE/2 * (sum(r0**2) - sum(r1**2))
+ *
+ *  The right hand side does not depend on the mask, and needs to be passed as
+ *  the 'limit' parameter.
+ *
+ *  After pre-computing (r0**2 - r1**2), which is passed in as 'ds', the left
+ *  hand side is simply a scalar product between an int16_t and uint8_t vector.
+ *
+ *  Note that for efficiency, ds is stored on 16 bits. Real input residuals
+ *  being small, this should not cause a noticeable issue.
+ */
+int8_t av1_wedge_sign_from_residuals_c(const int16_t *ds, const uint8_t *m,
+                                       int N, int64_t limit) {
+  int64_t acc = 0;
+
+  do {
+    acc += *ds++ * *m++;
+  } while (--N);
+
+  return acc > limit;
+}
+static void /*int64_t*/ pick_wedge(
+    PictureControlSet                    *picture_control_set_ptr,
+	ModeDecisionContext                  *context_ptr,
+    //const AV1_COMP *const cpi,
+    //const MACROBLOCK *const x,
+    const BLOCK_SIZE bsize, 
+    const uint8_t *const p0,
+    const int16_t *const residual1,
+    const int16_t *const diff10,
+    int8_t *const best_wedge_sign,
+    int8_t *const best_wedge_index) {
+ // const MACROBLOCKD *const xd = &x->e_mbd;
+ // const struct buf_2d *const src = &x->plane[0].src;
+    EbPictureBufferDesc   *src_pic = picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr;		
+    uint8_t               *src_buf  = src_pic->buffer_y + (context_ptr->cu_origin_x + src_pic->origin_x) + (context_ptr->cu_origin_y + src_pic->origin_y) * src_pic->stride_y;
+
+  const int bw = block_size_wide[bsize];
+  const int bh = block_size_high[bsize];
+  const int N = bw * bh;
+  assert(N >= 64);
+  int rate;
+  int64_t dist;
+  int64_t rd, best_rd = INT64_MAX;
+  int8_t wedge_index;
+  int8_t wedge_sign;
+  int8_t wedge_types = (1 << get_wedge_bits_lookup(bsize));
+  const uint8_t *mask;
+  uint64_t sse;
+  //const int hbd = is_cur_buf_hbd(xd);
+  //const int bd_round = hbd ? (xd->bd - 8) * 2 : 0;
+  const int bd_round = 0;
+  DECLARE_ALIGNED(32, int16_t, residual0[MAX_SB_SQUARE]);  // src - pred0
+  //if (hbd) {
+  //  aom_highbd_subtract_block(bh, bw, residual0, bw, src->buf, src->stride,
+  //                            CONVERT_TO_BYTEPTR(p0), bw, xd->bd);
+  //} else {
+    aom_subtract_block(bh, bw, residual0, bw, src_buf/*src->buf*/, src_pic->stride_y/*src->stride*/, p0, bw);
+  //}
+
+  int64_t sign_limit = ((int64_t)aom_sum_squares_i16(residual0, N) -
+                        (int64_t)aom_sum_squares_i16(residual1, N)) *
+                       (1 << WEDGE_WEIGHT_BITS) / 2;
+  int16_t *ds = residual0;
+
+  av1_wedge_compute_delta_squares(ds, residual0, residual1, N);
+
+  for (wedge_index = 0; wedge_index < wedge_types; ++wedge_index) {
+    mask = av1_get_contiguous_soft_mask(wedge_index, 0, bsize);
+
+    wedge_sign = av1_wedge_sign_from_residuals(ds, mask, N, sign_limit);
+
+    mask = av1_get_contiguous_soft_mask(wedge_index, wedge_sign, bsize);
+    sse = av1_wedge_sse_from_residuals(residual1, diff10, mask, N);
+    sse = ROUND_POWER_OF_TWO(sse, bd_round);
+
+    //model_rd_sse_fn[MODELRD_TYPE_MASKED_COMPOUND](cpi, x, bsize, 0, sse, N,
+     //                                             &rate, &dist);
+    model_rd_with_curvfit(picture_control_set_ptr,bsize, 0, sse, N,	&rate, &dist, context_ptr->full_lambda);
+    // int rate2;
+    // int64_t dist2;
+    // model_rd_with_curvfit(cpi, x, bsize, 0, sse, N, &rate2, &dist2);
+    // printf("sse %"PRId64": leagacy: %d %"PRId64", curvfit %d %"PRId64"\n",
+    // sse, rate, dist, rate2, dist2); dist = dist2;
+    // rate = rate2;
+
+    //rate += x->wedge_idx_cost[bsize][wedge_index];
+    rd = RDCOST(context_ptr->full_lambda/*x->rdmult*/, rate, dist);
+
+    if (rd < best_rd) {
+      *best_wedge_index = wedge_index;
+      *best_wedge_sign = wedge_sign;
+      best_rd = rd;
+    }
+  }
+
+  /*return best_rd -
+         RDCOST(x->rdmult, x->wedge_idx_cost[bsize][*best_wedge_index], 0);*/
+}
+
+extern aom_variance_fn_ptr_t mefn_ptr[BlockSizeS_ALL];
+
+// This is used as a reference when computing the source variance for the
+//  purposes of activity masking.
+// Eventually this should be replaced by custom no-reference routines,
+//  which will be faster.
+//const uint8_t AV1_VAR_OFFS[MAX_SB_SIZE] = {
+//  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+//  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+//  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+//  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+//  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+//  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+//  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+//  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+//  128, 128, 128, 128, 128, 128, 128, 128
+//};
+
+//unsigned int av1_get_sby_perpixel_variance(const aom_variance_fn_ptr_t *fn_ptr, //const AV1_COMP *cpi,
+//                                           const uint8_t *src,int stride,//const struct buf_2d *ref,
+//                                           BlockSize bs) {
+//  unsigned int sse;
+//  const unsigned int var =
+//      //cpi->fn_ptr[bs].vf(ref->buf, ref->stride, AV1_VAR_OFFS, 0, &sse);
+//     fn_ptr->vf(src,  stride, AV1_VAR_OFFS, 0, &sse);
+//  return ROUND_POWER_OF_TWO(var, num_pels_log2_lookup[bs]);
+//}
+
+static int8_t estimate_wedge_sign(  
+    
+    PictureControlSet                    *picture_control_set_ptr,
+	ModeDecisionContext                  *context_ptr,
+    //const AV1_COMP *cpi, const MACROBLOCK *x,
+    const BLOCK_SIZE bsize, 
+    const uint8_t *pred0,
+    int stride0, 
+    const uint8_t *pred1,
+    int stride1) {
+  static const BLOCK_SIZE split_qtr[BlockSizeS_ALL] = {
+    //                            4X4
+    BLOCK_INVALID,
+    // 4X8,        8X4,           8X8
+    BLOCK_INVALID, BLOCK_INVALID, BLOCK_4X4,
+    // 8X16,       16X8,          16X16
+    BLOCK_4X8, BLOCK_8X4, BLOCK_8X8,
+    // 16X32,      32X16,         32X32
+    BLOCK_8X16, BLOCK_16X8, BLOCK_16X16,
+    // 32X64,      64X32,         64X64
+    BLOCK_16X32, BLOCK_32X16, BLOCK_32X32,
+    // 64x128,     128x64,        128x128
+    BLOCK_32X64, BLOCK_64X32, BLOCK_64X64,
+    // 4X16,       16X4,          8X32
+    BLOCK_INVALID, BLOCK_INVALID, BLOCK_4X16,
+    // 32X8,       16X64,         64X16
+    BLOCK_16X4, BLOCK_8X32, BLOCK_32X8
+  };
+ // const struct macroblock_plane *const p = &x->plane[0];
+ //const uint8_t *src = p->src.buf;
+ //int src_stride = p->src.stride;
+  const int bw = block_size_wide[bsize];
+  const int bh = block_size_high[bsize];
+  uint32_t esq[2][4];
+  int64_t tl, br;
+
+  const BLOCK_SIZE f_index = split_qtr[bsize];
+  assert(f_index != BLOCK_INVALID);
+
+  //if (is_cur_buf_hbd(&x->e_mbd)) {
+  //  pred0 = CONVERT_TO_BYTEPTR(pred0);
+  //  pred1 = CONVERT_TO_BYTEPTR(pred1);
+  //}
+  
+    const aom_variance_fn_ptr_t *fn_ptr = &mefn_ptr[bsize];
+    EbPictureBufferDesc   *src_pic = picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr;		
+    uint8_t               *src_buf  = src_pic->buffer_y + (context_ptr->cu_origin_x + src_pic->origin_x) + (context_ptr->cu_origin_y + src_pic->origin_y) * src_pic->stride_y;
+
+    //  fn_ptr->vf(src_buf,  src_pic->stride_y , pred0, stride0,  &esq[0][0]);
+      //cpi->fn_ptr[bs].vf(ref->buf, ref->stride, AV1_VAR_OFFS, 0, &sse);
+
+  fn_ptr->vf(src_buf                                            , src_pic->stride_y    , pred0                              , stride0, &esq[0][0]);
+  fn_ptr->vf(src_buf + bw / 2                                   , src_pic->stride_y    , pred0 + bw / 2                     , stride0, &esq[0][1]);
+  fn_ptr->vf(src_buf + bh / 2 * src_pic->stride_y               , src_pic->stride_y    , pred0 + bh / 2 * stride0           , stride0, &esq[0][2]);
+  fn_ptr->vf(src_buf + bh / 2 * src_pic->stride_y + bw / 2      , src_pic->stride_y    , pred0 + bh / 2 * stride0 + bw / 2  , stride0, &esq[0][3]);
+  fn_ptr->vf(src_buf                                            , src_pic->stride_y    , pred1                              , stride1, &esq[1][0]);
+  fn_ptr->vf(src_buf + bw / 2                                   , src_pic->stride_y    , pred1 + bw / 2                     , stride1, &esq[1][1]);
+  fn_ptr->vf(src_buf + bh / 2 * src_pic->stride_y               , src_pic->stride_y    , pred1 + bh / 2 * stride1           , stride0, &esq[1][2]);
+  fn_ptr->vf(src_buf + bh / 2 * src_pic->stride_y + bw / 2      , src_pic->stride_y    , pred1 + bh / 2 * stride1 + bw / 2  , stride0, &esq[1][3]);
+
+  tl = ((int64_t)esq[0][0] + esq[0][1] + esq[0][2]) -
+       ((int64_t)esq[1][0] + esq[1][1] + esq[1][2]);
+  br = ((int64_t)esq[1][3] + esq[1][1] + esq[1][2]) -
+       ((int64_t)esq[0][3] + esq[0][1] + esq[0][2]);
+  return (tl + br > 0);
+}
+
+// Choose the best wedge index the specified sign
+static int64_t pick_wedge_fixed_sign(
+	PictureControlSet                    *picture_control_set_ptr,
+	ModeDecisionContext                  *context_ptr,
+    //const AV1_COMP *const cpi,
+    //const MACROBLOCK *const x,
+    const BLOCK_SIZE bsize,
+    const int16_t *const residual1,
+    const int16_t *const diff10,
+    const int8_t wedge_sign,
+    int8_t *const best_wedge_index) {
+  //const MACROBLOCKD *const xd = &x->e_mbd;
+
+  const int bw = block_size_wide[bsize];
+  const int bh = block_size_high[bsize];
+  const int N = bw * bh;
+  assert(N >= 64);
+  int rate;
+  int64_t dist;
+  int64_t rd, best_rd = INT64_MAX;
+  int8_t wedge_index;
+  int8_t wedge_types = (1 << get_wedge_bits_lookup(bsize));
+  const uint8_t *mask;
+  uint64_t sse;
+  const int hbd = 0;// is_cur_buf_hbd(xd);
+  const int bd_round = 0;//hbd ? (xd->bd - 8) * 2 : 0;
+  for (wedge_index = 0; wedge_index < wedge_types; ++wedge_index) {
+    mask = av1_get_contiguous_soft_mask(wedge_index, wedge_sign, bsize);
+    sse = av1_wedge_sse_from_residuals(residual1, diff10, mask, N);
+    sse = ROUND_POWER_OF_TWO(sse, bd_round);
+    
+	model_rd_with_curvfit(picture_control_set_ptr,bsize, 0, sse, N,	&rate, &dist, context_ptr->full_lambda);
+   // model_rd_sse_fn[MODELRD_TYPE_MASKED_COMPOUND](cpi, x, bsize, 0, sse, N, &rate, &dist);
+
+   // rate += x->wedge_idx_cost[bsize][wedge_index];
+    rd = RDCOST(/*x->rdmult*/context_ptr->full_lambda, rate, dist);
+
+    if (rd < best_rd) {
+      *best_wedge_index = wedge_index;
+      best_rd = rd;
+    }
+  }
+  return best_rd ;//- RDCOST(x->rdmult, x->wedge_idx_cost[bsize][*best_wedge_index], 0);
+}
+static void /*int64_t*/ pick_interinter_wedge(
+	PictureControlSet                    *picture_control_set_ptr,
+	ModeDecisionContext                  *context_ptr,
+	INTERINTER_COMPOUND_DATA             *interinter_comp,
+   //const AV1_COMP *const cpi, 
+   //MACROBLOCK *const x, 
+    const BLOCK_SIZE bsize,
+    const uint8_t *const p0, 
+    const uint8_t *const p1,
+    const int16_t *const residual1, 
+    const int16_t *const diff10) {
+//  MACROBLOCKD *const xd = &x->e_mbd;
+//  MB_MODE_INFO *const mbmi = xd->mi[0];
+  const int bw = block_size_wide[bsize];
+
+  int64_t rd;
+  int8_t wedge_index = -1;
+  int8_t wedge_sign = 0;
+
+  assert(is_interinter_compound_used(COMPOUND_WEDGE, bsize));
+  //assert(cpi->common.seq_params.enable_masked_compound);  
+ // assert(picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header->enable_masked_compound  > 0);
+
+  // Two method
+  // Fast seatch method to be added  OMK
+
+  if (picture_control_set_ptr->parent_pcs_ptr->wedge_mode == 2 || picture_control_set_ptr->parent_pcs_ptr->wedge_mode == 3) {
+    wedge_sign = estimate_wedge_sign(/*cpi, x, */picture_control_set_ptr,context_ptr, bsize, p0, bw, p1, bw);
+    rd = pick_wedge_fixed_sign(/*cpi, x, */picture_control_set_ptr,context_ptr, bsize, residual1, diff10, wedge_sign,
+                               &wedge_index);
+  } else {
+    /*rd =*/ pick_wedge(/*cpi, x, */picture_control_set_ptr,context_ptr,
+        bsize, p0, residual1, diff10, &wedge_sign,
+                    &wedge_index);
+  }
+
+  interinter_comp->wedge_sign = wedge_sign;
+  interinter_comp->wedge_index = wedge_index;
+//  return rd;
+}
+
+static void  pick_interinter_seg(
+	PictureControlSet                    *picture_control_set_ptr,
+	ModeDecisionContext                  *context_ptr,
+	INTERINTER_COMPOUND_DATA             *interinter_comp,
+	//const AV1_COMP *const cpi,
+	//MACROBLOCK *const x,
+	const BLOCK_SIZE bsize,
+	const uint8_t *const p0,
+	const uint8_t *const p1,
+	const int16_t *const residual1,
+	const int16_t *const diff10)
+{
+	//MACROBLOCKD *const xd = &x->e_mbd;
+	//MB_MODE_INFO *const mbmi = xd->mi[0];
+	const int bw = block_size_wide[bsize];
+	const int bh = block_size_high[bsize];
+	const int N = 1 << num_pels_log2_lookup[bsize];
+	int rate;
+	int64_t dist;
+	DIFFWTD_MASK_TYPE cur_mask_type;
+	int64_t best_rd = INT64_MAX;
+	DIFFWTD_MASK_TYPE best_mask_type = 0;
+	//const int hbd = is_cur_buf_hbd(xd);
+	//const int bd_round = hbd ? (xd->bd - 8) * 2 : 0;
+	DECLARE_ALIGNED(16, uint8_t, seg_mask0[2 * MAX_SB_SQUARE]);
+	DECLARE_ALIGNED(16, uint8_t, seg_mask1[2 * MAX_SB_SQUARE]);
+	uint8_t *tmp_mask[2] = { seg_mask0, seg_mask1 };
+	
+	// try each mask type and its inverse
+	for (cur_mask_type = 0; cur_mask_type < DIFFWTD_MASK_TYPES; cur_mask_type++) {
+		
+		// build mask and inverse
+#if COMP_AVX
+        av1_build_compound_diffwtd_mask(tmp_mask[cur_mask_type], cur_mask_type,
+			p0, bw, p1, bw, bh, bw);
+#else
+		av1_build_compound_diffwtd_mask_c(tmp_mask[cur_mask_type], cur_mask_type,
+			p0, bw, p1, bw, bh, bw);
+#endif
+		// compute rd for mask
+#if COMP_AVX
+		uint64_t sse = av1_wedge_sse_from_residuals(residual1, diff10, tmp_mask[cur_mask_type], N);
+#else
+		uint64_t sse =  av1_wedge_sse_from_residuals_c(residual1, diff10, tmp_mask[cur_mask_type], N);
+#endif
+		sse = ROUND_POWER_OF_TWO(sse, 0 /*bd_round*/);
+
+		model_rd_with_curvfit(picture_control_set_ptr,bsize, 0, sse, N,	&rate, &dist, context_ptr->full_lambda);
+
+		const int64_t rd0 = RDCOST(context_ptr->full_lambda /*x->rdmult*/, rate, dist);
+
+		if (rd0 < best_rd) {
+			best_mask_type = cur_mask_type;
+			best_rd = rd0;
+		}
+	}
+
+	interinter_comp->mask_type = best_mask_type;
+	//if (best_mask_type == DIFFWTD_38_INV) {
+	//	memcpy(xd->seg_mask, seg_mask, N * 2);
+	//}
+	//return best_rd;
+}
+void pick_interinter_mask(
+	PictureControlSet                    *picture_control_set_ptr,
+	ModeDecisionContext                  *context_ptr,
+	INTERINTER_COMPOUND_DATA             *interinter_comp,
+	const BLOCK_SIZE bsize,
+	const uint8_t *const p0,
+	const uint8_t *const p1,
+	const int16_t *const residual1,
+	const int16_t *const diff10) 
+{
+
+	if (interinter_comp->type == COMPOUND_WEDGE) {
+
+		//return
+        pick_interinter_wedge(picture_control_set_ptr,context_ptr, interinter_comp, bsize, p0, p1, residual1, diff10);
+	}
+	else if (interinter_comp->type == COMPOUND_DIFFWTD) {
+		pick_interinter_seg(picture_control_set_ptr,context_ptr, interinter_comp,bsize, p0, p1, residual1, diff10);
+	}
+	else {
+	    assert(0);
+	}	
+}
+void search_compound_diff_wedge(
+	PictureControlSet                    *picture_control_set_ptr,
+	ModeDecisionContext                  *context_ptr,	
+	ModeDecisionCandidate                *candidate_ptr	)
+{
+
+	//if (*calc_pred_masked_compound)
+	{	
+		EbPictureBufferDesc   *src_pic = picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr;		
+		uint8_t               *src_buf  = src_pic->buffer_y + (context_ptr->cu_origin_x + src_pic->origin_x) + (context_ptr->cu_origin_y + src_pic->origin_y) * src_pic->stride_y;
+
+		uint32_t  bwidth = context_ptr->blk_geom->bwidth;
+		uint32_t  bheight = context_ptr->blk_geom->bheight;
+		EbPictureBufferDesc  pred_desc;
+		pred_desc.origin_x = pred_desc.origin_y = 0;	
+		pred_desc.stride_y = bwidth;
+
+		SequenceControlSet* sequence_control_set_ptr = ((SequenceControlSet*)(picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr));	
+		EbPictureBufferDesc  *ref_pic_list0;
+		EbPictureBufferDesc  *ref_pic_list1 = NULL;		
+		Mv mv_0;
+		Mv mv_1;
+		mv_0.x = candidate_ptr->motion_vector_xl0;
+		mv_0.y = candidate_ptr->motion_vector_yl0;
+		mv_1.x = candidate_ptr->motion_vector_xl1;
+		mv_1.y = candidate_ptr->motion_vector_yl1;
+		MvUnit mv_unit;		
+		mv_unit.mv[0] = mv_0;
+		mv_unit.mv[1] = mv_1;
+		int8_t ref_idx_l0 = candidate_ptr->ref_frame_index_l0;
+		int8_t ref_idx_l1 = candidate_ptr->ref_frame_index_l1;		
+		MvReferenceFrame rf[2];
+		av1_set_ref_frame(rf, candidate_ptr->ref_frame_type);
+		uint8_t list_idx0, list_idx1;
+		list_idx0 = get_list_idx(rf[0]);
+		if (rf[1] == NONE_FRAME)
+			list_idx1 = get_list_idx(rf[0]);
+		else
+			list_idx1 = get_list_idx(rf[1]);
+		assert(list_idx0 < MAX_NUM_OF_REF_PIC_LIST);
+		assert(list_idx1 < MAX_NUM_OF_REF_PIC_LIST);
+		if (ref_idx_l0 >= 0)
+			ref_pic_list0 = ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[list_idx0][ref_idx_l0]->object_ptr)->reference_picture;
+		else
+			ref_pic_list0 = (EbPictureBufferDesc*)EB_NULL;
+		if (ref_idx_l1 >= 0)
+			ref_pic_list1 = ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[list_idx1][ref_idx_l1]->object_ptr)->reference_picture;
+		else
+			ref_pic_list1 = (EbPictureBufferDesc*)EB_NULL;
+				
+		//CHKN get seperate prediction of each ref(Luma only)
+		//ref0 prediction
+		mv_unit.pred_direction = UNI_PRED_LIST_0; 	
+		pred_desc.buffer_y = context_ptr->pred0;	
+
+		//we call the regular inter prediction path here(no compound)
+		av1_inter_prediction(
+			picture_control_set_ptr,
+			0,//fixed interpolation filter for compound search 
+			context_ptr->cu_ptr,
+			candidate_ptr->ref_frame_type,
+			&mv_unit,
+			0,//use_intrabc,
+#if COMP_MODE
+			1,//compound_idx not used 
+#endif
+#if COMP_DIFF
+			NULL,// interinter_comp not used
+#endif
+			context_ptr->cu_origin_x,
+			context_ptr->cu_origin_y,
+			bwidth,
+			bheight,
+			ref_pic_list0,
+			ref_pic_list1,
+			&pred_desc, //output
+			0,          //output origin_x,
+			0,          //output origin_y,
+			0,//do chroma
+			sequence_control_set_ptr->encode_context_ptr->asm_type);
+
+		//ref1 prediction
+		mv_unit.pred_direction = UNI_PRED_LIST_1;
+		pred_desc.buffer_y = context_ptr->pred1;
+
+		//we call the regular inter prediction path here(no compound)
+		av1_inter_prediction(
+			picture_control_set_ptr,
+			0,//fixed interpolation filter for compound search 
+			context_ptr->cu_ptr,
+			candidate_ptr->ref_frame_type,
+			&mv_unit,
+			0,//use_intrabc,
+#if COMP_MODE
+			1,//compound_idx not used 
+#endif
+#if COMP_DIFF
+			NULL,// interinter_comp not used
+#endif
+			context_ptr->cu_origin_x,
+			context_ptr->cu_origin_y,
+			bwidth,
+			bheight,
+			ref_pic_list0,
+			ref_pic_list1,
+			&pred_desc, //output
+			0,          //output origin_x,
+			0,          //output origin_y,
+			0,//do chroma
+			sequence_control_set_ptr->encode_context_ptr->asm_type);
+#if COMP_AVX
+		aom_subtract_block(bheight, bwidth, context_ptr->residual1, bwidth, src_buf, src_pic->stride_y, context_ptr->pred1, bwidth);
+		aom_subtract_block(bheight, bwidth, context_ptr->diff10, bwidth, context_ptr->pred1, bwidth, context_ptr->pred0, bwidth);
+#else
+		aom_subtract_block_c(bheight, bwidth, context_ptr->residual1, bwidth, src_buf, src_pic->stride_y, context_ptr->pred1, bwidth);
+		aom_subtract_block_c(bheight, bwidth, context_ptr->diff10, bwidth, context_ptr->pred1, bwidth, context_ptr->pred0, bwidth);
+#endif
+		//*calc_pred_masked_compound = 0;
+
+    
+#if COMP_MODE
+        if (picture_control_set_ptr->parent_pcs_ptr->wedge_mode == 1 || picture_control_set_ptr->parent_pcs_ptr->wedge_mode == 3)
+            if (candidate_ptr->interinter_comp.type == COMPOUND_DIFFWTD && context_ptr->variance_ready == 0) {
+                const aom_variance_fn_ptr_t *fn_ptr = &mefn_ptr[context_ptr->blk_geom->bsize];
+                //EbPictureBufferDesc   *src_pic = picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr;		
+                //uint8_t               *src_buf  = src_pic->buffer_y + (context_ptr->cu_origin_x + src_pic->origin_x) + (context_ptr->cu_origin_y + src_pic->origin_y) * src_pic->stride_y;
+
+                //  fn_ptr->vf(src_buf,  src_pic->stride_y , pred0, stride0,  &esq[0][0]);
+                  //cpi->fn_ptr[bs].vf(ref->buf, ref->stride, AV1_VAR_OFFS, 0, &sse);
+                unsigned int sse;
+                (void)fn_ptr->vf(context_ptr->pred0, bwidth, context_ptr->pred1, pred_desc.stride_y, &sse);
+
+                /*  if (cpi->sf.prune_wedge_pred_diff_based && compound_type == COMPOUND_WEDGE) {
+                    unsigned int sse;
+                    if (is_cur_buf_hbd(xd))
+                      (void)cpi->fn_ptr[bsize].vf(CONVERT_TO_BYTEPTR(*preds0), *strides,
+                                                CONVERT_TO_BYTEPTR(*preds1), *strides, &sse);
+                    else
+                      (void)cpi->fn_ptr[bsize].vf(*preds0, *strides, *preds1, *strides, &sse); */
+                /*    const unsigned int */context_ptr->prediction_mse = ROUND_POWER_OF_TWO(sse, num_pels_log2_lookup[context_ptr->blk_geom->bsize]);
+                context_ptr->variance_ready  = 1;
+                // If two predictors are very similar, skip wedge compound mode search
+                //if (mse < 8 || (!have_newmv_in_inter_mode(this_mode) && mse < 64)) {
+                //  *comp_model_rd_cur = INT64_MAX;
+                //  return INT64_MAX;
+                //}
+              //}
+            }
+#endif
+    }
+	pick_interinter_mask(
+		picture_control_set_ptr,
+		context_ptr,
+		&candidate_ptr->interinter_comp,
+		context_ptr->blk_geom->bsize,
+		context_ptr->pred0,
+		context_ptr->pred1,
+		context_ptr->residual1,
+		context_ptr->diff10);
+}
+
+int64_t aom_sse_c(const uint8_t *a, int a_stride, const uint8_t *b,
+	int b_stride, int width, int height) {
+	int y, x;
+	int64_t sse = 0;
+
+	for (y = 0; y < height; y++) {
+		for (x = 0; x < width; x++) {
+			const int32_t diff = abs(a[x] - b[x]);
+			sse += diff * diff;
+		}
+
+		a += a_stride;
+		b += b_stride;
+	}
+	return sse;
+}
+static void model_rd_for_sb_with_curvfit(
+	//const AV1_COMP *const cpi,  MACROBLOCK *x, MACROBLOCKD *xd,
+	PictureControlSet      *picture_control_set_ptr,
+	ModeDecisionContext                  *context_ptr, 
+	BLOCK_SIZE bsize,int bw, int bh,
+	uint8_t* src_buf, uint32_t src_stride, uint8_t* pred_buf, uint32_t pred_stride,
+	int plane_from, int plane_to, int mi_row, int mi_col, int *out_rate_sum,
+	int64_t *out_dist_sum, int *skip_txfm_sb, int64_t *skip_sse_sb,
+	int *plane_rate, int64_t *plane_sse, int64_t *plane_dist) {
+	(void)mi_row;
+	(void)mi_col;
+	// Note our transform coeffs are 8 times an orthogonal transform.
+	// Hence quantizer step is also 8 times. To get effective quantizer
+	// we need to divide by 8 before sending to modeling function.
+	const int ref = 0;//CHKN  xd->mi[0]->ref_frame[0];
+
+	int64_t rate_sum = 0;
+	int64_t dist_sum = 0;
+	int64_t total_sse = 0;
+
+	for (int plane = plane_from; plane <= plane_to; ++plane) {
+		//CHKN struct macroblockd_plane *const pd = 0;   &xd->plane[plane];
+		int32_t subsampling = plane == 0 ? 0 : 1;
+
+		const BLOCK_SIZE plane_bsize =
+			get_plane_block_size(bsize, /*pd->*/subsampling, /*pd->*/subsampling);
+		int64_t dist, sse;
+		int rate;
+
+		//CHKN if (x->skip_chroma_rd && plane) continue;
+
+		
+		//const struct macroblock_plane *const p = &x->plane[plane];
+		const int shift = 0;//CHKN (xd->bd - 8);
+		//CHKN get_txb_dimensions(xd, plane, plane_bsize, 0, 0, plane_bsize, NULL, NULL,&bw, &bh);
+
+/*		if (is_cur_buf_hbd(xd)) {
+			sse = aom_highbd_sse(p->src.buf, p->src.stride, pd->dst.buf,pd->dst.stride, bw, bh);
+		}
+		else */{
+#if COMP_AVX
+			  sse = aom_sse(src_buf, src_stride,pred_buf, pred_stride, bw,bh);
+#else
+			  sse = aom_sse_c(src_buf, src_stride,pred_buf, pred_stride, bw,bh);
+#endif
+		}
+
+		sse = ROUND_POWER_OF_TWO(sse, shift * 2);
+		model_rd_with_curvfit(picture_control_set_ptr /*cpi, x*/, plane_bsize, plane, sse, bw * bh, &rate,		&dist, context_ptr->full_lambda);
+
+		//if (plane == 0) x->pred_sse[ref] = (unsigned int)AOMMIN(sse, UINT_MAX);
+
+		total_sse += sse;
+		rate_sum += rate;
+		dist_sum += dist;
+
+		if (plane_rate) plane_rate[plane] = rate;
+		if (plane_sse) plane_sse[plane] = sse;
+		if (plane_dist) plane_dist[plane] = dist;
+	}
+
+	if (skip_txfm_sb) *skip_txfm_sb = total_sse == 0;
+	if (skip_sse_sb) *skip_sse_sb = total_sse << 4;
+	*out_rate_sum = (int)rate_sum;
+	*out_dist_sum = dist_sum;
+}
+void search_compound_avg_dist(
+	PictureControlSet                    *picture_control_set_ptr,
+	ModeDecisionContext                  *context_ptr,
+	ModeDecisionCandidate                *candidate_ptr)
+{
+	int64_t est_rd[2];
+	
+	MbModeInfo *const mbmi = &context_ptr->cu_ptr->av1xd->mi[0]->mbmi;
+	MvReferenceFrame rf[2];
+	av1_set_ref_frame(rf, candidate_ptr->ref_frame_type);
+	mbmi->ref_frame[0] = rf[0];
+	mbmi->ref_frame[1] = rf[1];
+	const int comp_index_ctx = get_comp_index_context_enc(
+		picture_control_set_ptr->parent_pcs_ptr,
+		picture_control_set_ptr->parent_pcs_ptr->cur_order_hint,
+		picture_control_set_ptr->parent_pcs_ptr->ref_order_hint[rf[0] - 1],
+		picture_control_set_ptr->parent_pcs_ptr->ref_order_hint[rf[1] - 1],
+		context_ptr->cu_ptr->av1xd);
+
+	//COMPOUND AVERAGE
+	COMPOUND_TYPE  comp_i;
+
+	for(comp_i= COMPOUND_AVERAGE;  comp_i<=COMPOUND_DISTWTD;    comp_i++)
+	{
+		//assign compound type temporary for RD test
+		candidate_ptr->interinter_comp.type = comp_i;
+		candidate_ptr->comp_group_idx = 0;
+		candidate_ptr->compound_idx = (comp_i == COMPOUND_AVERAGE) ? 1 : 0;
+
+		EbPictureBufferDesc   *src_pic = picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr;
+		uint8_t               *src_buf = src_pic->buffer_y + (context_ptr->cu_origin_x + src_pic->origin_x) + (context_ptr->cu_origin_y + src_pic->origin_y) * src_pic->stride_y;
+
+		uint32_t  bwidth = context_ptr->blk_geom->bwidth;
+		uint32_t  bheight = context_ptr->blk_geom->bheight;
+		EbPictureBufferDesc  pred_desc;
+		pred_desc.origin_x = pred_desc.origin_y = 0;
+		pred_desc.stride_y = bwidth;
+		pred_desc.buffer_y = context_ptr->pred0;
+
+		SequenceControlSet* sequence_control_set_ptr = ((SequenceControlSet*)(picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr));
+		EbPictureBufferDesc  *ref_pic_list0;
+		EbPictureBufferDesc  *ref_pic_list1 = NULL;
+		Mv mv_0;
+		Mv mv_1;
+		mv_0.x = candidate_ptr->motion_vector_xl0;
+		mv_0.y = candidate_ptr->motion_vector_yl0;
+		mv_1.x = candidate_ptr->motion_vector_xl1;
+		mv_1.y = candidate_ptr->motion_vector_yl1;
+		MvUnit mv_unit;
+		mv_unit.mv[0] = mv_0;
+		mv_unit.mv[1] = mv_1;
+		mv_unit.pred_direction = BI_PRED;
+		int8_t ref_idx_l0 = candidate_ptr->ref_frame_index_l0;
+		int8_t ref_idx_l1 = candidate_ptr->ref_frame_index_l1;
+		MvReferenceFrame rf[2];
+		av1_set_ref_frame(rf, candidate_ptr->ref_frame_type);
+		uint8_t list_idx0, list_idx1;
+		list_idx0 = get_list_idx(rf[0]);
+		if (rf[1] == NONE_FRAME)
+			list_idx1 = get_list_idx(rf[0]);
+		else
+			list_idx1 = get_list_idx(rf[1]);
+		assert(list_idx0 < MAX_NUM_OF_REF_PIC_LIST);
+		assert(list_idx1 < MAX_NUM_OF_REF_PIC_LIST);
+		if (ref_idx_l0 >= 0)
+			ref_pic_list0 = ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[list_idx0][ref_idx_l0]->object_ptr)->reference_picture;
+		else
+			ref_pic_list0 = (EbPictureBufferDesc*)EB_NULL;
+		if (ref_idx_l1 >= 0)
+			ref_pic_list1 = ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[list_idx1][ref_idx_l1]->object_ptr)->reference_picture;
+		else
+			ref_pic_list1 = (EbPictureBufferDesc*)EB_NULL;
+	
+		
+		av1_inter_prediction(
+			picture_control_set_ptr,
+			0,//fixed interpolation filter for compound search 
+			context_ptr->cu_ptr,
+			candidate_ptr->ref_frame_type,
+			&mv_unit,
+			0,//use_intrabc,
+#if COMP_MODE
+			candidate_ptr->compound_idx, 
+#endif
+#if COMP_DIFF
+			&candidate_ptr->interinter_comp, 
+#endif
+			context_ptr->cu_origin_x,
+			context_ptr->cu_origin_y,
+			bwidth,
+			bheight,
+			ref_pic_list0,
+			ref_pic_list1,
+			&pred_desc, //output
+			0,          //output origin_x,
+			0,          //output origin_y,
+			0,//do chroma
+			sequence_control_set_ptr->encode_context_ptr->asm_type);
+
+		int32_t est_rate;
+		int64_t est_dist;
+			
+		model_rd_for_sb_with_curvfit (picture_control_set_ptr /*cpi*/, context_ptr,context_ptr->blk_geom->bsize, bwidth, bheight,
+			src_buf, src_pic->stride_y, pred_desc.buffer_y, pred_desc.stride_y,
+			/*x, xd*/ 0, 0, 0, 0, &est_rate/*[COMPOUND_AVERAGE]*/,
+			&est_dist/*[COMPOUND_AVERAGE]*/, NULL, NULL, NULL, NULL, NULL);
+	
+		est_rate += candidate_ptr->md_rate_estimation_ptr->comp_idx_fac_bits[comp_index_ctx][candidate_ptr->compound_idx];
+
+		est_rd[comp_i] =
+			RDCOST(context_ptr->full_lambda /*x->rdmult*/, est_rate/*[COMPOUND_AVERAGE]*//* + *rate_mv*/,
+				est_dist/*[COMPOUND_AVERAGE]*/);
+
+	}
+
+
+	//assign the best compound type
+	if (est_rd[COMPOUND_AVERAGE] <= est_rd[COMPOUND_DISTWTD]) {
+		candidate_ptr->interinter_comp.type = COMPOUND_AVERAGE;
+		candidate_ptr->comp_group_idx = 0;
+		candidate_ptr->compound_idx = 1;
+	}
+	else {
+		candidate_ptr->interinter_comp.type = COMPOUND_DISTWTD;
+		candidate_ptr->comp_group_idx = 0;
+		candidate_ptr->compound_idx = 0;
+	}
+	
+
+	
+}
+#endif
 EbErrorType av1_inter_prediction(
     PictureControlSet                    *picture_control_set_ptr,
     uint32_t                                interp_filters,
@@ -994,6 +2614,12 @@ EbErrorType av1_inter_prediction(
     uint8_t                                 ref_frame_type,
     MvUnit                               *mv_unit,
     uint8_t                                  use_intrabc,
+#if COMP_MODE
+	uint8_t                                compound_idx,
+#endif
+#if COMP_DIFF
+	INTERINTER_COMPOUND_DATA               *interinter_comp,
+#endif
     uint16_t                                pu_origin_x,
     uint16_t                                pu_origin_y,
     uint8_t                                 bwidth,
@@ -1240,6 +2866,10 @@ EbErrorType av1_inter_prediction(
         }
     }
 
+#if COMP_MODE
+	MvReferenceFrame rf[2];
+	av1_set_ref_frame(rf, ref_frame_type);
+#endif
     if (mv_unit->pred_direction == UNI_PRED_LIST_0 || mv_unit->pred_direction == BI_PRED) {
         //List0-Y
         mv.col = mv_unit->mv[REF_LIST_0].x;
@@ -1352,6 +2982,43 @@ EbErrorType av1_inter_prediction(
         conv_params = get_conv_params_no_round(0, (mv_unit->pred_direction == BI_PRED) ? 1 : 0, 0, tmp_dstY, 128, is_compound, EB_8BIT);
         av1_get_convolve_filter_params(interp_filters, &filter_params_x,
             &filter_params_y, bwidth, bheight);
+#if COMP_MODE
+		//the luma data is applied to chroma below
+		av1_dist_wtd_comp_weight_assign(
+			picture_control_set_ptr,
+			picture_control_set_ptr->parent_pcs_ptr->cur_order_hint,// cur_frame_index,
+			picture_control_set_ptr->parent_pcs_ptr->ref_order_hint[rf[0] - 1],// bck_frame_index,
+			picture_control_set_ptr->parent_pcs_ptr->ref_order_hint[rf[1] - 1],// fwd_frame_index,
+			compound_idx,
+			0,// order_idx,
+			&conv_params.fwd_offset, &conv_params.bck_offset,
+			&conv_params.use_dist_wtd_comp_avg, is_compound);
+		conv_params.use_jnt_comp_avg =  conv_params.use_dist_wtd_comp_avg;
+#endif
+
+#if COMP_DIFF
+		if (is_compound && is_masked_compound_type(interinter_comp->type)) {
+			conv_params.do_average = 0;
+			av1_make_masked_inter_predictor(
+				src_ptr,
+				src_stride,
+				dst_ptr,
+				dst_stride,
+				blk_geom,
+				bwidth,
+				bheight,
+				&filter_params_x,
+				&filter_params_y,
+				subpel_x,
+				subpel_y,
+				&conv_params,
+				interinter_comp,
+				EB_8BIT,
+				0//plane=Luma  seg_mask is computed based on luma and used for chroma
+				);
+		}
+		else
+#endif
 
         convolve[subpel_x != 0][subpel_y != 0][is_compound](
             src_ptr,
@@ -1377,10 +3044,44 @@ EbErrorType av1_inter_prediction(
             subpel_y = mv_q4.row & SUBPEL_MASK;
             src_ptr = src_ptr + (mv_q4.row >> SUBPEL_BITS) * src_stride + (mv_q4.col >> SUBPEL_BITS);
             conv_params = get_conv_params_no_round(0, (mv_unit->pred_direction == BI_PRED) ? 1 : 0, 0, tmp_dstCb, 64, is_compound, EB_8BIT);
-
+#if COMP_MODE
+			av1_dist_wtd_comp_weight_assign(
+				picture_control_set_ptr,
+				picture_control_set_ptr->parent_pcs_ptr->cur_order_hint,// cur_frame_index,
+				picture_control_set_ptr->parent_pcs_ptr->ref_order_hint[rf[0] - 1],// bck_frame_index,
+				picture_control_set_ptr->parent_pcs_ptr->ref_order_hint[rf[1] - 1],// fwd_frame_index,
+				compound_idx,
+				0,// order_idx,
+				&conv_params.fwd_offset, &conv_params.bck_offset,
+				&conv_params.use_dist_wtd_comp_avg, is_compound);
+			conv_params.use_jnt_comp_avg = conv_params.use_dist_wtd_comp_avg;
+#endif
             av1_get_convolve_filter_params(interp_filters, &filter_params_x,
                 &filter_params_y, blk_geom->bwidth_uv, blk_geom->bheight_uv);
 
+#if COMP_DIFF
+			if (is_compound && is_masked_compound_type(interinter_comp->type)) {
+				conv_params.do_average = 0;
+				av1_make_masked_inter_predictor(
+					src_ptr,
+					src_stride,
+					dst_ptr,
+					dst_stride,
+					blk_geom,
+					blk_geom->bwidth_uv,
+					blk_geom->bheight_uv,
+					&filter_params_x,
+					&filter_params_y,
+					subpel_x,
+					subpel_y,
+					&conv_params,
+					interinter_comp,
+					EB_8BIT,
+					1//plane=cb  seg_mask is computed based on luma and used for chroma
+				);
+			}
+			else
+#endif
             convolve[subpel_x != 0][subpel_y != 0][is_compound](
                 src_ptr,
                 src_stride,
@@ -1405,6 +3106,42 @@ EbErrorType av1_inter_prediction(
             subpel_y = mv_q4.row & SUBPEL_MASK;
             src_ptr = src_ptr + (mv_q4.row >> SUBPEL_BITS) * src_stride + (mv_q4.col >> SUBPEL_BITS);
             conv_params = get_conv_params_no_round(0, (mv_unit->pred_direction == BI_PRED) ? 1 : 0, 0, tmp_dstCr, 64, is_compound, EB_8BIT);
+#if COMP_MODE
+			av1_dist_wtd_comp_weight_assign(
+				picture_control_set_ptr,
+				picture_control_set_ptr->parent_pcs_ptr->cur_order_hint,// cur_frame_index,
+				picture_control_set_ptr->parent_pcs_ptr->ref_order_hint[rf[0] - 1],// bck_frame_index,
+				picture_control_set_ptr->parent_pcs_ptr->ref_order_hint[rf[1] - 1],// fwd_frame_index,
+				compound_idx,
+				0,// order_idx,
+				&conv_params.fwd_offset, &conv_params.bck_offset,
+				&conv_params.use_dist_wtd_comp_avg, is_compound);
+			conv_params.use_jnt_comp_avg = conv_params.use_dist_wtd_comp_avg;
+#endif
+
+#if COMP_DIFF
+			if (is_compound && is_masked_compound_type(interinter_comp->type)) {
+				conv_params.do_average = 0;
+				av1_make_masked_inter_predictor(
+					src_ptr,
+					src_stride,
+					dst_ptr,
+					dst_stride,
+					blk_geom,
+					blk_geom->bwidth_uv,
+					blk_geom->bheight_uv,
+					&filter_params_x,
+					&filter_params_y,
+					subpel_x,
+					subpel_y,
+					&conv_params,
+					interinter_comp,
+					EB_8BIT,
+					1//plane=Cr  seg_mask is computed based on luma and used for chroma
+				);
+			}
+			else
+#endif
             convolve[subpel_x != 0][subpel_y != 0][is_compound](
                 src_ptr,
                 src_stride,
@@ -3615,6 +5352,12 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
         candidate_buffer_ptr->candidate_ptr->ref_frame_type,
         &mv_unit,
         0,
+#if COMP_MODE
+		candidate_buffer_ptr->candidate_ptr->compound_idx,
+#endif
+#if COMP_DIFF
+		&candidate_buffer_ptr->candidate_ptr->interinter_comp,
+#endif
         md_context_ptr->cu_origin_x,
         md_context_ptr->cu_origin_y,
         md_context_ptr->blk_geom->bwidth,
@@ -3692,6 +5435,12 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
                         candidate_buffer_ptr->candidate_ptr->ref_frame_type,
                         &mv_unit,
                         0,
+#if COMP_MODE
+						candidate_buffer_ptr->candidate_ptr->compound_idx,  
+#endif
+#if COMP_DIFF
+						&candidate_buffer_ptr->candidate_ptr->interinter_comp,
+#endif
                         md_context_ptr->cu_origin_x,
                         md_context_ptr->cu_origin_y,
                         md_context_ptr->blk_geom->bwidth,
@@ -3765,6 +5514,12 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
                         candidate_buffer_ptr->candidate_ptr->ref_frame_type,
                         &mv_unit,
                         0,
+#if COMP_MODE
+						candidate_buffer_ptr->candidate_ptr->compound_idx,
+#endif
+#if COMP_DIFF
+						&candidate_buffer_ptr->candidate_ptr->interinter_comp,
+#endif
                         md_context_ptr->cu_origin_x,
                         md_context_ptr->cu_origin_y,
                         md_context_ptr->blk_geom->bwidth,
@@ -3840,6 +5595,12 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
                         candidate_buffer_ptr->candidate_ptr->ref_frame_type,
                         &mv_unit,
                         0,
+#if COMP_MODE
+						candidate_buffer_ptr->candidate_ptr->compound_idx,
+#endif
+#if COMP_DIFF
+						&candidate_buffer_ptr->candidate_ptr->interinter_comp,
+#endif
                         md_context_ptr->cu_origin_x,
                         md_context_ptr->cu_origin_y,
                         md_context_ptr->blk_geom->bwidth,
@@ -4302,6 +6063,12 @@ EbErrorType inter_pu_prediction_av1(
             candidate_buffer_ptr->candidate_ptr->ref_frame_type,
             &mv_unit,
             1,//use_intrabc
+#if COMP_MODE
+			1,//1 for avg
+#endif
+#if COMP_DIFF
+			&candidate_buffer_ptr->candidate_ptr->interinter_comp,
+#endif
             md_context_ptr->cu_origin_x,
             md_context_ptr->cu_origin_y,
             md_context_ptr->blk_geom->bwidth,
@@ -4485,6 +6252,12 @@ EbErrorType inter_pu_prediction_av1(
             candidate_buffer_ptr->candidate_ptr->ref_frame_type,
             &mv_unit,
             candidate_buffer_ptr->candidate_ptr->use_intrabc,
+#if COMP_MODE
+			candidate_buffer_ptr->candidate_ptr->compound_idx,
+#endif
+#if COMP_DIFF
+			&candidate_buffer_ptr->candidate_ptr->interinter_comp,
+#endif
             md_context_ptr->cu_origin_x,
             md_context_ptr->cu_origin_y,
             md_context_ptr->blk_geom->bwidth,

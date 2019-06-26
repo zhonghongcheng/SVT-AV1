@@ -973,6 +973,9 @@ EB_API EbErrorType eb_init_encoder(EbComponentType *svt_enc_component)
 
     av1_init_me_luts();
     init_fn_ptr();
+#if COMP_DIFF
+	av1_init_wedge_masks();
+#endif
 
     /************************************
     * Sequence Control Set

@@ -217,6 +217,11 @@ void av1_setup_skip_mode_allowed(PictureParentControlSet  *parent_pcs_ptr) {
     //4 :BWD
     //5 :ALT2
     //6 :ALT
+#if COMP_MODE
+	parent_pcs_ptr->cur_order_hint = parent_pcs_ptr->picture_number % (1 << (parent_pcs_ptr->sequence_control_set_ptr->seq_header.order_hint_info.order_hint_bits));
+	for (uint8_t i = 0; i < 7; ++i)
+		parent_pcs_ptr->ref_order_hint[i] = ref_frame_arr_single[i].poc;
+#endif
 }
 #endif
 
@@ -1614,6 +1619,17 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
             picture_control_set_ptr->atb_mode = 0;
 
+#endif
+
+
+#if COMP_MODE
+        // Set Wedge mode      Settings
+        // 0                 FULL: Full search
+        // 1                 Fast: If two predictors are very similar, skip wedge compound mode search
+        // 2                 Fast: estimate Wedge sign
+        // 3                 Fast: Mode 1 & Mode 2
+
+        picture_control_set_ptr->wedge_mode = 0;
 #endif
 
     return return_error;

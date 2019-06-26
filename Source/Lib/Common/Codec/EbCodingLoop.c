@@ -3727,6 +3727,12 @@ EB_EXTERN void av1_encode_pass(
                                     cu_ptr->prediction_unit_array->ref_frame_type,
                                     &context_ptr->mv_unit,
                                     1,// use_intrabc,
+#if COMP_MODE
+									1,//compound_idx,
+#endif
+#if COMP_DIFF
+									&cu_ptr->interinter_comp,
+#endif
                                     context_ptr->cu_origin_x,
                                     context_ptr->cu_origin_y,
                                     blk_geom->bwidth,
@@ -4175,7 +4181,11 @@ EB_EXTERN void av1_encode_pass(
                     doMC = (EbBool)(doRecon | doMC);
 
                     doMVpred = (EbBool)(doRecon | doMVpred);
-
+#if NEW_NEAR_FIX
+					IntMv  predmv__md[2];
+					predmv__md[0].as_int = cu_ptr->predmv[0].as_int;
+					predmv__md[1].as_int = cu_ptr->predmv[1].as_int;
+#endif
                     //IntMv  predmv[2];
                     enc_pass_av1_mv_pred(
                         &sb_ptr->tile_info,
@@ -4191,7 +4201,35 @@ EB_EXTERN void av1_encode_pass(
                         cu_ptr->predmv);
                     //out1:  predmv
                     //out2:   cu_ptr->inter_mode_ctx[ cu_ptr->prediction_unit_array[0].ref_frame_type ]
+#if NEW_NEAR_FIX
+					//CHKN test with MD value
+					PredictionUnit* pu_ptr = &cu_ptr->prediction_unit_array[0];
 
+					if (cu_ptr->pred_mode == NEWMV) {
+						if (predmv__md[0].as_int != cu_ptr->predmv[0].as_int)
+							printf("STP\n");
+					}
+					else if (cu_ptr->pred_mode == NEW_NEWMV) {
+						if (predmv__md[0].as_int != cu_ptr->predmv[0].as_int || predmv__md[1].as_int != cu_ptr->predmv[1].as_int)
+							printf("STP\n");
+					}
+					else if (cu_ptr->pred_mode == NEAREST_NEWMV) {
+						if (predmv__md[1].as_int != cu_ptr->predmv[1].as_int)
+							printf("STP\n");
+					}
+					else if (cu_ptr->pred_mode == NEW_NEARESTMV) {
+						if (predmv__md[0].as_int != cu_ptr->predmv[0].as_int)
+							printf("STP\n");
+					}
+					else if (cu_ptr->pred_mode == NEW_NEARMV) {
+						if (predmv__md[0].as_int != cu_ptr->predmv[0].as_int)
+							printf("STP\n");
+					}
+					else if (cu_ptr->pred_mode == NEAR_NEWMV) {
+						if (predmv__md[1].as_int != cu_ptr->predmv[1].as_int)
+							printf("STP\n");
+					}
+#endif	
                     //keep final usefull mvp for entropy
                     memcpy(cu_ptr->av1xd->final_ref_mv_stack,
                        context_ptr->md_context->md_local_cu_unit[context_ptr->blk_geom->blkidx_mds].ed_ref_mv_stack[cu_ptr->prediction_unit_array[0].ref_frame_type],
@@ -4260,6 +4298,12 @@ EB_EXTERN void av1_encode_pass(
                                     cu_ptr->prediction_unit_array->ref_frame_type,
                                     &context_ptr->mv_unit,
                                     0,//use_intrabc,
+#if COMP_MODE
+									cu_ptr->compound_idx,
+#endif
+#if COMP_DIFF
+									&cu_ptr->interinter_comp,
+#endif
                                     context_ptr->cu_origin_x,
                                     context_ptr->cu_origin_y,
                                     blk_geom->bwidth,

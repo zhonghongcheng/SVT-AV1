@@ -147,6 +147,11 @@ extern "C" {
 #if ATB_SUPPORT
         uint8_t                                tx_depth;
 #endif
+#if COMP_MODE
+		INTERINTER_COMPOUND_DATA               interinter_comp;
+		uint8_t                                compound_idx;
+		uint8_t                                comp_group_idx;
+#endif
     } ModeDecisionCandidate;
 
     /**************************************
