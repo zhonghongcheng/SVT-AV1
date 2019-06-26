@@ -69,7 +69,7 @@ extern "C" {
 #define ALTREF_EIGHTH_PEL_SEARCH          1 // Add 1/8 search for temporal filtering
 #define ALTREF_AV1_SUBPEL                 0
 #define DECOUPLE_ALTREF_ME                1 // De-couple completely the HME/ME/Subpel used for ME Inter prediction and the one used for ALTREF temporal filtering 
-
+#define ALTREF_TEMPORAL_FILTERING         0
 
 #define ATB                               1 // ATB Main Flag
 #if ATB

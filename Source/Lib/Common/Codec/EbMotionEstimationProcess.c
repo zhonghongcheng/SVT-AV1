@@ -405,6 +405,11 @@ void* tf_set_me_hme_params_oq(
     me_context_ptr->search_area_width = tf_search_area_width[sc_content_detected][input_resolution][hmeMeLevel];
     me_context_ptr->search_area_height = tf_search_area_height[sc_content_detected][input_resolution][hmeMeLevel];
 
+#if ALTREF_TEMPORAL_FILTERING
+    me_context_ptr->search_area_width = 256;
+    me_context_ptr->search_area_height = 256;
+#endif
+
     assert(me_context_ptr->search_area_width <= MAX_SEARCH_AREA_WIDTH && "increase MAX_SEARCH_AREA_WIDTH");
     assert(me_context_ptr->search_area_height <= MAX_SEARCH_AREA_HEIGHT && "increase MAX_SEARCH_AREA_HEIGHT");
 

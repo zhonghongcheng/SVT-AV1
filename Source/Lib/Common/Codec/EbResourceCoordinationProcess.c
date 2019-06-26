@@ -136,6 +136,10 @@ EbErrorType signal_derivation_pre_analysis_oq(
     picture_control_set_ptr->tf_enable_hme_level1_flag = tf_enable_hme_level1_flag[0][input_resolution][hme_me_level] || tf_enable_hme_level1_flag[1][input_resolution][hme_me_level];
     picture_control_set_ptr->tf_enable_hme_level2_flag = tf_enable_hme_level2_flag[0][input_resolution][hme_me_level] || tf_enable_hme_level2_flag[1][input_resolution][hme_me_level];
 #endif
+
+#if ALTREF_TEMPORAL_FILTERING
+    picture_control_set_ptr->tf_enable_hme_flag = EB_FALSE;
+#endif
 #if NEW_PRESETS
     if (picture_control_set_ptr->enc_mode >= ENC_M8)
         sequence_control_set_ptr->seq_header.enable_restoration = 0;
