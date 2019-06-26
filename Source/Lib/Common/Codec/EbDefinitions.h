@@ -356,6 +356,7 @@ extern "C" {
 #define MV_REFINEMENT_AROUND_MV_PRED_T0                 1
 #endif
 
+#define OPTIMISED_EX_SUBPEL                                 1
 #if IMPROVED_SUBPEL_SEARCH
 typedef enum ME_HP_MODE { 
     EX_HP_MODE = 0, 

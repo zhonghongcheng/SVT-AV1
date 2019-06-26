@@ -5205,12 +5205,12 @@ EbBool allowed_ns_cu(
 #endif
     if (is_nsq_table_used) {
         if (context_ptr->blk_geom->shape != PART_N) {
-            ret = 0;
-            for (int i = 0; i < nsq_max_shapes_md; i++) {
-                if (context_ptr->blk_geom->shape == context_ptr->nsq_table[i])
-                    ret = 1;
-            }
+        ret = 0;
+        for (int i = 0; i < nsq_max_shapes_md; i++) {
+            if (context_ptr->blk_geom->shape == context_ptr->nsq_table[i])
+                ret = 1;
         }
+    }
     }
     return ret;
 }
