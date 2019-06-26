@@ -4587,7 +4587,10 @@ void AV1PerformFullLoop(
     uint32_t      fullLoopCandidateIndex;
 #if DECOUPLED_FAST_LOOP
     uint32_t       candidateIndex;
-
+#if COMP_FULL
+	uint32_t nfl_comp_cnt = 0;//need toadd the  increment 
+	uint32_t max_nfl_comp = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL  : (INTER_PRED_NFL >> 1);
+#endif
     uint32_t nfl_intra_cnt = 0;
     uint32_t nfl_inter_new_cnt = 0;
     uint32_t nfl_inter_pred_cnt = 0;
@@ -4661,6 +4664,28 @@ void AV1PerformFullLoop(
                 *candidateBuffer->full_cost_ptr = MAX_MODE_COST;
                 continue;
             }
+
+#if COMP_FULL
+			if ((candidate_ptr->type == INTER_MODE && candidate_ptr->is_compound == 0) ||
+				(candidate_ptr->type == INTER_MODE && candidate_ptr->is_compound == 1 && candidate_ptr->interinter_comp.type == COMPOUND_AVERAGE))
+			{
+				if (nfl_inter_new_cnt >= max_nfl_inter_new && candidate_ptr->type == INTER_MODE && candidate_ptr->is_new_mv) {
+					*candidateBuffer->full_cost_ptr = MAX_MODE_COST;
+					continue;
+				}
+				if (nfl_inter_pred_cnt >= max_nfl_inter_pred && candidate_ptr->type == INTER_MODE && candidate_ptr->is_new_mv == 0) {
+					*candidateBuffer->full_cost_ptr = MAX_MODE_COST;
+					continue;
+				}
+			}
+			else if ( (candidate_ptr->type == INTER_MODE && candidate_ptr->is_compound == 1 && candidate_ptr->interinter_comp.type != COMPOUND_AVERAGE))
+			{
+				if (nfl_comp_cnt >= max_nfl_comp ) {
+					*candidateBuffer->full_cost_ptr = MAX_MODE_COST;
+					continue;
+				}
+			}
+#else
             if (nfl_inter_new_cnt >= max_nfl_inter_new && candidate_ptr->type == INTER_MODE && candidate_ptr->is_new_mv) {
                 *candidateBuffer->full_cost_ptr = MAX_MODE_COST;
                 continue;
@@ -4669,7 +4694,28 @@ void AV1PerformFullLoop(
                 *candidateBuffer->full_cost_ptr = MAX_MODE_COST;
                 continue;
             }
+#endif
+ #if COMP_FULL           
+            if (candidate_ptr->type == INTRA_MODE) {
+                nfl_intra_cnt++;
+            }
 
+            if ((candidate_ptr->type == INTER_MODE && candidate_ptr->is_compound == 0) ||
+                (candidate_ptr->type == INTER_MODE && candidate_ptr->is_compound == 1 && candidate_ptr->interinter_comp.type == COMPOUND_AVERAGE))
+            {
+                if (candidate_ptr->is_new_mv) {
+                    nfl_inter_new_cnt++;
+				}
+				if (candidate_ptr->is_new_mv == 0) {
+                    max_nfl_inter_pred++;
+				}
+
+            }
+			  if ( (candidate_ptr->type == INTER_MODE && candidate_ptr->is_compound == 1 && candidate_ptr->interinter_comp.type != COMPOUND_AVERAGE))
+			{
+                    nfl_comp_cnt++;
+			}
+#else
             if (candidate_ptr->type == INTRA_MODE) {
                 nfl_intra_cnt++;
             }
@@ -4679,6 +4725,7 @@ void AV1PerformFullLoop(
             if (candidate_ptr->type == INTER_MODE && candidate_ptr->is_new_mv == 0) {
                 max_nfl_inter_pred++;
             }
+#endif
         }
 #endif
         candidate_ptr->full_distortion = 0;
