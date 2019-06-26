@@ -69,7 +69,11 @@ extern "C" {
 #define ALTREF_EIGHTH_PEL_SEARCH          1 // Add 1/8 search for temporal filtering
 #define ALTREF_AV1_SUBPEL                 0
 #define DECOUPLE_ALTREF_ME                1 // De-couple completely the HME/ME/Subpel used for ME Inter prediction and the one used for ALTREF temporal filtering 
+
+#define ALTREF_SHUT_EX_REFINEMENT         0
 #define ALTREF_TEMPORAL_FILTERING         0
+#define ALTREF_ENABLE_EX_REFINEMENT       0
+#define M0_SETTINGS                       0
 
 #define ATB                               1 // ATB Main Flag
 #if ATB
@@ -309,7 +313,7 @@ extern "C" {
 #define IMPROVED_SUBPEL_SEARCH                          1
 
 
-#define  MD_CLASS                     1   //added the concept of class for each MD candidate. NFL is now per class.
+#define  MD_CLASS                     0   //added the concept of class for each MD candidate. NFL is now per class.
 
 #if MD_CLASS
 typedef enum CAND_CLASS {
@@ -4718,7 +4722,36 @@ static const uint16_t tf_hme_level2_search_area_in_height_array_bottom[SC_MAX_LE
         {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 }
     }
 };
+#if ALTREF_TEMPORAL_FILTERING
+static const uint16_t tf_search_area_width[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {  48,   48,   48,   48,   48,   48,   48,   48,   48,   16,   16,    16,   16 },
+        { 112,  112,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
+        { 112,  112,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
+        { 112,  112,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 }
+    } , {
+        {  48,   48,   48,   48,   48,   48,   48,   48,   48,   16,   16,    16,   16 },
+        { 112,  112,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
+        { 112,  112,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
+        { 112,  112,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 }
+    }
+};
+static const uint16_t tf_search_area_height[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {  48,   48,   48,   48,    32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        { 112,  112,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        { 112,  112,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        { 112,  112,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 }
+    } , {
+        {  48,   48,   48,   48,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        { 112,  112,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        { 112,  112,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        { 112,  112,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 }
+    }
 
+    //     M0    M1    M2    M3    M4    M5    M6    M7    M8    M9    M10    M11    M12
+};
+#else
 static const uint16_t tf_search_area_width[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
     {
         {  64,   64,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
@@ -4747,6 +4780,8 @@ static const uint16_t tf_search_area_height[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_
 
     //     M0    M1    M2    M3    M4    M5    M6    M7    M8    M9    M10    M11    M12
 };
+#endif
+
 #endif
 
 static const uint16_t ep_to_pa_block_index[BLOCK_MAX_COUNT_SB_64] = {

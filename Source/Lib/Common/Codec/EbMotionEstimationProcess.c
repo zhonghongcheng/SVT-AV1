@@ -377,6 +377,10 @@ void* tf_set_me_hme_params_oq(
     UNUSED(sequence_control_set_ptr);
     uint8_t  hmeMeLevel = picture_control_set_ptr->enc_mode; // OMK to be revised after new presets
 
+#if M0_SETTINGS
+    hmeMeLevel = 0;
+#endif
+
     // HME/ME default settings
     me_context_ptr->number_hme_search_region_in_width = 2;
     me_context_ptr->number_hme_search_region_in_height = 2;
@@ -404,11 +408,11 @@ void* tf_set_me_hme_params_oq(
     // ME
     me_context_ptr->search_area_width = tf_search_area_width[sc_content_detected][input_resolution][hmeMeLevel];
     me_context_ptr->search_area_height = tf_search_area_height[sc_content_detected][input_resolution][hmeMeLevel];
-
-#if ALTREF_TEMPORAL_FILTERING
-    me_context_ptr->search_area_width = 256;
-    me_context_ptr->search_area_height = 256;
-#endif
+//
+//#if ALTREF_TEMPORAL_FILTERING
+//    me_context_ptr->search_area_width = 56;
+//    me_context_ptr->search_area_height = 56;
+//#endif
 
     assert(me_context_ptr->search_area_width <= MAX_SEARCH_AREA_WIDTH && "increase MAX_SEARCH_AREA_WIDTH");
     assert(me_context_ptr->search_area_height <= MAX_SEARCH_AREA_HEIGHT && "increase MAX_SEARCH_AREA_HEIGHT");
@@ -472,6 +476,14 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
             context_ptr->me_context_ptr->use_subpel_flag = 0;
     else
         context_ptr->me_context_ptr->use_subpel_flag = 1;
+
+
+#if ALTREF_SHUT_EX_REFINEMENT
+    context_ptr->me_context_ptr->half_pel_mode =
+        REFINMENT_HP_MODE;
+    context_ptr->me_context_ptr->quarter_pel_mode =
+        REFINMENT_QP_MODE;
+#else
     if (MR_MODE) {
         context_ptr->me_context_ptr->half_pel_mode =
             EX_HP_MODE;
@@ -491,6 +503,16 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
         context_ptr->me_context_ptr->quarter_pel_mode =
             REFINMENT_QP_MODE;
     }
+#endif
+
+
+#if ALTREF_ENABLE_EX_REFINEMENT
+    context_ptr->me_context_ptr->half_pel_mode =
+        EX_HP_MODE;
+    context_ptr->me_context_ptr->quarter_pel_mode =
+        REFINMENT_QP_MODE;
+#endif
+
 #endif
 
     // Set fractional search model
