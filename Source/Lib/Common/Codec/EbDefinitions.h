@@ -326,7 +326,7 @@ extern "C" {
 #define IMPROVED_SUBPEL_SEARCH                          1
 
 
-#define  MD_CLASS                     0   //added the concept of class for each MD candidate. NFL is now per class.
+#define  MD_CLASS                     1   //added the concept of class for each MD candidate. NFL is now per class.
 
 #if MD_CLASS
 typedef enum CAND_CLASS {

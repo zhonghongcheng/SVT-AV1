@@ -6531,7 +6531,7 @@ void md_encode_block(
 					buffer_start_idx,							// full candidate buffer start index 
 					buffer_count_for_curr_class,				// full candidate buffer length 
 					context_ptr->fast_cand_count[cand_class_it] > context_ptr->full_cand_count[cand_class_it],  //is there need to max the temp buffer
-					context_ptr->decoupled_fast_loop_search_method == SSD_SEARCH,
+					0,
 					asm_type);
 
 				buffer_start_idx += buffer_count_for_curr_class;//for next iteration.
