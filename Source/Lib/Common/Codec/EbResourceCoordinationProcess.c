@@ -99,8 +99,11 @@ EbErrorType signal_derivation_pre_analysis_oq(
 #if !DECOUPLE_ALTREF_ME
         uint8_t  hme_me_level = picture_control_set_ptr->enc_mode;
 #endif
+#if M0_HME_ME_TUNING
+        picture_control_set_ptr->enable_hme_flag = enable_hme_flag[0][input_resolution][hme_me_level] || enable_hme_flag[1][input_resolution][hme_me_level];
+#else
         picture_control_set_ptr->enable_hme_flag = EB_TRUE;
-
+#endif
 #if DECOUPLE_ALTREF_ME
         picture_control_set_ptr->enable_hme_level0_flag = enable_hme_level0_flag[0][input_resolution][hme_me_level] || enable_hme_level0_flag[1][input_resolution][hme_me_level];
         picture_control_set_ptr->enable_hme_level1_flag = enable_hme_level1_flag[0][input_resolution][hme_me_level] || enable_hme_level1_flag[1][input_resolution][hme_me_level];
@@ -134,7 +137,11 @@ EbErrorType signal_derivation_pre_analysis_oq(
 #if ALTREF_TEMPORAL_FILTERING
     picture_control_set_ptr->tf_enable_hme_flag = EB_FALSE;
 #else
+#if M0_HME_ME_TUNING
+    picture_control_set_ptr->tf_enable_hme_flag = tf_enable_hme_flag[0][input_resolution][hme_me_level] || tf_enable_hme_flag[1][input_resolution][hme_me_level];
+#else
     picture_control_set_ptr->tf_enable_hme_flag = EB_TRUE;
+#endif
 #endif
     picture_control_set_ptr->tf_enable_hme_level0_flag = tf_enable_hme_level0_flag[0][input_resolution][hme_me_level] || tf_enable_hme_level0_flag[1][input_resolution][hme_me_level];
     picture_control_set_ptr->tf_enable_hme_level1_flag = tf_enable_hme_level1_flag[0][input_resolution][hme_me_level] || tf_enable_hme_level1_flag[1][input_resolution][hme_me_level];
