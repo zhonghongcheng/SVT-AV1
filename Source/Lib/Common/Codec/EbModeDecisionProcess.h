@@ -325,7 +325,6 @@ extern "C" {
 #if MV_REFINEMENT_AROUND_MV_PRED
         int16_t                         best_spatial_pred_mv[2][4][2];
         int8_t                          valid_refined_mv[2][4];
-        uint64_t                        best_cost[2][4];
 #endif
 #if COMP_DIFF
 
