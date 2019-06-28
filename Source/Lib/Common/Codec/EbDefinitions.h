@@ -37,6 +37,12 @@ extern "C" {
 
 
 #define M0_HME_ME_TUNING                1
+#define LOAD_M0_HME_ME_SETTINGS         0
+
+#define MV_REFINEMENT_AROUND_MV_PRED    0
+#if  MV_REFINEMENT_AROUND_MV_PRED               
+#define MV_REFINEMENT_AROUND_MV_PRED_T0 1
+#endif
 
 #define COMPOUND_FLAG                      1// main flag for compound modes
 #if COMPOUND_FLAG
@@ -393,11 +399,6 @@ typedef enum CAND_CLASS {
 
 #define OPT_IFS                                         0 // DISABLE INTERPOLATION SEARCH WHEN ALL MVs (x and y) ARE INTEGER.
 #define IFS_EARLY_EXIT                                  0 // EARLY EXIT FROM INTERPOLATION SEARCH BASED ON THE DISTORTION OF THE REGULAR-FILTER (x and y) ARE INTEGER.
-
-#define MV_REFINEMENT_AROUND_MV_PRED                    0
-#if  MV_REFINEMENT_AROUND_MV_PRED                               
-#define MV_REFINEMENT_AROUND_MV_PRED_T0                 1
-#endif
 
 #define OPTIMISED_EX_SUBPEL                                 1
 #if IMPROVED_SUBPEL_SEARCH
