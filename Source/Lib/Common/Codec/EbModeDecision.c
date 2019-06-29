@@ -4426,6 +4426,10 @@ void  inject_inter_candidates(
                 if (context_ptr->valid_refined_mv[listIndex][ref_pic_index]) {
                     int16_t to_inject_mv_x = context_ptr->best_spatial_pred_mv[listIndex][ref_pic_index][0];
                     int16_t to_inject_mv_y = context_ptr->best_spatial_pred_mv[listIndex][ref_pic_index][1];
+
+#if DEBUG_CLASS
+                    candidateArray[canTotalCnt].cand_class = CAND_CLASS_4;
+#endif
                     candidateArray[canTotalCnt].type = INTER_MODE;
                     candidateArray[canTotalCnt].distortion_ready = 0;
                     candidateArray[canTotalCnt].use_intrabc = 0;
@@ -4493,6 +4497,9 @@ void  inject_inter_candidates(
                     if (context_ptr->valid_refined_mv[listIndex][ref_pic_index]) {
                         int16_t to_inject_mv_x = context_ptr->best_spatial_pred_mv[listIndex][ref_pic_index][0];
                         int16_t to_inject_mv_y = context_ptr->best_spatial_pred_mv[listIndex][ref_pic_index][1];
+#if DEBUG_CLASS
+                        candidateArray[canTotalCnt].cand_class = CAND_CLASS_4;
+#endif
                         candidateArray[canTotalCnt].type = INTER_MODE;
                         candidateArray[canTotalCnt].distortion_ready = 0;
                         candidateArray[canTotalCnt].use_intrabc = 0;
@@ -4573,6 +4580,9 @@ void  inject_inter_candidates(
                                     if (context_ptr->prediction_mse < 8 || (!have_newmv_in_inter_mode(NEW_NEWMV) && context_ptr->prediction_mse < 64))
                                         continue;
 
+#endif
+#if DEBUG_CLASS
+                                candidateArray[canTotalCnt].cand_class = CAND_CLASS_4;
 #endif
                                 candidateArray[canTotalCnt].type = INTER_MODE;
                                 candidateArray[canTotalCnt].distortion_ready = 0;
@@ -6229,6 +6239,14 @@ EbErrorType ProductGenerateMdCandidatesCu(
     uint8_t inject_intra_candidate = 1;
     uint8_t inject_inter_candidate = 1;
 
+#if DEBUG_CLASS
+    for (uint32_t k = 0; k < MODE_DECISION_CANDIDATE_MAX_COUNT; k++)
+    {
+        ModeDecisionCandidate * cand_ptr = &context_ptr->fast_candidate_array[k];
+        cand_ptr->cand_class = CAND_CLASS_0;
+    }
+#endif
+
     if (slice_type != I_SLICE) {
 #if ADP_BQ 
         // to add the support for extra partitioning method here
@@ -6309,29 +6327,41 @@ EbErrorType ProductGenerateMdCandidatesCu(
 	for (cand_i = 0; cand_i < canTotalCnt; cand_i++)
 	{
 		ModeDecisionCandidate * cand_ptr = &context_ptr->fast_candidate_array[cand_i];
-		if (cand_ptr->type == INTRA_MODE) {
-			cand_ptr->cand_class = CAND_CLASS_0;
-			context_ptr->fast_cand_count[CAND_CLASS_0]++;
-		}
+
+
+#if DEBUG_CLASS
+        // to remove after cleaning up the cand_class derivation
+        if (cand_ptr->cand_class == CAND_CLASS_4) {
+            context_ptr->fast_cand_count[CAND_CLASS_4]++;
+        }
+        else {
+#endif 
+            if (cand_ptr->type == INTRA_MODE) {
+                cand_ptr->cand_class = CAND_CLASS_0;
+                context_ptr->fast_cand_count[CAND_CLASS_0]++;
+            }
 #if COMP_FULL
-        else if ((cand_ptr->type == INTER_MODE && cand_ptr->is_compound == 0) ||
-                 (cand_ptr->type == INTER_MODE && cand_ptr->is_compound == 1 && cand_ptr->interinter_comp.type == COMPOUND_AVERAGE)) {
+            else if ((cand_ptr->type == INTER_MODE && cand_ptr->is_compound == 0) ||
+                (cand_ptr->type == INTER_MODE && cand_ptr->is_compound == 1 && cand_ptr->interinter_comp.type == COMPOUND_AVERAGE)) {
 
 #endif
-            if (cand_ptr->is_new_mv) {
-                cand_ptr->cand_class = CAND_CLASS_1;
-                context_ptr->fast_cand_count[CAND_CLASS_1]++;
+                if (cand_ptr->is_new_mv) {
+                    cand_ptr->cand_class = CAND_CLASS_1;
+                    context_ptr->fast_cand_count[CAND_CLASS_1]++;
+                }
+                else {
+                    cand_ptr->cand_class = CAND_CLASS_2;
+                    context_ptr->fast_cand_count[CAND_CLASS_2]++;
+                }
+#if COMP_FULL
             }
             else {
-                cand_ptr->cand_class = CAND_CLASS_2;
-                context_ptr->fast_cand_count[CAND_CLASS_2]++;
-            }
-#if COMP_FULL
-        }
-        else {            
                 cand_ptr->cand_class = CAND_CLASS_3;
                 context_ptr->fast_cand_count[CAND_CLASS_3]++;
 
+            }
+#endif
+#if DEBUG_CLASS
         }
 #endif
 	}

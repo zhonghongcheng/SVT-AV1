@@ -37,11 +37,14 @@ extern "C" {
 
 
 #define M0_HME_ME_TUNING                1
-#define LOAD_M0_HME_ME_SETTINGS         0
 
-#define MV_REFINEMENT_AROUND_MV_PRED    0
+#if 0
+#define LOAD_M0_HME_ME_SETTINGS         1
+#define MV_REFINEMENT_AROUND_MV_PRED    1
 #if  MV_REFINEMENT_AROUND_MV_PRED               
 #define MV_REFINEMENT_AROUND_MV_PRED_T0 1
+#endif
+#define DEBUG_CLASS                     1
 #endif
 
 #define COMPOUND_FLAG                      1// main flag for compound modes
@@ -341,6 +344,9 @@ typedef enum CAND_CLASS {
 	CAND_CLASS_2,
 #if COMP_FULL
 	CAND_CLASS_3,
+#endif
+#if DEBUG_CLASS
+    CAND_CLASS_4,
 #endif
 	CAND_CLASS_TOTAL
 } CAND_CLASS;
