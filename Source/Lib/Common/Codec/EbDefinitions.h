@@ -41,10 +41,12 @@ extern "C" {
 #if 0
 #define LOAD_M0_HME_ME_SETTINGS         1
 #define MV_REFINEMENT_AROUND_MV_PRED    1
-#if  MV_REFINEMENT_AROUND_MV_PRED               
+#if MV_REFINEMENT_AROUND_MV_PRED       
+#define ONLY_SAD_IF_FULL_PEL            1    
+#define BREACK_DOWN                     1    
 #define MV_REFINEMENT_AROUND_MV_PRED_T0 1
 #endif
-#define DEBUG_CLASS                     1
+#define DEBUG_CLASS                     0
 #endif
 
 #define COMPOUND_FLAG                      1// main flag for compound modes
@@ -476,7 +478,11 @@ enum {
 #else
 
 #if MD_CLASS
+#if DEBUG_CLASS
+#define MAX_NFL                                   100 //full loop all candidates in I slice
+#else
 #define MAX_NFL                                   65 //full loop all candidates in I slice
+#endif
 #else
 #define MAX_NFL                                   40
 #endif
