@@ -1087,6 +1087,74 @@ void sb_forward_sq_blocks_to_md(
 #endif
 }
 
+
+#if PREDICT_NSQ_SHAPE
+void sb_nsq_ranking_and_forward_all_blocks_to_md(
+    SequenceControlSet *sequence_control_set_ptr,
+    PictureControlSet  *picture_control_set_ptr,
+    ModeDecisionConfigurationContext *context_ptr,
+    uint32_t            sb_index)
+{
+
+    EbBool split_flag;
+    MdcLcuData *resultsPtr = &picture_control_set_ptr->mdc_sb_array[sb_index];
+    resultsPtr->leaf_count = 0;
+    uint32_t  blk_index = 0;
+    while (blk_index < sequence_control_set_ptr->max_block_cnt)
+    {
+        split_flag = EB_TRUE;
+
+        const BlockGeom * blk_geom = get_blk_geom_mds(blk_index);
+
+        //if the parentSq is inside inject this block
+        uint8_t is_blk_allowed = picture_control_set_ptr->slice_type != I_SLICE ? 1 : (blk_geom->sq_size < 128) ? 1 : 0;
+        //init ranking
+        resultsPtr->leaf_data_array[blk_index].open_loop_ranking = 10;
+        resultsPtr->leaf_data_array[blk_index].early_split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
+        if (sequence_control_set_ptr->sb_geom[sb_index].block_is_inside_md_scan[blk_index] && is_blk_allowed)
+        {
+            
+            resultsPtr->leaf_data_array[resultsPtr->leaf_count].tot_d1_blocks =
+                blk_geom->sq_size == 128 ? 17 :
+                blk_geom->sq_size > 8 ? 25 :
+                blk_geom->sq_size == 8 ? 5 : 1;
+
+            resultsPtr->leaf_data_array[resultsPtr->leaf_count].leaf_index = 0;//valid only for square 85 world. will be removed.
+            resultsPtr->leaf_data_array[resultsPtr->leaf_count].mds_idx = blk_index;
+            if (blk_geom->sq_size > 4)
+            {
+                resultsPtr->leaf_data_array[resultsPtr->leaf_count++].split_flag = EB_TRUE;
+                split_flag = EB_TRUE;
+            }
+            else {
+                resultsPtr->leaf_data_array[resultsPtr->leaf_count++].split_flag = EB_FALSE;
+                split_flag = EB_FALSE;
+            }
+        }
+
+        blk_index++;
+    }
+
+    if (picture_control_set_ptr->slice_type != I_SLICE) {
+        LargestCodingUnit            *sb_ptr;
+
+        // SB Loop : Partitionnig Decision
+        sb_ptr = picture_control_set_ptr->sb_ptr_array[sb_index];
+        sb_ptr->qp = (uint8_t)picture_control_set_ptr->parent_pcs_ptr->picture_qp;
+
+        nsq_prediction_shape(
+            sequence_control_set_ptr,
+            picture_control_set_ptr,
+            context_ptr,
+            resultsPtr,
+            sb_ptr,
+            sb_ptr->origin_x,
+            sb_ptr->origin_y,
+            sb_index);
+    }
+    picture_control_set_ptr->parent_pcs_ptr->average_qp = (uint8_t)picture_control_set_ptr->parent_pcs_ptr->picture_qp;
+}
+#endif
 #if ADP_BQ
 void sb_forward_all_blocks_to_md(
     SequenceControlSet *sequence_control_set_ptr,
@@ -2492,6 +2560,30 @@ void* mode_decision_configuration_kernel(void *input_ptr)
         else {   // (picture_control_set_ptr->parent_pcs_ptr->mdMode == PICT_BDP_DEPTH_MODE || picture_control_set_ptr->parent_pcs_ptr->mdMode == PICT_LIGHT_BDP_DEPTH_MODE )
             picture_control_set_ptr->parent_pcs_ptr->average_qp = (uint8_t)picture_control_set_ptr->parent_pcs_ptr->picture_qp;
         }
+#if PREDICT_NSQ_SHAPE
+        {
+            // SB Constants
+            uint8_t sb_sz = (uint8_t)sequence_control_set_ptr->sb_size_pix;
+            uint8_t lcuSizeLog2 = (uint8_t)Log2f(sb_sz);
+
+            uint32_t picture_height_in_sb = (sequence_control_set_ptr->seq_header.max_frame_height + sb_sz - 1) >> lcuSizeLog2;
+            uint32_t picture_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sb_sz - 1) >> lcuSizeLog2;
+            for (uint32_t y_lcu_index = 0; y_lcu_index < picture_height_in_sb; ++y_lcu_index) {
+                for (uint32_t x_lcu_index = 0; x_lcu_index < picture_width_in_sb; ++x_lcu_index) {
+
+                    uint32_t sb_index = (uint16_t)(y_lcu_index * picture_width_in_sb + x_lcu_index);
+                    LargestCodingUnit  *sb_ptr = picture_control_set_ptr->sb_ptr_array[sb_index];
+                    sb_ptr->origin_x = x_lcu_index << lcuSizeLog2;
+                    sb_ptr->origin_y = y_lcu_index << lcuSizeLog2;
+                    sb_nsq_ranking_and_forward_all_blocks_to_md(
+                        sequence_control_set_ptr,
+                        picture_control_set_ptr,
+                        context_ptr,
+                        sb_index);
+                }
+            }
+        }
+#endif
 
         if (picture_control_set_ptr->parent_pcs_ptr->allow_intrabc)
         {

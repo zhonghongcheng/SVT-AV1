@@ -356,6 +356,14 @@ extern "C" {
 #define MV_REFINEMENT_AROUND_MV_PRED_T0                 1
 #endif
 
+#define PREDICT_NSQ_SHAPE                               0
+#if PREDICT_NSQ_SHAPE
+#define ADD_MDC_INTRA                                   0
+#define DEPTH_RANKING                                   1
+#define NUMBER_OF_DEPTH                                 6
+#define NUMBER_OF_SHAPES                                10
+#endif
+
 #if IMPROVED_SUBPEL_SEARCH
 typedef enum ME_HP_MODE { 
     EX_HP_MODE = 0, 

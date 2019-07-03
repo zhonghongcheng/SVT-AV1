@@ -5184,6 +5184,12 @@ void check_redundant_block(const BlockGeom * blk_geom, ModeDecisionContext *cont
     }
 }
 #endif
+
+#if PREDICT_NSQ_SHAPE 
+uint8_t enable_ol_per_depth[NUMBER_OF_DEPTH] = {0,0,0,0,0,0}; // 0: OL application OFF; 1: OL application ON
+uint8_t depth_rank_th[NUMBER_OF_DEPTH] = {5,5,5,5,5,5}; // Range: 0-5 
+uint8_t shape_rank_th[NUMBER_OF_DEPTH] = {9,9,9,9,9,9}; // Range 0-9
+#endif
 /*******************************************
 * ModeDecision LCU
 *   performs CL (LCU)
@@ -5191,7 +5197,7 @@ void check_redundant_block(const BlockGeom * blk_geom, ModeDecisionContext *cont
 EbBool allowed_ns_cu(
     EbBool                             is_nsq_table_used,
     uint8_t                            nsq_max_shapes_md,
-    ModeDecisionContext              *context_ptr,
+    ModeDecisionContext                *context_ptr,
     uint8_t                            is_complete_sb){
     EbBool  ret = 1;
 #if NSQ_FIX
@@ -5203,14 +5209,30 @@ EbBool allowed_ns_cu(
             ret = 0;
     }
 #endif
-    if (is_nsq_table_used) {
+    if (is_nsq_table_used) {   
+#if PREDICT_NSQ_SHAPE
+        ret = 1;
         if (context_ptr->blk_geom->shape != PART_N) {
+            uint8_t depth = get_depth(context_ptr->blk_geom->sq_size);
+            if (enable_ol_per_depth[depth]) {
+                uint8_t depth_rank = context_ptr->sb_ptr->depth_ranking[depth];
+                uint8_t shape_rank = context_ptr->open_loop_block_rank;
+                if (depth_rank > depth_rank_th[depth]) {
+                    if (shape_rank > shape_rank_th[depth]) {
+                        ret = 0;
+                    }
+                }
+            }
+        }      
+#else
+       if (context_ptr->blk_geom->shape != PART_N) {
             ret = 0;
             for (int i = 0; i < nsq_max_shapes_md; i++) {
                 if (context_ptr->blk_geom->shape == context_ptr->nsq_table[i])
                     ret = 1;
             }
         }
+#endif   
     }
     return ret;
 }
@@ -6135,6 +6157,10 @@ void md_encode_block(
     uint32_t                          leaf_index,
 #endif
     uint32_t                          lcuAddr,
+#if PREDICT_NSQ_SHAPE
+    uint8_t                          open_loop_block_rank,
+    uint8_t                          early_split_flag,
+#endif
     ModeDecisionCandidateBuffer    *bestCandidateBuffers[5])
 {
     ModeDecisionCandidateBuffer         **candidateBufferPtrArrayBase = context_ptr->candidate_buffer_ptr_array;
@@ -6159,6 +6185,14 @@ void md_encode_block(
     const uint32_t cuChromaOriginIndex = ROUND_UV(blk_geom->origin_x) / 2 + ROUND_UV(blk_geom->origin_y) / 2 * SB_STRIDE_UV;
     CodingUnit *  cu_ptr = context_ptr->cu_ptr;
     candidate_buffer_ptr_array = &(candidateBufferPtrArrayBase[0]);
+#if PREDICT_NSQ_SHAPE
+    EbBool is_nsq_table_used = (picture_control_set_ptr->slice_type == !I_SLICE &&
+        picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE &&
+        picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
+        picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL) ? EB_TRUE : EB_FALSE;
+    context_ptr->open_loop_block_rank = open_loop_block_rank;
+    context_ptr->early_split_flag = early_split_flag;
+#else
 #if ADP_BQ 
     // Derive is_nsq_table_used
     EbBool is_nsq_table_used;
@@ -6191,7 +6225,7 @@ void md_encode_block(
                 context_ptr->leaf_partition_neighbor_array);
         }
     }
-
+#endif
     uint8_t                            is_complete_sb = sequence_control_set_ptr->sb_geom[lcuAddr].is_complete_sb;
 
 #if ADP_BQ // --
@@ -6204,8 +6238,7 @@ void md_encode_block(
 
     if (allowed_ns_cu(is_nsq_table_used, nsq_max_shapes_md, context_ptr, is_complete_sb))
 #else
-    if (picture_control_set_ptr->parent_pcs_ptr->nsq_max_shapes_md != 6)
-        printf("");
+
     if (allowed_ns_cu(
         is_nsq_table_used, picture_control_set_ptr->parent_pcs_ptr->nsq_max_shapes_md, context_ptr, is_complete_sb))
 #endif
@@ -6645,7 +6678,10 @@ EB_EXTERN EbErrorType mode_decision_sb(
     context_ptr->inter_pred_dir_neighbor_array = picture_control_set_ptr->md_inter_pred_dir_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX];
     context_ptr->ref_frame_type_neighbor_array = picture_control_set_ptr->md_ref_frame_type_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX];
     context_ptr->interpolation_type_neighbor_array = picture_control_set_ptr->md_interpolation_type_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX];
-
+ #if DEPTH_RANKING
+    for(uint8_t depth_idx = 0;depth_idx < NUMBER_OF_DEPTH; depth_idx++ )
+        context_ptr->open_loop_depth_rank[depth_idx] = sb_ptr->depth_ranking[depth_idx];
+#endif
     //CU Loop
     cuIdx = 0;  //index over mdc array
 
@@ -6692,7 +6728,10 @@ EB_EXTERN EbErrorType mode_decision_sb(
         cu_ptr->split_flag = (uint16_t)leafDataPtr->split_flag; //mdc indicates smallest or non valid CUs with split flag=
         cu_ptr->qp = context_ptr->qp;
         cu_ptr->best_d1_blk = blk_idx_mds;
-
+ #if PREDICT_NSQ_SHAPE
+        uint8_t open_loop_block_rank = leafDataPtr->open_loop_ranking;
+        uint8_t early_split_flag = leafDataPtr->early_split_flag;      
+#endif
             if (leafDataPtr->tot_d1_blocks != 1)
             {
                 if (blk_geom->shape == PART_N)
@@ -6778,6 +6817,10 @@ EB_EXTERN EbErrorType mode_decision_sb(
                 0xFFFFFFFF,
 #endif
                 lcuAddr,
+ #if PREDICT_NSQ_SHAPE
+                open_loop_block_rank,
+                early_split_flag,
+#endif
                 bestCandidateBuffers);
 
         }

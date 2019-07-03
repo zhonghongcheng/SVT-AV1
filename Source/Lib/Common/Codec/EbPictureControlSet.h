@@ -13641,6 +13641,10 @@ extern "C" {
         uint32_t          tot_d1_blocks; //how many d1 bloks every parent square would have
         uint8_t           leaf_index;
         EbBool            split_flag;
+#if PREDICT_NSQ_SHAPE
+        uint8_t           open_loop_ranking;
+        uint8_t           early_split_flag;
+#endif
     } EbMdcLeafData;
 
     typedef struct MdcLcuData
