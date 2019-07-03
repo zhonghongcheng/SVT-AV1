@@ -495,7 +495,11 @@ default_wedge_interintra_cdf[BlockSizeS_ALL][CDF_SIZE(2)] = {
 };
 
 static const AomCdfProb
+#if COMP_MODE
+default_compound_type_cdf[BlockSizeS_ALL][CDF_SIZE(MASKED_COMPOUND_TYPES)] = {
+#else
 default_compound_type_cdf[BlockSizeS_ALL][CDF_SIZE(COMPOUND_TYPES - 1)] = {
+#endif
     { AOM_CDF2(16384) }, { AOM_CDF2(16384) }, { AOM_CDF2(16384) },
     { AOM_CDF2(23431) }, { AOM_CDF2(13171) }, { AOM_CDF2(11470) },
     { AOM_CDF2(9770) }, { AOM_CDF2(9100) }, { AOM_CDF2(8233) },
@@ -4516,7 +4520,11 @@ void av1_reset_cdf_symbol_counters(FRAME_CONTEXT *fc) {
     RESET_CDF_COUNTER(fc->refmv_cdf, 2);
     RESET_CDF_COUNTER(fc->drl_cdf, 2);
     RESET_CDF_COUNTER(fc->inter_compound_mode_cdf, INTER_COMPOUND_MODES);
+#if COMP_MODE
+	RESET_CDF_COUNTER(fc->compound_type_cdf, MASKED_COMPOUND_TYPES);
+#else
     RESET_CDF_COUNTER(fc->compound_type_cdf, COMPOUND_TYPES - 1);
+#endif
     RESET_CDF_COUNTER(fc->wedge_idx_cdf, 16);
     RESET_CDF_COUNTER(fc->interintra_cdf, 2);
     RESET_CDF_COUNTER(fc->wedge_interintra_cdf, 2);

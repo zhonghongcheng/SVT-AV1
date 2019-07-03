@@ -445,6 +445,16 @@ extern "C" {
 #endif
         uint8_t                       hme_search_method;
         uint8_t                       me_search_method;
+#if DECOUPLE_ALTREF_ME
+        EbBool                        enable_hme_flag;
+        EbBool                        enable_hme_level0_flag;
+        EbBool                        enable_hme_level1_flag;
+        EbBool                        enable_hme_level2_flag;
+
+        EbBool                        use_subpel_flag;
+        EbBool                        half_pel_mode;
+        EbBool                        quarter_pel_mode;
+#endif
         // ME
 #if QUICK_ME_CLEANUP
         uint16_t                      search_area_width;
@@ -621,6 +631,12 @@ extern "C" {
         uint64_t                      lambda;
         uint8_t                       hme_search_type;
         uint8_t                       fractional_search_method;
+
+#if DECOUPLE_ALTREF_ME
+        EbBool                        use_subpel_flag;
+        EbBool                        half_pel_mode;
+        EbBool                        quarter_pel_mode;
+#endif
 
         // ME
         uint8_t                       search_area_width;

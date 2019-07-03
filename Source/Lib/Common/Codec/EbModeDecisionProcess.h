@@ -24,6 +24,9 @@ extern "C" {
      * Defines
      **************************************/
 #define IBC_CAND 2 //two intra bc candidates
+#if COMP_MODE
+#define MODE_DECISION_CANDIDATE_MAX_COUNT              (1000 +IBC_CAND)//488// (1400 +IBC_CAND)
+#else
 #if CHECK_CAND
 #if MRP_DUPLICATION_FIX
 #if EIGTH_PEL_MV
@@ -40,6 +43,7 @@ extern "C" {
 #endif
 #else
 #define MODE_DECISION_CANDIDATE_MAX_COUNT               (124+IBC_CAND) /* 61 Intra & 18+2x8+2x8 Inter*/
+#endif
 #endif
 #define DEPTH_ONE_STEP   21
 #define DEPTH_TWO_STEP    5
@@ -187,8 +191,13 @@ extern "C" {
         uint32_t                         best_candidate_index_array[MAX_NFL + 2];
         uint32_t                         sorted_candidate_index_array[MAX_NFL];
 #else
+#if MD_CLASS
+		uint32_t                         best_candidate_index_array[MAX_NFL_BUFF];
+		uint32_t                         sorted_candidate_index_array[MAX_NFL];
+#else
         uint8_t                         best_candidate_index_array[MAX_NFL + 2];
         uint8_t                         sorted_candidate_index_array[MAX_NFL];
+#endif
 #endif
         uint16_t                        cu_origin_x;
         uint16_t                        cu_origin_y;
@@ -279,6 +288,10 @@ extern "C" {
         uint8_t                         chroma_level;
         PART                            nsq_table[NSQ_TAB_SIZE];
         uint8_t                         decoupled_fast_loop_search_method;
+#if MD_CLASS
+		uint32_t                       full_cand_count[CAND_CLASS_TOTAL]; //how many full candiates per class
+		uint32_t                       fast_cand_count[CAND_CLASS_TOTAL]; //how many ffast candiates per class
+#endif
         uint8_t                         decouple_intra_inter_fast_loop;
         uint8_t                         full_loop_escape;
         uint8_t                         global_mv_injection;
@@ -312,7 +325,6 @@ extern "C" {
 #if MV_REFINEMENT_AROUND_MV_PRED
         int16_t                         best_spatial_pred_mv[2][4][2];
         int8_t                          valid_refined_mv[2][4];
-        uint64_t                        best_cost[2][4];
 #endif
 #if PREDICT_NSQ_SHAPE
         uint8_t                         open_loop_block_rank;
@@ -320,6 +332,33 @@ extern "C" {
 #if DEPTH_RANKING
         uint8_t                         open_loop_depth_rank[NUMBER_OF_DEPTH];
 #endif
+#endif
+#if COMP_DIFF
+
+		DECLARE_ALIGNED(16 ,uint8_t, pred0[2 * MAX_SB_SQUARE]);
+		DECLARE_ALIGNED(16, uint8_t, pred1[2 * MAX_SB_SQUARE]);
+		DECLARE_ALIGNED(32, int16_t, residual1[MAX_SB_SQUARE]);
+		DECLARE_ALIGNED(32, int16_t, diff10[MAX_SB_SQUARE]);
+
+	/*	uint8_t  pred0,
+			(uint8_t *)aom_memalign(16, 2 * MAX_SB_SQUARE * sizeof(*bufs->pred0)));
+		CHECK_MEM_ERROR(
+			cm, bufs->pred1,
+			(uint8_t *)aom_memalign(16, 2 * MAX_SB_SQUARE * sizeof(*bufs->pred1)));
+		CHECK_MEM_ERROR(
+			cm, bufs->residual1,
+			(int16_t *)aom_memalign(32, MAX_SB_SQUARE * sizeof(*bufs->residual1)));
+		CHECK_MEM_ERROR(
+			cm, bufs->diff10,
+			(int16_t *)aom_memalign(32, MAX_SB_SQUARE * sizeof(*bufs->diff10)));
+		CHECK_MEM_ERROR(cm, bufs->tmp_best_mask_buf,
+			(uint8_t *)aom_malloc(2 * MAX_SB_SQUARE *
+				sizeof(*bufs->tmp_best_mask_buf)));*/
+#endif
+          
+#if COMP_MODE
+    unsigned int prediction_mse ;
+    EbBool      variance_ready;
 #endif
     } ModeDecisionContext;
 

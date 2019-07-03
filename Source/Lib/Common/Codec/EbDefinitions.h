@@ -35,6 +35,30 @@
 extern "C" {
 #endif
 
+
+#define M0_HME_ME_TUNING                1
+
+#if 0
+#define LOAD_M0_HME_ME_SETTINGS         1
+#define MV_REFINEMENT_AROUND_MV_PRED    1
+#if MV_REFINEMENT_AROUND_MV_PRED       
+#define ONLY_SAD_IF_FULL_PEL            1    
+#define BREACK_DOWN                     1    
+#define MV_REFINEMENT_AROUND_MV_PRED_T0 1
+#endif
+#define DEBUG_CLASS                     0
+#endif
+
+#define COMPOUND_FLAG                      1// main flag for compound modes
+#if COMPOUND_FLAG
+#define COMP_MODE                       1 // Add compound modes
+#define	COMP_EC                         1 // EC support for compound
+#define	COMP_DIFF                       1 // Diff compound 
+#define	COMP_AVG_DIST                   1 // inject only best (avg,dist) 
+#define	COMP_FULL                       1 // test compound in full loop
+#define	COMP_AVX                        1 // test compound in full loop
+#endif
+#define  NEW_NEAR_FIX                   1  //to add compound  here -- DONE 
     
 #define SC_DETECTION                            1 // Change SC detection to blk based VAR. 
 #define NEW_M0_SC                               1 // Change M0 settings for SC . 
@@ -63,6 +87,17 @@ extern "C" {
 #define RDOQ_FP_QUANTIZATION              1 // Use FP quantization method if RDOQ ON and INTRA block and 8BIT (x86 WIP)
 #define FIXED_128x128_CONTEXT_UPDATE      1 // Fix txb_skip_context and dc_sign_context update for 128x128, and move txb_skip_context and dc_sign_context from CU to MD context 
 #define LOOP_FILTER_FIX                   1 // Use the existing loop filter multi-mode signal to control loop filter and removed the NRF checks @ Encode Pass and Loop Filter Processes 
+
+#define ALTREF_DYNAMIC_WINDOW             1 // Add the ability to use dynamic/asymmetric window for AltRef temporal filtering, add the ability to derive the activity within past and future frames @ picture decision, and add a logic to derive window size from activity.
+#define WEIGHT_GENERATION_NOISE           0 // Add noise information @ weight generation 
+#define ALTREF_EIGHTH_PEL_SEARCH          1 // Add 1/8 search for temporal filtering
+#define ALTREF_AV1_SUBPEL                 0
+#define DECOUPLE_ALTREF_ME                1 // De-couple completely the HME/ME/Subpel used for ME Inter prediction and the one used for ALTREF temporal filtering 
+
+#define ALTREF_SHUT_EX_REFINEMENT         0
+#define ALTREF_TEMPORAL_FILTERING         0
+#define ALTREF_ENABLE_EX_REFINEMENT       0
+#define M0_SETTINGS                       0
 
 #define ATB                               1 // ATB Main Flag
 #if ATB
@@ -300,7 +335,29 @@ extern "C" {
 #define EIGTH_PEL_MV                                    0
 #define DISABLE_NSQ_TABLE_FOR_M0                        1 // On wil disable the nsq_table ordering algrithm. This is a temporarily adoption that will be disable once we comeup with a better ordreing mecanisme when MRP i ON.
 #define IMPROVED_SUBPEL_SEARCH                          1
-#define DECOUPLED_FAST_LOOP                             1
+
+
+#define  MD_CLASS                     1   //added the concept of class for each MD candidate. NFL is now per class.
+
+#if MD_CLASS
+typedef enum CAND_CLASS {
+	CAND_CLASS_0,
+	CAND_CLASS_1,
+	CAND_CLASS_2,
+#if COMP_FULL
+	CAND_CLASS_3,
+#endif
+#if DEBUG_CLASS
+    CAND_CLASS_4,
+#endif
+	CAND_CLASS_TOTAL
+} CAND_CLASS;
+#else
+
+#define DECOUPLED_FAST_LOOP                            1     
+																	  
+#endif
+
 #define FIX_ATB_SUPPORT                                 0 // ENABLE_SKIP_REDUNDANT_BLOCK
 #define FIX_TX_SEARCH_FOR_MR_MODE                       1
 
@@ -308,7 +365,7 @@ extern "C" {
 #define DOWN_SAMPLING_FILTERING                         1 // Use down-sampling filtering (instead of down-sampling decimation) for 1/16th and 1/4th reference frame(s) generation @ ME and temporal filtering search, added the multi-mode signal down_sampling_method_me_search; filtering if M0, and decimation for M1 & higher
 #define DECIMATION_BUG_FIX                              1 // Removed HME Level0 check @ 1/16th decimation to guarantee valid ZZ SAD and SCD data when HME Level0 is OFF
 #define ENABLE_QUANT_FP                                 1
-#if DECOUPLED_FAST_LOOP
+#if DECOUPLED_FAST_LOOP || MD_CLASS
 #define IMPROVED_NFL_SETTINGS                           1 // Used NRF 8,8,8 and Ref 16,16,16 NFL settings
 #endif
 #define APPLY_3X3_FOR_BEST_ME                           1 // Might need to be restricted to M0
@@ -330,7 +387,7 @@ extern "C" {
 #define DECIMATION_BUG_FIX                              1 // Removed HME Level0 check @ 1/16th decimation to guarantee valid ZZ SAD and SCD data when HME Level0 is OFF
 #endif
 
-#if DECOUPLED_FAST_LOOP
+#if DECOUPLED_FAST_LOOP || MD_CLASS
 #if OPT_NFL_SETTINGS
 #define     INTRA_NFL       8
 #define     INTER_NEW_NFL   8
@@ -351,11 +408,7 @@ extern "C" {
 #define OPT_IFS                                         0 // DISABLE INTERPOLATION SEARCH WHEN ALL MVs (x and y) ARE INTEGER.
 #define IFS_EARLY_EXIT                                  0 // EARLY EXIT FROM INTERPOLATION SEARCH BASED ON THE DISTORTION OF THE REGULAR-FILTER (x and y) ARE INTEGER.
 
-#define MV_REFINEMENT_AROUND_MV_PRED                    0
-#if  MV_REFINEMENT_AROUND_MV_PRED                               
-#define MV_REFINEMENT_AROUND_MV_PRED_T0                 1
-#endif
-
+#define OPTIMISED_EX_SUBPEL                                 1
 #define PREDICT_NSQ_SHAPE                               0
 #if PREDICT_NSQ_SHAPE
 #define ADD_MDC_INTRA                                   0
@@ -424,15 +477,30 @@ enum {
 #else
 #define MAX_TXB_COUNT                             4 // Maximum number of transform blocks.
 #endif
-#if DECOUPLED_FAST_LOOP
+#if DECOUPLED_FAST_LOOP /*|| MD_CLASS*/  //CHKn this is temp, and needed to get same behaviour for the I framewith the simulation code
 #if MV_REFINEMENT_AROUND_MV_PRED
 #define MAX_NFL                                   520
 #else
 #define MAX_NFL                                   488 //MODE_DECISION_CANDIDATE_MAX_COUNT
 #endif
 #else
+
+#if MD_CLASS
+#if DEBUG_CLASS
+#define MAX_NFL                                   100 //full loop all candidates in I slice
+#else
+#define MAX_NFL                                   65 //full loop all candidates in I slice
+#endif
+#else
 #define MAX_NFL                                   40
 #endif
+#endif
+
+#if MD_CLASS
+#define MAX_NFL_BUFF                   (MAX_NFL + CAND_CLASS_TOTAL)  //need one extra temp buffer for each fast loop call.
+#endif
+
+
 #define MAX_LAD                                   120 // max lookahead-distance 2x60fps
 #define ROUND_UV(x) (((x)>>3)<<3)
 #define AV1_PROB_COST_SHIFT 9
@@ -691,6 +759,9 @@ typedef struct ConvolveParams
     int32_t use_jnt_comp_avg;
     int32_t fwd_offset;
     int32_t bck_offset;
+#if COMP_MODE
+	int use_dist_wtd_comp_avg;	
+#endif
 } ConvolveParams;
 
 // texture component type
@@ -1295,6 +1366,14 @@ typedef enum ATTRIBUTE_PACKED
 
 typedef enum
 {
+#if COMP_MODE
+    COMPOUND_AVERAGE,
+    COMPOUND_DISTWTD,
+    COMPOUND_WEDGE,
+    COMPOUND_DIFFWTD,
+	COMPOUND_TYPES,
+	MASKED_COMPOUND_TYPES = 2,
+#else
     COMPOUND_AVERAGE,
     COMPOUND_DISTWTD,
     COMPOUND_WEDGE,
@@ -1302,7 +1381,59 @@ typedef enum
     COMPOUND_INTRA,
     COMPOUND_TYPES = 3,
     MASKED_COMPOUND_TYPES = 2,
+#endif
 } CompoundType;
+
+#if COMP_MODE
+#define   COMPOUND_INTRA  4//just for the decoder
+#define AOM_BLEND_A64_ROUND_BITS 6
+#define AOM_BLEND_A64_MAX_ALPHA (1 << AOM_BLEND_A64_ROUND_BITS)  // 64
+#define DIFF_FACTOR_LOG2 4
+#define DIFF_FACTOR (1 << DIFF_FACTOR_LOG2)
+#define AOM_BLEND_AVG(v0, v1) ROUND_POWER_OF_TWO((v0) + (v1), 1)
+typedef uint16_t CONV_BUF_TYPE;
+#define BLOCK_SIZE BlockSize
+#define MB_MODE_INFO  MbModeInfo
+#define MACROBLOCKD MacroBlockD
+#define wedge_params_type WedgeParamsType
+#define wedge_code_type WedgeCodeType
+#define MAX_WEDGE_TYPES (1 << 4)
+#define MAX_WEDGE_SIZE_LOG2 5  // 32x32
+#define MAX_WEDGE_SIZE (1 << MAX_WEDGE_SIZE_LOG2)
+#define MAX_WEDGE_SQUARE (MAX_WEDGE_SIZE * MAX_WEDGE_SIZE)
+#define WEDGE_WEIGHT_BITS 6
+#define WEDGE_NONE -1
+#define MASK_MASTER_SIZE ((MAX_WEDGE_SIZE) << 1)
+#define MASK_MASTER_STRIDE (MASK_MASTER_SIZE)
+typedef struct {
+	int enable_order_hint;           // 0 - disable order hint, and related tools
+	int order_hint_bits_minus_1;     // dist_wtd_comp, ref_frame_mvs,
+	int enable_dist_wtd_comp;        // 0 - disable dist-wtd compound modes
+	int enable_ref_frame_mvs;        // 0 - disable ref frame mvs
+} OrderHintInfoEnc;
+enum {
+	MD_COMP_AVG,
+	MD_COMP_DIST,
+	MD_COMP_DIFF0,
+	//MD_COMP_DIFF1,
+	MD_COMP_WEDGE,
+	MD_COMP_TYPES,
+} UENUM1BYTE(MD_COMP_TYPE);
+#define COMPOUND_TYPE  CompoundType
+#define MAX_DIFFWTD_MASK_BITS 1
+enum {
+	DIFFWTD_38 = 0,
+	DIFFWTD_38_INV,
+	DIFFWTD_MASK_TYPES,
+} UENUM1BYTE(DIFFWTD_MASK_TYPE);
+typedef struct {
+	uint8_t *seg_mask;
+	int wedge_index;
+	int wedge_sign;
+	DIFFWTD_MASK_TYPE mask_type;
+	COMPOUND_TYPE type;
+} INTERINTER_COMPOUND_DATA;
+#endif
 
 typedef enum ATTRIBUTE_PACKED
 {
@@ -3709,6 +3840,23 @@ static const uint32_t MD_SCAN_TO_OIS_32x32_SCAN[CU_MAX_COUNT] =
                             ME/HME settings
 *******************************************************************************/
 #if NEW_PRESETS
+
+
+#if M0_HME_ME_TUNING
+static const uint8_t enable_hme_flag[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {   0,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_576p_RANGE_OR_LOWER
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_720P_RANGE/INPUT_SIZE_1080i_RANGE
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_1080p_RANGE
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_4K_RANGE
+    },{
+        {   0,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_576p_RANGE_OR_LOWER
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_720P_RANGE/INPUT_SIZE_1080i_RANGE
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_1080p_RANGE
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_4K_RANGE
+    }
+};
+#endif
 //     M0    M1    M2    M3    M4    M5    M6    M7    M8    M9    M10    M11    M12
 static const uint8_t enable_hme_level0_flag[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
     {
@@ -3728,8 +3876,13 @@ static const uint16_t hme_level0_total_search_area_width[SC_MAX_LEVEL][INPUT_SIZ
     {
         {  48,   48,   48,   48,   48,   48,   48,   48,   48,   48,   48,   48,   48 },
 #if M9_HME
+#if M0_HME_ME_TUNING // --
+        {  96,  112,  112,  112,  112,   48,   48,   48,   48,   48,   48,   48,   48 },
+        { 112,  128,  128,  128,  128,   48,   48,   48,   48,   48,   48,   48,   48 },
+#else
         { 112,  112,  112,  112,  112,   48,   48,   48,   48,   48,   48,   48,   48 },
         { 128,  128,  128,  128,  128,   48,   48,   48,   48,   48,   48,   48,   48 },
+#endif
         { 128,  128,  128,  128,  128,   96,   96,   96,   96,   96,   96,   96,   96 },
 #else
         { 112,  112,  112,  112,  112,  112,   64,   64,   64,   64,   64,   64,   64 },
@@ -3748,8 +3901,13 @@ static const uint16_t hme_level0_search_area_in_width_array_left[SC_MAX_LEVEL][I
     {
         {  24,   24,   24,   24,   24,   24,   24,   24,   24,   24,   24,   24,   24 },
 #if M9_HME
+#if M0_HME_ME_TUNING // -- 
+        {  48,   56,   56,   56,   56,   24,   24,   24,   24,   24,   24,   24,   24 },
+        {  64,   64,   64,   64,   64,   24,   24,   24,   24,   24,   24,   24,   24 },
+#else
         {  56,   56,   56,   56,   56,   24,   24,   24,   24,   24,   24,   24,   24 },
         {  64,   64,   64,   64,   64,   24,   24,   24,   24,   24,   24,   24,   24 },
+#endif
         {  64,   64,   64,   64,   64,   48,   48,   48,   48,   48,   48,   48,   48 }
 #else
         {  56,   56,   56,   56,   56,   56,   32,   32,   32,   32,   32,   32,   32 },
@@ -4259,9 +4417,15 @@ static const uint16_t search_area_width[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPP
     {
 #if M9_ME
 #if NEW_PRESETS
+#if M0_HME_ME_TUNING // -->
+        { 128,   64,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
+        { 160,  112,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
+        { 192,  128,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
+#else
         {  64,   64,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
         { 112,  112,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
         { 128,  128,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
+#endif
         { 128,  128,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 }
 #else
         {  64,   64,   64,   64,   64,   64,   48,   48,   48,   16,   16,    16,   16 },
@@ -4294,9 +4458,15 @@ static const uint16_t search_area_height[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUP
     {
 #if M9_ME
 #if NEW_PRESETS
+#if M0_HME_ME_TUNING  // -->
+        { 128,   64,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        { 160,  112,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        { 192,  128,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
+#else
         {  64,   64,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
         { 112,  112,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
         { 128,  128,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
+#endif
         { 128,  128,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 }
 #else
         {  64,   64,   64,   32,   32,   32,   48,   48,   16,    9,    9,     9,    9 },
@@ -4458,6 +4628,317 @@ static const uint8_t search_area_height[INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] =
 //     M0    M1    M2    M3    M4    M5    M6    M7    M8    M9    M10    M11    M12
 };
 #endif
+
+#if DECOUPLE_ALTREF_ME
+#if M0_HME_ME_TUNING
+static const uint8_t tf_enable_hme_flag[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_576p_RANGE_OR_LOWER
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_720P_RANGE/INPUT_SIZE_1080i_RANGE
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_1080p_RANGE
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_4K_RANGE
+    },{
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_576p_RANGE_OR_LOWER
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_720P_RANGE/INPUT_SIZE_1080i_RANGE
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_1080p_RANGE
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_4K_RANGE
+    }
+};
+#endif
+/******************************************************************************
+                            ME/HME settings for Altref Temporal Filtering
+*******************************************************************************/
+//     M0    M1    M2    M3    M4    M5    M6    M7    M8    M9    M10    M11    M12
+static const uint8_t tf_enable_hme_level0_flag[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_576p_RANGE_OR_LOWER
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_720P_RANGE/INPUT_SIZE_1080i_RANGE
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_1080p_RANGE
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_4K_RANGE
+    },{
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_576p_RANGE_OR_LOWER
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_720P_RANGE/INPUT_SIZE_1080i_RANGE
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_1080p_RANGE
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_4K_RANGE
+    }
+};
+
+static const uint16_t tf_hme_level0_total_search_area_width[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {  48,   48,   48,   48,   48,   48,   48,   48,   48,   48,   48,   48,   48 },
+        { 112,  112,  112,  112,  112,   48,   48,   48,   48,   48,   48,   48,   48 },
+        { 128,  128,  128,  128,  128,   48,   48,   48,   48,   48,   48,   48,   48 },
+        { 128,  128,  128,  128,  128,   96,   96,   96,   96,   96,   96,   96,   96 },
+     } , {
+        {  48,   48,   48,   48,   48,   48,   48,   48,   48,   48,   48,   48,   48 },
+        { 112,  112,  112,  112,  112,   48,   48,   48,   48,   48,   48,   48,   48 },
+        { 128,  128,  128,  128,  128,   48,   48,   48,   48,   48,   48,   48,   48 },
+        { 128,  128,  128,  128,  128,   96,   96,   96,   96,   96,   96,   96,   96 },
+    }
+};
+
+static const uint16_t tf_hme_level0_search_area_in_width_array_left[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {  24,   24,   24,   24,   24,   24,   24,   24,   24,   24,   24,   24,   24 },
+        {  56,   56,   56,   56,   56,   24,   24,   24,   24,   24,   24,   24,   24 },
+        {  64,   64,   64,   64,   64,   24,   24,   24,   24,   24,   24,   24,   24 },
+        {  64,   64,   64,   64,   64,   48,   48,   48,   48,   48,   48,   48,   48 }
+    } , {
+        {  24,   24,   24,   24,   24,   24,   24,   24,   24,   24,   24,   24,   24 },
+        {  56,   56,   56,   56,   56,   24,   24,   24,   24,   24,   24,   24,   24 },
+        {  64,   64,   64,   64,   64,   24,   24,   24,   24,   24,   24,   24,   24 },
+        {  64,   64,   64,   64,   64,   48,   48,   48,   48,   48,   48,   48,   48 }
+    }
+};
+static const uint16_t tf_hme_level0_search_area_in_width_array_right[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {  24,   24,   24,   24,   24,   24,   24,   24,   24,   24,   24,   24,   24 },
+        {  56,   56,   56,   56,   56,   24,   24,   24,   24,   24,   24,   24,   24 },
+        {  64,   64,   64,   64,   64,   24,   24,   24,   24,   24,   24,   24,   24 },
+        {  64,   64,   64,   64,   64,   48,   48,   48,   48,   48,   48,   48,   48 }
+    } , {
+        {  24,   24,   24,   24,   24,   24,   24,   24,   24,   24,   24,   24,   24 },
+        {  56,   56,   56,   56,   56,   24,   24,   24,   24,   24,   24,   24,   24 },
+        {  64,   64,   64,   64,   64,   24,   24,   24,   24,   24,   24,   24,   24 },
+        {  64,   64,   64,   64,   64,   48,   48,   48,   48,   48,   48,   48,   48 }
+    }
+};
+static const uint16_t tf_hme_level0_total_search_area_height[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {  40,   40,   40,   40,   40,   24,   24,   24,   24,   24,   24,   24,   24 },
+        {  64,   64,   64,   64,   64,   24,   24,   24,   24,   24,   24,   24,   24 },
+        {  80,   80,   80,   80,   80,   24,   24,   24,   24,   24,   24,   24,   24 },
+        {  80,   80,   80,   80,   80,   24,   24,   24,   24,   24,   24,   24,   24 }
+    } , {
+        {  40,   40,   40,   40,   40,   24,   24,   24,   24,   24,   24,   24,   24 },
+        {  64,   64,   64,   64,   64,   24,   24,   24,   24,   24,   24,   24,   24 },
+        {  80,   80,   80,   80,   80,   24,   24,   24,   24,   24,   24,   24,   24 },
+        {  80,   80,   80,   80,   80,   24,   24,   24,   24,   24,   24,   24,   24 }
+    }
+};
+static const uint16_t tf_hme_level0_search_area_in_height_array_top[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {  20,   20,   20,   20,   20,   12,   12,   12,   12,   12,   12,   12,   12 },
+        {  32,   32,   32,   32,   32,   12,   12,   12,   12,   12,   12,   12,   12 },
+        {  40,   40,   40,   40,   40,   12,   12,   12,   12,   12,   12,   12,   12 },
+        {  40,   40,   40,   40,   40,   12,   12,   12,   12,   12,   12,   12,   12 }
+    } , {
+        {  20,   20,   20,   20,   20,   12,   12,   12,   12,   12,   12,   12,   12 },
+        {  32,   32,   32,   32,   32,   12,   12,   12,   12,   12,   12,   12,   12 },
+        {  40,   40,   40,   40,   40,   12,   12,   12,   12,   12,   12,   12,   12 },
+        {  40,   40,   40,   40,   40,   12,   12,   12,   12,   12,   12,   12,   12 }
+    }
+};
+static const uint16_t tf_hme_level0_search_area_in_height_array_bottom[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {  20,   20,   20,   20,   20,   12,   12,   12,   12,   12,   12,   12,   12 },
+        {  32,   32,   32,   32,   32,   12,   12,   12,   12,   12,   12,   12,   12 },
+        {  40,   40,   40,   40,   40,   12,   12,   12,   12,   12,   12,   12,   12 },
+        {  40,   40,   40,   40,   40,   12,   12,   12,   12,   12,   12,   12,   12 }
+    }, {
+        {  20,   20,   20,   20,   20,   12,   12,   12,   12,   12,   12,   12,   12 },
+        {  32,   32,   32,   32,   32,   12,   12,   12,   12,   12,   12,   12,   12 },
+        {  40,   40,   40,   40,   40,   12,   12,   12,   12,   12,   12,   12,   12 },
+        {  40,   40,   40,   40,   40,   12,   12,   12,   12,   12,   12,   12,   12 }
+    }
+};
+
+// HME LEVEL 1
+   //      M0    M1    M2    M3    M4    M5    M6    M7    M8    M9    M10    M11    M12
+static const uint8_t tf_enable_hme_level1_flag[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    0,    0,     0,    0 },      // INPUT_SIZE_576p_RANGE_OR_LOWER
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    0,    0,     0,    0 },      // INPUT_SIZE_720P_RANGE/INPUT_SIZE_1080i_RANGE
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    0,    0,     0,    0 },      // INPUT_SIZE_1080p_RANGE
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    0,    0,     0,    0 }       // INPUT_SIZE_4K_RANGE
+    }, {
+        {   1,    1,    0,    0,    0,    0,    0,    0,    1,    0,    0,     0,    0 },      // INPUT_SIZE_576p_RANGE_OR_LOWER
+        {   1,    1,    0,    0,    0,    0,    0,    0,    1,    0,    0,     0,    0 },      // INPUT_SIZE_720P_RANGE/INPUT_SIZE_1080i_RANGE
+        {   1,    1,    0,    0,    0,    0,    0,    0,    1,    0,    0,     0,    0 },      // INPUT_SIZE_1080p_RANGE
+        {   1,    1,    0,    0,    0,    0,    0,    0,    1,    0,    0,     0,    0 }       // INPUT_SIZE_4K_RANGE
+    }
+};
+static const uint16_t tf_hme_level1_search_area_in_width_array_left[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 },
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 },
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 },
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 }
+    } , {
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 },
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 },
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 },
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 }
+    }
+};
+static const uint16_t tf_hme_level1_search_area_in_width_array_right[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 },
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 },
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 },
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 }
+    } , {
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 },
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 },
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 },
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 }
+    }
+};
+static const uint16_t tf_hme_level1_search_area_in_height_array_top[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 },
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 },
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 },
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 }
+    } , {
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 },
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 },
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 },
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 }
+    }
+};
+static const uint16_t tf_hme_level1_search_area_in_height_array_bottom[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 },
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 },
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 },
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 }
+    } , {
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 },
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 },
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 },
+        {  16,   16,   16,   16,   16,    8,    8,    8,    8,    8,    8,    8,     8 }
+    }
+};
+// HME LEVEL 2
+    //     M0    M1    M2    M3    M4    M5    M6    M7    M8    M9    M10    M11    M12
+static const uint8_t tf_enable_hme_level2_flag[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    0,    0,     0,    0 },      // INPUT_SIZE_576p_RANGE_OR_LOWER
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    0,    0,     0,    0 },      // INPUT_SIZE_720P_RANGE/INPUT_SIZE_1080i_RANGE
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    0,    0,     0,    0 },      // INPUT_SIZE_1080p_RANGE
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    0,    0,     0,    0 }       // INPUT_SIZE_4K_RANGE
+    },{
+        {   1,    1,    0,    0,    0,    0,    0,    0,    0,    0,    0,     0,    0 },      // INPUT_SIZE_576p_RANGE_OR_LOWER
+        {   1,    1,    0,    0,    0,    0,    0,    0,    0,    0,    0,     0,    0 },      // INPUT_SIZE_720P_RANGE/INPUT_SIZE_1080i_RANGE
+        {   1,    1,    0,    0,    0,    0,    0,    0,    0,    0,    0,     0,    0 },      // INPUT_SIZE_1080p_RANGE
+        {   1,    1,    0,    0,    0,    0,    0,    0,    0,    0,    0,     0,    0 }       // INPUT_SIZE_4K_RANGE
+    }
+};
+static const uint16_t tf_hme_level2_search_area_in_width_array_left[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 },
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 },
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 },
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 }
+    } , {
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 },
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 },
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 },
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 }
+    }
+};
+static const uint16_t tf_hme_level2_search_area_in_width_array_right[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 },
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 },
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 },
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 }
+    } , {
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 },
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 },
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 },
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 }
+    }
+};
+static const uint16_t tf_hme_level2_search_area_in_height_array_top[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 },
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 },
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 },
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 }
+    } , {
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 },
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 },
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 },
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 }
+    }
+};
+static const uint16_t tf_hme_level2_search_area_in_height_array_bottom[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 },
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 },
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 },
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 }
+    } , {
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 },
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 },
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 },
+        {   8,    8,    8,    8,    8,    4,    4,    4,    4,    4,    4,     4,    4 }
+    }
+};
+#if ALTREF_TEMPORAL_FILTERING
+static const uint16_t tf_search_area_width[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {  48,   48,   48,   48,   48,   48,   48,   48,   48,   16,   16,    16,   16 },
+        { 112,  112,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
+        { 112,  112,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
+        { 112,  112,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 }
+    } , {
+        {  48,   48,   48,   48,   48,   48,   48,   48,   48,   16,   16,    16,   16 },
+        { 112,  112,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
+        { 112,  112,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
+        { 112,  112,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 }
+    }
+};
+static const uint16_t tf_search_area_height[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {  48,   48,   48,   48,    32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        { 112,  112,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        { 112,  112,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        { 112,  112,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 }
+    } , {
+        {  48,   48,   48,   48,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        { 112,  112,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        { 112,  112,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        { 112,  112,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 }
+    }
+
+    //     M0    M1    M2    M3    M4    M5    M6    M7    M8    M9    M10    M11    M12
+};
+#else
+static const uint16_t tf_search_area_width[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {  64,   64,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
+        { 112,  112,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
+        { 128,  128,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
+        { 128,  128,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 }
+    } , {
+        {  64,   64,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
+        { 112,  112,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
+        { 128,  128,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
+        { 128,  128,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 }
+    }
+};
+static const uint16_t tf_search_area_height[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {  64,   64,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        { 112,  112,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        { 128,  128,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        { 128,  128,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 }
+    } , {
+        {  64,   64,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        { 112,  112,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        { 128,  128,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        { 128,  128,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 }
+    }
+
+    //     M0    M1    M2    M3    M4    M5    M6    M7    M8    M9    M10    M11    M12
+};
+#endif
+
+#endif
+
 static const uint16_t ep_to_pa_block_index[BLOCK_MAX_COUNT_SB_64] = {
     0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,
     1 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,

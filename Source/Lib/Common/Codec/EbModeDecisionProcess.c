@@ -56,6 +56,17 @@ EbErrorType mode_decision_context_ctor(
     if (return_error == EB_ErrorInsufficientResources)
         return EB_ErrorInsufficientResources;
     // Cost Arrays
+#if MD_CLASS
+	 EB_MALLOC(uint64_t*, context_ptr->fast_cost_array, sizeof(uint64_t) * MAX_NFL_BUFF, EB_N_PTR);
+	 EB_MALLOC(uint64_t*, context_ptr->full_cost_array, sizeof(uint64_t) * MAX_NFL_BUFF, EB_N_PTR);
+	 EB_MALLOC(uint64_t*, context_ptr->full_cost_skip_ptr, sizeof(uint64_t) * MAX_NFL_BUFF, EB_N_PTR);
+	 EB_MALLOC(uint64_t*, context_ptr->full_cost_merge_ptr, sizeof(uint64_t) * MAX_NFL_BUFF, EB_N_PTR);
+	 // Candidate Buffers
+	 EB_MALLOC(ModeDecisionCandidateBuffer**, context_ptr->candidate_buffer_ptr_array, sizeof(ModeDecisionCandidateBuffer*) * MAX_NFL_BUFF, EB_N_PTR);
+
+	 for (bufferIndex = 0; bufferIndex < MAX_NFL_BUFF; ++bufferIndex) {
+
+#else
     // Hsan: MAX_NFL + 1 scratch buffer for intra + 1 scratch buffer for inter
     EB_MALLOC(uint64_t*, context_ptr->fast_cost_array, sizeof(uint64_t) * (MAX_NFL + 1 + 1), EB_N_PTR);
     EB_MALLOC(uint64_t*, context_ptr->full_cost_array, sizeof(uint64_t) * (MAX_NFL + 1 + 1), EB_N_PTR);
@@ -65,6 +76,8 @@ EbErrorType mode_decision_context_ctor(
     EB_MALLOC(ModeDecisionCandidateBuffer**, context_ptr->candidate_buffer_ptr_array, sizeof(ModeDecisionCandidateBuffer*) * (MAX_NFL + 1 + 1), EB_N_PTR);
 
     for (bufferIndex = 0; bufferIndex < (MAX_NFL + 1 + 1); ++bufferIndex) {
+
+#endif
         return_error = mode_decision_candidate_buffer_ctor(
             &(context_ptr->candidate_buffer_ptr_array[bufferIndex]),
             &(context_ptr->fast_cost_array[bufferIndex]),
