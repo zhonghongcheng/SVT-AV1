@@ -5453,9 +5453,12 @@ void check_redundant_block(const BlockGeom * blk_geom, ModeDecisionContext *cont
 #endif
 
 #if PREDICT_NSQ_SHAPE 
-uint8_t enable_ol_per_depth[NUMBER_OF_DEPTH] = {0,0,0,0,0,0}; // 0: OL application OFF; 1: OL application ON
-uint8_t depth_rank_th[NUMBER_OF_DEPTH] = {5,5,5,5,5,5}; // Range: 0-5 
-uint8_t shape_rank_th[NUMBER_OF_DEPTH] = {9,9,9,9,9,9}; // Range 0-9
+
+// SAHPE  NONE, H, V, HA, HB, VA, VB, H4, V4, S
+// DEPTH  0-6 128x128-4x4 
+uint8_t enable_ol_per_depth[NUMBER_OF_DEPTH] = {1,1,1,1,1,1}; // 0: OL application OFF; 1: OL application ON
+uint8_t depth_rank_th[NUMBER_OF_DEPTH] = {6,6,6,6,6,6}; // Range: 0-6;  0: is always ON; 6: is always off.
+uint8_t shape_rank_th[NUMBER_OF_DEPTH] = {10,10,10,10,10,10}; // Range 0-10;  0: is always ON;  10: is always off.
 #endif
 /*******************************************
 * ModeDecision LCU
@@ -5484,13 +5487,13 @@ EbBool allowed_ns_cu(
             if (enable_ol_per_depth[depth]) {
                 uint8_t depth_rank = context_ptr->sb_ptr->depth_ranking[depth];
                 uint8_t shape_rank = context_ptr->open_loop_block_rank;
-                if (depth_rank > depth_rank_th[depth]) {
-                    if (shape_rank > shape_rank_th[depth]) {
+                if (depth_rank >= depth_rank_th[depth]) {
+                    if (shape_rank >= shape_rank_th[depth]) {
                         ret = 0;
                     }
                 }
             }
-        }      
+        } 
 #else
        if (context_ptr->blk_geom->shape != PART_N) {
             ret = 0;
