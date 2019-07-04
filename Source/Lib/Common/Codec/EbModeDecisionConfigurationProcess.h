@@ -41,7 +41,11 @@ extern "C" {
 
         uint8_t                              qp;
         uint64_t                             lambda;
+#if PREDICT_NSQ_SHAPE
+       MdcpLocalCodingUnit                   local_cu_array[BLOCK_MAX_COUNT_SB_128];
+#else
         MdcpLocalCodingUnit                  local_cu_array[CU_MAX_COUNT];
+#endif
 
         // Inter depth decision
         uint8_t                              group_of8x8_blocks_count;
@@ -87,6 +91,9 @@ extern "C" {
 
         // Multi - Mode signal(s)
         uint8_t                             adp_level;
+#if PREDICT_NSQ_SHAPE
+        uint32_t                            mds_idx;
+#endif
     } ModeDecisionConfigurationContext;
 
     /**************************************

@@ -494,6 +494,9 @@ extern "C" {
         // Quantized Coefficients
         EbPictureBufferDesc          *quantized_coeff;
         TileInfo tile_info;
+#if DEPTH_RANKING
+        uint8_t                       depth_ranking[NUMBER_OF_DEPTH];
+#endif
     } LargestCodingUnit;
 
     extern EbErrorType largest_coding_unit_ctor(

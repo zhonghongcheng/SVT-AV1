@@ -397,6 +397,14 @@ typedef enum CAND_CLASS {
 #define IFS_EARLY_EXIT                                  0 // EARLY EXIT FROM INTERPOLATION SEARCH BASED ON THE DISTORTION OF THE REGULAR-FILTER (x and y) ARE INTEGER.
 
 #define OPTIMISED_EX_SUBPEL                                 1
+#define PREDICT_NSQ_SHAPE                               0
+#if PREDICT_NSQ_SHAPE
+#define ADD_MDC_INTRA                                   0
+#define DEPTH_RANKING                                   1
+#define NUMBER_OF_DEPTH                                 6
+#define NUMBER_OF_SHAPES                                10
+#endif
+
 #if IMPROVED_SUBPEL_SEARCH
 typedef enum ME_HP_MODE { 
     EX_HP_MODE = 0, 
@@ -1343,10 +1351,10 @@ typedef enum ATTRIBUTE_PACKED
 typedef enum
 {
 #if COMP_MODE
-	COMPOUND_AVERAGE,
-	COMPOUND_DISTWTD,
-	COMPOUND_WEDGE,
-	COMPOUND_DIFFWTD,
+    COMPOUND_AVERAGE,
+    COMPOUND_DISTWTD,
+    COMPOUND_WEDGE,
+    COMPOUND_DIFFWTD,
 	COMPOUND_TYPES,
 	MASKED_COMPOUND_TYPES = 2,
 #else

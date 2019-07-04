@@ -326,6 +326,13 @@ extern "C" {
         int16_t                         best_spatial_pred_mv[2][4][2];
         int8_t                          valid_refined_mv[2][4];
 #endif
+#if PREDICT_NSQ_SHAPE
+        uint8_t                         open_loop_block_rank;
+        uint8_t                         early_split_flag;
+#if DEPTH_RANKING
+        uint8_t                         open_loop_depth_rank[NUMBER_OF_DEPTH];
+#endif
+#endif
 #if COMP_DIFF
 
 		DECLARE_ALIGNED(16 ,uint8_t, pred0[2 * MAX_SB_SQUARE]);
