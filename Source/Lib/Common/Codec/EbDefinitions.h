@@ -37,17 +37,8 @@ extern "C" {
 
 
 #define M0_HME_ME_TUNING                1
+#define PREDICTIVE_ME                   0
 
-#if 0
-#define LOAD_M0_HME_ME_SETTINGS         1
-#define MV_REFINEMENT_AROUND_MV_PRED    1
-#if MV_REFINEMENT_AROUND_MV_PRED       
-#define ONLY_SAD_IF_FULL_PEL            1    
-#define BREACK_DOWN                     1    
-#define MV_REFINEMENT_AROUND_MV_PRED_T0 1
-#endif
-#define DEBUG_CLASS                     0
-#endif
 
 #define COMPOUND_FLAG                      1// main flag for compound modes
 #if COMPOUND_FLAG
@@ -347,9 +338,6 @@ typedef enum CAND_CLASS {
 #if COMP_FULL
 	CAND_CLASS_3,
 #endif
-#if DEBUG_CLASS
-    CAND_CLASS_4,
-#endif
 	CAND_CLASS_TOTAL
 } CAND_CLASS;
 #else
@@ -470,7 +458,7 @@ enum {
 #define MAX_TXB_COUNT                             4 // Maximum number of transform blocks.
 #endif
 #if DECOUPLED_FAST_LOOP /*|| MD_CLASS*/  //CHKn this is temp, and needed to get same behaviour for the I framewith the simulation code
-#if MV_REFINEMENT_AROUND_MV_PRED
+#if PREDICTIVE_ME
 #define MAX_NFL                                   520
 #else
 #define MAX_NFL                                   488 //MODE_DECISION_CANDIDATE_MAX_COUNT
@@ -478,11 +466,7 @@ enum {
 #else
 
 #if MD_CLASS
-#if DEBUG_CLASS
-#define MAX_NFL                                   100 //full loop all candidates in I slice
-#else
 #define MAX_NFL                                   65 //full loop all candidates in I slice
-#endif
 #else
 #define MAX_NFL                                   40
 #endif

@@ -787,9 +787,7 @@ void set_class_based_nfl(
 #if COMP_FULL
 	context_ptr->full_cand_count[CAND_CLASS_3] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
 #endif
-#if DEBUG_CLASS
-    context_ptr->full_cand_count[CAND_CLASS_4] = 23;
-#endif
+
 	if (picture_control_set_ptr->slice_type == I_SLICE) {
 
 		context_ptr->full_cand_count[CAND_CLASS_0] = fastCandidateTotalCount;
@@ -797,9 +795,6 @@ void set_class_based_nfl(
 		context_ptr->full_cand_count[CAND_CLASS_2] = 0;
 #if COMP_FULL
 		context_ptr->full_cand_count[CAND_CLASS_3] = 0;
-#endif
-#if DEBUG_CLASS
-        context_ptr->full_cand_count[CAND_CLASS_4] = 0;
 #endif
 	}
 #endif
@@ -2013,17 +2008,92 @@ void perform_fast_loop(
         MAX_CU_COST :
         *(candidateBufferPtrArrayBase[highestCostIndex]->fast_cost_ptr);
 }
-#if MV_REFINEMENT_AROUND_MV_PRED
+#if PREDICTIVE_ME
 #define FULL_PEL_REF_WINDOW     9 
-#if BREACK_DOWN
 #define HALF_PEL_REF_WINDOW     3
 #define QUARTER_PEL_REF_WINDOW  3
-#else
-#define FRAC_PEL_REF_WINDOW  7 
-#endif
 
-#if ONLY_SAD_IF_FULL_PEL
-void md_full_pel_search(
+int32_t derive_luma_inter_dist(
+    PictureControlSet            *picture_control_set_ptr,
+    ModeDecisionContext          *context_ptr,
+    ModeDecisionCandidate        *fast_candidate_array,
+    EbPictureBufferDesc          *input_picture_ptr,
+    uint32_t                      inputOriginIndex,
+    uint32_t                      cuOriginIndex,
+    EbBool                        use_ssd,
+    uint8_t                       list_idx,
+    int8_t                        ref_idx,
+    int16_t                       mvx,
+    int16_t                       mvy,
+    EbAsm                         asm_type)
+{
+
+    int32_t  distortion;
+    ModeDecisionCandidateBuffer  *candidateBuffer = &(context_ptr->candidate_buffer_ptr_array[0][0]);
+    candidateBuffer->candidate_ptr = &(context_ptr->fast_candidate_array[0]);
+    ModeDecisionCandidate       *candidate_ptr = candidateBuffer->candidate_ptr;
+    EbPictureBufferDesc         *prediction_ptr = candidateBuffer->prediction_ptr;
+
+    candidate_ptr->type = INTER_MODE;
+    candidate_ptr->distortion_ready = 0;
+    candidate_ptr->use_intrabc = 0;
+    candidate_ptr->merge_flag = EB_FALSE;
+    candidate_ptr->prediction_direction[0] = (EbPredDirection)list_idx;
+    candidate_ptr->inter_mode = NEWMV;
+    candidate_ptr->pred_mode = NEWMV;
+    candidate_ptr->motion_mode = SIMPLE_TRANSLATION;
+    candidate_ptr->is_compound = 0;
+    candidate_ptr->is_new_mv = 1;
+    candidate_ptr->is_zero_mv = 0;
+    candidate_ptr->drl_index = 0;
+    candidate_ptr->ref_mv_index = 0;
+    candidate_ptr->pred_mv_weight = 0;
+    candidate_ptr->ref_frame_type = svt_get_ref_frame_type(list_idx, ref_idx);
+    candidate_ptr->transform_type[PLANE_TYPE_Y] = DCT_DCT;
+    candidate_ptr->transform_type[PLANE_TYPE_UV] = DCT_DCT;
+    candidate_ptr->motion_vector_xl0 = list_idx == 0 ? mvx : 0;
+    candidate_ptr->motion_vector_yl0 = list_idx == 0 ? mvy : 0;
+    candidate_ptr->motion_vector_xl1 = list_idx == 1 ? mvx : 0;
+    candidate_ptr->motion_vector_yl1 = list_idx == 1 ? mvy : 0;
+    candidate_ptr->ref_frame_index_l0 = list_idx == 0 ? ref_idx : -1;
+    candidate_ptr->ref_frame_index_l1 = list_idx == 1 ? ref_idx : -1;
+    candidate_ptr->interp_filters = 0;
+
+    // Prediction
+    uint8_t default_skip_interpolation_search = context_ptr->skip_interpolation_search;
+    context_ptr->skip_interpolation_search = 1;
+    ProductPredictionFunTable[INTER_MODE](
+        context_ptr,
+        picture_control_set_ptr,
+        candidateBuffer,
+        asm_type);
+    context_ptr->skip_interpolation_search = default_skip_interpolation_search;
+
+    // Distortion
+    if (use_ssd) {
+        distortion = spatial_full_distortion_kernel_func_ptr_array[asm_type][Log2f(context_ptr->blk_geom->bwidth) - 2](
+            input_picture_ptr->buffer_y + inputOriginIndex,
+            input_picture_ptr->stride_y,
+            prediction_ptr->buffer_y + cuOriginIndex,
+            prediction_ptr->stride_y,
+            context_ptr->blk_geom->bwidth,
+            context_ptr->blk_geom->bheight);
+    }
+    else {
+        assert((context_ptr->blk_geom->bwidth >> 3) < 17);
+        distortion = (nxm_sad_kernel_sub_sampled_func_ptr_array[asm_type][context_ptr->blk_geom->bwidth >> 3](
+            input_picture_ptr->buffer_y + inputOriginIndex,
+            input_picture_ptr->stride_y,
+            prediction_ptr->buffer_y + cuOriginIndex,
+            prediction_ptr->stride_y,
+            context_ptr->blk_geom->bheight,
+            context_ptr->blk_geom->bwidth));
+    }
+
+    return distortion;
+}
+
+void predictive_me_full_pel_search(
     PictureControlSet            *picture_control_set_ptr,
     ModeDecisionContext          *context_ptr,
     ModeDecisionCandidate        *fast_candidate_array,
@@ -2049,21 +2119,15 @@ void md_full_pel_search(
     int32_t  distortion;
     ModeDecisionCandidateBuffer  *candidateBuffer = &(context_ptr->candidate_buffer_ptr_array[0][0]);
     candidateBuffer->candidate_ptr = &(context_ptr->fast_candidate_array[0]);
-
-    EbPictureBufferDesc * ref_pic_list0 = ((EbReferenceObject*)picture_control_set_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr->object_ptr)->reference_picture;
-
-
     EbPictureBufferDesc *ref_pic =  ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[list_idx][ref_idx]->object_ptr)->reference_picture;
 
-    *best_distortion = (uint32_t)~0;
+
     for (int32_t refinement_pos_x = search_position_start_x; refinement_pos_x <= search_position_end_x; ++refinement_pos_x) {
         for (int32_t refinement_pos_y = search_position_start_y; refinement_pos_y <= search_position_end_y; ++refinement_pos_y) {
 
-            ModeDecisionCandidate       *candidate_ptr = candidateBuffer->candidate_ptr;
-            EbPictureBufferDesc         *prediction_ptr = candidateBuffer->prediction_ptr;
-
+            ModeDecisionCandidate *candidate_ptr = candidateBuffer->candidate_ptr;
+            EbPictureBufferDesc   *prediction_ptr = candidateBuffer->prediction_ptr;
             EbByte ref_ptr = ref_pic->buffer_y + ref_pic->origin_x + (context_ptr->cu_origin_x + (mvx / 8) + (refinement_pos_x * 1)) + (context_ptr->cu_origin_y + (mvy / 8) + ref_pic->origin_y + (refinement_pos_y * 1)) * ref_pic->stride_y;
-
 
             // Distortion
             if (use_ssd) {
@@ -2095,8 +2159,8 @@ void md_full_pel_search(
         }
     }
 }
-#endif
-void md_inter_search(
+
+void predictive_me_sub_pel_search(
     PictureControlSet            *picture_control_set_ptr,
     ModeDecisionContext          *context_ptr,
     ModeDecisionCandidate        *fast_candidate_array,
@@ -2107,8 +2171,8 @@ void md_inter_search(
     uint8_t                       list_idx,
     int8_t                        ref_idx,
     int16_t                       mvx,
-    int16_t                       mvy,  
-    int16_t                       search_position_start_x, 
+    int16_t                       mvy,
+    int16_t                       search_position_start_x,
     int16_t                       search_position_end_x,
     int16_t                       search_position_start_y,
     int16_t                       search_position_end_y,
@@ -2122,9 +2186,12 @@ void md_inter_search(
     int32_t  distortion;
     ModeDecisionCandidateBuffer  *candidateBuffer = &(context_ptr->candidate_buffer_ptr_array[0][0]);
     candidateBuffer->candidate_ptr = &(context_ptr->fast_candidate_array[0]);
-    *best_distortion = (uint32_t)~0;
+
     for (int32_t refinement_pos_x = search_position_start_x; refinement_pos_x <= search_position_end_x; ++refinement_pos_x) {
         for (int32_t refinement_pos_y = search_position_start_y; refinement_pos_y <= search_position_end_y; ++refinement_pos_y) {
+
+            if (refinement_pos_x == 0 && refinement_pos_y == 0)
+                continue;
 
             ModeDecisionCandidate       *candidate_ptr = candidateBuffer->candidate_ptr;
             EbPictureBufferDesc         *prediction_ptr = candidateBuffer->prediction_ptr;
@@ -2152,18 +2219,15 @@ void md_inter_search(
             candidate_ptr->motion_vector_yl1 = list_idx == 1 ? mvy + (refinement_pos_y * search_step) : 0;
             candidate_ptr->ref_frame_index_l0 = list_idx == 0 ? ref_idx : -1;
             candidate_ptr->ref_frame_index_l1 = list_idx == 1 ? ref_idx : -1;
+            candidate_ptr->interp_filters = 0;
 
             // Prediction
             uint8_t default_skip_interpolation_search = context_ptr->skip_interpolation_search;
             context_ptr->skip_interpolation_search = 1;
-            ProductMdFastPuPrediction(
+            ProductPredictionFunTable[INTER_MODE](
+                context_ptr,
                 picture_control_set_ptr,
                 candidateBuffer,
-                context_ptr,
-                candidate_ptr->type,
-                NULL,
-                0,
-                0,
                 asm_type);
             context_ptr->skip_interpolation_search = default_skip_interpolation_search;
 
@@ -2198,35 +2262,29 @@ void md_inter_search(
     }
 }
 
-
-void mvpred_refinement(
+void predictive_me_search(
     PictureControlSet            *picture_control_set_ptr,
     ModeDecisionContext          *context_ptr,
-    ModeDecisionCandidateBuffer **candidateBufferPtrArrayBase,
     ModeDecisionCandidate        *fast_candidate_array,
     EbPictureBufferDesc          *input_picture_ptr,
     uint32_t                      inputOriginIndex,
-    uint32_t                      inputCbOriginIndex,
-    uint32_t                      inputCrOriginIndex,
-    CodingUnit                   *cu_ptr,
     uint32_t                      cuOriginIndex,
-    uint32_t                      cuChromaOriginIndex,
-    uint32_t                      candidate_buffer_start_index,
-    EbBool                        use_ssd,
     EbAsm                         asm_type) {
 
-    uint64_t best_cost[2][4];
-    //init subpel
-    for (uint8_t listIndex = REF_LIST_0; listIndex < 2; ++listIndex) {
-        // Ref Picture Loop
-        for (uint8_t ref_pic_index = 0; ref_pic_index < 4; ++ref_pic_index) {
-            context_ptr->valid_refined_mv[listIndex][ref_pic_index] = 0;
-        }
-    }
     const SequenceControlSet *sequence_control_set_ptr = (SequenceControlSet*)picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr;
     const uint32_t             lcuAddr = context_ptr->sb_ptr->index;
     ModeDecisionCandidate      *candidateArray = context_ptr->fast_candidate_array;
     IntMv  bestPredmv[2] = { {0}, {0} };
+    EbBool use_ssd = EB_TRUE;
+
+    // Reset valid_refined_mv
+    for (uint8_t listIndex = REF_LIST_0; listIndex < 2; ++listIndex) {
+        for (uint8_t ref_pic_index = 0; ref_pic_index < 4; ++ref_pic_index) {
+            context_ptr->valid_refined_mv[listIndex][ref_pic_index] = 0;
+        }
+    }
+
+    // Generate MVP (s)  
     generate_av1_mvp_table(
         &context_ptr->sb_ptr->tile_info,
         context_ptr,
@@ -2238,13 +2296,12 @@ void mvpred_refinement(
         picture_control_set_ptr->parent_pcs_ptr->tot_ref_frame_types,
         picture_control_set_ptr);
 
-    uint32_t refIt;
-    for (refIt = 0; refIt < picture_control_set_ptr->parent_pcs_ptr->tot_ref_frame_types; ++refIt) {
+    for (uint32_t refIt = 0; refIt < picture_control_set_ptr->parent_pcs_ptr->tot_ref_frame_types; ++refIt) {
         MvReferenceFrame ref_pair = picture_control_set_ptr->parent_pcs_ptr->ref_frame_type_arr[refIt];
         uint8_t inj_mv;
 
         ModeDecisionCandidate    *candidateArray = context_ptr->fast_candidate_array;
-        MacroBlockD  *xd = cu_ptr->av1xd;
+        MacroBlockD  *xd = context_ptr->cu_ptr->av1xd;
         uint8_t drli, maxDrlIndex;
         IntMv    nearestmv[2], nearmv[2], ref_mv[2];
 
@@ -2252,13 +2309,16 @@ void mvpred_refinement(
         av1_set_ref_frame(rf, ref_pair);
 
         // Reset search variable(s) 
+
+        uint32_t best_mvp_distortion    = (int32_t)~0;
+        uint32_t mvp_distortion;
+
         int16_t  best_search_mvx = (int16_t)~0;
         int16_t  best_search_mvy = (int16_t)~0;
-        uint32_t best_search_distortion ;
-        uint32_t best_mvp_distortion    = (int32_t)~0;
+        uint32_t best_search_distortion = (int32_t)~0;
 
         // Step 0: derive the MVP list; 1 nearest and up to 3 near  
-        #define MAX_MVP_CANIDATES 4 // Hsan_mvp is there a such macro somewhere else 
+        #define MAX_MVP_CANIDATES 4
         int16_t mvp_x_array[MAX_MVP_CANIDATES];
         int16_t mvp_y_array[MAX_MVP_CANIDATES];
         int8_t mvp_count = 0;
@@ -2279,7 +2339,7 @@ void mvpred_refinement(
             for (drli = 0; drli < maxDrlIndex; drli++) {
                 get_av1_mv_pred_drl(
                     context_ptr,
-                    cu_ptr,
+                    context_ptr->cu_ptr,
                     frame_type,
                     0,
                     NEARMV,
@@ -2295,12 +2355,12 @@ void mvpred_refinement(
                 }
             }
 
-            // Step1: derive the best MVP in term of distortion 
+            // Step 1: derive the best MVP in term of distortion 
             int16_t best_mvp_x;
             int16_t best_mvp_y;
 
             for (int8_t mvp_index = 0; mvp_index < mvp_count; mvp_index++) {
-                md_inter_search(
+                mvp_distortion = derive_luma_inter_dist(
                     picture_control_set_ptr,
                     context_ptr,
                     fast_candidate_array,
@@ -2312,29 +2372,20 @@ void mvpred_refinement(
                     ref_idx,
                     mvp_x_array[mvp_index],
                     mvp_y_array[mvp_index],
-                    0,
-                    0,
-                    0,
-                    0,
-                    1,
-                    &best_search_mvx,
-                    &best_search_mvy,
-                    &best_search_distortion,
                     asm_type);
 
-                if (best_search_distortion < best_mvp_distortion) {
-                    best_mvp_distortion = best_search_distortion;
+                if (mvp_distortion < best_mvp_distortion) {
+                    best_mvp_distortion = mvp_distortion;
                     best_mvp_x = mvp_x_array[mvp_index];
                     best_mvp_y = mvp_y_array[mvp_index];
                 }
             }
 
-            // Step2: refine around the best MVP
+            // Step 2: refine around the best MVP
             best_mvp_x = (best_mvp_x + 4)&~0x07;
             best_mvp_y = (best_mvp_y + 4)&~0x07;
 
-#if 1
-            md_full_pel_search(
+            predictive_me_full_pel_search(
                 picture_control_set_ptr,
                 context_ptr,
                 fast_candidate_array,
@@ -2355,33 +2406,9 @@ void mvpred_refinement(
                 &best_search_mvy,
                 &best_search_distortion,
                 asm_type);
-#else
-            md_inter_search(
-                picture_control_set_ptr,
-                context_ptr,
-                fast_candidate_array,
-                input_picture_ptr,
-                inputOriginIndex,
-                cuOriginIndex,
-                use_ssd,
-                list_idx,
-                ref_idx,
-                best_mvp_x,
-                best_mvp_y,
-                -(FULL_PEL_REF_WINDOW >> 1),
-                +(FULL_PEL_REF_WINDOW >> 1),
-                -(FULL_PEL_REF_WINDOW >> 1),
-                +(FULL_PEL_REF_WINDOW >> 1),
-                8,
-                &best_search_mvx,
-                &best_search_mvy,
-                &best_search_distortion,
-                asm_type);
-#endif
 
-#if BREACK_DOWN
             // Step3: perform half pel refinement
-            md_inter_search(
+            predictive_me_sub_pel_search(
                 picture_control_set_ptr,
                 context_ptr,
                 fast_candidate_array,
@@ -2403,8 +2430,8 @@ void mvpred_refinement(
                 &best_search_distortion,
                 asm_type);
 
-            // Step4: perform quarter pel refinement
-            md_inter_search(
+            // Step 4: perform quarter pel refinement
+            predictive_me_sub_pel_search(
                 picture_control_set_ptr,
                 context_ptr,
                 fast_candidate_array,
@@ -2425,31 +2452,6 @@ void mvpred_refinement(
                 &best_search_mvy,
                 &best_search_distortion,
                 asm_type);
-#else
-            // Step4: perform sub pel refinement
-            md_inter_search(
-                picture_control_set_ptr,
-                context_ptr,
-                fast_candidate_array,
-                input_picture_ptr,
-                inputOriginIndex,
-                cuOriginIndex,
-                use_ssd,
-                list_idx,
-                ref_idx,
-                best_search_mvx,
-                best_search_mvy,
-                -(FRAC_PEL_REF_WINDOW >> 1),
-                +(FRAC_PEL_REF_WINDOW >> 1),
-                -(FRAC_PEL_REF_WINDOW >> 1),
-                +(FRAC_PEL_REF_WINDOW >> 1),
-                2,
-                &best_search_mvx,
-                &best_search_mvy,
-                &best_search_distortion,
-                asm_type);
-#endif
-
 
             context_ptr->best_spatial_pred_mv[list_idx][ref_idx][0] = best_search_mvx;
             context_ptr->best_spatial_pred_mv[list_idx][ref_idx][1] = best_search_mvy;
@@ -2458,6 +2460,7 @@ void mvpred_refinement(
     }
 }
 #endif
+
 #if !OPT_LOSSLESS_0 && !DISABLE_OIS_USE
 void ProductConfigureChroma(
     PictureControlSet                 *picture_control_set_ptr,
@@ -6540,22 +6543,16 @@ void md_encode_block(
 			}
 		}
 #endif
-#if MV_REFINEMENT_AROUND_MV_PRED
+#if PREDICTIVE_ME
+        // Perform ME search around the best MVP
 		if (picture_control_set_ptr->slice_type != I_SLICE)
-			mvpred_refinement(
+			predictive_me_search(
 				picture_control_set_ptr,
 				context_ptr,
-				candidateBufferPtrArrayBase,
 				fast_candidate_array,
 				input_picture_ptr,
 				inputOriginIndex,
-				inputCbOriginIndex,
-				inputCbOriginIndex,
-				cu_ptr,
 				cuOriginIndex,
-				cuChromaOriginIndex,
-				0,
-                SSD_SEARCH,
 				asm_type);
 #endif
 		ProductGenerateMdCandidatesCu(

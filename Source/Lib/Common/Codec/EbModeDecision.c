@@ -4414,8 +4414,7 @@ void  inject_inter_candidates(
                 }
             }
 #endif
-#if MV_REFINEMENT_AROUND_MV_PRED_T0
-        //init subpel
+#if PREDICTIVE_ME // inject them
         IntMv  bestPredmv[2] = { {0}, {0} };
         uint8_t listIndex;
         uint8_t ref_pic_index;
@@ -4426,10 +4425,9 @@ void  inject_inter_candidates(
                 if (context_ptr->valid_refined_mv[listIndex][ref_pic_index]) {
                     int16_t to_inject_mv_x = context_ptr->best_spatial_pred_mv[listIndex][ref_pic_index][0];
                     int16_t to_inject_mv_y = context_ptr->best_spatial_pred_mv[listIndex][ref_pic_index][1];
+                    uint8_t to_inject_ref_type = svt_get_ref_frame_type(REF_LIST_0, ref_pic_index);
+                    if (context_ptr->injected_mv_count_l0 == 0 || mrp_is_already_injected_mv_l0(context_ptr, to_inject_mv_x, to_inject_mv_y, to_inject_ref_type) == EB_FALSE) {
 
-#if DEBUG_CLASS
-                    candidateArray[canTotalCnt].cand_class = CAND_CLASS_4;
-#endif
                     candidateArray[canTotalCnt].type = INTER_MODE;
                     candidateArray[canTotalCnt].distortion_ready = 0;
                     candidateArray[canTotalCnt].use_intrabc = 0;
@@ -4483,6 +4481,12 @@ void  inject_inter_candidates(
 #else
                     ++canTotalCnt;
 #endif
+
+                    context_ptr->injected_mv_x_l0_array[context_ptr->injected_mv_count_l0] = to_inject_mv_x;
+                    context_ptr->injected_mv_y_l0_array[context_ptr->injected_mv_count_l0] = to_inject_mv_y;
+                    context_ptr->injected_ref_type_l0_array[context_ptr->injected_mv_count_l0] = to_inject_ref_type;
+                    ++context_ptr->injected_mv_count_l0;
+                    }
                 }
             }
         }
@@ -4497,9 +4501,9 @@ void  inject_inter_candidates(
                     if (context_ptr->valid_refined_mv[listIndex][ref_pic_index]) {
                         int16_t to_inject_mv_x = context_ptr->best_spatial_pred_mv[listIndex][ref_pic_index][0];
                         int16_t to_inject_mv_y = context_ptr->best_spatial_pred_mv[listIndex][ref_pic_index][1];
-#if DEBUG_CLASS
-                        candidateArray[canTotalCnt].cand_class = CAND_CLASS_4;
-#endif
+                        uint8_t to_inject_ref_type = svt_get_ref_frame_type(REF_LIST_1, ref_pic_index);
+                        if (context_ptr->injected_mv_count_l1 == 0 || mrp_is_already_injected_mv_l1(context_ptr, to_inject_mv_x, to_inject_mv_y, to_inject_ref_type) == EB_FALSE) {
+
                         candidateArray[canTotalCnt].type = INTER_MODE;
                         candidateArray[canTotalCnt].distortion_ready = 0;
                         candidateArray[canTotalCnt].use_intrabc = 0;
@@ -4551,6 +4555,13 @@ void  inject_inter_candidates(
 #else
                         ++canTotalCnt;
 #endif
+                        context_ptr->injected_mv_x_l1_array[context_ptr->injected_mv_count_l1] = to_inject_mv_x;
+                        context_ptr->injected_mv_y_l1_array[context_ptr->injected_mv_count_l1] = to_inject_mv_y;
+
+                        context_ptr->injected_ref_type_l1_array[context_ptr->injected_mv_count_l1] = to_inject_ref_type;
+
+                        ++context_ptr->injected_mv_count_l1;
+                        }
                     }
                 }
             }
@@ -4571,6 +4582,12 @@ void  inject_inter_candidates(
                             int16_t to_inject_mv_x_l1 = context_ptr->best_spatial_pred_mv[REF_LIST_1][ref_pic_index_l1][0];
                             int16_t to_inject_mv_y_l1 = context_ptr->best_spatial_pred_mv[REF_LIST_1][ref_pic_index_l1][1];
 
+                            MvReferenceFrame rf[2];
+                            rf[0] = svt_get_ref_frame_type(REF_LIST_0, ref_pic_index_l0);
+                            rf[1] = svt_get_ref_frame_type(REF_LIST_1, ref_pic_index_l1);
+                            uint8_t to_inject_ref_type = av1_ref_frame_type(rf);
+                            if (context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, to_inject_ref_type) == EB_FALSE) {
+
 #if COMP_MODE	
                             context_ptr->variance_ready = 0;
                             for (cur_type = MD_COMP_AVG; cur_type <= tot_comp_types; cur_type++)
@@ -4580,9 +4597,6 @@ void  inject_inter_candidates(
                                     if (context_ptr->prediction_mse < 8 || (!have_newmv_in_inter_mode(NEW_NEWMV) && context_ptr->prediction_mse < 64))
                                         continue;
 
-#endif
-#if DEBUG_CLASS
-                                candidateArray[canTotalCnt].cand_class = CAND_CLASS_4;
 #endif
                                 candidateArray[canTotalCnt].type = INTER_MODE;
                                 candidateArray[canTotalCnt].distortion_ready = 0;
@@ -4657,6 +4671,14 @@ void  inject_inter_candidates(
 #else
                                 ++canTotalCnt;
 #endif
+                                context_ptr->injected_mv_x_bipred_l0_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_x_l0;
+                                context_ptr->injected_mv_y_bipred_l0_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_y_l0;
+                                context_ptr->injected_mv_x_bipred_l1_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_x_l1;
+                                context_ptr->injected_mv_y_bipred_l1_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_y_l1;
+
+                                context_ptr->injected_ref_type_bipred_array[context_ptr->injected_mv_count_bipred] = to_inject_ref_type;
+                                ++context_ptr->injected_mv_count_bipred;
+                            }
 #if COMP_MODE
                             }
 #endif
@@ -6239,14 +6261,6 @@ EbErrorType ProductGenerateMdCandidatesCu(
     uint8_t inject_intra_candidate = 1;
     uint8_t inject_inter_candidate = 1;
 
-#if DEBUG_CLASS
-    for (uint32_t k = 0; k < MODE_DECISION_CANDIDATE_MAX_COUNT; k++)
-    {
-        ModeDecisionCandidate * cand_ptr = &context_ptr->fast_candidate_array[k];
-        cand_ptr->cand_class = CAND_CLASS_0;
-    }
-#endif
-
     if (slice_type != I_SLICE) {
 #if ADP_BQ 
         // to add the support for extra partitioning method here
@@ -6328,14 +6342,6 @@ EbErrorType ProductGenerateMdCandidatesCu(
 	{
 		ModeDecisionCandidate * cand_ptr = &context_ptr->fast_candidate_array[cand_i];
 
-
-#if DEBUG_CLASS
-        // to remove after cleaning up the cand_class derivation
-        if (cand_ptr->cand_class == CAND_CLASS_4) {
-            context_ptr->fast_cand_count[CAND_CLASS_4]++;
-        }
-        else {
-#endif 
             if (cand_ptr->type == INTRA_MODE) {
                 cand_ptr->cand_class = CAND_CLASS_0;
                 context_ptr->fast_cand_count[CAND_CLASS_0]++;
@@ -6360,9 +6366,6 @@ EbErrorType ProductGenerateMdCandidatesCu(
                 context_ptr->fast_cand_count[CAND_CLASS_3]++;
 
             }
-#endif
-#if DEBUG_CLASS
-        }
 #endif
 	}
 
