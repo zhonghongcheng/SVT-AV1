@@ -307,6 +307,10 @@ extern "C" {
         uint8_t                         warped_motion_injection;
         uint8_t                         unipred3x3_injection;
         uint8_t                         bipred3x3_injection;
+#if PREDICTIVE_ME
+        uint8_t                         predictive_me_injection;
+#endif
+
         uint8_t                         interpolation_filter_search_blk_size;
         uint8_t                         redundant_blk;
 #if CFL_FIX

@@ -3542,7 +3542,7 @@ void inject_predictive_me_candidates(
     EbBool                      allow_bipred,
     uint32_t                   *candidateTotalCnt) {
 
-    ModeDecisionCandidate    *candidateArray = context_ptr->fast_candidate_array;
+    ModeDecisionCandidate *candidateArray = context_ptr->fast_candidate_array;
     IntMv  bestPredmv[2] = { {0}, {0} };
     uint32_t canTotalCnt = (*candidateTotalCnt);
 
@@ -3911,7 +3911,7 @@ void  inject_inter_candidates(
         inject_newmv_candidate = context_ptr->blk_geom->shape == PART_N ? 1 :
             context_ptr->parent_sq_has_coeff[sq_index] != 0 ? inject_newmv_candidate : 0;
     }
-
+#if !PREDICTIVE_ME
     generate_av1_mvp_table(
         &sb_ptr->tile_info,
         context_ptr,
@@ -3931,6 +3931,7 @@ void  inject_inter_candidates(
         (picture_control_set_ptr->parent_pcs_ptr->reference_mode == SINGLE_REFERENCE) ? 1 : 3,
 #endif
         picture_control_set_ptr);
+#endif
 
     uint32_t mi_row = context_ptr->cu_origin_y >> MI_SIZE_LOG2;
     uint32_t mi_col = context_ptr->cu_origin_x >> MI_SIZE_LOG2;
@@ -4669,13 +4670,14 @@ void  inject_inter_candidates(
             }
 #endif
 #if PREDICTIVE_ME // inject them
-            inject_predictive_me_candidates(
-                sequence_control_set_ptr,
-                context_ptr,
-                picture_control_set_ptr,
-                isCompoundEnabled,
-                allow_bipred,
-                &canTotalCnt);
+            if (context_ptr->predictive_me_injection)
+                inject_predictive_me_candidates(
+                    sequence_control_set_ptr,
+                    context_ptr,
+                    picture_control_set_ptr,
+                    isCompoundEnabled,
+                    allow_bipred,
+                    &canTotalCnt);
 #endif
 // update the total number of candidates injected
 (*candidateTotalCnt) = canTotalCnt;
@@ -5652,6 +5654,7 @@ void  intra_bc_search(
     assert(bsize < BlockSizeS_ALL);
     const Av1Common *const cm = pcs->parent_pcs_ptr->av1_cm;
     MvReferenceFrame ref_frame = INTRA_FRAME;
+#if !PREDICTIVE_ME
     generate_av1_mvp_table(
         &sb_ptr->tile_info,
         context_ptr,
@@ -5662,7 +5665,7 @@ void  intra_bc_search(
         &ref_frame,
         1,
         pcs);
-
+#endif
     const int num_planes = 3;
     MacroBlockD * xd = cu_ptr->av1xd;
     const TileInfo *tile = &xd->tile;

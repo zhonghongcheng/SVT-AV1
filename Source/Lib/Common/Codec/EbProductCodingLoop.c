@@ -2284,18 +2284,6 @@ void predictive_me_search(
         }
     }
 
-    // Generate MVP (s)  
-    generate_av1_mvp_table(
-        &context_ptr->sb_ptr->tile_info,
-        context_ptr,
-        context_ptr->cu_ptr,
-        context_ptr->blk_geom,
-        context_ptr->cu_origin_x,
-        context_ptr->cu_origin_y,
-        picture_control_set_ptr->parent_pcs_ptr->ref_frame_type_arr,
-        picture_control_set_ptr->parent_pcs_ptr->tot_ref_frame_types,
-        picture_control_set_ptr);
-
     for (uint32_t refIt = 0; refIt < picture_control_set_ptr->parent_pcs_ptr->tot_ref_frame_types; ++refIt) {
         MvReferenceFrame ref_pair = picture_control_set_ptr->parent_pcs_ptr->ref_frame_type_arr[refIt];
         uint8_t inj_mv;
@@ -6580,16 +6568,30 @@ void md_encode_block(
         }
 #endif
 #if PREDICTIVE_ME
+        // Generate MVP (s)  
+        if (picture_control_set_ptr->parent_pcs_ptr->allow_intrabc || picture_control_set_ptr->slice_type != I_SLICE)
+            generate_av1_mvp_table(
+                &context_ptr->sb_ptr->tile_info,
+                context_ptr,
+                context_ptr->cu_ptr,
+                context_ptr->blk_geom,
+                context_ptr->cu_origin_x,
+                context_ptr->cu_origin_y,
+                picture_control_set_ptr->parent_pcs_ptr->ref_frame_type_arr,
+                picture_control_set_ptr->parent_pcs_ptr->tot_ref_frame_types,
+                picture_control_set_ptr);
+
+
         // Perform ME search around the best MVP
-		if (picture_control_set_ptr->slice_type != I_SLICE)
-			predictive_me_search(
-				picture_control_set_ptr,
-				context_ptr,
-				fast_candidate_array,
-				input_picture_ptr,
-				inputOriginIndex,
-				cuOriginIndex,
-				asm_type);
+        if (context_ptr->predictive_me_injection)
+            predictive_me_search(
+                picture_control_set_ptr,
+                context_ptr,
+                fast_candidate_array,
+                input_picture_ptr,
+                inputOriginIndex,
+                cuOriginIndex,
+                asm_type);
 #endif
         ProductGenerateMdCandidatesCu(
             context_ptr->sb_ptr,

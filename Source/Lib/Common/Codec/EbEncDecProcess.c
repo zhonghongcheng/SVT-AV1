@@ -1548,6 +1548,19 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->bipred3x3_injection = 0;
 #endif
 
+#if PREDICTIVE_ME
+    // Level                Settings
+    // 0                    OFF
+    // 1                    ON 
+    if (picture_control_set_ptr->slice_type != I_SLICE)
+        if (picture_control_set_ptr->enc_mode == ENC_M0)
+            context_ptr->predictive_me_injection = 1;
+        else
+            context_ptr->predictive_me_injection = 0;
+    else
+        context_ptr->predictive_me_injection = 0;
+#endif
+
     // Set interpolation filter search blk size
     // Level                Settings
     // 0                    ON for 8x8 and above
