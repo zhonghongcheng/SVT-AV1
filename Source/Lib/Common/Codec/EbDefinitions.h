@@ -37,7 +37,7 @@ extern "C" {
 
 
 #define M0_HME_ME_TUNING                1
-#define PREDICTIVE_ME                   0
+#define PREDICTIVE_ME                   1 // Perform ME search around MVP 
 
 #define ENABLE_CDF_UPDATE               1 // Added the support for end of frame CDF update.
     
