@@ -238,8 +238,10 @@ static void ResetEncDec(
     SequenceControlSet    *sequence_control_set_ptr,
     uint32_t                   segment_index)
 {
+#if !ENABLE_CDF_UPDATE
     EB_SLICE                     slice_type;
     MdRateEstimationContext   *md_rate_estimation_array;
+#endif
     context_ptr->is16bit = (EbBool)(sequence_control_set_ptr->static_config.encoder_bit_depth > EB_8BIT);
 
     // QP
@@ -265,11 +267,13 @@ static void ResetEncDec(
         (uint8_t)picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr->bit_depth,
         context_ptr->qp_index);
 
+#if ENABLE_CDF_UPDATE
+    context_ptr->md_rate_estimation_ptr = picture_control_set_ptr->md_rate_estimation_array;
+#else
     // Slice Type
     slice_type =
         (picture_control_set_ptr->parent_pcs_ptr->idr_flag == EB_TRUE) ? I_SLICE :
         picture_control_set_ptr->slice_type;
-
     // Increment the MD Rate Estimation array pointer to point to the right address based on the QP and slice type
     md_rate_estimation_array = (MdRateEstimationContext*)sequence_control_set_ptr->encode_context_ptr->md_rate_estimation_array;
 #if ADD_DELTA_QP_SUPPORT
@@ -277,10 +281,10 @@ static void ResetEncDec(
 #else
     md_rate_estimation_array += slice_type * TOTAL_NUMBER_OF_QP_VALUES + context_ptr->qp;
 #endif
-
     // Reset MD rate Estimation table to initial values by copying from md_rate_estimation_array
 
     context_ptr->md_rate_estimation_ptr = md_rate_estimation_array;
+#endif
 #if !OPT_LOSSLESS_0
     // TMVP Map Writer pointer
     if (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag == EB_TRUE)
@@ -1777,11 +1781,15 @@ void* enc_dec_kernel(void *input_ptr)
 
 #if CABAC_UP
                     if (picture_control_set_ptr->update_cdf) {
+#if ENABLE_CDF_UPDATE
+                        picture_control_set_ptr->rate_est_array[sb_index] = *picture_control_set_ptr->md_rate_estimation_array;
+#else
                         MdRateEstimationContext* md_rate_estimation_array = sequence_control_set_ptr->encode_context_ptr->md_rate_estimation_array;
                         md_rate_estimation_array += picture_control_set_ptr->slice_type * TOTAL_NUMBER_OF_QP_VALUES + context_ptr->md_context->qp;
 
                         //this is temp, copy all default tables
                         picture_control_set_ptr->rate_est_array[sb_index] = *md_rate_estimation_array;
+#endif
 #if CABAC_SERIAL
                         if (sb_index == 0)
                             picture_control_set_ptr->ec_ctx_array[sb_index] = *picture_control_set_ptr->coeff_est_entropy_coder_ptr->fc;
@@ -1966,6 +1974,13 @@ void* enc_dec_kernel(void *input_ptr)
                         = picture_control_set_ptr->parent_pcs_ptr->film_grain_params;
                 }
             }
+
+#if ENABLE_CDF_UPDATE
+            if (picture_control_set_ptr->parent_pcs_ptr->frame_end_cdf_update_mode && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag == EB_TRUE && picture_control_set_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr)
+                for (int frame = LAST_FRAME; frame <= ALTREF_FRAME; ++frame) 
+                    ((EbReferenceObject*)picture_control_set_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr->object_ptr)->global_motion[frame]
+                        = picture_control_set_ptr->parent_pcs_ptr->global_motion[frame];
+#endif
 
             EB_MEMCPY(picture_control_set_ptr->parent_pcs_ptr->av1x->sgrproj_restore_cost, context_ptr->md_rate_estimation_ptr->sgrproj_restore_fac_bits, 2 * sizeof(int32_t));
             EB_MEMCPY(picture_control_set_ptr->parent_pcs_ptr->av1x->switchable_restore_cost, context_ptr->md_rate_estimation_ptr->switchable_restore_fac_bits, 3 * sizeof(int32_t));

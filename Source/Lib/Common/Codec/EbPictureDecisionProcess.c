@@ -1631,7 +1631,12 @@ EbErrorType signal_derivation_multi_processes_oq(
 
         picture_control_set_ptr->wedge_mode = 0;
 #endif
-
+#if ENABLE_CDF_UPDATE
+        // Set frame end cdf update mode      Settings
+        // 0                                     OFF
+        // 1                                     ON
+        picture_control_set_ptr->frame_end_cdf_update_mode = 1;
+#endif
     return return_error;
 }
 
@@ -4348,7 +4353,7 @@ void* picture_decision_kernel(void *input_ptr)
                                         break;
                                 }
                                 picture_control_set_ptr->future_altref_nframes = pic_itr - index_center;
-                                printf("\nPOC %d\t PAST %d\t FUTURE %d\n", picture_control_set_ptr->picture_number, picture_control_set_ptr->past_altref_nframes, picture_control_set_ptr->future_altref_nframes);
+                               // printf("\nPOC %d\t PAST %d\t FUTURE %d\n", picture_control_set_ptr->picture_number, picture_control_set_ptr->past_altref_nframes, picture_control_set_ptr->future_altref_nframes);
 #else
                                 //set the actual_number of final pics
                                 altref_nframes = (uint8_t)(num_past_pics + 1 + actual_future_pics);

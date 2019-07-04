@@ -17,6 +17,9 @@
 #if RC
 #include "EbModeDecisionProcess.h"
 #endif
+#if ENABLE_CDF_UPDATE
+#include "EbPictureDemuxResults.h"
+#endif
 
 #define DETAILED_FRAME_OUTPUT 0
 
@@ -38,7 +41,11 @@ static EbLinkedListNode* ExtractPassthroughData(EbLinkedListNode** llPtrPtr)
 EbErrorType packetization_context_ctor(
     PacketizationContext **context_dbl_ptr,
     EbFifo                *entropy_coding_input_fifo_ptr,
-    EbFifo                *rate_control_tasks_output_fifo_ptr)
+    EbFifo                *rate_control_tasks_output_fifo_ptr
+#if ENABLE_CDF_UPDATE
+    ,EbFifo              *picture_manager_input_fifo_ptr
+#endif  
+)
 {
     PacketizationContext *context_ptr;
     EB_MALLOC(PacketizationContext*, context_ptr, sizeof(PacketizationContext), EB_N_PTR);
@@ -46,6 +53,9 @@ EbErrorType packetization_context_ctor(
 
     context_ptr->entropy_coding_input_fifo_ptr = entropy_coding_input_fifo_ptr;
     context_ptr->rate_control_tasks_output_fifo_ptr = rate_control_tasks_output_fifo_ptr;
+#if ENABLE_CDF_UPDATE
+    context_ptr->picture_manager_input_fifo_ptr = picture_manager_input_fifo_ptr;
+#endif
 
     EB_MALLOC(EbPPSConfig*, context_ptr->pps_config, sizeof(EbPPSConfig), EB_N_PTR);
 
@@ -250,6 +260,10 @@ void* packetization_kernel(void *input_ptr)
     EbBufferHeaderType             *output_stream_ptr;
     EbObjectWrapper              *rateControlTasksWrapperPtr;
     RateControlTasks             *rateControlTasksPtr;
+#if ENABLE_CDF_UPDATE
+    EbObjectWrapper               *picture_manager_results_wrapper_ptr;
+    PictureDemuxResults       	  *picture_manager_results_ptr;
+#endif
 
     // Queue variables
     int32_t                         queueEntryIndex;
@@ -301,7 +315,31 @@ void* packetization_kernel(void *input_ptr)
         rateControlTasksPtr = (RateControlTasks*)rateControlTasksWrapperPtr->object_ptr;
         rateControlTasksPtr->picture_control_set_wrapper_ptr = picture_control_set_ptr->picture_parent_control_set_wrapper_ptr;
         rateControlTasksPtr->task_type = RC_PACKETIZATION_FEEDBACK_RESULT;
+#if ENABLE_CDF_UPDATE
+        if (picture_control_set_ptr->parent_pcs_ptr->frame_end_cdf_update_mode && 
+            picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag == EB_TRUE && 
+            picture_control_set_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr){
+            
+            av1_reset_cdf_symbol_counters(picture_control_set_ptr->entropy_coder_ptr->fc);
+            ((EbReferenceObject*)picture_control_set_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr->object_ptr)->frame_context
+                = (*picture_control_set_ptr->entropy_coder_ptr->fc);
 
+            // Get Empty Results Object
+            eb_get_empty_object(
+                context_ptr->picture_manager_input_fifo_ptr,
+                &picture_manager_results_wrapper_ptr);
+
+            picture_manager_results_ptr = (PictureDemuxResults*)picture_manager_results_wrapper_ptr->object_ptr;
+            picture_manager_results_ptr->picture_number = picture_control_set_ptr->picture_number;
+            picture_manager_results_ptr->picture_type   = EB_PIC_FEEDBACK;
+            picture_manager_results_ptr->sequence_control_set_wrapper_ptr = picture_control_set_ptr->sequence_control_set_wrapper_ptr;
+        }
+        else {
+            picture_manager_results_wrapper_ptr = EB_NULL;
+            (void)picture_manager_results_ptr;
+            (void)picture_manager_results_wrapper_ptr;
+        }
+#endif
         // slice_type = picture_control_set_ptr->slice_type;
             // Reset the bitstream before writing to it
         reset_bitstream(
@@ -405,7 +443,16 @@ void* packetization_kernel(void *input_ptr)
 
         // Post Rate Control Taks
         eb_post_full_object(rateControlTasksWrapperPtr);
-
+#if ENABLE_CDF_UPDATE
+        if (picture_control_set_ptr->parent_pcs_ptr->frame_end_cdf_update_mode &&
+            picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag == EB_TRUE &&
+            picture_control_set_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr)
+            // Post the Full Results Object
+            eb_post_full_object(picture_manager_results_wrapper_ptr);
+        else
+            // Since feedback is not set to PM, life count of is reduced here instead of PM
+            eb_release_object(picture_control_set_ptr->sequence_control_set_wrapper_ptr);
+#endif
         //Release the Parent PCS then the Child PCS
         eb_release_object(entropyCodingResultsPtr->picture_control_set_wrapper_ptr);//Child
 

@@ -11,6 +11,9 @@
 #include "EbSystemResourceManager.h"
 #include "EbPredictionStructure.h"
 #include "EbApiSei.h"
+#if ENABLE_CDF_UPDATE
+#include "EbCabacContextModel.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,6 +63,11 @@ extern "C" {
 #endif
 #if RC_FEEDBACK
         EbBool           feedback_arrived;
+#endif
+#if ENABLE_CDF_UPDATE
+        EB_SLICE         slice_type;
+        uint8_t          temporal_layer_index;
+        EbBool           frame_context_updated;
 #endif
     } ReferenceQueueEntry;
 

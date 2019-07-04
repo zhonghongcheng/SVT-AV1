@@ -13930,6 +13930,14 @@ extern "C" {
         struct MdRateEstimationContext* rate_est_array;
         uint8_t  update_cdf;
 #endif
+#if ENABLE_CDF_UPDATE
+        FRAME_CONTEXT           ref_frame_context[REF_FRAMES];
+        EbWarpedMotionParams    ref_global_motion[TOTAL_REFS_PER_FRAME];
+#if ENABLE_CDF_UPDATE
+        struct MdRateEstimationContext *md_rate_estimation_array;
+#endif
+
+#endif
     } PictureControlSet;
 
     // To optimize based on the max input size
@@ -14265,6 +14273,9 @@ extern "C" {
         uint8_t                               wedge_mode;
 
 
+#endif
+#if ENABLE_CDF_UPDATE
+        uint8_t                               frame_end_cdf_update_mode; // mm-signal: 0: OFF, 1:ON
 #endif
         //**********************************************************************************************************//
         FrameType                            av1_frame_type;

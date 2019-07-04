@@ -347,12 +347,13 @@ void reset_mode_decision(
     SequenceControlSet    *sequence_control_set_ptr,
     uint32_t                   segment_index)
 {
+#if !ENABLE_CDF_UPDATE
     EB_SLICE                     slice_type;
 #if !MEMORY_FOOTPRINT_OPT
     uint32_t                       lcuRowIndex;
 #endif
     MdRateEstimationContext   *md_rate_estimation_array;
-
+#endif
     // QP
 #if ADD_DELTA_QP_SUPPORT
     uint16_t picture_qp = picture_control_set_ptr->parent_pcs_ptr->base_qindex;
@@ -371,6 +372,13 @@ void reset_mode_decision(
         &context_ptr->full_chroma_lambda,
         (uint8_t)picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr->bit_depth,
         context_ptr->qp_index);
+    
+#if ENABLE_CDF_UPDATE
+    context_ptr->md_rate_estimation_ptr = picture_control_set_ptr->md_rate_estimation_array;
+    uint32_t  candidateIndex;
+    for (candidateIndex = 0; candidateIndex < MODE_DECISION_CANDIDATE_MAX_COUNT; ++candidateIndex)
+        context_ptr->fast_candidate_ptr_array[candidateIndex]->md_rate_estimation_ptr = context_ptr->md_rate_estimation_ptr;
+#else
     // Slice Type
     slice_type =
         (picture_control_set_ptr->parent_pcs_ptr->idr_flag == EB_TRUE) ? I_SLICE :
@@ -393,6 +401,7 @@ void reset_mode_decision(
     uint32_t  candidateIndex;
     for (candidateIndex = 0; candidateIndex < MODE_DECISION_CANDIDATE_MAX_COUNT; ++candidateIndex)
         context_ptr->fast_candidate_ptr_array[candidateIndex]->md_rate_estimation_ptr = md_rate_estimation_array;
+#endif
 #if !OPT_LOSSLESS_0
     // TMVP Map Writer pointer
     if (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag == EB_TRUE)

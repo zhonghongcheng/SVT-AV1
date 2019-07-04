@@ -369,7 +369,6 @@ void SetGlobalMotionField(
         picture_control_set_ptr->parent_pcs_ptr->global_motion[frameIndex].wmmat[6] = 0;
         picture_control_set_ptr->parent_pcs_ptr->global_motion[frameIndex].wmmat[7] = 0;
     }
-
     //Update MV
     if (picture_control_set_ptr->parent_pcs_ptr->is_pan && picture_control_set_ptr->parent_pcs_ptr->is_tilt) {
         picture_control_set_ptr->parent_pcs_ptr->global_motion[LAST_FRAME].wmtype = TRANSLATION;
@@ -2147,7 +2146,7 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
             picture_control_set_ptr->update_cdf = 0;
     else
 #endif
-    picture_control_set_ptr->update_cdf = (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M5) ? 1 : 0;
+        picture_control_set_ptr->update_cdf = (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M5) ? 1 : 0;
 
 #if MEMORY_FOOTPRINT_OPT_ME_MV
     if(picture_control_set_ptr->update_cdf)
@@ -2439,7 +2438,9 @@ void* mode_decision_configuration_kernel(void *input_ptr)
             (uint8_t)picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr->bit_depth,
             context_ptr->qp_index);
         context_ptr->lambda = (uint64_t)lambdaSad;
-
+#if ENABLE_CDF_UPDATE
+        md_rate_estimation_array = picture_control_set_ptr->md_rate_estimation_array;
+#else
         // Slice Type
         EB_SLICE slice_type =
             (picture_control_set_ptr->parent_pcs_ptr->idr_flag == EB_TRUE) ? I_SLICE :
@@ -2454,10 +2455,26 @@ void* mode_decision_configuration_kernel(void *input_ptr)
 #endif
 
         // Reset MD rate Estimation table to initial values by copying from md_rate_estimation_array
+#endif
         context_ptr->md_rate_estimation_ptr = md_rate_estimation_array;
-
         entropyCodingQp = picture_control_set_ptr->parent_pcs_ptr->base_qindex;
 
+#if ENABLE_CDF_UPDATE
+        if (picture_control_set_ptr->parent_pcs_ptr->primary_ref_frame != PRIMARY_REF_NONE)
+            memcpy(picture_control_set_ptr->coeff_est_entropy_coder_ptr->fc, &picture_control_set_ptr->ref_frame_context[picture_control_set_ptr->parent_pcs_ptr->primary_ref_frame], sizeof(FRAME_CONTEXT));
+        else
+             reset_entropy_coder(
+                sequence_control_set_ptr->encode_context_ptr,
+                picture_control_set_ptr->coeff_est_entropy_coder_ptr,
+                entropyCodingQp,
+                picture_control_set_ptr->slice_type);
+
+        // Initial Rate Estimatimation of the syntax elements
+        av1_estimate_syntax_rate(
+            md_rate_estimation_array,
+            picture_control_set_ptr->slice_type == I_SLICE ? EB_TRUE : EB_FALSE,
+            picture_control_set_ptr->coeff_est_entropy_coder_ptr->fc);
+#else
         // Reset CABAC Contexts
         reset_entropy_coder(
             sequence_control_set_ptr->encode_context_ptr,
@@ -2471,7 +2488,7 @@ void* mode_decision_configuration_kernel(void *input_ptr)
                 md_rate_estimation_array,
                 picture_control_set_ptr->slice_type == I_SLICE ? EB_TRUE : EB_FALSE,
                 picture_control_set_ptr->coeff_est_entropy_coder_ptr->fc);
-
+#endif
         // Initial Rate Estimatimation of the Motion vectors
         av1_estimate_mv_rate(
             picture_control_set_ptr,

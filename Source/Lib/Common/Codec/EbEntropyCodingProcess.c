@@ -20,6 +20,9 @@
 #include "EbEncDecResults.h"
 #include "EbEntropyCodingResults.h"
 #include "EbRateControlTasks.h"
+#if ENABLE_CDF_UPDATE
+#include "EbCabacContextModel.h"
+#endif
 
 #define  AV1_MIN_TILE_SIZE_BYTES 1
 void av1_reset_loop_restoration(PictureControlSet     *piCSetPtr);
@@ -225,11 +228,23 @@ static void ResetEntropyCodingPicture(
 
     // ADD Reset here
 
+
+#if ENABLE_CDF_UPDATE
+    if (picture_control_set_ptr->parent_pcs_ptr->primary_ref_frame != PRIMARY_REF_NONE)
+        memcpy(picture_control_set_ptr->entropy_coder_ptr->fc, &picture_control_set_ptr->ref_frame_context[picture_control_set_ptr->parent_pcs_ptr->primary_ref_frame], sizeof(FRAME_CONTEXT));
+    else
+        reset_entropy_coder(
+            sequence_control_set_ptr->encode_context_ptr,
+            picture_control_set_ptr->entropy_coder_ptr,
+            entropyCodingQp,
+            picture_control_set_ptr->slice_type);
+#else
     reset_entropy_coder(
         sequence_control_set_ptr->encode_context_ptr,
         picture_control_set_ptr->entropy_coder_ptr,
         entropyCodingQp,
         picture_control_set_ptr->slice_type);
+#endif
 
     EntropyCodingResetNeighborArrays(picture_control_set_ptr);
 
@@ -300,12 +315,24 @@ static void reset_ec_tile(
 
     aom_start_encode(&picture_control_set_ptr->entropy_coder_ptr->ec_writer, data);
 
+#if ENABLE_CDF_UPDATE
+    if (picture_control_set_ptr->parent_pcs_ptr->primary_ref_frame != PRIMARY_REF_NONE)
+        memcpy(picture_control_set_ptr->entropy_coder_ptr->fc, &picture_control_set_ptr->ref_frame_context[picture_control_set_ptr->parent_pcs_ptr->primary_ref_frame], sizeof(FRAME_CONTEXT));
+    else
+        //reset probabilities
+        reset_entropy_coder(
+            sequence_control_set_ptr->encode_context_ptr,
+            picture_control_set_ptr->entropy_coder_ptr,
+            entropy_coding_qp,
+            picture_control_set_ptr->slice_type);
+#else
     //reset probabilities
     reset_entropy_coder(
         sequence_control_set_ptr->encode_context_ptr,
         picture_control_set_ptr->entropy_coder_ptr,
         entropy_coding_qp,
         picture_control_set_ptr->slice_type);
+#endif
 
     EntropyCodingResetNeighborArrays(picture_control_set_ptr);
 
@@ -626,7 +653,6 @@ void* entropy_coding_kernel(void *input_ptr)
                         picture_control_set_ptr->entropy_coding_pic_done = EB_TRUE;
 
                         encode_slice_finish(picture_control_set_ptr->entropy_coder_ptr);
-
                         // Release the List 0 Reference Pictures
                         for (ref_idx = 0; ref_idx < picture_control_set_ptr->parent_pcs_ptr->ref_list0_count; ++ref_idx) {
 #if MRP_MD

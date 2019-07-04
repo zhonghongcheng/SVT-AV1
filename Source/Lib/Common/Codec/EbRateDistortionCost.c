@@ -854,8 +854,7 @@ uint64_t EstimateRefFramesNumBits(
 {
     uint64_t refRateBits = 0;
 
-#if MRP_COST_EST
-
+#if MRP_COST_EST 
     if (md_pass == 1) {
         uint64_t refRateA = 0;
         uint64_t refRateB = 0;

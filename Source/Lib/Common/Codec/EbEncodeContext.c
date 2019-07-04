@@ -176,7 +176,7 @@ EbErrorType encode_context_ctor(
 
     // Prediction Structure Group
     encode_context_ptr->prediction_structure_group_ptr = (PredictionStructureGroup*)EB_NULL;
-
+#if !ENABLE_CDF_UPDATE
     // MD Rate Estimation Array
     EB_MALLOC(MdRateEstimationContext*, encode_context_ptr->md_rate_estimation_array, sizeof(MdRateEstimationContext) * TOTAL_NUMBER_OF_MD_RATE_ESTIMATION_CASE_BUFFERS, EB_N_PTR);
 
@@ -185,6 +185,7 @@ EbErrorType encode_context_ctor(
     return_error = md_rate_estimation_context_ctor(encode_context_ptr->md_rate_estimation_array);
     if (return_error == EB_ErrorInsufficientResources)
         return EB_ErrorInsufficientResources;
+#endif
     // Temporal Filter
 
     // Rate Control Bit Tables

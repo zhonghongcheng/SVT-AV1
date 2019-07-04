@@ -1937,6 +1937,7 @@ EbErrorType reset_entropy_coder(
 
     (void)encode_context_ptr;
     (void)slice_type;
+
     av1_default_coef_probs(entropy_coder_ptr->fc, qp);
     init_mode_probs(entropy_coder_ptr->fc);
 
@@ -3908,7 +3909,14 @@ static void write_tile_info(const PictureParentControlSet *const pcs_ptr,
 
     if (pcs_ptr->av1_cm->tile_rows * pcs_ptr->av1_cm->tile_cols > 1) {
         // tile id used for cdf update
+#if ENABLE_CDF_UPDATE
+        aom_wb_write_literal(
+            wb, 
+            pcs_ptr->frame_end_cdf_update_mode ? pcs_ptr->av1_cm->tile_rows * pcs_ptr->av1_cm->tile_cols-1 : 0, 
+            pcs_ptr->av1_cm->log2_tile_cols + pcs_ptr->av1_cm->log2_tile_rows);
+#else
         aom_wb_write_literal(wb, 0, pcs_ptr->av1_cm->log2_tile_cols + pcs_ptr->av1_cm->log2_tile_rows);
+#endif
         // Number of bytes in tile size - 1
         aom_wb_write_literal(wb, 3, 2);
     }
@@ -4357,8 +4365,13 @@ static void WriteGlobalMotion(
 {
     int32_t frame;
     for (frame = LAST_FRAME; frame <= ALTREF_FRAME; ++frame) {
+#if ENABLE_CDF_UPDATE
+        const EbWarpedMotionParams *ref_params = (pcs_ptr->primary_ref_frame != PRIMARY_REF_NONE) ? 
+            &pcs_ptr->childPcs->ref_global_motion[frame] : &default_warp_params;
+#else
         const EbWarpedMotionParams *ref_params = &default_warp_params;
         //pcs_ptr->prev_frame ? &pcs_ptr->prev_frame->global_motion[frame] : &default_warp_params;
+#endif
 
         write_global_motion_params(&pcs_ptr->global_motion[frame], ref_params, wb,
             pcs_ptr->allow_high_precision_mv);

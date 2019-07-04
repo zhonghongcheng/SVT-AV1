@@ -39,7 +39,8 @@ extern "C" {
 #define M0_HME_ME_TUNING                1
 #define PREDICTIVE_ME                   0
 
-
+#define ENABLE_CDF_UPDATE               1 // Added the support for end of frame CDF update.
+    
 #define COMPOUND_FLAG                      1// main flag for compound modes
 #if COMPOUND_FLAG
 #define COMP_MODE                       1 // Add compound modes
@@ -140,6 +141,7 @@ extern "C" {
 #define HARD_CODE_SC_SETTING              0
 #define MR_MODE                           0
 #define SHUT_FILTERING                    0 // CDEF RESTORATION DLF
+
 #define M8_SKIP_BLK                       1
 #define M8_OIS                            1
 #define QUICK_ME_CLEANUP                  1

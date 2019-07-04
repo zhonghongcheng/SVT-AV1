@@ -271,6 +271,11 @@ EbErrorType picture_control_set_ctor(
         sb_origin_x = (sb_origin_x == picture_sb_w - 1) ? 0 : sb_origin_x + 1;
     }
 
+#if ENABLE_CDF_UPDATE
+    // MD Rate Estimation Array
+    EB_MALLOC(MdRateEstimationContext*, object_ptr->md_rate_estimation_array, sizeof(MdRateEstimationContext) , EB_N_PTR);
+    memset(object_ptr->md_rate_estimation_array, 0, sizeof(MdRateEstimationContext) );
+#endif
 #if CABAC_UP
 #if MEMORY_FOOTPRINT_OPT_ME_MV
     if (initDataPtr->cdf_mode == 0) {
