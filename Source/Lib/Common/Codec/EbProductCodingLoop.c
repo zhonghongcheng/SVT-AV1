@@ -2297,16 +2297,16 @@ void sort_stage0_fast_candidates(
 	}
 
 
-	for (i = 0; i < output_buffer_count - 1; ++i) {
-		for (j = i + 1; j < output_buffer_count; ++j) {
-			if (*(buffer_ptr_array[cand_buff_indices[j]]->fast_cost_ptr) < *(buffer_ptr_array[cand_buff_indices[i]]->fast_cost_ptr)) {
-				index = cand_buff_indices[i];
-				cand_buff_indices[i] = (uint32_t)cand_buff_indices[j];
-				cand_buff_indices[j] = (uint32_t)index;
+	//for (i = 0; i < output_buffer_count - 1; ++i) {
+	//	for (j = i + 1; j < output_buffer_count; ++j) {
+	//		if (*(buffer_ptr_array[cand_buff_indices[j]]->fast_cost_ptr) < *(buffer_ptr_array[cand_buff_indices[i]]->fast_cost_ptr)) {
+	//			index = cand_buff_indices[i];
+	//			cand_buff_indices[i] = (uint32_t)cand_buff_indices[j];
+	//			cand_buff_indices[j] = (uint32_t)index;
 
-			}
-		}
-	}
+	//		}
+	//	}
+	//}
 
 	{
 		//for (int i = input_buffer_start_idx; i < input_buffer_count; i++)
@@ -2329,6 +2329,9 @@ void construct_best_sorted_arrays(
 	for (CAND_CLASS class_i = CAND_CLASS_0; class_i < CAND_CLASS_TOTAL; class_i++)
 		for (uint32_t candi = 0; candi < context_ptr->full_cand_count[class_i]; candi++)
 			best_candidate_index_array[best_candi++] = context_ptr->cand_buff_indices[class_i][candi];
+
+    
+
 
 	assert(best_candi == context_ptr->full_recon_search_count);
 
@@ -7192,7 +7195,24 @@ void md_encode_block(
 
 			}
 		}
-
+        #if 0
+		{
+			printf("\n %i NFL \n" ,context_ptr->full_recon_search_count);
+			/*for (int i = 0; i < context_ptr->full_recon_search_count; i++)
+			{
+				printf("%i ", context_ptr->best_candidate_index_array[i]);
+			}*/
+            	for (CAND_CLASS class_i = CAND_CLASS_0; class_i < CAND_CLASS_TOTAL; class_i++)
+		            for (uint32_t candi = 0; candi < context_ptr->full_cand_count[class_i]; candi++)
+		                printf("%i ",context_ptr->cand_buff_indices[class_i][candi]);
+   //          printf("\n");
+			//for (int i = 0; i < context_ptr->full_recon_search_count; i++)
+			//{
+			//	printf("%i ", context_ptr->sorted_candidate_index_array[i]);
+			//}
+			printf("");
+		}
+#endif
 		//after completing stage0, we might shorten cand count for some classes.
 		inter_class_decision(context_ptr);
 
@@ -7322,7 +7342,7 @@ void md_encode_block(
 			{
 				printf("%i ", context_ptr->sorted_candidate_index_array[i]);
 			}
-			
+			printf("");
 		}
 #endif
 
