@@ -2009,9 +2009,11 @@ void perform_fast_loop(
         *(candidateBufferPtrArrayBase[highestCostIndex]->fast_cost_ptr);
 }
 #if PREDICTIVE_ME
-#define FULL_PEL_REF_WINDOW     9 
-#define HALF_PEL_REF_WINDOW     3
-#define QUARTER_PEL_REF_WINDOW  3
+
+#define FULL_PEL_REF_WINDOW_WIDTH     9 
+#define FULL_PEL_REF_WINDOW_HEIGHT    9
+#define HALF_PEL_REF_WINDOW           3
+#define QUARTER_PEL_REF_WINDOW        3
 
 int32_t derive_luma_inter_dist(
     PictureControlSet            *picture_control_set_ptr,
@@ -2385,10 +2387,10 @@ void predictive_me_search(
                 ref_idx,
                 best_mvp_x,
                 best_mvp_y,
-                -(FULL_PEL_REF_WINDOW >> 1),
-                +(FULL_PEL_REF_WINDOW >> 1),
-                -(FULL_PEL_REF_WINDOW >> 1),
-                +(FULL_PEL_REF_WINDOW >> 1),
+                -(FULL_PEL_REF_WINDOW_WIDTH >> 1),
+                +(FULL_PEL_REF_WINDOW_WIDTH >> 1),
+                -(FULL_PEL_REF_WINDOW_HEIGHT >> 1),
+                +(FULL_PEL_REF_WINDOW_HEIGHT >> 1),
                 8,
                 &best_search_mvx,
                 &best_search_mvy,
@@ -6583,6 +6585,10 @@ void md_encode_block(
 
 
         // Perform ME search around the best MVP
+
+        //: me_results->me_mv_array[me_block_offset][list0_ref_index].x_mv << 1;
+        //: me_results->me_mv_array[me_block_offset][list0_ref_index].y_mv << 1;
+
         if (context_ptr->predictive_me_injection)
             predictive_me_search(
                 picture_control_set_ptr,
