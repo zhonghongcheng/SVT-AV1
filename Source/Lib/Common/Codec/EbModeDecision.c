@@ -6352,6 +6352,8 @@ EbErrorType ProductGenerateMdCandidatesCu(
             else if ((cand_ptr->type == INTER_MODE && cand_ptr->is_compound == 0) ||
                 (cand_ptr->type == INTER_MODE && cand_ptr->is_compound == 1 && cand_ptr->interinter_comp.type == COMPOUND_AVERAGE)) {
 
+#else
+            else
 #endif
                 if (cand_ptr->is_new_mv) {
                     cand_ptr->cand_class = CAND_CLASS_1;

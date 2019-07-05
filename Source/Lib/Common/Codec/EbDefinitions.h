@@ -332,7 +332,7 @@ extern "C" {
 #define IMPROVED_SUBPEL_SEARCH                          1
 
 
-#define  MD_CLASS                     1   //added the concept of class for each MD candidate. NFL is now per class.
+#define  MD_CLASS                     1  //added the concept of class for each MD candidate. NFL is now per class.
 
 #if MD_CLASS
 typedef enum CAND_CLASS {
@@ -349,6 +349,16 @@ typedef enum CAND_CLASS {
 #define DECOUPLED_FAST_LOOP                            1     
 																	  
 #endif
+
+#define  MDLEVELS                     1 // FastLoop-0 -->  FasLoop-1 --> FullLoop
+#define  REFACTOR_FAST_LOOP           1 // Lossless
+
+typedef enum MD_STAGE {
+	MD_STAGE_0,
+	MD_STAGE_1,
+	MD_STAGE_2,
+	MD_STAGE_TOTAL
+} MD_STAGE;
 
 #define FIX_ATB_SUPPORT                                 0 // ENABLE_SKIP_REDUNDANT_BLOCK
 #define FIX_TX_SEARCH_FOR_MR_MODE                       1
@@ -478,7 +488,7 @@ enum {
 #else
 
 #if MD_CLASS
-#define MAX_NFL                                   65 //full loop all candidates in I slice
+#define MAX_NFL                            65 //full loop all candidates in I slice  300//   MDLEVELS// 
 #else
 #define MAX_NFL                                   40
 #endif
@@ -3378,7 +3388,9 @@ static const uint8_t intra_area_th_class_1[MAX_HIERARCHICAL_LEVEL][MAX_TEMPORAL_
 #define PF_N4   2
 
 #define STAGE uint8_t
+#if !MDLEVELS
 #define MD_STAGE  0      // MD stage
+#endif
 #define ED_STAGE  1      // ENCDEC stage
 
 #define EB_TRANS_COEFF_SHAPE uint8_t

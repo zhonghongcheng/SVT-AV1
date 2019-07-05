@@ -199,6 +199,13 @@ extern "C" {
         uint8_t                         sorted_candidate_index_array[MAX_NFL];
 #endif
 #endif
+
+#if MDLEVELS
+		MD_STAGE                         md_stage;
+		uint32_t                         fast1_cand_count[CAND_CLASS_TOTAL]; //how many candiates will be tested per md level and  per class
+		uint32_t                         cand_buff_indices[CAND_CLASS_TOTAL][MAX_NFL_BUFF];
+#endif
+
         uint16_t                        cu_origin_x;
         uint16_t                        cu_origin_y;
 #if !OPT_LOSSLESS_0
