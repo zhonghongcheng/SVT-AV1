@@ -38,6 +38,7 @@ extern "C" {
 
 #define M0_HME_ME_TUNING                1
 #define PREDICTIVE_ME                   1 // Perform ME search around MVP 
+#define ME_MVP_DEVIATION                0 // Skip Predictive ME Search if significant ME-to-MVP difference
 #define USE_M0_HME_ME_SETTINGS          0 // To enable when running ME relatedt experiments in context of non-M0
 
 #define ENABLE_CDF_UPDATE               1 // Added the support for end of frame CDF update.

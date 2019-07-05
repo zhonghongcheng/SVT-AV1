@@ -2371,81 +2371,102 @@ void predictive_me_search(
                 }
             }
 
-            // Step 2: refine around the best MVP
-            best_mvp_x = (best_mvp_x + 4)&~0x07;
-            best_mvp_y = (best_mvp_y + 4)&~0x07;
 
-            predictive_me_full_pel_search(
-                picture_control_set_ptr,
-                context_ptr,
-                fast_candidate_array,
-                input_picture_ptr,
-                inputOriginIndex,
-                cuOriginIndex,
-                use_ssd,
-                list_idx,
-                ref_idx,
-                best_mvp_x,
-                best_mvp_y,
-                -(FULL_PEL_REF_WINDOW_WIDTH >> 1),
-                +(FULL_PEL_REF_WINDOW_WIDTH >> 1),
-                -(FULL_PEL_REF_WINDOW_HEIGHT >> 1),
-                +(FULL_PEL_REF_WINDOW_HEIGHT >> 1),
-                8,
-                &best_search_mvx,
-                &best_search_mvy,
-                &best_search_distortion,
-                asm_type);
+#if ME_MVP_DEVIATION
+            const MeLcuResults *me_results = picture_control_set_ptr->parent_pcs_ptr->me_results[context_ptr->me_sb_addr];            
+            int16_t me_mv_x;
+            int16_t me_mv_y;
 
-            // Step3: perform half pel refinement
-            predictive_me_sub_pel_search(
-                picture_control_set_ptr,
-                context_ptr,
-                fast_candidate_array,
-                input_picture_ptr,
-                inputOriginIndex,
-                cuOriginIndex,
-                use_ssd,
-                list_idx,
-                ref_idx,
-                best_search_mvx,
-                best_search_mvy,
-                -(HALF_PEL_REF_WINDOW >> 1),
-                +(HALF_PEL_REF_WINDOW >> 1),
-                -(HALF_PEL_REF_WINDOW >> 1),
-                +(HALF_PEL_REF_WINDOW >> 1),
-                4,
-                &best_search_mvx,
-                &best_search_mvy,
-                &best_search_distortion,
-                asm_type);
+            if (list_idx == 0) {
+                me_mv_x = (me_results->me_mv_array[context_ptr->me_block_offset][ref_idx].x_mv) << 1;
+                me_mv_y = (me_results->me_mv_array[context_ptr->me_block_offset][ref_idx].x_mv) << 1;
+            }
+            else {
+                me_mv_x = (me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? 4 : 2) + ref_idx].x_mv) << 1;
+                me_mv_y = (me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? 4 : 2) + ref_idx].x_mv) << 1;
+            }
 
-            // Step 4: perform quarter pel refinement
-            predictive_me_sub_pel_search(
-                picture_control_set_ptr,
-                context_ptr,
-                fast_candidate_array,
-                input_picture_ptr,
-                inputOriginIndex,
-                cuOriginIndex,
-                use_ssd,
-                list_idx,
-                ref_idx,
-                best_search_mvx,
-                best_search_mvy,
-                -(QUARTER_PEL_REF_WINDOW >> 1),
-                +(QUARTER_PEL_REF_WINDOW >> 1),
-                -(QUARTER_PEL_REF_WINDOW >> 1),
-                +(QUARTER_PEL_REF_WINDOW >> 1),
-                2,
-                &best_search_mvx,
-                &best_search_mvy,
-                &best_search_distortion,
-                asm_type);
 
-            context_ptr->best_spatial_pred_mv[list_idx][ref_idx][0] = best_search_mvx;
-            context_ptr->best_spatial_pred_mv[list_idx][ref_idx][1] = best_search_mvy;
-            context_ptr->valid_refined_mv[list_idx][ref_idx] = 1;
+            if (ABS(me_mv_x - best_mvp_x) > 64 || ABS(me_mv_y - best_mvp_y) > 64) {
+#endif
+                // Step 2: perform full pel search around the best MVP
+                best_mvp_x = (best_mvp_x + 4)&~0x07;
+                best_mvp_y = (best_mvp_y + 4)&~0x07;
+
+                predictive_me_full_pel_search(
+                    picture_control_set_ptr,
+                    context_ptr,
+                    fast_candidate_array,
+                    input_picture_ptr,
+                    inputOriginIndex,
+                    cuOriginIndex,
+                    use_ssd,
+                    list_idx,
+                    ref_idx,
+                    best_mvp_x,
+                    best_mvp_y,
+                    -(FULL_PEL_REF_WINDOW_WIDTH >> 1),
+                    +(FULL_PEL_REF_WINDOW_WIDTH >> 1),
+                    -(FULL_PEL_REF_WINDOW_HEIGHT >> 1),
+                    +(FULL_PEL_REF_WINDOW_HEIGHT >> 1),
+                    8,
+                    &best_search_mvx,
+                    &best_search_mvy,
+                    &best_search_distortion,
+                    asm_type);
+
+                // Step 3: perform half pel search around the best full pel position
+                predictive_me_sub_pel_search(
+                    picture_control_set_ptr,
+                    context_ptr,
+                    fast_candidate_array,
+                    input_picture_ptr,
+                    inputOriginIndex,
+                    cuOriginIndex,
+                    use_ssd,
+                    list_idx,
+                    ref_idx,
+                    best_search_mvx,
+                    best_search_mvy,
+                    -(HALF_PEL_REF_WINDOW >> 1),
+                    +(HALF_PEL_REF_WINDOW >> 1),
+                    -(HALF_PEL_REF_WINDOW >> 1),
+                    +(HALF_PEL_REF_WINDOW >> 1),
+                    4,
+                    &best_search_mvx,
+                    &best_search_mvy,
+                    &best_search_distortion,
+                    asm_type);
+
+                // Step 4: perform quarter pel search around the best half pel position
+                predictive_me_sub_pel_search(
+                    picture_control_set_ptr,
+                    context_ptr,
+                    fast_candidate_array,
+                    input_picture_ptr,
+                    inputOriginIndex,
+                    cuOriginIndex,
+                    use_ssd,
+                    list_idx,
+                    ref_idx,
+                    best_search_mvx,
+                    best_search_mvy,
+                    -(QUARTER_PEL_REF_WINDOW >> 1),
+                    +(QUARTER_PEL_REF_WINDOW >> 1),
+                    -(QUARTER_PEL_REF_WINDOW >> 1),
+                    +(QUARTER_PEL_REF_WINDOW >> 1),
+                    2,
+                    &best_search_mvx,
+                    &best_search_mvy,
+                    &best_search_distortion,
+                    asm_type);
+
+                context_ptr->best_spatial_pred_mv[list_idx][ref_idx][0] = best_search_mvx;
+                context_ptr->best_spatial_pred_mv[list_idx][ref_idx][1] = best_search_mvy;
+                context_ptr->valid_refined_mv[list_idx][ref_idx] = 1;
+#if ME_MVP_DEVIATION
+            }
+#endif
         }
     }
 }
@@ -6570,7 +6591,27 @@ void md_encode_block(
         }
 #endif
 #if PREDICTIVE_ME
-        // Generate MVP (s)  
+#if ME_MVP_DEVIATION
+        uint32_t geom_offset_x = 0;
+        uint32_t geom_offset_y = 0;
+
+        if (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128) {
+            uint32_t me_sb_size = sequence_control_set_ptr->sb_sz;
+            uint32_t me_pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / me_sb_size;
+            uint32_t me_sb_x = (context_ptr->cu_origin_x / me_sb_size);
+            uint32_t me_sb_y = (context_ptr->cu_origin_y / me_sb_size);
+            context_ptr->me_sb_addr = me_sb_x + me_sb_y * me_pic_width_in_sb;
+            geom_offset_x = (me_sb_x & 0x1) * me_sb_size;
+            geom_offset_y = (me_sb_y & 0x1) * me_sb_size;
+        } else 
+            context_ptr->me_sb_addr = lcuAddr;
+
+        context_ptr->me_block_offset =
+            (context_ptr->blk_geom->bwidth == 4 || context_ptr->blk_geom->bheight == 4 || context_ptr->blk_geom->bwidth == 128 || context_ptr->blk_geom->bheight == 128) ?
+            0 :
+            get_me_info_index(picture_control_set_ptr->parent_pcs_ptr->max_number_of_pus_per_sb, context_ptr->blk_geom, geom_offset_x, geom_offset_y);
+#endif
+        // Generate MVP(s)  
         if (picture_control_set_ptr->parent_pcs_ptr->allow_intrabc || picture_control_set_ptr->slice_type != I_SLICE)
             generate_av1_mvp_table(
                 &context_ptr->sb_ptr->tile_info,
@@ -6585,10 +6626,6 @@ void md_encode_block(
 
 
         // Perform ME search around the best MVP
-
-        //: me_results->me_mv_array[me_block_offset][list0_ref_index].x_mv << 1;
-        //: me_results->me_mv_array[me_block_offset][list0_ref_index].y_mv << 1;
-
         if (context_ptr->predictive_me_injection)
             predictive_me_search(
                 picture_control_set_ptr,

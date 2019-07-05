@@ -3810,7 +3810,7 @@ void  inject_inter_candidates(
 #endif
     uint32_t geom_offset_x = 0;
     uint32_t geom_offset_y = 0;
-
+#if !ME_MVP_DEVIATION
     if (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128) {
         uint32_t me_sb_size = sequence_control_set_ptr->sb_sz;
         uint32_t me_pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / me_sb_size;
@@ -3830,14 +3830,19 @@ void  inject_inter_candidates(
 #else
         me_sb_addr = lcuAddr;
 #endif
+#endif
+#if !ME_MVP_DEVIATION
     uint32_t max_number_of_pus_per_sb;
 
     max_number_of_pus_per_sb = picture_control_set_ptr->parent_pcs_ptr->max_number_of_pus_per_sb;
+#endif
 #if MEMORY_FOOTPRINT_OPT_ME_MV
+#if !ME_MVP_DEVIATION
     context_ptr->me_block_offset =
         (context_ptr->blk_geom->bwidth == 4 || context_ptr->blk_geom->bheight == 4 || context_ptr->blk_geom->bwidth == 128 || context_ptr->blk_geom->bheight == 128) ?
             0 :
             get_me_info_index(max_number_of_pus_per_sb, context_ptr->blk_geom, geom_offset_x, geom_offset_y);
+#endif
 #else
     uint32_t me2Nx2NTableOffset;
 
@@ -4033,7 +4038,12 @@ void  inject_inter_candidates(
 
                 // Search the me_info_index of the parent block
                 uint32_t me_info_index;
+
+#if ME_MVP_DEVIATION
+                for (uint32_t block_index = 0; block_index < picture_control_set_ptr->parent_pcs_ptr->max_number_of_pus_per_sb; block_index++) {
+#else
                 for (uint32_t block_index = 0; block_index < max_number_of_pus_per_sb; block_index++) {
+#endif
 
                     if (
                         (bwidth_to_search == partition_width[block_index]) && 
