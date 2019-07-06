@@ -7326,6 +7326,15 @@ void md_encode_block(
 		}
 #endif
 
+
+#if FULL_LOOP_SPLIT
+
+#if VALGRIND_FIX
+        context_ptr->luma_txb_skip_context = 0;
+        context_ptr->luma_dc_sign_context = 0;
+#endif
+
+        // 1st Full-Loop
         AV1PerformFullLoop(
             picture_control_set_ptr,
             context_ptr->sb_ptr,
@@ -7340,6 +7349,44 @@ void md_encode_block(
             ref_fast_cost,
             asm_type); // fullCandidateTotalCount to number of buffers to process
 
+#if VALGRIND_FIX
+        context_ptr->luma_txb_skip_context = 0;
+        context_ptr->luma_dc_sign_context = 0;
+#endif
+
+        // 2nd Full-Loop
+        AV1PerformFullLoop(
+            picture_control_set_ptr,
+            context_ptr->sb_ptr,
+            cu_ptr,
+            context_ptr,
+            input_picture_ptr,
+            inputOriginIndex,
+            inputCbOriginIndex,
+            cuOriginIndex,
+            cuChromaOriginIndex,
+            context_ptr->full_recon_search_count,
+            ref_fast_cost,
+            asm_type); // fullCandidateTotalCount to number of buffers to process
+#else
+#if VALGRIND_FIX
+        context_ptr->luma_txb_skip_context = 0;
+        context_ptr->luma_dc_sign_context = 0;
+#endif
+        AV1PerformFullLoop(
+            picture_control_set_ptr,
+            context_ptr->sb_ptr,
+            cu_ptr,
+            context_ptr,
+            input_picture_ptr,
+            inputOriginIndex,
+            inputCbOriginIndex,
+            cuOriginIndex,
+            cuChromaOriginIndex,
+            context_ptr->full_recon_search_count,
+            ref_fast_cost,
+            asm_type); // fullCandidateTotalCount to number of buffers to process
+#endif
         // Full Mode Decision (choose the best mode)
         candidateIndex = product_full_mode_decision(
             context_ptr,
