@@ -360,6 +360,9 @@ typedef enum MD_STAGE {
 	MD_STAGE_0,
 	MD_STAGE_1,
 	MD_STAGE_2,
+#if FULL_LOOP_SPLIT
+    MD_STAGE_3,
+#endif
 	MD_STAGE_TOTAL
 } MD_STAGE;
 

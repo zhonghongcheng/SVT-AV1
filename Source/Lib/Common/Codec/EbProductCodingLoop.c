@@ -5156,7 +5156,9 @@ void AV1PerformFullLoop(
         // Set the Candidate Buffer
         candidateBuffer = candidate_buffer_ptr_array[candidateIndex];
         candidate_ptr = candidateBuffer->candidate_ptr;//this is the FastCandidateStruct
-
+#if FULL_LOOP_SPLIT // bypass useless
+        if (context_ptr->md_stage == MD_STAGE_3)
+#endif
         if (picture_control_set_ptr->slice_type != I_SLICE) {
             if ((candidate_ptr->type == INTRA_MODE || context_ptr->full_loop_escape == 2) && best_inter_luma_zero_coeff == 0) {
                 // Update # of NFL
@@ -5428,7 +5430,9 @@ void AV1PerformFullLoop(
 #if ATB_MD
         }
 #endif
-
+#if FULL_LOOP_SPLIT // bypass useless
+        if(context_ptr->md_stage == MD_STAGE_3) {
+#endif
         if (candidate_ptr->type == INTRA_MODE && candidateBuffer->candidate_ptr->intra_chroma_mode == UV_CFL_PRED) {
             // If mode is CFL:
             // 1: recon the Luma
@@ -5445,7 +5449,9 @@ void AV1PerformFullLoop(
                 cuChromaOriginIndex,
                 asm_type);
         }
-
+#if FULL_LOOP_SPLIT // bypass useless
+        }
+#endif
         candidate_ptr->chroma_distortion_inter_depth = 0;
         candidate_ptr->chroma_distortion = 0;
 
@@ -5462,7 +5468,9 @@ void AV1PerformFullLoop(
         // FullLoop and TU search
         uint8_t cb_qp = context_ptr->qp;
         uint8_t cr_qp = context_ptr->qp;
-
+#if FULL_LOOP_SPLIT // bypass useless
+        if (context_ptr->md_stage == MD_STAGE_3) {
+#endif
         if (context_ptr->blk_geom->has_uv && context_ptr->chroma_level <= CHROMA_MODE_1) {
             full_loop_r(
                 sb_ptr,
@@ -5517,6 +5525,9 @@ void AV1PerformFullLoop(
                     &cr_coeff_bits,
                     asm_type);
             }
+            }
+#endif
+#if FULL_LOOP_SPLIT
         }
 #endif
         candidate_ptr->block_has_coeff = (candidate_ptr->y_has_coeff | candidate_ptr->u_has_coeff | candidate_ptr->v_has_coeff) ? EB_TRUE : EB_FALSE;
@@ -5547,7 +5558,9 @@ void AV1PerformFullLoop(
 
         candidateBuffer->y_coeff_bits = y_coeff_bits;
         candidate_ptr->full_distortion = (uint32_t)(y_full_distortion[0]);
-
+#if FULL_LOOP_SPLIT // bypass useless
+        if (context_ptr->md_stage == MD_STAGE_3)
+#endif
         if (context_ptr->full_loop_escape)
         {
             if (picture_control_set_ptr->slice_type != I_SLICE) {
@@ -5559,6 +5572,12 @@ void AV1PerformFullLoop(
                 }
             }
         }
+
+#if FULL_LOOP_SPLIT // bypass useless
+        if (context_ptr->md_stage == MD_STAGE_2) {
+        
+        }
+#endif
     }//end for( full loop)
 }
 
@@ -7333,8 +7352,11 @@ void md_encode_block(
         context_ptr->luma_txb_skip_context = 0;
         context_ptr->luma_dc_sign_context = 0;
 #endif
+        // Record context_ptr->full_recon_search_count
+        uint32_t initial_full_recon_search_count = context_ptr->full_recon_search_count;
 
         // 1st Full-Loop
+        context_ptr->md_stage = MD_STAGE_2;
         AV1PerformFullLoop(
             picture_control_set_ptr,
             context_ptr->sb_ptr,
@@ -7353,8 +7375,10 @@ void md_encode_block(
         context_ptr->luma_txb_skip_context = 0;
         context_ptr->luma_dc_sign_context = 0;
 #endif
+        context_ptr->full_recon_search_count = initial_full_recon_search_count;
 
         // 2nd Full-Loop
+        context_ptr->md_stage = MD_STAGE_3;
         AV1PerformFullLoop(
             picture_control_set_ptr,
             context_ptr->sb_ptr,
