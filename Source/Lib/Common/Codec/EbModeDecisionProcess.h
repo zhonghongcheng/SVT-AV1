@@ -371,6 +371,14 @@ extern "C" {
     unsigned int prediction_mse ;
     EbBool      variance_ready;
 #endif
+
+#if FULL_LOOP_SPLIT
+    CAND_CLASS cand_class_it;
+
+    uint64_t full_cost_per_class[MAX_NFL];
+    uint64_t full_index_per_class[MAX_NFL];
+    uint8_t count_per_class;
+#endif
     } ModeDecisionContext;
 
     typedef void(*EbAv1LambdaAssignFunc)(

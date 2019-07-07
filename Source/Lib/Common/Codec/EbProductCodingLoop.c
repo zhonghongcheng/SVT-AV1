@@ -5135,7 +5135,9 @@ void AV1PerformFullLoop(
     ModeDecisionCandidateBuffer         **candidate_buffer_ptr_array = &(candidateBufferPtrArrayBase[0]);
     ModeDecisionCandidateBuffer          *candidateBuffer;
     ModeDecisionCandidate                *candidate_ptr;
-
+#if FULL_LOOP_SPLIT // per class 
+   if (context_ptr->md_stage == MD_STAGE_3 || context_ptr->cand_class_it == CAND_CLASS_0 || context_ptr->cand_class_it == CAND_CLASS_1 || context_ptr->cand_class_it == CAND_CLASS_2)
+#endif
     for (fullLoopCandidateIndex = 0; fullLoopCandidateIndex < fullCandidateTotalCount; ++fullLoopCandidateIndex) {
 #if M9_FULL_LOOP_ESCAPE
         candidateIndex = (context_ptr->full_loop_escape == 2) ? context_ptr->sorted_candidate_index_array[fullLoopCandidateIndex]: context_ptr->best_candidate_index_array[fullLoopCandidateIndex];
@@ -5575,7 +5577,9 @@ void AV1PerformFullLoop(
 
 #if FULL_LOOP_SPLIT // bypass useless
         if (context_ptr->md_stage == MD_STAGE_2) {
-        
+            context_ptr->full_cost_per_class[context_ptr->count_per_class] = *candidateBuffer->full_cost_ptr;
+            context_ptr->full_index_per_class[context_ptr->count_per_class] = candidateIndex;
+            context_ptr->count_per_class++;
         }
 #endif
     }//end for( full loop)
@@ -7357,20 +7361,23 @@ void md_encode_block(
 
         // 1st Full-Loop
         context_ptr->md_stage = MD_STAGE_2;
-        AV1PerformFullLoop(
-            picture_control_set_ptr,
-            context_ptr->sb_ptr,
-            cu_ptr,
-            context_ptr,
-            input_picture_ptr,
-            inputOriginIndex,
-            inputCbOriginIndex,
-            cuOriginIndex,
-            cuChromaOriginIndex,
-            context_ptr->full_recon_search_count,
-            ref_fast_cost,
-            asm_type); // fullCandidateTotalCount to number of buffers to process
-
+        for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
+            context_ptr->cand_class_it = cand_class_it;
+            context_ptr->count_per_class = 0;
+            AV1PerformFullLoop(
+                picture_control_set_ptr,
+                context_ptr->sb_ptr,
+                cu_ptr,
+                context_ptr,
+                input_picture_ptr,
+                inputOriginIndex,
+                inputCbOriginIndex,
+                cuOriginIndex,
+                cuChromaOriginIndex,
+                context_ptr->full_recon_search_count,
+                ref_fast_cost,
+                asm_type); // fullCandidateTotalCount to number of buffers to process
+        }
 #if VALGRIND_FIX
         context_ptr->luma_txb_skip_context = 0;
         context_ptr->luma_dc_sign_context = 0;
