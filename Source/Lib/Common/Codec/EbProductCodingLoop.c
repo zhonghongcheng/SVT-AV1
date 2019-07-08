@@ -5158,6 +5158,31 @@ void AV1PerformFullLoop(
         // Set the Candidate Buffer
         candidateBuffer = candidate_buffer_ptr_array[candidateIndex];
         candidate_ptr = candidateBuffer->candidate_ptr;//this is the FastCandidateStruct
+
+#if FULL_LOOP_SPLIT // to remove later
+        EbBool skip_current_candidate = EB_TRUE;
+        if (context_ptr->md_stage == MD_STAGE_3) {
+            if (context_ptr->is_1st_full_loop_performed[candidate_ptr->cand_class]) {
+                for (uint8_t k = 0; k < context_ptr->top_n_full_loop_candidates[candidate_ptr->cand_class]; k++)
+                    if (context_ptr->full_index_per_class[candidate_ptr->cand_class][k] == candidateIndex) {
+                        skip_current_candidate = EB_FALSE;
+                        break;
+                    }
+            }
+            else {
+                skip_current_candidate = EB_FALSE;
+            }
+        }
+        else {
+            skip_current_candidate = EB_FALSE;
+        }
+
+        if (skip_current_candidate) {
+            *(candidateBuffer->full_cost_ptr) = (uint64_t) ~0;
+            break;
+        }
+#endif
+
 #if FULL_LOOP_SPLIT // bypass useless
         if (context_ptr->md_stage == MD_STAGE_3)
 #endif
@@ -5577,9 +5602,9 @@ void AV1PerformFullLoop(
 
 #if FULL_LOOP_SPLIT // bypass useless
         if (context_ptr->md_stage == MD_STAGE_2) {
-            context_ptr->full_cost_per_class[context_ptr->count_per_class] = *candidateBuffer->full_cost_ptr;
-            context_ptr->full_index_per_class[context_ptr->count_per_class] = candidateIndex;
-            context_ptr->count_per_class++;
+            context_ptr->full_cost_per_class[context_ptr->count_per_class[context_ptr->cand_class_it]] = *candidateBuffer->full_cost_ptr;
+            context_ptr->full_index_per_class[context_ptr->cand_class_it][context_ptr->count_per_class[context_ptr->cand_class_it]] = candidateIndex;
+            context_ptr->count_per_class[context_ptr->cand_class_it]++;
         }
 #endif
     }//end for( full loop)
@@ -7351,19 +7376,22 @@ void md_encode_block(
 
 
 #if FULL_LOOP_SPLIT
+        // Initialize is_1st_full_loop_performed
+        for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
+            context_ptr->is_1st_full_loop_performed[cand_class_it] = EB_FALSE;
+        }
 
 #if VALGRIND_FIX
         context_ptr->luma_txb_skip_context = 0;
         context_ptr->luma_dc_sign_context = 0;
 #endif
-        // Record context_ptr->full_recon_search_count
-        uint32_t initial_full_recon_search_count = context_ptr->full_recon_search_count;
-
         // 1st Full-Loop
         context_ptr->md_stage = MD_STAGE_2;
-        for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
+        //for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
+        for (cand_class_it = CAND_CLASS_0; cand_class_it <= CAND_CLASS_0; cand_class_it++) {
             context_ptr->cand_class_it = cand_class_it;
-            context_ptr->count_per_class = 0;
+            context_ptr->count_per_class[cand_class_it] = 0;
+            context_ptr->is_1st_full_loop_performed[cand_class_it] = EB_TRUE;
             AV1PerformFullLoop(
                 picture_control_set_ptr,
                 context_ptr->sb_ptr,
@@ -7377,13 +7405,30 @@ void md_encode_block(
                 context_ptr->full_recon_search_count,
                 ref_fast_cost,
                 asm_type); // fullCandidateTotalCount to number of buffers to process
+
+            // Sort the candidates of the target class based on the 1st full loop cost
+            uint32_t i, j, index;
+            for (i = 0; i < context_ptr->count_per_class[cand_class_it] - 1; ++i) {
+                for (j = i + 1; j < context_ptr->count_per_class[cand_class_it]; ++j) {
+                    if (context_ptr->full_cost_per_class[j] < context_ptr->full_cost_per_class[i]) {
+                        index = context_ptr->full_index_per_class[cand_class_it][i];
+                        context_ptr->full_index_per_class[cand_class_it][i] = (uint32_t)context_ptr->full_index_per_class[cand_class_it][j];
+                        context_ptr->full_index_per_class[cand_class_it][j] = (uint32_t)index;
+
+                    }
+                }
+            }
+            // To do 
+            // Derive the # of candidates to cut
+            context_ptr->top_n_full_loop_candidates[cand_class_it] = context_ptr->count_per_class[cand_class_it];
+            // Update the candidate_index_array 
+            // Update # of full loop candidates 
+            
         }
 #if VALGRIND_FIX
         context_ptr->luma_txb_skip_context = 0;
         context_ptr->luma_dc_sign_context = 0;
 #endif
-        context_ptr->full_recon_search_count = initial_full_recon_search_count;
-
         // 2nd Full-Loop
         context_ptr->md_stage = MD_STAGE_3;
         AV1PerformFullLoop(
