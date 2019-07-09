@@ -4212,7 +4212,7 @@ static INLINE void set_mi_row_col(
     if (xd->n8_w > xd->n8_h)
         if (mi_row & (xd->n8_w - 1)) xd->is_sec_rect = 1;
 }
-
+#if !SHUT_TX_SIZE_RATE
 uint64_t estimate_tx_size_bits(
     PictureControlSet       *pcsPtr,
     uint32_t                 cu_origin_x,
@@ -4269,6 +4269,7 @@ uint64_t estimate_tx_size_bits(
 
     return bits;
 }
+#endif
 #endif
 void perform_intra_tx_partitioning(
     ModeDecisionCandidateBuffer  *candidateBuffer,
@@ -4795,7 +4796,7 @@ void perform_intra_tx_partitioning(
 
 #if ATB_RATE
         uint64_t tx_size_bits = 0;
-
+#if !SHUT_TX_SIZE_RATE
         if (candidateBuffer->candidate_ptr->y_has_coeff)
             tx_size_bits = estimate_tx_size_bits(
                 picture_control_set_ptr,
@@ -4806,7 +4807,7 @@ void perform_intra_tx_partitioning(
                 context_ptr->txfm_context_array,
                 context_ptr->tx_depth,
                 context_ptr->md_rate_estimation_ptr);
-
+#endif
         uint64_t cost = RDCOST(context_ptr->full_lambda, ((*y_coeff_bits) + tx_size_bits), y_full_distortion[DIST_CALC_RESIDUAL]);
 #else
         uint64_t cost = RDCOST(context_ptr->full_lambda, (*y_coeff_bits), y_full_distortion[DIST_CALC_RESIDUAL]);

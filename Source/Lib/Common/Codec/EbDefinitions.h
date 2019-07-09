@@ -40,9 +40,13 @@ extern "C" {
 #define PREDICTIVE_ME                   1 // Perform ME search around MVP 
 #define ME_MVP_DEVIATION                0 // Skip Predictive ME Search if significant ME-to-MVP difference
 #define USE_M0_HME_ME_SETTINGS          0 // To enable when running ME related experiments in context of non-M0
-#define FULL_LOOP_SPLIT                 0
 
-#define VALGRIND_FIX                    0 //---------------------> Hsan & Tahani to talk !!
+#define FULL_LOOP_SPLIT                 0
+/***************************************************************************************************/
+#define ENABLE_ATB                      0
+#define SHUT_TX_SIZE_RATE               1 // To fix a bug @ tx size rate estimation 
+#define VALGRIND_FIX                    1 // Fixed a valgrind error
+/***************************************************************************************************/
 
 #define ENABLE_CDF_UPDATE               1 // Added the support for end of frame CDF update.
     

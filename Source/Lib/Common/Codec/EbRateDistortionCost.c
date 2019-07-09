@@ -1852,6 +1852,7 @@ EbErrorType av1_tu_estimate_coeff_bits(
 }
 
 #if ATB_MD
+#if !SHUT_TX_SIZE_RATE
 uint64_t estimate_tx_size_bits(
     PictureControlSet       *pcsPtr,
     uint32_t                 cu_origin_x,
@@ -1861,6 +1862,7 @@ uint64_t estimate_tx_size_bits(
     NeighborArrayUnit        *txfm_context_array,
     uint8_t                   tx_depth,
     MdRateEstimationContext  *md_rate_estimation_ptr);
+#endif
 #endif
 
 /*********************************************************************************
@@ -1958,6 +1960,7 @@ EbErrorType Av1FullCost(
     rate = lumaRate + chromaRate + coeffRate;
 
 #if ATB_RATE
+#if !SHUT_TX_SIZE_RATE
     if (candidate_buffer_ptr->candidate_ptr->block_has_coeff) {
         uint64_t tx_size_bits = estimate_tx_size_bits(
             picture_control_set_ptr,
@@ -1971,6 +1974,7 @@ EbErrorType Av1FullCost(
 
         rate += tx_size_bits;
     }
+#endif
 #endif
 
     // Assign full cost
@@ -2083,6 +2087,7 @@ EbErrorType  Av1MergeSkipFullCost(
     mergeRate += coeffRate;
 
 #if ATB_RATE
+#if !SHUT_TX_SIZE_RATE
     if (candidate_buffer_ptr->candidate_ptr->block_has_coeff) {
         uint64_t tx_size_bits = estimate_tx_size_bits(
             picture_control_set_ptr,
@@ -2096,6 +2101,7 @@ EbErrorType  Av1MergeSkipFullCost(
 
         mergeRate += tx_size_bits;
     }
+#endif
 #endif
 
     mergeDistortion = (mergeLumaSse + mergeChromaSse);
