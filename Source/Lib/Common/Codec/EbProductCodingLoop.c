@@ -7381,10 +7381,6 @@ void md_encode_block(
             context_ptr->is_1st_full_loop_performed[cand_class_it] = EB_FALSE;
         }
 
-#if VALGRIND_FIX
-        context_ptr->luma_txb_skip_context = 0;
-        context_ptr->luma_dc_sign_context = 0;
-#endif
         // 1st Full-Loop
         context_ptr->md_stage = MD_STAGE_2;
         //for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
@@ -7425,10 +7421,7 @@ void md_encode_block(
             // Update # of full loop candidates 
             
         }
-#if VALGRIND_FIX
-        context_ptr->luma_txb_skip_context = 0;
-        context_ptr->luma_dc_sign_context = 0;
-#endif
+
         // 2nd Full-Loop
         context_ptr->md_stage = MD_STAGE_3;
         AV1PerformFullLoop(
@@ -7445,10 +7438,6 @@ void md_encode_block(
             ref_fast_cost,
             asm_type); // fullCandidateTotalCount to number of buffers to process
 #else
-#if VALGRIND_FIX
-        context_ptr->luma_txb_skip_context = 0;
-        context_ptr->luma_dc_sign_context = 0;
-#endif
         AV1PerformFullLoop(
             picture_control_set_ptr,
             context_ptr->sb_ptr,
