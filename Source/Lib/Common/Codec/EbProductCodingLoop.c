@@ -5136,9 +5136,7 @@ void AV1PerformFullLoop(
     ModeDecisionCandidateBuffer         **candidate_buffer_ptr_array = &(candidateBufferPtrArrayBase[0]);
     ModeDecisionCandidateBuffer          *candidateBuffer;
     ModeDecisionCandidate                *candidate_ptr;
-#if FULL_LOOP_SPLIT // per class 
-   if (context_ptr->md_stage == MD_STAGE_3 || context_ptr->cand_class_it == CAND_CLASS_0 || context_ptr->cand_class_it == CAND_CLASS_1 || context_ptr->cand_class_it == CAND_CLASS_2)
-#endif
+
     for (fullLoopCandidateIndex = 0; fullLoopCandidateIndex < fullCandidateTotalCount; ++fullLoopCandidateIndex) {
 #if M9_FULL_LOOP_ESCAPE
         candidateIndex = (context_ptr->full_loop_escape == 2) ? context_ptr->sorted_candidate_index_array[fullLoopCandidateIndex]: context_ptr->best_candidate_index_array[fullLoopCandidateIndex];
@@ -5183,8 +5181,8 @@ void AV1PerformFullLoop(
             break;
         }
 #endif
-
-#if FULL_LOOP_SPLIT // bypass useless
+        
+#if FULL_LOOP_SPLIT // bypass full loop escape
         if (context_ptr->md_stage == MD_STAGE_3)
 #endif
         if (picture_control_set_ptr->slice_type != I_SLICE) {
@@ -5368,6 +5366,11 @@ void AV1PerformFullLoop(
 #if ATB_MD
 #if INCOMPLETE_SB_FIX
         uint8_t end_tx_depth = 0;
+#if FIRST_FULL_LOOP_ATB_OFF
+        if (context_ptr->md_stage == MD_STAGE_2) {
+            end_tx_depth = 0;
+        } else 
+#endif
         // end_tx_depth set to zero for blocks which go beyond the picture boundaries
         if ((context_ptr->sb_origin_x + context_ptr->blk_geom->origin_x + context_ptr->blk_geom->bwidth < picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header.max_frame_width &&
             context_ptr->sb_origin_y + context_ptr->blk_geom->origin_y + context_ptr->blk_geom->bheight < picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header.max_frame_height))
@@ -5433,6 +5436,10 @@ void AV1PerformFullLoop(
 
             tx_search_skip_fag = (picture_control_set_ptr->parent_pcs_ptr->skip_tx_search && best_fastLoop_candidate_index > NFL_TX_TH) ? 1 : tx_search_skip_fag;
 
+#if FIRST_FULL_LOOP_TX_SEARCH_OFF
+            if (context_ptr->md_stage == MD_STAGE_2)
+                tx_search_skip_fag = EB_TRUE;
+#endif
             if (!tx_search_skip_fag) {
                 product_full_loop_tx_search(
                     candidateBuffer,
@@ -5458,7 +5465,7 @@ void AV1PerformFullLoop(
 #if ATB_MD
         }
 #endif
-#if FULL_LOOP_SPLIT // bypass useless
+#if FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
         if(context_ptr->md_stage == MD_STAGE_3) {
 #endif
         if (candidate_ptr->type == INTRA_MODE && candidateBuffer->candidate_ptr->intra_chroma_mode == UV_CFL_PRED) {
@@ -5477,7 +5484,7 @@ void AV1PerformFullLoop(
                 cuChromaOriginIndex,
                 asm_type);
         }
-#if FULL_LOOP_SPLIT // bypass useless
+#if FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
         }
 #endif
         candidate_ptr->chroma_distortion_inter_depth = 0;
@@ -5496,7 +5503,7 @@ void AV1PerformFullLoop(
         // FullLoop and TU search
         uint8_t cb_qp = context_ptr->qp;
         uint8_t cr_qp = context_ptr->qp;
-#if FULL_LOOP_SPLIT // bypass useless
+#if FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
         if (context_ptr->md_stage == MD_STAGE_3) {
 #endif
         if (context_ptr->blk_geom->has_uv && context_ptr->chroma_level <= CHROMA_MODE_1) {
@@ -5555,7 +5562,7 @@ void AV1PerformFullLoop(
             }
             }
 #endif
-#if FULL_LOOP_SPLIT
+#if FIRST_FULL_LOOP_CHROMA_BLIND
         }
 #endif
         candidate_ptr->block_has_coeff = (candidate_ptr->y_has_coeff | candidate_ptr->u_has_coeff | candidate_ptr->v_has_coeff) ? EB_TRUE : EB_FALSE;
@@ -5586,7 +5593,7 @@ void AV1PerformFullLoop(
 
         candidateBuffer->y_coeff_bits = y_coeff_bits;
         candidate_ptr->full_distortion = (uint32_t)(y_full_distortion[0]);
-#if FULL_LOOP_SPLIT // bypass useless
+#if FULL_LOOP_SPLIT // bypass full loop escape
         if (context_ptr->md_stage == MD_STAGE_3)
 #endif
         if (context_ptr->full_loop_escape)
@@ -5601,7 +5608,7 @@ void AV1PerformFullLoop(
             }
         }
 
-#if FULL_LOOP_SPLIT // bypass useless
+#if FULL_LOOP_SPLIT // set stats per class
         if (context_ptr->md_stage == MD_STAGE_2) {
             context_ptr->full_cost_per_class[context_ptr->count_per_class[context_ptr->cand_class_it]] = *candidateBuffer->full_cost_ptr;
             context_ptr->full_index_per_class[context_ptr->cand_class_it][context_ptr->count_per_class[context_ptr->cand_class_it]] = candidateIndex;

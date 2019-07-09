@@ -41,7 +41,13 @@ extern "C" {
 #define ME_MVP_DEVIATION                0 // Skip Predictive ME Search if significant ME-to-MVP difference
 #define USE_M0_HME_ME_SETTINGS          0 // To enable when running ME related experiments in context of non-M0
 
-#define FULL_LOOP_SPLIT                 0
+#define FULL_LOOP_SPLIT                 1
+#if FULL_LOOP_SPLIT
+#define FIRST_FULL_LOOP_CHROMA_BLIND    1
+#define FIRST_FULL_LOOP_ATB_OFF         1
+#define FIRST_FULL_LOOP_TX_SEARCH_OFF   1
+#endif
+
 /***************************************************************************************************/
 #define ENABLE_ATB                      0
 #define SHUT_TX_SIZE_RATE               1 // To fix a bug @ tx size rate estimation 
