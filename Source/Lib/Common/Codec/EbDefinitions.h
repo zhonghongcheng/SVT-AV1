@@ -378,7 +378,7 @@ typedef enum MD_STAGE {
 
 #define FIX_ATB_SUPPORT                                 0 // ENABLE_SKIP_REDUNDANT_BLOCK
 #define FIX_TX_SEARCH_FOR_MR_MODE                       1
-
+#define TURN_OFF_DUAL_MODE                              1 // Turn OFF IF search dual mode
 #if BEST_Q_M0
 #define DOWN_SAMPLING_FILTERING                         1 // Use down-sampling filtering (instead of down-sampling decimation) for 1/16th and 1/4th reference frame(s) generation @ ME and temporal filtering search, added the multi-mode signal down_sampling_method_me_search; filtering if M0, and decimation for M1 & higher
 #define DECIMATION_BUG_FIX                              1 // Removed HME Level0 check @ 1/16th decimation to guarantee valid ZZ SAD and SCD data when HME Level0 is OFF
