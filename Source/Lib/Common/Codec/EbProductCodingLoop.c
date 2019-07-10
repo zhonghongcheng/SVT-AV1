@@ -2375,8 +2375,8 @@ void construct_best_sorted_arrays(
 
 #if PREDICTIVE_ME
 
-#define FULL_PEL_REF_WINDOW_WIDTH     9 
-#define FULL_PEL_REF_WINDOW_HEIGHT    9
+#define FULL_PEL_REF_WINDOW_WIDTH     7 
+#define FULL_PEL_REF_WINDOW_HEIGHT    5
 #define HALF_PEL_REF_WINDOW           3
 #define QUARTER_PEL_REF_WINDOW        3
 
