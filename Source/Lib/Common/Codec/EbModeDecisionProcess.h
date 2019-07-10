@@ -377,7 +377,7 @@ extern "C" {
 
     uint64_t full_cost_per_class[MAX_NFL];
     uint8_t full_index_per_class[CAND_CLASS_TOTAL][MAX_NFL];
-    uint8_t is_1st_full_loop_performed[CAND_CLASS_TOTAL];
+    uint8_t bypass_stage2[CAND_CLASS_TOTAL];
     uint8_t top_n_full_loop_candidates[CAND_CLASS_TOTAL];
     uint8_t count_per_class[CAND_CLASS_TOTAL];
 #endif

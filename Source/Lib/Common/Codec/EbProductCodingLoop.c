@@ -5161,7 +5161,7 @@ void AV1PerformFullLoop(
 #if FULL_LOOP_SPLIT // to remove later
         EbBool skip_current_candidate = EB_TRUE;
         if (context_ptr->md_stage == MD_STAGE_3) {
-            if (context_ptr->is_1st_full_loop_performed[candidate_ptr->cand_class]) {
+            if (context_ptr->bypass_stage2[candidate_ptr->cand_class] == EB_FALSE) {
                 for (uint8_t k = 0; k < context_ptr->top_n_full_loop_candidates[candidate_ptr->cand_class]; k++)
                     if (context_ptr->full_index_per_class[candidate_ptr->cand_class][k] == candidateIndex) {
                         skip_current_candidate = EB_FALSE;
@@ -7386,7 +7386,7 @@ void md_encode_block(
 #if FULL_LOOP_SPLIT
         // Initialize is_1st_full_loop_performed
         for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
-            context_ptr->is_1st_full_loop_performed[cand_class_it] = EB_FALSE;
+            context_ptr->bypass_stage2[cand_class_it] = EB_TRUE;
         }
 
         // 1st Full-Loop
@@ -7395,7 +7395,7 @@ void md_encode_block(
         for (cand_class_it = CAND_CLASS_0; cand_class_it <= CAND_CLASS_0; cand_class_it++) {
             context_ptr->cand_class_it = cand_class_it;
             context_ptr->count_per_class[cand_class_it] = 0;
-            context_ptr->is_1st_full_loop_performed[cand_class_it] = EB_TRUE;
+            context_ptr->bypass_stage2[cand_class_it] = EB_FALSE;
             AV1PerformFullLoop(
                 picture_control_set_ptr,
                 context_ptr->sb_ptr,
