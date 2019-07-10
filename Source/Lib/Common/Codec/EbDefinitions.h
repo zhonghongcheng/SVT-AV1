@@ -41,19 +41,19 @@ extern "C" {
 #define ME_MVP_DEVIATION                0 // Skip Predictive ME Search if significant ME-to-MVP difference
 #define USE_M0_HME_ME_SETTINGS          0 // To enable when running ME related experiments in context of non-M0
 
-#define FULL_LOOP_SPLIT                 1
+#define FULL_LOOP_SPLIT                 0
 #if FULL_LOOP_SPLIT
 #define FIRST_FULL_LOOP_CHROMA_BLIND    1
 #define FIRST_FULL_LOOP_ATB_OFF         1
 #define FIRST_FULL_LOOP_TX_SEARCH_OFF   1
 #endif
-
+#if 0
 /***************************************************************************************************/
 #define ENABLE_ATB                      0
 #define SHUT_TX_SIZE_RATE               1 // To fix a bug @ tx size rate estimation 
 #define VALGRIND_FIX                    1 // Fixed a valgrind error
 /***************************************************************************************************/
-
+#endif
 #define ENABLE_CDF_UPDATE               1 // Added the support for end of frame CDF update.
     
 #define COMPOUND_FLAG                      1// main flag for compound modes
