@@ -478,8 +478,11 @@ void eb_config_ctor(EbConfig *config_ptr)
     config_ptr->performance_context.total_execution_time = 0;
     config_ptr->performance_context.total_encode_time    = 0;
 
-    config_ptr->performance_context.frame_count        = 0;
-    config_ptr->performance_context.average_speed      = 0;
+    config_ptr->performance_context.frame_count         = 0;
+    config_ptr->performance_context.average_speed       = 0;
+
+    config_ptr->performance_context.start_cycle_count   = 0;
+    config_ptr->performance_context.end_cycle_count     = 0;
     config_ptr->performance_context.starts_time        = 0;
     config_ptr->performance_context.startu_time        = 0;
     config_ptr->performance_context.max_latency        = 0;

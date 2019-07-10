@@ -149,6 +149,9 @@ typedef struct EbPerformanceContext {
     uint64_t                  startu_time;
     uint64_t                  frame_count;
 
+    uint64_t                  start_cycle_count;
+    uint64_t                  end_cycle_count;
+
     double                    average_speed;
     double                    average_latency;
 
