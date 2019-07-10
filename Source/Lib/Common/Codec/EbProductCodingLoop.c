@@ -2751,8 +2751,8 @@ void predictive_me_search(
                 me_mv_y = (me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? 4 : 2) + ref_idx].x_mv) << 1;
             }
 
-
-            if (ABS(me_mv_x - best_mvp_x) > 64 || ABS(me_mv_y - best_mvp_y) > 64) {
+#define ME_MVP_TH 4
+            if (ABS(me_mv_x - best_mvp_x) > ME_MVP_TH || ABS(me_mv_y - best_mvp_y) > ME_MVP_TH) {
 #endif
                 // Step 2: perform full pel search around the best MVP
                 best_mvp_x = (best_mvp_x + 4)&~0x07;
