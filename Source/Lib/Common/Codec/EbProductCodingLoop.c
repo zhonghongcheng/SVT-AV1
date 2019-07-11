@@ -2751,8 +2751,8 @@ void predictive_me_search(
                 me_mv_y = (me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? 4 : 2) + ref_idx].x_mv) << 1;
             }
 
-#define ME_MVP_TH 4
-            if (ABS(me_mv_x - best_mvp_x) > ME_MVP_TH || ABS(me_mv_y - best_mvp_y) > ME_MVP_TH) {
+#define ME_MVP_TH 8
+            if (ABS(me_mv_x - best_mvp_x) >= ME_MVP_TH || ABS(me_mv_y - best_mvp_y) >= ME_MVP_TH) {
 #endif
                 // Step 2: perform full pel search around the best MVP
                 best_mvp_x = (best_mvp_x + 4)&~0x07;
@@ -7017,8 +7017,8 @@ void md_encode_block(
 #endif
 #if PREDICTIVE_ME
 #if ME_MVP_DEVIATION
-        uint32_t geom_offset_x = 0;
-        uint32_t geom_offset_y = 0;
+        context_ptr->geom_offset_x = 0;
+        context_ptr->geom_offset_y = 0;
 
         if (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128) {
             uint32_t me_sb_size = sequence_control_set_ptr->sb_sz;
@@ -7026,15 +7026,15 @@ void md_encode_block(
             uint32_t me_sb_x = (context_ptr->cu_origin_x / me_sb_size);
             uint32_t me_sb_y = (context_ptr->cu_origin_y / me_sb_size);
             context_ptr->me_sb_addr = me_sb_x + me_sb_y * me_pic_width_in_sb;
-            geom_offset_x = (me_sb_x & 0x1) * me_sb_size;
-            geom_offset_y = (me_sb_y & 0x1) * me_sb_size;
+            context_ptr->geom_offset_x = (me_sb_x & 0x1) * me_sb_size;
+            context_ptr->geom_offset_y = (me_sb_y & 0x1) * me_sb_size;
         } else 
             context_ptr->me_sb_addr = lcuAddr;
 
         context_ptr->me_block_offset =
             (context_ptr->blk_geom->bwidth == 4 || context_ptr->blk_geom->bheight == 4 || context_ptr->blk_geom->bwidth == 128 || context_ptr->blk_geom->bheight == 128) ?
             0 :
-            get_me_info_index(picture_control_set_ptr->parent_pcs_ptr->max_number_of_pus_per_sb, context_ptr->blk_geom, geom_offset_x, geom_offset_y);
+            get_me_info_index(picture_control_set_ptr->parent_pcs_ptr->max_number_of_pus_per_sb, context_ptr->blk_geom, context_ptr->geom_offset_x, context_ptr->geom_offset_y);
 #endif
         // Generate MVP(s)  
         if (picture_control_set_ptr->parent_pcs_ptr->allow_intrabc || picture_control_set_ptr->slice_type != I_SLICE)

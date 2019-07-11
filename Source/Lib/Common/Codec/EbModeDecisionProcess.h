@@ -277,7 +277,10 @@ extern "C" {
 #if NEW_NEAREST_NEW_INJECTION
         uint32_t                        me_sb_addr;
 #endif
-
+#if ME_MVP_DEVIATION   
+        uint32_t                        geom_offset_x;
+        uint32_t                        geom_offset_y;
+#endif
 #if FIXED_128x128_CONTEXT_UPDATE
         int16_t                         luma_txb_skip_context;
         int16_t                         luma_dc_sign_context;

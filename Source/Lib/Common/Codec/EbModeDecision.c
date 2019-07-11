@@ -3808,9 +3808,10 @@ void  inject_inter_candidates(
 #if !NEW_NEAREST_NEW_INJECTION && !ENHANCED_Nx4_4xN_NEW_MV
     uint32_t me_sb_addr;
 #endif
+#if !ME_MVP_DEVIATION    
     uint32_t geom_offset_x = 0;
     uint32_t geom_offset_y = 0;
-#if !ME_MVP_DEVIATION
+
     if (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128) {
         uint32_t me_sb_size = sequence_control_set_ptr->sb_sz;
         uint32_t me_pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / me_sb_size;
@@ -4033,9 +4034,13 @@ void  inject_inter_candidates(
                 uint32_t bheight_to_search = context_ptr->blk_geom->bheight + bheight_offset_to_8;
 
                 // Align parent block has origin inherited by current block
+#if ME_MVP_DEVIATION 
+                uint32_t x_to_search = context_ptr->blk_geom->origin_x - (context_ptr->geom_offset_x + ((context_ptr->blk_geom->origin_x & 0x7) ? 4 : 0));
+                uint32_t y_to_search = context_ptr->blk_geom->origin_y - (context_ptr->geom_offset_y + ((context_ptr->blk_geom->origin_y & 0x7) ? 4 : 0));
+#else
                 uint32_t x_to_search = context_ptr->blk_geom->origin_x - (geom_offset_x + ((context_ptr->blk_geom->origin_x & 0x7) ? 4 : 0));
                 uint32_t y_to_search = context_ptr->blk_geom->origin_y - (geom_offset_y + ((context_ptr->blk_geom->origin_y & 0x7) ? 4 : 0));
-
+#endif
                 // Search the me_info_index of the parent block
                 uint32_t me_info_index;
 
