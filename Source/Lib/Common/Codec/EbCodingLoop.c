@@ -3657,7 +3657,7 @@ EB_EXTERN void av1_encode_pass(
                             if (cu_ptr->av1xd->use_intrabc)
                             {
                                 MvReferenceFrame ref_frame = INTRA_FRAME;
-#if !PREDICTIVE_ME
+
                                 generate_av1_mvp_table(
                                     &sb_ptr->tile_info,
                                     context_ptr->md_context,
@@ -3668,7 +3668,7 @@ EB_EXTERN void av1_encode_pass(
                                     &ref_frame,
                                     1,
                                     picture_control_set_ptr);
-#endif
+
                                 IntMv nearestmv, nearmv;
                                 av1_find_best_ref_mvs_from_stack(0, context_ptr->md_context->md_local_cu_unit[blk_geom->blkidx_mds].ed_ref_mv_stack, cu_ptr->av1xd, ref_frame, &nearestmv, &nearmv,
                                     0);
