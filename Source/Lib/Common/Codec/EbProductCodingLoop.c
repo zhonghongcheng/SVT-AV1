@@ -5836,7 +5836,6 @@ void check_redundant_block(const BlockGeom * blk_geom, ModeDecisionContext *cont
 #endif
 
 #if PREDICT_NSQ_SHAPE 
-
 // SAHPE  NONE, H, V, HA, HB, VA, VB, H4, V4, S
 // DEPTH  0-6 128x128-4x4 
 uint8_t enable_ol_per_depth[NUMBER_OF_DEPTH] = {1,1,1,1,1,1}; // 0: OL application OFF; 1: OL application ON
@@ -5870,11 +5869,23 @@ EbBool allowed_ns_cu(
             if (enable_ol_per_depth[depth]) {
                 uint8_t depth_rank = context_ptr->sb_ptr->depth_ranking[depth];
                 uint8_t shape_rank = context_ptr->open_loop_block_rank;
+#if ADP_BQ
+               uint8_t depth_rank_th_tab[SB_NSQ_LEVEL_0_DEPTH_MODE] = { 6, 4,3,2,2,2,2 };
+               uint8_t shape_rank_th_tab[SB_NSQ_LEVEL_0_DEPTH_MODE] = { 10,5,4,3,2,2,2 };
+               uint8_t nsq_mode_idx = context_ptr->nsq_mode_idx;
+
+                if (depth_rank >= depth_rank_th_tab[nsq_mode_idx]) {
+                    if (shape_rank >= shape_rank_th_tab[nsq_mode_idx]) {
+                        ret = 0;
+                    }
+                }
+#else
                 if (depth_rank >= depth_rank_th[depth]) {
                     if (shape_rank >= shape_rank_th[depth]) {
                         ret = 0;
                     }
                 }
+#endif
             }
         } 
 #else
@@ -6839,12 +6850,28 @@ void md_encode_block(
     CodingUnit *  cu_ptr = context_ptr->cu_ptr;
     candidate_buffer_ptr_array = &(candidateBufferPtrArrayBase[0]);
 #if PREDICT_NSQ_SHAPE
+ #if ADP_BQ 
+    // Derive is_nsq_table_used
+    EbBool is_nsq_table_used;
+    if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE)
+        is_nsq_table_used = (picture_control_set_ptr->parent_pcs_ptr->sb_depth_mode_array[lcuAddr] == SB_NSQ_LEVEL_6_DEPTH_MODE) ?
+        EB_FALSE :
+        EB_TRUE;
+    else
+        is_nsq_table_used = (picture_control_set_ptr->slice_type == !I_SLICE &&
+            picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE &&
+            picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
+            picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL &&
+            picture_control_set_ptr->enc_mode != ENC_M0) ? EB_TRUE : EB_FALSE;
+#else
     EbBool is_nsq_table_used = (picture_control_set_ptr->slice_type == !I_SLICE &&
         picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL) ? EB_TRUE : EB_FALSE;
+#endif
     context_ptr->open_loop_block_rank = open_loop_block_rank;
     context_ptr->early_split_flag = early_split_flag;
+    context_ptr->nsq_mode_idx = picture_control_set_ptr->parent_pcs_ptr->sb_depth_mode_array[lcuAddr] - 1;
 #else
 #if ADP_BQ 
     // Derive is_nsq_table_used
@@ -6881,7 +6908,7 @@ void md_encode_block(
 #endif
     uint8_t                            is_complete_sb = sequence_control_set_ptr->sb_geom[lcuAddr].is_complete_sb;
 
-#if ADP_BQ // --
+#if ADP_BQ && !PREDICT_NSQ_SHAPE
     uint8_t partitioning_to_nsq_max_shapes[SB_NSQ_LEVEL_0_DEPTH_MODE] = { 6,5,4,3,2,1,0 };
     uint8_t nsq_max_shapes_md = (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE) ?
         partitioning_to_nsq_max_shapes[picture_control_set_ptr->parent_pcs_ptr->sb_depth_mode_array[lcuAddr] - 1] :
@@ -6891,7 +6918,6 @@ void md_encode_block(
 
     if (allowed_ns_cu(is_nsq_table_used, nsq_max_shapes_md, context_ptr, is_complete_sb))
 #else
-
     if (allowed_ns_cu(
         is_nsq_table_used, picture_control_set_ptr->parent_pcs_ptr->nsq_max_shapes_md, context_ptr, is_complete_sb))
 #endif

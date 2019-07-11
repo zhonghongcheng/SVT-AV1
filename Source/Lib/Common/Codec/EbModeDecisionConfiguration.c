@@ -899,6 +899,11 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
         const BlockGeom * blk_geom = context_ptr->blk_geom = get_blk_geom_mds(blk_idx_mds);
         uint32_t cu_origin_x = sb_originx + blk_geom->origin_x;
         uint32_t cu_origin_y = sb_originy + blk_geom->origin_y;
+        if (!(cu_origin_x < sequence_control_set_ptr->seq_header.max_frame_width && cu_origin_y < sequence_control_set_ptr->seq_header.max_frame_height))
+        {
+            cuIdx++; 
+            continue;
+        }
         cu_ptr = &local_cu_array[cuIdx];
         if (picture_control_set_ptr->slice_type != I_SLICE) {
             uint32_t geom_offset_x = 0;

@@ -371,6 +371,9 @@ extern "C" {
     unsigned int prediction_mse ;
     EbBool      variance_ready;
 #endif
+#if PREDICT_NSQ_SHAPE
+    uint8_t nsq_mode_idx;
+#endif
     } ModeDecisionContext;
 
     typedef void(*EbAv1LambdaAssignFunc)(
