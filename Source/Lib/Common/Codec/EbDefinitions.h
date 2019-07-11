@@ -39,8 +39,21 @@ extern "C" {
 #define M0_HME_ME_TUNING                1
 #define PREDICTIVE_ME                   1 // Perform ME search around MVP 
 #define ME_MVP_DEVIATION                0 // Skip Predictive ME Search if significant ME-to-MVP difference
-#define USE_M0_HME_ME_SETTINGS          0 // To enable when running ME relatedt experiments in context of non-M0
+#define USE_M0_HME_ME_SETTINGS          0 // To enable when running ME related experiments in context of non-M0
 
+#define FULL_LOOP_SPLIT                 0
+#if FULL_LOOP_SPLIT
+#define FIRST_FULL_LOOP_CHROMA_BLIND    1
+#define FIRST_FULL_LOOP_ATB_OFF         1
+#define FIRST_FULL_LOOP_TX_SEARCH_OFF   1
+#endif
+#if 0
+/***************************************************************************************************/
+#define ENABLE_ATB                      0
+#define SHUT_TX_SIZE_RATE               1 // To fix a bug @ tx size rate estimation 
+#define VALGRIND_FIX                    1 // Fixed a valgrind error
+/***************************************************************************************************/
+#endif
 #define ENABLE_CDF_UPDATE               1 // Added the support for end of frame CDF update.
     
 #define COMPOUND_FLAG                      1// main flag for compound modes
@@ -357,12 +370,15 @@ typedef enum MD_STAGE {
 	MD_STAGE_0,
 	MD_STAGE_1,
 	MD_STAGE_2,
+#if FULL_LOOP_SPLIT
+    MD_STAGE_3,
+#endif
 	MD_STAGE_TOTAL
 } MD_STAGE;
 
 #define FIX_ATB_SUPPORT                                 0 // ENABLE_SKIP_REDUNDANT_BLOCK
 #define FIX_TX_SEARCH_FOR_MR_MODE                       1
-
+#define TURN_OFF_DUAL_MODE                              1 // Turn OFF IF search dual mode
 #if BEST_Q_M0
 #define DOWN_SAMPLING_FILTERING                         1 // Use down-sampling filtering (instead of down-sampling decimation) for 1/16th and 1/4th reference frame(s) generation @ ME and temporal filtering search, added the multi-mode signal down_sampling_method_me_search; filtering if M0, and decimation for M1 & higher
 #define DECIMATION_BUG_FIX                              1 // Removed HME Level0 check @ 1/16th decimation to guarantee valid ZZ SAD and SCD data when HME Level0 is OFF

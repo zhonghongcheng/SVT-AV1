@@ -2762,6 +2762,22 @@ void product_full_loop_tx_search(
             candidateBuffer->candidate_ptr->transform_type[PLANE_TYPE_Y] = tx_type;
 #endif
 
+#if VALGRIND_FIX
+            context_ptr->luma_txb_skip_context = 0;
+            context_ptr->luma_dc_sign_context = 0;
+            get_txb_ctx(
+#if INCOMPLETE_SB_FIX
+                sequence_control_set_ptr,
+#endif
+                COMPONENT_LUMA,
+                picture_control_set_ptr->ep_luma_dc_sign_level_coeff_neighbor_array,
+                context_ptr->sb_origin_x + txb_origin_x,
+                context_ptr->sb_origin_y + txb_origin_y,
+                context_ptr->blk_geom->bsize,
+                context_ptr->blk_geom->txsize[tx_depth][txb_itr],
+                &context_ptr->luma_txb_skip_context,
+                &context_ptr->luma_dc_sign_context);
+#endif
             // Y: T Q iQ
             av1_estimate_transform(
                 &(((int16_t*)candidateBuffer->residual_ptr->buffer_y)[tu_origin_index]),

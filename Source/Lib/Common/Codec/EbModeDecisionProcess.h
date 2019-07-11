@@ -277,7 +277,10 @@ extern "C" {
 #if NEW_NEAREST_NEW_INJECTION
         uint32_t                        me_sb_addr;
 #endif
-
+#if ME_MVP_DEVIATION   
+        uint32_t                        geom_offset_x;
+        uint32_t                        geom_offset_y;
+#endif
 #if FIXED_128x128_CONTEXT_UPDATE
         int16_t                         luma_txb_skip_context;
         int16_t                         luma_dc_sign_context;
@@ -374,7 +377,16 @@ extern "C" {
 #if PREDICT_NSQ_SHAPE
     uint8_t nsq_mode_idx;
 #endif
-    } ModeDecisionContext;
+#if FULL_LOOP_SPLIT
+    CAND_CLASS cand_class_it;
+
+    uint64_t full_cost_per_class[MAX_NFL];
+    uint8_t full_index_per_class[CAND_CLASS_TOTAL][MAX_NFL];
+    uint8_t bypass_stage2[CAND_CLASS_TOTAL];
+    uint8_t top_n_full_loop_candidates[CAND_CLASS_TOTAL];
+    uint8_t count_per_class[CAND_CLASS_TOTAL];
+#endif  
+  } ModeDecisionContext;
 
     typedef void(*EbAv1LambdaAssignFunc)(
         uint32_t                    *fast_lambda,

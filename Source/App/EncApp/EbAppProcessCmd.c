@@ -29,6 +29,26 @@
 #define YUV4MPEG2_IND_SIZE 9
 extern volatile int32_t keepRunning;
 
+
+//  Windows
+#ifdef _WIN32
+ 
+#include <intrin.h>
+uint64_t rdtsc(){
+    return __rdtsc();
+}
+ 
+//  Linux/GCC
+#else
+ 
+uint64_t rdtsc(){
+    unsigned int lo,hi;
+    __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
+    return ((uint64_t)hi << 32) | lo;
+}
+ 
+#endif
+
 /***************************************
 * Process Error Log
 ***************************************/
@@ -1154,10 +1174,10 @@ AppExitConditionType ProcessOutputStreamBuffer(
             *total_latency += (uint64_t)headerPtr->n_tick_count;
             *max_latency = (headerPtr->n_tick_count > *max_latency) ? headerPtr->n_tick_count : *max_latency;
 
-            EbFinishTime((uint64_t*)&finishsTime, (uint64_t*)&finishuTime);
+            FinishTime((uint64_t*)&finishsTime, (uint64_t*)&finishuTime);
 
             // total execution time, inc init time
-            EbComputeOverallElapsedTime(
+            ComputeOverallElapsedTime(
                 config->performance_context.lib_start_time[0],
                 config->performance_context.lib_start_time[1],
                 finishsTime,
@@ -1165,7 +1185,7 @@ AppExitConditionType ProcessOutputStreamBuffer(
                 &config->performance_context.total_execution_time);
 
             // total encode time
-            EbComputeOverallElapsedTime(
+            ComputeOverallElapsedTime(
                 config->performance_context.encode_start_time[0],
                 config->performance_context.encode_start_time[1],
                 finishsTime,
@@ -1268,6 +1288,8 @@ AppExitConditionType ProcessOutputStreamBuffer(
                     printf("Average System Encoding Speed:        %.2f\n", (double)(frame_count) / config->performance_context.total_encode_time);
                 }
             }
+            if (return_value == APP_ExitConditionFinished)
+                config->performance_context.end_cycle_count = (uint64_t)rdtsc();
         }
 #if ALT_REF_OVERLAY_APP
     }

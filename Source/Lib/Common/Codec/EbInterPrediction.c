@@ -1234,7 +1234,9 @@ static void init_wedge_signs() {
 	}
 }
 #endif  // !USE_PRECOMPUTED_WEDGE_SIGN
-
+static INLINE int get_wedge_bits_lookup(BLOCK_SIZE sb_type) {
+    return wedge_params_lookup[sb_type].bits;
+}
 static const uint8_t *get_wedge_mask_inplace(int wedge_index, int neg,
 	BLOCK_SIZE sb_type) {
 	const uint8_t *master;
@@ -1283,9 +1285,7 @@ static void init_wedge_masks() {
 		assert(sizeof(wedge_mask_buf) >= (size_t)(dst - wedge_mask_buf));
 	}
 }
-static INLINE int get_wedge_bits_lookup(BLOCK_SIZE sb_type) {
-	return wedge_params_lookup[sb_type].bits;
-}
+
 // Equation of line: f(x, y) = a[0]*(x - a[2]*w/8) + a[1]*(y - a[3]*h/8) = 0
 void av1_init_wedge_masks() {
 	init_wedge_master_masks();

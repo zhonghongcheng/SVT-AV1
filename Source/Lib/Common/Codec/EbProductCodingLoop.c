@@ -2375,8 +2375,8 @@ void construct_best_sorted_arrays(
 
 #if PREDICTIVE_ME
 
-#define FULL_PEL_REF_WINDOW_WIDTH     9 
-#define FULL_PEL_REF_WINDOW_HEIGHT    9
+#define FULL_PEL_REF_WINDOW_WIDTH     7 
+#define FULL_PEL_REF_WINDOW_HEIGHT    5
 #define HALF_PEL_REF_WINDOW           3
 #define QUARTER_PEL_REF_WINDOW        3
 
@@ -2711,10 +2711,31 @@ void predictive_me_search(
             }
 
             // Step 1: derive the best MVP in term of distortion 
+#if ME_MVP_DEVIATION
+#define ME_MVP_TH 8
+            const MeLcuResults *me_results = picture_control_set_ptr->parent_pcs_ptr->me_results[context_ptr->me_sb_addr];
+            int16_t me_mv_x;
+            int16_t me_mv_y;
+
+            if (list_idx == 0) {
+                me_mv_x = (me_results->me_mv_array[context_ptr->me_block_offset][ref_idx].x_mv) << 1;
+                me_mv_y = (me_results->me_mv_array[context_ptr->me_block_offset][ref_idx].x_mv) << 1;
+            }
+            else {
+                me_mv_x = (me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? 4 : 2) + ref_idx].x_mv) << 1;
+                me_mv_y = (me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? 4 : 2) + ref_idx].x_mv) << 1;
+            }
+
+            int16_t best_mvp_x = me_mv_x;
+            int16_t best_mvp_y = me_mv_y;
+#else
             int16_t best_mvp_x;
             int16_t best_mvp_y;
-
+#endif
             for (int8_t mvp_index = 0; mvp_index < mvp_count; mvp_index++) {
+#if ME_MVP_DEVIATION
+                if (ABS(me_mv_x - mvp_x_array[mvp_index]) >= ME_MVP_TH || ABS(me_mv_y - mvp_y_array[mvp_index]) >= ME_MVP_TH) {
+#endif
                 mvp_distortion = derive_luma_inter_dist(
                         picture_control_set_ptr,
                         context_ptr,
@@ -2734,25 +2755,14 @@ void predictive_me_search(
                     best_mvp_x = mvp_x_array[mvp_index];
                     best_mvp_y = mvp_y_array[mvp_index];
                 }
+#if ME_MVP_DEVIATION
+            }             
+#endif
             }
 
 
 #if ME_MVP_DEVIATION
-            const MeLcuResults *me_results = picture_control_set_ptr->parent_pcs_ptr->me_results[context_ptr->me_sb_addr];            
-            int16_t me_mv_x;
-            int16_t me_mv_y;
-
-            if (list_idx == 0) {
-                me_mv_x = (me_results->me_mv_array[context_ptr->me_block_offset][ref_idx].x_mv) << 1;
-                me_mv_y = (me_results->me_mv_array[context_ptr->me_block_offset][ref_idx].x_mv) << 1;
-            }
-            else {
-                me_mv_x = (me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? 4 : 2) + ref_idx].x_mv) << 1;
-                me_mv_y = (me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? 4 : 2) + ref_idx].x_mv) << 1;
-            }
-
-
-            if (ABS(me_mv_x - best_mvp_x) > 64 || ABS(me_mv_y - best_mvp_y) > 64) {
+            if (ABS(me_mv_x - best_mvp_x) >= ME_MVP_TH || ABS(me_mv_y - best_mvp_y) >= ME_MVP_TH) {
 #endif
                 // Step 2: perform full pel search around the best MVP
                 best_mvp_x = (best_mvp_x + 4)&~0x07;
@@ -4215,7 +4225,7 @@ static INLINE void set_mi_row_col(
     if (xd->n8_w > xd->n8_h)
         if (mi_row & (xd->n8_w - 1)) xd->is_sec_rect = 1;
 }
-
+#if !SHUT_TX_SIZE_RATE
 uint64_t estimate_tx_size_bits(
     PictureControlSet       *pcsPtr,
     uint32_t                 cu_origin_x,
@@ -4272,6 +4282,7 @@ uint64_t estimate_tx_size_bits(
 
     return bits;
 }
+#endif
 #endif
 void perform_intra_tx_partitioning(
     ModeDecisionCandidateBuffer  *candidateBuffer,
@@ -4798,7 +4809,7 @@ void perform_intra_tx_partitioning(
 
 #if ATB_RATE
         uint64_t tx_size_bits = 0;
-
+#if !SHUT_TX_SIZE_RATE
         if (candidateBuffer->candidate_ptr->y_has_coeff)
             tx_size_bits = estimate_tx_size_bits(
                 picture_control_set_ptr,
@@ -4809,7 +4820,7 @@ void perform_intra_tx_partitioning(
                 context_ptr->txfm_context_array,
                 context_ptr->tx_depth,
                 context_ptr->md_rate_estimation_ptr);
-
+#endif
         uint64_t cost = RDCOST(context_ptr->full_lambda, ((*y_coeff_bits) + tx_size_bits), y_full_distortion[DIST_CALC_RESIDUAL]);
 #else
         uint64_t cost = RDCOST(context_ptr->full_lambda, (*y_coeff_bits), y_full_distortion[DIST_CALC_RESIDUAL]);
@@ -5160,6 +5171,33 @@ void AV1PerformFullLoop(
         candidateBuffer = candidate_buffer_ptr_array[candidateIndex];
         candidate_ptr = candidateBuffer->candidate_ptr;//this is the FastCandidateStruct
 
+#if FULL_LOOP_SPLIT // to remove later
+        EbBool skip_current_candidate = EB_TRUE;
+        if (context_ptr->md_stage == MD_STAGE_3) {
+            if (context_ptr->bypass_stage2[candidate_ptr->cand_class] == EB_FALSE) {
+                for (uint8_t k = 0; k < context_ptr->top_n_full_loop_candidates[candidate_ptr->cand_class]; k++)
+                    if (context_ptr->full_index_per_class[candidate_ptr->cand_class][k] == candidateIndex) {
+                        skip_current_candidate = EB_FALSE;
+                        break;
+                    }
+            }
+            else {
+                skip_current_candidate = EB_FALSE;
+            }
+        }
+        else {
+            skip_current_candidate = EB_FALSE;
+        }
+
+        if (skip_current_candidate) {
+            *(candidateBuffer->full_cost_ptr) = (uint64_t) ~0;
+            break;
+        }
+#endif
+        
+#if FULL_LOOP_SPLIT // bypass full loop escape
+        if (context_ptr->md_stage == MD_STAGE_3)
+#endif
         if (picture_control_set_ptr->slice_type != I_SLICE) {
             if ((candidate_ptr->type == INTRA_MODE || context_ptr->full_loop_escape == 2) && best_inter_luma_zero_coeff == 0) {
                 // Update # of NFL
@@ -5341,6 +5379,11 @@ void AV1PerformFullLoop(
 #if ATB_MD
 #if INCOMPLETE_SB_FIX
         uint8_t end_tx_depth = 0;
+#if FIRST_FULL_LOOP_ATB_OFF
+        if (context_ptr->md_stage == MD_STAGE_2) {
+            end_tx_depth = 0;
+        } else 
+#endif
         // end_tx_depth set to zero for blocks which go beyond the picture boundaries
         if ((context_ptr->sb_origin_x + context_ptr->blk_geom->origin_x + context_ptr->blk_geom->bwidth < picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header.max_frame_width &&
             context_ptr->sb_origin_y + context_ptr->blk_geom->origin_y + context_ptr->blk_geom->bheight < picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header.max_frame_height))
@@ -5406,6 +5449,10 @@ void AV1PerformFullLoop(
 
             tx_search_skip_fag = (picture_control_set_ptr->parent_pcs_ptr->skip_tx_search && best_fastLoop_candidate_index > NFL_TX_TH) ? 1 : tx_search_skip_fag;
 
+#if FIRST_FULL_LOOP_TX_SEARCH_OFF
+            if (context_ptr->md_stage == MD_STAGE_2)
+                tx_search_skip_fag = EB_TRUE;
+#endif
             if (!tx_search_skip_fag) {
                 product_full_loop_tx_search(
                     candidateBuffer,
@@ -5431,7 +5478,9 @@ void AV1PerformFullLoop(
 #if ATB_MD
         }
 #endif
-
+#if FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
+        if(context_ptr->md_stage == MD_STAGE_3) {
+#endif
         if (candidate_ptr->type == INTRA_MODE && candidateBuffer->candidate_ptr->intra_chroma_mode == UV_CFL_PRED) {
             // If mode is CFL:
             // 1: recon the Luma
@@ -5448,7 +5497,9 @@ void AV1PerformFullLoop(
                 cuChromaOriginIndex,
                 asm_type);
         }
-
+#if FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
+        }
+#endif
         candidate_ptr->chroma_distortion_inter_depth = 0;
         candidate_ptr->chroma_distortion = 0;
 
@@ -5465,7 +5516,9 @@ void AV1PerformFullLoop(
         // FullLoop and TU search
         uint8_t cb_qp = context_ptr->qp;
         uint8_t cr_qp = context_ptr->qp;
-
+#if FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
+        if (context_ptr->md_stage == MD_STAGE_3) {
+#endif
         if (context_ptr->blk_geom->has_uv && context_ptr->chroma_level <= CHROMA_MODE_1) {
             full_loop_r(
                 sb_ptr,
@@ -5520,6 +5573,9 @@ void AV1PerformFullLoop(
                     &cr_coeff_bits,
                     asm_type);
             }
+            }
+#endif
+#if FIRST_FULL_LOOP_CHROMA_BLIND
         }
 #endif
         candidate_ptr->block_has_coeff = (candidate_ptr->y_has_coeff | candidate_ptr->u_has_coeff | candidate_ptr->v_has_coeff) ? EB_TRUE : EB_FALSE;
@@ -5550,7 +5606,9 @@ void AV1PerformFullLoop(
 
         candidateBuffer->y_coeff_bits = y_coeff_bits;
         candidate_ptr->full_distortion = (uint32_t)(y_full_distortion[0]);
-
+#if FULL_LOOP_SPLIT // bypass full loop escape
+        if (context_ptr->md_stage == MD_STAGE_3)
+#endif
         if (context_ptr->full_loop_escape)
         {
             if (picture_control_set_ptr->slice_type != I_SLICE) {
@@ -5562,6 +5620,14 @@ void AV1PerformFullLoop(
                 }
             }
         }
+
+#if FULL_LOOP_SPLIT // set stats per class
+        if (context_ptr->md_stage == MD_STAGE_2) {
+            context_ptr->full_cost_per_class[context_ptr->count_per_class[context_ptr->cand_class_it]] = *candidateBuffer->full_cost_ptr;
+            context_ptr->full_index_per_class[context_ptr->cand_class_it][context_ptr->count_per_class[context_ptr->cand_class_it]] = candidateIndex;
+            context_ptr->count_per_class[context_ptr->cand_class_it]++;
+        }
+#endif
     }//end for( full loop)
 }
 
@@ -6987,8 +7053,8 @@ void md_encode_block(
 #endif
 #if PREDICTIVE_ME
 #if ME_MVP_DEVIATION
-        uint32_t geom_offset_x = 0;
-        uint32_t geom_offset_y = 0;
+        context_ptr->geom_offset_x = 0;
+        context_ptr->geom_offset_y = 0;
 
         if (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128) {
             uint32_t me_sb_size = sequence_control_set_ptr->sb_sz;
@@ -6996,15 +7062,15 @@ void md_encode_block(
             uint32_t me_sb_x = (context_ptr->cu_origin_x / me_sb_size);
             uint32_t me_sb_y = (context_ptr->cu_origin_y / me_sb_size);
             context_ptr->me_sb_addr = me_sb_x + me_sb_y * me_pic_width_in_sb;
-            geom_offset_x = (me_sb_x & 0x1) * me_sb_size;
-            geom_offset_y = (me_sb_y & 0x1) * me_sb_size;
+            context_ptr->geom_offset_x = (me_sb_x & 0x1) * me_sb_size;
+            context_ptr->geom_offset_y = (me_sb_y & 0x1) * me_sb_size;
         } else 
             context_ptr->me_sb_addr = lcuAddr;
 
         context_ptr->me_block_offset =
             (context_ptr->blk_geom->bwidth == 4 || context_ptr->blk_geom->bheight == 4 || context_ptr->blk_geom->bwidth == 128 || context_ptr->blk_geom->bheight == 128) ?
             0 :
-            get_me_info_index(picture_control_set_ptr->parent_pcs_ptr->max_number_of_pus_per_sb, context_ptr->blk_geom, geom_offset_x, geom_offset_y);
+            get_me_info_index(picture_control_set_ptr->parent_pcs_ptr->max_number_of_pus_per_sb, context_ptr->blk_geom, context_ptr->geom_offset_x, context_ptr->geom_offset_y);
 #endif
         // Generate MVP(s)  
         if (picture_control_set_ptr->parent_pcs_ptr->allow_intrabc || picture_control_set_ptr->slice_type != I_SLICE)
@@ -7372,6 +7438,56 @@ void md_encode_block(
 		}
 #endif
 
+
+#if FULL_LOOP_SPLIT
+        // Initialize is_1st_full_loop_performed
+        for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
+            context_ptr->bypass_stage2[cand_class_it] = EB_TRUE;
+        }
+
+        // 1st Full-Loop
+        context_ptr->md_stage = MD_STAGE_2;
+        //for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
+        for (cand_class_it = CAND_CLASS_0; cand_class_it <= CAND_CLASS_0; cand_class_it++) {
+            context_ptr->cand_class_it = cand_class_it;
+            context_ptr->count_per_class[cand_class_it] = 0;
+            context_ptr->bypass_stage2[cand_class_it] = EB_FALSE;
+            AV1PerformFullLoop(
+                picture_control_set_ptr,
+                context_ptr->sb_ptr,
+                cu_ptr,
+                context_ptr,
+                input_picture_ptr,
+                inputOriginIndex,
+                inputCbOriginIndex,
+                cuOriginIndex,
+                cuChromaOriginIndex,
+                context_ptr->full_recon_search_count,
+                ref_fast_cost,
+                asm_type); // fullCandidateTotalCount to number of buffers to process
+
+            // Sort the candidates of the target class based on the 1st full loop cost
+            uint32_t i, j, index;
+            for (i = 0; i < context_ptr->count_per_class[cand_class_it] - 1; ++i) {
+                for (j = i + 1; j < context_ptr->count_per_class[cand_class_it]; ++j) {
+                    if (context_ptr->full_cost_per_class[j] < context_ptr->full_cost_per_class[i]) {
+                        index = context_ptr->full_index_per_class[cand_class_it][i];
+                        context_ptr->full_index_per_class[cand_class_it][i] = (uint32_t)context_ptr->full_index_per_class[cand_class_it][j];
+                        context_ptr->full_index_per_class[cand_class_it][j] = (uint32_t)index;
+
+                    }
+                }
+            }
+            // To do 
+            // Derive the # of candidates to cut
+            context_ptr->top_n_full_loop_candidates[cand_class_it] = context_ptr->count_per_class[cand_class_it];
+            // Update the candidate_index_array 
+            // Update # of full loop candidates 
+            
+        }
+
+        // 2nd Full-Loop
+        context_ptr->md_stage = MD_STAGE_3;
         AV1PerformFullLoop(
             picture_control_set_ptr,
             context_ptr->sb_ptr,
@@ -7385,7 +7501,21 @@ void md_encode_block(
             context_ptr->full_recon_search_count,
             ref_fast_cost,
             asm_type); // fullCandidateTotalCount to number of buffers to process
-
+#else
+        AV1PerformFullLoop(
+            picture_control_set_ptr,
+            context_ptr->sb_ptr,
+            cu_ptr,
+            context_ptr,
+            input_picture_ptr,
+            inputOriginIndex,
+            inputCbOriginIndex,
+            cuOriginIndex,
+            cuChromaOriginIndex,
+            context_ptr->full_recon_search_count,
+            ref_fast_cost,
+            asm_type); // fullCandidateTotalCount to number of buffers to process
+#endif
         // Full Mode Decision (choose the best mode)
         candidateIndex = product_full_mode_decision(
             context_ptr,
