@@ -2711,10 +2711,31 @@ void predictive_me_search(
             }
 
             // Step 1: derive the best MVP in term of distortion 
+#if ME_MVP_DEVIATION
+#define ME_MVP_TH 8
+            const MeLcuResults *me_results = picture_control_set_ptr->parent_pcs_ptr->me_results[context_ptr->me_sb_addr];
+            int16_t me_mv_x;
+            int16_t me_mv_y;
+
+            if (list_idx == 0) {
+                me_mv_x = (me_results->me_mv_array[context_ptr->me_block_offset][ref_idx].x_mv) << 1;
+                me_mv_y = (me_results->me_mv_array[context_ptr->me_block_offset][ref_idx].x_mv) << 1;
+            }
+            else {
+                me_mv_x = (me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? 4 : 2) + ref_idx].x_mv) << 1;
+                me_mv_y = (me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? 4 : 2) + ref_idx].x_mv) << 1;
+            }
+
+            int16_t best_mvp_x = me_mv_x;
+            int16_t best_mvp_y = me_mv_y;
+#else
             int16_t best_mvp_x;
             int16_t best_mvp_y;
-
+#endif
             for (int8_t mvp_index = 0; mvp_index < mvp_count; mvp_index++) {
+#if ME_MVP_DEVIATION
+                if (ABS(me_mv_x - mvp_x_array[mvp_index]) >= ME_MVP_TH || ABS(me_mv_y - mvp_y_array[mvp_index]) >= ME_MVP_TH) {
+#endif
                 mvp_distortion = derive_luma_inter_dist(
                         picture_control_set_ptr,
                         context_ptr,
@@ -2734,24 +2755,13 @@ void predictive_me_search(
                     best_mvp_x = mvp_x_array[mvp_index];
                     best_mvp_y = mvp_y_array[mvp_index];
                 }
+#if ME_MVP_DEVIATION
+            }             
+#endif
             }
 
 
 #if ME_MVP_DEVIATION
-            const MeLcuResults *me_results = picture_control_set_ptr->parent_pcs_ptr->me_results[context_ptr->me_sb_addr];            
-            int16_t me_mv_x;
-            int16_t me_mv_y;
-
-            if (list_idx == 0) {
-                me_mv_x = (me_results->me_mv_array[context_ptr->me_block_offset][ref_idx].x_mv) << 1;
-                me_mv_y = (me_results->me_mv_array[context_ptr->me_block_offset][ref_idx].x_mv) << 1;
-            }
-            else {
-                me_mv_x = (me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? 4 : 2) + ref_idx].x_mv) << 1;
-                me_mv_y = (me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? 4 : 2) + ref_idx].x_mv) << 1;
-            }
-
-#define ME_MVP_TH 8
             if (ABS(me_mv_x - best_mvp_x) >= ME_MVP_TH || ABS(me_mv_y - best_mvp_y) >= ME_MVP_TH) {
 #endif
                 // Step 2: perform full pel search around the best MVP
