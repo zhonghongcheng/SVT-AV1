@@ -36,6 +36,8 @@
 #include <io.h>     /* _setmode() */
 #include <fcntl.h>  /* _O_BINARY */
 #endif
+
+uint64_t rdtsc();
 /***************************************
  * External Functions
  ***************************************/
@@ -151,7 +153,7 @@ int32_t main(int32_t argc, char* argv[])
                     configs[instanceCount]->channel_id = instanceCount;
 
                     StartTime((uint64_t*)&configs[instanceCount]->performance_context.lib_start_time[0], (uint64_t*)&configs[instanceCount]->performance_context.lib_start_time[1]);
-                    configs[instanceCount]->performance_context.start_cycle_count = (uint64_t)__rdtsc();
+                    configs[instanceCount]->performance_context.start_cycle_count = (uint64_t)rdtsc();
                     return_errors[instanceCount] = init_encoder(configs[instanceCount], appCallbacks[instanceCount], instanceCount);
                     return_error = (EbErrorType)(return_error | return_errors[instanceCount]);
                 }

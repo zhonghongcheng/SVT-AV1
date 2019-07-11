@@ -29,6 +29,26 @@
 #define YUV4MPEG2_IND_SIZE 9
 extern volatile int32_t keepRunning;
 
+
+//  Windows
+#ifdef _WIN32
+ 
+#include <intrin.h>
+uint64_t rdtsc(){
+    return __rdtsc();
+}
+ 
+//  Linux/GCC
+#else
+ 
+uint64_t rdtsc(){
+    unsigned int lo,hi;
+    __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
+    return ((uint64_t)hi << 32) | lo;
+}
+ 
+#endif
+
 /***************************************
 * Process Error Log
 ***************************************/
@@ -1269,7 +1289,7 @@ AppExitConditionType ProcessOutputStreamBuffer(
                 }
             }
             if (return_value == APP_ExitConditionFinished)
-                config->performance_context.end_cycle_count = (uint64_t)__rdtsc();
+                config->performance_context.end_cycle_count = (uint64_t)rdtsc();
         }
 #if ALT_REF_OVERLAY_APP
     }
