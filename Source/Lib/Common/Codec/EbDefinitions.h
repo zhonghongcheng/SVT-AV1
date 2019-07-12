@@ -365,6 +365,10 @@ typedef enum CAND_CLASS {
 
 #define  MDLEVELS                     1 // FastLoop-0 -->  FasLoop-1 --> FullLoop
 #define  REFACTOR_FAST_LOOP           1 // Lossless
+#define  FAST_LOOP_OPT                1 // Use fast loop stages to speed up encoder
+#define  COMP_OPT                     1 // cut some compound injection/modes
+#define  FULL_COMPOUND_BDRATE         0 // enable to run compound in full mode for best bd rate
+
 
 typedef enum MD_STAGE {
 	MD_STAGE_0,
