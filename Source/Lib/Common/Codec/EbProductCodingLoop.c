@@ -2210,7 +2210,7 @@ void set_md_stage_counts(
 		context_ptr->full_cand_count[CAND_CLASS_3] = 0;
 #endif
 	}
-
+#endif
 
 #if FAST_LOOP_OPT
 
@@ -2221,7 +2221,11 @@ void set_md_stage_counts(
 	context_ptr->fast1_cand_count[CAND_CLASS_3] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? count_cand : (count_cand >> 1);
 
 	if (picture_control_set_ptr->slice_type == I_SLICE) {
+#if FULL_LOOP_SPLIT
+        context_ptr->fast1_cand_count[CAND_CLASS_0] = context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0];
+#else
 		context_ptr->fast1_cand_count[CAND_CLASS_0] = context_ptr->full_cand_count[CAND_CLASS_0];
+#endif
 		context_ptr->fast1_cand_count[CAND_CLASS_1] = 0;
 		context_ptr->fast1_cand_count[CAND_CLASS_2] = 0;
 		context_ptr->fast1_cand_count[CAND_CLASS_3] = 0;
@@ -2251,11 +2255,15 @@ void set_md_stage_counts(
 
 	for (CAND_CLASS cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
 		if (context_ptr->bypass_stage1[cand_class_it])
+#if FULL_LOOP_SPLIT
+            context_ptr->fast1_cand_count[cand_class_it] = context_ptr->full_cand_count_md_stage_2[cand_class_it];
+#else
 			context_ptr->fast1_cand_count[cand_class_it] = context_ptr->full_cand_count[cand_class_it];
+#endif
 	}
 
 #endif
-#endif  	
+  	
 
 }
 void fast_loop_stage1(	
