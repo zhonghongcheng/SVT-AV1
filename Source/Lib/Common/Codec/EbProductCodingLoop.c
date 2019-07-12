@@ -2178,7 +2178,7 @@ void set_md_stage_counts(
         context_ptr->full_cand_count_md_stage_2[CAND_CLASS_2] = 0;
         context_ptr->full_cand_count_md_stage_2[CAND_CLASS_3] = 0;
     }
-
+#if 0
     //this is to simulate DECOUPLED FAST LOOP
     context_ptr->full_cand_count_md_stage_3[CAND_CLASS_0] = 1;
     context_ptr->full_cand_count_md_stage_3[CAND_CLASS_1] = 1;
@@ -2191,7 +2191,7 @@ void set_md_stage_counts(
         context_ptr->full_cand_count_md_stage_3[CAND_CLASS_2] = 0;
         context_ptr->full_cand_count_md_stage_3[CAND_CLASS_3] = 0;
     }
-
+#endif
 #else
 	//this is to simulate DECOUPLED FAST LOOP
 	context_ptr->full_cand_count[CAND_CLASS_0] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTRA_NFL : (INTRA_NFL >> 1);
@@ -8176,6 +8176,20 @@ void md_encode_block(
         context_ptr->bypass_stage2[CAND_CLASS_1] = EB_TRUE;
         context_ptr->bypass_stage2[CAND_CLASS_2] = EB_TRUE;
         context_ptr->bypass_stage2[CAND_CLASS_3] = EB_TRUE;
+
+
+        // Derive nfl @ md_stage_3
+        context_ptr->full_cand_count_md_stage_3[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0] : 1;
+        context_ptr->full_cand_count_md_stage_3[CAND_CLASS_1] = context_ptr->bypass_stage2[CAND_CLASS_1] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_1] : 1;
+        context_ptr->full_cand_count_md_stage_3[CAND_CLASS_2] = context_ptr->bypass_stage2[CAND_CLASS_2] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_2] : 1;
+        context_ptr->full_cand_count_md_stage_3[CAND_CLASS_3] = context_ptr->bypass_stage2[CAND_CLASS_3] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_3] : 1;
+
+        if (picture_control_set_ptr->slice_type == I_SLICE) {
+            context_ptr->full_cand_count_md_stage_3[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0] : 1;
+            context_ptr->full_cand_count_md_stage_3[CAND_CLASS_1] = 0;
+            context_ptr->full_cand_count_md_stage_3[CAND_CLASS_2] = 0;
+            context_ptr->full_cand_count_md_stage_3[CAND_CLASS_3] = 0;
+        }
 
         context_ptr->chroma_md_stage_2[CAND_CLASS_0] = EB_TRUE;
         context_ptr->chroma_md_stage_2[CAND_CLASS_1] = EB_TRUE;
