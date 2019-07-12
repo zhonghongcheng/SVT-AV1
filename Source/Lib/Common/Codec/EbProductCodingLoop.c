@@ -7815,7 +7815,18 @@ void md_encode_block(
             get_me_info_index(picture_control_set_ptr->parent_pcs_ptr->max_number_of_pus_per_sb, context_ptr->blk_geom, context_ptr->geom_offset_x, context_ptr->geom_offset_y);
 #endif
         // Generate MVP(s)  
-        if (picture_control_set_ptr->parent_pcs_ptr->allow_intrabc || picture_control_set_ptr->slice_type != I_SLICE)
+        if (picture_control_set_ptr->parent_pcs_ptr->allow_intrabc) // picture_control_set_ptr->slice_type == I_SLICE
+            generate_av1_mvp_table(
+                &context_ptr->sb_ptr->tile_info,
+                context_ptr,
+                context_ptr->cu_ptr,
+                context_ptr->blk_geom,
+                context_ptr->cu_origin_x,
+                context_ptr->cu_origin_y,
+                picture_control_set_ptr->parent_pcs_ptr->ref_frame_type_arr,
+                1,
+                picture_control_set_ptr);
+        else if (picture_control_set_ptr->slice_type != I_SLICE)
             generate_av1_mvp_table(
                 &context_ptr->sb_ptr->tile_info,
                 context_ptr,
