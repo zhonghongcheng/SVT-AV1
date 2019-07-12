@@ -303,7 +303,12 @@ extern "C" {
 		uint32_t                       bypass_stage1[CAND_CLASS_TOTAL];
 #endif
 #if MD_CLASS
+#if FULL_LOOP_SPLIT
+        uint32_t                       full_cand_count_md_stage_2[CAND_CLASS_TOTAL]; //how many full candiates per class @ md_stage_2
+        uint32_t                       full_cand_count_md_stage_3[CAND_CLASS_TOTAL]; //how many full candiates per class @ md_stage_3
+#else
 		uint32_t                       full_cand_count[CAND_CLASS_TOTAL]; //how many full candiates per class
+#endif
 		uint32_t                       fast_cand_count[CAND_CLASS_TOTAL]; //how many ffast candiates per class
 #endif
         uint8_t                         decouple_intra_inter_fast_loop;
@@ -382,14 +387,11 @@ extern "C" {
     uint8_t nsq_mode_idx;
 #endif
 #if FULL_LOOP_SPLIT
-    CAND_CLASS cand_class_it;
-
+    EbBool chroma_md_stage_2[CAND_CLASS_TOTAL];
     uint64_t full_cost_per_class[MAX_NFL];
-    uint8_t full_index_per_class[CAND_CLASS_TOTAL][MAX_NFL];
+    uint32_t full_index_per_class[CAND_CLASS_TOTAL][MAX_NFL];
     uint8_t bypass_stage2[CAND_CLASS_TOTAL];
-    uint8_t top_n_full_loop_candidates[CAND_CLASS_TOTAL];
-    uint8_t count_per_class[CAND_CLASS_TOTAL];
-#endif  
+#endif
   } ModeDecisionContext;
 
     typedef void(*EbAv1LambdaAssignFunc)(

@@ -1619,10 +1619,6 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
             picture_control_set_ptr->atb_mode = 0;
 
-
-#if ENABLE_ATB
-        picture_control_set_ptr->atb_mode = 1;
-#endif
 #endif
 
 

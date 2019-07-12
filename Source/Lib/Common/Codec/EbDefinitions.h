@@ -43,16 +43,16 @@ extern "C" {
 
 #define FULL_LOOP_SPLIT                 0
 #if FULL_LOOP_SPLIT
-#define FIRST_FULL_LOOP_CHROMA_BLIND    1
-#define FIRST_FULL_LOOP_ATB_OFF         1
-#define FIRST_FULL_LOOP_TX_SEARCH_OFF   1
+#define FIRST_FULL_LOOP_CHROMA_BLIND           0
+#define FIRST_FULL_LOOP_ATB_OFF                0
+#define FIRST_FULL_LOOP_TX_SEARCH_OFF          0
+#define FIRST_FULL_LOOP_INTERPOLATION_SEARCH   0
 #endif
-#if 0
-/***************************************************************************************************/
-#define ENABLE_ATB                      0
+#define MODIFIED_ENCODER                0
+#if MODIFIED_ENCODER      
 #define SHUT_TX_SIZE_RATE               1 // To fix a bug @ tx size rate estimation 
 #define VALGRIND_FIX                    1 // Fixed a valgrind error
-/***************************************************************************************************/
+#define ABILITY_TO_SKIP_TX_SEARCH_ATB   1
 #endif
 #define ENABLE_CDF_UPDATE               1 // Added the support for end of frame CDF update.
     
