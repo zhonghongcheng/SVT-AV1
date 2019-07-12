@@ -298,6 +298,10 @@ extern "C" {
         uint8_t                         chroma_level;
         PART                            nsq_table[NSQ_TAB_SIZE];
         uint8_t                         decoupled_fast_loop_search_method;
+#if	FAST_LOOP_OPT
+		uint8_t                        md_staging_mode; 
+		uint32_t                       bypass_stage1[CAND_CLASS_TOTAL];
+#endif
 #if MD_CLASS
 		uint32_t                       full_cand_count[CAND_CLASS_TOTAL]; //how many full candiates per class
 		uint32_t                       fast_cand_count[CAND_CLASS_TOTAL]; //how many ffast candiates per class
@@ -374,7 +378,9 @@ extern "C" {
     unsigned int prediction_mse ;
     EbBool      variance_ready;
 #endif
-
+#if PREDICT_NSQ_SHAPE
+    uint8_t nsq_mode_idx;
+#endif
 #if FULL_LOOP_SPLIT
     CAND_CLASS cand_class_it;
 
@@ -383,8 +389,8 @@ extern "C" {
     uint8_t bypass_stage2[CAND_CLASS_TOTAL];
     uint8_t top_n_full_loop_candidates[CAND_CLASS_TOTAL];
     uint8_t count_per_class[CAND_CLASS_TOTAL];
-#endif
-    } ModeDecisionContext;
+#endif  
+  } ModeDecisionContext;
 
     typedef void(*EbAv1LambdaAssignFunc)(
         uint32_t                    *fast_lambda,

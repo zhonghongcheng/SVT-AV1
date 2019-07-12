@@ -1029,9 +1029,17 @@ void Bipred3x3CandidatesInjection(
     BlockSize bsize = context_ptr->blk_geom->bsize;                       // bloc size
     MD_COMP_TYPE compound_types_to_try = picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->compound_types_to_try;
 	MD_COMP_TYPE cur_type; //BIP 3x3 MiSize >= BLOCK_8X8 && MiSize <= BLOCK_32X32)
+#if COMP_OPT
+	MD_COMP_TYPE tot_comp_types = sequence_control_set_ptr->compound_mode == 1 ?  MD_COMP_AVG : 
+		(bsize >= BLOCK_8X8 && bsize <= BLOCK_32X32) ? compound_types_to_try :
+		(compound_types_to_try == MD_COMP_WEDGE) ? MD_COMP_DIFF0 :
+		picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->compound_types_to_try;
+#else
 	MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize<= BLOCK_32X32 ) ? compound_types_to_try : 
                                   (compound_types_to_try == MD_COMP_WEDGE )? MD_COMP_DIFF0 : 
                                    picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->compound_types_to_try;//MD_COMP_DIST;// MD_COMP_AVG;//
+#endif
+
 #endif
 
     if (isCompoundEnabled) {
@@ -3183,9 +3191,17 @@ void inject_new_candidates(
     BlockSize bsize = context_ptr->blk_geom->bsize;                       // bloc size
     MD_COMP_TYPE compound_types_to_try = picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->compound_types_to_try;
 	MD_COMP_TYPE cur_type; //BIP 3x3 MiSize >= BLOCK_8X8 && MiSize <= BLOCK_32X32)
+#if COMP_OPT
+	//MD_COMP_TYPE tot_comp_types = MD_COMP_AVG;
+	MD_COMP_TYPE tot_comp_types = sequence_control_set_ptr->compound_mode == 1 ? MD_COMP_AVG :
+		(bsize >= BLOCK_8X8 && bsize <= BLOCK_32X32) ? compound_types_to_try :
+		(compound_types_to_try == MD_COMP_WEDGE) ? MD_COMP_DIFF0 :
+		picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->compound_types_to_try;
+#else
 	MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize<= BLOCK_32X32 ) ? compound_types_to_try : 
                                   (compound_types_to_try == MD_COMP_WEDGE )? MD_COMP_DIFF0 : 
                                    picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->compound_types_to_try;//MD_COMP_DIST;// MD_COMP_AVG;//
+#endif
 #endif
 
     for (uint8_t me_candidate_index = 0; me_candidate_index < total_me_cnt; ++me_candidate_index)
@@ -3904,9 +3920,17 @@ void  inject_inter_candidates(
     BlockSize bsize = context_ptr->blk_geom->bsize;                       // bloc size
     MD_COMP_TYPE compound_types_to_try = picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->compound_types_to_try;
 	MD_COMP_TYPE cur_type; //BIP 3x3 MiSize >= BLOCK_8X8 && MiSize <= BLOCK_32X32)
+#if COMP_OPT
+	//MD_COMP_TYPE tot_comp_types = MD_COMP_AVG;
+	MD_COMP_TYPE tot_comp_types = sequence_control_set_ptr->compound_mode == 1 ? MD_COMP_AVG :
+		(bsize >= BLOCK_8X8 && bsize <= BLOCK_32X32) ? compound_types_to_try :
+		(compound_types_to_try == MD_COMP_WEDGE) ? MD_COMP_DIFF0 :
+		picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->compound_types_to_try;
+#else
 	MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize<= BLOCK_32X32 ) ? compound_types_to_try : 
                                   (compound_types_to_try == MD_COMP_WEDGE )? MD_COMP_DIFF0 : 
                                    picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->compound_types_to_try;//MD_COMP_DIST;// MD_COMP_AVG;//
+#endif
 #endif
 #if ADP_BQ
     if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE || (picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 && picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL)) {

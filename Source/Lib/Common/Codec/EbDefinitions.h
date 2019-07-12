@@ -83,7 +83,7 @@ extern "C" {
 
 #define MRP_SUPPORT                       1// MRP Main Flag
 
-#define ADP_BQ                            0 // Added the ability to perform ADP for best quality mode
+
 
 #define RDOQ_INTRA                        1 // Enable RDOQ INTRA (RDOQ INTER already active) 
 #define DC_SIGN_CONTEXT_EP                1 // Fixed DC level derivation & update @ encode pass
@@ -365,6 +365,10 @@ typedef enum CAND_CLASS {
 
 #define  MDLEVELS                     1 // FastLoop-0 -->  FasLoop-1 --> FullLoop
 #define  REFACTOR_FAST_LOOP           1 // Lossless
+#define  FAST_LOOP_OPT                1 // Use fast loop stages to speed up encoder
+#define  COMP_OPT                     1 // cut some compound injection/modes
+#define  FULL_COMPOUND_BDRATE         0 // enable to run compound in full mode for best bd rate
+
 
 typedef enum MD_STAGE {
 	MD_STAGE_0,
@@ -433,8 +437,8 @@ typedef enum MD_STAGE {
 #define DEPTH_RANKING                                   1
 #define NUMBER_OF_DEPTH                                 6
 #define NUMBER_OF_SHAPES                                10
+#define ADP_BQ                                          1 // Added the ability to perform ADP for best quality mode
 #endif
-
 #if IMPROVED_SUBPEL_SEARCH
 typedef enum ME_HP_MODE { 
     EX_HP_MODE = 0, 

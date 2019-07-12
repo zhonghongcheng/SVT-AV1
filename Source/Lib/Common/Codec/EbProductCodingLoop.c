@@ -1756,6 +1756,12 @@ void ProductMdFastPuPrediction(
     context_ptr->pu_itr = 0;
     // Prediction
     context_ptr->skip_interpolation_search = picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? 0 : 1;
+
+#if FAST_LOOP_OPT
+	if (context_ptr->md_staging_mode == 1 && context_ptr->md_stage == MD_STAGE_0)
+		context_ptr->skip_interpolation_search = 1;
+#endif
+
     candidateBuffer->candidate_ptr->interp_filters = 0;
 
     ProductPredictionFunTable[candidateBuffer->candidate_ptr->use_intrabc ? INTER_MODE : modeType](
@@ -2153,7 +2159,7 @@ void set_md_stage_counts(
 	uint32_t                 fastCandidateTotalCount)
 {
 
-	context_ptr->fast1_cand_count[CAND_CLASS_0] = context_ptr->fast_cand_count[CAND_CLASS_0];
+	context_ptr->fast1_cand_count[CAND_CLASS_0] =  context_ptr->fast_cand_count[CAND_CLASS_0];
 	context_ptr->fast1_cand_count[CAND_CLASS_1] = context_ptr->fast_cand_count[CAND_CLASS_1];
 	context_ptr->fast1_cand_count[CAND_CLASS_2] = context_ptr->fast_cand_count[CAND_CLASS_2];
 #if COMP_FULL
@@ -2177,6 +2183,51 @@ void set_md_stage_counts(
 		context_ptr->full_cand_count[CAND_CLASS_3] = 0;
 #endif
 	}
+
+
+#if FAST_LOOP_OPT
+
+	uint32_t  count_cand = 16;
+	context_ptr->fast1_cand_count[CAND_CLASS_0] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? count_cand : (count_cand >> 1);
+	context_ptr->fast1_cand_count[CAND_CLASS_1] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? count_cand : (count_cand >> 1);
+	context_ptr->fast1_cand_count[CAND_CLASS_2] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? count_cand : (count_cand >> 1);
+	context_ptr->fast1_cand_count[CAND_CLASS_3] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? count_cand : (count_cand >> 1);
+
+	if (picture_control_set_ptr->slice_type == I_SLICE) {
+		context_ptr->fast1_cand_count[CAND_CLASS_0] = context_ptr->full_cand_count[CAND_CLASS_0];
+		context_ptr->fast1_cand_count[CAND_CLASS_1] = 0;
+		context_ptr->fast1_cand_count[CAND_CLASS_2] = 0;
+		context_ptr->fast1_cand_count[CAND_CLASS_3] = 0;
+	}
+
+
+
+	uint32_t tot_fast1 = 0;
+	for (CAND_CLASS class_it = CAND_CLASS_0; class_it < CAND_CLASS_TOTAL; class_it++)
+		tot_fast1 += context_ptr->fast1_cand_count[class_it];
+	assert(tot_fast1 > 0);
+
+
+	if (picture_control_set_ptr->enc_mode == ENC_M0)
+		context_ptr->md_staging_mode = 1; //use fast-loop0->fast-loop1->full-loop
+	else
+		context_ptr->md_staging_mode = 0; //use fast-loop0->full-loop
+
+	//stage1 bypass decision
+	memset(context_ptr->bypass_stage1, 0, CAND_CLASS_TOTAL * sizeof(uint32_t));	
+
+	
+	if(context_ptr->md_staging_mode == 1)
+		context_ptr->bypass_stage1[CAND_CLASS_0] = 1;
+	else
+		memset(context_ptr->bypass_stage1, 1, CAND_CLASS_TOTAL * sizeof(uint32_t));
+
+	for (CAND_CLASS cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
+		if (context_ptr->bypass_stage1[cand_class_it])
+			context_ptr->fast1_cand_count[cand_class_it] = context_ptr->full_cand_count[cand_class_it];
+	}
+
+#endif
 	   	
 
 }
@@ -2213,7 +2264,7 @@ void fast_loop_stage1(
 		if (!candidate_ptr->distortion_ready) {
 
 
-        #if 1//MDLEVELS//TMP
+        #if 0//MDLEVELS//TMP
 			uint64_t  tmp_cost = *(candidateBuffer->fast_cost_ptr);
         #endif
 
@@ -2231,7 +2282,7 @@ void fast_loop_stage1(
 				use_ssd,
 				asm_type);
 
-         #if 1//MDLEVELS
+         #if 0//MDLEVELS
 			if (tmp_cost != *(candidateBuffer->fast_cost_ptr))
 				printf("STOP_MED_COST \n");
         #endif
@@ -5130,7 +5181,12 @@ void AV1PerformFullLoop(
 #endif
 #endif
 #else
+#if  MD_CLASS
+	uint32_t       candidateIndex;
+#else
     uint8_t       candidateIndex;
+#endif
+
 #endif
 
     uint64_t      y_full_distortion[DIST_CALC_TOTAL];
@@ -5902,7 +5958,6 @@ void check_redundant_block(const BlockGeom * blk_geom, ModeDecisionContext *cont
 #endif
 
 #if PREDICT_NSQ_SHAPE 
-
 // SAHPE  NONE, H, V, HA, HB, VA, VB, H4, V4, S
 // DEPTH  0-6 128x128-4x4 
 uint8_t enable_ol_per_depth[NUMBER_OF_DEPTH] = {1,1,1,1,1,1}; // 0: OL application OFF; 1: OL application ON
@@ -5936,11 +5991,23 @@ EbBool allowed_ns_cu(
             if (enable_ol_per_depth[depth]) {
                 uint8_t depth_rank = context_ptr->sb_ptr->depth_ranking[depth];
                 uint8_t shape_rank = context_ptr->open_loop_block_rank;
+#if ADP_BQ
+               uint8_t depth_rank_th_tab[SB_NSQ_LEVEL_0_DEPTH_MODE] = { 6, 4,3,2,2,2,2 };
+               uint8_t shape_rank_th_tab[SB_NSQ_LEVEL_0_DEPTH_MODE] = { 10,5,4,3,2,2,2 };
+               uint8_t nsq_mode_idx = context_ptr->nsq_mode_idx;
+
+                if (depth_rank >= depth_rank_th_tab[nsq_mode_idx]) {
+                    if (shape_rank >= shape_rank_th_tab[nsq_mode_idx]) {
+                        ret = 0;
+                    }
+                }
+#else
                 if (depth_rank >= depth_rank_th[depth]) {
                     if (shape_rank >= shape_rank_th[depth]) {
                         ret = 0;
                     }
                 }
+#endif
             }
         } 
 #else
@@ -6905,12 +6972,28 @@ void md_encode_block(
     CodingUnit *  cu_ptr = context_ptr->cu_ptr;
     candidate_buffer_ptr_array = &(candidateBufferPtrArrayBase[0]);
 #if PREDICT_NSQ_SHAPE
+ #if ADP_BQ 
+    // Derive is_nsq_table_used
+    EbBool is_nsq_table_used;
+    if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE)
+        is_nsq_table_used = (picture_control_set_ptr->parent_pcs_ptr->sb_depth_mode_array[lcuAddr] == SB_NSQ_LEVEL_6_DEPTH_MODE) ?
+        EB_FALSE :
+        EB_TRUE;
+    else
+        is_nsq_table_used = (picture_control_set_ptr->slice_type == !I_SLICE &&
+            picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE &&
+            picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
+            picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL &&
+            picture_control_set_ptr->enc_mode != ENC_M0) ? EB_TRUE : EB_FALSE;
+#else
     EbBool is_nsq_table_used = (picture_control_set_ptr->slice_type == !I_SLICE &&
         picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL) ? EB_TRUE : EB_FALSE;
+#endif
     context_ptr->open_loop_block_rank = open_loop_block_rank;
     context_ptr->early_split_flag = early_split_flag;
+    context_ptr->nsq_mode_idx = picture_control_set_ptr->parent_pcs_ptr->sb_depth_mode_array[lcuAddr] - 1;
 #else
 #if ADP_BQ 
     // Derive is_nsq_table_used
@@ -6947,7 +7030,7 @@ void md_encode_block(
 #endif
     uint8_t                            is_complete_sb = sequence_control_set_ptr->sb_geom[lcuAddr].is_complete_sb;
 
-#if ADP_BQ // --
+#if ADP_BQ && !PREDICT_NSQ_SHAPE
     uint8_t partitioning_to_nsq_max_shapes[SB_NSQ_LEVEL_0_DEPTH_MODE] = { 6,5,4,3,2,1,0 };
     uint8_t nsq_max_shapes_md = (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE) ?
         partitioning_to_nsq_max_shapes[picture_control_set_ptr->parent_pcs_ptr->sb_depth_mode_array[lcuAddr] - 1] :
@@ -6957,7 +7040,6 @@ void md_encode_block(
 
     if (allowed_ns_cu(is_nsq_table_used, nsq_max_shapes_md, context_ptr, is_complete_sb))
 #else
-
     if (allowed_ns_cu(
         is_nsq_table_used, picture_control_set_ptr->parent_pcs_ptr->nsq_max_shapes_md, context_ptr, is_complete_sb))
 #endif
@@ -7208,11 +7290,12 @@ void md_encode_block(
 		uint32_t buffer_count_for_curr_class;
 		uint32_t buffer_total_count = 0;
 		context_ptr->full_recon_search_count = 0;
+#if ! FAST_LOOP_OPT
 		uint8_t bypass_stage1 = 1;
 		
 		if (bypass_stage1)
 		    memcpy(context_ptr->fast1_cand_count, context_ptr->full_cand_count, CAND_CLASS_TOTAL * sizeof(uint32_t));
-
+#endif
 		context_ptr->md_stage = MD_STAGE_0;
 		for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
 
@@ -7288,8 +7371,11 @@ void md_encode_block(
 			//number of next level candidates could not exceed number of curr level candidates
 			context_ptr->full_cand_count[cand_class_it] = MIN(context_ptr->fast1_cand_count[cand_class_it], context_ptr->full_cand_count[cand_class_it]);
 			context_ptr->full_recon_search_count += context_ptr->full_cand_count[cand_class_it];
-
+#if FAST_LOOP_OPT
+			if (context_ptr->bypass_stage1[cand_class_it] == 0 && context_ptr->fast1_cand_count[cand_class_it] > 0 && context_ptr->full_cand_count[cand_class_it] > 0) {
+#else
 			if (bypass_stage1 == 0 && context_ptr->fast1_cand_count[cand_class_it] > 0 && context_ptr->full_cand_count[cand_class_it] > 0) {
+#endif
 
 				//Input: fast1_cand_count[cand_class_it]  Output:  full_cand_count[cand_class_it]
 				fast_loop_stage1(

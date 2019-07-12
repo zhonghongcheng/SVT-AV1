@@ -2511,12 +2511,37 @@ void* mode_decision_configuration_kernel(void *input_ptr)
 
 #if ADP_BQ
             if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE) {
+#if PREDICT_NSQ_SHAPE
+                {
+                    // SB Constants
+                    uint8_t sb_sz = (uint8_t)sequence_control_set_ptr->sb_size_pix;
+                    uint8_t lcuSizeLog2 = (uint8_t)Log2f(sb_sz);
+
+                    uint32_t picture_height_in_sb = (sequence_control_set_ptr->seq_header.max_frame_height + sb_sz - 1) >> lcuSizeLog2;
+                    uint32_t picture_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sb_sz - 1) >> lcuSizeLog2;
+                    for (uint32_t y_lcu_index = 0; y_lcu_index < picture_height_in_sb; ++y_lcu_index) {
+                        for (uint32_t x_lcu_index = 0; x_lcu_index < picture_width_in_sb; ++x_lcu_index) {
+
+                            uint32_t sb_index = (uint16_t)(y_lcu_index * picture_width_in_sb + x_lcu_index);
+                            LargestCodingUnit  *sb_ptr = picture_control_set_ptr->sb_ptr_array[sb_index];
+                            sb_ptr->origin_x = x_lcu_index << lcuSizeLog2;
+                            sb_ptr->origin_y = y_lcu_index << lcuSizeLog2;
+                            sb_nsq_ranking_and_forward_all_blocks_to_md(
+                                sequence_control_set_ptr,
+                                picture_control_set_ptr,
+                                context_ptr,
+                                sb_index);
+                        }
+                    }
+                }
+#else
                 for (int sb_index = 0; sb_index < picture_control_set_ptr->sb_total_count; ++sb_index) {
                     sb_forward_all_blocks_to_md(
                         sequence_control_set_ptr,
                         picture_control_set_ptr,
                         sb_index);
                 }
+#endif
             }
             else {
 #endif
@@ -2577,7 +2602,7 @@ void* mode_decision_configuration_kernel(void *input_ptr)
         else {   // (picture_control_set_ptr->parent_pcs_ptr->mdMode == PICT_BDP_DEPTH_MODE || picture_control_set_ptr->parent_pcs_ptr->mdMode == PICT_LIGHT_BDP_DEPTH_MODE )
             picture_control_set_ptr->parent_pcs_ptr->average_qp = (uint8_t)picture_control_set_ptr->parent_pcs_ptr->picture_qp;
         }
-#if PREDICT_NSQ_SHAPE
+#if PREDICT_NSQ_SHAPE && !ADP_BQ
         {
             // SB Constants
             uint8_t sb_sz = (uint8_t)sequence_control_set_ptr->sb_size_pix;
