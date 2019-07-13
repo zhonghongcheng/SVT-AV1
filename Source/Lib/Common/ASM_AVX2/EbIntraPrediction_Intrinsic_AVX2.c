@@ -6320,7 +6320,7 @@ static void dr_prediction_z2_Nx4_avx2(int32_t N, uint8_t *dst, ptrdiff_t stride,
             base_y_c128 = _mm_srai_epi32(y_c128, frac_bits_y);
             mask128 = _mm_cmpgt_epi32(min_base_y128, base_y_c128);
             base_y_c128 = _mm_andnot_si128(mask128, base_y_c128);
-            _mm_store_si128((__m128i *)base_y_c, base_y_c128);
+            _mm_storeu_si128((__m128i *)base_y_c, base_y_c128);
 
             a0_y = _mm256_castsi128_si256(
                 _mm_setr_epi32(left[base_y_c[0]], left[base_y_c[1]],
@@ -6457,7 +6457,7 @@ static void dr_prediction_z2_Nx8_avx2(int32_t N, uint8_t *dst, ptrdiff_t stride,
             base_y_c256 = _mm256_srai_epi32(y_c256, frac_bits_y);
             mask256 = _mm256_cmpgt_epi32(min_base_y256, base_y_c256);
             base_y_c256 = _mm256_andnot_si256(mask256, base_y_c256);
-            _mm256_store_si256((__m256i *)base_y_c, base_y_c256);
+            _mm256_storeu_si256((__m256i *)base_y_c, base_y_c256);
 
             a0_y = _mm256_setr_epi32(left[base_y_c[0]], left[base_y_c[1]],
                 left[base_y_c[2]], left[base_y_c[3]],
@@ -6627,14 +6627,14 @@ static void dr_prediction_z2_HxW_avx2(int32_t H, int32_t W, uint8_t *dst,
                 base_y_c256 = _mm256_srai_epi32(y_c256, frac_bits_y);
                 mask256 = _mm256_cmpgt_epi32(min_base_y256, base_y_c256);
                 base_y_c256 = _mm256_andnot_si256(mask256, base_y_c256);
-                _mm256_store_si256((__m256i *)base_y_c, base_y_c256);
+                _mm256_storeu_si256((__m256i *)base_y_c, base_y_c256);
                 c256 = _mm256_setr_epi32(9 + j, 10 + j, 11 + j, 12 + j, 13 + j, 14 + j,
                     15 + j, 16 + j);
                 y_c_1_256 = _mm256_sub_epi32(r6, _mm256_mullo_epi32(c256, dy256));
                 base_y_c256 = _mm256_srai_epi32(y_c_1_256, frac_bits_y);
                 mask256 = _mm256_cmpgt_epi32(min_base_y256, base_y_c256);
                 base_y_c256 = _mm256_andnot_si256(mask256, base_y_c256);
-                _mm256_store_si256((__m256i *)(base_y_c + 8), base_y_c256);
+                _mm256_storeu_si256((__m256i *)(base_y_c + 8), base_y_c256);
 
                 a0_y = _mm256_cvtepu8_epi32(_mm_setr_epi8(
                     left[base_y_c[0]], left[base_y_c[1]], left[base_y_c[2]],
@@ -9253,7 +9253,7 @@ static void highbd_dr_prediction_z2_Nx4_avx2(
             base_y_c128 = _mm_srai_epi32(y_c128, frac_bits_y);
             mask128 = _mm_cmpgt_epi32(min_base_y128, base_y_c128);
             base_y_c128 = _mm_andnot_si128(mask128, base_y_c128);
-            _mm_store_si128((__m128i *)base_y_c, base_y_c128);
+            _mm_storeu_si128((__m128i *)base_y_c, base_y_c128);
 
             a0_y = _mm256_castsi128_si256(
                 _mm_setr_epi32(left[base_y_c[0]], left[base_y_c[1]],
@@ -9403,7 +9403,7 @@ static void highbd_dr_prediction_z2_Nx8_avx2(
             base_y_c256 = _mm256_srai_epi32(y_c256, frac_bits_y);
             mask256 = _mm256_cmpgt_epi32(min_base_y256, base_y_c256);
             base_y_c256 = _mm256_andnot_si256(mask256, base_y_c256);
-            _mm256_store_si256((__m256i *)base_y_c, base_y_c256);
+            _mm256_storeu_si256((__m256i *)base_y_c, base_y_c256);
 
             a0_y = _mm256_cvtepu16_epi32(_mm_setr_epi16(
                 left[base_y_c[0]], left[base_y_c[1]], left[base_y_c[2]],
@@ -9572,14 +9572,14 @@ static void highbd_dr_prediction_z2_HxW_avx2(
                 base_y_c256 = _mm256_srai_epi32(y_c256, frac_bits_y);
                 mask256 = _mm256_cmpgt_epi32(min_base_y256, base_y_c256);
                 base_y_c256 = _mm256_andnot_si256(mask256, base_y_c256);
-                _mm256_store_si256((__m256i *)base_y_c, base_y_c256);
+                _mm256_storeu_si256((__m256i *)base_y_c, base_y_c256);
                 c256 = _mm256_setr_epi32(9 + j, 10 + j, 11 + j, 12 + j, 13 + j, 14 + j,
                     15 + j, 16 + j);
                 y_c_1_256 = _mm256_sub_epi32(r6, _mm256_mullo_epi32(c256, dy256));
                 base_y_c256 = _mm256_srai_epi32(y_c_1_256, frac_bits_y);
                 mask256 = _mm256_cmpgt_epi32(min_base_y256, base_y_c256);
                 base_y_c256 = _mm256_andnot_si256(mask256, base_y_c256);
-                _mm256_store_si256((__m256i *)(base_y_c + 8), base_y_c256);
+                _mm256_storeu_si256((__m256i *)(base_y_c + 8), base_y_c256);
 
                 a0_y = _mm256_cvtepu16_epi32(_mm_setr_epi16(
                     left[base_y_c[0]], left[base_y_c[1]], left[base_y_c[2]],
@@ -10144,7 +10144,7 @@ void aom_paeth_predictor_16x8_avx2(uint8_t *dst, ptrdiff_t stride,
     const __m256i l16 = _mm256_shuffle_epi8(l, rep);
     const __m128i row = paeth_16x1_pred(&l16, &top, &tl16);
 
-    _mm_store_si128((__m128i *)dst, row);
+    _mm_storeu_si128((__m128i *)dst, row);
     dst += stride;
     rep = _mm256_add_epi16(rep, one);
   }
@@ -10168,7 +10168,7 @@ void aom_paeth_predictor_16x16_avx2(uint8_t *dst, ptrdiff_t stride,
     const __m256i l16 = _mm256_shuffle_epi8(l, rep);
     const __m128i row = paeth_16x1_pred(&l16, &top, &tl16);
 
-    _mm_store_si128((__m128i *)dst, row);
+    _mm_storeu_si128((__m128i *)dst, row);
     dst += stride;
     rep = _mm256_add_epi16(rep, one);
   }
@@ -10187,7 +10187,7 @@ void aom_paeth_predictor_16x32_avx2(uint8_t *dst, ptrdiff_t stride,
     const __m256i l16 = _mm256_shuffle_epi8(l, rep);
     const __m128i row = paeth_16x1_pred(&l16, &top, &tl16);
 
-    _mm_store_si128((__m128i *)dst, row);
+    _mm_storeu_si128((__m128i *)dst, row);
     dst += stride;
     rep = _mm256_add_epi16(rep, one);
   }
@@ -10198,7 +10198,7 @@ void aom_paeth_predictor_16x32_avx2(uint8_t *dst, ptrdiff_t stride,
     const __m256i l16 = _mm256_shuffle_epi8(l, rep);
     const __m128i row = paeth_16x1_pred(&l16, &top, &tl16);
 
-    _mm_store_si128((__m128i *)dst, row);
+    _mm_storeu_si128((__m128i *)dst, row);
     dst += stride;
     rep = _mm256_add_epi16(rep, one);
   }
@@ -10217,7 +10217,7 @@ void aom_paeth_predictor_16x64_avx2(uint8_t *dst, ptrdiff_t stride,
       const __m256i l16 = _mm256_shuffle_epi8(l, rep);
       const __m128i row = paeth_16x1_pred(&l16, &top, &tl16);
 
-      _mm_store_si128((__m128i *)dst, row);
+      _mm_storeu_si128((__m128i *)dst, row);
       dst += stride;
       rep = _mm256_add_epi16(rep, one);
     }
@@ -10277,8 +10277,8 @@ void aom_paeth_predictor_32x32_avx2(uint8_t *dst, ptrdiff_t stride,
     const __m128i r0 = paeth_16x1_pred(&l16, &t0, &tl);
     const __m128i r1 = paeth_16x1_pred(&l16, &t1, &tl);
 
-    _mm_store_si128((__m128i *)dst, r0);
-    _mm_store_si128((__m128i *)(dst + 16), r1);
+    _mm_storeu_si128((__m128i *)dst, r0);
+    _mm_storeu_si128((__m128i *)(dst + 16), r1);
 
     dst += stride;
     rep = _mm256_add_epi16(rep, one);
@@ -10292,8 +10292,8 @@ void aom_paeth_predictor_32x32_avx2(uint8_t *dst, ptrdiff_t stride,
     const __m128i r0 = paeth_16x1_pred(&l16, &t0, &tl);
     const __m128i r1 = paeth_16x1_pred(&l16, &t1, &tl);
 
-    _mm_store_si128((__m128i *)dst, r0);
-    _mm_store_si128((__m128i *)(dst + 16), r1);
+    _mm_storeu_si128((__m128i *)dst, r0);
+    _mm_storeu_si128((__m128i *)(dst + 16), r1);
 
     dst += stride;
     rep = _mm256_add_epi16(rep, one);
@@ -10317,8 +10317,8 @@ void aom_paeth_predictor_32x64_avx2(uint8_t *dst, ptrdiff_t stride,
       const __m128i r0 = paeth_16x1_pred(&l16, &t0, &tl);
       const __m128i r1 = paeth_16x1_pred(&l16, &t1, &tl);
 
-      _mm_store_si128((__m128i *)dst, r0);
-      _mm_store_si128((__m128i *)(dst + 16), r1);
+      _mm_storeu_si128((__m128i *)dst, r0);
+      _mm_storeu_si128((__m128i *)(dst + 16), r1);
 
       dst += stride;
       rep = _mm256_add_epi16(rep, one);
@@ -10347,10 +10347,10 @@ void aom_paeth_predictor_64x32_avx2(uint8_t *dst, ptrdiff_t stride,
       const __m128i r2 = paeth_16x1_pred(&l16, &t2, &tl);
       const __m128i r3 = paeth_16x1_pred(&l16, &t3, &tl);
 
-      _mm_store_si128((__m128i *)dst, r0);
-      _mm_store_si128((__m128i *)(dst + 16), r1);
-      _mm_store_si128((__m128i *)(dst + 32), r2);
-      _mm_store_si128((__m128i *)(dst + 48), r3);
+      _mm_storeu_si128((__m128i *)dst, r0);
+      _mm_storeu_si128((__m128i *)(dst + 16), r1);
+      _mm_storeu_si128((__m128i *)(dst + 32), r2);
+      _mm_storeu_si128((__m128i *)(dst + 48), r3);
 
       dst += stride;
       rep = _mm256_add_epi16(rep, one);
@@ -10379,10 +10379,10 @@ void aom_paeth_predictor_64x64_avx2(uint8_t *dst, ptrdiff_t stride,
       const __m128i r2 = paeth_16x1_pred(&l16, &t2, &tl);
       const __m128i r3 = paeth_16x1_pred(&l16, &t3, &tl);
 
-      _mm_store_si128((__m128i *)dst, r0);
-      _mm_store_si128((__m128i *)(dst + 16), r1);
-      _mm_store_si128((__m128i *)(dst + 32), r2);
-      _mm_store_si128((__m128i *)(dst + 48), r3);
+      _mm_storeu_si128((__m128i *)dst, r0);
+      _mm_storeu_si128((__m128i *)(dst + 16), r1);
+      _mm_storeu_si128((__m128i *)(dst + 32), r2);
+      _mm_storeu_si128((__m128i *)(dst + 48), r3);
 
       dst += stride;
       rep = _mm256_add_epi16(rep, one);
@@ -10410,10 +10410,10 @@ void aom_paeth_predictor_64x16_avx2(uint8_t *dst, ptrdiff_t stride,
     const __m128i r2 = paeth_16x1_pred(&l16, &t2, &tl);
     const __m128i r3 = paeth_16x1_pred(&l16, &t3, &tl);
 
-    _mm_store_si128((__m128i *)dst, r0);
-    _mm_store_si128((__m128i *)(dst + 16), r1);
-    _mm_store_si128((__m128i *)(dst + 32), r2);
-    _mm_store_si128((__m128i *)(dst + 48), r3);
+    _mm_storeu_si128((__m128i *)dst, r0);
+    _mm_storeu_si128((__m128i *)(dst + 16), r1);
+    _mm_storeu_si128((__m128i *)(dst + 32), r2);
+    _mm_storeu_si128((__m128i *)(dst + 48), r3);
 
     dst += stride;
     rep = _mm256_add_epi16(rep, one);
