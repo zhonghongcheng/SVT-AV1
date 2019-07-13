@@ -1757,11 +1757,15 @@ void ProductMdFastPuPrediction(
     // Prediction
     context_ptr->skip_interpolation_search = picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? 0 : 1;
 
+#if FIRST_FULL_LOOP_INTERPOLATION_SEARCH
+    if (context_ptr->md_staging_mode == 1 && (context_ptr->md_stage == MD_STAGE_0 || context_ptr->md_stage == MD_STAGE_1))
+        context_ptr->skip_interpolation_search = 1;
+#else
 #if FAST_LOOP_OPT
 	if (context_ptr->md_staging_mode == 1 && context_ptr->md_stage == MD_STAGE_0)
 		context_ptr->skip_interpolation_search = 1;
 #endif
-
+#endif
     candidateBuffer->candidate_ptr->interp_filters = 0;
 
     ProductPredictionFunTable[candidateBuffer->candidate_ptr->use_intrabc ? INTER_MODE : modeType](
@@ -2240,7 +2244,11 @@ void set_md_stage_counts(
 
 
 	if (picture_control_set_ptr->enc_mode == ENC_M0)
+#if FULL_LOOP_SPLIT
+        context_ptr->md_staging_mode = 1; //use fast-loop0->fast-loop1->full-loop0->full-loop1
+#else
 		context_ptr->md_staging_mode = 1; //use fast-loop0->fast-loop1->full-loop
+#endif
 	else
 		context_ptr->md_staging_mode = 0; //use fast-loop0->full-loop
 
@@ -5541,6 +5549,9 @@ void md_stage_2(
 
         //TOADD
 #endif
+#if FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
+        if (target_class != CAND_CLASS_0) {
+#endif
         //Cb Residual
         if (context_ptr->blk_geom->has_uv && context_ptr->chroma_level <= CHROMA_MODE_1) {
             ResidualKernel(
@@ -5564,7 +5575,9 @@ void md_stage_2(
                 context_ptr->blk_geom->bwidth_uv,
                 context_ptr->blk_geom->bheight_uv);
         }
-
+#if FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
+        }
+#endif
         // initialize luma CBF
 
         candidate_ptr->y_has_coeff = 0;
@@ -5714,7 +5727,7 @@ void md_stage_2(
         }
 #endif
 #if FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
-        if (0) {
+        if (target_class != CAND_CLASS_0) {
 #endif
             if (candidate_ptr->type == INTRA_MODE && candidateBuffer->candidate_ptr->intra_chroma_mode == UV_CFL_PRED) {
                 // If mode is CFL:
@@ -5752,7 +5765,7 @@ void md_stage_2(
         uint8_t cb_qp = context_ptr->qp;
         uint8_t cr_qp = context_ptr->qp;
 #if FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
-        if (0) {
+        if (target_class != CAND_CLASS_0) {
 #endif
             if (context_ptr->blk_geom->has_uv && context_ptr->chroma_level <= CHROMA_MODE_1) {
                 full_loop_r(
@@ -6098,6 +6111,7 @@ void AV1PerformFullLoop(
         candidate_ptr->transform_type[2] = DCT_DCT;
         candidate_ptr->transform_type[3] = DCT_DCT;
 #endif
+#if !FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
 #if FULL_LOOP_SPLIT
         // Re-do Prediction for CHROMA @ MD_STAGE_3 if CFL previously evaluated @ MD_STAGE_2 to revert back to the oiginal predicted CHROMA samples 
         if (context_ptr->chroma_md_stage_2[candidate_ptr->cand_class]) {
@@ -6113,6 +6127,7 @@ void AV1PerformFullLoop(
                     asm_type);
             }
         }
+#endif
 #endif
 #if !ATB_MD
         uint8_t  tx_search_skip_fag = picture_control_set_ptr->parent_pcs_ptr->tx_search_level == TX_SEARCH_FULL_LOOP ? get_skip_tx_search_flag(
@@ -6177,6 +6192,18 @@ void AV1PerformFullLoop(
         }
         else {
             // Transform partitioning free patch (except the 128x128 case)
+#if FIRST_FULL_LOOP_INTERPOLATION_SEARCH 
+            if (candidate_ptr->type != INTRA_MODE) {
+                if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level == IT_SEARCH_FULL_LOOP || context_ptr->md_staging_mode == 1) {
+                    context_ptr->skip_interpolation_search = (best_fastLoop_candidate_index > NFL_IT_TH && context_ptr->md_staging_mode == 0) ? 1 : 0;
+                    ProductPredictionFunTable[candidate_ptr->type](
+                        context_ptr,
+                        picture_control_set_ptr,
+                        candidateBuffer,
+                        asm_type);
+                }
+            }
+#else
             if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level == IT_SEARCH_FULL_LOOP) {
                 context_ptr->skip_interpolation_search = 0;
                 context_ptr->skip_interpolation_search = (best_fastLoop_candidate_index > NFL_IT_TH) ? 1 : context_ptr->skip_interpolation_search;
@@ -6188,7 +6215,7 @@ void AV1PerformFullLoop(
                         asm_type);
                 }
             }
-
+#endif
             //Y Residual
             ResidualKernel(
                 &(input_picture_ptr->buffer_y[inputOriginIndex]),
@@ -8184,24 +8211,37 @@ void md_encode_block(
 
         // Derive bypass_stage2
         context_ptr->bypass_stage2[CAND_CLASS_0] = EB_FALSE;
+#if FIRST_FULL_LOOP_INTERPOLATION_SEARCH 
+        context_ptr->bypass_stage2[CAND_CLASS_1] = EB_FALSE;
+        context_ptr->bypass_stage2[CAND_CLASS_2] = EB_FALSE;
+        context_ptr->bypass_stage2[CAND_CLASS_3] = EB_FALSE;
+#else
         context_ptr->bypass_stage2[CAND_CLASS_1] = EB_TRUE;
         context_ptr->bypass_stage2[CAND_CLASS_2] = EB_TRUE;
         context_ptr->bypass_stage2[CAND_CLASS_3] = EB_TRUE;
-
+#endif
 
         // Derive nfl @ md_stage_3
-        context_ptr->full_cand_count_md_stage_3[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0] : 1;
+#if MD_STAGE_3_NFL_BDRATE
+        context_ptr->full_cand_count_md_stage_3[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0] : 10;
+#else
+        context_ptr->full_cand_count_md_stage_3[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0] : 4;
+#endif
         context_ptr->full_cand_count_md_stage_3[CAND_CLASS_1] = context_ptr->bypass_stage2[CAND_CLASS_1] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_1] : 1;
         context_ptr->full_cand_count_md_stage_3[CAND_CLASS_2] = context_ptr->bypass_stage2[CAND_CLASS_2] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_2] : 1;
         context_ptr->full_cand_count_md_stage_3[CAND_CLASS_3] = context_ptr->bypass_stage2[CAND_CLASS_3] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_3] : 1;
 
         if (picture_control_set_ptr->slice_type == I_SLICE) {
-            context_ptr->full_cand_count_md_stage_3[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0] : 1;
+#if MD_STAGE_3_NFL_BDRATE
+            context_ptr->full_cand_count_md_stage_3[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0] : 10;
+#else
+            context_ptr->full_cand_count_md_stage_3[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0] : 4;
+#endif
             context_ptr->full_cand_count_md_stage_3[CAND_CLASS_1] = 0;
             context_ptr->full_cand_count_md_stage_3[CAND_CLASS_2] = 0;
             context_ptr->full_cand_count_md_stage_3[CAND_CLASS_3] = 0;
         }
-
+#if !FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
         context_ptr->chroma_md_stage_2[CAND_CLASS_0] = EB_TRUE;
         context_ptr->chroma_md_stage_2[CAND_CLASS_1] = EB_TRUE;
         context_ptr->chroma_md_stage_2[CAND_CLASS_2] = EB_TRUE;
@@ -8218,7 +8258,7 @@ void md_encode_block(
         uint64_t fast_chroma_rate_array[MODE_DECISION_CANDIDATE_MAX_COUNT];
         EbBool is_directional_chroma_mode_flag_array[MODE_DECISION_CANDIDATE_MAX_COUNT];
         int32_t angle_delta_array[MODE_DECISION_CANDIDATE_MAX_COUNT];
-
+#endif
 
         // 1st Full-Loop
         context_ptr->md_stage = MD_STAGE_2;
@@ -8232,6 +8272,8 @@ void md_encode_block(
             context_ptr->full_recon_search_count += context_ptr->full_cand_count_md_stage_3[cand_class_it];
 
             if (context_ptr->bypass_stage2[cand_class_it] == EB_FALSE && context_ptr->full_cand_count_md_stage_2[cand_class_it] > 0 && context_ptr->full_cand_count_md_stage_3[cand_class_it] > 0) {
+
+#if !FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
                 for (fullLoopCandidateIndex = 0; fullLoopCandidateIndex < context_ptr->full_cand_count_md_stage_2[cand_class_it]; ++fullLoopCandidateIndex) {
                     candidateIndex = context_ptr->cand_buff_indices[cand_class_it][fullLoopCandidateIndex];
                     candidateBuffer = candidate_buffer_ptr_array[candidateIndex];
@@ -8244,7 +8286,7 @@ void md_encode_block(
                         angle_delta_array[candidateIndex] = candidate_ptr->angle_delta[PLANE_TYPE_UV];
                     }
                 }
-
+#endif
                 md_stage_2(
                     cand_class_it,
                     picture_control_set_ptr,
@@ -8259,7 +8301,7 @@ void md_encode_block(
                     context_ptr->full_recon_search_count,
                     ref_fast_cost,
                     asm_type);
-
+#if !FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
                 // Reset intra_chroma_mode
                 for (fullLoopCandidateIndex = 0; fullLoopCandidateIndex < context_ptr->full_cand_count_md_stage_2[cand_class_it]; ++fullLoopCandidateIndex) {
                     candidateIndex = context_ptr->cand_buff_indices[cand_class_it][fullLoopCandidateIndex];
@@ -8273,7 +8315,7 @@ void md_encode_block(
                         candidate_ptr->angle_delta[PLANE_TYPE_UV] = angle_delta_array[candidateIndex];
                     }
                 }
-
+#endif
                 // Sort the candidates of the target class based on the 1st full loop cost
 
                 //sort the new set of candidates

@@ -387,7 +387,9 @@ extern "C" {
     uint8_t nsq_mode_idx;
 #endif
 #if FULL_LOOP_SPLIT
+#if !FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
     EbBool chroma_md_stage_2[CAND_CLASS_TOTAL];
+#endif
     uint64_t full_cost_per_class[MAX_NFL];
     uint32_t full_index_per_class[CAND_CLASS_TOTAL][MAX_NFL];
     uint8_t bypass_stage2[CAND_CLASS_TOTAL];

@@ -41,14 +41,14 @@ extern "C" {
 #define ME_MVP_DEVIATION                0 // Skip Predictive ME Search if significant ME-to-MVP difference
 #define USE_M0_HME_ME_SETTINGS          0 // To enable when running ME related experiments in context of non-M0
 
-#define FULL_LOOP_SPLIT                 0
+#define FULL_LOOP_SPLIT                 1
 #if FULL_LOOP_SPLIT
-#define FIRST_FULL_LOOP_CHROMA_BLIND           0
-#define FIRST_FULL_LOOP_ATB_OFF                0
-#define FIRST_FULL_LOOP_TX_SEARCH_OFF          0
+#define FIRST_FULL_LOOP_CHROMA_BLIND           1
+#define FIRST_FULL_LOOP_ATB_OFF                1
+#define FIRST_FULL_LOOP_TX_SEARCH_OFF          1
 #define FIRST_FULL_LOOP_INTERPOLATION_SEARCH   0
 #endif
-#define MODIFIED_ENCODER                0
+#define MODIFIED_ENCODER                1
 #if MODIFIED_ENCODER      
 #define SHUT_TX_SIZE_RATE               1 // To fix a bug @ tx size rate estimation 
 #define VALGRIND_FIX                    1 // Fixed a valgrind error
@@ -367,8 +367,11 @@ typedef enum CAND_CLASS {
 #define  REFACTOR_FAST_LOOP           1 // Lossless
 #define  FAST_LOOP_OPT                1 // Use fast loop stages to speed up encoder
 #define  COMP_OPT                     1 // cut some compound injection/modes
-#define  FULL_COMPOUND_BDRATE         0 // enable to run compound in full mode for best bd rate
-
+#define  BDR_MODE                     1 // enable to run for best bd rate
+#if BDR_MODE
+#define  FULL_COMPOUND_BDRATE         1 // enable to run compound in full mode for best bd rate
+#define  MD_STAGE_3_NFL_BDRATE        1 // 10 NFL @ md_stage_3
+#endif
 
 typedef enum MD_STAGE {
 	MD_STAGE_0,
