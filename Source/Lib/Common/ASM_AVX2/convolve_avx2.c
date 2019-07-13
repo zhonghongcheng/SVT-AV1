@@ -899,8 +899,8 @@ static INLINE void subtract32_avx2(int16_t *diff_ptr, const uint8_t *src_ptr,
   __m256i p_1 = _mm256_cvtepu8_epi16(_mm256_extracti128_si256(p, 1));
   const __m256i d_0 = _mm256_sub_epi16(s_0, p_0);
   const __m256i d_1 = _mm256_sub_epi16(s_1, p_1);
-  _mm256_store_si256((__m256i *)(diff_ptr), d_0);
-  _mm256_store_si256((__m256i *)(diff_ptr + 16), d_1);
+  _mm256_storeu_si256((__m256i *)(diff_ptr), d_0);
+  _mm256_storeu_si256((__m256i *)(diff_ptr + 16), d_1);
 }
 
 
@@ -913,7 +913,7 @@ static INLINE void aom_subtract_block_16xn_avx2(
     __m256i s_0 = _mm256_cvtepu8_epi16(s);
     __m256i p_0 = _mm256_cvtepu8_epi16(p);
     const __m256i d_0 = _mm256_sub_epi16(s_0, p_0);
-    _mm256_store_si256((__m256i *)(diff_ptr), d_0);
+    _mm256_storeu_si256((__m256i *)(diff_ptr), d_0);
     src_ptr += src_stride;
     pred_ptr += pred_stride;
     diff_ptr += diff_stride;
@@ -1983,10 +1983,10 @@ void av1_wedge_compute_delta_squares_avx2(int16_t *d, const int16_t *a,
     const __m256i v_r2_w = _mm256_packs_epi32(v_r2l_w, v_r2h_w);
     const __m256i v_r3_w = _mm256_packs_epi32(v_r3l_w, v_r3h_w);
 
-    _mm256_store_si256((__m256i *)(d), v_r0_w);
-    _mm256_store_si256((__m256i *)(d + 16), v_r1_w);
-    _mm256_store_si256((__m256i *)(d + 32), v_r2_w);
-    _mm256_store_si256((__m256i *)(d + 48), v_r3_w);
+    _mm256_storeu_si256((__m256i *)(d), v_r0_w);
+    _mm256_storeu_si256((__m256i *)(d + 16), v_r1_w);
+    _mm256_storeu_si256((__m256i *)(d + 32), v_r2_w);
+    _mm256_storeu_si256((__m256i *)(d + 48), v_r3_w);
 
     a += 64;
     b += 64;

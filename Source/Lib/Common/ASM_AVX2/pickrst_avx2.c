@@ -225,7 +225,7 @@ static INLINE void sub_avg_block_avx2(const uint8_t *src,
             const __m128i s = _mm_loadu_si128((__m128i *)(src + j));
             const __m256i ss = _mm256_cvtepu8_epi16(s);
             const __m256i d = _mm256_sub_epi16(ss, a);
-            _mm256_store_si256((__m256i *)(dst + j), d);
+            _mm256_storeu_si256((__m256i *)(dst + j), d);
             j += 16;
         } while (j < width);
 
@@ -250,7 +250,7 @@ static INLINE void sub_avg_block_highbd_avx2(const uint16_t *src,
         do {
             const __m256i s = _mm256_loadu_si256((__m256i *)(src + j));
             const __m256i d = _mm256_sub_epi16(s, a);
-            _mm256_store_si256((__m256i *)(dst + j), d);
+            _mm256_storeu_si256((__m256i *)(dst + j), d);
             j += 16;
         } while (j < width);
 

@@ -97,13 +97,13 @@ void av1_highbd_jnt_convolve_2d_copy_avx2(
                         _mm256_packus_epi32(round_result_lo, round_result_hi);
                     const __m256i res_clip = _mm256_min_epi16(res_16b, clip_pixel_to_bd);
 
-                    _mm256_store_si256((__m256i *)(&dst0[i * dst_stride0 + j]), res_clip);
+                    _mm256_storeu_si256((__m256i *)(&dst0[i * dst_stride0 + j]), res_clip);
                 }
                 else {
                     const __m256i res_unsigned_16b =
                         _mm256_adds_epu16(res, offset_const_16b);
 
-                    _mm256_store_si256((__m256i *)(&dst[i * dst_stride + j]),
+                    _mm256_storeu_si256((__m256i *)(&dst[i * dst_stride + j]),
                         res_unsigned_16b);
                 }
             }
@@ -318,7 +318,7 @@ void av1_highbd_jnt_convolve_2d_avx2(
                 __m256i res_odd1 = _mm256_packs_epi32(res_odd, res_odd);
                 __m256i res = _mm256_unpacklo_epi16(res_even1, res_odd1);
 
-                _mm256_store_si256((__m256i *)&im_block[i * im_stride], res);
+                _mm256_storeu_si256((__m256i *)&im_block[i * im_stride], res);
             }
         }
 

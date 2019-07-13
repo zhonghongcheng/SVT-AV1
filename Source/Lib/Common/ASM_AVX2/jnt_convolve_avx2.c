@@ -404,7 +404,7 @@ void av1_jnt_convolve_2d_avx2(const uint8_t *src, int32_t src_stride, uint8_t *d
                 res = _mm256_sra_epi16(_mm256_add_epi16(res, round_const_h),
                     round_shift_h);
 
-                _mm256_store_si256((__m256i *)&im_block[i * im_stride], res);
+                _mm256_storeu_si256((__m256i *)&im_block[i * im_stride], res);
             }
         }
 

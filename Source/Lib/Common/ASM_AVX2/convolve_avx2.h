@@ -131,7 +131,7 @@ static INLINE void add_store_aligned_256(ConvBufType *const dst,
     }
     else
         d = *res;
-    _mm256_store_si256((__m256i *)dst, d);
+    _mm256_storeu_si256((__m256i *)dst, d);
 }
 
 static INLINE __m256i comp_avg(const __m256i *const data_ref_0,

@@ -196,7 +196,7 @@ void av1_wiener_convolve_add_src_avx2(const uint8_t *src, ptrdiff_t src_stride,
             data_0 = _mm256_slli_epi16(data_0, FILTER_BITS - conv_params->round_0);
             res = _mm256_add_epi16(res, data_0);
 
-            _mm256_store_si256((__m256i *)&im_block[i * im_stride], res);
+            _mm256_storeu_si256((__m256i *)&im_block[i * im_stride], res);
         }
 
         /* Vertical filter */

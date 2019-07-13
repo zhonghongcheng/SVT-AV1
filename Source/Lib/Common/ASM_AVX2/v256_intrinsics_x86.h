@@ -69,7 +69,7 @@ SIMD_INLINE v256 v256_load_unaligned(const void *p) {
 }
 
 SIMD_INLINE void v256_store_aligned(void *p, v256 a) {
-    _mm256_store_si256((__m256i *)p, a);
+    _mm256_storeu_si256((__m256i *)p, a);
 }
 
 SIMD_INLINE void v256_store_unaligned(void *p, v256 a) {
