@@ -800,8 +800,9 @@ void* motion_estimation_kernel(void *input_ptr)
     uint32_t                      intra_sad_interval_index;
 
     EbAsm                      asm_type;
+#if !ENABLE_CDF_UPDATE
     MdRateEstimationContext   *md_rate_estimation_array;
-
+#endif
     for (;;) {
         // Get Input Full Object
         eb_get_full_object(

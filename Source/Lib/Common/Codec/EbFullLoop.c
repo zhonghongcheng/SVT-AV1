@@ -2747,8 +2747,8 @@ void product_full_loop_tx_search(
 #endif
         {
 #if ATB_SUPPORT
-            uint8_t txb_origin_x = context_ptr->blk_geom->tx_org_x[tx_depth][txb_itr];
-            uint8_t txb_origin_y = context_ptr->blk_geom->tx_org_y[tx_depth][txb_itr];
+            uint8_t txb_origin_x = (uint8_t)context_ptr->blk_geom->tx_org_x[tx_depth][txb_itr];
+            uint8_t txb_origin_y = (uint8_t)context_ptr->blk_geom->tx_org_y[tx_depth][txb_itr];
             tu_origin_index = txb_origin_x + (txb_origin_y * candidateBuffer->residual_ptr->stride_y);
 #else
             tu_origin_index = context_ptr->blk_geom->origin_x + (context_ptr->blk_geom->origin_y * candidateBuffer->residual_ptr->stride_y);

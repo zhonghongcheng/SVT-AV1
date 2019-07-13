@@ -930,7 +930,7 @@ EbErrorType RestResultsCtor(
 }
 
 void init_fn_ptr(void);
-
+void av1_init_wedge_masks();
 /**********************************
 * Initialize Encoder Library
 **********************************/

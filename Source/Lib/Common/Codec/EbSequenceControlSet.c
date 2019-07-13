@@ -432,7 +432,9 @@ extern EbErrorType sb_params_init(
     EbErrorType return_error = EB_ErrorNone;
     uint16_t    sb_index;
     uint16_t    rasterScanCuIndex;
+#if  !INCOMPLETE_SB_FIX
     uint16_t    md_scan_block_index;
+#endif
     uint8_t   pictureLcuWidth = (uint8_t)((sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz);
     uint8_t    pictureLcuHeight = (uint8_t)((sequence_control_set_ptr->seq_header.max_frame_height + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz);
     EB_MALLOC(SbParams*, sequence_control_set_ptr->sb_params_array, sizeof(SbParams) * pictureLcuWidth * pictureLcuHeight, EB_N_PTR);

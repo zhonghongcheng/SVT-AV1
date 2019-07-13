@@ -1431,6 +1431,8 @@ void aom_lowbd_blend_a64_d16_mask_c(
 		}
 	}
 }
+int is_masked_compound_type(COMPOUND_TYPE type);
+
 static INLINE const uint8_t *av1_get_contiguous_soft_mask(int wedge_index,
 	int wedge_sign,
 	BLOCK_SIZE sb_type) {
@@ -2105,6 +2107,8 @@ static int64_t pick_wedge_fixed_sign(
   }
   return best_rd ;//- RDCOST(x->rdmult, x->wedge_idx_cost[bsize][*best_wedge_index], 0);
 }
+int is_interinter_compound_used(COMPOUND_TYPE type,
+    BLOCK_SIZE sb_type);
 static void /*int64_t*/ pick_interinter_wedge(
 	PictureControlSet                    *picture_control_set_ptr,
 	ModeDecisionContext                  *context_ptr,
@@ -2475,6 +2479,12 @@ static void model_rd_for_sb_with_curvfit(
 	*out_rate_sum = (int)rate_sum;
 	*out_dist_sum = dist_sum;
 }
+int get_comp_index_context_enc(
+    PictureParentControlSet   *pcs_ptr,
+    int cur_frame_index,
+    int bck_frame_index,
+    int fwd_frame_index,
+    const MACROBLOCKD *xd);
 void search_compound_avg_dist(
 	PictureControlSet                    *picture_control_set_ptr,
 	ModeDecisionContext                  *context_ptr,

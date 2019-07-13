@@ -1239,7 +1239,9 @@ int get_comp_index_context_enc(
 	int fwd_frame_index,
 	const MACROBLOCKD *xd);
 int get_comp_group_idx_context_enc(const MACROBLOCKD *xd);
-
+int is_any_masked_compound_used(BLOCK_SIZE sb_type);
+int is_interinter_compound_used(COMPOUND_TYPE type,
+    BLOCK_SIZE sb_type);
 uint32_t get_compound_mode_rate(
 	uint8_t                 md_pass,
 	ModeDecisionCandidate *candidate_ptr,

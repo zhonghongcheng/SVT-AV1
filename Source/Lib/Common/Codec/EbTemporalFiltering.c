@@ -34,7 +34,7 @@
 #include "EbTemporalFiltering_sse4.h"
 
 #if ALTREF_FILTERING_SUPPORT
-
+#undef _MM_HINT_T2
 #define _MM_HINT_T2  1
 
 static unsigned int index_mult[14] = {
@@ -130,7 +130,9 @@ void save_YUV_to_file(char *filename, EbByte buffer_y, EbByte buffer_u, EbByte b
     int h;
 
     // save current source picture to a YUV file
-    if ((fid = fopen(filename, "wb")) == NULL) {
+    FOPEN(fid, filename, "wb");
+
+    if (!fid) {
         printf("Unable to open file %s to write.\n", "temp_picture.yuv");
     }else{
         // the source picture saved in the enchanced_picture_ptr contains a border in x and y dimensions
@@ -876,9 +878,9 @@ void tf_inter_prediction(
 
                 const int32_t bw = mi_size_wide[BLOCK_16X16];
                 const int32_t bh = mi_size_high[BLOCK_16X16];
-                cu_ptr.av1xd->mb_to_top_edge = -((mirow * MI_SIZE) * 8);
+                cu_ptr.av1xd->mb_to_top_edge = -(int32_t)((mirow * MI_SIZE) * 8);
                 cu_ptr.av1xd->mb_to_bottom_edge = ((picture_control_set_ptr->av1_cm->mi_rows - bw - mirow) * MI_SIZE) * 8;
-                cu_ptr.av1xd->mb_to_left_edge = -((micol * MI_SIZE) * 8);
+                cu_ptr.av1xd->mb_to_left_edge = -(int32_t)((micol * MI_SIZE) * 8);
                 cu_ptr.av1xd->mb_to_right_edge = ((picture_control_set_ptr->av1_cm->mi_cols - bh - micol) * MI_SIZE) * 8;
 
                 uint32_t mv_index = tab16x16[pu_index];
@@ -1314,6 +1316,11 @@ static double estimate_noise(EbByte src, uint16_t width, uint16_t height,
     return sigma;
 }
 
+void DownsampleFilteringInputPicture(
+    PictureParentControlSet       *picture_control_set_ptr,
+    EbPictureBufferDesc           *input_padded_picture_ptr,
+    EbPictureBufferDesc           *quarter_picture_ptr,
+    EbPictureBufferDesc           *sixteenth_picture_ptr);
 // Produce the filtered alt-ref picture
 static EbErrorType produce_temporally_filtered_pic(PictureParentControlSet **list_picture_control_set_ptr,
                                             EbPictureBufferDesc **list_input_picture_ptr,
@@ -1428,7 +1435,7 @@ static EbErrorType produce_temporally_filtered_pic(PictureParentControlSet **lis
 
             // for every frame to filter
 #if ALTREF_DYNAMIC_WINDOW
-            for (int frame_index = index_center - picture_control_set_ptr_central->past_altref_nframes; frame_index < index_center + picture_control_set_ptr_central->future_altref_nframes + 1; frame_index++) {
+            for (frame_index = index_center - picture_control_set_ptr_central->past_altref_nframes; frame_index < index_center + picture_control_set_ptr_central->future_altref_nframes + 1; frame_index++) {
 #else
             for (frame_index = 0; frame_index < altref_nframes; frame_index++) {
 #endif

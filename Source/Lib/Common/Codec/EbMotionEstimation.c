@@ -5902,7 +5902,6 @@ static void open_loop_me_half_pel_search_sblock(
     uint32_t list_index, uint32_t ref_pic_index, int16_t x_search_area_origin,
     int16_t y_search_area_origin, uint32_t search_area_width,
     uint32_t search_area_height, EbAsm asm_type) {
-    uint32_t search_index_x, search_index_y;
 
     half_pel_refinement_sb(
         sequence_control_set_ptr,
@@ -9435,7 +9434,7 @@ static void quarter_pel_refinemnet_block(
         y_search_area_origin,  // [IN] search area origin in the vertical
                                // direction, used to point to reference samples
     EbAsm asm_type, uint32_t candidate_mv, uint32_t *p_best_sad,
-    uint32_t *p_best_mv, uint8_t is_frac_candidate) {
+    uint32_t *p_best_mv, uint16_t is_frac_candidate) {
     int16_t x_mv = _MVXT(candidate_mv);
     int16_t y_mv = _MVYT(candidate_mv);
     int16_t search_Index_x = ((x_mv + 2) >> 2) - x_search_area_origin;

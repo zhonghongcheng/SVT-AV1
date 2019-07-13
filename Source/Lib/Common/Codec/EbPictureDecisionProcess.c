@@ -86,7 +86,7 @@ void av1_setup_skip_mode_allowed(PictureParentControlSet  *parent_pcs_ptr) {
 
     for (uint8_t i = 0; i < 7; ++i) {
 #if FIX_ORDER_HINT
-        ref_frame_arr_single[i].poc = parent_pcs_ptr->av1_ref_signal.ref_poc_array[i] % (1 << (parent_pcs_ptr->sequence_control_set_ptr->seq_header.order_hint_info.order_hint_bits));
+        ref_frame_arr_single[i].poc = parent_pcs_ptr->av1_ref_signal.ref_poc_array[i] % (uint64_t)(1 << (parent_pcs_ptr->sequence_control_set_ptr->seq_header.order_hint_info.order_hint_bits));
 #else
         ref_frame_arr_single[i].poc = parent_pcs_ptr->av1RefSignal.ref_poc_array[i];
 #endif
@@ -137,7 +137,7 @@ void av1_setup_skip_mode_allowed(PictureParentControlSet  *parent_pcs_ptr) {
         return;
 
 #if FIX_ORDER_HINT
-    const int cur_order_hint = parent_pcs_ptr->picture_number % (1 << (parent_pcs_ptr->sequence_control_set_ptr->seq_header.order_hint_info.order_hint_bits));
+    const int cur_order_hint = parent_pcs_ptr->picture_number % (uint64_t)(1 << (parent_pcs_ptr->sequence_control_set_ptr->seq_header.order_hint_info.order_hint_bits));
 #else
     const int cur_order_hint = parent_pcs_ptr->picture_number;// cm->current_frame.order_hint;
 #endif
@@ -218,7 +218,7 @@ void av1_setup_skip_mode_allowed(PictureParentControlSet  *parent_pcs_ptr) {
     //5 :ALT2
     //6 :ALT
 #if COMP_MODE
-	parent_pcs_ptr->cur_order_hint = parent_pcs_ptr->picture_number % (1 << (parent_pcs_ptr->sequence_control_set_ptr->seq_header.order_hint_info.order_hint_bits));
+	parent_pcs_ptr->cur_order_hint = parent_pcs_ptr->picture_number % (uint64_t)(1 << (parent_pcs_ptr->sequence_control_set_ptr->seq_header.order_hint_info.order_hint_bits));
 	for (uint8_t i = 0; i < 7; ++i)
 		parent_pcs_ptr->ref_order_hint[i] = ref_frame_arr_single[i].poc;
 #endif
@@ -3150,6 +3150,11 @@ void  Av1GenerateRpsInfo(
     }
  }
 #if ALT_REF_OVERLAY
+ void DownsampleFilteringInputPicture(
+     PictureParentControlSet       *picture_control_set_ptr,
+     EbPictureBufferDesc           *input_padded_picture_ptr,
+     EbPictureBufferDesc           *quarter_picture_ptr,
+     EbPictureBufferDesc           *sixteenth_picture_ptr);
 /***************************************************************************************************
 // Perform Required Picture Analysis Processing for the Overlay frame
 ***************************************************************************************************/
@@ -3410,10 +3415,10 @@ void* picture_decision_kernel(void *input_ptr)
     // Dynamic GOP
     uint32_t                           mini_gop_index;
     uint32_t                           pictureIndex;
-
+#if !ALT_REF_OVERLAY
     // Initialization
     uint32_t                           picture_width_in_sb;
-
+#endif
     EbBool                          windowAvail, framePasseThru;
     uint32_t                           windowIndex;
     uint32_t                           entryIndex;

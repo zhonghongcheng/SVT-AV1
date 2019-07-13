@@ -1919,7 +1919,9 @@ void perform_fast_loop(
     EbAsm                                asm_type) {
     int32_t  fastLoopCandidateIndex;
     uint64_t lumaFastDistortion;
+#if !REFACTOR_FAST_LOOP
     uint64_t chromaFastDistortion;
+#endif
     uint32_t highestCostIndex;
     uint64_t highestCost;
     uint64_t bestFirstFastCostSearchCandidateCost = MAX_CU_COST;
@@ -2290,10 +2292,6 @@ void fast_loop_stage1(
 	EbBool                             use_ssd,
 	EbAsm                              asm_type)
 {
-	int32_t  fastLoopCandidateIndex;
-	uint64_t lumaFastDistortion;
-	uint64_t chromaFastDistortion;	
-
 	for (uint32_t cand_idx = 0; cand_idx < num_of_candidates; ++cand_idx)
 	{
 		uint32_t                        candidateIndex  =  context_ptr->cand_buff_indices[target_class][cand_idx];
@@ -2405,12 +2403,12 @@ void sort_stage0_fast_candidates(
 	}
 
 
-	uint32_t i, j, index;
+	//uint32_t i, j, index;
 
-	{
+	//{
 		//for (int i = input_buffer_start_idx; i < input_buffer_count; i++)
 		//	printf("before  %i  -- %I64u  \n", i, *(buffer_ptr_array[ordered_buffers[i]]->fast_cost_ptr));
-	}
+	//}
 
 
 	//for (i = 0; i < output_buffer_count - 1; ++i) {
@@ -2852,7 +2850,11 @@ void predictive_me_sub_pel_search(
             }
             }
 }
-
+void av1_set_ref_frame(MvReferenceFrame *rf,
+    int8_t ref_frame_type);
+uint8_t GetMaxDrlIndex(uint8_t  refmvCnt, PredictionMode   mode);
+int32_t av1_mv_bit_cost(const MV *mv, const MV *ref, const int32_t *mvjcost,
+    int32_t *mvcost[2], int32_t weight);
 void predictive_me_search(
     PictureControlSet            *picture_control_set_ptr,
     ModeDecisionContext          *context_ptr,
@@ -2877,7 +2879,6 @@ void predictive_me_search(
 
     for (uint32_t refIt = 0; refIt < picture_control_set_ptr->parent_pcs_ptr->tot_ref_frame_types; ++refIt) {
         MvReferenceFrame ref_pair = picture_control_set_ptr->parent_pcs_ptr->ref_frame_type_arr[refIt];
-        uint8_t inj_mv;
 
         ModeDecisionCandidate    *candidateArray = context_ptr->fast_candidate_array;
         MacroBlockD  *xd = context_ptr->cu_ptr->av1xd;

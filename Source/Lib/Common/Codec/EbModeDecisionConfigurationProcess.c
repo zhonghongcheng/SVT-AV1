@@ -1986,7 +1986,7 @@ void derive_sb_score(
         context_ptr->sb_max_score = MAX(sb_score, context_ptr->sb_max_score);
         sb_tot_score += sb_score;
     }
-    context_ptr->sb_average_score = sb_tot_score / sequence_control_set_ptr->sb_tot_cnt;
+    context_ptr->sb_average_score = (uint32_t)(sb_tot_score / sequence_control_set_ptr->sb_tot_cnt);
 }
 
 /******************************************************
