@@ -182,13 +182,17 @@ static void ResetEntropyCodingPicture(
 
     // QP
 #if ADD_DELTA_QP_SUPPORT
+#if !QPM	
     uint16_t picture_qp = picture_control_set_ptr->parent_pcs_ptr->base_qindex;
     context_ptr->qp = picture_qp;
+#endif	
 #else
     context_ptr->qp = picture_control_set_ptr->picture_qp;
 #endif
     // Asuming cb and cr offset to be the same for chroma QP in both slice and pps for lambda computation
-
+#if QPM
+    entropyCodingQp = picture_control_set_ptr->parent_pcs_ptr->base_qindex;
+#else
     context_ptr->chroma_qp = context_ptr->qp;
     if (picture_control_set_ptr->use_delta_qp)
         entropyCodingQp = picture_control_set_ptr->parent_pcs_ptr->base_qindex;
@@ -198,6 +202,7 @@ static void ResetEntropyCodingPicture(
     // Reset QP Assignement
     picture_control_set_ptr->prev_coded_qp = picture_control_set_ptr->picture_qp;
     picture_control_set_ptr->prev_quant_group_coded_qp = picture_control_set_ptr->picture_qp;
+ #endif 
 
 #if ADD_DELTA_QP_SUPPORT //PART 0
     picture_control_set_ptr->parent_pcs_ptr->prev_qindex = picture_control_set_ptr->parent_pcs_ptr->base_qindex;
@@ -266,13 +271,17 @@ static void reset_ec_tile(
 
     // QP
 #if ADD_DELTA_QP_SUPPORT
+#if !QPM	
     uint16_t picture_qp = picture_control_set_ptr->parent_pcs_ptr->base_qindex;
     context_ptr->qp = picture_qp;
+#endif	
 #else
     context_ptr->qp = picture_control_set_ptr->picture_qp;
 #endif
+#if QPM
+    entropy_coding_qp = picture_control_set_ptr->parent_pcs_ptr->base_qindex;
+#else
     // Asuming cb and cr offset to be the same for chroma QP in both slice and pps for lambda computation
-
     context_ptr->chroma_qp = context_ptr->qp;
     if (picture_control_set_ptr->use_delta_qp)
         entropy_coding_qp = picture_control_set_ptr->parent_pcs_ptr->base_qindex;
@@ -282,6 +291,7 @@ static void reset_ec_tile(
     // Reset QP Assignement
     picture_control_set_ptr->prev_coded_qp = picture_control_set_ptr->picture_qp;
     picture_control_set_ptr->prev_quant_group_coded_qp = picture_control_set_ptr->picture_qp;
+#endif   
 
 #if ADD_DELTA_QP_SUPPORT //PART 0
     picture_control_set_ptr->parent_pcs_ptr->prev_qindex = picture_control_set_ptr->parent_pcs_ptr->base_qindex;
@@ -348,17 +358,19 @@ static void EntropyCodingConfigureLcu(
     PictureControlSet     *picture_control_set_ptr)
 {
 #if ADD_DELTA_QP_SUPPORT
+#if !QPM
     context_ptr->qp = picture_control_set_ptr->parent_pcs_ptr->base_qindex;
+#endif	
 #else
     context_ptr->qp = picture_control_set_ptr->picture_qp;
 #endif
 
     // Asuming cb and cr offset to be the same for chroma QP in both slice and pps for lambda computation
-
+#if !QPM
     context_ptr->chroma_qp = context_ptr->qp;
 
     sb_ptr->qp = context_ptr->qp;
-
+#endif
     return;
 }
 #if !RC

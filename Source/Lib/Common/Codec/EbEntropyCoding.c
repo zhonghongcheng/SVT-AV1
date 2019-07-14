@@ -6143,8 +6143,12 @@ assert(bsize < BlockSizeS_ALL);
 
 #if ADD_DELTA_QP_SUPPORT //PART 1
         if (picture_control_set_ptr->parent_pcs_ptr->delta_q_present_flag) {
+#if QPM
+            int32_t current_q_index = quantizer_to_qindex[cu_ptr->qp];
+            int32_t super_block_upper_left = (((blkOriginY >> 2) & (sequence_control_set_ptr->seq_header.sb_mi_size - 1)) == 0) && (((blkOriginX >> 2) & (sequence_control_set_ptr->seq_header.sb_mi_size - 1)) == 0);
+            if ((bsize != sequence_control_set_ptr->seq_header.sb_size || skipCoeff == 0) && super_block_upper_left) {
+#else
             int32_t current_q_index = cu_ptr->qp;
-
             int32_t super_block_upper_left = (((blkOriginY >> 2) & (sequence_control_set_ptr->mib_size - 1)) == 0) && (((blkOriginX >> 2) & (sequence_control_set_ptr->mib_size - 1)) == 0);
             /*((mi_row & (cm->seq_params.mib_size - 1)) == 0) && ((mi_col & (cm->seq_params.mib_size - 1)) == 0);*/
 
@@ -6152,6 +6156,7 @@ assert(bsize < BlockSizeS_ALL);
             if (cu_size == 8 && cu_ptr->prediction_mode_flag == INTRA_MODE && cu_ptr->pred_mode == INTRA_MODE_4x4)
                 bsize = BLOCK_4X4;
             if ((bsize != sequence_control_set_ptr->sb_size || skipCoeff == 0) && super_block_upper_left) {
+#endif			
                 assert(current_q_index > 0);
                 int32_t reduced_delta_qindex = (current_q_index - picture_control_set_ptr->parent_pcs_ptr->prev_qindex) / picture_control_set_ptr->parent_pcs_ptr->delta_q_res;
 
@@ -6160,13 +6165,7 @@ assert(bsize < BlockSizeS_ALL);
                     frameContext,
                     reduced_delta_qindex,
                     ec_writer);
-                /*if (picture_control_set_ptr->picture_number == 0){
-                printf("%d\t%d\t%d\t%d\n",
-                blkOriginX,
-                blkOriginY,
-                current_q_index,
-                picture_control_set_ptr->parent_pcs_ptr->prev_qindex);
-                }*/
+
                 picture_control_set_ptr->parent_pcs_ptr->prev_qindex = current_q_index;
             }
         }
@@ -6289,8 +6288,12 @@ assert(bsize < BlockSizeS_ALL);
             blkOriginY >> MI_SIZE_LOG2);
 #if ADD_DELTA_QP_SUPPORT//PART 2
         if (picture_control_set_ptr->parent_pcs_ptr->delta_q_present_flag) {
+#if QPM
+            int32_t current_q_index = quantizer_to_qindex[cu_ptr->qp];
+            int32_t super_block_upper_left = (((blkOriginY >> 2) & (sequence_control_set_ptr->seq_header.sb_mi_size - 1)) == 0) && (((blkOriginX >> 2) & (sequence_control_set_ptr->seq_header.sb_mi_size - 1)) == 0);
+            if ((bsize != sequence_control_set_ptr->seq_header.sb_size || skipCoeff == 0) && super_block_upper_left) {
+#else
             int32_t current_q_index = cu_ptr->qp;
-
             int32_t super_block_upper_left = (((blkOriginY >> 2) & (sequence_control_set_ptr->mib_size - 1)) == 0) && (((blkOriginX >> 2) & (sequence_control_set_ptr->mib_size - 1)) == 0);
             /*((mi_row & (cm->seq_params.mib_size - 1)) == 0) && ((mi_col & (cm->seq_params.mib_size - 1)) == 0);*/
 
@@ -6298,6 +6301,7 @@ assert(bsize < BlockSizeS_ALL);
             if (cu_size == 8 && cu_ptr->prediction_mode_flag == INTRA_MODE && cu_ptr->pred_mode == INTRA_MODE_4x4)
                 bsize = BLOCK_4X4;
             if ((bsize != sequence_control_set_ptr->sb_size || skipCoeff == 0) && super_block_upper_left) {
+#endif			
                 assert(current_q_index > 0);
 
                 int32_t reduced_delta_qindex = (current_q_index - picture_control_set_ptr->parent_pcs_ptr->prev_qindex) / picture_control_set_ptr->parent_pcs_ptr->delta_q_res;

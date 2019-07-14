@@ -13802,9 +13802,11 @@ extern "C" {
 #if !MEMORY_FOOTPRINT_OPT
         uint8_t                              *cbf_map_array;
 #endif
+#if !QPM
         // QP Assignment
         uint8_t                               prev_coded_qp;
         uint8_t                               prev_quant_group_coded_qp;
+#endif
 #if !MEMORY_FOOTPRINT_OPT
         // Enc/DecQP Assignment
         uint8_t                               enc_prev_coded_qp[50];
@@ -14158,7 +14160,10 @@ extern "C" {
         uint32_t                              zz_cost_average;                    // used by ModeDecisionConfigurationProcess()
 #endif
         uint16_t                              non_moving_index_average;            // used by ModeDecisionConfigurationProcess()
-
+#if QPM
+        int16_t                               non_moving_index_min_distance;
+        int16_t                               non_moving_index_max_distance;
+#endif   
 #if ADAPTIVE_QP_SCALING
         uint16_t                              qp_scaling_average_complexity;
 #endif
@@ -14368,7 +14373,7 @@ extern "C" {
         // 1: use separate deltas for each filter level
         int32_t                               delta_lf_multi;
         int32_t                               num_tg;
-        int32_t                               monochrome = 0; //NM - hadcoded to zero. to be set to one to support the coding of monochrome contents.
+        int32_t                               monochrome ; //NM - hadcoded to zero. to be set to one to support the coding of monochrome contents.
         int32_t                               prev_qindex;
         // Since actual frame level loop filtering level value is not available
         // at the beginning of the tile (only available during actual filtering)

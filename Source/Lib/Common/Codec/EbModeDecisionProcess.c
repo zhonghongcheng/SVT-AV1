@@ -363,6 +363,7 @@ void reset_mode_decision(
     context_ptr->qp = picture_control_set_ptr->picture_qp;
 #endif
     // Asuming cb and cr offset to be the same for chroma QP in both slice and pps for lambda computation
+    //AMIR USELESS
     context_ptr->chroma_qp = context_ptr->qp;
     context_ptr->qp_index = (uint8_t)picture_control_set_ptr->parent_pcs_ptr->base_qindex;
     (*av1_lambda_assignment_function_table[picture_control_set_ptr->parent_pcs_ptr->pred_structure])(
@@ -467,7 +468,10 @@ void mode_decision_configure_lcu(
     uint8_t                    sb_qp){
     (void)picture_control_set_ptr;
     //Disable Lambda update per LCU
-
+#if QPM
+    (void)picture_qp;
+    context_ptr->qp = sb_qp;
+#else
     //RC is off
     if (sequence_control_set_ptr->static_config.rate_control_mode == 0 && sequence_control_set_ptr->static_config.improve_sharpness == 0) {
         context_ptr->qp = (uint8_t)picture_qp;
@@ -476,6 +480,7 @@ void mode_decision_configure_lcu(
     //RC is on
     else
         context_ptr->qp = (uint8_t)sb_qp;
+#endif
     // Asuming cb and cr offset to be the same for chroma QP in both slice and pps for lambda computation
 
     context_ptr->chroma_qp = context_ptr->qp;
@@ -483,8 +488,11 @@ void mode_decision_configure_lcu(
     /* Note(CHKN) : when Qp modulation varies QP on a sub-LCU(CU) basis,  Lamda has to change based on Cu->QP , and then this code has to move inside the CU loop in MD */
 
     // Lambda Assignement
+#if QPM
+    context_ptr->qp_index = picture_control_set_ptr->parent_pcs_ptr->delta_q_present_flag ? (uint8_t)quantizer_to_qindex[sb_qp] : (uint8_t)picture_control_set_ptr->parent_pcs_ptr->base_qindex;
+#else
     context_ptr->qp_index = (uint8_t)picture_control_set_ptr->parent_pcs_ptr->base_qindex;
-
+#endif
     (*av1_lambda_assignment_function_table[picture_control_set_ptr->parent_pcs_ptr->pred_structure])(
         &context_ptr->fast_lambda,
         &context_ptr->full_lambda,

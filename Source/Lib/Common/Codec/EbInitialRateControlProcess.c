@@ -1279,12 +1279,10 @@ void QpmGatherStatisticsSW(
         for (rasterScanCuIndex = RASTER_SCAN_CU_INDEX_8x8_0; rasterScanCuIndex <= RASTER_SCAN_CU_INDEX_8x8_63; rasterScanCuIndex++) {
             if (sb_params.raster_scan_cu_validity[rasterScanCuIndex]) {
                 mdScanCuIndex = raster_scan_to_md_scan[rasterScanCuIndex];
-
             OisSbResults        *ois_sb_results_ptr = picture_control_set_ptr->ois_sb_results[sb_index];
 
             OisCandidate *ois_cu_ptr = ois_sb_results_ptr->ois_candidate_array[mdScanCuIndex];
             oisSad = ois_cu_ptr[ois_sb_results_ptr->best_distortion_index[mdScanCuIndex]].distortion;
-
 #if MRP_CONNECTION
                 meSad = picture_control_set_ptr->me_results[sb_index]->me_candidate[rasterScanCuIndex][0].distortion;
 #else
@@ -1308,7 +1306,6 @@ void QpmGatherStatisticsSW(
     for (rasterScanCuIndex = RASTER_SCAN_CU_INDEX_16x16_0; rasterScanCuIndex <= RASTER_SCAN_CU_INDEX_16x16_15; rasterScanCuIndex++) {
         if (sb_params.raster_scan_cu_validity[rasterScanCuIndex]) {
             mdScanCuIndex = raster_scan_to_md_scan[rasterScanCuIndex];
-
             OisSbResults        *ois_sb_results_ptr = picture_control_set_ptr->ois_sb_results[sb_index];
             OisCandidate *ois_cu_ptr = ois_sb_results_ptr->ois_candidate_array[mdScanCuIndex];
             oisSad = ois_cu_ptr[ois_sb_results_ptr->best_distortion_index[mdScanCuIndex]].distortion;
@@ -1334,7 +1331,6 @@ void QpmGatherStatisticsSW(
     for (rasterScanCuIndex = RASTER_SCAN_CU_INDEX_32x32_0; rasterScanCuIndex <= RASTER_SCAN_CU_INDEX_32x32_3; rasterScanCuIndex++) {
         if (sb_params.raster_scan_cu_validity[rasterScanCuIndex]) {
              mdScanCuIndex = raster_scan_to_md_scan[rasterScanCuIndex];
-
             OisSbResults        *ois_sb_results_ptr = picture_control_set_ptr->ois_sb_results[sb_index];
             OisCandidate *ois_cu_ptr = ois_sb_results_ptr->ois_candidate_array[mdScanCuIndex];
             oisSad = ois_cu_ptr[ois_sb_results_ptr->best_distortion_index[mdScanCuIndex]].distortion;
@@ -1360,7 +1356,6 @@ void QpmGatherStatisticsSW(
     cu_depth = 0;
     if (sb_params.raster_scan_cu_validity[RASTER_SCAN_CU_INDEX_64x64]) {
             mdScanCuIndex = 0;
-
             OisSbResults        *ois_sb_results_ptr = picture_control_set_ptr->ois_sb_results[sb_index];
             OisCandidate *ois_cu_ptr = ois_sb_results_ptr->ois_candidate_array[mdScanCuIndex];
             oisSad = ois_cu_ptr[ois_sb_results_ptr->best_distortion_index[mdScanCuIndex]].distortion;
@@ -1624,14 +1619,14 @@ void* initial_rate_control_kernel(void *input_ptr)
 
                     picture_control_set_ptr->processed_leaf_count[cu_depth] = 0;
                 }
-
+#if !QPM
                 for (sb_index = 0; sb_index < picture_control_set_ptr->sb_total_count; sb_index++) {
                     QpmGatherStatisticsSW(
                         sequence_control_set_ptr,
                         picture_control_set_ptr,
                         sb_index);
                 }
-
+#endif
                 picture_control_set_ptr->intra_complexity_min_pre = picture_control_set_ptr->intra_complexity_min[0];
                 picture_control_set_ptr->intra_complexity_max_pre = picture_control_set_ptr->intra_complexity_max[0];
                 picture_control_set_ptr->inter_complexity_min_pre = picture_control_set_ptr->inter_complexity_min[0];

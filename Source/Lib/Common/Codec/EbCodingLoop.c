@@ -2108,7 +2108,7 @@ EbErrorType QpmDeriveBeaAndSkipQpmFlagLcu(
     return return_error;
 }
 #endif
-#if ADD_DELTA_QP_SUPPORT
+#if ADD_DELTA_QP_SUPPORT && !QPM
 /*****************************************************************************
 * NM - Note: Clean up
 * AV1 QPM is SB based and all sub-Lcu buffers needs to be removed
@@ -2134,12 +2134,9 @@ EbErrorType Av1QpModulationLcu(
 
     int8_t    non_moving_delta_qp = context_ptr->non_moving_delta_qp;
     int8_t    bea64x64DeltaQp;
-
     uint8_t   deltaQpRes = picture_control_set_ptr->parent_pcs_ptr->delta_q_res;
-
     cu_qp = qpm_qp;
     sb_ptr->qp = qpm_qp;
-
     uint32_t  distortion = 0;
 
     if (!context_ptr->skip_qpm_flag) {
@@ -2148,7 +2145,6 @@ EbErrorType Av1QpModulationLcu(
             OisSbResults        *ois_sb_results_ptr = picture_control_set_ptr->parent_pcs_ptr->ois_sb_results[sb_index];
             OisCandidate *OisCuPtr = ois_sb_results_ptr->sorted_ois_candidate[from_1101_to_85[cu_index]];
             distortion = OisCuPtr[ois_sb_results_ptr->best_distortion_index[from_1101_to_85[cu_index]]].distortion;
-
             distortion = (uint32_t)CLIP3(picture_control_set_ptr->parent_pcs_ptr->intra_complexity_min[0], picture_control_set_ptr->parent_pcs_ptr->intra_complexity_max[0], distortion);
             complexityDistance = ((int32_t)distortion - (int32_t)picture_control_set_ptr->parent_pcs_ptr->intra_complexity_avg[0]);
 
@@ -2160,7 +2156,6 @@ EbErrorType Av1QpModulationLcu(
         // INTER MODE
         else {
             distortion = picture_control_set_ptr->parent_pcs_ptr->me_results[sb_index][0].distortion_direction[0].distortion;
-
             distortion = (uint32_t)CLIP3(picture_control_set_ptr->parent_pcs_ptr->inter_complexity_min[0], picture_control_set_ptr->parent_pcs_ptr->inter_complexity_max[0], distortion);
             complexityDistance = ((int32_t)distortion - (int32_t)picture_control_set_ptr->parent_pcs_ptr->inter_complexity_avg[0]);
 
@@ -2202,17 +2197,16 @@ EbErrorType Av1QpModulationLcu(
                     delta_qp = ANTI_CONTOURING_DELTA_QP_2;
             }
         }
-
         delta_qp -= context_ptr->grass_enhancement_flag ? 3 : 0;
 
         delta_qp *= deltaQpRes;
-
         if (sequence_control_set_ptr->static_config.rate_control_mode == 1 || sequence_control_set_ptr->static_config.rate_control_mode == 2) {
             if (qpm_qp > (RC_QPMOD_MAXQP * deltaQpRes))
                 delta_qp = MIN(0, delta_qp);
             cu_qp = (uint32_t)(qpm_qp + delta_qp);
 
             if ((qpm_qp <= (RC_QPMOD_MAXQP *deltaQpRes))) {
+
                 cu_qp = (uint8_t)CLIP3(
                     min_qp_allowed,
                     RC_QPMOD_MAXQP*deltaQpRes,
@@ -2220,15 +2214,15 @@ EbErrorType Av1QpModulationLcu(
             }
         }
         else
+
             cu_qp = (uint8_t)(qpm_qp + delta_qp);
-        cu_qp = (uint8_t)CLIP3(
-            min_qp_allowed,
-            max_qp_allowed,
-            cu_qp);
+			cu_qp = CLIP3(
+                min_qp_allowed,
+                max_qp_allowed,
+                cu_qp);
+
     }
-
     sb_ptr->qp = sequence_control_set_ptr->static_config.improve_sharpness ? cu_qp : qpm_qp;
-
     sb_ptr->delta_qp = (int16_t)sb_ptr->qp - (int16_t)qpm_qp;
 
     sb_ptr->org_delta_qp = sb_ptr->delta_qp;
@@ -3380,7 +3374,7 @@ EB_EXTERN void av1_encode_pass(
         }
     }
 #endif
-#if ADD_DELTA_QP_SUPPORT
+#if ADD_DELTA_QP_SUPPORT && !QPM
     if (context_ptr->skip_qpm_flag == EB_FALSE && sequence_control_set_ptr->static_config.improve_sharpness) {
         Av1QpModulationLcu(
             sequence_control_set_ptr,
@@ -3452,7 +3446,13 @@ EB_EXTERN void av1_encode_pass(
                     context_ptr->blk_geom->bheight == 4) ? EB_TRUE : EB_FALSE;
                 // Evaluate cfl @ EP if applicable, and not done @ MD
                 context_ptr->evaluate_cfl_ep = (disable_cfl_flag == EB_FALSE && context_ptr->md_context->chroma_level == CHROMA_MODE_2);
-
+#if QPM
+                cu_ptr->qp = sb_ptr->qp;
+                cu_ptr->delta_qp = sb_ptr->delta_qp;
+#if !MEMORY_FOOTPRINT_OPT
+                cu_ptr->org_delta_qp = sb_ptr->org_delta_qp;
+#endif
+#else
 #if ADD_DELTA_QP_SUPPORT
                 if (context_ptr->skip_qpm_flag == EB_FALSE && sequence_control_set_ptr->static_config.improve_sharpness) {
                     cu_ptr->qp = sb_ptr->qp;
@@ -3462,16 +3462,16 @@ EB_EXTERN void av1_encode_pass(
                 else {
                     uint16_t                           picture_qp = picture_control_set_ptr->parent_pcs_ptr->base_qindex;
                     sb_ptr->qp = picture_qp;
-                    cu_ptr->qp = sb_ptr->qp;
+                    cu_ptr->qp = picture_control_set_ptr->picture_qp;
                     cu_ptr->delta_qp = 0;
                     cu_ptr->org_delta_qp = 0;
                 }
-
 #else
                 cu_ptr->qp = (sequence_control_set_ptr->static_config.improve_sharpness) ? context_ptr->qpm_qp : picture_control_set_ptr->picture_qp;
                 sb_ptr->qp = (sequence_control_set_ptr->static_config.improve_sharpness) ? context_ptr->qpm_qp : picture_control_set_ptr->picture_qp;
 #if !MEMORY_FOOTPRINT_OPT
                 cu_ptr->org_delta_qp = cu_ptr->delta_qp;
+#endif
 #endif
 #endif
 #if !MEMORY_FOOTPRINT_OPT

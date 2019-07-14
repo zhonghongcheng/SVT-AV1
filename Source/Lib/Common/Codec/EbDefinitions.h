@@ -35,9 +35,9 @@
 extern "C" {
 #endif
 
-
 #define M0_HME_ME_TUNING                1
 #define PREDICTIVE_ME                   1 // Perform ME search around MVP 
+#define QPM                             1 // Use SB QP Mod
 #define ME_MVP_DEVIATION                0 // Skip Predictive ME Search if significant ME-to-MVP difference
 #define USE_M0_HME_ME_SETTINGS          0 // To enable when running ME related experiments in context of non-M0
 
@@ -494,7 +494,9 @@ enum {
 #define PAD_VALUE                                (128+32)
 
 //  Delta QP support
-#define ADD_DELTA_QP_SUPPORT                      0  // Add delta QP support - Please enable this flag and iproveSharpness (config) to test the QPM
+#if QPM
+#define ADD_DELTA_QP_SUPPORT                      1  // Add delta QP support - Please enable this flag and iproveSharpness (config) to test the QPM
+#endif
 #define BLOCK_MAX_COUNT_SB_128                    4421  // TODO: reduce alloction for 64x64
 #define BLOCK_MAX_COUNT_SB_64                     1101  // TODO: reduce alloction for 64x64
 #if ATB_SUPPORT && !ATB_SUPPORT_1_DEPTH
