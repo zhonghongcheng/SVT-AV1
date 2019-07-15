@@ -1755,12 +1755,14 @@ void ProductMdFastPuPrediction(
     UNUSED(bestFirstFastCostSearchCandidateIndex);
     context_ptr->pu_itr = 0;
     // Prediction
+#if FIRST_FULL_LOOP_INTERPOLATION_SEARCH
+    if (context_ptr->md_staging_mode == 1 && (context_ptr->md_stage == MD_STAGE_0 || context_ptr->md_stage == MD_STAGE_1 || context_ptr->md_stage == MD_STAGE_2))
+        context_ptr->skip_interpolation_search = 1;
+    else
+        context_ptr->skip_interpolation_search = picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? 0 : 1;
+#else
     context_ptr->skip_interpolation_search = picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? 0 : 1;
 
-#if FIRST_FULL_LOOP_INTERPOLATION_SEARCH
-    if (context_ptr->md_staging_mode == 1 && (context_ptr->md_stage == MD_STAGE_0 || context_ptr->md_stage == MD_STAGE_1))
-        context_ptr->skip_interpolation_search = 1;
-#else
 #if FAST_LOOP_OPT
 	if (context_ptr->md_staging_mode == 1 && context_ptr->md_stage == MD_STAGE_0)
 		context_ptr->skip_interpolation_search = 1;
@@ -2257,9 +2259,16 @@ void set_md_stage_counts(
 	//stage1 bypass decision
 	memset(context_ptr->bypass_stage1, 0, CAND_CLASS_TOTAL * sizeof(uint32_t));	
 
-	
 	if(context_ptr->md_staging_mode == 1)
+#if FULL_LOOP_SPLIT // to do
+#if FIRST_FULL_LOOP_INTERPOLATION_SEARCH
+        memset(context_ptr->bypass_stage1, 1, CAND_CLASS_TOTAL * sizeof(uint32_t));
+#else
 		context_ptr->bypass_stage1[CAND_CLASS_0] = 1;
+#endif
+#else
+        context_ptr->bypass_stage1[CAND_CLASS_0] = 1;
+#endif
 	else
 		memset(context_ptr->bypass_stage1, 1, CAND_CLASS_TOTAL * sizeof(uint32_t));
 
@@ -8091,6 +8100,7 @@ void md_encode_block(
 		inter_class_decision(context_ptr);
 
 		context_ptr->md_stage = MD_STAGE_1;
+
 		for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
 
 			//number of next level candidates could not exceed number of curr level candidates
