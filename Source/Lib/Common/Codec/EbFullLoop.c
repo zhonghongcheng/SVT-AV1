@@ -1973,8 +1973,15 @@ void av1_quantize_inv_quantize(
 #if RDOQ_FP_QUANTIZATION
     EbBool is_inter = (pred_mode >= NEARESTMV);
 
+#if FIRST_RDOQ_INTRA
+#if FIRST_RDOQ_INTER
+    EbBool perform_rdoq = ((is_encode_pass || md_context->md_stage == MD_STAGE_2) && md_context->trellis_quant_coeff_optimization && component_type == COMPONENT_LUMA && !is_intra_bc);
+#else
+    EbBool perform_rdoq = ((is_encode_pass || md_context->md_stage == MD_STAGE_2 || is_inter) && md_context->trellis_quant_coeff_optimization && component_type == COMPONENT_LUMA && !is_intra_bc);
+#endif
+#else
     EbBool perform_rdoq = (md_context->trellis_quant_coeff_optimization && component_type == COMPONENT_LUMA && !is_intra_bc);
-    
+#endif 
     // Hsan: set to FALSE until adding x86 quantize_fp
 #if ENABLE_QUANT_FP
     EbBool perform_quantize_fp = picture_control_set_ptr->enc_mode == ENC_M0 ? EB_TRUE : EB_FALSE;

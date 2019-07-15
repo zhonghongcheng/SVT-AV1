@@ -8212,7 +8212,7 @@ void md_encode_block(
 
         // Derive bypass_stage2
         context_ptr->bypass_stage2[CAND_CLASS_0] = EB_FALSE;
-#if FIRST_FULL_LOOP_INTERPOLATION_SEARCH 
+#if FIRST_FULL_LOOP_INTERPOLATION_SEARCH || FIRST_RDOQ_INTER
         context_ptr->bypass_stage2[CAND_CLASS_1] = EB_FALSE;
         context_ptr->bypass_stage2[CAND_CLASS_2] = EB_FALSE;
         context_ptr->bypass_stage2[CAND_CLASS_3] = EB_FALSE;

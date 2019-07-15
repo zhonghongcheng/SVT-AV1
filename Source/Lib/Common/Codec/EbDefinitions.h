@@ -47,6 +47,8 @@ extern "C" {
 #define FIRST_FULL_LOOP_ATB_OFF                1
 #define FIRST_FULL_LOOP_TX_SEARCH_OFF          1
 #define FIRST_FULL_LOOP_INTERPOLATION_SEARCH   0
+#define FIRST_RDOQ_INTRA                       0
+#define FIRST_RDOQ_INTER                       0
 #endif
 #define MODIFIED_ENCODER                1
 #if MODIFIED_ENCODER      
