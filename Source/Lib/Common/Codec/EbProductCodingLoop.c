@@ -5708,7 +5708,7 @@ void md_stage_2(
             tx_search_skip_fag = (picture_control_set_ptr->parent_pcs_ptr->skip_tx_search && best_fastLoop_candidate_index > NFL_TX_TH) ? 1 : tx_search_skip_fag;
 
 #if FIRST_FULL_LOOP_TX_SEARCH_OFF
-            if (context_ptr->md_stage == MD_STAGE_2)
+            if (context_ptr->md_stage == MD_STAGE_2 && target_class == CAND_CLASS_0)
                 tx_search_skip_fag = EB_TRUE;
 #endif
             if (!tx_search_skip_fag) {
