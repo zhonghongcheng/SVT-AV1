@@ -46,12 +46,14 @@ extern "C" {
 #define FIRST_FULL_LOOP_CHROMA_BLIND           1
 #define FIRST_FULL_LOOP_ATB_OFF                1
 #define FIRST_FULL_LOOP_TX_SEARCH_OFF          1
+#define FIRST_FULL_LOOP_TX_SEARCH_OFF_INTER    0
+
 #define FIRST_FULL_LOOP_INTERPOLATION_SEARCH   0
 #define FIRST_RDOQ_INTRA                       0
 #define FIRST_RDOQ_INTER                       0
 #endif
-#define MODIFIED_ENCODER                1
-#if MODIFIED_ENCODER      
+#define BUG_FIXES                       1
+#if BUG_FIXES      
 #define SHUT_TX_SIZE_RATE               1 // To fix a bug @ tx size rate estimation 
 #define VALGRIND_FIX                    1 // Fixed a valgrind error
 #define ABILITY_TO_SKIP_TX_SEARCH_ATB   1

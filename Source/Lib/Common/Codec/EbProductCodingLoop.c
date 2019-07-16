@@ -5708,8 +5708,12 @@ void md_stage_2(
             tx_search_skip_fag = (picture_control_set_ptr->parent_pcs_ptr->skip_tx_search && best_fastLoop_candidate_index > NFL_TX_TH) ? 1 : tx_search_skip_fag;
 
 #if FIRST_FULL_LOOP_TX_SEARCH_OFF
+#if FIRST_FULL_LOOP_TX_SEARCH_OFF_INTER
+            tx_search_skip_fag = EB_TRUE;
+#else
             if (context_ptr->md_stage == MD_STAGE_2 && target_class == CAND_CLASS_0)
                 tx_search_skip_fag = EB_TRUE;
+#endif
 #endif
             if (!tx_search_skip_fag) {
                 product_full_loop_tx_search(
@@ -8221,22 +8225,30 @@ void md_encode_block(
             &ref_fast_cost);
 
         // Derive bypass_stage2
-        context_ptr->bypass_stage2[CAND_CLASS_0] = EB_FALSE;
+        context_ptr->bypass_stage2[CAND_CLASS_0] = (context_ptr->md_staging_mode == 0) ? EB_TRUE : EB_FALSE;
 #if FIRST_FULL_LOOP_INTERPOLATION_SEARCH || FIRST_RDOQ_INTER
-        context_ptr->bypass_stage2[CAND_CLASS_1] = EB_FALSE;
-        context_ptr->bypass_stage2[CAND_CLASS_2] = EB_FALSE;
-        context_ptr->bypass_stage2[CAND_CLASS_3] = EB_FALSE;
+        context_ptr->bypass_stage2[CAND_CLASS_1] = (context_ptr->md_staging_mode == 0) ? EB_TRUE : EB_FALSE;
+        context_ptr->bypass_stage2[CAND_CLASS_2] = (context_ptr->md_staging_mode == 0) ? EB_TRUE : EB_FALSE;
+        context_ptr->bypass_stage2[CAND_CLASS_3] = (context_ptr->md_staging_mode == 0) ? EB_TRUE : EB_FALSE;
+#else
+#if FIRST_FULL_LOOP_TX_SEARCH_OFF_INTER
+        context_ptr->bypass_stage2[CAND_CLASS_1] = (context_ptr->md_staging_mode == 0) ? EB_TRUE : EB_FALSE;
+        context_ptr->bypass_stage2[CAND_CLASS_2] = (context_ptr->md_staging_mode == 0) ? EB_TRUE : EB_FALSE;
+        context_ptr->bypass_stage2[CAND_CLASS_3] = (context_ptr->md_staging_mode == 0) ? EB_TRUE : EB_FALSE;
 #else
         context_ptr->bypass_stage2[CAND_CLASS_1] = EB_TRUE;
         context_ptr->bypass_stage2[CAND_CLASS_2] = EB_TRUE;
         context_ptr->bypass_stage2[CAND_CLASS_3] = EB_TRUE;
+#endif
 #endif
 
         // Derive nfl @ md_stage_3
 #if MD_STAGE_3_NFL_BDRATE
         context_ptr->full_cand_count_md_stage_3[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0] : 10;
 #else
-        context_ptr->full_cand_count_md_stage_3[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0] : 4;
+        context_ptr->full_cand_count_md_stage_3[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ?
+            context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0] :
+            (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 4;
 #endif
         context_ptr->full_cand_count_md_stage_3[CAND_CLASS_1] = context_ptr->bypass_stage2[CAND_CLASS_1] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_1] : 1;
         context_ptr->full_cand_count_md_stage_3[CAND_CLASS_2] = context_ptr->bypass_stage2[CAND_CLASS_2] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_2] : 1;
@@ -8246,7 +8258,9 @@ void md_encode_block(
 #if MD_STAGE_3_NFL_BDRATE
             context_ptr->full_cand_count_md_stage_3[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0] : 10;
 #else
-            context_ptr->full_cand_count_md_stage_3[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0] : 4;
+            context_ptr->full_cand_count_md_stage_3[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ?
+                context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0] :
+                (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 4;
 #endif
             context_ptr->full_cand_count_md_stage_3[CAND_CLASS_1] = 0;
             context_ptr->full_cand_count_md_stage_3[CAND_CLASS_2] = 0;
