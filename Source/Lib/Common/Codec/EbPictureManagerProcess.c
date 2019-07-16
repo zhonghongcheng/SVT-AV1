@@ -708,7 +708,7 @@ void* picture_manager_kernel(void *input_ptr)
                                     && entryPictureControlSetPtr->temporal_layer_index == 0 && !referenceEntryPtr->feedback_arrived)) ? EB_FALSE :
 #endif
 #if ENABLE_CDF_UPDATE
-                                    (picture_control_set_ptr->frame_end_cdf_update_mode && !referenceEntryPtr->frame_context_updated) ? EB_FALSE :
+                                    (entryPictureControlSetPtr->frame_end_cdf_update_mode && !referenceEntryPtr->frame_context_updated) ? EB_FALSE :
 #endif
                                 (referenceEntryPtr->reference_available) ? EB_TRUE :   // The Reference has been completed
                                 EB_FALSE;     // The Reference has not been completed
@@ -792,7 +792,7 @@ void* picture_manager_kernel(void *input_ptr)
                                             && entryPictureControlSetPtr->temporal_layer_index == 0 && !referenceEntryPtr->feedback_arrived)) ? EB_FALSE :
 #endif
 #if ENABLE_CDF_UPDATE
-                                        (picture_control_set_ptr->frame_end_cdf_update_mode && !referenceEntryPtr->frame_context_updated) ? EB_FALSE :
+                                        (entryPictureControlSetPtr->frame_end_cdf_update_mode && !referenceEntryPtr->frame_context_updated) ? EB_FALSE :
 #endif
                                         (referenceEntryPtr->reference_available) ? EB_TRUE :   // The Reference has been completed
                                         EB_FALSE;     // The Reference has not been completed
@@ -990,7 +990,7 @@ void* picture_manager_kernel(void *input_ptr)
 
                                     referenceEntryPtr = encode_context_ptr->reference_picture_queue[referenceQueueIndex];
 #if ENABLE_CDF_UPDATE
-                                    if (picture_control_set_ptr->frame_end_cdf_update_mode) {
+                                    if (entryPictureControlSetPtr->frame_end_cdf_update_mode) {
                                         ChildPictureControlSetPtr->ref_frame_context[svt_get_ref_frame_type(REF_LIST_0, refIdx) - LAST_FRAME] = ((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->frame_context;
                                         if (max_temporal_index < (int8_t)referenceEntryPtr->temporal_layer_index) {
                                             max_temporal_index = (int8_t)referenceEntryPtr->temporal_layer_index;
@@ -1071,7 +1071,7 @@ void* picture_manager_kernel(void *input_ptr)
 
                                     referenceEntryPtr = encode_context_ptr->reference_picture_queue[referenceQueueIndex];
 #if ENABLE_CDF_UPDATE
-                                    if (picture_control_set_ptr->frame_end_cdf_update_mode) {
+                                    if (entryPictureControlSetPtr->frame_end_cdf_update_mode) {
                                         ChildPictureControlSetPtr->ref_frame_context[svt_get_ref_frame_type(REF_LIST_1, refIdx) - LAST_FRAME] = ((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->frame_context;
                                         if (max_temporal_index < (int8_t)referenceEntryPtr->temporal_layer_index && referenceEntryPtr->slice_type != I_SLICE/* && ChildPictureControlSetPtr->temporal_layer_index != 0*/) {
                                             max_temporal_index = (int8_t)referenceEntryPtr->temporal_layer_index;
@@ -1139,7 +1139,7 @@ void* picture_manager_kernel(void *input_ptr)
                             I_SLICE;
 
 #if ENABLE_CDF_UPDATE
-                        if (picture_control_set_ptr->frame_end_cdf_update_mode) {
+                        if (entryPictureControlSetPtr->frame_end_cdf_update_mode) {
                             if (entryPictureControlSetPtr->slice_type != I_SLICE)
                                 ChildPictureControlSetPtr->parent_pcs_ptr->primary_ref_frame = ref_index;
                             else
