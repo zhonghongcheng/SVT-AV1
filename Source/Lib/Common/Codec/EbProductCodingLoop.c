@@ -4046,6 +4046,26 @@ static void tx_search_update_recon_sample_neighbor_array(
 uint8_t get_end_tx_depth(ModeDecisionContext *context_ptr, uint8_t atb_mode, ModeDecisionCandidate *candidate_ptr, BlockSize bsize, uint8_t btype) {
     uint8_t tx_depth = 0;
 
+#if STRENGHTHEN_MD_STAGE_3
+    if (bsize == BLOCK_64X64 ||
+        bsize == BLOCK_32X32 ||
+        bsize == BLOCK_16X16 ||
+        bsize == BLOCK_64X32 ||
+        bsize == BLOCK_32X64 ||
+        bsize == BLOCK_16X32 ||
+        bsize == BLOCK_32X16 ||
+        bsize == BLOCK_16X8 ||
+        bsize == BLOCK_8X16)
+        tx_depth = (btype == INTRA_MODE) ? 1 : 2;
+    else if (bsize == BLOCK_8X8 ||
+        bsize == BLOCK_64X16 ||
+        bsize == BLOCK_16X64 ||
+        bsize == BLOCK_32X8 ||
+        bsize == BLOCK_8X32 ||
+        bsize == BLOCK_16X4 ||
+        bsize == BLOCK_4X16)
+        tx_depth = 1;
+#else
     if (context_ptr->decoupled_fast_loop_search_method != SSD_SEARCH)
         assert(atb_mode != 1 && "atb_mode 1 assumes SSD_SEARCH @ fast loop because of the energy threshold");
 
@@ -4070,7 +4090,7 @@ uint8_t get_end_tx_depth(ModeDecisionContext *context_ptr, uint8_t atb_mode, Mod
             bsize == BLOCK_4X16)
             tx_depth = 1;
     }
-
+#endif
     return tx_depth;
 }
 
@@ -6242,6 +6262,20 @@ void AV1PerformFullLoop(
                 context_ptr->blk_geom->bheight);
 
             // Transform partitioning free path
+#if STRENGHTHEN_MD_STAGE_3
+            uint8_t  tx_search_skip_fag;
+            if (context_ptr->md_staging_mode == 1)
+                tx_search_skip_fag = 0;
+            else
+                tx_search_skip_fag =
+                (picture_control_set_ptr->parent_pcs_ptr->skip_tx_search && best_fastLoop_candidate_index > NFL_TX_TH) ?
+                1 :
+                picture_control_set_ptr->parent_pcs_ptr->tx_search_level == TX_SEARCH_FULL_LOOP ? get_skip_tx_search_flag(
+                    context_ptr->blk_geom->sq_size,
+                    ref_fast_cost,
+                    *candidateBuffer->fast_cost_ptr,
+                    picture_control_set_ptr->parent_pcs_ptr->tx_weight) : 1;
+#else 
             uint8_t  tx_search_skip_fag = picture_control_set_ptr->parent_pcs_ptr->tx_search_level == TX_SEARCH_FULL_LOOP ? get_skip_tx_search_flag(
 #if BYPASS_USELESS_TX_SEARCH
                 context_ptr->blk_geom,
@@ -6253,7 +6287,7 @@ void AV1PerformFullLoop(
                 picture_control_set_ptr->parent_pcs_ptr->tx_weight) : 1;
 
             tx_search_skip_fag = (picture_control_set_ptr->parent_pcs_ptr->skip_tx_search && best_fastLoop_candidate_index > NFL_TX_TH) ? 1 : tx_search_skip_fag;
-
+#endif
             if (!tx_search_skip_fag) {
                 product_full_loop_tx_search(
                     candidateBuffer,

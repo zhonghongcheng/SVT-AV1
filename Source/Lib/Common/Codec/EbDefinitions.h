@@ -48,6 +48,8 @@ extern "C" {
 #define FIRST_FULL_LOOP_TX_SEARCH_OFF          1
 #define FIRST_FULL_LOOP_TX_SEARCH_OFF_INTER    0
 
+#define STRENGHTHEN_MD_STAGE_3                 0
+
 #define FIRST_FULL_LOOP_INTERPOLATION_SEARCH   0
 #define FIRST_RDOQ_INTRA                       0
 #define FIRST_RDOQ_INTER                       0
@@ -124,7 +126,6 @@ extern "C" {
 #if ATB_DC_CONTEXT_SUPPORT_1 && ATB_DC_CONTEXT_SUPPORT_2
 #define DC_SIGN_CONTEXT_FIX               1 // Fixed DC level derivation and update @ mode decision
 #endif
-#define SHUT_ATB                          0 // ATB multi-mode signal
 #endif
 
 #define CHROMA_SEARCH_FIX                 1 // Fix a few bugs related to Chroma search
