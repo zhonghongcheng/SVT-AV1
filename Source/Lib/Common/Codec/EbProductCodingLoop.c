@@ -6264,7 +6264,7 @@ void AV1PerformFullLoop(
             // Transform partitioning free path
 #if STRENGHTHEN_MD_STAGE_3
             uint8_t  tx_search_skip_fag;
-            if (context_ptr->md_staging_mode == 1)
+            if (context_ptr->bypass_stage2[candidate_ptr->cand_class] == EB_FALSE)
                 tx_search_skip_fag = 0;
             else
                 tx_search_skip_fag =
@@ -8282,19 +8282,30 @@ void md_encode_block(
 #else
         context_ptr->full_cand_count_md_stage_3[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ?
             context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0] :
-            (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 4;
+            (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 1;
 #endif
+#if FIRST_FULL_LOOP_TX_SEARCH_OFF_INTER
+        context_ptr->full_cand_count_md_stage_3[CAND_CLASS_1] = context_ptr->bypass_stage2[CAND_CLASS_1] ? 
+            context_ptr->full_cand_count_md_stage_2[CAND_CLASS_1] : 
+            (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 3 : 1;
+        context_ptr->full_cand_count_md_stage_3[CAND_CLASS_2] = context_ptr->bypass_stage2[CAND_CLASS_2] ? 
+            context_ptr->full_cand_count_md_stage_2[CAND_CLASS_2] : 
+            (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 2 : 1;
+        context_ptr->full_cand_count_md_stage_3[CAND_CLASS_3] = context_ptr->bypass_stage2[CAND_CLASS_3] ? 
+            context_ptr->full_cand_count_md_stage_2[CAND_CLASS_3] : 
+            (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 3 : 1;
+#else
         context_ptr->full_cand_count_md_stage_3[CAND_CLASS_1] = context_ptr->bypass_stage2[CAND_CLASS_1] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_1] : 1;
         context_ptr->full_cand_count_md_stage_3[CAND_CLASS_2] = context_ptr->bypass_stage2[CAND_CLASS_2] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_2] : 1;
         context_ptr->full_cand_count_md_stage_3[CAND_CLASS_3] = context_ptr->bypass_stage2[CAND_CLASS_3] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_3] : 1;
-
+#endif
         if (picture_control_set_ptr->slice_type == I_SLICE) {
 #if MD_STAGE_3_NFL_BDRATE
             context_ptr->full_cand_count_md_stage_3[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0] : 10;
 #else
             context_ptr->full_cand_count_md_stage_3[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ?
                 context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0] :
-                (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 4;
+                (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 1;
 #endif
             context_ptr->full_cand_count_md_stage_3[CAND_CLASS_1] = 0;
             context_ptr->full_cand_count_md_stage_3[CAND_CLASS_2] = 0;
