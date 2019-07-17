@@ -975,7 +975,7 @@ EB_API EbErrorType eb_init_encoder(EbComponentType *svt_enc_component)
     av1_init_me_luts();
     init_fn_ptr();
 #if COMP_DIFF
-	av1_init_wedge_masks();
+    av1_init_wedge_masks();
 #endif
 
     /************************************
@@ -1859,7 +1859,7 @@ EB_API EbErrorType eb_init_encoder(EbComponentType *svt_enc_component)
 #if ENABLE_CDF_UPDATE
         ,enc_handle_ptr->picture_demux_results_producer_fifo_ptr_array[enc_handle_ptr->sequence_control_set_instance_array[0]->sequence_control_set_ptr->source_based_operations_process_init_count +
             enc_handle_ptr->sequence_control_set_instance_array[0]->sequence_control_set_ptr->enc_dec_process_init_count] // Add port lookup logic here JMJ
-#endif    
+#endif
     );
 
     if (return_error == EB_ErrorInsufficientResources)

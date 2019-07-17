@@ -4337,7 +4337,7 @@ static void half_pel_refinement_block(
             y_mv = y_best_mv + (offset_y * 4);
             search_index_x = (x_mv >> 2) - x_search_area_origin;
             search_index_y = (y_mv >> 2) - y_search_area_origin;
-            
+
             uint32_t integer_mv1 = (((uint16_t)(y_mv >> 2)) << 18);
             uint16_t integer_mv2 = (((uint16_t)(x_mv >> 2) << 2));
             uint32_t integer_mv = integer_mv1 | integer_mv2;
@@ -4348,7 +4348,7 @@ static void half_pel_refinement_block(
             if (search_index_y < 0 || search_index_y > (int16_t)search_area_height - 1) {
                 continue;
             }
-            
+
             half_mv_x[0] = x_mv - 2;  // L  position
             half_mv_x[1] = x_mv + 2;  // R  position
             half_mv_x[2] = x_mv;      // T  position
@@ -14267,7 +14267,7 @@ EbErrorType motion_estimate_lcu(
     uint32_t sb_height = (input_ptr->height - sb_origin_y) < BLOCK_SIZE_64
                              ? input_ptr->height - sb_origin_y
                              : BLOCK_SIZE_64;
-  
+
     int16_t padWidth = (int16_t)BLOCK_SIZE_64 - 1;
     int16_t padHeight = (int16_t)BLOCK_SIZE_64 - 1;
     int16_t search_area_width;
@@ -14388,7 +14388,7 @@ EbErrorType motion_estimate_lcu(
                             ? (uint32_t)REF_LIST_0
                             : (uint32_t)REF_LIST_1;
 
-#if ADP_BQ 
+#if ADP_BQ
     // Derive is_nsq_table_used
     EbBool is_nsq_table_used;
     if (picture_control_set_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE)
@@ -14399,7 +14399,7 @@ EbErrorType motion_estimate_lcu(
             picture_control_set_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
             picture_control_set_ptr->nsq_search_level < NSQ_SEARCH_FULL &&
             picture_control_set_ptr->enc_mode != ENC_M0) ? EB_TRUE : EB_FALSE;
-#else    
+#else
     EbBool is_nsq_table_used = (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE &&
         picture_control_set_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
         picture_control_set_ptr->nsq_search_level < NSQ_SEARCH_FULL) ? EB_TRUE : EB_FALSE;
@@ -15988,7 +15988,7 @@ EbErrorType motion_estimate_lcu(
 #if TEST5_DISABLE_NSQ_ME
                                     EB_FALSE);
 #else
-#if ADP_BQ 
+#if ADP_BQ
                                     picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE || picture_control_set_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE);
 #else
                                     picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE);
@@ -16193,7 +16193,7 @@ if (context_ptr->me_alt_ref == EB_FALSE) {
         total_me_candidate_index = candidateIndex;
 
         if (numOfListToSearch) {
-#if ADP_BQ 
+#if ADP_BQ
             if (picture_control_set_ptr->cu8x8_mode == CU_8x8_MODE_0 || pu_index < 21 || picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE || picture_control_set_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE) {
 #else
             if (picture_control_set_ptr->cu8x8_mode == CU_8x8_MODE_0 || pu_index < 21 || (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE)) {

@@ -587,7 +587,7 @@ void* picture_manager_kernel(void *input_ptr)
             // Find the Reference in the Reference Queue
             do {
                 referenceEntryPtr = encode_context_ptr->reference_picture_queue[referenceQueueIndex];
-                if (referenceEntryPtr->picture_number == inputPictureDemuxPtr->picture_number) 
+                if (referenceEntryPtr->picture_number == inputPictureDemuxPtr->picture_number)
                     // Set the feedback arrived
                     referenceEntryPtr->frame_context_updated = EB_TRUE;
                 // Increment the referenceQueueIndex Iterator
@@ -596,7 +596,7 @@ void* picture_manager_kernel(void *input_ptr)
             } while ((referenceQueueIndex != encode_context_ptr->reference_picture_queue_tail_index) && (referenceEntryPtr->picture_number != inputPictureDemuxPtr->picture_number));
 
             //keep the release of SCS here because we still need the encodeContext structure here
-            // Release the Reference's SequenceControlSet    
+            // Release the Reference's SequenceControlSet
             eb_release_object(inputPictureDemuxPtr->sequence_control_set_wrapper_ptr);
 
             break;
@@ -1145,7 +1145,7 @@ void* picture_manager_kernel(void *input_ptr)
                             else
                                 ChildPictureControlSetPtr->parent_pcs_ptr->primary_ref_frame = PRIMARY_REF_NONE;
                             ChildPictureControlSetPtr->parent_pcs_ptr->refresh_frame_context = REFRESH_FRAME_CONTEXT_BACKWARD;
-                            
+
                         }
                         else {
                             ChildPictureControlSetPtr->parent_pcs_ptr->primary_ref_frame = PRIMARY_REF_NONE;

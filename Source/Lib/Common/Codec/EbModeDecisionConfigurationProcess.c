@@ -96,11 +96,11 @@ static uint8_t intrabc_max_mesh_pct[MAX_MESH_SPEED + 1] = { 100, 100, 100,
 #define SQ_BLOCKS_SEARCH_COST       190u
 #if ADP_BQ
 #define SB_NSQ_LEVEL_0_SEARCH_COST  SQ_BLOCKS_SEARCH_COST // 4.0x faster than NSQ_LEVEL_6
-#define SB_NSQ_LEVEL_1_SEARCH_COST  200                   // 3.8x faster than NSQ_LEVEL_6      
+#define SB_NSQ_LEVEL_1_SEARCH_COST  200                   // 3.8x faster than NSQ_LEVEL_6
 #define SB_NSQ_LEVEL_2_SEARCH_COST  253                   // 3.0x faster than NSQ_LEVEL_6
 #define SB_NSQ_LEVEL_3_SEARCH_COST  304                   // 2.5x faster than NSQ_LEVEL_6
-#define SB_NSQ_LEVEL_4_SEARCH_COST  362                   // 2.1x faster than NSQ_LEVEL_6         
-#define SB_NSQ_LEVEL_5_SEARCH_COST  422                   // 1.8x faster than NSQ_LEVEL_6  
+#define SB_NSQ_LEVEL_4_SEARCH_COST  362                   // 2.1x faster than NSQ_LEVEL_6
+#define SB_NSQ_LEVEL_5_SEARCH_COST  422                   // 1.8x faster than NSQ_LEVEL_6
 #define SB_NSQ_LEVEL_6_SEARCH_COST  760
 #endif
 
@@ -1114,7 +1114,7 @@ void sb_nsq_ranking_and_forward_all_blocks_to_md(
         resultsPtr->leaf_data_array[blk_index].early_split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
         if (sequence_control_set_ptr->sb_geom[sb_index].block_is_inside_md_scan[blk_index] && is_blk_allowed)
         {
-            
+
             resultsPtr->leaf_data_array[resultsPtr->leaf_count].tot_d1_blocks =
                 blk_geom->sq_size == 128 ? 17 :
                 blk_geom->sq_size > 8 ? 25 :
@@ -2060,7 +2060,7 @@ void set_target_budget_oq(
     uint32_t budget_per_sb;
 
 #if ADP_BQ //------
-    if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE) {               
+    if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE) {
         budget_per_sb = ((context_ptr->sb_average_score * (SB_NSQ_LEVEL_6_SEARCH_COST - SB_NSQ_LEVEL_0_SEARCH_COST)) / HIGH_SB_SCORE) + SB_NSQ_LEVEL_0_SEARCH_COST;
         budget_per_sb = CLIP3(SB_NSQ_LEVEL_0_SEARCH_COST, SB_NSQ_LEVEL_6_SEARCH_COST, budget_per_sb);
     }

@@ -4640,7 +4640,7 @@ EbErrorType av1_intra_prediction_cl(
         av1_predict_intra_block(
             &md_context_ptr->sb_ptr->tile_info,
 #if MDLEVELS
-			!ED_STAGE,
+            !ED_STAGE,
 #else
             MD_STAGE,
 #endif

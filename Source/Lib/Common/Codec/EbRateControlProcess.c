@@ -3507,13 +3507,13 @@ static int adaptive_qindex_calc(
         if (picture_control_set_ptr->parent_pcs_ptr->kf_zeromotion_pct <= FAST_MOVING_KF_GROUP_THRESH)
             picture_control_set_ptr->parent_pcs_ptr->qp_scaling_average_complexity = max_qp_scaling_avg_comp_I;
 
-        // For the low filtered ALT_REF pictures (next ALT_REF) where complexity is low and picture is static, decrease the complexity/QP of the I_SLICE. 
+        // For the low filtered ALT_REF pictures (next ALT_REF) where complexity is low and picture is static, decrease the complexity/QP of the I_SLICE.
         // The improved area will be propagated to future frames
         if (picture_control_set_ptr->parent_pcs_ptr->qp_scaling_average_complexity <= LOW_QPS_COMP_THRESHOLD &&
             picture_control_set_ptr->parent_pcs_ptr->filtered_sse < LOW_FILTERED_THRESHOLD && picture_control_set_ptr->parent_pcs_ptr->filtered_sse_uv < LOW_FILTERED_THRESHOLD &&
             picture_control_set_ptr->parent_pcs_ptr->kf_zeromotion_pct > STATIC_KF_GROUP_THRESH)
             picture_control_set_ptr->parent_pcs_ptr->qp_scaling_average_complexity >>= 1;
-        
+
         // For the highly filtered ALT_REF pictures (next ALT_REF), increase the complexity/QP of the I_SLICE to save on rate
         if (picture_control_set_ptr->parent_pcs_ptr->filtered_sse + picture_control_set_ptr->parent_pcs_ptr->filtered_sse_uv >= HIGH_FILTERED_THRESHOLD)
             picture_control_set_ptr->parent_pcs_ptr->qp_scaling_average_complexity = max_qp_scaling_avg_comp_I;
@@ -3689,7 +3689,7 @@ static void sb_qp_derivation(
                 if (variance_sb < IS_COMPLEX_LCU_FLAT_VARIANCE_TH)
                     delta_qp = 3;
                 else {
-                    // Calculate the QP of each block to find the delta 
+                    // Calculate the QP of each block to find the delta
                     rc.kf_boost = (((max_qp_scaling_avg_comp - non_moving_index_sb)  * (kf_high - kf_low)) / max_qp_scaling_avg_comp) + kf_low;
                     // Baseline value derived from cpi->active_worst_quality and kf boost.
                     active_best_quality =

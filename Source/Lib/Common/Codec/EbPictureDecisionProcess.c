@@ -152,7 +152,7 @@ void av1_setup_skip_mode_allowed(PictureParentControlSet  *parent_pcs_ptr) {
 
         if (ref_frame_arr_single[i].used == 0) continue;
 
-        const int ref_order_hint = ref_frame_arr_single[i].poc;// buf->order_hint;
+        const int ref_order_hint = (int)ref_frame_arr_single[i].poc;// buf->order_hint;
         if (get_relative_dist(order_hint_info, ref_order_hint, cur_order_hint) <
             0) {
             // Forward reference
@@ -190,7 +190,7 @@ void av1_setup_skip_mode_allowed(PictureParentControlSet  *parent_pcs_ptr) {
             //if (buf == NULL) continue;
             if (ref_frame_arr_single[i].used == 0) continue;
 
-            const int ref_order_hint = ref_frame_arr_single[i].poc;// buf->order_hint;
+            const int ref_order_hint = (int)ref_frame_arr_single[i].poc;// buf->order_hint;
             if ((ref_order_hints[0] != -1 &&
                 get_relative_dist(order_hint_info, ref_order_hint,
                     ref_order_hints[0]) < 0) &&
@@ -218,9 +218,9 @@ void av1_setup_skip_mode_allowed(PictureParentControlSet  *parent_pcs_ptr) {
     //5 :ALT2
     //6 :ALT
 #if COMP_MODE
-	parent_pcs_ptr->cur_order_hint = parent_pcs_ptr->picture_number % (uint64_t)(1 << (parent_pcs_ptr->sequence_control_set_ptr->seq_header.order_hint_info.order_hint_bits));
-	for (uint8_t i = 0; i < 7; ++i)
-		parent_pcs_ptr->ref_order_hint[i] = (uint32_t)ref_frame_arr_single[i].poc;
+    parent_pcs_ptr->cur_order_hint = parent_pcs_ptr->picture_number % (uint64_t)(1 << (parent_pcs_ptr->sequence_control_set_ptr->seq_header.order_hint_info.order_hint_bits));
+    for (uint8_t i = 0; i < 7; ++i)
+        parent_pcs_ptr->ref_order_hint[i] = (uint32_t)ref_frame_arr_single[i].poc;
 #endif
 }
 #endif
@@ -277,7 +277,7 @@ uint8_t  circ_inc(uint8_t max, uint8_t off, uint8_t input)
 #define FC_SKIP_TX_SR_TH025                     125 // Fast cost skip tx search threshold.
 #define FC_SKIP_TX_SR_TH010                     110 // Fast cost skip tx search threshold.
 #if APPLY_TX_SEARCH_SHORTCUTS_TO_ATB
-#define FC_SKIP_ATB_SR_TH040                    140 
+#define FC_SKIP_ATB_SR_TH040                    140
 #endif
  /************************************************
   * Picture Analysis Context Constructor
@@ -1474,7 +1474,7 @@ EbErrorType signal_derivation_multi_processes_oq(
     if (MR_MODE)
         picture_control_set_ptr->atb_weight = MAX_MODE_COST;
     else
-        picture_control_set_ptr->atb_weight = FC_SKIP_ATB_SR_TH040; 
+        picture_control_set_ptr->atb_weight = FC_SKIP_ATB_SR_TH040;
 #endif
 
     // Intra prediction modes                       Settings
@@ -1513,7 +1513,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 #if NEW_PRESETS
 #if SCREEN_CONTENT_SETTINGS
     if (sc_content_detected)
-        if (picture_control_set_ptr->enc_mode == ENC_M0) 
+        if (picture_control_set_ptr->enc_mode == ENC_M0)
             picture_control_set_ptr->intra_pred_mode = 0;
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
             if (picture_control_set_ptr->temporal_layer_index == 0)
@@ -3271,7 +3271,7 @@ void perform_simple_picture_analysis_for_overlay(PictureParentControlSet     *pi
         picture_control_set_ptr->chroma_downsampled_picture_ptr, //420 input_picture_ptr
         input_padded_picture_ptr,
 #if DOWN_SAMPLING_FILTERING
-        paReferenceObject->sixteenth_decimated_picture_ptr, // Hsan: always use decimated until studying the trade offs 
+        paReferenceObject->sixteenth_decimated_picture_ptr, // Hsan: always use decimated until studying the trade offs
 #else
         sixteenth_decimated_picture_ptr,
 #endif

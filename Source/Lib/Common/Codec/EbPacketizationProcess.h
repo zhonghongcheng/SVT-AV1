@@ -46,7 +46,7 @@ extern "C" {
         EbFifo                *rate_control_tasks_output_fifo_ptr
 #if ENABLE_CDF_UPDATE
         ,EbFifo              *picture_manager_input_fifo_ptr
-#endif    
+#endif
     );
 
     extern void* packetization_kernel(void *input_ptr);

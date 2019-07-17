@@ -79,86 +79,86 @@ extern void av1_set_ref_frame(MvReferenceFrame *rf,
 #if COMP_EC
 int get_relative_dist_enc(SeqHeader *seq_header, int ref_hint, int order_hint);
  int get_comp_index_context_enc(
-	PictureParentControlSet   *pcs_ptr,
-	int cur_frame_index,
-	int bck_frame_index,
-	int fwd_frame_index,
-	const MACROBLOCKD *xd) {
-	ModeInfo *mi_ptr = *xd->mi;
-	MB_MODE_INFO *mbmi = &mi_ptr->mbmi;
-	//const RefCntBuffer *const bck_buf = get_ref_frame_buf(cm, mbmi->ref_frame[0]);
-	//const RefCntBuffer *const fwd_buf = get_ref_frame_buf(cm, mbmi->ref_frame[1]);
-	//int bck_frame_index = 0, fwd_frame_index = 0;
-	//int cur_frame_index = cm->cur_frame->order_hint;
+    PictureParentControlSet   *pcs_ptr,
+    int cur_frame_index,
+    int bck_frame_index,
+    int fwd_frame_index,
+    const MACROBLOCKD *xd) {
+    ModeInfo *mi_ptr = *xd->mi;
+    MB_MODE_INFO *mbmi = &mi_ptr->mbmi;
+    //const RefCntBuffer *const bck_buf = get_ref_frame_buf(cm, mbmi->ref_frame[0]);
+    //const RefCntBuffer *const fwd_buf = get_ref_frame_buf(cm, mbmi->ref_frame[1]);
+    //int bck_frame_index = 0, fwd_frame_index = 0;
+    //int cur_frame_index = cm->cur_frame->order_hint;
 
-	//if (bck_buf != NULL) bck_frame_index = bck_buf->order_hint;
-	//if (fwd_buf != NULL) fwd_frame_index = fwd_buf->order_hint;
-	int fwd = abs(get_relative_dist_enc(&pcs_ptr->sequence_control_set_ptr->seq_header,
-		fwd_frame_index, cur_frame_index));
-	int bck = abs(get_relative_dist_enc(&pcs_ptr->sequence_control_set_ptr->seq_header,
-		cur_frame_index, bck_frame_index));
-	const MB_MODE_INFO *const above_mi = xd->above_mbmi;
-	const MB_MODE_INFO *const left_mi = xd->left_mbmi;
-	int above_ctx = 0, left_ctx = 0;
-	const int offset = (fwd == bck);
-	if (above_mi != NULL) {
-		if (has_second_ref(above_mi))
-			above_ctx = above_mi->compound_idx;
-		else if (above_mi->ref_frame[0] == ALTREF_FRAME)
-			above_ctx = 1;
-	}
-	if (left_mi != NULL) {
-		if (has_second_ref(left_mi))
-			left_ctx = left_mi->compound_idx;
-		else if (left_mi->ref_frame[0] == ALTREF_FRAME)
-			left_ctx = 1;
-	}
-	return above_ctx + left_ctx + 3 * offset;
+    //if (bck_buf != NULL) bck_frame_index = bck_buf->order_hint;
+    //if (fwd_buf != NULL) fwd_frame_index = fwd_buf->order_hint;
+    int fwd = abs(get_relative_dist_enc(&pcs_ptr->sequence_control_set_ptr->seq_header,
+        fwd_frame_index, cur_frame_index));
+    int bck = abs(get_relative_dist_enc(&pcs_ptr->sequence_control_set_ptr->seq_header,
+        cur_frame_index, bck_frame_index));
+    const MB_MODE_INFO *const above_mi = xd->above_mbmi;
+    const MB_MODE_INFO *const left_mi = xd->left_mbmi;
+    int above_ctx = 0, left_ctx = 0;
+    const int offset = (fwd == bck);
+    if (above_mi != NULL) {
+        if (has_second_ref(above_mi))
+            above_ctx = above_mi->compound_idx;
+        else if (above_mi->ref_frame[0] == ALTREF_FRAME)
+            above_ctx = 1;
+    }
+    if (left_mi != NULL) {
+        if (has_second_ref(left_mi))
+            left_ctx = left_mi->compound_idx;
+        else if (left_mi->ref_frame[0] == ALTREF_FRAME)
+            left_ctx = 1;
+    }
+    return above_ctx + left_ctx + 3 * offset;
 }
 int get_comp_group_idx_context_enc(const MACROBLOCKD *xd) {
-	const MB_MODE_INFO *const above_mi = xd->above_mbmi;
-	const MB_MODE_INFO *const left_mi = xd->left_mbmi;
-	int above_ctx = 0, left_ctx = 0;
-	if (above_mi) {
-		if (has_second_ref(above_mi))
-			above_ctx = above_mi->comp_group_idx;
-		else if (above_mi->ref_frame[0] == ALTREF_FRAME)
-			above_ctx = 3;
-	}
-	if (left_mi) {
-		if (has_second_ref(left_mi))
-			left_ctx = left_mi->comp_group_idx;
-		else if (left_mi->ref_frame[0] == ALTREF_FRAME)
-			left_ctx = 3;
-	}
-	return AOMMIN(5, above_ctx + left_ctx);
+    const MB_MODE_INFO *const above_mi = xd->above_mbmi;
+    const MB_MODE_INFO *const left_mi = xd->left_mbmi;
+    int above_ctx = 0, left_ctx = 0;
+    if (above_mi) {
+        if (has_second_ref(above_mi))
+            above_ctx = above_mi->comp_group_idx;
+        else if (above_mi->ref_frame[0] == ALTREF_FRAME)
+            above_ctx = 3;
+    }
+    if (left_mi) {
+        if (has_second_ref(left_mi))
+            left_ctx = left_mi->comp_group_idx;
+        else if (left_mi->ref_frame[0] == ALTREF_FRAME)
+            left_ctx = 3;
+    }
+    return AOMMIN(5, above_ctx + left_ctx);
 }
  int is_masked_compound_type(COMPOUND_TYPE type) {
-	return (type == COMPOUND_WEDGE || type == COMPOUND_DIFFWTD);
+    return (type == COMPOUND_WEDGE || type == COMPOUND_DIFFWTD);
 }
  int is_interinter_compound_used(COMPOUND_TYPE type,
-	BLOCK_SIZE sb_type) {
-	const int comp_allowed = is_comp_ref_allowed(sb_type);
-	switch (type) {
-	case COMPOUND_AVERAGE:
-	case COMPOUND_DISTWTD:
-	case COMPOUND_DIFFWTD: return comp_allowed;
-	case COMPOUND_WEDGE:
-		return comp_allowed && wedge_params_lookup[sb_type].bits > 0;
-	default: assert(0); return 0;
-	}
+    BLOCK_SIZE sb_type) {
+    const int comp_allowed = is_comp_ref_allowed(sb_type);
+    switch (type) {
+    case COMPOUND_AVERAGE:
+    case COMPOUND_DISTWTD:
+    case COMPOUND_DIFFWTD: return comp_allowed;
+    case COMPOUND_WEDGE:
+        return comp_allowed && wedge_params_lookup[sb_type].bits > 0;
+    default: assert(0); return 0;
+    }
 }
  int is_any_masked_compound_used(BLOCK_SIZE sb_type) {
-	COMPOUND_TYPE comp_type;
-	int i;
-	if (!is_comp_ref_allowed(sb_type)) return 0;
-	for (i = 0; i < COMPOUND_TYPES; i++) {
-		comp_type = (COMPOUND_TYPE)i;
-		if (is_masked_compound_type(comp_type) &&
-			is_interinter_compound_used(comp_type, sb_type))
-			return 1;
-	}
-	return 0;
+    COMPOUND_TYPE comp_type;
+    int i;
+    if (!is_comp_ref_allowed(sb_type)) return 0;
+    for (i = 0; i < COMPOUND_TYPES; i++) {
+        comp_type = (COMPOUND_TYPE)i;
+        if (is_masked_compound_type(comp_type) &&
+            is_interinter_compound_used(comp_type, sb_type))
+            return 1;
+    }
+    return 0;
 }
 #endif
 /************************************************
@@ -3911,8 +3911,8 @@ static void write_tile_info(const PictureParentControlSet *const pcs_ptr,
         // tile id used for cdf update
 #if ENABLE_CDF_UPDATE
         aom_wb_write_literal(
-            wb, 
-            pcs_ptr->frame_end_cdf_update_mode ? pcs_ptr->av1_cm->tile_rows * pcs_ptr->av1_cm->tile_cols-1 : 0, 
+            wb,
+            pcs_ptr->frame_end_cdf_update_mode ? pcs_ptr->av1_cm->tile_rows * pcs_ptr->av1_cm->tile_cols-1 : 0,
             pcs_ptr->av1_cm->log2_tile_cols + pcs_ptr->av1_cm->log2_tile_rows);
 #else
         aom_wb_write_literal(wb, 0, pcs_ptr->av1_cm->log2_tile_cols + pcs_ptr->av1_cm->log2_tile_rows);
@@ -4366,7 +4366,7 @@ static void WriteGlobalMotion(
     int32_t frame;
     for (frame = LAST_FRAME; frame <= ALTREF_FRAME; ++frame) {
 #if ENABLE_CDF_UPDATE
-        const EbWarpedMotionParams *ref_params = (pcs_ptr->primary_ref_frame != PRIMARY_REF_NONE) ? 
+        const EbWarpedMotionParams *ref_params = (pcs_ptr->primary_ref_frame != PRIMARY_REF_NONE) ?
             &pcs_ptr->childPcs->ref_global_motion[frame] : &default_warp_params;
 #else
         const EbWarpedMotionParams *ref_params = &default_warp_params;
@@ -6156,7 +6156,7 @@ assert(bsize < BlockSizeS_ALL);
             if (cu_size == 8 && cu_ptr->prediction_mode_flag == INTRA_MODE && cu_ptr->pred_mode == INTRA_MODE_4x4)
                 bsize = BLOCK_4X4;
             if ((bsize != sequence_control_set_ptr->sb_size || skipCoeff == 0) && super_block_upper_left) {
-#endif			
+#endif
                 assert(current_q_index > 0);
                 int32_t reduced_delta_qindex = (current_q_index - picture_control_set_ptr->parent_pcs_ptr->prev_qindex) / picture_control_set_ptr->parent_pcs_ptr->delta_q_res;
 
@@ -6301,7 +6301,7 @@ assert(bsize < BlockSizeS_ALL);
             if (cu_size == 8 && cu_ptr->prediction_mode_flag == INTRA_MODE && cu_ptr->pred_mode == INTRA_MODE_4x4)
                 bsize = BLOCK_4X4;
             if ((bsize != sequence_control_set_ptr->sb_size || skipCoeff == 0) && super_block_upper_left) {
-#endif			
+#endif
                 assert(current_q_index > 0);
 
                 int32_t reduced_delta_qindex = (current_q_index - picture_control_set_ptr->parent_pcs_ptr->prev_qindex) / picture_control_set_ptr->parent_pcs_ptr->delta_q_res;
@@ -6517,75 +6517,75 @@ assert(bsize < BlockSizeS_ALL);
                         picture_control_set_ptr);
                 }
 #if COMP_EC
-				// First write idx to indicate current compound inter prediction mode group
+                // First write idx to indicate current compound inter prediction mode group
                 // Group A (0): dist_wtd_comp, compound_average
                 // Group B (1): interintra, compound_diffwtd, wedge
-				MbModeInfo *mbmi = &mi_ptr->mbmi;
+                MbModeInfo *mbmi = &mi_ptr->mbmi;
 
-				if (has_second_ref(mbmi)) {
-					
+                if (has_second_ref(mbmi)) {
 
-					const int masked_compound_used = is_any_masked_compound_used(bsize) &&
-						sequence_control_set_ptr->seq_header.enable_masked_compound;
 
-					if (masked_compound_used) {
-						const int ctx_comp_group_idx =  get_comp_group_idx_context_enc(cu_ptr->av1xd);
-						aom_write_symbol(ec_writer, cu_ptr->comp_group_idx,
-							frameContext->comp_group_idx_cdf[ctx_comp_group_idx], 2);
-					}
-					else {
+                    const int masked_compound_used = is_any_masked_compound_used(bsize) &&
+                        sequence_control_set_ptr->seq_header.enable_masked_compound;
 
-						//printf("CHKN SHOULD  NOT COME HERE\n");
-						assert(cu_ptr->comp_group_idx == 0);
-					}
+                    if (masked_compound_used) {
+                        const int ctx_comp_group_idx =  get_comp_group_idx_context_enc(cu_ptr->av1xd);
+                        aom_write_symbol(ec_writer, cu_ptr->comp_group_idx,
+                            frameContext->comp_group_idx_cdf[ctx_comp_group_idx], 2);
+                    }
+                    else {
 
-					if (cu_ptr->comp_group_idx == 0) {
-						if ( cu_ptr->compound_idx)
-							assert(cu_ptr->interinter_comp.type == COMPOUND_AVERAGE);
+                        //printf("CHKN SHOULD  NOT COME HERE\n");
+                        assert(cu_ptr->comp_group_idx == 0);
+                    }
 
-						if (sequence_control_set_ptr->seq_header.order_hint_info.enable_jnt_comp) {
-							const int comp_index_ctx =  get_comp_index_context_enc(
-								picture_control_set_ptr->parent_pcs_ptr, 
-								picture_control_set_ptr->parent_pcs_ptr->cur_order_hint,// cur_frame_index,
-								picture_control_set_ptr->parent_pcs_ptr->ref_order_hint[rf[0] - 1],// bck_frame_index,
-								picture_control_set_ptr->parent_pcs_ptr->ref_order_hint[rf[1] - 1],// fwd_frame_index,
-								cu_ptr->av1xd);
-							aom_write_symbol(ec_writer, cu_ptr->compound_idx,
-								frameContext->compound_index_cdf[comp_index_ctx], 2);
-						}
-						else {
-							assert(cu_ptr->compound_idx == 1);
-						}
-					}
-					else {
+                    if (cu_ptr->comp_group_idx == 0) {
+                        if ( cu_ptr->compound_idx)
+                            assert(cu_ptr->interinter_comp.type == COMPOUND_AVERAGE);
 
-						//printf("CHKN  NOT HERE YET \n");
-						assert(picture_control_set_ptr->parent_pcs_ptr->reference_mode != SINGLE_REFERENCE &&
-							is_inter_compound_mode(mbmi->mode) &&
-							cu_ptr->prediction_unit_array[0].motion_mode == SIMPLE_TRANSLATION);
-						assert(masked_compound_used);
-						// compound_diffwtd, wedge
-						assert(cu_ptr->interinter_comp.type == COMPOUND_WEDGE ||
-							cu_ptr->interinter_comp.type == COMPOUND_DIFFWTD);
+                        if (sequence_control_set_ptr->seq_header.order_hint_info.enable_jnt_comp) {
+                            const int comp_index_ctx =  get_comp_index_context_enc(
+                                picture_control_set_ptr->parent_pcs_ptr,
+                                picture_control_set_ptr->parent_pcs_ptr->cur_order_hint,// cur_frame_index,
+                                picture_control_set_ptr->parent_pcs_ptr->ref_order_hint[rf[0] - 1],// bck_frame_index,
+                                picture_control_set_ptr->parent_pcs_ptr->ref_order_hint[rf[1] - 1],// fwd_frame_index,
+                                cu_ptr->av1xd);
+                            aom_write_symbol(ec_writer, cu_ptr->compound_idx,
+                                frameContext->compound_index_cdf[comp_index_ctx], 2);
+                        }
+                        else {
+                            assert(cu_ptr->compound_idx == 1);
+                        }
+                    }
+                    else {
 
-						if (is_interinter_compound_used(COMPOUND_WEDGE, bsize))
-							aom_write_symbol(ec_writer, cu_ptr->interinter_comp.type - COMPOUND_WEDGE,
-								frameContext->compound_type_cdf[bsize],
-								MASKED_COMPOUND_TYPES);
+                        //printf("CHKN  NOT HERE YET \n");
+                        assert(picture_control_set_ptr->parent_pcs_ptr->reference_mode != SINGLE_REFERENCE &&
+                            is_inter_compound_mode(mbmi->mode) &&
+                            cu_ptr->prediction_unit_array[0].motion_mode == SIMPLE_TRANSLATION);
+                        assert(masked_compound_used);
+                        // compound_diffwtd, wedge
+                        assert(cu_ptr->interinter_comp.type == COMPOUND_WEDGE ||
+                            cu_ptr->interinter_comp.type == COMPOUND_DIFFWTD);
 
-						if (cu_ptr->interinter_comp.type == COMPOUND_WEDGE) {
-							assert(is_interinter_compound_used(COMPOUND_WEDGE, bsize));
-							aom_write_symbol(ec_writer, cu_ptr->interinter_comp.wedge_index,
-								frameContext->wedge_idx_cdf[bsize], 16);
-							aom_write_bit(ec_writer, cu_ptr->interinter_comp.wedge_sign);
-						}
-						else {
-							assert(cu_ptr->interinter_comp.type == COMPOUND_DIFFWTD);
-							aom_write_literal(ec_writer, cu_ptr->interinter_comp.mask_type,
-								MAX_DIFFWTD_MASK_BITS);
-						}
-					}
-				}
+                        if (is_interinter_compound_used(COMPOUND_WEDGE, bsize))
+                            aom_write_symbol(ec_writer, cu_ptr->interinter_comp.type - COMPOUND_WEDGE,
+                                frameContext->compound_type_cdf[bsize],
+                                MASKED_COMPOUND_TYPES);
+
+                        if (cu_ptr->interinter_comp.type == COMPOUND_WEDGE) {
+                            assert(is_interinter_compound_used(COMPOUND_WEDGE, bsize));
+                            aom_write_symbol(ec_writer, cu_ptr->interinter_comp.wedge_index,
+                                frameContext->wedge_idx_cdf[bsize], 16);
+                            aom_write_bit(ec_writer, cu_ptr->interinter_comp.wedge_sign);
+                        }
+                        else {
+                            assert(cu_ptr->interinter_comp.type == COMPOUND_DIFFWTD);
+                            aom_write_literal(ec_writer, cu_ptr->interinter_comp.mask_type,
+                                MAX_DIFFWTD_MASK_BITS);
+                        }
+                    }
+                }
 #else
                 if (sequence_control_set_ptr->seq_header.enable_masked_compound || sequence_control_set_ptr->seq_header.order_hint_info.enable_jnt_comp)
                     printf("ERROR[AN]: masked_compound_used and enable_jnt_comp not supported\n");

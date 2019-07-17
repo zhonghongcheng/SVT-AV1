@@ -121,7 +121,7 @@ extern "C" {
         EbBool                                 is_zero_mv;
 
 #if MD_CLASS
-		CAND_CLASS                             cand_class;
+        CAND_CLASS                             cand_class;
 #endif
 
 #if ATB_TX_TYPE_SUPPORT_PER_TU
@@ -148,9 +148,9 @@ extern "C" {
         uint8_t                                tx_depth;
 #endif
 #if COMP_MODE
-		INTERINTER_COMPOUND_DATA               interinter_comp;
-		uint8_t                                compound_idx;
-		uint8_t                                comp_group_idx;
+        INTERINTER_COMPOUND_DATA               interinter_comp;
+        uint8_t                                compound_idx;
+        uint8_t                                comp_group_idx;
 #endif
     } ModeDecisionCandidate;
 

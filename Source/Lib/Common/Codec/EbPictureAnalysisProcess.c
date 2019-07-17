@@ -4785,7 +4785,7 @@ void DecimateInputPicture(
     }
 
 #if DECIMATION_BUG_FIX
-    // Always perform 1/16th decimation as 
+    // Always perform 1/16th decimation as
     // Sixteenth Input Picture Decimation
     decimation_2d(
         &input_padded_picture_ptr->buffer_y[input_padded_picture_ptr->origin_x + input_padded_picture_ptr->origin_y * input_padded_picture_ptr->stride_y],
@@ -4882,7 +4882,7 @@ static void is_screen_content(PictureParentControlSet       *picture_control_set
                 //buf.buf = (uint8_t *)src;
                 const aom_variance_fn_ptr_t *fn_ptr = &mefn_ptr[BLOCK_16X16];
 
-                const unsigned int var = 
+                const unsigned int var =
                                /* use_hbd
                 ? av1_high_get_sby_perpixel_variance(cpi, &buf, BLOCK_16X16, bd)
                 : */
@@ -4894,7 +4894,7 @@ static void is_screen_content(PictureParentControlSet       *picture_control_set
         }
     }
 
-    // The threshold is 10%. 
+    // The threshold is 10%.
     picture_control_set_ptr->sc_content_detected = (counts_1 * blk_h * blk_w * 10 > width * height) && ( counts_2 * blk_h * blk_w * 15 > width * height) ;
 }
 #else
@@ -5136,7 +5136,7 @@ void* picture_analysis_kernel(void *input_ptr)
                 picture_control_set_ptr->chroma_downsampled_picture_ptr, //420 input_picture_ptr
                 input_padded_picture_ptr,
 #if DOWN_SAMPLING_FILTERING
-                (EbPictureBufferDesc*)paReferenceObject->sixteenth_decimated_picture_ptr, // Hsan: always use decimated until studying the trade offs 
+                (EbPictureBufferDesc*)paReferenceObject->sixteenth_decimated_picture_ptr, // Hsan: always use decimated until studying the trade offs
 #else
                 sixteenth_decimated_picture_ptr,
 #endif

@@ -183,10 +183,10 @@ extern "C" {
         EbInputResolution                       input_resolution;
         EbScdMode                               scd_mode;
         EbPmMode                                pm_mode;
-        
+
 #if COMP_MODE
-	//	OrderHintInfoEnc                        order_hint_info_st;
-		MD_COMP_TYPE                            compound_types_to_try;
+    //    OrderHintInfoEnc                        order_hint_info_st;
+        MD_COMP_TYPE                            compound_types_to_try;
         uint8_t                                 compound_mode;
 
 
@@ -244,7 +244,7 @@ extern "C" {
 #endif
 #endif
 
-        SeqHeader								seq_header;
+        SeqHeader                                seq_header;
     } SequenceControlSet;
 
     typedef struct EbSequenceControlSetInitData

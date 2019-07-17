@@ -182,10 +182,10 @@ static void ResetEntropyCodingPicture(
 
     // QP
 #if ADD_DELTA_QP_SUPPORT
-#if !QPM	
+#if !QPM
     uint16_t picture_qp = picture_control_set_ptr->parent_pcs_ptr->base_qindex;
     context_ptr->qp = picture_qp;
-#endif	
+#endif
 #else
     context_ptr->qp = picture_control_set_ptr->picture_qp;
 #endif
@@ -202,7 +202,7 @@ static void ResetEntropyCodingPicture(
     // Reset QP Assignement
     picture_control_set_ptr->prev_coded_qp = picture_control_set_ptr->picture_qp;
     picture_control_set_ptr->prev_quant_group_coded_qp = picture_control_set_ptr->picture_qp;
- #endif 
+ #endif
 
 #if ADD_DELTA_QP_SUPPORT //PART 0
     picture_control_set_ptr->parent_pcs_ptr->prev_qindex = picture_control_set_ptr->parent_pcs_ptr->base_qindex;
@@ -271,10 +271,10 @@ static void reset_ec_tile(
 
     // QP
 #if ADD_DELTA_QP_SUPPORT
-#if !QPM	
+#if !QPM
     uint16_t picture_qp = picture_control_set_ptr->parent_pcs_ptr->base_qindex;
     context_ptr->qp = picture_qp;
-#endif	
+#endif
 #else
     context_ptr->qp = picture_control_set_ptr->picture_qp;
 #endif
@@ -291,7 +291,7 @@ static void reset_ec_tile(
     // Reset QP Assignement
     picture_control_set_ptr->prev_coded_qp = picture_control_set_ptr->picture_qp;
     picture_control_set_ptr->prev_quant_group_coded_qp = picture_control_set_ptr->picture_qp;
-#endif   
+#endif
 
 #if ADD_DELTA_QP_SUPPORT //PART 0
     picture_control_set_ptr->parent_pcs_ptr->prev_qindex = picture_control_set_ptr->parent_pcs_ptr->base_qindex;
@@ -360,7 +360,7 @@ static void EntropyCodingConfigureLcu(
 #if ADD_DELTA_QP_SUPPORT
 #if !QPM
     context_ptr->qp = picture_control_set_ptr->parent_pcs_ptr->base_qindex;
-#endif	
+#endif
 #else
     context_ptr->qp = picture_control_set_ptr->picture_qp;
 #endif

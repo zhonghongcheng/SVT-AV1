@@ -903,7 +903,7 @@ void UpdateBeaInfoOverTime(
 #if QPS_TUNING
             // Limit the distortion to Layer 0, 1 and 2 only. Higher layers have close temporal distance and lower distortion that might contaminate the data
             if (temporaryPictureControlSetPtr->temporal_layer_index < 3)
-#endif           
+#endif
             {
                 if (lcuIdx == 0)
                     me_dist_pic_count++;
@@ -1602,7 +1602,6 @@ void* initial_rate_control_kernel(void *input_ptr)
                 picture_control_set_ptr);
 
             if (sequence_control_set_ptr->static_config.improve_sharpness) {
-                uint32_t sb_index;
                 uint8_t cu_depth;
 
                 // QPM statistics init
@@ -1620,6 +1619,7 @@ void* initial_rate_control_kernel(void *input_ptr)
                     picture_control_set_ptr->processed_leaf_count[cu_depth] = 0;
                 }
 #if !QPM
+                uint32_t sb_index;
                 for (sb_index = 0; sb_index < picture_control_set_ptr->sb_total_count; sb_index++) {
                     QpmGatherStatisticsSW(
                         sequence_control_set_ptr,

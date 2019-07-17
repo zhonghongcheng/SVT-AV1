@@ -728,7 +728,7 @@ void   mdc_compute_depth_costs(
 
     // Compute above depth  cost
      *above_depth_cost = context_ptr->local_cu_array[above_depth_mds].early_cost + above_non_split_rate;
-    
+
 
      // Compute current depth  cost
     *curr_depth_cost =
@@ -746,7 +746,7 @@ uint32_t mdc_d2_inter_depth_block_decision(
     uint32_t                                   sb_index) {
 
 
-    uint32_t                last_cu_index, d0_idx_mds, d1_idx_mds, d2_idx_mds, top_left_idx_mds;
+    uint32_t                last_cu_index, /*d0_idx_mds,*/ d1_idx_mds, d2_idx_mds/*, top_left_idx_mds*/;
     uint64_t                parent_depth_cost = 0, current_depth_cost = 0;
     SequenceControlSet     *sequence_control_set_ptr = (SequenceControlSet*)picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr;
     EbBool                  last_depth_flag;
@@ -869,14 +869,14 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
     EbErrorType                          return_error = EB_ErrorNone;
 
     uint32_t                                cuIdx;
-    uint32_t leaf_idx; 
+    uint32_t leaf_idx;
     uint32_t start_idx,end_idx;
-    ModeDecisionCandidateBuffer            *bestCandidateBuffers[5];
+    //ModeDecisionCandidateBuffer            *bestCandidateBuffers[5];
 
     uint32_t                                leaf_count = mdcResultTbPtr->leaf_count;
     EbMdcLeafData *              leaf_data_array = mdcResultTbPtr->leaf_data_array;
     MdcpLocalCodingUnit *local_cu_array     = context_ptr->local_cu_array;
-    
+
     MdcpLocalCodingUnit   *cu_ptr;
     //CU Loop
     cuIdx = 0;  //index over mdc array
@@ -901,7 +901,7 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
         uint32_t cu_origin_y = sb_originy + blk_geom->origin_y;
         if (!(cu_origin_x < sequence_control_set_ptr->seq_header.max_frame_width && cu_origin_y < sequence_control_set_ptr->seq_header.max_frame_height))
         {
-            cuIdx++; 
+            cuIdx++;
             continue;
         }
         cu_ptr = &local_cu_array[cuIdx];
@@ -931,7 +931,7 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
                 get_me_info_index(max_number_of_pus_per_sb, context_ptr->blk_geom, geom_offset_x, geom_offset_y);
 
             MeLcuResults *me_results = picture_control_set_ptr->parent_pcs_ptr->me_results[me_sb_addr];
-            
+
 
             const MeCandidate *me_block_results = me_results->me_candidate[me_block_offset];
             uint8_t total_me_cnt = me_results->total_me_candidate_index[me_block_offset];
@@ -1160,14 +1160,14 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
                const BlockGeom * bepth_blk_geom = get_blk_geom_mds(leaf_data_array[leaf_idx].mds_idx);
                current_depth_leaf_data->open_loop_ranking = find_shape_index(bepth_blk_geom->shape, nsq_shape_table);
             }
-            
+
             //Reset nsq table
-            memset(nsq_cost, MAX_CU_COST,NUMBER_OF_SHAPES*sizeof(uint64_t));
+            memset(nsq_cost, MAX_CU_COST,(uint64_t)NUMBER_OF_SHAPES*sizeof(uint64_t));
             for (int sh = 0; sh < NUMBER_OF_SHAPES; sh++)
                 nsq_shape_table[sh] = (PART) sh;
 
             start_idx = end_idx;
-            
+
             uint32_t  last_cu_index = mdc_d2_inter_depth_block_decision(
                 picture_control_set_ptr,
                 context_ptr,

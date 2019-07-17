@@ -255,7 +255,7 @@ static void ResetEncDec(
     uint16_t picture_qp = picture_control_set_ptr->parent_pcs_ptr->base_qindex;
     context_ptr->qp = picture_qp;
     context_ptr->qp_index = context_ptr->qp;
-#endif	
+#endif
 #else
     context_ptr->qp = picture_control_set_ptr->picture_qp;
 #endif
@@ -1324,7 +1324,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
                 CHROMA_MODE_3;
     else
 #endif
-#if CHROMA_SEARCH_MR    
+#if CHROMA_SEARCH_MR
     if (MR_MODE || USE_MR_CHROMA) // chroma
         context_ptr->chroma_level = CHROMA_MODE_0;
     else
@@ -1389,9 +1389,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
 
 
-	//MD_CLASS
-	//context_ptr->decouple_intra_inter_fast_loop = 0;
-	//context_ptr->decoupled_fast_loop_search_method = FULL_SAD_SEARCH;// picture_control_set_ptr->enc_mode == ENC_M0 ? SSD_SEARCH : FULL_SAD_SEARCH;
+    //MD_CLASS
+    //context_ptr->decouple_intra_inter_fast_loop = 0;
+    //context_ptr->decoupled_fast_loop_search_method = FULL_SAD_SEARCH;// picture_control_set_ptr->enc_mode == ENC_M0 ? SSD_SEARCH : FULL_SAD_SEARCH;
 
 
     // Set the full loop escape level
@@ -1429,8 +1429,8 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
 
 
-	//MD_CLASS
-	//context_ptr->full_loop_escape = 2;  //to use always the sorted array.
+    //MD_CLASS
+    //context_ptr->full_loop_escape = 2;  //to use always the sorted array.
 
 
     // Set global MV injection
@@ -1563,7 +1563,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if PREDICTIVE_ME
     // Level                Settings
     // 0                    OFF
-    // 1                    ON    
+    // 1                    ON
     if (picture_control_set_ptr->slice_type != I_SLICE)
         // Hsan: kept ON for sc_content_detected as ~5% gain for minecraft clip
         if (picture_control_set_ptr->enc_mode == ENC_M0)
@@ -2003,7 +2003,7 @@ void* enc_dec_kernel(void *input_ptr)
 
 #if ENABLE_CDF_UPDATE
             if (picture_control_set_ptr->parent_pcs_ptr->frame_end_cdf_update_mode && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag == EB_TRUE && picture_control_set_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr)
-                for (int frame = LAST_FRAME; frame <= ALTREF_FRAME; ++frame) 
+                for (int frame = LAST_FRAME; frame <= ALTREF_FRAME; ++frame)
                     ((EbReferenceObject*)picture_control_set_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr->object_ptr)->global_motion[frame]
                         = picture_control_set_ptr->parent_pcs_ptr->global_motion[frame];
 #endif

@@ -36,7 +36,7 @@ extern "C" {
 #endif
 
 #define M0_HME_ME_TUNING                1
-#define PREDICTIVE_ME                   1 // Perform ME search around MVP 
+#define PREDICTIVE_ME                   1 // Perform ME search around MVP
 #define QPM                             1 // Use SB QP Mod
 #define ME_MVP_DEVIATION                0 // Skip Predictive ME Search if significant ME-to-MVP difference
 #define USE_M0_HME_ME_SETTINGS          0 // To enable when running ME related experiments in context of non-M0
@@ -54,26 +54,26 @@ extern "C" {
 #define FIRST_RDOQ_INTER                       0
 #endif
 #define BUG_FIXES                       1
-#if BUG_FIXES      
-#define SHUT_TX_SIZE_RATE               1 // To fix a bug @ tx size rate estimation 
+#if BUG_FIXES
+#define SHUT_TX_SIZE_RATE               1 // To fix a bug @ tx size rate estimation
 #define VALGRIND_FIX                    1 // Fixed a valgrind error
 #define ABILITY_TO_SKIP_TX_SEARCH_ATB   1
 #endif
 #define ENABLE_CDF_UPDATE               1 // Added the support for end of frame CDF update.
-    
+
 #define COMPOUND_FLAG                      1// main flag for compound modes
 #if COMPOUND_FLAG
 #define COMP_MODE                       1 // Add compound modes
-#define	COMP_EC                         1 // EC support for compound
-#define	COMP_DIFF                       1 // Diff compound 
-#define	COMP_AVG_DIST                   1 // inject only best (avg,dist) 
-#define	COMP_FULL                       1 // test compound in full loop
-#define	COMP_AVX                        1 // test compound in full loop
+#define    COMP_EC                         1 // EC support for compound
+#define    COMP_DIFF                       1 // Diff compound
+#define    COMP_AVG_DIST                   1 // inject only best (avg,dist)
+#define    COMP_FULL                       1 // test compound in full loop
+#define    COMP_AVX                        1 // test compound in full loop
 #endif
-#define  NEW_NEAR_FIX                   1  //to add compound  here -- DONE 
-    
-#define SC_DETECTION                            1 // Change SC detection to blk based VAR. 
-#define NEW_M0_SC                               1 // Change M0 settings for SC . 
+#define  NEW_NEAR_FIX                   1  //to add compound  here -- DONE
+
+#define SC_DETECTION                            1 // Change SC detection to blk based VAR.
+#define NEW_M0_SC                               1 // Change M0 settings for SC .
 
 #define BEST_Q_M0                         1 // disable all shortcuts into M0
 #define ALT_REF_SUPPORT                   1// ALT_REF main flag
@@ -90,21 +90,21 @@ extern "C" {
 
 
 
-#define RDOQ_INTRA                        1 // Enable RDOQ INTRA (RDOQ INTER already active) 
+#define RDOQ_INTRA                        1 // Enable RDOQ INTRA (RDOQ INTER already active)
 #define DC_SIGN_CONTEXT_EP                1 // Fixed DC level derivation & update @ encode pass
 #define SPATIAL_SSE_TX_SEARCH             1 // Spatial SSE @ the full loop Tx search
 #define ENHANCED_Nx4_4xN_NEW_MV           1 // Nx4 and 4xN MVs to be inherited from the parent block rather than from the 64x64
 #define NEW_NEAREST_NEW_INJECTION         1 // Missing inter candidates NEARETSEST/NEW, NEW/NEARETSEST, NEAR/NEW, NEW/NEAR.
 
 #define RDOQ_FP_QUANTIZATION              1 // Use FP quantization method if RDOQ ON and INTRA block and 8BIT (x86 WIP)
-#define FIXED_128x128_CONTEXT_UPDATE      1 // Fix txb_skip_context and dc_sign_context update for 128x128, and move txb_skip_context and dc_sign_context from CU to MD context 
-#define LOOP_FILTER_FIX                   1 // Use the existing loop filter multi-mode signal to control loop filter and removed the NRF checks @ Encode Pass and Loop Filter Processes 
+#define FIXED_128x128_CONTEXT_UPDATE      1 // Fix txb_skip_context and dc_sign_context update for 128x128, and move txb_skip_context and dc_sign_context from CU to MD context
+#define LOOP_FILTER_FIX                   1 // Use the existing loop filter multi-mode signal to control loop filter and removed the NRF checks @ Encode Pass and Loop Filter Processes
 
 #define ALTREF_DYNAMIC_WINDOW             1 // Add the ability to use dynamic/asymmetric window for AltRef temporal filtering, add the ability to derive the activity within past and future frames @ picture decision, and add a logic to derive window size from activity.
-#define WEIGHT_GENERATION_NOISE           0 // Add noise information @ weight generation 
+#define WEIGHT_GENERATION_NOISE           0 // Add noise information @ weight generation
 #define ALTREF_EIGHTH_PEL_SEARCH          1 // Add 1/8 search for temporal filtering
 #define ALTREF_AV1_SUBPEL                 0
-#define DECOUPLE_ALTREF_ME                1 // De-couple completely the HME/ME/Subpel used for ME Inter prediction and the one used for ALTREF temporal filtering 
+#define DECOUPLE_ALTREF_ME                1 // De-couple completely the HME/ME/Subpel used for ME Inter prediction and the one used for ALTREF temporal filtering
 
 #define ALTREF_SHUT_EX_REFINEMENT         0
 #define ALTREF_TEMPORAL_FILTERING         0
@@ -353,18 +353,18 @@ extern "C" {
 
 #if MD_CLASS
 typedef enum CAND_CLASS {
-	CAND_CLASS_0,
-	CAND_CLASS_1,
-	CAND_CLASS_2,
+    CAND_CLASS_0,
+    CAND_CLASS_1,
+    CAND_CLASS_2,
 #if COMP_FULL
-	CAND_CLASS_3,
+    CAND_CLASS_3,
 #endif
-	CAND_CLASS_TOTAL
+    CAND_CLASS_TOTAL
 } CAND_CLASS;
 #else
 
-#define DECOUPLED_FAST_LOOP                            1     
-																	  
+#define DECOUPLED_FAST_LOOP                            1
+
 #endif
 
 #define  MDLEVELS                     1 // FastLoop-0 -->  FasLoop-1 --> FullLoop
@@ -379,13 +379,13 @@ typedef enum CAND_CLASS {
 #endif
 
 typedef enum MD_STAGE {
-	MD_STAGE_0,
-	MD_STAGE_1,
-	MD_STAGE_2,
+    MD_STAGE_0,
+    MD_STAGE_1,
+    MD_STAGE_2,
 #if FULL_LOOP_SPLIT
     MD_STAGE_3,
 #endif
-	MD_STAGE_TOTAL
+    MD_STAGE_TOTAL
 } MD_STAGE;
 
 #define FIX_ATB_SUPPORT                                 0 // ENABLE_SKIP_REDUNDANT_BLOCK
@@ -399,14 +399,14 @@ typedef enum MD_STAGE {
 #define IMPROVED_NFL_SETTINGS                           1 // Used NRF 8,8,8 and Ref 16,16,16 NFL settings
 #endif
 #define APPLY_3X3_FOR_BEST_ME                           1 // Might need to be restricted to M0
-#if APPLY_3X3_FOR_BEST_ME 
+#if APPLY_3X3_FOR_BEST_ME
 #define BEST_CANDIDATE_COUNT                            4
 #endif
-#define USE_MR_SP                                       0 
+#define USE_MR_SP                                       0
 #define USE_MR_CHROMA                                   0
 #define USE_MR_ATB                                      0
 #define ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH           1 // TUNED FILTER STRENGTH FOR LUMA AND CHROMA
-#define DISABLE_ALT_REF_STRENGTH_TUNING                 1 
+#define DISABLE_ALT_REF_STRENGTH_TUNING                 1
 #else
 #define CAPPED_ME_CANDIDATES_NUM                        1 // Capped the ME-output adaptively based on the block size
 #if CAPPED_ME_CANDIDATES_NUM
@@ -450,13 +450,13 @@ typedef enum MD_STAGE {
 #define P_NSQ_NEW                                       1
 #endif
 #if IMPROVED_SUBPEL_SEARCH
-typedef enum ME_HP_MODE { 
-    EX_HP_MODE = 0, 
-    REFINMENT_HP_MODE = 1 
+typedef enum ME_HP_MODE {
+    EX_HP_MODE = 0,
+    REFINMENT_HP_MODE = 1
 } ME_HP_MODE;
 typedef enum ME_QP_MODE {
     EX_QP_MODE = 0,
-    REFINMENT_QP_MODE = 1 
+    REFINMENT_QP_MODE = 1
 } ME_QP_MODE;
 #endif
 
@@ -522,7 +522,7 @@ enum {
 #else
 
 #if MD_CLASS
-#define MAX_NFL                            65 //full loop all candidates in I slice  300//   MDLEVELS// 
+#define MAX_NFL                            65 //full loop all candidates in I slice  300//   MDLEVELS//
 #else
 #define MAX_NFL                                   40
 #endif
@@ -792,7 +792,7 @@ typedef struct ConvolveParams
     int32_t fwd_offset;
     int32_t bck_offset;
 #if COMP_MODE
-	int use_dist_wtd_comp_avg;	
+    int use_dist_wtd_comp_avg;
 #endif
 } ConvolveParams;
 
@@ -1403,8 +1403,8 @@ typedef enum
     COMPOUND_DISTWTD,
     COMPOUND_WEDGE,
     COMPOUND_DIFFWTD,
-	COMPOUND_TYPES,
-	MASKED_COMPOUND_TYPES = 2,
+    COMPOUND_TYPES,
+    MASKED_COMPOUND_TYPES = 2,
 #else
     COMPOUND_AVERAGE,
     COMPOUND_DISTWTD,
@@ -1438,32 +1438,32 @@ typedef uint16_t CONV_BUF_TYPE;
 #define MASK_MASTER_SIZE ((MAX_WEDGE_SIZE) << 1)
 #define MASK_MASTER_STRIDE (MASK_MASTER_SIZE)
 typedef struct {
-	int enable_order_hint;           // 0 - disable order hint, and related tools
-	int order_hint_bits_minus_1;     // dist_wtd_comp, ref_frame_mvs,
-	int enable_dist_wtd_comp;        // 0 - disable dist-wtd compound modes
-	int enable_ref_frame_mvs;        // 0 - disable ref frame mvs
+    int enable_order_hint;           // 0 - disable order hint, and related tools
+    int order_hint_bits_minus_1;     // dist_wtd_comp, ref_frame_mvs,
+    int enable_dist_wtd_comp;        // 0 - disable dist-wtd compound modes
+    int enable_ref_frame_mvs;        // 0 - disable ref frame mvs
 } OrderHintInfoEnc;
 enum {
-	MD_COMP_AVG,
-	MD_COMP_DIST,
-	MD_COMP_DIFF0,
-	//MD_COMP_DIFF1,
-	MD_COMP_WEDGE,
-	MD_COMP_TYPES,
+    MD_COMP_AVG,
+    MD_COMP_DIST,
+    MD_COMP_DIFF0,
+    //MD_COMP_DIFF1,
+    MD_COMP_WEDGE,
+    MD_COMP_TYPES,
 } UENUM1BYTE(MD_COMP_TYPE);
 #define COMPOUND_TYPE  CompoundType
 #define MAX_DIFFWTD_MASK_BITS 1
 enum {
-	DIFFWTD_38 = 0,
-	DIFFWTD_38_INV,
-	DIFFWTD_MASK_TYPES,
+    DIFFWTD_38 = 0,
+    DIFFWTD_38_INV,
+    DIFFWTD_MASK_TYPES,
 } UENUM1BYTE(DIFFWTD_MASK_TYPE);
 typedef struct {
-	uint8_t *seg_mask;
-	int wedge_index;
-	int wedge_sign;
-	DIFFWTD_MASK_TYPE mask_type;
-	COMPOUND_TYPE type;
+    uint8_t *seg_mask;
+    int wedge_index;
+    int wedge_sign;
+    DIFFWTD_MASK_TYPE mask_type;
+    COMPOUND_TYPE type;
 } INTERINTER_COMPOUND_DATA;
 #endif
 
@@ -3474,8 +3474,8 @@ typedef enum EbPictureDepthMode
 #if OPT_LOSSLESS_0
     PIC_OPEN_LOOP_DEPTH_MODE = 4, // Early Inter Depth Decision:  SB size -> 8x8
 #if ADP_BQ
-    PIC_SB_SWITCH_SQ_DEPTH_MODE  = 5, // Adaptive Depth Partitioning SQ   
-    PIC_SB_SWITCH_NSQ_DEPTH_MODE = 6  // Adaptive Depth Partitioning NSQ 
+    PIC_SB_SWITCH_SQ_DEPTH_MODE  = 5, // Adaptive Depth Partitioning SQ
+    PIC_SB_SWITCH_NSQ_DEPTH_MODE = 6  // Adaptive Depth Partitioning NSQ
 #else
     PIC_SB_SWITCH_DEPTH_MODE    = 5  // Adaptive Depth Partitioning
 #endif
@@ -3935,7 +3935,7 @@ static const uint16_t hme_level0_search_area_in_width_array_left[SC_MAX_LEVEL][I
     {
         {  24,   24,   24,   24,   24,   24,   24,   24,   24,   24,   24,   24,   24 },
 #if M9_HME
-#if M0_HME_ME_TUNING // -- 
+#if M0_HME_ME_TUNING // --
         {  48,   56,   56,   56,   56,   24,   24,   24,   24,   24,   24,   24,   24 },
         {  64,   64,   64,   64,   64,   24,   24,   24,   24,   24,   24,   24,   24 },
 #else

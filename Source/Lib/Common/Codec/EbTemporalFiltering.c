@@ -806,10 +806,10 @@ EbErrorType av1_inter_prediction(
     MvUnit                               *mv_unit,
     uint8_t                              use_intrabc,
 #if COMP_MODE
-	uint8_t                              compound_idx,
+    uint8_t                              compound_idx,
 #endif
 #if COMP_DIFF
-	INTERINTER_COMPOUND_DATA             *interinter_comp,
+    INTERINTER_COMPOUND_DATA             *interinter_comp,
 #endif
     uint16_t                             pu_origin_x,
     uint16_t                             pu_origin_y,
@@ -909,10 +909,10 @@ void tf_inter_prediction(
                             &mv_unit,
                             0,//use_intrabc,
 #if COMP_MODE
-			                1,//compound_idx not used 
+                            1,//compound_idx not used
 #endif
 #if COMP_DIFF
-			                NULL,// interinter_comp not used
+                            NULL,// interinter_comp not used
 #endif
                             pu_origin_x,
                             pu_origin_y,
@@ -954,10 +954,10 @@ void tf_inter_prediction(
                     &mv_unit,
                     0,//use_intrabc,
 #if COMP_MODE
-			        1,//compound_idx not used 
+                    1,//compound_idx not used
 #endif
 #if COMP_DIFF
-			        NULL,// interinter_comp not used
+                    NULL,// interinter_comp not used
 #endif
                     pu_origin_x,
                     pu_origin_y,
@@ -969,7 +969,7 @@ void tf_inter_prediction(
                     local_origin_x,
                     local_origin_y,
                     1,//perform_chroma,
-                    asm_type); 
+                    asm_type);
 
 #else
                 av1_inter_prediction(
@@ -980,10 +980,10 @@ void tf_inter_prediction(
                     &mv_unit,
                     0,//use_intrabc,
 #if COMP_MODE
-			        1,//compound_idx not used 
+                    1,//compound_idx not used
 #endif
 #if COMP_DIFF
-			        NULL,// interinter_comp not used
+                    NULL,// interinter_comp not used
 #endif
                     pu_origin_x,
                     pu_origin_y,
@@ -1545,7 +1545,7 @@ static EbErrorType produce_temporally_filtered_pic(PictureParentControlSet **lis
                                       stride[C_Y]);
 
 #if WEIGHT_GENERATION_NOISE
-                    // Derive the noise level of the current SB 
+                    // Derive the noise level of the current SB
                     uint32_t sb_origin_x = (uint32_t)(blk_col * BW);
                     uint32_t sb_origin_y = (uint32_t)(blk_row * BH);
 

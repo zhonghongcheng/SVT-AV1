@@ -1888,10 +1888,10 @@ void av1_quantize_inv_quantize(
     const QmVal *iqMatrix = picture_control_set_ptr->parent_pcs_ptr->giqmatrix[NUM_QM_LEVELS - 1][0][txsize];
 #if ADD_DELTA_QP_SUPPORT
 #if QPM
-    uint32_t qIndex = picture_control_set_ptr->parent_pcs_ptr->delta_q_present_flag ? quantizer_to_qindex[qp] : picture_control_set_ptr->parent_pcs_ptr->base_qindex; 
-#else	
-	uint32_t qIndex = qp;
-#endif	
+    uint32_t qIndex = picture_control_set_ptr->parent_pcs_ptr->delta_q_present_flag ? quantizer_to_qindex[qp] : picture_control_set_ptr->parent_pcs_ptr->base_qindex;
+#else
+    uint32_t qIndex = qp;
+#endif
 #else
     uint32_t qIndex = picture_control_set_ptr->parent_pcs_ptr->base_qindex;
 #endif
@@ -1981,7 +1981,7 @@ void av1_quantize_inv_quantize(
 #endif
 #else
     EbBool perform_rdoq = (md_context->trellis_quant_coeff_optimization && component_type == COMPONENT_LUMA && !is_intra_bc);
-#endif 
+#endif
     // Hsan: set to FALSE until adding x86 quantize_fp
 #if ENABLE_QUANT_FP
     EbBool perform_quantize_fp = picture_control_set_ptr->enc_mode == ENC_M0 ? EB_TRUE : EB_FALSE;
@@ -3643,7 +3643,7 @@ void full_loop_r(
             context_ptr->blk_geom->txsize_uv[tx_depth][txb_itr],
             &context_ptr->cr_txb_skip_context,
             &context_ptr->cr_dc_sign_context);
-        
+
 #endif
         // NADER - TU
         tu_origin_index = txb_origin_x + txb_origin_y * candidateBuffer->residual_quant_coeff_ptr->stride_y;
@@ -4553,7 +4553,7 @@ uint32_t d2_inter_depth_block_decision(
 #if INTRA64_FIX
             if (picture_control_set_ptr->slice_type == I_SLICE && parent_depth_idx_mds == 0 && sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128)
 #else
-            if (picture_control_set_ptr->slice_type == I_SLICE && parent_depth_idx_mds == 0) 
+            if (picture_control_set_ptr->slice_type == I_SLICE && parent_depth_idx_mds == 0)
 #endif
                 parent_depth_cost = MAX_MODE_COST;
             else
@@ -4561,7 +4561,7 @@ uint32_t d2_inter_depth_block_decision(
 #if INCOMPLETE_SB_FIX
             if (!sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[parent_depth_idx_mds])
                 parent_depth_cost = MAX_MODE_COST;
-#endif 
+#endif
             if (parent_depth_cost <= current_depth_cost) {
                 context_ptr->md_cu_arr_nsq[parent_depth_idx_mds].split_flag = EB_FALSE;
                 context_ptr->md_local_cu_unit[parent_depth_idx_mds].cost = parent_depth_cost;

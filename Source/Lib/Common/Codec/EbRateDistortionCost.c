@@ -854,7 +854,7 @@ uint64_t EstimateRefFramesNumBits(
 {
     uint64_t refRateBits = 0;
 
-#if MRP_COST_EST 
+#if MRP_COST_EST
     if (md_pass == 1) {
         uint64_t refRateA = 0;
         uint64_t refRateB = 0;
@@ -1233,120 +1233,120 @@ static INLINE int16_t Av1ModeContextAnalyzer(
 #if COMP_EC
 
 int get_comp_index_context_enc(
-	PictureParentControlSet   *pcs_ptr,
-	int cur_frame_index,
-	int bck_frame_index,
-	int fwd_frame_index,
-	const MACROBLOCKD *xd);
+    PictureParentControlSet   *pcs_ptr,
+    int cur_frame_index,
+    int bck_frame_index,
+    int fwd_frame_index,
+    const MACROBLOCKD *xd);
 int get_comp_group_idx_context_enc(const MACROBLOCKD *xd);
 int is_any_masked_compound_used(BLOCK_SIZE sb_type);
 int is_interinter_compound_used(COMPOUND_TYPE type,
     BLOCK_SIZE sb_type);
 uint32_t get_compound_mode_rate(
-	uint8_t                 md_pass,
-	ModeDecisionCandidate *candidate_ptr,
-	CodingUnit            *cu_ptr, 
-	uint8_t                ref_frame_type,
-	BlockSize              bsize,
-	SequenceControlSet    *sequence_control_set_ptr,
-	PictureControlSet     *picture_control_set_ptr
-	)
+    uint8_t                 md_pass,
+    ModeDecisionCandidate *candidate_ptr,
+    CodingUnit            *cu_ptr,
+    uint8_t                ref_frame_type,
+    BlockSize              bsize,
+    SequenceControlSet    *sequence_control_set_ptr,
+    PictureControlSet     *picture_control_set_ptr
+    )
 {
-	uint32_t comp_rate = 0;
-	if (md_pass == 0)
-		return 0;
+    uint32_t comp_rate = 0;
+    if (md_pass == 0)
+        return 0;
 
 
-	MbModeInfo *const mbmi = &cu_ptr->av1xd->mi[0]->mbmi;
-	MvReferenceFrame rf[2];
-	av1_set_ref_frame(rf, ref_frame_type);
-	mbmi->ref_frame[0] = rf[0];
-	mbmi->ref_frame[1] = rf[1];
+    MbModeInfo *const mbmi = &cu_ptr->av1xd->mi[0]->mbmi;
+    MvReferenceFrame rf[2];
+    av1_set_ref_frame(rf, ref_frame_type);
+    mbmi->ref_frame[0] = rf[0];
+    mbmi->ref_frame[1] = rf[1];
 
-	//NOTE  :  Make sure, any cuPtr data is already set before   usage  
+    //NOTE  :  Make sure, any cuPtr data is already set before   usage
 
-	if (has_second_ref(mbmi)) {
+    if (has_second_ref(mbmi)) {
 
 
-		const int masked_compound_used = is_any_masked_compound_used(bsize) &&
-			sequence_control_set_ptr->seq_header.enable_masked_compound;
+        const int masked_compound_used = is_any_masked_compound_used(bsize) &&
+            sequence_control_set_ptr->seq_header.enable_masked_compound;
 
-		if (masked_compound_used) {
-			const int ctx_comp_group_idx = get_comp_group_idx_context_enc(cu_ptr->av1xd);
+        if (masked_compound_used) {
+            const int ctx_comp_group_idx = get_comp_group_idx_context_enc(cu_ptr->av1xd);
 #if COMP_DIFF
-			comp_rate = candidate_ptr->md_rate_estimation_ptr->comp_group_idx_fac_bits[ctx_comp_group_idx][candidate_ptr->comp_group_idx];
+            comp_rate = candidate_ptr->md_rate_estimation_ptr->comp_group_idx_fac_bits[ctx_comp_group_idx][candidate_ptr->comp_group_idx];
 #endif
-			/*aom_write_symbol(ec_writer, cu_ptr->comp_group_idx,
-				frameContext->comp_group_idx_cdf[ctx_comp_group_idx], 2);*/
-		}
-		else {
+            /*aom_write_symbol(ec_writer, cu_ptr->comp_group_idx,
+                frameContext->comp_group_idx_cdf[ctx_comp_group_idx], 2);*/
+        }
+        else {
 
-			//printf("CHKN SHOULD  NOT COME HERE\n");
-			assert(candidate_ptr->comp_group_idx == 0);
-		}
+            //printf("CHKN SHOULD  NOT COME HERE\n");
+            assert(candidate_ptr->comp_group_idx == 0);
+        }
 
-		if (candidate_ptr->comp_group_idx == 0) {
-			if (candidate_ptr->compound_idx)
-				assert(candidate_ptr->interinter_comp.type == COMPOUND_AVERAGE);
+        if (candidate_ptr->comp_group_idx == 0) {
+            if (candidate_ptr->compound_idx)
+                assert(candidate_ptr->interinter_comp.type == COMPOUND_AVERAGE);
 
-			if (sequence_control_set_ptr->seq_header.order_hint_info.enable_jnt_comp) {
-				const int comp_index_ctx = get_comp_index_context_enc(
-					picture_control_set_ptr->parent_pcs_ptr,
-					picture_control_set_ptr->parent_pcs_ptr->cur_order_hint,// cur_frame_index,
-					picture_control_set_ptr->parent_pcs_ptr->ref_order_hint[rf[0] - 1],// bck_frame_index,
-					picture_control_set_ptr->parent_pcs_ptr->ref_order_hint[rf[1] - 1],// fwd_frame_index,
-					cu_ptr->av1xd);				
+            if (sequence_control_set_ptr->seq_header.order_hint_info.enable_jnt_comp) {
+                const int comp_index_ctx = get_comp_index_context_enc(
+                    picture_control_set_ptr->parent_pcs_ptr,
+                    picture_control_set_ptr->parent_pcs_ptr->cur_order_hint,// cur_frame_index,
+                    picture_control_set_ptr->parent_pcs_ptr->ref_order_hint[rf[0] - 1],// bck_frame_index,
+                    picture_control_set_ptr->parent_pcs_ptr->ref_order_hint[rf[1] - 1],// fwd_frame_index,
+                    cu_ptr->av1xd);
 
-				comp_rate += candidate_ptr->md_rate_estimation_ptr->comp_idx_fac_bits[comp_index_ctx][candidate_ptr->compound_idx];
+                comp_rate += candidate_ptr->md_rate_estimation_ptr->comp_idx_fac_bits[comp_index_ctx][candidate_ptr->compound_idx];
 
-			/*	aom_write_symbol(ec_writer, cu_ptr->compound_idx,
-					frameContext->compound_index_cdf[comp_index_ctx], 2);*/
-			}
-			else {
-				assert(candidate_ptr->compound_idx == 1);
-			}
-		}
-		else {
+            /*    aom_write_symbol(ec_writer, cu_ptr->compound_idx,
+                    frameContext->compound_index_cdf[comp_index_ctx], 2);*/
+            }
+            else {
+                assert(candidate_ptr->compound_idx == 1);
+            }
+        }
+        else {
 
-			//printf("CHKN  NOT HERE YET \n");
-			assert(picture_control_set_ptr->parent_pcs_ptr->reference_mode != SINGLE_REFERENCE &&
-				is_inter_compound_mode(candidate_ptr->pred_mode /*mbmi->mode*/) &&
-				candidate_ptr->motion_mode == SIMPLE_TRANSLATION);
-			assert(masked_compound_used);
-			// compound_diffwtd, wedge
-			assert(candidate_ptr->interinter_comp.type == COMPOUND_WEDGE ||
-				candidate_ptr->interinter_comp.type == COMPOUND_DIFFWTD);
+            //printf("CHKN  NOT HERE YET \n");
+            assert(picture_control_set_ptr->parent_pcs_ptr->reference_mode != SINGLE_REFERENCE &&
+                is_inter_compound_mode(candidate_ptr->pred_mode /*mbmi->mode*/) &&
+                candidate_ptr->motion_mode == SIMPLE_TRANSLATION);
+            assert(masked_compound_used);
+            // compound_diffwtd, wedge
+            assert(candidate_ptr->interinter_comp.type == COMPOUND_WEDGE ||
+                candidate_ptr->interinter_comp.type == COMPOUND_DIFFWTD);
 
-			if (is_interinter_compound_used(COMPOUND_WEDGE, bsize))
+            if (is_interinter_compound_used(COMPOUND_WEDGE, bsize))
 #if COMP_DIFF
-				comp_rate += candidate_ptr->md_rate_estimation_ptr->compound_type_fac_bits[bsize][candidate_ptr->interinter_comp.type- COMPOUND_WEDGE];
+                comp_rate += candidate_ptr->md_rate_estimation_ptr->compound_type_fac_bits[bsize][candidate_ptr->interinter_comp.type- COMPOUND_WEDGE];
 #endif
-			/*	aom_write_symbol(ec_writer, cu_ptr->interinter_comp.type - COMPOUND_WEDGE,
-					frameContext->compound_type_cdf[bsize],
-					MASKED_COMPOUND_TYPES);*/
+            /*    aom_write_symbol(ec_writer, cu_ptr->interinter_comp.type - COMPOUND_WEDGE,
+                    frameContext->compound_type_cdf[bsize],
+                    MASKED_COMPOUND_TYPES);*/
 
-			if (candidate_ptr->interinter_comp.type == COMPOUND_WEDGE) {
-				assert(is_interinter_compound_used(COMPOUND_WEDGE, bsize));
+            if (candidate_ptr->interinter_comp.type == COMPOUND_WEDGE) {
+                assert(is_interinter_compound_used(COMPOUND_WEDGE, bsize));
 #if COMP_DIFF
-				comp_rate += candidate_ptr->md_rate_estimation_ptr->wedge_idx_fac_bits[bsize][candidate_ptr->interinter_comp.wedge_index];
-				comp_rate += av1_cost_literal(1);
+                comp_rate += candidate_ptr->md_rate_estimation_ptr->wedge_idx_fac_bits[bsize][candidate_ptr->interinter_comp.wedge_index];
+                comp_rate += av1_cost_literal(1);
 #endif
-			/*	aom_write_symbol(ec_writer, cu_ptr->interinter_comp.wedge_index,
-					frameContext->wedge_idx_cdf[bsize], 16);
-				aom_write_bit(ec_writer, cu_ptr->interinter_comp.wedge_sign);*/
-			}
-			else {
-				assert(candidate_ptr->interinter_comp.type == COMPOUND_DIFFWTD);
-#if COMP_DIFF		
-				comp_rate += av1_cost_literal(1);
+            /*    aom_write_symbol(ec_writer, cu_ptr->interinter_comp.wedge_index,
+                    frameContext->wedge_idx_cdf[bsize], 16);
+                aom_write_bit(ec_writer, cu_ptr->interinter_comp.wedge_sign);*/
+            }
+            else {
+                assert(candidate_ptr->interinter_comp.type == COMPOUND_DIFFWTD);
+#if COMP_DIFF
+                comp_rate += av1_cost_literal(1);
 #endif
-				/*aom_write_literal(ec_writer, cu_ptr->interinter_comp.mask_type,
-					MAX_DIFFWTD_MASK_BITS);*/
-			}
-		}
-	}
+                /*aom_write_literal(ec_writer, cu_ptr->interinter_comp.mask_type,
+                    MAX_DIFFWTD_MASK_BITS);*/
+            }
+        }
+    }
 
-	return comp_rate;
+    return comp_rate;
 }
 #endif
 uint64_t av1_inter_fast_cost(
@@ -1599,17 +1599,17 @@ uint64_t av1_inter_fast_cost(
     }
 
 #if COMP_EC
-	//even merge will get this ??!!
-	//CHKN  this func return 0 is masked=0 and distance=0
-	interModeBitsNum += get_compound_mode_rate(
-		md_pass,
-		candidate_ptr,
-		cu_ptr,
-		candidate_ptr->ref_frame_type,
-		blk_geom->bsize,
-		picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr,
-		picture_control_set_ptr
-	);
+    //even merge will get this ??!!
+    //CHKN  this func return 0 is masked=0 and distance=0
+    interModeBitsNum += get_compound_mode_rate(
+        md_pass,
+        candidate_ptr,
+        cu_ptr,
+        candidate_ptr->ref_frame_type,
+        blk_geom->bsize,
+        picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr,
+        picture_control_set_ptr
+    );
 #endif
     // NM - To be added when the overlappable mode is adopted
     //    read_compound_type(is_compound)

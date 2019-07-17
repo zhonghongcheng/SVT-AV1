@@ -989,7 +989,7 @@ void av1_apply_temporal_filter_sse4_1(
     u_dist_ptr = u_dist + 1;
     v_dist_ptr = v_dist + 1;
 
-    
+
 
 #if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
          av1_apply_temporal_filter_luma(

@@ -33,7 +33,7 @@ extern "C" {
 #define MODE_DECISION_CANDIDATE_MAX_COUNT               (470+IBC_CAND )
 #else
 #if NEW_NEAREST_NEW_INJECTION
-#define MODE_DECISION_CANDIDATE_MAX_COUNT               (486 +IBC_CAND) 
+#define MODE_DECISION_CANDIDATE_MAX_COUNT               (486 +IBC_CAND)
 #else
 #define MODE_DECISION_CANDIDATE_MAX_COUNT               (440 +IBC_CAND)
 #endif
@@ -192,8 +192,8 @@ extern "C" {
         uint32_t                         sorted_candidate_index_array[MAX_NFL];
 #else
 #if MD_CLASS
-		uint32_t                         best_candidate_index_array[MAX_NFL_BUFF];
-		uint32_t                         sorted_candidate_index_array[MAX_NFL];
+        uint32_t                         best_candidate_index_array[MAX_NFL_BUFF];
+        uint32_t                         sorted_candidate_index_array[MAX_NFL];
 #else
         uint8_t                         best_candidate_index_array[MAX_NFL + 2];
         uint8_t                         sorted_candidate_index_array[MAX_NFL];
@@ -201,9 +201,9 @@ extern "C" {
 #endif
 
 #if MDLEVELS
-		MD_STAGE                         md_stage;
-		uint32_t                         fast1_cand_count[CAND_CLASS_TOTAL]; //how many candiates will be tested per md level and  per class
-		uint32_t                         cand_buff_indices[CAND_CLASS_TOTAL][MAX_NFL_BUFF];
+        MD_STAGE                         md_stage;
+        uint32_t                         fast1_cand_count[CAND_CLASS_TOTAL]; //how many candiates will be tested per md level and  per class
+        uint32_t                         cand_buff_indices[CAND_CLASS_TOTAL][MAX_NFL_BUFF];
 #endif
 
         uint16_t                        cu_origin_x;
@@ -277,7 +277,7 @@ extern "C" {
 #if NEW_NEAREST_NEW_INJECTION
         uint32_t                        me_sb_addr;
 #endif
-#if ME_MVP_DEVIATION   
+#if ME_MVP_DEVIATION
         uint32_t                        geom_offset_x;
         uint32_t                        geom_offset_y;
 #endif
@@ -298,18 +298,18 @@ extern "C" {
         uint8_t                         chroma_level;
         PART                            nsq_table[NSQ_TAB_SIZE];
         uint8_t                         decoupled_fast_loop_search_method;
-#if	FAST_LOOP_OPT
-		uint8_t                        md_staging_mode; 
-		uint32_t                       bypass_stage1[CAND_CLASS_TOTAL];
+#if    FAST_LOOP_OPT
+        uint8_t                        md_staging_mode;
+        uint32_t                       bypass_stage1[CAND_CLASS_TOTAL];
 #endif
 #if MD_CLASS
 #if FULL_LOOP_SPLIT
         uint32_t                       full_cand_count_md_stage_2[CAND_CLASS_TOTAL]; //how many full candiates per class @ md_stage_2
         uint32_t                       full_cand_count_md_stage_3[CAND_CLASS_TOTAL]; //how many full candiates per class @ md_stage_3
 #else
-		uint32_t                       full_cand_count[CAND_CLASS_TOTAL]; //how many full candiates per class
+        uint32_t                       full_cand_count[CAND_CLASS_TOTAL]; //how many full candiates per class
 #endif
-		uint32_t                       fast_cand_count[CAND_CLASS_TOTAL]; //how many ffast candiates per class
+        uint32_t                       fast_cand_count[CAND_CLASS_TOTAL]; //how many ffast candiates per class
 #endif
         uint8_t                         decouple_intra_inter_fast_loop;
         uint8_t                         full_loop_escape;
@@ -358,27 +358,27 @@ extern "C" {
 #endif
 #if COMP_DIFF
 
-		DECLARE_ALIGNED(16 ,uint8_t, pred0[2 * MAX_SB_SQUARE]);
-		DECLARE_ALIGNED(16, uint8_t, pred1[2 * MAX_SB_SQUARE]);
-		DECLARE_ALIGNED(32, int16_t, residual1[MAX_SB_SQUARE]);
-		DECLARE_ALIGNED(32, int16_t, diff10[MAX_SB_SQUARE]);
+        DECLARE_ALIGNED(16 ,uint8_t, pred0[2 * MAX_SB_SQUARE]);
+        DECLARE_ALIGNED(16, uint8_t, pred1[2 * MAX_SB_SQUARE]);
+        DECLARE_ALIGNED(32, int16_t, residual1[MAX_SB_SQUARE]);
+        DECLARE_ALIGNED(32, int16_t, diff10[MAX_SB_SQUARE]);
 
-	/*	uint8_t  pred0,
-			(uint8_t *)aom_memalign(16, 2 * MAX_SB_SQUARE * sizeof(*bufs->pred0)));
-		CHECK_MEM_ERROR(
-			cm, bufs->pred1,
-			(uint8_t *)aom_memalign(16, 2 * MAX_SB_SQUARE * sizeof(*bufs->pred1)));
-		CHECK_MEM_ERROR(
-			cm, bufs->residual1,
-			(int16_t *)aom_memalign(32, MAX_SB_SQUARE * sizeof(*bufs->residual1)));
-		CHECK_MEM_ERROR(
-			cm, bufs->diff10,
-			(int16_t *)aom_memalign(32, MAX_SB_SQUARE * sizeof(*bufs->diff10)));
-		CHECK_MEM_ERROR(cm, bufs->tmp_best_mask_buf,
-			(uint8_t *)aom_malloc(2 * MAX_SB_SQUARE *
-				sizeof(*bufs->tmp_best_mask_buf)));*/
+    /*    uint8_t  pred0,
+            (uint8_t *)aom_memalign(16, 2 * MAX_SB_SQUARE * sizeof(*bufs->pred0)));
+        CHECK_MEM_ERROR(
+            cm, bufs->pred1,
+            (uint8_t *)aom_memalign(16, 2 * MAX_SB_SQUARE * sizeof(*bufs->pred1)));
+        CHECK_MEM_ERROR(
+            cm, bufs->residual1,
+            (int16_t *)aom_memalign(32, MAX_SB_SQUARE * sizeof(*bufs->residual1)));
+        CHECK_MEM_ERROR(
+            cm, bufs->diff10,
+            (int16_t *)aom_memalign(32, MAX_SB_SQUARE * sizeof(*bufs->diff10)));
+        CHECK_MEM_ERROR(cm, bufs->tmp_best_mask_buf,
+            (uint8_t *)aom_malloc(2 * MAX_SB_SQUARE *
+                sizeof(*bufs->tmp_best_mask_buf)));*/
 #endif
-          
+
 #if COMP_MODE
     unsigned int prediction_mse ;
     EbBool      variance_ready;

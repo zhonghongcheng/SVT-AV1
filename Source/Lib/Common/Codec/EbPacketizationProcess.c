@@ -44,7 +44,7 @@ EbErrorType packetization_context_ctor(
     EbFifo                *rate_control_tasks_output_fifo_ptr
 #if ENABLE_CDF_UPDATE
     ,EbFifo              *picture_manager_input_fifo_ptr
-#endif  
+#endif
 )
 {
     PacketizationContext *context_ptr;
@@ -262,7 +262,7 @@ void* packetization_kernel(void *input_ptr)
     RateControlTasks             *rateControlTasksPtr;
 #if ENABLE_CDF_UPDATE
     EbObjectWrapper               *picture_manager_results_wrapper_ptr;
-    PictureDemuxResults       	  *picture_manager_results_ptr;
+    PictureDemuxResults             *picture_manager_results_ptr;
 #endif
 
     // Queue variables
@@ -316,10 +316,10 @@ void* packetization_kernel(void *input_ptr)
         rateControlTasksPtr->picture_control_set_wrapper_ptr = picture_control_set_ptr->picture_parent_control_set_wrapper_ptr;
         rateControlTasksPtr->task_type = RC_PACKETIZATION_FEEDBACK_RESULT;
 #if ENABLE_CDF_UPDATE
-        if (picture_control_set_ptr->parent_pcs_ptr->frame_end_cdf_update_mode && 
-            picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag == EB_TRUE && 
+        if (picture_control_set_ptr->parent_pcs_ptr->frame_end_cdf_update_mode &&
+            picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag == EB_TRUE &&
             picture_control_set_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr){
-            
+
             av1_reset_cdf_symbol_counters(picture_control_set_ptr->entropy_coder_ptr->fc);
             ((EbReferenceObject*)picture_control_set_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr->object_ptr)->frame_context
                 = (*picture_control_set_ptr->entropy_coder_ptr->fc);

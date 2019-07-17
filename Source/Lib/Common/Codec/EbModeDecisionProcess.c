@@ -57,14 +57,14 @@ EbErrorType mode_decision_context_ctor(
         return EB_ErrorInsufficientResources;
     // Cost Arrays
 #if MD_CLASS
-	 EB_MALLOC(uint64_t*, context_ptr->fast_cost_array, sizeof(uint64_t) * MAX_NFL_BUFF, EB_N_PTR);
-	 EB_MALLOC(uint64_t*, context_ptr->full_cost_array, sizeof(uint64_t) * MAX_NFL_BUFF, EB_N_PTR);
-	 EB_MALLOC(uint64_t*, context_ptr->full_cost_skip_ptr, sizeof(uint64_t) * MAX_NFL_BUFF, EB_N_PTR);
-	 EB_MALLOC(uint64_t*, context_ptr->full_cost_merge_ptr, sizeof(uint64_t) * MAX_NFL_BUFF, EB_N_PTR);
-	 // Candidate Buffers
-	 EB_MALLOC(ModeDecisionCandidateBuffer**, context_ptr->candidate_buffer_ptr_array, sizeof(ModeDecisionCandidateBuffer*) * MAX_NFL_BUFF, EB_N_PTR);
+     EB_MALLOC(uint64_t*, context_ptr->fast_cost_array, sizeof(uint64_t) * MAX_NFL_BUFF, EB_N_PTR);
+     EB_MALLOC(uint64_t*, context_ptr->full_cost_array, sizeof(uint64_t) * MAX_NFL_BUFF, EB_N_PTR);
+     EB_MALLOC(uint64_t*, context_ptr->full_cost_skip_ptr, sizeof(uint64_t) * MAX_NFL_BUFF, EB_N_PTR);
+     EB_MALLOC(uint64_t*, context_ptr->full_cost_merge_ptr, sizeof(uint64_t) * MAX_NFL_BUFF, EB_N_PTR);
+     // Candidate Buffers
+     EB_MALLOC(ModeDecisionCandidateBuffer**, context_ptr->candidate_buffer_ptr_array, sizeof(ModeDecisionCandidateBuffer*) * MAX_NFL_BUFF, EB_N_PTR);
 
-	 for (bufferIndex = 0; bufferIndex < MAX_NFL_BUFF; ++bufferIndex) {
+     for (bufferIndex = 0; bufferIndex < MAX_NFL_BUFF; ++bufferIndex) {
 
 #else
     // Hsan: MAX_NFL + 1 scratch buffer for intra + 1 scratch buffer for inter
@@ -373,7 +373,7 @@ void reset_mode_decision(
         &context_ptr->full_chroma_lambda,
         (uint8_t)picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr->bit_depth,
         context_ptr->qp_index);
-    
+
 #if ENABLE_CDF_UPDATE
     context_ptr->md_rate_estimation_ptr = picture_control_set_ptr->md_rate_estimation_array;
     uint32_t  candidateIndex;
@@ -433,7 +433,7 @@ void reset_mode_decision(
 #if ENABLE_WARPED_MV
 #if NEW_PRESETS
 #if NEW_M0_SC
-    EbBool enable_wm ; 
+    EbBool enable_wm ;
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
          enable_wm =  EB_FALSE;
     else

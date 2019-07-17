@@ -14041,8 +14041,8 @@ extern "C" {
         uint8_t                               picture_qp;
         uint64_t                              picture_number;
 #if COMP_MODE
-		uint32_t                             cur_order_hint;
-		uint32_t                             ref_order_hint[7];
+        uint32_t                             cur_order_hint;
+        uint32_t                             ref_order_hint[7];
 #endif
 #if BASE_LAYER_REF
         uint64_t                              last_islice_picture_number;
@@ -14163,7 +14163,7 @@ extern "C" {
 #if QPM
         int16_t                               non_moving_index_min_distance;
         int16_t                               non_moving_index_max_distance;
-#endif   
+#endif
 #if ADAPTIVE_QP_SCALING
         uint16_t                              qp_scaling_average_complexity;
 #endif

@@ -188,8 +188,8 @@ extern "C" {
         // Joint sign of alpha Cb and alpha Cr
         // int32_t cfl_alpha_signs;
 #if COMP_EC
-		int32_t compound_idx;
-		int32_t comp_group_idx;
+        int32_t compound_idx;
+        int32_t comp_group_idx;
 #else
         //int32_t compound_idx;
         //int32_t comp_group_idx;
@@ -348,9 +348,9 @@ extern "C" {
         TransformUnit             transform_unit_array[TRANSFORM_UNIT_MAX_COUNT]; // 2-bytes * 21 = 42-bytes
         PredictionUnit            prediction_unit_array[MAX_NUM_OF_PU_PER_CU];    // 35-bytes * 4 = 140 bytes
 #if COMP_MODE
-		INTERINTER_COMPOUND_DATA               interinter_comp;
-		uint8_t                                compound_idx;
-		uint8_t                                comp_group_idx;
+        INTERINTER_COMPOUND_DATA               interinter_comp;
+        uint8_t                                compound_idx;
+        uint8_t                                comp_group_idx;
 #endif
         unsigned                    skip_flag_context       : 2;
         unsigned                    prediction_mode_flag    : 2;

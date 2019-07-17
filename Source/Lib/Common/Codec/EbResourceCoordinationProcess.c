@@ -702,38 +702,38 @@ void* resource_coordination_kernel(void *input_ptr)
                 PM_MODE_2 :
                 PM_MODE_1;
 
-#if COMP_MODE	
-            
+#if COMP_MODE
+
             // Set compound mode      Settings
             // 0                 OFF: No compond mode search : AVG only
             // 1                 ON: compond mode search: 4 modes
-			// 2                 ON: full
+            // 2                 ON: full
 #if FULL_COMPOUND_BDRATE
-			sequence_control_set_ptr->compound_mode = 2;
+            sequence_control_set_ptr->compound_mode = 2;
 #else
             sequence_control_set_ptr->compound_mode = 1;
 #endif
 
-			//sequence_control_set_ptr->order_hint_info_st.enable_order_hint = 1;
-			//sequence_control_set_ptr->order_hint_info_st.order_hint_bits_minus_1 = 6;
+            //sequence_control_set_ptr->order_hint_info_st.enable_order_hint = 1;
+            //sequence_control_set_ptr->order_hint_info_st.order_hint_bits_minus_1 = 6;
 
-			//if (sequence_control_set_ptr->static_config.enc_mode == ENC_M0)
-			if(sequence_control_set_ptr->compound_mode)
-			{
+            //if (sequence_control_set_ptr->static_config.enc_mode == ENC_M0)
+            if(sequence_control_set_ptr->compound_mode)
+            {
                 //sequence_control_set_ptr->seq_header.enable_interintra_compound = 1;
-				sequence_control_set_ptr->seq_header.order_hint_info.enable_jnt_comp = 1; //DISTANCE
-				sequence_control_set_ptr->seq_header.enable_masked_compound = 1; //DIFF+WEDGE
+                sequence_control_set_ptr->seq_header.order_hint_info.enable_jnt_comp = 1; //DISTANCE
+                sequence_control_set_ptr->seq_header.enable_masked_compound = 1; //DIFF+WEDGE
 #if COMP_OPT
-				sequence_control_set_ptr->compound_types_to_try = sequence_control_set_ptr->compound_mode == 1 ? MD_COMP_DIFF0 : MD_COMP_WEDGE;
+                sequence_control_set_ptr->compound_types_to_try = sequence_control_set_ptr->compound_mode == 1 ? MD_COMP_DIFF0 : MD_COMP_WEDGE;
 #else
-				sequence_control_set_ptr->compound_types_to_try = MD_COMP_WEDGE;//  MD_COMP_DIST;//MD_COMP_AVG;//
+                sequence_control_set_ptr->compound_types_to_try = MD_COMP_WEDGE;//  MD_COMP_DIST;//MD_COMP_AVG;//
 #endif
-			}
-			else {
-				sequence_control_set_ptr->seq_header.order_hint_info.enable_jnt_comp = 0;  //these + inject only avg should give same m7 stream
-				sequence_control_set_ptr->seq_header.enable_masked_compound = 0;
-				sequence_control_set_ptr->compound_types_to_try = MD_COMP_AVG;
-			}
+            }
+            else {
+                sequence_control_set_ptr->seq_header.order_hint_info.enable_jnt_comp = 0;  //these + inject only avg should give same m7 stream
+                sequence_control_set_ptr->seq_header.enable_masked_compound = 0;
+                sequence_control_set_ptr->compound_types_to_try = MD_COMP_AVG;
+            }
 #endif
             // Construct PM Trans Coeff Shaping
             if (context_ptr->sequence_control_set_instance_array[instance_index]->encode_context_ptr->initial_picture) {

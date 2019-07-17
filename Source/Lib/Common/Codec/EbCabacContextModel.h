@@ -990,7 +990,7 @@ extern "C" {
         AomCdfProb inter_compound_mode_cdf[INTER_MODE_CONTEXTS]
             [CDF_SIZE(INTER_COMPOUND_MODES)];
 #if COMP_MODE
-		AomCdfProb compound_type_cdf[BlockSizeS_ALL][CDF_SIZE(MASKED_COMPOUND_TYPES)];
+        AomCdfProb compound_type_cdf[BlockSizeS_ALL][CDF_SIZE(MASKED_COMPOUND_TYPES)];
 #else
         AomCdfProb compound_type_cdf[BlockSizeS_ALL][CDF_SIZE(COMPOUND_TYPES - 1)];
 #endif

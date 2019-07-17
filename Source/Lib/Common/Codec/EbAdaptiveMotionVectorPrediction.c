@@ -1164,7 +1164,7 @@ void generate_av1_mvp_table(
 #else
     //these could be done at init time
     xd->mi_stride = picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->picture_width_in_sb*(BLOCK_SIZE_64 / 4);
-#endif    
+#endif
     const int32_t offset = mi_row * xd->mi_stride + mi_col;
     xd->mi = picture_control_set_ptr->mi_grid_base + offset;
 
@@ -1315,7 +1315,7 @@ void update_av1_mi_map(
     uint32_t mi_stride = picture_control_set_ptr->mi_stride;
 #else
     uint32_t mi_stride = picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->picture_width_in_sb*(BLOCK_SIZE_64 >> MI_SIZE_LOG2);
-#endif    
+#endif
     int32_t mi_row = cu_origin_y >> MI_SIZE_LOG2;
     int32_t mi_col = cu_origin_x >> MI_SIZE_LOG2;
 
@@ -1375,8 +1375,8 @@ void update_av1_mi_map(
                 miPtr[miX + miY * mi_stride].mbmi.partition = from_shape_to_part[blk_geom->shape];// cu_ptr->part;
             }
 #if COMP_EC
-			miPtr[miX + miY * mi_stride].mbmi.comp_group_idx = cu_ptr->comp_group_idx;
-			miPtr[miX + miY * mi_stride].mbmi.compound_idx = cu_ptr->compound_idx;
+            miPtr[miX + miY * mi_stride].mbmi.comp_group_idx = cu_ptr->comp_group_idx;
+            miPtr[miX + miY * mi_stride].mbmi.compound_idx = cu_ptr->compound_idx;
 #endif
 
             //needed for CDEF
@@ -1399,7 +1399,7 @@ void update_mi_map(
     uint32_t mi_stride = picture_control_set_ptr->mi_stride;
 #else
     uint32_t mi_stride = picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->picture_width_in_sb*(BLOCK_SIZE_64 >> MI_SIZE_LOG2);
-#endif    
+#endif
     int32_t mi_row = cu_origin_y >> MI_SIZE_LOG2;
     int32_t mi_col = cu_origin_x >> MI_SIZE_LOG2;
 
@@ -1459,8 +1459,8 @@ void update_mi_map(
                 miPtr[miX + miY * mi_stride].mbmi.partition = from_shape_to_part[blk_geom->shape];// cu_ptr->part;
             }
 #if COMP_EC
-			miPtr[miX + miY * mi_stride].mbmi.comp_group_idx = cu_ptr->comp_group_idx;
-			miPtr[miX + miY * mi_stride].mbmi.compound_idx   = cu_ptr->compound_idx;
+            miPtr[miX + miY * mi_stride].mbmi.comp_group_idx = cu_ptr->comp_group_idx;
+            miPtr[miX + miY * mi_stride].mbmi.compound_idx   = cu_ptr->compound_idx;
 #endif
             if (blk_geom->has_uv && context_ptr->chroma_level <= CHROMA_MODE_1)
                 miPtr[miX + miY * mi_stride].mbmi.skip = (cu_ptr->transform_unit_array[0].y_has_coeff == 0 && cu_ptr->transform_unit_array[0].v_has_coeff == 0 && cu_ptr->transform_unit_array[0].u_has_coeff == 0) ? EB_TRUE : EB_FALSE;
