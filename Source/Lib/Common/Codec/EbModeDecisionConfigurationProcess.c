@@ -1870,15 +1870,32 @@ EbErrorType derive_default_segments(
     EbErrorType return_error = EB_ErrorNone;
 
 #if ADP_BQ // --------
+#if P_NSQ_NEW
+    int8_t score_th_bias_0[6] = { 0,0,0,1,1,1 };
+    int8_t score_th_bias_1[6] = { 0,0,0,1,1,1 };
+    int8_t score_th_bias_2[6] = { 0,0,0,1,1,1 };
+    int8_t score_th_bias_3[6] = { 0,0,0,1,1,1 };
+    int8_t score_th_bias_4[6] = { 0,1,1,1,1,1 };
+    int8_t score_th_bias_5[6] = { 0,1,1,1,1,1 };
+#endif
     if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE) {
 
         context_ptr->number_of_segments = 7;
+#if P_NSQ_NEW
+        context_ptr->score_th[0] = (int8_t)((1 * score_th_bias_0[picture_control_set_ptr->temporal_layer_index] * 100) / context_ptr->number_of_segments);
+        context_ptr->score_th[1] = (int8_t)((2 * score_th_bias_1[picture_control_set_ptr->temporal_layer_index] * 100) / context_ptr->number_of_segments);
+        context_ptr->score_th[2] = (int8_t)((3 * score_th_bias_2[picture_control_set_ptr->temporal_layer_index] * 100) / context_ptr->number_of_segments);
+        context_ptr->score_th[3] = (int8_t)((4 * score_th_bias_3[picture_control_set_ptr->temporal_layer_index] * 100) / context_ptr->number_of_segments);
+        context_ptr->score_th[4] = (int8_t)((5 * score_th_bias_4[picture_control_set_ptr->temporal_layer_index] * 100) / context_ptr->number_of_segments);
+        context_ptr->score_th[5] = (int8_t)((6 * score_th_bias_5[picture_control_set_ptr->temporal_layer_index] * 100) / context_ptr->number_of_segments);
+#else
         context_ptr->score_th[0] = (int8_t)((1 * 100) / context_ptr->number_of_segments);
         context_ptr->score_th[1] = (int8_t)((2 * 100) / context_ptr->number_of_segments);
         context_ptr->score_th[2] = (int8_t)((3 * 100) / context_ptr->number_of_segments);
         context_ptr->score_th[3] = (int8_t)((4 * 100) / context_ptr->number_of_segments);
         context_ptr->score_th[4] = (int8_t)((5 * 100) / context_ptr->number_of_segments);
         context_ptr->score_th[5] = (int8_t)((6 * 100) / context_ptr->number_of_segments);
+#endif
 
         context_ptr->interval_cost[0] = context_ptr->cost_depth_mode[SB_NSQ_LEVEL_0_DEPTH_MODE - 1];
         context_ptr->interval_cost[1] = context_ptr->cost_depth_mode[SB_NSQ_LEVEL_1_DEPTH_MODE - 1];

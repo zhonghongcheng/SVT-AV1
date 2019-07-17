@@ -6765,8 +6765,13 @@ EbBool allowed_ns_cu(
                 uint8_t depth_rank = context_ptr->sb_ptr->depth_ranking[depth];
                 uint8_t shape_rank = context_ptr->open_loop_block_rank;
 #if ADP_BQ
+#if P_NSQ_NEW
+               uint8_t depth_rank_th_tab[SB_NSQ_LEVEL_0_DEPTH_MODE] = { 0, 0,0,0,0,0,0 };
+               uint8_t shape_rank_th_tab[SB_NSQ_LEVEL_0_DEPTH_MODE] = { 2,2,2,10,10,10,10};
+#else
                uint8_t depth_rank_th_tab[SB_NSQ_LEVEL_0_DEPTH_MODE] = { 6, 4,3,2,2,2,2 };
                uint8_t shape_rank_th_tab[SB_NSQ_LEVEL_0_DEPTH_MODE] = { 10,5,4,3,2,2,2 };
+#endif
                uint8_t nsq_mode_idx = context_ptr->nsq_mode_idx;
 
                 if (depth_rank >= depth_rank_th_tab[nsq_mode_idx]) {
