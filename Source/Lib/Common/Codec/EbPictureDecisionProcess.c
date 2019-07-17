@@ -220,7 +220,7 @@ void av1_setup_skip_mode_allowed(PictureParentControlSet  *parent_pcs_ptr) {
 #if COMP_MODE
 	parent_pcs_ptr->cur_order_hint = parent_pcs_ptr->picture_number % (uint64_t)(1 << (parent_pcs_ptr->sequence_control_set_ptr->seq_header.order_hint_info.order_hint_bits));
 	for (uint8_t i = 0; i < 7; ++i)
-		parent_pcs_ptr->ref_order_hint[i] = ref_frame_arr_single[i].poc;
+		parent_pcs_ptr->ref_order_hint[i] = (uint32_t)ref_frame_arr_single[i].poc;
 #endif
 }
 #endif
@@ -4343,8 +4343,8 @@ void* picture_decision_kernel(void *input_ptr)
                                     picture_control_set_ptr->temp_filt_pcs_list[index_center]->enhanced_picture_ptr->origin_x;
 
                                 int ahd;
-                                int regionInPictureWidthIndex;
-                                int regionInPictureHeightIndex;
+                                uint32_t regionInPictureWidthIndex;
+                                uint32_t regionInPictureHeightIndex;
 
                                 int ahd_th = (((sequence_control_set_ptr->seq_header.max_frame_width * sequence_control_set_ptr->seq_header.max_frame_height) * 50) / 100);
 

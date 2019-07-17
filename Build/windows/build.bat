@@ -6,6 +6,8 @@ setlocal
 cd /d "%~dp0"
 set instdir=%CD%
 
+add_compile_options(PRIVATE /W3)
+
 set "build=y"
 if NOT -%1-==-- call :args %*
 if exist CMakeCache.txt del /f /s /q CMakeCache.txt 1>nul

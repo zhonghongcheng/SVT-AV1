@@ -12,14 +12,14 @@
 extern "C" {
 #endif
 
-#define MAX_ME_PU_COUNT          209           // Sum of all the possible partitions which have both deminsions greater than 4.
+#define MAX_ME_PU_COUNT          (uint32_t)209           // Sum of all the possible partitions which have both deminsions greater than 4.
 
 #if MEMORY_FOOTPRINT_OPT_ME_MV
 
-#define ME_RES_CAND_MRP_MODE_0   23            // [Single Ref = 7] + [BiDir = 12 = 3*4 ] + [UniDir = 4 = 3+1]
+#define ME_RES_CAND_MRP_MODE_0   (uint32_t)23            // [Single Ref = 7] + [BiDir = 12 = 3*4 ] + [UniDir = 4 = 3+1]
 #define ME_MV_MRP_MODE_0          7            // [7 = 4+3]
 
-#define ME_RES_CAND_MRP_MODE_1   10            // [Single Ref = 4] + [UniDir = 4 = 2*2] + [UniDir = 2 = 1+1]
+#define ME_RES_CAND_MRP_MODE_1   (uint32_t)10            // [Single Ref = 4] + [UniDir = 4 = 2*2] + [UniDir = 2 = 1+1]
 #define ME_MV_MRP_MODE_1          4            // [4 = 2+2]
 
 #else
@@ -28,7 +28,7 @@ extern "C" {
 #define MAX_SS_ME_PU_COUNT       (849 * 4 + 5) // Sum of all the possible partitions which have both deminsions greater or equal to 4.
 
     // i.e. no 4x4, 8x4, or 4x8 partitions
-#define SQUARE_PU_COUNT           85
+#define SQUARE_PU_COUNT           (uint32_t)85
 #if !MEMORY_FOOTPRINT_OPT_ME_MV
 #if MRP_ME
 #define MAX_ME_CANDIDATE_PER_PU   24

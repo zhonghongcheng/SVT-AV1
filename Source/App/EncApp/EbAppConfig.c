@@ -217,8 +217,8 @@ static void SetHmeLevel2SearchAreaInHeightArray (const char *value, EbConfig *cf
 static void SetScreenContentMode                (const char *value, EbConfig *cfg) {cfg->screen_content_mode                                                 = strtoul(value, NULL, 0);};
 // --- start: ALTREF_FILTERING_SUPPORT
 static void SetEnableAltRefs                    (const char *value, EbConfig *cfg) {cfg->enable_altrefs = (EbBool)strtoul(value, NULL, 0);};
-static void SetAltRefStrength                   (const char *value, EbConfig *cfg) {cfg->altref_strength = strtoul(value, NULL, 0);};
-static void SetAltRefNFrames                    (const char *value, EbConfig *cfg) {cfg->altref_nframes = strtoul(value, NULL, 0);};
+static void SetAltRefStrength                   (const char *value, EbConfig *cfg) {cfg->altref_strength = (uint8_t)strtoul(value, NULL, 0);};
+static void SetAltRefNFrames                    (const char *value, EbConfig *cfg) {cfg->altref_nframes = (uint8_t)strtoul(value, NULL, 0);};
 static void SetEnableOverlays                   (const char *value, EbConfig *cfg) { cfg->enable_overlays = (EbBool)strtoul(value, NULL, 0); };
 // --- end: ALTREF_FILTERING_SUPPORT
 static void SetEnableConstrainedIntra           (const char *value, EbConfig *cfg) {cfg->constrained_intra                                             = (EbBool)strtoul(value, NULL, 0);};

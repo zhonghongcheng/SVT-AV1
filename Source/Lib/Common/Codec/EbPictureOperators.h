@@ -407,6 +407,8 @@ extern "C" {
         compute8x8_satd_u8_sse4
     };
 
+
+    // TODO: readjust this function table and all its functions to return uint32_t instead of uint64_t
     typedef uint64_t(*EbSpatialFullDistType)(
         uint8_t  *input,
         uint32_t  input_stride,

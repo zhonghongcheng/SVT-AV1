@@ -435,12 +435,12 @@ void get_txb_ctx(
     int32_t txb_w_unit;
     int32_t txb_h_unit;
     if (plane) {
-        txb_w_unit = MIN(tx_size_wide_unit[tx_size], (sequence_control_set_ptr->seq_header.max_frame_width / 2 - cu_origin_x) >> 2);
-        txb_h_unit = MIN(tx_size_high_unit[tx_size], (sequence_control_set_ptr->seq_header.max_frame_height / 2 - cu_origin_y) >> 2);
+        txb_w_unit = MIN(tx_size_wide_unit[tx_size], (int32_t)(sequence_control_set_ptr->seq_header.max_frame_width / 2 - cu_origin_x) >> 2);
+        txb_h_unit = MIN(tx_size_high_unit[tx_size], (int32_t)(sequence_control_set_ptr->seq_header.max_frame_height / 2 - cu_origin_y) >> 2);
     }
     else {
-        txb_w_unit = MIN(tx_size_wide_unit[tx_size], (sequence_control_set_ptr->seq_header.max_frame_width - cu_origin_x) >> 2);
-        txb_h_unit = MIN(tx_size_high_unit[tx_size], (sequence_control_set_ptr->seq_header.max_frame_height - cu_origin_y) >> 2);
+        txb_w_unit = MIN(tx_size_wide_unit[tx_size], (int32_t)(sequence_control_set_ptr->seq_header.max_frame_width - cu_origin_x) >> 2);
+        txb_h_unit = MIN(tx_size_high_unit[tx_size], (int32_t)(sequence_control_set_ptr->seq_header.max_frame_height - cu_origin_y) >> 2);
     }
 #else
     const int32_t txb_w_unit = tx_size_wide_unit[tx_size];
