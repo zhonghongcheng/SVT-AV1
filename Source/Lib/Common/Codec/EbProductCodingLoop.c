@@ -5382,6 +5382,9 @@ void md_stage_2(
     uint32_t               cuChromaOriginIndex,
     uint32_t               fullCandidateTotalCount,
     uint64_t               ref_fast_cost,
+#if TBX_SPLIT_CAP
+    uint8_t                skip_atb,
+#endif
     EbAsm                  asm_type)
 {
     uint32_t       best_inter_luma_zero_coeff;
@@ -5667,6 +5670,9 @@ void md_stage_2(
 #else
         uint8_t end_tx_depth = get_end_tx_depth(context_ptr, picture_control_set_ptr->parent_pcs_ptr->atb_mode, candidate_ptr, context_ptr->blk_geom->bsize, candidateBuffer->candidate_ptr->type);
 #endif
+#if TBX_SPLIT_CAP
+        end_tx_depth = picture_control_set_ptr->parent_pcs_ptr->enable_skip_atb && skip_atb ? 0 : end_tx_depth;
+#endif
         // Transform partitioning path (INTRA Luma)
 #if APPLY_TX_SEARCH_SHORTCUTS_TO_ATB
         uint8_t  atb_search_skip_fag = get_skip_atb_flag(ref_fast_cost, *candidateBuffer->fast_cost_ptr, picture_control_set_ptr->parent_pcs_ptr->atb_weight);
@@ -5918,6 +5924,9 @@ void AV1PerformFullLoop(
     uint32_t               cuChromaOriginIndex,
     uint32_t               fullCandidateTotalCount,
     uint64_t               ref_fast_cost,
+#if TBX_SPLIT_CAP
+    uint8_t                skip_atb,
+#endif
     EbAsm                  asm_type)
 {
     uint32_t       best_inter_luma_zero_coeff;
@@ -6201,6 +6210,9 @@ void AV1PerformFullLoop(
             end_tx_depth = 0;
 #else
         uint8_t end_tx_depth = get_end_tx_depth(context_ptr, picture_control_set_ptr->parent_pcs_ptr->atb_mode, candidate_ptr, context_ptr->blk_geom->bsize, candidateBuffer->candidate_ptr->type);
+#endif
+#if TBX_SPLIT_CAP
+        end_tx_depth = picture_control_set_ptr->parent_pcs_ptr->enable_skip_atb && skip_atb ? 0 : end_tx_depth;
 #endif
         // Transform partitioning path (INTRA Luma)
 #if APPLY_TX_SEARCH_SHORTCUTS_TO_ATB
@@ -7708,6 +7720,9 @@ void md_encode_block(
     uint8_t                          open_loop_block_rank,
     uint8_t                          early_split_flag,
 #endif
+#if TBX_SPLIT_CAP
+    uint8_t                          skip_atb,
+#endif
     ModeDecisionCandidateBuffer    *bestCandidateBuffers[5])
 {
     ModeDecisionCandidateBuffer         **candidateBufferPtrArrayBase = context_ptr->candidate_buffer_ptr_array;
@@ -8370,6 +8385,9 @@ void md_encode_block(
                     cuChromaOriginIndex,
                     context_ptr->full_recon_search_count,
                     ref_fast_cost,
+#if TBX_SPLIT_CAP
+                    skip_atb,
+#endif
                     asm_type);
 #if !FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
                 // Reset intra_chroma_mode
@@ -8422,6 +8440,9 @@ void md_encode_block(
             cuChromaOriginIndex,
             context_ptr->full_recon_search_count,
             ref_fast_cost,
+#if TBX_SPLIT_CAP
+            skip_atb,
+#endif
             asm_type); // fullCandidateTotalCount to number of buffers to process
 #else
         uint64_t ref_fast_cost = MAX_MODE_COST;
@@ -8470,6 +8491,9 @@ void md_encode_block(
             cuChromaOriginIndex,
             context_ptr->full_recon_search_count,
             ref_fast_cost,
+#if TBX_SPLIT_CAP
+            skip_atb;
+#endif
             asm_type); // fullCandidateTotalCount to number of buffers to process
 #endif
         // Full Mode Decision (choose the best mode)
@@ -8718,6 +8742,9 @@ EB_EXTERN EbErrorType mode_decision_sb(
 
     uint8_t skip_sub_blocks;
 #endif
+#if TBX_SPLIT_CAP
+    uint8_t   skip_atb = 0;
+#endif
     do {
 #if M8_SKIP_BLK
         skip_sub_blocks = 0;
@@ -8842,6 +8869,9 @@ EB_EXTERN EbErrorType mode_decision_sb(
                 open_loop_block_rank,
                 early_split_flag,
 #endif
+#if TBX_SPLIT_CAP
+                skip_atb,
+#endif
                 bestCandidateBuffers);
 
         }
@@ -8907,7 +8937,9 @@ EB_EXTERN EbErrorType mode_decision_sb(
                 context_ptr->full_lambda,
                 context_ptr->md_rate_estimation_ptr,
                 picture_control_set_ptr);
-
+#if TBX_SPLIT_CAP
+            skip_atb = context_ptr->md_cu_arr_nsq[lastCuIndex_mds].block_has_coeff == 0 ? 1 : 0;
+#endif
             if (context_ptr->md_cu_arr_nsq[lastCuIndex_mds].split_flag == EB_FALSE)
             {
                 md_update_all_neighbour_arrays_multiple(

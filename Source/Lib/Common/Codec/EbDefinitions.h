@@ -457,6 +457,8 @@ typedef enum ME_QP_MODE {
     REFINMENT_QP_MODE = 1 
 } ME_QP_MODE;
 #endif
+
+#define TBX_SPLIT_CAP                                   1 //SKIP TXB SPLIT WHEN PARENT BLOCK EOB IS 0
 struct Buf2D
 {
     uint8_t *buf;

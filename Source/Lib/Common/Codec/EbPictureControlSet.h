@@ -14488,6 +14488,9 @@ extern "C" {
                                                             // I Slice has the value of the next ALT_REF picture
         uint64_t                              filtered_sse_uv;
 #endif
+#if TBX_SPLIT_CAP
+        uint8_t                              enable_skip_atb;
+#endif
     } PictureParentControlSet;
 
     typedef struct PictureControlSetInitData
@@ -14518,6 +14521,9 @@ extern "C" {
         uint8_t                            mrp_mode;
         uint8_t                            cdf_mode;
         uint8_t                            nsq_present;
+#endif
+#if TBX_SPLIT_CAP
+        uint8_t                            enable_skip_atb;
 #endif
     } PictureControlSetInitData;
 
