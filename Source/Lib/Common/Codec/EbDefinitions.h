@@ -406,6 +406,7 @@ typedef enum MD_STAGE {
 #define USE_MR_CHROMA                                   0
 #define USE_MR_ATB                                      0
 #define ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH           1 // TUNED FILTER STRENGTH FOR LUMA AND CHROMA
+#define DISABLE_ALT_REF_STRENGTH_TUNING                 1 
 #else
 #define CAPPED_ME_CANDIDATES_NUM                        1 // Capped the ME-output adaptively based on the block size
 #if CAPPED_ME_CANDIDATES_NUM
