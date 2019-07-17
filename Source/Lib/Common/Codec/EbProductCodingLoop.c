@@ -1812,23 +1812,25 @@ void fast_loop_core(
 	// Distortion
 	// Y
 	if (use_ssd) {
-		candidateBuffer->candidate_ptr->luma_fast_distortion = lumaFastDistortion = spatial_full_distortion_kernel_func_ptr_array[asm_type][Log2f(context_ptr->blk_geom->bwidth) - 2](
+		lumaFastDistortion = spatial_full_distortion_kernel_func_ptr_array[asm_type][Log2f(context_ptr->blk_geom->bwidth) - 2](
 			input_picture_ptr->buffer_y + inputOriginIndex,
 			input_picture_ptr->stride_y,
 			prediction_ptr->buffer_y + cuOriginIndex,
 			prediction_ptr->stride_y,
 			context_ptr->blk_geom->bwidth,
 			context_ptr->blk_geom->bheight);
+        candidateBuffer->candidate_ptr->luma_fast_distortion = (uint32_t)lumaFastDistortion;
 	}
 	else {
 		assert((context_ptr->blk_geom->bwidth >> 3) < 17);
-		candidateBuffer->candidate_ptr->luma_fast_distortion = lumaFastDistortion = (nxm_sad_kernel_sub_sampled_func_ptr_array[asm_type][context_ptr->blk_geom->bwidth >> 3](
+		lumaFastDistortion = (nxm_sad_kernel_sub_sampled_func_ptr_array[asm_type][context_ptr->blk_geom->bwidth >> 3](
 			input_picture_ptr->buffer_y + inputOriginIndex,
 			input_picture_ptr->stride_y,
 			prediction_ptr->buffer_y + cuOriginIndex,
 			prediction_ptr->stride_y,
 			context_ptr->blk_geom->bheight,
 			context_ptr->blk_geom->bwidth));
+        candidateBuffer->candidate_ptr->luma_fast_distortion = (uint32_t)lumaFastDistortion;
 	}
 
 	if (context_ptr->blk_geom->has_uv && context_ptr->chroma_level <= CHROMA_MODE_1) {
@@ -2669,7 +2671,7 @@ int32_t derive_luma_inter_dist(
 
     // Distortion
     if (use_ssd) {
-        distortion = spatial_full_distortion_kernel_func_ptr_array[asm_type][Log2f(context_ptr->blk_geom->bwidth) - 2](
+        distortion = (uint32_t)spatial_full_distortion_kernel_func_ptr_array[asm_type][Log2f(context_ptr->blk_geom->bwidth) - 2](
             input_picture_ptr->buffer_y + inputOriginIndex,
             input_picture_ptr->stride_y,
             prediction_ptr->buffer_y + cuOriginIndex,
@@ -2714,7 +2716,7 @@ void predictive_me_full_pel_search(
     EbAsm                         asm_type)
 {
 
-    int32_t  distortion;
+    uint32_t  distortion;
     ModeDecisionCandidateBuffer  *candidateBuffer = &(context_ptr->candidate_buffer_ptr_array[0][0]);
     candidateBuffer->candidate_ptr = &(context_ptr->fast_candidate_array[0]);
     EbPictureBufferDesc *ref_pic =  ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[list_idx][ref_idx]->object_ptr)->reference_picture;
@@ -2729,7 +2731,7 @@ void predictive_me_full_pel_search(
 
             // Distortion
             if (use_ssd) {
-                distortion = spatial_full_distortion_kernel_func_ptr_array[asm_type][Log2f(context_ptr->blk_geom->bwidth) - 2](
+                distortion = (uint32_t)spatial_full_distortion_kernel_func_ptr_array[asm_type][Log2f(context_ptr->blk_geom->bwidth) - 2](
                     input_picture_ptr->buffer_y + inputOriginIndex,
                     input_picture_ptr->stride_y,
                     ref_ptr,
@@ -2781,7 +2783,7 @@ void predictive_me_sub_pel_search(
     EbAsm                         asm_type)
 {
 
-    int32_t  distortion;
+    uint32_t  distortion;
     ModeDecisionCandidateBuffer  *candidateBuffer = &(context_ptr->candidate_buffer_ptr_array[0][0]);
     candidateBuffer->candidate_ptr = &(context_ptr->fast_candidate_array[0]);
 
@@ -2831,7 +2833,7 @@ void predictive_me_sub_pel_search(
 
             // Distortion
             if (use_ssd) {
-                distortion = spatial_full_distortion_kernel_func_ptr_array[asm_type][Log2f(context_ptr->blk_geom->bwidth) - 2](
+                distortion = (uint32_t)spatial_full_distortion_kernel_func_ptr_array[asm_type][Log2f(context_ptr->blk_geom->bwidth) - 2](
                     input_picture_ptr->buffer_y + inputOriginIndex,
                     input_picture_ptr->stride_y,
                     prediction_ptr->buffer_y + cuOriginIndex,
@@ -6765,8 +6767,13 @@ EbBool allowed_ns_cu(
                 uint8_t depth_rank = context_ptr->sb_ptr->depth_ranking[depth];
                 uint8_t shape_rank = context_ptr->open_loop_block_rank;
 #if ADP_BQ
+#if P_NSQ_NEW
+               uint8_t depth_rank_th_tab[SB_NSQ_LEVEL_0_DEPTH_MODE] = { 0, 0,0,0,0,0,0 };
+               uint8_t shape_rank_th_tab[SB_NSQ_LEVEL_0_DEPTH_MODE] = { 2,2,2,10,10,10,10};
+#else
                uint8_t depth_rank_th_tab[SB_NSQ_LEVEL_0_DEPTH_MODE] = { 6, 4,3,2,2,2,2 };
                uint8_t shape_rank_th_tab[SB_NSQ_LEVEL_0_DEPTH_MODE] = { 10,5,4,3,2,2,2 };
+#endif
                uint8_t nsq_mode_idx = context_ptr->nsq_mode_idx;
 
                 if (depth_rank >= depth_rank_th_tab[nsq_mode_idx]) {
@@ -7423,8 +7430,8 @@ void search_best_independent_uv_mode(
 
     UvPredictionMode uv_mode;
 
-    int coeff_rate[UV_PAETH_PRED + 1][(MAX_ANGLE_DELTA << 1) + 1];
-    int distortion[UV_PAETH_PRED + 1][(MAX_ANGLE_DELTA << 1) + 1];
+    uint64_t coeff_rate[UV_PAETH_PRED + 1][(MAX_ANGLE_DELTA << 1) + 1];
+    uint64_t distortion[UV_PAETH_PRED + 1][(MAX_ANGLE_DELTA << 1) + 1];
 
     // Use the 1st spot of the candidate buffer to hold cfl settings to use same kernel as MD for coef cost estimation
     ModeDecisionCandidateBuffer  *candidateBuffer = &(context_ptr->candidate_buffer_ptr_array[0][0]);

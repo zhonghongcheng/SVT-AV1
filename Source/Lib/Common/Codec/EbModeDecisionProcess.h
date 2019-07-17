@@ -162,7 +162,7 @@ extern "C" {
 #else
         uint8_t                         qp;
 #endif
-        uint8_t                         chroma_qp;
+        uint16_t                         chroma_qp;
         uint32_t                        fast_lambda;
         uint32_t                        full_lambda;
         uint32_t                        fast_chroma_lambda;

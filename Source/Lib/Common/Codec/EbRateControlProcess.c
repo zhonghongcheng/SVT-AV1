@@ -3567,7 +3567,7 @@ static int adaptive_qindex_calc(
         // For the highly filtered ALT_REF pictures or where complexity is medium or picture is medium moving, add a boost to decrease the QP of the ALT_REF.
         // The improved area will be propagated to future frames
         rc->arf_boost_factor = (picture_control_set_ptr->parent_pcs_ptr->qp_scaling_average_complexity > LOW_QPS_COMP_THRESHOLD  || picture_control_set_ptr->parent_pcs_ptr->kf_zeromotion_pct < MEDIUM_MOVING_KF_GROUP_THRESH || picture_control_set_ptr->parent_pcs_ptr->filtered_sse >= HIGH_FILTERED_THRESHOLD) ?
-            1.3 : 1;
+            (float_t)1.3 : (float_t)1.0;
 #else
         rc->arf_boost_factor = 1;
 #endif
