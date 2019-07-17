@@ -60,40 +60,40 @@ static uint8_t intrabc_max_mesh_pct[MAX_MESH_SPEED + 1] = { 100, 100, 100,
 #define OVER_SHOOTING                         1
 #define TBD_SHOOTING                          2
 
-#define SB_PRED_OPEN_LOOP_COST      100 // Let's assume PRED_OPEN_LOOP_COST costs ~100 U
-#define U_101                       101
-#define U_102                       102
-#define U_103                       103
-#define U_104                       104
-#define U_105                       105
-#define U_107                       107
-#define SB_FAST_OPEN_LOOP_COST      108
-#define U_109                       109
-#define SB_OPEN_LOOP_COST           110 // F_MDC is ~10% slower than PRED_OPEN_LOOP_COST
-#define U_111                       111
-#define U_112                       112
-#define U_113                       113
-#define U_114                       114
-#define U_115                       115
-#define U_116                       116
-#define U_117                       117
-#define U_118                       118
-#define U_119                       119
-#define U_120                       120
-#define U_121                       121
-#define U_122                       122
-#define U_125                       125
-#define U_127                       127
-#define U_130                       130
-#define U_132                       132
-#define U_133                       133
-#define U_134                       134
-#define U_140                       140
-#define U_145                       145
-#define U_150                       150
-#define U_152                       152
-#define SQ_NON4_BLOCKS_SEARCH_COST  155
-#define SQ_BLOCKS_SEARCH_COST       190
+#define SB_PRED_OPEN_LOOP_COST      100u // Let's assume PRED_OPEN_LOOP_COST costs ~100 U
+#define U_101                       101u
+#define U_102                       102u
+#define U_103                       103u
+#define U_104                       104u
+#define U_105                       105u
+#define U_107                       107u
+#define SB_FAST_OPEN_LOOP_COST      108u
+#define U_109                       109u
+#define SB_OPEN_LOOP_COST           110u // F_MDC is ~10% slower than PRED_OPEN_LOOP_COST
+#define U_111                       111u
+#define U_112                       112u
+#define U_113                       113u
+#define U_114                       114u
+#define U_115                       115u
+#define U_116                       116u
+#define U_117                       117u
+#define U_118                       118u
+#define U_119                       119u
+#define U_120                       120u
+#define U_121                       121u
+#define U_122                       122u
+#define U_125                       125u
+#define U_127                       127u
+#define U_130                       130u
+#define U_132                       132u
+#define U_133                       133u
+#define U_134                       134u
+#define U_140                       140u
+#define U_145                       145u
+#define U_150                       150u
+#define U_152                       152u
+#define SQ_NON4_BLOCKS_SEARCH_COST  155u
+#define SQ_BLOCKS_SEARCH_COST       190u
 #if ADP_BQ
 #define SB_NSQ_LEVEL_0_SEARCH_COST  SQ_BLOCKS_SEARCH_COST // 4.0x faster than NSQ_LEVEL_6
 #define SB_NSQ_LEVEL_1_SEARCH_COST  200                   // 3.8x faster than NSQ_LEVEL_6      

@@ -3133,8 +3133,8 @@ void AV1CostCalcCfl(
     uint32_t                            chroma_height = context_ptr->blk_geom->bheight_uv;
     // FullLoop and TU search
     int32_t                             alpha_q3;
-    uint8_t                             cb_qp = context_ptr->qp;
-    uint8_t                             cr_qp = context_ptr->qp;
+    uint16_t                             cb_qp = context_ptr->qp;
+    uint16_t                             cr_qp = context_ptr->qp;
 
     full_distortion[DIST_CALC_RESIDUAL] = 0;
     full_distortion[DIST_CALC_PREDICTION] = 0;
@@ -3746,8 +3746,8 @@ void check_best_indepedant_cfl(
     uint32_t                       inputCbOriginIndex,
     uint32_t                       cuChromaOriginIndex,
     ModeDecisionCandidateBuffer *candidateBuffer,
-    uint8_t                        cb_qp,
-    uint8_t                        cr_qp,
+    uint16_t                       cb_qp,
+    uint16_t                       cr_qp,
     uint64_t                      *cbFullDistortion,
     uint64_t                      *crFullDistortion,
     uint64_t                      *cb_coeff_bits,
@@ -3772,10 +3772,10 @@ void check_best_indepedant_cfl(
     chromaRate += (uint64_t)candidateBuffer->candidate_ptr->md_rate_estimation_ptr->intra_uv_mode_fac_bits[CFL_ALLOWED][candidateBuffer->candidate_ptr->intra_luma_mode][UV_CFL_PRED];
     chromaRate -= (uint64_t)candidateBuffer->candidate_ptr->md_rate_estimation_ptr->intra_uv_mode_fac_bits[CFL_ALLOWED][candidateBuffer->candidate_ptr->intra_luma_mode][UV_DC_PRED];
 #endif
-    int coeff_rate = *cb_coeff_bits + *cr_coeff_bits;
-    int distortion = cbFullDistortion[DIST_CALC_RESIDUAL] + crFullDistortion[DIST_CALC_RESIDUAL];
+    uint64_t coeff_rate = *cb_coeff_bits + *cr_coeff_bits;
+    uint64_t distortion = cbFullDistortion[DIST_CALC_RESIDUAL] + crFullDistortion[DIST_CALC_RESIDUAL];
 #if CHROMA_SEARCH_FIX
-    int rate = coeff_rate + chromaRate + candidateBuffer->candidate_ptr->fast_luma_rate;
+    uint64_t rate = coeff_rate + chromaRate + candidateBuffer->candidate_ptr->fast_luma_rate;
 #else
     int rate = coeff_rate + chromaRate;
 #endif
@@ -5802,8 +5802,8 @@ void md_stage_2(
         cr_coeff_bits = 0;
 
         // FullLoop and TU search
-        uint8_t cb_qp = context_ptr->qp;
-        uint8_t cr_qp = context_ptr->qp;
+        uint16_t cb_qp = context_ptr->qp;
+        uint16_t cr_qp = context_ptr->qp;
 #if FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
         if (target_class != CAND_CLASS_0) {
 #endif
@@ -6356,8 +6356,8 @@ void AV1PerformFullLoop(
         cr_coeff_bits = 0;
 
         // FullLoop and TU search
-        uint8_t cb_qp = context_ptr->qp;
-        uint8_t cr_qp = context_ptr->qp;
+        uint16_t cb_qp = context_ptr->qp;
+        uint16_t cr_qp = context_ptr->qp;
 
         if (context_ptr->blk_geom->has_uv && context_ptr->chroma_level <= CHROMA_MODE_1) {
             full_loop_r(
@@ -6891,8 +6891,8 @@ void inter_depth_tx_search(
         cr_coeff_bits = 0;
 
         // FullLoop and TU search
-        uint8_t cb_qp = context_ptr->qp;
-        uint8_t cr_qp = context_ptr->qp;
+        uint16_t cb_qp = context_ptr->qp;
+        uint16_t cr_qp = context_ptr->qp;
         if (context_ptr->blk_geom->has_uv && context_ptr->chroma_level <= CHROMA_MODE_1) {
             full_loop_r(
                 context_ptr->sb_ptr,
@@ -7504,8 +7504,8 @@ void search_best_independent_uv_mode(
                     picture_control_set_ptr->parent_pcs_ptr->reduced_tx_set_used);
 #endif
 
-            uint8_t  cb_qp = context_ptr->qp;
-            uint8_t  cr_qp = context_ptr->qp;
+            uint16_t  cb_qp = context_ptr->qp;
+            uint16_t  cr_qp = context_ptr->qp;
             uint64_t cb_coeff_bits = 0;
             uint64_t cr_coeff_bits = 0;
             uint64_t cbFullDistortion[DIST_CALC_TOTAL] = { 0, 0 };

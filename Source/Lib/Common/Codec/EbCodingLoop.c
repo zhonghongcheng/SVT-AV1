@@ -2596,7 +2596,7 @@ void perform_intra_coding_loop(
         }
         // Encode Transform Unit -INTRA-
 
-        uint8_t cb_qp = cu_ptr->qp;
+        uint16_t cb_qp = cu_ptr->qp;
         Av1EncodeLoopFunctionTable[is16bit](
             picture_control_set_ptr,
             context_ptr,
@@ -2912,7 +2912,7 @@ void perform_intra_coding_loop(
         }
 
         // Encode Transform Unit -INTRA-
-        uint8_t cb_qp = cu_ptr->qp;
+        uint16_t cb_qp = cu_ptr->qp;
 
         Av1EncodeLoopFunctionTable[is16bit](
             picture_control_set_ptr,
@@ -3907,7 +3907,7 @@ EB_EXTERN void av1_encode_pass(
 
                             // Encode Transform Unit -INTRA-
                             {
-                                uint8_t             cb_qp = cu_ptr->qp;
+                                uint16_t             cb_qp = cu_ptr->qp;
 
                                 Av1EncodeLoopFunctionTable[is16bit](
                                     picture_control_set_ptr,
@@ -4345,7 +4345,7 @@ EB_EXTERN void av1_encode_pass(
                     uint32_t totTu = context_ptr->blk_geom->txb_count;
 #endif
                     uint8_t   tuIt;
-                    uint8_t   cb_qp = cu_ptr->qp;
+                    uint16_t   cb_qp = cu_ptr->qp;
                     uint32_t  component_mask = context_ptr->blk_geom->has_uv ? PICTURE_BUFFER_DESC_FULL_MASK : PICTURE_BUFFER_DESC_LUMA_MASK;
 
                     if (cu_ptr->prediction_unit_array[0].merge_flag == EB_FALSE) {

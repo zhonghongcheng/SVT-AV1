@@ -4342,10 +4342,10 @@ static void half_pel_refinement_block(
             uint16_t integer_mv2 = (((uint16_t)(x_mv >> 2) << 2));
             uint32_t integer_mv = integer_mv1 | integer_mv2;
 
-            if (search_index_x < 0 || search_index_x > search_area_width - 1) {
+            if (search_index_x < 0 || search_index_x > (int16_t)search_area_width - 1) {
                 continue;
             }
-            if (search_index_y < 0 || search_index_y > search_area_height - 1) {
+            if (search_index_y < 0 || search_index_y > (int16_t)search_area_height - 1) {
                 continue;
             }
             
