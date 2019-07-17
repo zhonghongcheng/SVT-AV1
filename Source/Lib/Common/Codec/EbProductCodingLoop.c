@@ -2247,7 +2247,7 @@ void set_md_stage_counts(
 	assert(tot_fast1 > 0);
 
 
-	if (picture_control_set_ptr->enc_mode == ENC_M0)
+	if (picture_control_set_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == EB_FALSE)
 #if FULL_LOOP_SPLIT
         context_ptr->md_staging_mode = 1; //use fast-loop0->fast-loop1->full-loop0->full-loop1
 #else
@@ -8297,7 +8297,11 @@ void md_encode_block(
 #else
         context_ptr->full_cand_count_md_stage_3[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ?
             context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0] :
+#if CLASS_0_NFL_MD_STAGE_3
             (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 1;
+#else
+            (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 4;
+#endif
 #endif
 #if FIRST_FULL_LOOP_TX_SEARCH_OFF_INTER
         context_ptr->full_cand_count_md_stage_3[CAND_CLASS_1] = context_ptr->bypass_stage2[CAND_CLASS_1] ? 
@@ -8320,7 +8324,11 @@ void md_encode_block(
 #else
             context_ptr->full_cand_count_md_stage_3[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ?
                 context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0] :
+#if CLASS_0_NFL_MD_STAGE_3
                 (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 1;
+#else
+                (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 4;
+#endif
 #endif
             context_ptr->full_cand_count_md_stage_3[CAND_CLASS_1] = 0;
             context_ptr->full_cand_count_md_stage_3[CAND_CLASS_2] = 0;

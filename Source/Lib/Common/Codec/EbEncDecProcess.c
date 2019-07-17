@@ -1563,8 +1563,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if PREDICTIVE_ME
     // Level                Settings
     // 0                    OFF
-    // 1                    ON 
+    // 1                    ON    
     if (picture_control_set_ptr->slice_type != I_SLICE)
+        // Hsan: kept ON for sc_content_detected as ~5% gain for minecraft clip
         if (picture_control_set_ptr->enc_mode == ENC_M0)
             context_ptr->predictive_me_injection = 1;
         else
