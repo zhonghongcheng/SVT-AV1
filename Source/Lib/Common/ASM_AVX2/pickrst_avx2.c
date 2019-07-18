@@ -1149,7 +1149,7 @@ static INLINE void compute_stats_win3_avx2(
     {
         const int16_t *dT = d;
         __m256i dd = _mm256_setzero_si256();  // Initialize to avoid warning.
-        __m256i deltas[WIENER_WIN_3TAP] = {0};
+        __m256i deltas[4] = {0};
         __m256i delta;
 
         dd = _mm256_insert_epi32(dd, *(int32_t *)(dT + 0 * d_stride), 0);
