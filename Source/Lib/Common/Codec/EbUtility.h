@@ -320,6 +320,10 @@ extern "C" {
         L3_7_INDEX = 14
     } MiniGopIndex;
 
+
+    extern uint8_t get_depth(
+        uint8_t sq_size);
+
 #ifdef __cplusplus
 }
 #endif

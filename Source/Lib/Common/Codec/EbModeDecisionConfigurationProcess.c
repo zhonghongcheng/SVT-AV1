@@ -291,6 +291,16 @@ static const int16_t ac_qlookup_12_Q3[QINDEX_RANGE] = {
     28143, 28687, 29247,
 };
 
+EB_EXTERN EbErrorType nsq_prediction_shape(
+    SequenceControlSet                *sequence_control_set_ptr,
+    PictureControlSet                 *picture_control_set_ptr,
+    ModeDecisionConfigurationContext  *context_ptr,
+    MdcLcuData                        *mdcResultTbPtr,
+    LargestCodingUnit                 *sb_ptr,
+    uint32_t                           sb_originx,
+    uint32_t                           sb_originy,
+    uint32_t                           sb_index);
+
 int16_t av1_dc_quant_Q3(int32_t qindex, int32_t delta, AomBitDepth bit_depth) {
     switch (bit_depth) {
     case AOM_BITS_8: return dc_qlookup_Q3[clamp(qindex + delta, 0, MAXQ)];

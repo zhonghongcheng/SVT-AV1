@@ -91,6 +91,12 @@ const uint8_t incrementalCount[85] = {
     0, 0, 0, 4, 0, 0, 0, 4
 };
 
+extern uint32_t get_me_info_index(
+    uint32_t         max_me_block,
+    const BlockGeom *blk_geom,
+    uint32_t         geom_offset_x,
+    uint32_t         geom_offset_y);
+
 /*******************************************
 mdcSetDepth : set depth to be tested
 *******************************************/
@@ -1162,7 +1168,7 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
             }
 
             //Reset nsq table
-            memset(nsq_cost, MAX_CU_COST,(uint64_t)NUMBER_OF_SHAPES*sizeof(uint64_t));
+            memset(nsq_cost, MAX_CU_COST,NUMBER_OF_SHAPES*sizeof(uint64_t));
             for (int sh = 0; sh < NUMBER_OF_SHAPES; sh++)
                 nsq_shape_table[sh] = (PART) sh;
 
