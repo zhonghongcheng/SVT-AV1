@@ -1665,6 +1665,14 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->redundant_blk = EB_FALSE;
 #endif
 
+#if FULL_LOOP_SPLIT
+    // Derive md_staging_mode 
+    if (picture_control_set_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == EB_FALSE)
+        context_ptr->md_staging_mode = 1; //use fast-loop0->fast-loop1->full-loop0->full-loop1
+    else
+        context_ptr->md_staging_mode = 0; //use fast-loop0->full-loop
+#endif
+
     return return_error;
 }
 

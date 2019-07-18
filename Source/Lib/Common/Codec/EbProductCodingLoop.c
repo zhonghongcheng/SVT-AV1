@@ -696,6 +696,7 @@ uint32_t nfl_non_ref[6] = {
     2, // 128x128
 };
 #endif
+#if ! MD_CLASS
 void set_nfl(
 #if NFL_PER_SQ_SIZE
     PictureControlSet       *picture_control_set_ptr,
@@ -756,7 +757,7 @@ void set_nfl(
 #endif
     ASSERT(context_ptr->full_recon_search_count <= MAX_NFL);
 }
-
+#endif
 
 #if !MDLEVELS
 #if MD_CLASS
@@ -2163,145 +2164,213 @@ void perform_fast_loop(
 
 
 #if MDLEVELS
+#if FULL_LOOP_SPLIT
 void set_md_stage_counts(
     PictureControlSet       *picture_control_set_ptr,
     ModeDecisionContext     *context_ptr,
     uint32_t                 fastCandidateTotalCount)
 {
-
-    context_ptr->fast1_cand_count[CAND_CLASS_0] =  context_ptr->fast_cand_count[CAND_CLASS_0];
-    context_ptr->fast1_cand_count[CAND_CLASS_1] = context_ptr->fast_cand_count[CAND_CLASS_1];
-    context_ptr->fast1_cand_count[CAND_CLASS_2] = context_ptr->fast_cand_count[CAND_CLASS_2];
-#if COMP_FULL
-    context_ptr->fast1_cand_count[CAND_CLASS_3] = context_ptr->fast_cand_count[CAND_CLASS_3];
-#endif
-#if FULL_LOOP_SPLIT
-    //this is to simulate DECOUPLED FAST LOOP
-    context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTRA_NFL : (INTRA_NFL >> 1);
-    context_ptr->full_cand_count_md_stage_2[CAND_CLASS_1] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_NEW_NFL : (INTER_NEW_NFL >> 1);
-    context_ptr->full_cand_count_md_stage_2[CAND_CLASS_2] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
-    context_ptr->full_cand_count_md_stage_2[CAND_CLASS_3] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
-
-    if (picture_control_set_ptr->slice_type == I_SLICE) {
-        context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0] = fastCandidateTotalCount;
-        context_ptr->full_cand_count_md_stage_2[CAND_CLASS_1] = 0;
-        context_ptr->full_cand_count_md_stage_2[CAND_CLASS_2] = 0;
-        context_ptr->full_cand_count_md_stage_2[CAND_CLASS_3] = 0;
-    }
-#if 0
-    //this is to simulate DECOUPLED FAST LOOP
-    context_ptr->full_cand_count_md_stage_3[CAND_CLASS_0] = 1;
-    context_ptr->full_cand_count_md_stage_3[CAND_CLASS_1] = 1;
-    context_ptr->full_cand_count_md_stage_3[CAND_CLASS_2] = 1;
-    context_ptr->full_cand_count_md_stage_3[CAND_CLASS_3] = 1;
-
-    if (picture_control_set_ptr->slice_type == I_SLICE) {
-        context_ptr->full_cand_count_md_stage_3[CAND_CLASS_0] = 1;
-        context_ptr->full_cand_count_md_stage_3[CAND_CLASS_1] = 0;
-        context_ptr->full_cand_count_md_stage_3[CAND_CLASS_2] = 0;
-        context_ptr->full_cand_count_md_stage_3[CAND_CLASS_3] = 0;
-    }
-#endif
+    // Derive bypass_stage1 
+    if (context_ptr->md_staging_mode == 1) 
+#if FIRST_FULL_LOOP_INTERPOLATION_SEARCH
+        memset(context_ptr->bypass_stage1, EB_TRUE, CAND_CLASS_TOTAL * sizeof(uint32_t));
 #else
-    //this is to simulate DECOUPLED FAST LOOP
-    context_ptr->full_cand_count[CAND_CLASS_0] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTRA_NFL : (INTRA_NFL >> 1);
-    context_ptr->full_cand_count[CAND_CLASS_1] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_NEW_NFL : (INTER_NEW_NFL >> 1);
-    context_ptr->full_cand_count[CAND_CLASS_2] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
-#if COMP_FULL
-    context_ptr->full_cand_count[CAND_CLASS_3] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
-#endif
-
-    if (picture_control_set_ptr->slice_type == I_SLICE) {
-
-        context_ptr->full_cand_count[CAND_CLASS_0] = fastCandidateTotalCount;
-        context_ptr->full_cand_count[CAND_CLASS_1] = 0;
-        context_ptr->full_cand_count[CAND_CLASS_2] = 0;
-#if COMP_FULL
-        context_ptr->full_cand_count[CAND_CLASS_3] = 0;
-#endif
+    {
+        context_ptr->bypass_stage1[CAND_CLASS_0] = EB_TRUE;
+        context_ptr->bypass_stage1[CAND_CLASS_1] = EB_FALSE;
+        context_ptr->bypass_stage1[CAND_CLASS_2] = EB_FALSE;
+        context_ptr->bypass_stage1[CAND_CLASS_3] = EB_FALSE;
     }
 #endif
+    else
+        memset(context_ptr->bypass_stage1, EB_TRUE, CAND_CLASS_TOTAL * sizeof(uint32_t));
 
-#if FAST_LOOP_OPT
+    // Derive bypass_stage2
+    if (context_ptr->md_staging_mode == 1)
+    {
+        context_ptr->bypass_stage2[CAND_CLASS_0] = EB_FALSE;
+#if FIRST_FULL_LOOP_INTERPOLATION_SEARCH || FIRST_FULL_LOOP_TX_SEARCH_OFF_INTER || FIRST_RDOQ_INTER
+        context_ptr->bypass_stage2[CAND_CLASS_1] = EB_FALSE;
+        context_ptr->bypass_stage2[CAND_CLASS_2] = EB_FALSE;
+        context_ptr->bypass_stage2[CAND_CLASS_3] = EB_FALSE;
+#else
+        context_ptr->bypass_stage2[CAND_CLASS_1] = EB_TRUE;
+        context_ptr->bypass_stage2[CAND_CLASS_2] = EB_TRUE;
+        context_ptr->bypass_stage2[CAND_CLASS_3] = EB_TRUE;
+#endif
+    }
+    else
+        memset(context_ptr->bypass_stage2, EB_TRUE, CAND_CLASS_TOTAL * sizeof(uint32_t));
 
+    // Set # of md_stage_1 candidates
     uint32_t  count_cand = 16;
-    context_ptr->fast1_cand_count[CAND_CLASS_0] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? count_cand : (count_cand >> 1);
-    context_ptr->fast1_cand_count[CAND_CLASS_1] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? count_cand : (count_cand >> 1);
-    context_ptr->fast1_cand_count[CAND_CLASS_2] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? count_cand : (count_cand >> 1);
-    context_ptr->fast1_cand_count[CAND_CLASS_3] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? count_cand : (count_cand >> 1);
+    context_ptr->fast1_cand_count[CAND_CLASS_0] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTRA_NFL : (INTRA_NFL >> 1);
+    context_ptr->fast1_cand_count[CAND_CLASS_1] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_NEW_NFL : (INTER_NEW_NFL >> 1);
+    context_ptr->fast1_cand_count[CAND_CLASS_2] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
+    context_ptr->fast1_cand_count[CAND_CLASS_3] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
 
     if (picture_control_set_ptr->slice_type == I_SLICE) {
-#if FULL_LOOP_SPLIT
-        context_ptr->fast1_cand_count[CAND_CLASS_0] = context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0];
-#else
-        context_ptr->fast1_cand_count[CAND_CLASS_0] = context_ptr->full_cand_count[CAND_CLASS_0];
-#endif
+        context_ptr->fast1_cand_count[CAND_CLASS_0] = fastCandidateTotalCount;
         context_ptr->fast1_cand_count[CAND_CLASS_1] = 0;
         context_ptr->fast1_cand_count[CAND_CLASS_2] = 0;
         context_ptr->fast1_cand_count[CAND_CLASS_3] = 0;
     }
 
-
-
-    uint32_t tot_fast1 = 0;
-    for (CAND_CLASS class_it = CAND_CLASS_0; class_it < CAND_CLASS_TOTAL; class_it++)
-        tot_fast1 += context_ptr->fast1_cand_count[class_it];
-    assert(tot_fast1 > 0);
-
-
-    if (picture_control_set_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == EB_FALSE)
-#if FULL_LOOP_SPLIT
-        context_ptr->md_staging_mode = 1; //use fast-loop0->fast-loop1->full-loop0->full-loop1
+    // Set # of md_stage_2 candidates
+    context_ptr->md_stage_2_count[CAND_CLASS_0] = context_ptr->bypass_stage1[CAND_CLASS_0] ? context_ptr->fast1_cand_count[CAND_CLASS_0] : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTRA_NFL : (INTRA_NFL >> 1);
+#if CLASS_012_NFL_MD_STAGE_3
+    context_ptr->md_stage_2_count[CAND_CLASS_1] = context_ptr->bypass_stage1[CAND_CLASS_1] ? context_ptr->fast1_cand_count[CAND_CLASS_1] : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 10 : 2;
+    context_ptr->md_stage_2_count[CAND_CLASS_2] = context_ptr->bypass_stage1[CAND_CLASS_2] ? context_ptr->fast1_cand_count[CAND_CLASS_2] : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 10 : 4;
+    context_ptr->md_stage_2_count[CAND_CLASS_3] = context_ptr->bypass_stage1[CAND_CLASS_3] ? context_ptr->fast1_cand_count[CAND_CLASS_3] : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 10 : 4;
 #else
-        context_ptr->md_staging_mode = 1; //use fast-loop0->fast-loop1->full-loop
+    context_ptr->md_stage_2_count[CAND_CLASS_1] = context_ptr->bypass_stage1[CAND_CLASS_1] ? context_ptr->fast1_cand_count[CAND_CLASS_1] : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_NEW_NFL : (INTER_NEW_NFL >> 1);
+    context_ptr->md_stage_2_count[CAND_CLASS_2] = context_ptr->bypass_stage1[CAND_CLASS_2] ? context_ptr->fast1_cand_count[CAND_CLASS_2] : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
+    context_ptr->md_stage_2_count[CAND_CLASS_3] = context_ptr->bypass_stage1[CAND_CLASS_3] ? context_ptr->fast1_cand_count[CAND_CLASS_3] : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
 #endif
-    else
-        context_ptr->md_staging_mode = 0; //use fast-loop0->full-loop
 
-    //stage1 bypass decision
-    memset(context_ptr->bypass_stage1, 0, CAND_CLASS_TOTAL * sizeof(uint32_t));
-
-    if(context_ptr->md_staging_mode == 1)
-#if FULL_LOOP_SPLIT // to do
-#if FIRST_FULL_LOOP_INTERPOLATION_SEARCH
-        memset(context_ptr->bypass_stage1, 1, CAND_CLASS_TOTAL * sizeof(uint32_t));
-#else
-        context_ptr->bypass_stage1[CAND_CLASS_0] = 1;
-#endif
-#else
-        context_ptr->bypass_stage1[CAND_CLASS_0] = 1;
-#endif
-    else
-        memset(context_ptr->bypass_stage1, 1, CAND_CLASS_TOTAL * sizeof(uint32_t));
-
-    for (CAND_CLASS cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
-        if (context_ptr->bypass_stage1[cand_class_it])
-#if FULL_LOOP_SPLIT
-            context_ptr->fast1_cand_count[cand_class_it] = context_ptr->full_cand_count_md_stage_2[cand_class_it];
-#else
-            context_ptr->fast1_cand_count[cand_class_it] = context_ptr->full_cand_count[cand_class_it];
-#endif
+    if (picture_control_set_ptr->slice_type == I_SLICE) {
+        context_ptr->md_stage_2_count[CAND_CLASS_0] = context_ptr->bypass_stage1[CAND_CLASS_0] ? context_ptr->fast1_cand_count[CAND_CLASS_0] : fastCandidateTotalCount;
+        context_ptr->md_stage_2_count[CAND_CLASS_1] = 0;
+        context_ptr->md_stage_2_count[CAND_CLASS_2] = 0;
+        context_ptr->md_stage_2_count[CAND_CLASS_3] = 0;
     }
 
+    // Set # of md_stage_3 candidates
+#if MD_STAGE_3_NFL_BDRATE
+    context_ptr->md_stage_3_count[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ? context_ptr->md_stage_2_count[CAND_CLASS_0] : 10;
+#else
+    context_ptr->md_stage_3_count[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ?
+        context_ptr->md_stage_2_count[CAND_CLASS_0] :
+#if CLASS_0_NFL_MD_STAGE_3
+        (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 1;
+#else
+        (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 4;
+#endif
+#endif
+#if FIRST_FULL_LOOP_TX_SEARCH_OFF_INTER
+    context_ptr->md_stage_3_count[CAND_CLASS_1] = context_ptr->bypass_stage2[CAND_CLASS_1] ?
+        context_ptr->md_stage_2_count[CAND_CLASS_1] :
+        (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 3 : 1;
+    context_ptr->md_stage_3_count[CAND_CLASS_2] = context_ptr->bypass_stage2[CAND_CLASS_2] ?
+        context_ptr->md_stage_2_count[CAND_CLASS_2] :
+        (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 2 : 1;
+    context_ptr->md_stage_3_count[CAND_CLASS_3] = context_ptr->bypass_stage2[CAND_CLASS_3] ?
+        context_ptr->md_stage_2_count[CAND_CLASS_3] :
+        (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 3 : 1;
+#else
+    context_ptr->md_stage_3_count[CAND_CLASS_1] = context_ptr->bypass_stage2[CAND_CLASS_1] ? context_ptr->md_stage_2_count[CAND_CLASS_1] : 1;
+    context_ptr->md_stage_3_count[CAND_CLASS_2] = context_ptr->bypass_stage2[CAND_CLASS_2] ? context_ptr->md_stage_2_count[CAND_CLASS_2] : 1;
+    context_ptr->md_stage_3_count[CAND_CLASS_3] = context_ptr->bypass_stage2[CAND_CLASS_3] ? context_ptr->md_stage_2_count[CAND_CLASS_3] : 1;
+#endif
+    if (picture_control_set_ptr->slice_type == I_SLICE) {
+#if MD_STAGE_3_NFL_BDRATE
+        context_ptr->md_stage_3_count[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ? context_ptr->md_stage_2_count[CAND_CLASS_0] : 10;
+#else
+        context_ptr->md_stage_3_count[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ?
+            context_ptr->md_stage_2_count[CAND_CLASS_0] :
+#if CLASS_0_NFL_MD_STAGE_3
+            (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 1;
+#else
+            (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 4;
+#endif
+#endif
+        context_ptr->md_stage_3_count[CAND_CLASS_1] = 0;
+        context_ptr->md_stage_3_count[CAND_CLASS_2] = 0;
+        context_ptr->md_stage_3_count[CAND_CLASS_3] = 0;
+    }
+}
+#else
+void set_md_stage_counts(
+	PictureControlSet       *picture_control_set_ptr,
+	ModeDecisionContext     *context_ptr,
+	uint32_t                 fastCandidateTotalCount)
+{
+
+	context_ptr->fast1_cand_count[CAND_CLASS_0] =  context_ptr->fast_cand_count[CAND_CLASS_0];
+	context_ptr->fast1_cand_count[CAND_CLASS_1] = context_ptr->fast_cand_count[CAND_CLASS_1];
+	context_ptr->fast1_cand_count[CAND_CLASS_2] = context_ptr->fast_cand_count[CAND_CLASS_2];
+#if COMP_FULL
+	context_ptr->fast1_cand_count[CAND_CLASS_3] = context_ptr->fast_cand_count[CAND_CLASS_3];	
+#endif
+	//this is to simulate DECOUPLED FAST LOOP
+	context_ptr->full_cand_count[CAND_CLASS_0] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTRA_NFL : (INTRA_NFL >> 1);
+	context_ptr->full_cand_count[CAND_CLASS_1] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_NEW_NFL : (INTER_NEW_NFL >> 1);
+	context_ptr->full_cand_count[CAND_CLASS_2] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
+#if COMP_FULL
+	context_ptr->full_cand_count[CAND_CLASS_3] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
 #endif
 
+	if (picture_control_set_ptr->slice_type == I_SLICE) {
+
+		context_ptr->full_cand_count[CAND_CLASS_0] = fastCandidateTotalCount;
+		context_ptr->full_cand_count[CAND_CLASS_1] = 0;
+		context_ptr->full_cand_count[CAND_CLASS_2] = 0;
+#if COMP_FULL
+		context_ptr->full_cand_count[CAND_CLASS_3] = 0;
+#endif
+	}
+
+#if FAST_LOOP_OPT
+
+	uint32_t  count_cand = 16;
+	context_ptr->fast1_cand_count[CAND_CLASS_0] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? count_cand : (count_cand >> 1);
+	context_ptr->fast1_cand_count[CAND_CLASS_1] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? count_cand : (count_cand >> 1);
+	context_ptr->fast1_cand_count[CAND_CLASS_2] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? count_cand : (count_cand >> 1);
+	context_ptr->fast1_cand_count[CAND_CLASS_3] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? count_cand : (count_cand >> 1);
+
+	if (picture_control_set_ptr->slice_type == I_SLICE) {
+		context_ptr->fast1_cand_count[CAND_CLASS_0] = context_ptr->full_cand_count[CAND_CLASS_0];
+		context_ptr->fast1_cand_count[CAND_CLASS_1] = 0;
+		context_ptr->fast1_cand_count[CAND_CLASS_2] = 0;
+		context_ptr->fast1_cand_count[CAND_CLASS_3] = 0;
+	}
+
+
+
+	uint32_t tot_fast1 = 0;
+	for (CAND_CLASS class_it = CAND_CLASS_0; class_it < CAND_CLASS_TOTAL; class_it++)
+		tot_fast1 += context_ptr->fast1_cand_count[class_it];
+	assert(tot_fast1 > 0);
+
+
+	if (picture_control_set_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == EB_FALSE)
+		context_ptr->md_staging_mode = 1; //use fast-loop0->fast-loop1->full-loop
+	else
+		context_ptr->md_staging_mode = 0; //use fast-loop0->full-loop
+
+	//stage1 bypass decision
+	memset(context_ptr->bypass_stage1, 0, CAND_CLASS_TOTAL * sizeof(uint32_t));	
+
+	if(context_ptr->md_staging_mode == 1)
+        context_ptr->bypass_stage1[CAND_CLASS_0] = 1;
+	else
+		memset(context_ptr->bypass_stage1, 1, CAND_CLASS_TOTAL * sizeof(uint32_t));
+
+	for (CAND_CLASS cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
+		if (context_ptr->bypass_stage1[cand_class_it])
+			context_ptr->fast1_cand_count[cand_class_it] = context_ptr->full_cand_count[cand_class_it];
+	}
+
+#endif
+  	
 
 }
-void fast_loop_stage1(
-    CAND_CLASS                         target_class,
-    PictureControlSet                 *picture_control_set_ptr,
-    ModeDecisionContext               *context_ptr,
-    ModeDecisionCandidateBuffer      **candidateBufferPtrArrayBase,
-    uint32_t                           num_of_candidates,
-    EbPictureBufferDesc               *input_picture_ptr,
-    uint32_t                           inputOriginIndex,
-    uint32_t                           inputCbOriginIndex,
-    uint32_t                           inputCrOriginIndex,
-    CodingUnit                        *cu_ptr,
-    uint32_t                           cuOriginIndex,
-    uint32_t                           cuChromaOriginIndex,
-    EbBool                             use_ssd,
-    EbAsm                              asm_type)
+#endif
+void fast_loop_stage1(	
+	CAND_CLASS                         target_class,
+	PictureControlSet                 *picture_control_set_ptr,
+	ModeDecisionContext               *context_ptr,
+	ModeDecisionCandidateBuffer      **candidateBufferPtrArrayBase,
+	uint32_t                           num_of_candidates,
+	EbPictureBufferDesc               *input_picture_ptr,
+	uint32_t                           inputOriginIndex,
+	uint32_t                           inputCbOriginIndex,
+	uint32_t                           inputCrOriginIndex,
+	CodingUnit                        *cu_ptr,
+	uint32_t                           cuOriginIndex,
+	uint32_t                           cuChromaOriginIndex,	
+	EbBool                             use_ssd,
+	EbAsm                              asm_type)
 {
     for (uint32_t cand_idx = 0; cand_idx < num_of_candidates; ++cand_idx)
     {
@@ -2453,16 +2522,16 @@ void construct_best_sorted_arrays_md_stage_2(
     //best = union from all classes
     uint32_t best_candi = 0;
     for (CAND_CLASS class_i = CAND_CLASS_0; class_i < CAND_CLASS_TOTAL; class_i++)
-        for (uint32_t candi = 0; candi < context_ptr->full_cand_count_md_stage_2[class_i]; candi++)
+        for (uint32_t candi = 0; candi < context_ptr->md_stage_2_count[class_i]; candi++)
             best_candidate_index_array[best_candi++] = context_ptr->cand_buff_indices[class_i][candi];
 
 
 
 
-    assert(best_candi == context_ptr->full_recon_search_count);
+    assert(best_candi == context_ptr->md_stage_2_total_count);
 
     uint32_t i, j, index;
-    uint32_t fullReconCandidateCount = context_ptr->full_recon_search_count;
+    uint32_t fullReconCandidateCount = context_ptr->md_stage_2_total_count;
     //sort best: inter, then intra
     for (i = 0; i < fullReconCandidateCount - 1; ++i) {
         for (j = i + 1; j < fullReconCandidateCount; ++j) {
@@ -2508,16 +2577,16 @@ void construct_best_sorted_arrays_md_stage_3(
     //best = union from all classes
     uint32_t best_candi = 0;
     for (CAND_CLASS class_i = CAND_CLASS_0; class_i < CAND_CLASS_TOTAL; class_i++)
-        for (uint32_t candi = 0; candi < context_ptr->full_cand_count_md_stage_3[class_i]; candi++)
+        for (uint32_t candi = 0; candi < context_ptr->md_stage_3_count[class_i]; candi++)
             best_candidate_index_array[best_candi++] = context_ptr->cand_buff_indices[class_i][candi];
 
 
 
 
-    assert(best_candi == context_ptr->full_recon_search_count);
+    assert(best_candi == context_ptr->md_stage_3_total_count);
 
     uint32_t i, j, index;
-    uint32_t fullReconCandidateCount = context_ptr->full_recon_search_count;
+    uint32_t fullReconCandidateCount = context_ptr->md_stage_3_total_count;
     //sort best: inter, then intra
     for (i = 0; i < fullReconCandidateCount - 1; ++i) {
         for (j = i + 1; j < fullReconCandidateCount; ++j) {
@@ -5382,7 +5451,9 @@ void md_stage_2(
     uint32_t               inputCbOriginIndex,
     uint32_t               cuOriginIndex,
     uint32_t               cuChromaOriginIndex,
+#if !FULL_LOOP_SPLIT
     uint32_t               fullCandidateTotalCount,
+#endif
     uint64_t               ref_fast_cost,
 #if TBX_SPLIT_CAP
     uint8_t                skip_atb,
@@ -5442,7 +5513,7 @@ void md_stage_2(
     ModeDecisionCandidateBuffer          *candidateBuffer;
     ModeDecisionCandidate                *candidate_ptr;
 #if FULL_LOOP_SPLIT //---
-    for (fullLoopCandidateIndex = 0; fullLoopCandidateIndex < context_ptr->full_cand_count_md_stage_2[target_class]; ++fullLoopCandidateIndex) {
+    for (fullLoopCandidateIndex = 0; fullLoopCandidateIndex < context_ptr->md_stage_2_count[target_class]; ++fullLoopCandidateIndex) {
 
         candidateIndex = context_ptr->cand_buff_indices[target_class][fullLoopCandidateIndex];
 #else
@@ -6009,7 +6080,11 @@ void AV1PerformFullLoop(
         if (picture_control_set_ptr->slice_type != I_SLICE) {
             if ((candidate_ptr->type == INTRA_MODE || context_ptr->full_loop_escape == 2) && best_inter_luma_zero_coeff == 0) {
                 // Update # of NFL
+#if FULL_LOOP_SPLIT //---
+                context_ptr->md_stage_3_total_count = fullLoopCandidateIndex;
+#else
                 context_ptr->full_recon_search_count = fullLoopCandidateIndex;
+#endif
                 return;
             }
         }
@@ -7960,7 +8035,11 @@ void md_encode_block(
             picture_control_set_ptr);
 #if M9_INTRA
         if (picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode >= 5 && picture_control_set_ptr->slice_type == I_SLICE)
+#if FULL_LOOP_SPLIT //---
+            context_ptr->md_stage_3_total_count = 1;
+#else
             context_ptr->full_recon_search_count = 1;
+#endif
 #endif
 
 
@@ -8079,11 +8158,16 @@ void md_encode_block(
             context_ptr,
             fastCandidateTotalCount);
 
-        CAND_CLASS  cand_class_it;
-        uint32_t buffer_start_idx = 0;
-        uint32_t buffer_count_for_curr_class;
-        uint32_t buffer_total_count = 0;
-        context_ptr->full_recon_search_count = 0;
+		CAND_CLASS  cand_class_it;
+		uint32_t buffer_start_idx = 0;
+		uint32_t buffer_count_for_curr_class;
+		uint32_t buffer_total_count = 0;
+#if FULL_LOOP_SPLIT //---
+        context_ptr->md_stage_2_total_count = 0;
+        context_ptr->md_stage_3_total_count = 0;
+#else
+		context_ptr->full_recon_search_count = 0;
+#endif
 #if ! FAST_LOOP_OPT
         uint8_t bypass_stage1 = 1;
 
@@ -8165,13 +8249,13 @@ void md_encode_block(
 
             //number of next level candidates could not exceed number of curr level candidates
 #if FULL_LOOP_SPLIT // to do
-            context_ptr->full_cand_count_md_stage_2[cand_class_it] = MIN(context_ptr->fast1_cand_count[cand_class_it], context_ptr->full_cand_count_md_stage_2[cand_class_it]);
+            context_ptr->md_stage_2_count[cand_class_it] = MIN(context_ptr->fast1_cand_count[cand_class_it], context_ptr->md_stage_2_count[cand_class_it]);
             // handar
-            context_ptr->full_recon_search_count += context_ptr->full_cand_count_md_stage_2[cand_class_it];
+            context_ptr->md_stage_2_total_count += context_ptr->md_stage_2_count[cand_class_it];
 #if FAST_LOOP_OPT
-            if (context_ptr->bypass_stage1[cand_class_it] == 0 && context_ptr->fast1_cand_count[cand_class_it] > 0 && context_ptr->full_cand_count_md_stage_2[cand_class_it] > 0) {
+            if (context_ptr->bypass_stage1[cand_class_it] == 0 && context_ptr->fast1_cand_count[cand_class_it] > 0 && context_ptr->md_stage_2_count[cand_class_it] > 0) {
 #else
-            if (bypass_stage1 == 0 && context_ptr->fast1_cand_count[cand_class_it] > 0 && context_ptr->full_cand_count_md_stage_2[cand_class_it] > 0) {
+            if (bypass_stage1 == 0 && context_ptr->fast1_cand_count[cand_class_it] > 0 && context_ptr->md_stage_2_count[cand_class_it] > 0) {
 #endif
 #else
             context_ptr->full_cand_count[cand_class_it] = MIN(context_ptr->fast1_cand_count[cand_class_it], context_ptr->full_cand_count[cand_class_it]);
@@ -8280,67 +8364,6 @@ void md_encode_block(
             context_ptr->sorted_candidate_index_array,
             &ref_fast_cost);
 
-        // Derive bypass_stage2
-        context_ptr->bypass_stage2[CAND_CLASS_0] = (context_ptr->md_staging_mode == 0) ? EB_TRUE : EB_FALSE;
-#if FIRST_FULL_LOOP_INTERPOLATION_SEARCH || FIRST_RDOQ_INTER
-        context_ptr->bypass_stage2[CAND_CLASS_1] = (context_ptr->md_staging_mode == 0) ? EB_TRUE : EB_FALSE;
-        context_ptr->bypass_stage2[CAND_CLASS_2] = (context_ptr->md_staging_mode == 0) ? EB_TRUE : EB_FALSE;
-        context_ptr->bypass_stage2[CAND_CLASS_3] = (context_ptr->md_staging_mode == 0) ? EB_TRUE : EB_FALSE;
-#else
-#if FIRST_FULL_LOOP_TX_SEARCH_OFF_INTER
-        context_ptr->bypass_stage2[CAND_CLASS_1] = (context_ptr->md_staging_mode == 0) ? EB_TRUE : EB_FALSE;
-        context_ptr->bypass_stage2[CAND_CLASS_2] = (context_ptr->md_staging_mode == 0) ? EB_TRUE : EB_FALSE;
-        context_ptr->bypass_stage2[CAND_CLASS_3] = (context_ptr->md_staging_mode == 0) ? EB_TRUE : EB_FALSE;
-#else
-        context_ptr->bypass_stage2[CAND_CLASS_1] = EB_TRUE;
-        context_ptr->bypass_stage2[CAND_CLASS_2] = EB_TRUE;
-        context_ptr->bypass_stage2[CAND_CLASS_3] = EB_TRUE;
-#endif
-#endif
-
-        // Derive nfl @ md_stage_3
-#if MD_STAGE_3_NFL_BDRATE
-        context_ptr->full_cand_count_md_stage_3[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0] : 10;
-#else
-        context_ptr->full_cand_count_md_stage_3[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ?
-            context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0] :
-#if CLASS_0_NFL_MD_STAGE_3
-            (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 1;
-#else
-            (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 4;
-#endif
-#endif
-#if FIRST_FULL_LOOP_TX_SEARCH_OFF_INTER
-        context_ptr->full_cand_count_md_stage_3[CAND_CLASS_1] = context_ptr->bypass_stage2[CAND_CLASS_1] ?
-            context_ptr->full_cand_count_md_stage_2[CAND_CLASS_1] :
-            (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 3 : 1;
-        context_ptr->full_cand_count_md_stage_3[CAND_CLASS_2] = context_ptr->bypass_stage2[CAND_CLASS_2] ?
-            context_ptr->full_cand_count_md_stage_2[CAND_CLASS_2] :
-            (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 2 : 1;
-        context_ptr->full_cand_count_md_stage_3[CAND_CLASS_3] = context_ptr->bypass_stage2[CAND_CLASS_3] ?
-            context_ptr->full_cand_count_md_stage_2[CAND_CLASS_3] :
-            (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 3 : 1;
-#else
-        context_ptr->full_cand_count_md_stage_3[CAND_CLASS_1] = context_ptr->bypass_stage2[CAND_CLASS_1] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_1] : 1;
-        context_ptr->full_cand_count_md_stage_3[CAND_CLASS_2] = context_ptr->bypass_stage2[CAND_CLASS_2] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_2] : 1;
-        context_ptr->full_cand_count_md_stage_3[CAND_CLASS_3] = context_ptr->bypass_stage2[CAND_CLASS_3] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_3] : 1;
-#endif
-        if (picture_control_set_ptr->slice_type == I_SLICE) {
-#if MD_STAGE_3_NFL_BDRATE
-            context_ptr->full_cand_count_md_stage_3[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ? context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0] : 10;
-#else
-            context_ptr->full_cand_count_md_stage_3[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ?
-                context_ptr->full_cand_count_md_stage_2[CAND_CLASS_0] :
-#if CLASS_0_NFL_MD_STAGE_3
-                (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 1;
-#else
-                (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 4;
-#endif
-#endif
-            context_ptr->full_cand_count_md_stage_3[CAND_CLASS_1] = 0;
-            context_ptr->full_cand_count_md_stage_3[CAND_CLASS_2] = 0;
-            context_ptr->full_cand_count_md_stage_3[CAND_CLASS_3] = 0;
-        }
 #if !FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
         context_ptr->chroma_md_stage_2[CAND_CLASS_0] = EB_TRUE;
         context_ptr->chroma_md_stage_2[CAND_CLASS_1] = EB_TRUE;
@@ -8362,19 +8385,18 @@ void md_encode_block(
 
         // 1st Full-Loop
         context_ptr->md_stage = MD_STAGE_2;
-        // Reset full_recon_search_count
-        context_ptr->full_recon_search_count = 0;
+
         for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
 
             //number of next level candidates could not exceed number of curr level candidates
-            context_ptr->full_cand_count_md_stage_3[cand_class_it] = MIN(context_ptr->full_cand_count_md_stage_2[cand_class_it], context_ptr->full_cand_count_md_stage_3[cand_class_it]);
+            context_ptr->md_stage_3_count[cand_class_it] = MIN(context_ptr->md_stage_2_count[cand_class_it], context_ptr->md_stage_3_count[cand_class_it]);
             // handar
-            context_ptr->full_recon_search_count += context_ptr->full_cand_count_md_stage_3[cand_class_it];
+            context_ptr->md_stage_3_total_count += context_ptr->md_stage_3_count[cand_class_it];
 
-            if (context_ptr->bypass_stage2[cand_class_it] == EB_FALSE && context_ptr->full_cand_count_md_stage_2[cand_class_it] > 0 && context_ptr->full_cand_count_md_stage_3[cand_class_it] > 0) {
+            if (context_ptr->bypass_stage2[cand_class_it] == EB_FALSE && context_ptr->md_stage_2_count[cand_class_it] > 0 && context_ptr->md_stage_3_count[cand_class_it] > 0) {
 
 #if !FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
-                for (fullLoopCandidateIndex = 0; fullLoopCandidateIndex < context_ptr->full_cand_count_md_stage_2[cand_class_it]; ++fullLoopCandidateIndex) {
+                for (fullLoopCandidateIndex = 0; fullLoopCandidateIndex < context_ptr->md_stage_2_count[cand_class_it]; ++fullLoopCandidateIndex) {
                     candidateIndex = context_ptr->cand_buff_indices[cand_class_it][fullLoopCandidateIndex];
                     candidateBuffer = candidate_buffer_ptr_array[candidateIndex];
                     candidate_ptr = candidateBuffer->candidate_ptr;//this is the FastCandidateStruct
@@ -8398,7 +8420,9 @@ void md_encode_block(
                     inputCbOriginIndex,
                     cuOriginIndex,
                     cuChromaOriginIndex,
+#if !FULL_LOOP_SPLIT
                     context_ptr->full_recon_search_count,
+#endif
                     ref_fast_cost,
 #if TBX_SPLIT_CAP
                     skip_atb,
@@ -8406,7 +8430,7 @@ void md_encode_block(
                     asm_type);
 #if !FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
                 // Reset intra_chroma_mode
-                for (fullLoopCandidateIndex = 0; fullLoopCandidateIndex < context_ptr->full_cand_count_md_stage_2[cand_class_it]; ++fullLoopCandidateIndex) {
+                for (fullLoopCandidateIndex = 0; fullLoopCandidateIndex < context_ptr->md_stage_2_count[cand_class_it]; ++fullLoopCandidateIndex) {
                     candidateIndex = context_ptr->cand_buff_indices[cand_class_it][fullLoopCandidateIndex];
                     candidateBuffer = candidate_buffer_ptr_array[candidateIndex];
                     candidate_ptr = candidateBuffer->candidate_ptr;//this is the FastCandidateStruct
@@ -8422,16 +8446,16 @@ void md_encode_block(
                 // Sort the candidates of the target class based on the 1st full loop cost
 
                 //sort the new set of candidates
-                if (context_ptr->full_cand_count_md_stage_2[cand_class_it])
+                if (context_ptr->md_stage_2_count[cand_class_it])
                     sort_stage2_candidates(
                         context_ptr,
-                        context_ptr->full_cand_count_md_stage_2[cand_class_it],
+                        context_ptr->md_stage_2_count[cand_class_it],
                         context_ptr->cand_buff_indices[cand_class_it]);
             }
         }
 #if FULL_LOOP_SPLIT
-        assert(context_ptr->full_recon_search_count <= MAX_NFL);
-        assert(context_ptr->full_recon_search_count > 0);
+        assert(context_ptr->md_stage_3_total_count <= MAX_NFL);
+        assert(context_ptr->md_stage_3_total_count > 0);
 #endif
 
         // handar
@@ -8453,7 +8477,7 @@ void md_encode_block(
             inputCbOriginIndex,
             cuOriginIndex,
             cuChromaOriginIndex,
-            context_ptr->full_recon_search_count,
+            context_ptr->md_stage_3_total_count,
             ref_fast_cost,
 #if TBX_SPLIT_CAP
             skip_atb,
@@ -8518,7 +8542,11 @@ void md_encode_block(
             context_ptr->blk_geom->bwidth,
             context_ptr->blk_geom->bheight,
             candidate_buffer_ptr_array,
+#if FULL_LOOP_SPLIT
+            context_ptr->md_stage_3_total_count,
+#else
             context_ptr->full_recon_search_count,
+#endif
 #if M9_FULL_LOOP_ESCAPE
             (context_ptr->full_loop_escape == 2) ? context_ptr->sorted_candidate_index_array : context_ptr->best_candidate_index_array,
 #else

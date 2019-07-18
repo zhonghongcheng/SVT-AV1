@@ -226,7 +226,12 @@ extern "C" {
         unsigned                        chroma_intra_ref_samples_gen_done    : 2; // only 1 bit is needed, but used two for rounding
         unsigned                        generate_mvp                         : 2; // only 1 bit is needed, but used two for rounding
 #endif
+#if FULL_LOOP_SPLIT
+        uint32_t                        md_stage_2_total_count;
+        uint32_t                        md_stage_3_total_count;
+#else
         uint32_t                        full_recon_search_count;
+#endif
         EbBool                          cu_use_ref_src_flag;
         uint16_t                        qp_index;
         uint64_t                        three_quad_energy;
@@ -304,8 +309,8 @@ extern "C" {
 #endif
 #if MD_CLASS
 #if FULL_LOOP_SPLIT
-        uint32_t                       full_cand_count_md_stage_2[CAND_CLASS_TOTAL]; //how many full candiates per class @ md_stage_2
-        uint32_t                       full_cand_count_md_stage_3[CAND_CLASS_TOTAL]; //how many full candiates per class @ md_stage_3
+        uint32_t                       md_stage_2_count[CAND_CLASS_TOTAL]; //how many full candiates per class @ md_stage_2
+        uint32_t                       md_stage_3_count[CAND_CLASS_TOTAL]; //how many full candiates per class @ md_stage_3
 #else
         uint32_t                       full_cand_count[CAND_CLASS_TOTAL]; //how many full candiates per class
 #endif
