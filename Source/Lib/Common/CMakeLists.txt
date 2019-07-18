@@ -3,6 +3,11 @@
 # SPDX - License - Identifier: BSD - 2 - Clause - Patent
 #
 
+# sets Windows warning level to 3
+if(MSVC)
+  add_compile_options(/W3)
+endif()
+
 # Libraries Directory CMakeLists.txt
 
 add_subdirectory(Codec)
