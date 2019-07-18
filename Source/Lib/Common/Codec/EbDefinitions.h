@@ -49,7 +49,14 @@ extern "C" {
 #define FIRST_FULL_LOOP_TX_SEARCH_OFF_INTER    0
 #define STRENGHTHEN_MD_STAGE_3                 1
 #define CLASS_0_NFL_MD_STAGE_3                 1
-#define CLASS_012_NFL_MD_STAGE_3               0
+#define CLASS_123_NFL_MD_STAGE_2_3             0
+#define CLASS_0_NFL_MD_STAGE_2                 0
+
+#define PRE_BILINEAR_CLEAN_UP                  1 
+#define BILINEAR_FAST_LOOP                     0
+#define BILINEAR_PREDICTIVE_ME                 0
+#define BILINEAR_INJECTION                     0
+
 #define FIRST_FULL_LOOP_INTERPOLATION_SEARCH   0
 #define FIRST_RDOQ_INTRA                       0
 #define FIRST_RDOQ_INTER                       0

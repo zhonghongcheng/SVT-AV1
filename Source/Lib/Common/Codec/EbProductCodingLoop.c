@@ -1769,8 +1769,15 @@ void ProductMdFastPuPrediction(
         context_ptr->skip_interpolation_search = 1;
 #endif
 #endif
-    candidateBuffer->candidate_ptr->interp_filters = 0;
 
+#if BILINEAR_FAST_LOOP
+    if (context_ptr->md_stage == MD_STAGE_0 && context_ptr->md_staging_mode == 1)
+        candidateBuffer->candidate_ptr->interp_filters = av1_make_interp_filters(BILINEAR, BILINEAR);
+    else
+        candidateBuffer->candidate_ptr->interp_filters = 0;
+#else 
+    candidateBuffer->candidate_ptr->interp_filters = 0;
+#endif
     ProductPredictionFunTable[candidateBuffer->candidate_ptr->use_intrabc ? INTER_MODE : modeType](
         context_ptr,
         picture_control_set_ptr,
@@ -1798,6 +1805,8 @@ void fast_loop_core(
     uint64_t chromaFastDistortion;
     ModeDecisionCandidate       *candidate_ptr = candidateBuffer->candidate_ptr;
     EbPictureBufferDesc         *prediction_ptr = candidateBuffer->prediction_ptr;
+
+
 
     // Prediction
     ProductMdFastPuPrediction(
@@ -1902,7 +1911,9 @@ void generate_intra_reference_samples(
 
 void perform_fast_loop(
 #if MD_CLASS
+#if !PRE_BILINEAR_CLEAN_UP
     CAND_CLASS                        target_class,
+#endif
 #endif
     PictureControlSet                 *picture_control_set_ptr,
     ModeDecisionContext               *context_ptr,
@@ -1938,7 +1949,11 @@ void perform_fast_loop(
 
 
 #if MD_CLASS //this code has to be tested for higher presets
+#if PRE_BILINEAR_CLEAN_UP
+        if (fast_candidate_array[fastLoopCandidateIndex].cand_class == context_ptr->target_class)
+#else
         if (fast_candidate_array[fastLoopCandidateIndex].cand_class == target_class)
+#endif
         {
 #endif
 
@@ -1999,7 +2014,11 @@ void perform_fast_loop(
     {
 
 #if MD_CLASS
+#if PRE_BILINEAR_CLEAN_UP
+        if (fast_candidate_array[fastLoopCandidateIndex].cand_class == context_ptr->target_class)
+#else
         if (fast_candidate_array[fastLoopCandidateIndex].cand_class == target_class)
+#endif
         {
 #endif
 
@@ -2217,11 +2236,17 @@ void set_md_stage_counts(
     }
 
     // Set # of md_stage_2 candidates
+#if CLASS_0_NFL_MD_STAGE_2
+    context_ptr->md_stage_2_count[CAND_CLASS_0] = context_ptr->bypass_stage1[CAND_CLASS_0] ? context_ptr->fast1_cand_count[CAND_CLASS_0] : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTRA_NFL : 6;// (INTRA_NFL >> 1);
+#else
     context_ptr->md_stage_2_count[CAND_CLASS_0] = context_ptr->bypass_stage1[CAND_CLASS_0] ? context_ptr->fast1_cand_count[CAND_CLASS_0] : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTRA_NFL : (INTRA_NFL >> 1);
-#if CLASS_012_NFL_MD_STAGE_3
-    context_ptr->md_stage_2_count[CAND_CLASS_1] = context_ptr->bypass_stage1[CAND_CLASS_1] ? context_ptr->fast1_cand_count[CAND_CLASS_1] : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 10 : 2;
-    context_ptr->md_stage_2_count[CAND_CLASS_2] = context_ptr->bypass_stage1[CAND_CLASS_2] ? context_ptr->fast1_cand_count[CAND_CLASS_2] : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 10 : 4;
-    context_ptr->md_stage_2_count[CAND_CLASS_3] = context_ptr->bypass_stage1[CAND_CLASS_3] ? context_ptr->fast1_cand_count[CAND_CLASS_3] : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 10 : 4;
+#endif
+#if CLASS_123_NFL_MD_STAGE_2_3
+    context_ptr->md_stage_2_count[CAND_CLASS_1] = context_ptr->bypass_stage1[CAND_CLASS_1] ? context_ptr->fast1_cand_count[CAND_CLASS_1] : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 12 : 4;
+    context_ptr->md_stage_2_count[CAND_CLASS_2] = context_ptr->bypass_stage1[CAND_CLASS_2] ? context_ptr->fast1_cand_count[CAND_CLASS_2] : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 12 : 4;
+    context_ptr->md_stage_2_count[CAND_CLASS_3] = context_ptr->bypass_stage1[CAND_CLASS_3] ? context_ptr->fast1_cand_count[CAND_CLASS_3] : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 12 : 4;
+    //context_ptr->md_stage_2_count[CAND_CLASS_3] = context_ptr->bypass_stage1[CAND_CLASS_3] ? context_ptr->fast1_cand_count[CAND_CLASS_3] : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
+
 #else
     context_ptr->md_stage_2_count[CAND_CLASS_1] = context_ptr->bypass_stage1[CAND_CLASS_1] ? context_ptr->fast1_cand_count[CAND_CLASS_1] : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_NEW_NFL : (INTER_NEW_NFL >> 1);
     context_ptr->md_stage_2_count[CAND_CLASS_2] = context_ptr->bypass_stage1[CAND_CLASS_2] ? context_ptr->fast1_cand_count[CAND_CLASS_2] : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
@@ -2356,25 +2381,31 @@ void set_md_stage_counts(
 
 }
 #endif
-void fast_loop_stage1(
-    CAND_CLASS                         target_class,
-    PictureControlSet                 *picture_control_set_ptr,
-    ModeDecisionContext               *context_ptr,
-    ModeDecisionCandidateBuffer      **candidateBufferPtrArrayBase,
-    uint32_t                           num_of_candidates,
-    EbPictureBufferDesc               *input_picture_ptr,
-    uint32_t                           inputOriginIndex,
-    uint32_t                           inputCbOriginIndex,
-    uint32_t                           inputCrOriginIndex,
-    CodingUnit                        *cu_ptr,
-    uint32_t                           cuOriginIndex,
-    uint32_t                           cuChromaOriginIndex,
-    EbBool                             use_ssd,
-    EbAsm                              asm_type)
+void fast_loop_stage1(	
+#if !PRE_BILINEAR_CLEAN_UP
+	CAND_CLASS                         target_class,
+#endif
+	PictureControlSet                 *picture_control_set_ptr,
+	ModeDecisionContext               *context_ptr,
+	ModeDecisionCandidateBuffer      **candidateBufferPtrArrayBase,
+	uint32_t                           num_of_candidates,
+	EbPictureBufferDesc               *input_picture_ptr,
+	uint32_t                           inputOriginIndex,
+	uint32_t                           inputCbOriginIndex,
+	uint32_t                           inputCrOriginIndex,
+	CodingUnit                        *cu_ptr,
+	uint32_t                           cuOriginIndex,
+	uint32_t                           cuChromaOriginIndex,	
+	EbBool                             use_ssd,
+	EbAsm                              asm_type)
 {
     for (uint32_t cand_idx = 0; cand_idx < num_of_candidates; ++cand_idx)
     {
+#if PRE_BILINEAR_CLEAN_UP
+        uint32_t                        candidateIndex = context_ptr->cand_buff_indices[context_ptr->target_class][cand_idx];
+#else
         uint32_t                        candidateIndex  =  context_ptr->cand_buff_indices[target_class][cand_idx];
+#endif
         ModeDecisionCandidateBuffer    *candidateBuffer = candidateBufferPtrArrayBase[candidateIndex];
         ModeDecisionCandidate          *candidate_ptr   = candidateBuffer->candidate_ptr;
 
@@ -2726,8 +2757,11 @@ int32_t derive_luma_inter_dist(
     candidate_ptr->motion_vector_yl1 = list_idx == 1 ? mvy : 0;
     candidate_ptr->ref_frame_index_l0 = list_idx == 0 ? ref_idx : -1;
     candidate_ptr->ref_frame_index_l1 = list_idx == 1 ? ref_idx : -1;
+#if BILINEAR_PREDICTIVE_ME
+    candidateBuffer->candidate_ptr->interp_filters = av1_make_interp_filters(BILINEAR, BILINEAR);
+#else 
     candidate_ptr->interp_filters = 0;
-
+#endif
     // Prediction
     uint8_t default_skip_interpolation_search = context_ptr->skip_interpolation_search;
     context_ptr->skip_interpolation_search = 1;
@@ -2888,8 +2922,11 @@ void predictive_me_sub_pel_search(
             candidate_ptr->motion_vector_yl1 = list_idx == 1 ? mvy + (refinement_pos_y * search_step) : 0;
             candidate_ptr->ref_frame_index_l0 = list_idx == 0 ? ref_idx : -1;
             candidate_ptr->ref_frame_index_l1 = list_idx == 1 ? ref_idx : -1;
+#if BILINEAR_PREDICTIVE_ME
+            candidateBuffer->candidate_ptr->interp_filters = av1_make_interp_filters(BILINEAR, BILINEAR);
+#else 
             candidate_ptr->interp_filters = 0;
-
+#endif
             // Prediction
             uint8_t default_skip_interpolation_search = context_ptr->skip_interpolation_search;
             context_ptr->skip_interpolation_search = 1;
@@ -5441,7 +5478,9 @@ void perform_intra_tx_partitioning(
 #endif
 #if FULL_LOOP_SPLIT //---
 void md_stage_2(
+#if !PRE_BILINEAR_CLEAN_UP
     CAND_CLASS             target_class,
+#endif
     PictureControlSet     *picture_control_set_ptr,
     LargestCodingUnit     *sb_ptr,
     CodingUnit            *cu_ptr,
@@ -5513,9 +5552,13 @@ void md_stage_2(
     ModeDecisionCandidateBuffer          *candidateBuffer;
     ModeDecisionCandidate                *candidate_ptr;
 #if FULL_LOOP_SPLIT //---
+#if PRE_BILINEAR_CLEAN_UP
+    for (fullLoopCandidateIndex = 0; fullLoopCandidateIndex < context_ptr->md_stage_2_count[context_ptr->target_class]; ++fullLoopCandidateIndex) {
+        candidateIndex = context_ptr->cand_buff_indices[context_ptr->target_class][fullLoopCandidateIndex];
+#else
     for (fullLoopCandidateIndex = 0; fullLoopCandidateIndex < context_ptr->md_stage_2_count[target_class]; ++fullLoopCandidateIndex) {
-
         candidateIndex = context_ptr->cand_buff_indices[target_class][fullLoopCandidateIndex];
+#endif
 #else
     for (fullLoopCandidateIndex = 0; fullLoopCandidateIndex < fullCandidateTotalCount; ++fullLoopCandidateIndex) {
 #if M9_FULL_LOOP_ESCAPE
@@ -5656,7 +5699,11 @@ void md_stage_2(
         //TOADD
 #endif
 #if FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
+#if PRE_BILINEAR_CLEAN_UP
+        if (context_ptr->target_class != CAND_CLASS_0) {
+#else
         if (target_class != CAND_CLASS_0) {
+#endif
 #endif
         //Cb Residual
         if (context_ptr->blk_geom->has_uv && context_ptr->chroma_level <= CHROMA_MODE_1) {
@@ -5810,7 +5857,11 @@ void md_stage_2(
 #if FIRST_FULL_LOOP_TX_SEARCH_OFF_INTER
             tx_search_skip_fag = EB_TRUE;
 #else
+#if PRE_BILINEAR_CLEAN_UP
+            if (context_ptr->md_stage == MD_STAGE_2 && context_ptr->target_class == CAND_CLASS_0)
+#else
             if (context_ptr->md_stage == MD_STAGE_2 && target_class == CAND_CLASS_0)
+#endif
                 tx_search_skip_fag = EB_TRUE;
 #endif
 #endif
@@ -5840,7 +5891,11 @@ void md_stage_2(
         }
 #endif
 #if FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
+#if PRE_BILINEAR_CLEAN_UP
+        if (context_ptr->target_class != CAND_CLASS_0) {
+#else
         if (target_class != CAND_CLASS_0) {
+#endif
 #endif
             if (candidate_ptr->type == INTRA_MODE && candidateBuffer->candidate_ptr->intra_chroma_mode == UV_CFL_PRED) {
                 // If mode is CFL:
@@ -5878,7 +5933,11 @@ void md_stage_2(
         uint16_t cb_qp = context_ptr->qp;
         uint16_t cr_qp = context_ptr->qp;
 #if FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
+#if PRE_BILINEAR_CLEAN_UP
+        if (context_ptr->target_class != CAND_CLASS_0) {
+#else
         if (target_class != CAND_CLASS_0) {
+#endif
 #endif
             if (context_ptr->blk_geom->has_uv && context_ptr->chroma_level <= CHROMA_MODE_1) {
                 full_loop_r(
@@ -8188,8 +8247,13 @@ void md_encode_block(
                 assert(buffer_total_count <= MAX_NFL_BUFF && "not enough cand buffers");
 
                 //Input: fast_cand_count[cand_class_it]  Output:  fast1_cand_count[cand_class_it]
+#if PRE_BILINEAR_CLEAN_UP
+                context_ptr->target_class = cand_class_it;
+#endif
                 perform_fast_loop(
+#if !PRE_BILINEAR_CLEAN_UP
                     cand_class_it,
+#endif
                     picture_control_set_ptr,
                     context_ptr,
                     candidateBufferPtrArrayBase,
@@ -8250,7 +8314,6 @@ void md_encode_block(
             //number of next level candidates could not exceed number of curr level candidates
 #if FULL_LOOP_SPLIT // to do
             context_ptr->md_stage_2_count[cand_class_it] = MIN(context_ptr->fast1_cand_count[cand_class_it], context_ptr->md_stage_2_count[cand_class_it]);
-            // handar
             context_ptr->md_stage_2_total_count += context_ptr->md_stage_2_count[cand_class_it];
 #if FAST_LOOP_OPT
             if (context_ptr->bypass_stage1[cand_class_it] == 0 && context_ptr->fast1_cand_count[cand_class_it] > 0 && context_ptr->md_stage_2_count[cand_class_it] > 0) {
@@ -8268,8 +8331,13 @@ void md_encode_block(
 #endif
 
                 //Input: fast1_cand_count[cand_class_it]  Output:  full_cand_count[cand_class_it]
+#if PRE_BILINEAR_CLEAN_UP
+                context_ptr->target_class = cand_class_it;
+#endif
                 fast_loop_stage1(
+#if !PRE_BILINEAR_CLEAN_UP
                     cand_class_it,
+#endif
                     picture_control_set_ptr,
                     context_ptr,
                     candidateBufferPtrArrayBase,
@@ -8390,7 +8458,6 @@ void md_encode_block(
 
             //number of next level candidates could not exceed number of curr level candidates
             context_ptr->md_stage_3_count[cand_class_it] = MIN(context_ptr->md_stage_2_count[cand_class_it], context_ptr->md_stage_3_count[cand_class_it]);
-            // handar
             context_ptr->md_stage_3_total_count += context_ptr->md_stage_3_count[cand_class_it];
 
             if (context_ptr->bypass_stage2[cand_class_it] == EB_FALSE && context_ptr->md_stage_2_count[cand_class_it] > 0 && context_ptr->md_stage_3_count[cand_class_it] > 0) {
@@ -8409,8 +8476,13 @@ void md_encode_block(
                     }
                 }
 #endif
+#if PRE_BILINEAR_CLEAN_UP
+                context_ptr->target_class = cand_class_it;
+#endif
                 md_stage_2(
+#if !PRE_BILINEAR_CLEAN_UP
                     cand_class_it,
+#endif
                     picture_control_set_ptr,
                     context_ptr->sb_ptr,
                     cu_ptr,
@@ -8457,8 +8529,6 @@ void md_encode_block(
         assert(context_ptr->md_stage_3_total_count <= MAX_NFL);
         assert(context_ptr->md_stage_3_total_count > 0);
 #endif
-
-        // handar
         construct_best_sorted_arrays_md_stage_3(
             context_ptr,
             candidate_buffer_ptr_array,

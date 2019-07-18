@@ -2242,6 +2242,13 @@ void search_compound_diff_wedge(
     ModeDecisionCandidate                *candidate_ptr    )
 {
 
+#if PRE_BILINEAR_CLEAN_UP // compound 
+#if BILINEAR_INJECTION
+    candidate_ptr->interp_filters = av1_make_interp_filters(BILINEAR, BILINEAR);
+#else
+    candidate_ptr->interp_filters = 0;
+#endif
+#endif
     //if (*calc_pred_masked_compound)
     {
         EbPictureBufferDesc   *src_pic = picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr;
@@ -2294,7 +2301,11 @@ void search_compound_diff_wedge(
         //we call the regular inter prediction path here(no compound)
         av1_inter_prediction(
             picture_control_set_ptr,
+#if PRE_BILINEAR_CLEAN_UP // compound 
+            candidate_ptr->interp_filters,
+#else
             0,//fixed interpolation filter for compound search
+#endif
             context_ptr->cu_ptr,
             candidate_ptr->ref_frame_type,
             &mv_unit,
@@ -2320,11 +2331,15 @@ void search_compound_diff_wedge(
         //ref1 prediction
         mv_unit.pred_direction = UNI_PRED_LIST_1;
         pred_desc.buffer_y = context_ptr->pred1;
-
+       
         //we call the regular inter prediction path here(no compound)
         av1_inter_prediction(
             picture_control_set_ptr,
+#if PRE_BILINEAR_CLEAN_UP // compound 
+            candidate_ptr->interp_filters,
+#else
             0,//fixed interpolation filter for compound search
+#endif
             context_ptr->cu_ptr,
             candidate_ptr->ref_frame_type,
             &mv_unit,
@@ -2818,6 +2833,10 @@ EbErrorType av1_inter_prediction(
                     av1_get_convolve_filter_params(interp_filters, &filter_params_x,
                         &filter_params_y, blk_geom->bwidth_uv, blk_geom->bheight_uv);
 
+
+                    //if (filter_params_x.interp_filter != 3 || filter_params_y.interp_filter != 3)
+                    //    printf("to do -> to do");
+
                     convolve[subpel_x != 0][subpel_y != 0][is_compound](
                         src_ptr,
                         src_stride,
@@ -2851,6 +2870,9 @@ EbErrorType av1_inter_prediction(
 
                     av1_get_convolve_filter_params(interp_filters, &filter_params_x,
                         &filter_params_y, blk_geom->bwidth_uv, blk_geom->bheight_uv);
+                    //
+                    //if (filter_params_x.interp_filter != 3 || filter_params_y.interp_filter != 3)
+                    //    printf("to do -> to do");
 
                     convolve[subpel_x != 0][subpel_y != 0][is_compound](
                         src_ptr,
@@ -2898,6 +2920,9 @@ EbErrorType av1_inter_prediction(
         av1_get_convolve_filter_params(interp_filters, &filter_params_x,
             &filter_params_y, bwidth, bheight);
 
+        //if (filter_params_x.interp_filter != 3 || filter_params_y.interp_filter != 3)
+        //    printf("to do -> to do");
+
         convolve[subpel_x != 0][subpel_y != 0][is_compound](
             src_ptr,
             src_stride,
@@ -2925,6 +2950,9 @@ EbErrorType av1_inter_prediction(
 
             av1_get_convolve_filter_params(interp_filters, &filter_params_x,
                 &filter_params_y, blk_geom->bwidth_uv, blk_geom->bheight_uv);
+
+            //if (filter_params_x.interp_filter != 3 || filter_params_y.interp_filter != 3)
+            //    printf("to do -> to do");
 
             if (use_intrabc && (subpel_x != 0 || subpel_y != 0))
                 convolve_2d_for_intrabc((const uint8_t *)src_ptr, src_stride, dst_ptr, dst_stride, blk_geom->bwidth_uv, blk_geom->bheight_uv, subpel_x,
@@ -2992,6 +3020,10 @@ EbErrorType av1_inter_prediction(
         conv_params = get_conv_params_no_round(0, (mv_unit->pred_direction == BI_PRED) ? 1 : 0, 0, tmp_dstY, 128, is_compound, EB_8BIT);
         av1_get_convolve_filter_params(interp_filters, &filter_params_x,
             &filter_params_y, bwidth, bheight);
+
+        //if (filter_params_x.interp_filter != 3 || filter_params_y.interp_filter != 3)
+        //    printf("to do -> to do");
+
 #if COMP_MODE
         //the luma data is applied to chroma below
         av1_dist_wtd_comp_weight_assign(
@@ -3069,6 +3101,8 @@ EbErrorType av1_inter_prediction(
             av1_get_convolve_filter_params(interp_filters, &filter_params_x,
                 &filter_params_y, blk_geom->bwidth_uv, blk_geom->bheight_uv);
 
+            //if (filter_params_x.interp_filter != 3 || filter_params_y.interp_filter != 3)
+            //    printf("to do -> to do");
 #if COMP_DIFF
             if (is_compound && is_masked_compound_type(interinter_comp->type)) {
                 conv_params.do_average = 0;
@@ -6236,8 +6270,9 @@ EbErrorType inter_pu_prediction_av1(
                            md_context_ptr->interpolation_filter_search_blk_size == 1 ? 8 : 16 ;
 
 #if REMOVE_UNPACK_REF
-
+#if !PRE_BILINEAR_CLEAN_UP
         candidate_buffer_ptr->candidate_ptr->interp_filters = 0;
+#endif
         if (!md_context_ptr->skip_interpolation_search) {
             if (md_context_ptr->blk_geom->bwidth > capped_size && md_context_ptr->blk_geom->bheight > capped_size)
                 interpolation_filter_search(
