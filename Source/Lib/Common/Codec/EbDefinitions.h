@@ -448,7 +448,7 @@ typedef enum MD_STAGE {
 #define IFS_EARLY_EXIT                                  0 // EARLY EXIT FROM INTERPOLATION SEARCH BASED ON THE DISTORTION OF THE REGULAR-FILTER (x and y) ARE INTEGER.
 
 #define OPTIMISED_EX_SUBPEL                                 1
-#define PREDICT_NSQ_SHAPE                               1
+#define PREDICT_NSQ_SHAPE                               0
 #if PREDICT_NSQ_SHAPE
 #define ADD_MDC_INTRA                                   0
 #define DEPTH_RANKING                                   1
