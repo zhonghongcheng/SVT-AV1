@@ -33,8 +33,11 @@
 #include "EbCodingLoop.h"
 
 #define TH_NFL_BIAS             7
-
+#if MD_CLASS
+EbErrorType generate_md_stage_0_cand(
+#else
 EbErrorType ProductGenerateMdCandidatesCu(
+#endif
     LargestCodingUnit             *sb_ptr,
     ModeDecisionContext           *context_ptr,
     SsMeContext                  *ss_mecontext,
@@ -1908,8 +1911,11 @@ void fast_loop_core(
 void generate_intra_reference_samples(
     const Av1Common         *cm,
     ModeDecisionContext   *md_context_ptr);
-
+#if MDLEVELS
+void md_stage_0(
+#else
 void perform_fast_loop(
+#endif
 #if MD_CLASS
 #if !PRE_BILINEAR_CLEAN_UP
     CAND_CLASS                        target_class,
@@ -2379,7 +2385,7 @@ void set_md_stage_counts(
 
 }
 #endif
-void fast_loop_stage1(	
+void md_stage_1(	
 #if !PRE_BILINEAR_CLEAN_UP
 	CAND_CLASS                         target_class,
 #endif
@@ -8079,7 +8085,11 @@ void md_encode_block(
                 cuOriginIndex,
                 asm_type);
 #endif
+#if MD_CLASS
+        generate_md_stage_0_cand(
+#else
         ProductGenerateMdCandidatesCu(
+#endif
             context_ptr->sb_ptr,
             context_ptr,
             ss_mecontext,
@@ -8248,7 +8258,7 @@ void md_encode_block(
 #if PRE_BILINEAR_CLEAN_UP
                 context_ptr->target_class = cand_class_it;
 #endif
-                perform_fast_loop(
+                md_stage_0(
 #if !PRE_BILINEAR_CLEAN_UP
                     cand_class_it,
 #endif
@@ -8332,7 +8342,7 @@ void md_encode_block(
 #if PRE_BILINEAR_CLEAN_UP
                 context_ptr->target_class = cand_class_it;
 #endif
-                fast_loop_stage1(
+                md_stage_1(
 #if !PRE_BILINEAR_CLEAN_UP
                     cand_class_it,
 #endif
