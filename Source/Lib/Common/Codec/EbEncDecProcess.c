@@ -1452,7 +1452,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
 #if NEW_NEAREST_NEW_INJECTION
     if (picture_control_set_ptr->enc_mode == ENC_M0)
+#if M1_CAND
+        context_ptr->new_nearest_near_comb_injection = 0;
+#else
         context_ptr->new_nearest_near_comb_injection = 1;
+#endif
     else
         context_ptr->new_nearest_near_comb_injection = 0;
 #endif
@@ -1546,7 +1550,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
 #endif
     if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#if M1_CAND
+        context_ptr->bipred3x3_injection = 0;
+#else
         context_ptr->bipred3x3_injection = 1;
+#endif
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->bipred3x3_injection = 2;
     else

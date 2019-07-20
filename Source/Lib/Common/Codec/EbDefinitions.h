@@ -35,6 +35,8 @@
 extern "C" {
 #endif
 
+#define M1_CAND                         0
+
 #define M0_HME_ME_TUNING                1
 #define PREDICTIVE_ME                   1 // Perform ME search around MVP
 #define QPM                             1 // Use SB QP Mod
@@ -52,8 +54,10 @@ extern "C" {
 #define CLASS_123_NFL_MD_STAGE_2_3             1 // CIN13,CIN23,CIN33
 #define CLASS_0_NFL_MD_STAGE_2                 0
 
-#define PRE_BILINEAR_CLEAN_UP                  1 
-#define BILINEAR_FAST_LOOP                     0
+#define PRE_BILINEAR_CLEAN_UP                  1
+#if M1_CAND 
+#define BILINEAR_FAST_LOOP                     1
+#endif
 #define BILINEAR_PREDICTIVE_ME                 0
 #define BILINEAR_INJECTION                     0
 
@@ -379,8 +383,9 @@ typedef enum CAND_CLASS {
 #define  REFACTOR_FAST_LOOP           1 // Lossless
 #define  FAST_LOOP_OPT                1 // Use fast loop stages to speed up encoder
 #define  COMP_OPT                     1 // cut some compound injection/modes
+#if !M1_CAND 
 #define  FULL_COMPOUND_BDRATE         1 // enable to run compound in full mode for best bd rate
-
+#endif
 #define  BDR_MODE                     0 // enable to run for best bd rate
 #if BDR_MODE
 #define  MD_STAGE_3_NFL_BDRATE        1 // 10 NFL @ md_stage_3
