@@ -1776,7 +1776,7 @@ static EbErrorType PredictionStructureCtor(
 
 EbErrorType prediction_structure_group_ctor(
 #if MRP_M1
-    uint8_t          enc_mode,
+    uint8_t          mrp_mode,
 #endif
     PredictionStructureGroup   **predictionStructureGroupDblPtr,
     uint32_t                         baseLayerSwitchMode)
@@ -1793,7 +1793,7 @@ EbErrorType prediction_structure_group_ctor(
     *predictionStructureGroupDblPtr = predictionStructureGroupPtr;
 
 #if MRP_M1
-    if (enc_mode > ENC_M0) {
+    if (mrp_mode == 1) {
         for (int gop_i = 1; gop_i < 8; ++gop_i) {
             for (int i = 1; i < 4; ++i) {
                 four_level_hierarchical_pred_struct[gop_i].ref_list0[i] = 0;
