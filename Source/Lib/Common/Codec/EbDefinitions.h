@@ -55,9 +55,7 @@ extern "C" {
 #define CLASS_0_NFL_MD_STAGE_2                 0
 
 #define PRE_BILINEAR_CLEAN_UP                  1
-#if M1_CAND 
 #define BILINEAR_FAST_LOOP                     1
-#endif
 #define BILINEAR_PREDICTIVE_ME                 0
 #define BILINEAR_INJECTION                     0
 
