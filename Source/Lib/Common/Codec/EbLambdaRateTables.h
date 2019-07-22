@@ -11,7 +11,7 @@ extern "C" {
 #endif
 
 #define NUMBER_OF_INTRA_MODES_MINUS_TWO  34
-#define LUMA_INTRA_MODE_BITS_GRE31       196608 // farctional number of bit required for signaling luma intra mode greater than 31
+#define LUMA_INTRA_MODE_BITS_GRE31       196608 // fractional number of bit required for signaling luma intra mode greater than 31
 #define QP_NUM                           52
 
     // *Note - As of Oct 2011, the JCT-VC uses the PSNR forumula

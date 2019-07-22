@@ -5706,6 +5706,7 @@ static INLINE int txfm_partition_context(TXFM_CONTEXT *above_ctx,
     return category * 3 + above + left;
 }
 
+#if !ATB_SUPPORT
 static INLINE int av1_get_txb_size_index(BlockSize bsize, int blk_row,
     int blk_col) {
     TxSize txs = max_txsize_rect_lookup[bsize];
@@ -5720,6 +5721,7 @@ static INLINE int av1_get_txb_size_index(BlockSize bsize, int blk_row,
     assert(index < INTER_TX_SIZE_BUF_LEN);
     return index;
 }
+#endif
 
 static void write_tx_size_vartx(MacroBlockD *xd, const MbModeInfo *mbmi,
     TxSize tx_size, int depth, int blk_row,
