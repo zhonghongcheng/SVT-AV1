@@ -3136,10 +3136,58 @@ void predictive_me_search(
         int8_t mvp_count = 0;
         if (rf[1] == NONE_FRAME)
         {
+
+
             MvReferenceFrame frame_type = rf[0];
             uint8_t list_idx = get_list_idx(rf[0]);
             uint8_t ref_idx = get_ref_frame_idx(rf[0]);
 
+#if FASTER_PREDICTIVE_ME
+            const MeLcuResults *me_results = picture_control_set_ptr->parent_pcs_ptr->me_results[context_ptr->me_sb_addr];
+            int16_t me_mv_x;
+            int16_t me_mv_y;
+
+            if (list_idx == 0) {
+                me_mv_x = (me_results->me_mv_array[context_ptr->me_block_offset][ref_idx].x_mv) << 1;
+                me_mv_y = (me_results->me_mv_array[context_ptr->me_block_offset][ref_idx].y_mv) << 1;
+        }
+            else {
+                me_mv_x = (me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? 4 : 2) + ref_idx].x_mv) << 1;
+                me_mv_y = (me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? 4 : 2) + ref_idx].y_mv) << 1;
+            }
+
+            // Round-up to the closest integer the ME MV
+            me_mv_x = (me_mv_x + 4)&~0x07;
+            me_mv_y = (me_mv_y + 4)&~0x07;
+
+
+            uint32_t pa_me_distortion;
+            EbPictureBufferDesc *ref_pic = ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[list_idx][ref_idx]->object_ptr)->reference_picture;
+            EbByte ref_ptr = ref_pic->buffer_y + ref_pic->origin_x + (context_ptr->cu_origin_x + (me_mv_x / 8)) + (context_ptr->cu_origin_y + (me_mv_y / 8) + ref_pic->origin_y) * ref_pic->stride_y;
+
+            if (use_ssd) {
+                pa_me_distortion = (uint32_t)spatial_full_distortion_kernel_func_ptr_array[asm_type][Log2f(context_ptr->blk_geom->bwidth) - 2](
+                    input_picture_ptr->buffer_y + inputOriginIndex,
+                    input_picture_ptr->stride_y,
+                    ref_ptr,
+                    ref_pic->stride_y,
+                    context_ptr->blk_geom->bwidth,
+                    context_ptr->blk_geom->bheight);
+            }
+            else {
+                assert((context_ptr->blk_geom->bwidth >> 3) < 17);
+                pa_me_distortion = (nxm_sad_kernel_sub_sampled_func_ptr_array[asm_type][context_ptr->blk_geom->bwidth >> 3](
+                    input_picture_ptr->buffer_y + inputOriginIndex,
+                    input_picture_ptr->stride_y,
+                    ref_ptr,
+                    ref_pic->stride_y,
+                    context_ptr->blk_geom->bheight,
+                    context_ptr->blk_geom->bwidth));
+            }
+
+            if (pa_me_distortion != 0) {
+
+#endif
             //NEAREST
 #if  FASTER_PREDICTIVE_ME
             mvp_x_array[mvp_count] = (context_ptr->cu_ptr->ref_mvs[frame_type][0].as_mv.col + 4)&~0x07;
@@ -3178,24 +3226,6 @@ void predictive_me_search(
             }
 
             // Step 1: derive the best MVP in term of distortion
-#if FASTER_PREDICTIVE_ME
-            const MeLcuResults *me_results = picture_control_set_ptr->parent_pcs_ptr->me_results[context_ptr->me_sb_addr];
-            int16_t me_mv_x;
-            int16_t me_mv_y;
-
-            if (list_idx == 0) {
-                me_mv_x = (me_results->me_mv_array[context_ptr->me_block_offset][ref_idx].x_mv) << 1;
-                me_mv_y = (me_results->me_mv_array[context_ptr->me_block_offset][ref_idx].y_mv) << 1;
-            }
-            else {
-                me_mv_x = (me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? 4 : 2) + ref_idx].x_mv) << 1;
-                me_mv_y = (me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? 4 : 2) + ref_idx].y_mv) << 1;
-            }
-
-            // Round-up to the closest integer the ME MV
-            me_mv_x = (me_mv_x + 4)&~0x07;
-            me_mv_y = (me_mv_y + 4)&~0x07;
-#endif
             int16_t best_mvp_x = 0;
             int16_t best_mvp_y = 0;
 
@@ -3275,30 +3305,6 @@ void predictive_me_search(
                     asm_type);
 
 #if FASTER_PREDICTIVE_ME
-                uint32_t pa_me_distortion;
-                EbPictureBufferDesc *ref_pic = ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[list_idx][ref_idx]->object_ptr)->reference_picture;
-                EbByte ref_ptr = ref_pic->buffer_y + ref_pic->origin_x + (context_ptr->cu_origin_x + (me_mv_x / 8)) + (context_ptr->cu_origin_y + (me_mv_y / 8) + ref_pic->origin_y) * ref_pic->stride_y;
-
-                if (use_ssd) {
-                    pa_me_distortion = (uint32_t)spatial_full_distortion_kernel_func_ptr_array[asm_type][Log2f(context_ptr->blk_geom->bwidth) - 2](
-                        input_picture_ptr->buffer_y + inputOriginIndex,
-                        input_picture_ptr->stride_y,
-                        ref_ptr,
-                        ref_pic->stride_y,
-                        context_ptr->blk_geom->bwidth,
-                        context_ptr->blk_geom->bheight);
-                }
-                else {
-                    assert((context_ptr->blk_geom->bwidth >> 3) < 17);
-                    pa_me_distortion = (nxm_sad_kernel_sub_sampled_func_ptr_array[asm_type][context_ptr->blk_geom->bwidth >> 3](
-                        input_picture_ptr->buffer_y + inputOriginIndex,
-                        input_picture_ptr->stride_y,
-                        ref_ptr,
-                        ref_pic->stride_y,
-                        context_ptr->blk_geom->bheight,
-                        context_ptr->blk_geom->bwidth));
-                }
-
                 EbBool perform_predictive_me_sub_pel;
                 #define DEVIATION_TH 50
                 if (pa_me_distortion == 0)
@@ -3383,6 +3389,7 @@ void predictive_me_search(
                 context_ptr->best_spatial_pred_mv[list_idx][ref_idx][1] = best_search_mvy;
                 context_ptr->valid_refined_mv[list_idx][ref_idx] = 1;
 #if FASTER_PREDICTIVE_ME
+                }
                 }
 #endif
         }
