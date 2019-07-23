@@ -1378,7 +1378,11 @@ void update_av1_mi_map(
             miPtr[miX + miY * mi_stride].mbmi.comp_group_idx = cu_ptr->comp_group_idx;
             miPtr[miX + miY * mi_stride].mbmi.compound_idx = cu_ptr->compound_idx;
 #endif
-
+#if II_EC
+            miPtr[miX + miY * mi_stride].mbmi.interintra_mode           = cu_ptr->interintra_mode;
+            miPtr[miX + miY * mi_stride].mbmi.use_wedge_interintra      = cu_ptr->use_wedge_interintra;
+            miPtr[miX + miY * mi_stride].mbmi.interintra_wedge_index    = cu_ptr->interintra_wedge_index;//in
+#endif
             //needed for CDEF
             miPtr[miX + miY * mi_stride].mbmi.skip = cu_ptr->block_has_coeff ? EB_FALSE : EB_TRUE;
         }
@@ -1461,6 +1465,11 @@ void update_mi_map(
 #if COMP_EC
             miPtr[miX + miY * mi_stride].mbmi.comp_group_idx = cu_ptr->comp_group_idx;
             miPtr[miX + miY * mi_stride].mbmi.compound_idx   = cu_ptr->compound_idx;
+#endif
+#if II_EC
+            miPtr[miX + miY * mi_stride].mbmi.interintra_mode           = cu_ptr->interintra_mode;
+            miPtr[miX + miY * mi_stride].mbmi.use_wedge_interintra      = cu_ptr->use_wedge_interintra;
+            miPtr[miX + miY * mi_stride].mbmi.interintra_wedge_index    = cu_ptr->interintra_wedge_index;//in
 #endif
             if (blk_geom->has_uv && context_ptr->chroma_level <= CHROMA_MODE_1)
                 miPtr[miX + miY * mi_stride].mbmi.skip = (cu_ptr->transform_unit_array[0].y_has_coeff == 0 && cu_ptr->transform_unit_array[0].v_has_coeff == 0 && cu_ptr->transform_unit_array[0].u_has_coeff == 0) ? EB_TRUE : EB_FALSE;

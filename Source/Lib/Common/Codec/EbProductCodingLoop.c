@@ -2269,6 +2269,9 @@ void set_md_stage_counts(
         context_ptr->bypass_stage1[CAND_CLASS_1] = EB_FALSE;
         context_ptr->bypass_stage1[CAND_CLASS_2] = EB_FALSE;
         context_ptr->bypass_stage1[CAND_CLASS_3] = EB_FALSE;
+#if II_CLASS
+        context_ptr->bypass_stage1[CAND_CLASS_4] = EB_FALSE;
+#endif
     }
 #endif
     else
@@ -2286,6 +2289,9 @@ void set_md_stage_counts(
         context_ptr->bypass_stage2[CAND_CLASS_1] = EB_TRUE;
         context_ptr->bypass_stage2[CAND_CLASS_2] = EB_TRUE;
         context_ptr->bypass_stage2[CAND_CLASS_3] = EB_TRUE;
+#if II_CLASS
+        context_ptr->bypass_stage2[CAND_CLASS_4] = EB_TRUE;
+#endif
 #endif
     }
     else
@@ -2301,12 +2307,18 @@ void set_md_stage_counts(
     context_ptr->fast1_cand_count[CAND_CLASS_1] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_NEW_NFL : (INTER_NEW_NFL >> 1);
     context_ptr->fast1_cand_count[CAND_CLASS_2] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
     context_ptr->fast1_cand_count[CAND_CLASS_3] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
+#if II_CLASS
+    context_ptr->fast1_cand_count[CAND_CLASS_4] = context_ptr->fast_cand_count[CAND_CLASS_4] ;//(picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
+#endif
 
     if (picture_control_set_ptr->slice_type == I_SLICE) {
         context_ptr->fast1_cand_count[CAND_CLASS_0] = fastCandidateTotalCount;
         context_ptr->fast1_cand_count[CAND_CLASS_1] = 0;
         context_ptr->fast1_cand_count[CAND_CLASS_2] = 0;
         context_ptr->fast1_cand_count[CAND_CLASS_3] = 0;
+ #if II_CLASS
+        context_ptr->fast1_cand_count[CAND_CLASS_4] = 0;
+#endif
     }
 
     // Set # of md_stage_2 candidates
@@ -2319,6 +2331,9 @@ void set_md_stage_counts(
     context_ptr->md_stage_2_count[CAND_CLASS_1] = context_ptr->bypass_stage1[CAND_CLASS_1] ? context_ptr->fast1_cand_count[CAND_CLASS_1] : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_NEW_NFL : (INTER_NEW_NFL >> 1);
     context_ptr->md_stage_2_count[CAND_CLASS_2] = context_ptr->bypass_stage1[CAND_CLASS_2] ? context_ptr->fast1_cand_count[CAND_CLASS_2] : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
     context_ptr->md_stage_2_count[CAND_CLASS_3] = context_ptr->bypass_stage1[CAND_CLASS_3] ? context_ptr->fast1_cand_count[CAND_CLASS_3] : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
+#if II_CLASS
+    context_ptr->md_stage_2_count[CAND_CLASS_4] = context_ptr->fast_cand_count[CAND_CLASS_4] ;//(picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
+#endif
 #endif
 
     if (picture_control_set_ptr->slice_type == I_SLICE) {
@@ -2326,6 +2341,9 @@ void set_md_stage_counts(
         context_ptr->md_stage_2_count[CAND_CLASS_1] = 0;
         context_ptr->md_stage_2_count[CAND_CLASS_2] = 0;
         context_ptr->md_stage_2_count[CAND_CLASS_3] = 0;
+ #if II_CLASS
+        context_ptr->md_stage_2_count[CAND_CLASS_4] = 0;
+#endif
     }
 
     // Set # of md_stage_3 candidates
@@ -2354,6 +2372,9 @@ void set_md_stage_counts(
     context_ptr->md_stage_3_count[CAND_CLASS_1] = context_ptr->bypass_stage2[CAND_CLASS_1] ? context_ptr->md_stage_2_count[CAND_CLASS_1] : 1;
     context_ptr->md_stage_3_count[CAND_CLASS_2] = context_ptr->bypass_stage2[CAND_CLASS_2] ? context_ptr->md_stage_2_count[CAND_CLASS_2] : 1;
     context_ptr->md_stage_3_count[CAND_CLASS_3] = context_ptr->bypass_stage2[CAND_CLASS_3] ? context_ptr->md_stage_2_count[CAND_CLASS_3] : 1;
+#if II_CLASS
+    context_ptr->md_stage_3_count[CAND_CLASS_4] = context_ptr->fast_cand_count[CAND_CLASS_4] ;//(picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
+#endif
 #endif
     if (picture_control_set_ptr->slice_type == I_SLICE) {
 #if MD_STAGE_3_NFL_BDRATE
@@ -2370,6 +2391,9 @@ void set_md_stage_counts(
         context_ptr->md_stage_3_count[CAND_CLASS_1] = 0;
         context_ptr->md_stage_3_count[CAND_CLASS_2] = 0;
         context_ptr->md_stage_3_count[CAND_CLASS_3] = 0;
+ #if II_CLASS
+        context_ptr->md_stage_3_count[CAND_CLASS_4] = 0;
+#endif
     }
 }
 #else
@@ -2812,6 +2836,9 @@ int32_t derive_luma_inter_dist(
     candidate_ptr->pred_mode = NEWMV;
     candidate_ptr->motion_mode = SIMPLE_TRANSLATION;
     candidate_ptr->is_compound = 0;
+#if II_COMP
+    candidate_ptr->is_interintra_used = 0;
+#endif
     candidate_ptr->is_new_mv = 1;
     candidate_ptr->is_zero_mv = 0;
     candidate_ptr->drl_index = 0;
@@ -2980,6 +3007,9 @@ void predictive_me_sub_pel_search(
             candidate_ptr->pred_mode = NEWMV;
             candidate_ptr->motion_mode = SIMPLE_TRANSLATION;
             candidate_ptr->is_compound = 0;
+#if II_COMP
+            candidate_ptr->is_interintra_used = 0;
+#endif
             candidate_ptr->is_new_mv = 1;
             candidate_ptr->is_zero_mv = 0;
             candidate_ptr->drl_index = 0;
@@ -6842,6 +6872,13 @@ void move_cu_data(
     dst_cu->compound_idx = src_cu->compound_idx;
     dst_cu->comp_group_idx = src_cu->comp_group_idx;
 #endif
+#if II_COMP
+       dst_cu->is_interintra_used      = src_cu->is_interintra_used          ;
+       dst_cu->interintra_mode         = src_cu->interintra_mode             ;
+       dst_cu->use_wedge_interintra    = src_cu->use_wedge_interintra        ;
+       dst_cu->interintra_wedge_index  = src_cu->interintra_wedge_index      ;//inter_intra wedge index
+       dst_cu->ii_wedge_sign           = src_cu->ii_wedge_sign               ;//inter_intra wedge sign=-1
+#endif
     //CHKN TransformUnit             transform_unit_array[TRANSFORM_UNIT_MAX_COUNT]; // 2-bytes * 21 = 42-bytes
     memcpy(dst_cu->transform_unit_array, src_cu->transform_unit_array, TRANSFORM_UNIT_MAX_COUNT * sizeof(TransformUnit));
 
@@ -6968,6 +7005,13 @@ void move_cu_data_redund(
     dst_cu->compound_idx = src_cu->compound_idx;
     dst_cu->comp_group_idx = src_cu->comp_group_idx;
 
+#endif
+#if II_COMP
+       dst_cu->is_interintra_used      = src_cu->is_interintra_used          ;
+       dst_cu->interintra_mode         = src_cu->interintra_mode             ;
+       dst_cu->use_wedge_interintra    = src_cu->use_wedge_interintra        ;
+       dst_cu->interintra_wedge_index  = src_cu->interintra_wedge_index      ;//inter_intra wedge index
+       dst_cu->ii_wedge_sign           = src_cu->ii_wedge_sign               ;//inter_intra wedge sign=-1
 #endif
     //CHKN TransformUnit_t             transform_unit_array[TRANSFORM_UNIT_MAX_COUNT]; // 2-bytes * 21 = 42-bytes
     memcpy(dst_cu->transform_unit_array, src_cu->transform_unit_array, TRANSFORM_UNIT_MAX_COUNT * sizeof(TransformUnit));

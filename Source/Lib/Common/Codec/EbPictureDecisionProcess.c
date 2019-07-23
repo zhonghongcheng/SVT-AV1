@@ -1666,6 +1666,13 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->enable_skip_atb = 1;
 
 #endif
+#if II_SEARCH
+        // inter intra pred                      Settings
+        // 0                                     OFF
+        // 1                                     ON
+            picture_control_set_ptr->enable_inter_intra = sequence_control_set_ptr->seq_header.enable_interintra_compound;
+
+#endif
     return return_error;
 }
 

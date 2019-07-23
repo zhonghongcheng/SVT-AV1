@@ -14491,6 +14491,9 @@ extern "C" {
 #if TBX_SPLIT_CAP
         uint8_t                              enable_skip_atb;
 #endif
+#if II_SEARCH
+        uint8_t                              enable_inter_intra;
+#endif
     } PictureParentControlSet;
 
     typedef struct PictureControlSetInitData

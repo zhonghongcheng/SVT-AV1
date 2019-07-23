@@ -94,6 +94,20 @@ extern "C" {
 #define    COMP_FULL                       1 // test compound in full loop
 #define    COMP_AVX                        1 // test compound in full loop
 #endif
+#define II_COMP_FLAG 1
+
+#if II_COMP_FLAG
+#define  II_COMP            1   // Inter-intra compound
+#define  II_SEARCH          1   // Inject inter Intra
+#define  II_EC              1   // ii EC
+#define  II_ED              1   // ii ED
+#define  II_CLASS           1   // ADD its own class
+#define  II_RATEE           1   // Rate estimation 
+#define  II_AVX             1   // AVX 
+#define  FIX_RATE_E_WEDGE   0   // Fix bug in wedge search 
+#endif
+
+
 #define  NEW_NEAR_FIX                   1  //to add compound  here -- DONE
 
 #define SC_DETECTION                            1 // Change SC detection to blk based VAR.
@@ -382,6 +396,9 @@ typedef enum CAND_CLASS {
     CAND_CLASS_2,
 #if COMP_FULL
     CAND_CLASS_3,
+#endif
+#if II_CLASS
+    CAND_CLASS_4,
 #endif
     CAND_CLASS_TOTAL
 } CAND_CLASS;
@@ -1494,6 +1511,14 @@ typedef struct {
     DIFFWTD_MASK_TYPE mask_type;
     COMPOUND_TYPE type;
 } INTERINTER_COMPOUND_DATA;
+#endif
+
+#if II_COMP
+#define AOM_BLEND_A64(a, v0, v1)                                          \
+  ROUND_POWER_OF_TWO((a) * (v0) + (AOM_BLEND_A64_MAX_ALPHA - (a)) * (v1), \
+                     AOM_BLEND_A64_ROUND_BITS)
+#define IS_POWER_OF_TWO(x) (((x) & ((x)-1)) == 0)
+#define INTERINTRA_MODE  InterIntraMode
 #endif
 
 typedef enum ATTRIBUTE_PACKED
