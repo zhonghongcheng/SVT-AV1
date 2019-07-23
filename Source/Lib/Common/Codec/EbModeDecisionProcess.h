@@ -398,7 +398,7 @@ extern "C" {
     uint64_t full_cost_per_class[MAX_NFL];
     uint32_t full_index_per_class[CAND_CLASS_TOTAL][MAX_NFL];
     uint8_t bypass_stage2[CAND_CLASS_TOTAL];
-#if PRE_BILINEAR_CLEAN_UP 
+#if PRE_BILINEAR_CLEAN_UP
     CAND_CLASS target_class;
 #endif
 #endif
@@ -406,7 +406,7 @@ extern "C" {
 #if RE_FACTURE_PRED_KERNEL
     EbBool shut_chroma_comp;
 #endif
-    
+
   } ModeDecisionContext;
 
     typedef void(*EbAv1LambdaAssignFunc)(

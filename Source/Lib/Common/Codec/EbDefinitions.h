@@ -41,9 +41,12 @@ extern "C" {
 #define PREDICTIVE_ME                   1 // Perform ME search around MVP
 #define QPM                             1 // Use SB QP Mod
 #define ME_MVP_DEVIATION                0 // Skip Predictive ME Search if significant ME-to-MVP difference
+#define ME_MVP_BYPASS                   0 //
+#define FASTER_ME_PRED                  1 //
+
 #define USE_M0_HME_ME_SETTINGS          0 // To enable when running ME related experiments in context of non-M0
 
-#define RE_FACTURE_PRED_KERNEL          1 
+#define RE_FACTURE_PRED_KERNEL          1
 
 
 #define FULL_LOOP_SPLIT                 1
