@@ -2087,7 +2087,7 @@ static int64_t pick_wedge_fixed_sign(
   int8_t wedge_types = (1 << get_wedge_bits_lookup(bsize));
   const uint8_t *mask;
   uint64_t sse;
-  const int hbd = 0;// is_cur_buf_hbd(xd);
+  //const int hbd = 0;// is_cur_buf_hbd(xd);
   const int bd_round = 0;//hbd ? (xd->bd - 8) * 2 : 0;
   for (wedge_index = 0; wedge_index < wedge_types; ++wedge_index) {
     mask = av1_get_contiguous_soft_mask(wedge_index, wedge_sign, bsize);

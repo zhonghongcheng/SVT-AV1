@@ -887,8 +887,8 @@ void tf_inter_prediction(
 
 #if ALTREF_EIGHTH_PEL_SEARCH
                 uint64_t best_distortion = (uint64_t)~0;
-                signed short best_mv_x;
-                signed short best_mv_y;
+                signed short best_mv_x = 0;
+                signed short best_mv_y = 0;
                 signed short mv_x = (_MVXT(context_ptr->p_best_mv16x16[mv_index])) << 1;
                 signed short mv_y = (_MVYT(context_ptr->p_best_mv16x16[mv_index])) << 1;
 #if ALTREF_AV1_SUBPEL

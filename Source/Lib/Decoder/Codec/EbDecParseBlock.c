@@ -40,11 +40,11 @@ FILE* temp_fp;
 typedef AomCdfProb(*base_cdf_arr)[CDF_SIZE(4)];
 typedef AomCdfProb(*br_cdf_arr)[CDF_SIZE(BR_CDF_SIZE)];
 
-static const TxSize tx_mode_to_biggest_tx_size[TX_MODES] = {
-  TX_4X4,    // ONLY_4X4
-  TX_64X64,  // TX_MODE_LARGEST
-  TX_64X64,  // TX_MODE_SELECT
-};
+//static const TxSize tx_mode_to_biggest_tx_size[TX_MODES] = {
+//  TX_4X4,    // ONLY_4X4
+//  TX_64X64,  // TX_MODE_LARGEST
+//  TX_64X64,  // TX_MODE_SELECT
+//};
 
 typedef struct txb_ctx {
     int txb_skip_ctx;
@@ -1056,18 +1056,18 @@ TxSize read_tx_size(EbDecHandle *dec_handle, PartitionInfo_t *xd,
     update_tx_context(parse_ctxt, xd->mi_row, xd->mi_col, bsize, tx_size);
     return tx_size;
 }
-
-static INLINE void txfm_nbr_update(uint8_t *above_ctx,
-    uint8_t *left_ctx,
-    TxSize tx_size, TxSize txb_size) {
-    BlockSize bsize = txsize_to_bsize[txb_size];
-    int bh = mi_size_high[bsize];
-    int bw = mi_size_wide[bsize];
-    uint8_t txw = tx_size_wide[tx_size];
-    uint8_t txh = tx_size_high[tx_size];
-    memset(above_ctx, txw, bw);
-    memset(left_ctx, txh, bh);
-}
+//
+//static INLINE void txfm_nbr_update(uint8_t *above_ctx,
+//    uint8_t *left_ctx,
+//    TxSize tx_size, TxSize txb_size) {
+//    BlockSize bsize = txsize_to_bsize[txb_size];
+//    int bh = mi_size_high[bsize];
+//    int bw = mi_size_wide[bsize];
+//    uint8_t txw = tx_size_wide[tx_size];
+//    uint8_t txh = tx_size_high[tx_size];
+//    memset(above_ctx, txw, bw);
+//    memset(left_ctx, txh, bh);
+//}
 
 void read_var_tx_size(EbDecHandle *dec_handle, PartitionInfo_t *pi,
                                TxSize tx_size,

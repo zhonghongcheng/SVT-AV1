@@ -5851,7 +5851,7 @@ void  inject_intra_bc_candidates(
     PictureControlSet            *picture_control_set_ptr,
     ModeDecisionContext          *context_ptr,
     const SequenceControlSet     *sequence_control_set_ptr,
-    LargestCodingUnit            *sb_ptr,
+    //LargestCodingUnit            *sb_ptr,
     CodingUnit                   *cu_ptr,
     uint32_t                       *cand_cnt)
 {
@@ -6347,7 +6347,7 @@ EbErrorType ProductGenerateMdCandidatesCu(
             picture_control_set_ptr,
             context_ptr,
             sequence_control_set_ptr,
-            sb_ptr,
+            //sb_ptr,
             context_ptr->cu_ptr,
             &canTotalCnt
         );

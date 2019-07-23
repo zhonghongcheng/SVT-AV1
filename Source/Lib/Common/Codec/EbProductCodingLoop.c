@@ -2871,7 +2871,7 @@ int32_t derive_luma_inter_dist(
 void predictive_me_full_pel_search(
     PictureControlSet            *picture_control_set_ptr,
     ModeDecisionContext          *context_ptr,
-    ModeDecisionCandidate        *fast_candidate_array,
+    //ModeDecisionCandidate        *fast_candidate_array,
     EbPictureBufferDesc          *input_picture_ptr,
     uint32_t                      inputOriginIndex,
     //uint32_t                      cuOriginIndex,
@@ -2900,8 +2900,8 @@ void predictive_me_full_pel_search(
     for (int32_t refinement_pos_x = search_position_start_x; refinement_pos_x <= search_position_end_x; ++refinement_pos_x) {
         for (int32_t refinement_pos_y = search_position_start_y; refinement_pos_y <= search_position_end_y; ++refinement_pos_y) {
 
-            ModeDecisionCandidate *candidate_ptr = candidateBuffer->candidate_ptr;
-            EbPictureBufferDesc   *prediction_ptr = candidateBuffer->prediction_ptr;
+            //ModeDecisionCandidate *candidate_ptr = candidateBuffer->candidate_ptr;
+            //EbPictureBufferDesc   *prediction_ptr = candidateBuffer->prediction_ptr;
             EbByte ref_ptr = ref_pic->buffer_y + ref_pic->origin_x + (context_ptr->cu_origin_x + (mvx / 8) + (refinement_pos_x * 1)) + (context_ptr->cu_origin_y + (mvy / 8) + ref_pic->origin_y + (refinement_pos_y * 1)) * ref_pic->stride_y;
 
             // Distortion
@@ -2938,7 +2938,7 @@ void predictive_me_full_pel_search(
 void predictive_me_sub_pel_search(
     PictureControlSet            *picture_control_set_ptr,
     ModeDecisionContext          *context_ptr,
-    ModeDecisionCandidate        *fast_candidate_array,
+    //ModeDecisionCandidate        *fast_candidate_array,
     EbPictureBufferDesc          *input_picture_ptr,
     uint32_t                      inputOriginIndex,
     uint32_t                      cuOriginIndex,
@@ -3161,8 +3161,8 @@ void predictive_me_search(
             int16_t best_mvp_y = me_mv_y;
 #endif
 #else
-            int16_t best_mvp_x;
-            int16_t best_mvp_y;
+            int16_t best_mvp_x = 0;
+            int16_t best_mvp_y = 0;
 #endif
             for (int8_t mvp_index = 0; mvp_index < mvp_count; mvp_index++) {
 #if ME_MVP_DEVIATION
@@ -3236,7 +3236,7 @@ void predictive_me_search(
                 predictive_me_full_pel_search(
                     picture_control_set_ptr,
                     context_ptr,
-                    fast_candidate_array,
+                    //fast_candidate_array,
                     input_picture_ptr,
                     inputOriginIndex,
                     //cuOriginIndex,
@@ -3287,7 +3287,7 @@ void predictive_me_search(
                 predictive_me_sub_pel_search(
                     picture_control_set_ptr,
                     context_ptr,
-                    fast_candidate_array,
+                    //fast_candidate_array,
                     input_picture_ptr,
                     inputOriginIndex,
                     cuOriginIndex,
@@ -3310,7 +3310,7 @@ void predictive_me_search(
                 predictive_me_sub_pel_search(
                     picture_control_set_ptr,
                     context_ptr,
-                    fast_candidate_array,
+                    //fast_candidate_array,
                     input_picture_ptr,
                     inputOriginIndex,
                     cuOriginIndex,
@@ -4379,6 +4379,8 @@ static INLINE int is_intrabc_block(const MbModeInfo *mbmi) {
 static INLINE int is_inter_block(const MbModeInfo *mbmi) {
     return is_intrabc_block(mbmi) || mbmi->ref_frame[0] > INTRA_FRAME;
 }
+
+#if !SHUT_TX_SIZE_RATE
 static INLINE int get_vartx_max_txsize(/*const MbModeInfo *xd,*/ BlockSize bsize,
     int plane) {
     /* if (xd->lossless[xd->mi[0]->segment_id]) return TX_4X4;*/
@@ -4386,6 +4388,8 @@ static INLINE int get_vartx_max_txsize(/*const MbModeInfo *xd,*/ BlockSize bsize
     if (plane == 0) return max_txsize;            // luma
     return av1_get_adjusted_tx_size(max_txsize);  // chroma
 }
+#endif
+
 static INLINE int max_block_wide(const MacroBlockD *xd, BlockSize bsize,
     int plane) {
     int max_blocks_wide = block_size_wide[bsize];
@@ -4472,6 +4476,7 @@ static INLINE int av1_get_txb_size_index(BlockSize bsize, int blk_row,
 }
 #endif
 
+#if !SHUT_TX_SIZE_RATE
 static uint64_t cost_tx_size_vartx(MacroBlockD *xd, const MbModeInfo *mbmi,
     TxSize tx_size, int depth, int blk_row,
     int blk_col, MdRateEstimationContext  *md_rate_estimation_ptr) {
@@ -4540,6 +4545,8 @@ static INLINE void set_txfm_ctxs(TxSize tx_size, int n8_w, int n8_h, int skip,
     set_txfm_ctx(xd->above_txfm_context, bw, n8_w);
     set_txfm_ctx(xd->left_txfm_context, bh, n8_h);
 }
+#endif
+
 static INLINE int tx_size_to_depth(TxSize tx_size, BlockSize bsize) {
     TxSize ctx_size = max_txsize_rect_lookup[bsize];
     int depth = 0;
@@ -4643,6 +4650,8 @@ static INLINE int get_tx_size_context(const MacroBlockD *xd) {
     else
         return 0;
 }
+
+#if !SHUT_TX_SIZE_RATE
 static uint64_t cost_selected_tx_size(
     const MacroBlockD *xd,
     MdRateEstimationContext  *md_rate_estimation_ptr) {
@@ -4668,7 +4677,6 @@ static uint64_t cost_selected_tx_size(
     return bits;
 }
 
-#if !SHUT_TX_SIZE_RATE
 static uint64_t tx_size_bits(
     MdRateEstimationContext  *md_rate_estimation_ptr,
     MacroBlockD         *xd,
@@ -5677,8 +5685,6 @@ void md_stage_2(
 #endif
     EbAsm                  asm_type)
 {
-    uint32_t       best_inter_luma_zero_coeff;
-    uint64_t      bestfullCost;
     uint32_t      fullLoopCandidateIndex;
 #if DECOUPLED_FAST_LOOP
     uint32_t       candidateIndex;
@@ -5722,9 +5728,10 @@ void md_stage_2(
     uint64_t      y_coeff_bits;
     uint64_t        cb_coeff_bits = 0;
     uint64_t        cr_coeff_bits = 0;
-    best_inter_luma_zero_coeff = 1;
-    bestfullCost = 0xFFFFFFFFull;
-
+#if !FULL_LOOP_SPLIT
+    uint32_t      best_inter_luma_zero_coeff = 1;
+    uint64_t      bestfullCost = 0xFFFFFFFFull;
+#endif
     ModeDecisionCandidateBuffer         **candidateBufferPtrArrayBase = context_ptr->candidate_buffer_ptr_array;
     ModeDecisionCandidateBuffer         **candidate_buffer_ptr_array = &(candidateBufferPtrArrayBase[0]);
     ModeDecisionCandidateBuffer          *candidateBuffer;

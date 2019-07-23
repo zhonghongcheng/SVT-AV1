@@ -85,7 +85,7 @@ int get_relative_dist_enc(SeqHeader *seq_header, int ref_hint, int order_hint);
     int fwd_frame_index,
     const MACROBLOCKD *xd) {
     ModeInfo *mi_ptr = *xd->mi;
-    MB_MODE_INFO *mbmi = &mi_ptr->mbmi;
+    //MB_MODE_INFO *mbmi = &mi_ptr->mbmi;
     //const RefCntBuffer *const bck_buf = get_ref_frame_buf(cm, mbmi->ref_frame[0]);
     //const RefCntBuffer *const fwd_buf = get_ref_frame_buf(cm, mbmi->ref_frame[1]);
     //int bck_frame_index = 0, fwd_frame_index = 0;

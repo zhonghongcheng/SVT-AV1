@@ -4315,11 +4315,10 @@ void* picture_decision_kernel(void *input_ptr)
 #if ALTREF_FILTERING_SUPPORT
                             if ( sequence_control_set_ptr->enable_altrefs == EB_TRUE &&
 #if TF_KEY
-                                ( (picture_control_set_ptr->idr_flag && picture_control_set_ptr->sc_content_detected==0) ||
-                                  picture_control_set_ptr->slice_type != I_SLICE && picture_control_set_ptr->temporal_layer_index == 0 )) {
-#else
-                                 picture_control_set_ptr->slice_type != I_SLICE && picture_control_set_ptr->temporal_layer_index == 0) {
+                                ((picture_control_set_ptr->idr_flag && picture_control_set_ptr->sc_content_detected==0) ||
 #endif
+                                (picture_control_set_ptr->slice_type != I_SLICE && picture_control_set_ptr->temporal_layer_index == 0)
+                                )) {
                                 int altref_nframes = picture_control_set_ptr->sequence_control_set_ptr->static_config.altref_nframes;
 
 #if TF_KEY
