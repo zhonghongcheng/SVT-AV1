@@ -42,6 +42,7 @@ extern "C" {
 #define QPM                             1 // Use SB QP Mod
 #if PREDICTIVE_ME
 #define FASTER_PREDICTIVE_ME            1
+#define HALF_QUARTER_BREAK_DOWN         1
 #endif
 #define USE_M0_HME_ME_SETTINGS          0 // To enable when running ME related experiments in context of non-M0
 
@@ -53,6 +54,7 @@ extern "C" {
 #define FIRST_FULL_LOOP_CHROMA_BLIND           1
 #define FIRST_FULL_LOOP_ATB_OFF                1
 #define FIRST_FULL_LOOP_TX_SEARCH_OFF          1
+#define FIRST_FULL_LOOP_CHROMA_BLIND_INTER     0
 #define FIRST_FULL_LOOP_TX_SEARCH_OFF_INTER    0
 #define STRENGHTHEN_MD_STAGE_3                 1
 #define CLASS_0_NFL_MD_STAGE_3                 1 // CIN03

@@ -2281,7 +2281,7 @@ void set_md_stage_counts(
     if (context_ptr->md_staging_mode == 1)
     {
         context_ptr->bypass_stage2[CAND_CLASS_0] = EB_FALSE;
-#if FIRST_FULL_LOOP_INTERPOLATION_SEARCH || FIRST_FULL_LOOP_TX_SEARCH_OFF_INTER || FIRST_RDOQ_INTER
+#if FIRST_FULL_LOOP_CHROMA_BLIND_INTER || FIRST_FULL_LOOP_INTERPOLATION_SEARCH || FIRST_FULL_LOOP_TX_SEARCH_OFF_INTER || FIRST_RDOQ_INTER
         context_ptr->bypass_stage2[CAND_CLASS_1] = EB_FALSE;
         context_ptr->bypass_stage2[CAND_CLASS_2] = EB_FALSE;
         context_ptr->bypass_stage2[CAND_CLASS_3] = EB_FALSE;
@@ -2358,16 +2358,16 @@ void set_md_stage_counts(
         (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 4;
 #endif
 #endif
-#if FIRST_FULL_LOOP_TX_SEARCH_OFF_INTER
+#if FIRST_FULL_LOOP_TX_SEARCH_OFF_INTER || FIRST_FULL_LOOP_CHROMA_BLIND_INTER
     context_ptr->md_stage_3_count[CAND_CLASS_1] = context_ptr->bypass_stage2[CAND_CLASS_1] ?
         context_ptr->md_stage_2_count[CAND_CLASS_1] :
-        (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 3 : 1;
+        (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 1 : 1;
     context_ptr->md_stage_3_count[CAND_CLASS_2] = context_ptr->bypass_stage2[CAND_CLASS_2] ?
         context_ptr->md_stage_2_count[CAND_CLASS_2] :
-        (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 2 : 1;
+        (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 1 : 1;
     context_ptr->md_stage_3_count[CAND_CLASS_3] = context_ptr->bypass_stage2[CAND_CLASS_3] ?
         context_ptr->md_stage_2_count[CAND_CLASS_3] :
-        (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 3 : 1;
+        (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 1 : 1;
 #else
     context_ptr->md_stage_3_count[CAND_CLASS_1] = context_ptr->bypass_stage2[CAND_CLASS_1] ? context_ptr->md_stage_2_count[CAND_CLASS_1] : 1;
     context_ptr->md_stage_3_count[CAND_CLASS_2] = context_ptr->bypass_stage2[CAND_CLASS_2] ? context_ptr->md_stage_2_count[CAND_CLASS_2] : 1;
@@ -2965,7 +2965,6 @@ void predictive_me_full_pel_search(
 void predictive_me_sub_pel_search(
     PictureControlSet            *picture_control_set_ptr,
     ModeDecisionContext          *context_ptr,
-    //ModeDecisionCandidate        *fast_candidate_array,
     EbPictureBufferDesc          *input_picture_ptr,
     uint32_t                      inputOriginIndex,
     uint32_t                      cuOriginIndex,
@@ -2982,6 +2981,9 @@ void predictive_me_sub_pel_search(
     int16_t                      *best_mvx,
     int16_t                      *best_mvy,
     uint32_t                     *best_distortion,
+#if HALF_QUARTER_BREAK_DOWN
+    uint8_t                       search_pattern,
+#endif
     EbAsm                         asm_type)
 {
 
@@ -2995,6 +2997,16 @@ void predictive_me_sub_pel_search(
             if (refinement_pos_x == 0 && refinement_pos_y == 0)
                 continue;
 
+#if HALF_QUARTER_BREAK_DOWN
+            if(search_pattern == 1 && refinement_pos_x != 0 && refinement_pos_y != 0)
+                continue;
+
+            if (search_pattern == 2 && refinement_pos_y != 0)
+                continue;
+
+            if (search_pattern == 3 && refinement_pos_x != 0)
+                continue;
+#endif
             ModeDecisionCandidate       *candidate_ptr = candidateBuffer->candidate_ptr;
             EbPictureBufferDesc         *prediction_ptr = candidateBuffer->prediction_ptr;
 
@@ -3288,19 +3300,31 @@ void predictive_me_search(
                 }
 
                 EbBool perform_predictive_me_sub_pel;
+                #define DEVIATION_TH 50
                 if (pa_me_distortion == 0)
                     perform_predictive_me_sub_pel = EB_FALSE;
                 else if (best_search_distortion <= pa_me_distortion)
                     perform_predictive_me_sub_pel = EB_TRUE;
                 else {
-                    perform_predictive_me_sub_pel = ((((best_search_distortion - pa_me_distortion) * 100) / pa_me_distortion) < 25)  ?
+                    perform_predictive_me_sub_pel = ((((best_search_distortion - pa_me_distortion) * 100) / pa_me_distortion) < DEVIATION_TH)  ?
                         EB_TRUE:
                         EB_FALSE;
                 }
 
                 if (perform_predictive_me_sub_pel) {
 #endif
+
+#if HALF_QUARTER_BREAK_DOWN
+                uint8_t search_pattern;
+                // 0: all possible position(s): horizontal, vertical, diagonal 
+                // 1: horizontal, vertical only
+                // 2: horizontal only
+                // 3: vertical only
                 // Step 3: perform half pel search around the best full pel position
+                search_pattern = 0;
+#else
+                // Step 3: perform half pel search around the best full pel position
+#endif
                 predictive_me_sub_pel_search(
                     picture_control_set_ptr,
                     context_ptr,
@@ -3321,9 +3345,15 @@ void predictive_me_search(
                     &best_search_mvx,
                     &best_search_mvy,
                     &best_search_distortion,
+#if HALF_QUARTER_BREAK_DOWN
+                    search_pattern,
+#endif
                     asm_type);
 
                 // Step 4: perform quarter pel search around the best half pel position
+#if HALF_QUARTER_BREAK_DOWN
+                search_pattern = 0;
+#endif
                 predictive_me_sub_pel_search(
                     picture_control_set_ptr,
                     context_ptr,
@@ -3344,6 +3374,9 @@ void predictive_me_search(
                     &best_search_mvx,
                     &best_search_mvy,
                     &best_search_distortion,
+#if HALF_QUARTER_BREAK_DOWN
+                    search_pattern,
+#endif
                     asm_type);
 
                 context_ptr->best_spatial_pred_mv[list_idx][ref_idx][0] = best_search_mvx;
@@ -5897,7 +5930,11 @@ void md_stage_2(
 #endif
 #if FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
 #if PRE_BILINEAR_CLEAN_UP
+#if FIRST_FULL_LOOP_CHROMA_BLIND_INTER
+        if (0) {
+#else
         if (context_ptr->target_class != CAND_CLASS_0) {
+#endif
 #else
         if (target_class != CAND_CLASS_0) {
 #endif
@@ -6106,7 +6143,11 @@ void md_stage_2(
 #endif
 #if FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
 #if PRE_BILINEAR_CLEAN_UP
+#if FIRST_FULL_LOOP_CHROMA_BLIND_INTER
+        if (0) {
+#else
         if (context_ptr->target_class != CAND_CLASS_0) {
+#endif
 #else
         if (target_class != CAND_CLASS_0) {
 #endif
@@ -6148,7 +6189,11 @@ void md_stage_2(
         uint16_t cr_qp = context_ptr->qp;
 #if FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
 #if PRE_BILINEAR_CLEAN_UP
+#if FIRST_FULL_LOOP_CHROMA_BLIND_INTER
+        if (0) {
+#else
         if (context_ptr->target_class != CAND_CLASS_0) {
+#endif
 #else
         if (target_class != CAND_CLASS_0) {
 #endif
@@ -6657,7 +6702,7 @@ void AV1PerformFullLoop(
             // Transform partitioning free path
 #if STRENGHTHEN_MD_STAGE_3
             uint8_t  tx_search_skip_fag;
-            if (context_ptr->bypass_stage2[candidate_ptr->cand_class] == EB_FALSE)
+            if (context_ptr->bypass_stage2[candidate_ptr->cand_class] == EB_FALSE && candidate_ptr->cand_class == CAND_CLASS_0)
                 tx_search_skip_fag = 0;
             else
                 tx_search_skip_fag =

@@ -1980,7 +1980,11 @@ void av1_quantize_inv_quantize(
     EbBool perform_rdoq = ((is_encode_pass || md_context->md_stage == MD_STAGE_2 || is_inter) && md_context->trellis_quant_coeff_optimization && component_type == COMPONENT_LUMA && !is_intra_bc);
 #endif
 #else
+#if FIRST_RDOQ_INTER
+    EbBool perform_rdoq = ((is_encode_pass || md_context->md_stage == MD_STAGE_2 || !is_inter) && md_context->trellis_quant_coeff_optimization && component_type == COMPONENT_LUMA && !is_intra_bc);
+#else
     EbBool perform_rdoq = (md_context->trellis_quant_coeff_optimization && component_type == COMPONENT_LUMA && !is_intra_bc);
+#endif
 #endif
     // Hsan: set to FALSE until adding x86 quantize_fp
 #if ENABLE_QUANT_FP
