@@ -282,7 +282,7 @@ extern "C" {
 #if NEW_NEAREST_NEW_INJECTION
         uint32_t                        me_sb_addr;
 #endif
-#if ME_MVP_DEVIATION
+#if FASTER_PREDICTIVE_ME
         uint32_t                        geom_offset_x;
         uint32_t                        geom_offset_y;
 #endif
