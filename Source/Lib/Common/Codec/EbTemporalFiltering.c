@@ -1322,7 +1322,12 @@ void DownsampleFilteringInputPicture(
     EbPictureBufferDesc           *quarter_picture_ptr,
     EbPictureBufferDesc           *sixteenth_picture_ptr);
 // Produce the filtered alt-ref picture
-static EbErrorType produce_temporally_filtered_pic(PictureParentControlSet **list_picture_control_set_ptr,
+static EbErrorType produce_temporally_filtered_pic(
+    
+#if TF_KEY
+    int              index_center_input,
+#endif
+    PictureParentControlSet **list_picture_control_set_ptr,
                                             EbPictureBufferDesc **list_input_picture_ptr,
 #if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
                                             uint8_t altref_strength_y,
@@ -1360,8 +1365,11 @@ static EbErrorType produce_temporally_filtered_pic(PictureParentControlSet **lis
     EbPictureBufferDesc *input_picture_ptr_central;
 
     // index of the center frame
+#if TF_KEY 
+    index_center = index_center_input;
+#else
     index_center = (uint8_t)(list_picture_control_set_ptr[0]->sequence_control_set_ptr->static_config.altref_nframes / 2);
-
+#endif
     picture_control_set_ptr_central = list_picture_control_set_ptr[index_center];
     input_picture_ptr_central = list_input_picture_ptr[index_center];
 
@@ -1934,7 +1942,13 @@ void init_temporal_filtering(PictureParentControlSet **list_picture_control_set_
 #endif
 
     // index of the central source frame
+#if TF_KEY  
+    index_center =
+         picture_control_set_ptr_central->idr_flag ? picture_control_set_ptr_central->past_altref_nframes :
+                  (uint8_t)(picture_control_set_ptr_central->sequence_control_set_ptr->static_config.altref_nframes / 2);
+#else
     index_center = (uint8_t)(picture_control_set_ptr_central->sequence_control_set_ptr->static_config.altref_nframes / 2);
+#endif
 
     // source central frame picture buffer
     input_picture_ptr = picture_control_set_ptr_central->enhanced_picture_ptr;
@@ -2007,7 +2021,11 @@ void init_temporal_filtering(PictureParentControlSet **list_picture_control_set_
 #if QPS_TUNING
     uint64_t filtered_sse, filtered_sse_uv;
 #if ALTREF_DYNAMIC_WINDOW
-    produce_temporally_filtered_pic(list_picture_control_set_ptr, list_input_picture_ptr, picture_control_set_ptr_central->altref_strength_y, picture_control_set_ptr_central->altref_strength_uv, alt_ref_buffer, &filtered_sse, &filtered_sse_uv, (MotionEstimationContext_t *)me_context_ptr, segment_index);
+    produce_temporally_filtered_pic(
+#if TF_KEY
+        index_center,
+#endif    
+        list_picture_control_set_ptr, list_input_picture_ptr, picture_control_set_ptr_central->altref_strength_y, picture_control_set_ptr_central->altref_strength_uv, alt_ref_buffer, &filtered_sse, &filtered_sse_uv, (MotionEstimationContext_t *)me_context_ptr, segment_index);
 #else
     produce_temporally_filtered_pic(list_picture_control_set_ptr, list_input_picture_ptr, picture_control_set_ptr_central->altref_strength_y, picture_control_set_ptr_central->altref_strength_uv, altref_nframes, alt_ref_buffer, &filtered_sse, &filtered_sse_uv, (MotionEstimationContext_t *)me_context_ptr, segment_index);
 #endif

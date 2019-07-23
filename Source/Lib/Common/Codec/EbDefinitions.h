@@ -389,6 +389,10 @@ typedef enum CAND_CLASS {
 #define  MD_STAGE_3_NFL_BDRATE        1 // 10 NFL @ md_stage_3
 #endif
 
+
+ #define    TF_KEY                   1  //Temporal Filtering  for Key frame. OFF for Screen Content.
+
+
 typedef enum MD_STAGE {
     MD_STAGE_0,
     MD_STAGE_1,
