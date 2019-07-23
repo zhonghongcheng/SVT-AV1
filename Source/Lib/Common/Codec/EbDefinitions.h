@@ -43,6 +43,9 @@ extern "C" {
 #define ME_MVP_DEVIATION                0 // Skip Predictive ME Search if significant ME-to-MVP difference
 #define USE_M0_HME_ME_SETTINGS          0 // To enable when running ME related experiments in context of non-M0
 
+#define RE_FACTURE_PRED_KERNEL          1 
+
+
 #define FULL_LOOP_SPLIT                 1
 #if FULL_LOOP_SPLIT
 #define FIRST_FULL_LOOP_CHROMA_BLIND           1
@@ -58,6 +61,14 @@ extern "C" {
 #define BILINEAR_FAST_LOOP                     1
 #define BILINEAR_PREDICTIVE_ME                 0
 #define BILINEAR_INJECTION                     0
+
+
+#define SHUT_RATE_MD_STAGE                     0 // Move fast rate estimation from md_stage_0 to md_stage_1
+#define CHROMA_MD_STAGE_0_TO_MD_STAGE_1        1 // Move fast chroma compensation from md_stage_0 to md_stage_1
+#if CHROMA_MD_STAGE_0_TO_MD_STAGE_1
+#define CHROMA_MD_STAGE_1_TO_MD_STAGE_3        0 // Move fast chroma compensation from md_stage_1 to md_stage_3
+#endif
+
 
 #define FIRST_FULL_LOOP_INTERPOLATION_SEARCH   0
 #define FIRST_RDOQ_INTRA                       0

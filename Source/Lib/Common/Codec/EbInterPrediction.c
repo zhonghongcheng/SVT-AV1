@@ -6121,7 +6121,11 @@ EbErrorType inter_pu_prediction_av1(
             candidate_buffer_ptr->prediction_ptr,
             md_context_ptr->blk_geom->origin_x,
             md_context_ptr->blk_geom->origin_y,
+#if RE_FACTURE_PRED_KERNEL
+            md_context_ptr->chroma_level <= CHROMA_MODE_1 && md_context_ptr->shut_chroma_comp == EB_FALSE,
+#else
             md_context_ptr->chroma_level <= CHROMA_MODE_1,
+#endif
             asm_type);
         return return_error;
 #else
@@ -6259,7 +6263,11 @@ EbErrorType inter_pu_prediction_av1(
                 md_context_ptr->blk_geom->origin_y,
                 &candidate_ptr->wm_params,
                 (uint8_t) sequence_control_set_ptr->static_config.encoder_bit_depth,
+#if RE_FACTURE_PRED_KERNEL
+                md_context_ptr->chroma_level <= CHROMA_MODE_1 && md_context_ptr->shut_chroma_comp == EB_FALSE,
+#else
                 md_context_ptr->chroma_level <= CHROMA_MODE_1,
+#endif
                 asm_type);
         }
         return return_error;
@@ -6311,7 +6319,11 @@ EbErrorType inter_pu_prediction_av1(
             candidate_buffer_ptr->prediction_ptr,
             md_context_ptr->blk_geom->origin_x,
             md_context_ptr->blk_geom->origin_y,
+#if RE_FACTURE_PRED_KERNEL
+            md_context_ptr->chroma_level <= CHROMA_MODE_1 && md_context_ptr->shut_chroma_comp == EB_FALSE,
+#else
         md_context_ptr->chroma_level <= CHROMA_MODE_1,
+#endif
         asm_type);
 #else
     if (is16bit) {

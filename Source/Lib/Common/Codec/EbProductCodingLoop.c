@@ -1743,7 +1743,7 @@ uint64_t ProductGenerateChromaWeight(
     return (weight << 1);
 }
 #endif
-
+#if !RE_FACTURE_PRED_KERNEL
 void ProductMdFastPuPrediction(
     PictureControlSet                 *picture_control_set_ptr,
     ModeDecisionCandidateBuffer       *candidateBuffer,
@@ -1787,6 +1787,7 @@ void ProductMdFastPuPrediction(
         candidateBuffer,
         asm_type);
 }
+#endif
 
 #if REFACTOR_FAST_LOOP
 
@@ -1809,9 +1810,56 @@ void fast_loop_core(
     ModeDecisionCandidate       *candidate_ptr = candidateBuffer->candidate_ptr;
     EbPictureBufferDesc         *prediction_ptr = candidateBuffer->prediction_ptr;
 
-
-
     // Prediction
+#if RE_FACTURE_PRED_KERNEL
+    context_ptr->pu_itr = 0;
+    // Prediction
+#if FIRST_FULL_LOOP_INTERPOLATION_SEARCH
+    if (context_ptr->md_staging_mode == 1 && (context_ptr->md_stage == MD_STAGE_0 || context_ptr->md_stage == MD_STAGE_1 || context_ptr->md_stage == MD_STAGE_2))
+        context_ptr->skip_interpolation_search = 1;
+    else
+        context_ptr->skip_interpolation_search = picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? 0 : 1;
+#else
+    context_ptr->skip_interpolation_search = picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? 0 : 1;
+
+#if FAST_LOOP_OPT
+    if (context_ptr->md_staging_mode == 1 && context_ptr->md_stage == MD_STAGE_0)
+        context_ptr->skip_interpolation_search = 1;
+#endif
+#endif
+
+#if BILINEAR_FAST_LOOP
+    if (context_ptr->md_stage == MD_STAGE_0 && context_ptr->md_staging_mode == 1)
+        candidateBuffer->candidate_ptr->interp_filters = av1_make_interp_filters(BILINEAR, BILINEAR);
+    else
+        candidateBuffer->candidate_ptr->interp_filters = 0;
+#else
+    candidateBuffer->candidate_ptr->interp_filters = 0;
+#endif
+
+
+#if CHROMA_MD_STAGE_0_TO_MD_STAGE_1
+#if CHROMA_MD_STAGE_1_TO_MD_STAGE_3
+    context_ptr->shut_chroma_comp = (
+        context_ptr->md_staging_mode == 1 &&
+        (context_ptr->md_stage == MD_STAGE_0 || context_ptr->md_stage == MD_STAGE_1 || context_ptr->md_stage == MD_STAGE_2) &&
+        (context_ptr->target_class == CAND_CLASS_1 || context_ptr->target_class == CAND_CLASS_2 || context_ptr->target_class == CAND_CLASS_3));
+#else
+    context_ptr->shut_chroma_comp =
+        (context_ptr->md_staging_mode == 1 && context_ptr->md_stage == MD_STAGE_0 &&
+        (context_ptr->target_class == CAND_CLASS_1 || context_ptr->target_class == CAND_CLASS_2 || context_ptr->target_class == CAND_CLASS_3) &&
+            context_ptr->bypass_stage1[context_ptr->target_class] == EB_FALSE);
+#endif
+#else
+    context_ptr->shut_chroma_comp = EB_FALSE;
+#endif
+
+    ProductPredictionFunTable[candidateBuffer->candidate_ptr->use_intrabc ? INTER_MODE : candidate_ptr->type](
+        context_ptr,
+        picture_control_set_ptr,
+        candidateBuffer,
+        asm_type);
+#else
     ProductMdFastPuPrediction(
         picture_control_set_ptr,
         candidateBuffer,
@@ -1821,6 +1869,7 @@ void fast_loop_core(
         0xFFFF,//NOT_USED
         0xFFFF,//NOT_USED
         asm_type);
+#endif
 
     // Distortion
     // Y
@@ -1845,8 +1894,11 @@ void fast_loop_core(
             context_ptr->blk_geom->bwidth));
         candidateBuffer->candidate_ptr->luma_fast_distortion = (uint32_t)lumaFastDistortion;
     }
-
+#if CHROMA_MD_STAGE_0_TO_MD_STAGE_1
+    if (context_ptr->blk_geom->has_uv && context_ptr->chroma_level <= CHROMA_MODE_1 && context_ptr->shut_chroma_comp == EB_FALSE) {
+#else
     if (context_ptr->blk_geom->has_uv && context_ptr->chroma_level <= CHROMA_MODE_1) {
+#endif
         if (use_ssd) {
             chromaFastDistortion = spatial_full_distortion_kernel_func_ptr_array[asm_type][Log2f(context_ptr->blk_geom->bwidth_uv) - 2]( //spatial_full_distortion_kernel(
                 input_picture_ptr->buffer_cb + inputCbOriginIndex,
@@ -1886,6 +1938,11 @@ void fast_loop_core(
     else
         chromaFastDistortion = 0;
     // Fast Cost
+#if SHUT_RATE_MD_STAGE
+    if (context_ptr->md_staging_mode == 1 && context_ptr->md_stage == MD_STAGE_0 && (context_ptr->target_class == CAND_CLASS_1 || context_ptr->target_class == CAND_CLASS_2 || context_ptr->target_class == CAND_CLASS_3) && context_ptr->bypass_stage1[context_ptr->target_class] == EB_FALSE)
+        *(candidateBuffer->fast_cost_ptr) = lumaFastDistortion + chromaFastDistortion;
+    else
+#endif
     *(candidateBuffer->fast_cost_ptr) = Av1ProductFastCostFuncTable[candidate_ptr->type](
         cu_ptr,
         candidateBuffer->candidate_ptr,
@@ -1976,6 +2033,11 @@ void perform_fast_loop(
             lumaFastDistortion = candidate_ptr->me_distortion;
 
             // Fast Cost
+#if SHUT_RATE_MD_STAGE
+            if (context_ptr->md_staging_mode == 1 && context_ptr->md_stage == MD_STAGE_0 && (context_ptr->target_class == CAND_CLASS_1 || context_ptr->target_class == CAND_CLASS_2 || context_ptr->target_class == CAND_CLASS_3) && context_ptr->bypass_stage1[context_ptr->target_class] == EB_FALSE)
+                *(candidateBuffer->fast_cost_ptr) = lumaFastDistortion;
+            else
+#endif
             *(candidateBuffer->fast_cost_ptr) = Av1ProductFastCostFuncTable[candidate_ptr->type](
                 cu_ptr,
                 candidateBuffer->candidate_ptr,
@@ -2772,6 +2834,9 @@ int32_t derive_luma_inter_dist(
     // Prediction
     uint8_t default_skip_interpolation_search = context_ptr->skip_interpolation_search;
     context_ptr->skip_interpolation_search = 1;
+#if RE_FACTURE_PRED_KERNEL
+    context_ptr->shut_chroma_comp = EB_TRUE;
+#endif
     ProductPredictionFunTable[INTER_MODE](
         context_ptr,
         picture_control_set_ptr,
@@ -2937,6 +3002,9 @@ void predictive_me_sub_pel_search(
             // Prediction
             uint8_t default_skip_interpolation_search = context_ptr->skip_interpolation_search;
             context_ptr->skip_interpolation_search = 1;
+#if RE_FACTURE_PRED_KERNEL
+            context_ptr->shut_chroma_comp = EB_TRUE;
+#endif
             ProductPredictionFunTable[INTER_MODE](
                 context_ptr,
                 picture_control_set_ptr,
@@ -3956,7 +4024,9 @@ void check_best_indepedant_cfl(
         *cr_coeff_bits = 0;
 
         uint32_t count_non_zero_coeffs[3][MAX_NUM_OF_TU_PER_CU];
-
+#if RE_FACTURE_PRED_KERNEL
+        context_ptr->shut_chroma_comp = EB_FALSE;
+#endif
         ProductPredictionFunTable[candidateBuffer->candidate_ptr->type](
             context_ptr,
             picture_control_set_ptr,
@@ -5860,6 +5930,9 @@ void md_stage_2(
                 context_ptr->skip_interpolation_search = 0;
                 context_ptr->skip_interpolation_search = (best_fastLoop_candidate_index > NFL_IT_TH) ? 1 : context_ptr->skip_interpolation_search;
                 if (candidate_ptr->type != INTRA_MODE) {
+#if RE_FACTURE_PRED_KERNEL
+                    context_ptr->shut_chroma_comp = EB_FALSE;
+#endif
                     ProductPredictionFunTable[candidate_ptr->type](
                         context_ptr,
                         picture_control_set_ptr,
@@ -6431,6 +6504,9 @@ void AV1PerformFullLoop(
             if (candidate_ptr->type != INTRA_MODE) {
                 if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level == IT_SEARCH_FULL_LOOP || context_ptr->md_staging_mode == 1) {
                     context_ptr->skip_interpolation_search = (best_fastLoop_candidate_index > NFL_IT_TH && context_ptr->md_staging_mode == 0) ? 1 : 0;
+#if RE_FACTURE_PRED_KERNEL
+                    context_ptr->shut_chroma_comp = EB_FALSE;
+#endif
                     ProductPredictionFunTable[candidate_ptr->type](
                         context_ptr,
                         picture_control_set_ptr,
@@ -6443,6 +6519,9 @@ void AV1PerformFullLoop(
                 context_ptr->skip_interpolation_search = 0;
                 context_ptr->skip_interpolation_search = (best_fastLoop_candidate_index > NFL_IT_TH) ? 1 : context_ptr->skip_interpolation_search;
                 if (candidate_ptr->type != INTRA_MODE) {
+#if RE_FACTURE_PRED_KERNEL
+                    context_ptr->shut_chroma_comp = EB_FALSE;
+#endif
                     ProductPredictionFunTable[candidate_ptr->type](
                         context_ptr,
                         picture_control_set_ptr,
@@ -6450,6 +6529,17 @@ void AV1PerformFullLoop(
                         asm_type);
                 }
             }
+#if CHROMA_MD_STAGE_1_TO_MD_STAGE_3
+            else if (context_ptr->md_staging_mode == 1 && (candidate_ptr->cand_class == CAND_CLASS_1 || candidate_ptr->cand_class == CAND_CLASS_2 || candidate_ptr->cand_class == CAND_CLASS_3))
+            {
+                context_ptr->shut_chroma_comp = EB_FALSE;
+                ProductPredictionFunTable[INTER_MODE](
+                    context_ptr,
+                    picture_control_set_ptr,
+                    candidateBuffer,
+                    asm_type);
+            }
+#endif
 #endif
             //Y Residual
             ResidualKernel(
@@ -7706,7 +7796,9 @@ void search_best_independent_uv_mode(
             uint64_t crFullDistortion[DIST_CALC_TOTAL] = { 0, 0 };
 
             uint32_t count_non_zero_coeffs[3][MAX_NUM_OF_TU_PER_CU];
-
+#if RE_FACTURE_PRED_KERNEL
+            context_ptr->shut_chroma_comp = EB_FALSE;
+#endif
             ProductPredictionFunTable[candidateBuffer->candidate_ptr->type](
                 context_ptr,
                 picture_control_set_ptr,
@@ -8688,6 +8780,9 @@ void md_encode_block(
         if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level == IT_SEARCH_INTER_DEPTH) {
             if (candidateBuffer->candidate_ptr->type != INTRA_MODE && candidateBuffer->candidate_ptr->motion_mode == SIMPLE_TRANSLATION) {
                 context_ptr->skip_interpolation_search = 0;
+#if RE_FACTURE_PRED_KERNEL
+                context_ptr->shut_chroma_comp = EB_FALSE;
+#endif
                 ProductPredictionFunTable[candidateBuffer->candidate_ptr->type](
                     context_ptr,
                     picture_control_set_ptr,
