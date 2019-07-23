@@ -2176,7 +2176,7 @@ static int64_t pick_wedge_fixed_sign(
 int is_interinter_compound_used(COMPOUND_TYPE type,
     BLOCK_SIZE sb_type);
 static void /*int64_t*/ pick_interinter_wedge(
-#if FIX_RATE_E_WEDGE 
+#if FIX_RATE_E_WEDGE  || II_COMP
     ModeDecisionCandidate               *candidate_ptr,
 #endif
     PictureControlSet                    *picture_control_set_ptr,
@@ -2206,7 +2206,7 @@ static void /*int64_t*/ pick_interinter_wedge(
 
   if (picture_control_set_ptr->parent_pcs_ptr->wedge_mode == 2 || picture_control_set_ptr->parent_pcs_ptr->wedge_mode == 3) {
     wedge_sign = estimate_wedge_sign(/*cpi, x, */picture_control_set_ptr,context_ptr, bsize, p0, bw, p1, bw);
-#if FIX_RATE_E_WEDGE
+#if FIX_RATE_E_WEDGE || II_COMP
     rd = pick_wedge_fixed_sign(/*cpi, x, */candidate_ptr,picture_control_set_ptr,context_ptr, bsize, residual1, diff10, wedge_sign,
 #else
     rd = pick_wedge_fixed_sign(/*cpi, x, */picture_control_set_ptr,context_ptr, bsize, residual1, diff10, wedge_sign,
@@ -2287,7 +2287,7 @@ static void  pick_interinter_seg(
     //return best_rd;
 }
 void pick_interinter_mask(
-#if FIX_RATE_E_WEDGE
+#if FIX_RATE_E_WEDGE  || II_COMP
     ModeDecisionCandidate        *candidate_ptr,
 #endif
     PictureControlSet                    *picture_control_set_ptr,
@@ -2303,7 +2303,7 @@ void pick_interinter_mask(
     if (interinter_comp->type == COMPOUND_WEDGE) {
 
         //return
-#if FIX_RATE_E_WEDGE
+#if FIX_RATE_E_WEDGE  || II_COMP
         pick_interinter_wedge(candidate_ptr,picture_control_set_ptr,context_ptr, interinter_comp, bsize, p0, p1, residual1, diff10);
 #else
         pick_interinter_wedge(picture_control_set_ptr,context_ptr, interinter_comp, bsize, p0, p1, residual1, diff10);
@@ -2502,7 +2502,7 @@ void search_compound_diff_wedge(
 #endif
     }
     pick_interinter_mask(
-#if FIX_RATE_E_WEDGE      
+#if FIX_RATE_E_WEDGE    || II_COMP    
         candidate_ptr,
 #endif
         picture_control_set_ptr,
