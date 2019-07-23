@@ -265,7 +265,7 @@ int32_t main(int32_t argc, char* argv[])
                                 configs[instanceCount]->performance_context.total_execution_time * 1000,
                                 configs[instanceCount]->performance_context.average_latency,
                                 (uint32_t)(configs[instanceCount]->performance_context.max_latency),
-                                (configs[instanceCount]->performance_context.end_cycle_count - configs[instanceCount]->performance_context.start_cycle_count));
+                                (unsigned long)(configs[instanceCount]->performance_context.end_cycle_count - configs[instanceCount]->performance_context.start_cycle_count));
                         }
                         else {
                             printf("\nChannel %u\nAverage Speed:\t\t%.3f fps\nTotal Encoding Time:\t%.0f ms\nTotal Execution Time:\t%.0f ms\nAverage Latency:\t%.0f ms\nMax Latency:\t\t%u ms\nCycle Count:\t\t%lu cycles\n",
@@ -275,7 +275,7 @@ int32_t main(int32_t argc, char* argv[])
                                 configs[instanceCount]->performance_context.total_execution_time * 1000,
                                 configs[instanceCount]->performance_context.average_latency,
                                 (uint32_t)(configs[instanceCount]->performance_context.max_latency),
-                                (configs[instanceCount]->performance_context.end_cycle_count - configs[instanceCount]->performance_context.start_cycle_count));
+                                (unsigned long)(configs[instanceCount]->performance_context.end_cycle_count - configs[instanceCount]->performance_context.start_cycle_count));
                         }
                     }
                     else

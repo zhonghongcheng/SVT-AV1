@@ -4330,7 +4330,7 @@ void* picture_decision_kernel(void *input_ptr)
                                         picture_control_set_ptr->temp_filt_pcs_list[pic_itr] = NULL;
 
                                     picture_control_set_ptr->temp_filt_pcs_list[0] = picture_control_set_ptr;
-                                    
+
                                     uint32_t num_future_pics = 6;
                                     uint32_t num_past_pics = 0;
                                     uint32_t pic_i;
@@ -4340,7 +4340,7 @@ void* picture_decision_kernel(void *input_ptr)
                                         if (encode_context_ptr->picture_decision_reorder_queue[q_index]->parent_pcs_wrapper_ptr != NULL) {
                                             PictureParentControlSet* pcs_itr = (PictureParentControlSet *)encode_context_ptr->picture_decision_reorder_queue[q_index]->parent_pcs_wrapper_ptr->object_ptr;
                                             picture_control_set_ptr->temp_filt_pcs_list[pic_i + num_past_pics + 1] = pcs_itr;
-                                           
+
                                         }
                                         else
                                            break;
@@ -4462,8 +4462,8 @@ void* picture_decision_kernel(void *input_ptr)
                                 picture_control_set_ptr->altref_nframes = altref_nframes;
 #endif
 
-#if TF_KEY                              
-                                }                               
+#if TF_KEY
+                                }
 #endif
                                 //clock_t start_time;
                                 //start_time = clock();

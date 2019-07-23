@@ -823,7 +823,7 @@ EbErrorType av1_inter_prediction(
     EbBool                               perform_chroma,
     EbAsm                                asm_type);
 
-uint32_t get_mds_idx(uint32_t  orgx, uint32_t  orgy, uint32_t  size, uint32_t use_128x128);
+uint32_t get_mds_idx(uint32_t  org_x, uint32_t  org_y, int32_t  size, uint32_t use_128x128);
 
 void tf_inter_prediction(
     PictureParentControlSet   *picture_control_set_ptr,
@@ -861,7 +861,7 @@ void tf_inter_prediction(
 
     for (uint32_t idx_32x32 = 0; idx_32x32 < 4; idx_32x32++) {
         if (use_16x16_subblocks[idx_32x32] != 0) {
-            uint32_t    bsize = 16;
+            int32_t bsize = 16;
 
             for (uint32_t idx_16x16 = 0; idx_16x16 < 4; idx_16x16++) {
                 uint32_t pu_index = index_16x16_from_subindexes[idx_32x32][idx_16x16];
@@ -1323,7 +1323,7 @@ void DownsampleFilteringInputPicture(
     EbPictureBufferDesc           *sixteenth_picture_ptr);
 // Produce the filtered alt-ref picture
 static EbErrorType produce_temporally_filtered_pic(
-    
+
 #if TF_KEY
     int              index_center_input,
 #endif
@@ -1365,7 +1365,7 @@ static EbErrorType produce_temporally_filtered_pic(
     EbPictureBufferDesc *input_picture_ptr_central;
 
     // index of the center frame
-#if TF_KEY 
+#if TF_KEY
     index_center = index_center_input;
 #else
     index_center = (uint8_t)(list_picture_control_set_ptr[0]->sequence_control_set_ptr->static_config.altref_nframes / 2);
@@ -1942,7 +1942,7 @@ void init_temporal_filtering(PictureParentControlSet **list_picture_control_set_
 #endif
 
     // index of the central source frame
-#if TF_KEY  
+#if TF_KEY
     index_center =
          picture_control_set_ptr_central->idr_flag ? picture_control_set_ptr_central->past_altref_nframes :
                   (uint8_t)(picture_control_set_ptr_central->sequence_control_set_ptr->static_config.altref_nframes / 2);
@@ -2024,7 +2024,7 @@ void init_temporal_filtering(PictureParentControlSet **list_picture_control_set_
     produce_temporally_filtered_pic(
 #if TF_KEY
         index_center,
-#endif    
+#endif
         list_picture_control_set_ptr, list_input_picture_ptr, picture_control_set_ptr_central->altref_strength_y, picture_control_set_ptr_central->altref_strength_uv, alt_ref_buffer, &filtered_sse, &filtered_sse_uv, (MotionEstimationContext_t *)me_context_ptr, segment_index);
 #else
     produce_temporally_filtered_pic(list_picture_control_set_ptr, list_input_picture_ptr, picture_control_set_ptr_central->altref_strength_y, picture_control_set_ptr_central->altref_strength_uv, altref_nframes, alt_ref_buffer, &filtered_sse, &filtered_sse_uv, (MotionEstimationContext_t *)me_context_ptr, segment_index);

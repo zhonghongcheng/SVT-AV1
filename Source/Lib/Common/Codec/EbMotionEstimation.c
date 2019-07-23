@@ -4313,7 +4313,7 @@ static void half_pel_refinement_block(
     uint64_t distortion_top_position = 0;
     uint64_t distortion_topleft_position = 0;
     uint64_t distortion_topright_position = 0;
-#if HP_REF_OPT
+#if !HP_REF_OPT
     uint64_t distortion_bottomleft_position = 0;
     uint64_t distortion_bottomright_position = 0;
 #endif
@@ -15641,8 +15641,8 @@ EbErrorType motion_estimate_lcu(
                                        ->p_sb_best_mv[listIndex][ref_pic_index],
                                    MAX_ME_PU_COUNT * sizeof(uint32_t));
                             open_loop_me_quarter_pel_search_sblock(
-                                sequence_control_set_ptr,
-                                //picture_control_set_ptr,
+                                //sequence_control_set_ptr,
+                                picture_control_set_ptr,
                                 context_ptr,
                                 listIndex,
                                 ref_pic_index,
