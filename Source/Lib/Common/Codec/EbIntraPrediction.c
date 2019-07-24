@@ -4713,20 +4713,20 @@ EbErrorType  intra_luma_prediction_for_interintra(
         (md_context_ptr->mode_type_neighbor_array->top_array[modeTypeTopNeighborIndex] != INTRA_MODE) ? DC_PRED/*EB_INTRA_DC*/ :
         (uint32_t)md_context_ptr->intra_luma_mode_neighbor_array->top_array[intraLumaModeTopNeighborIndex]);       //   use DC. This seems like we could use a LCU-width
 
-    TxSize  tx_size = md_context_ptr->blk_geom->txsize[0][0];  //CHKN  TOcheck 
-   
+    TxSize  tx_size = md_context_ptr->blk_geom->txsize[0][0];  //CHKN  TOcheck
+
 
     uint8_t    topNeighArray[64 * 2 + 1];
     uint8_t    leftNeighArray[64 * 2 + 1];
     PredictionMode mode = interintra_to_intra_mode[ interintra_mode];;
-    
+
     if (md_context_ptr->cu_origin_y != 0)
         memcpy(topNeighArray + 1, md_context_ptr->luma_recon_neighbor_array->top_array + md_context_ptr->cu_origin_x, md_context_ptr->blk_geom->bwidth * 2);
     if (md_context_ptr->cu_origin_x != 0)
         memcpy(leftNeighArray + 1, md_context_ptr->luma_recon_neighbor_array->left_array + md_context_ptr->cu_origin_y, md_context_ptr->blk_geom->bheight * 2);
     if (md_context_ptr->cu_origin_y != 0 && md_context_ptr->cu_origin_x != 0)
         topNeighArray[0] = leftNeighArray[0] = md_context_ptr->luma_recon_neighbor_array->top_left_array[MAX_PICTURE_HEIGHT_SIZE + md_context_ptr->cu_origin_x - md_context_ptr->cu_origin_y];
-   
+
     av1_predict_intra_block(
         &md_context_ptr->sb_ptr->tile_info,
 #if MDLEVELS

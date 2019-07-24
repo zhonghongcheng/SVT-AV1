@@ -13050,7 +13050,7 @@ EbErrorType BiPredictionSearch(
             uint8_t add_bi = skip_bi_pred(
                 to_inject_ref_type_0,
                 ref_type_table);
-                
+
             if (!add_bi) {
 #endif
                 BiPredictionCompensation(
@@ -13081,7 +13081,7 @@ EbErrorType BiPredictionSearch(
             uint8_t add_bi = skip_bi_pred(
                 to_inject_ref_type_0,
                 ref_type_table);
-                
+
             if (!add_bi) {
 #endif
                 BiPredictionCompensation(

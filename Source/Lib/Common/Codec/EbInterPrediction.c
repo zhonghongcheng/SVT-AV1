@@ -2127,7 +2127,9 @@ int64_t pick_wedge_fixed_sign(
 #else
 static int64_t pick_wedge_fixed_sign(
 #endif
+#if FIX_RATE_E_WEDGE || II_COMP
     ModeDecisionCandidate        *candidate_ptr,
+#endif
     PictureControlSet                    *picture_control_set_ptr,
     ModeDecisionContext                  *context_ptr,
     //const AV1_COMP *const cpi,
@@ -2207,7 +2209,11 @@ static void /*int64_t*/ pick_interinter_wedge(
   if (picture_control_set_ptr->parent_pcs_ptr->wedge_mode == 2 || picture_control_set_ptr->parent_pcs_ptr->wedge_mode == 3) {
     wedge_sign = estimate_wedge_sign(/*cpi, x, */picture_control_set_ptr,context_ptr, bsize, p0, bw, p1, bw);
 #if FIX_RATE_E_WEDGE || II_COMP
-    rd = pick_wedge_fixed_sign(/*cpi, x, */candidate_ptr,picture_control_set_ptr,context_ptr, bsize, residual1, diff10, wedge_sign,
+    rd = pick_wedge_fixed_sign(/*cpi, x, */
+#if FIX_RATE_E_WEDGE
+        candidate_ptr,
+#endif
+        picture_control_set_ptr,context_ptr, bsize, residual1, diff10, wedge_sign,
 #else
     rd = pick_wedge_fixed_sign(/*cpi, x, */picture_control_set_ptr,context_ptr, bsize, residual1, diff10, wedge_sign,
 #endif
@@ -2396,7 +2402,7 @@ void search_compound_diff_wedge(
 #if COMP_DIFF
             NULL,// interinter_comp not used
 #endif
-#if II_ED  
+#if II_ED
             NULL,
             NULL,
             NULL,
@@ -2440,7 +2446,7 @@ void search_compound_diff_wedge(
 #if COMP_DIFF
             NULL,// interinter_comp not used
 #endif
-#if II_ED  
+#if II_ED
             NULL,
             NULL,
             NULL,
@@ -2502,7 +2508,7 @@ void search_compound_diff_wedge(
 #endif
     }
     pick_interinter_mask(
-#if FIX_RATE_E_WEDGE    || II_COMP    
+#if FIX_RATE_E_WEDGE    || II_COMP
         candidate_ptr,
 #endif
         picture_control_set_ptr,
@@ -2693,7 +2699,7 @@ void search_compound_avg_dist(
 #if COMP_DIFF
             &candidate_ptr->interinter_comp,
 #endif
-#if II_ED  
+#if II_ED
             NULL,
             NULL,
             NULL,
@@ -3491,7 +3497,7 @@ EbErrorType av1_inter_prediction(
             //av1_build_interintra_predictors_sbp
             uint8_t    topNeighArray[64 * 2 + 1];
             uint8_t    leftNeighArray[64 * 2 + 1];
-            
+
             uint32_t cu_originx_uv = (dst_origin_x >> 3 << 3) >> 1;
             uint32_t cu_originy_uv = (dst_origin_y >> 3 << 3) >> 1;
 
@@ -3579,17 +3585,17 @@ EbErrorType av1_inter_prediction(
 
             //combine_interintra
             combine_interintra(
-                interintra_mode,//xd->mi[0]->interintra_mode, 
+                interintra_mode,//xd->mi[0]->interintra_mode,
                 use_wedge_interintra,//xd->mi[0]->use_wedge_interintra,
-                interintra_wedge_index,//xd->mi[0]->interintra_wedge_index, 
+                interintra_wedge_index,//xd->mi[0]->interintra_wedge_index,
                 INTERINTRA_WEDGE_SIGN,
                 blk_geom->bsize,//bsize,
                 plane_bsize,
                 dst_ptr,//xd->plane[plane].dst.buf,
                 dst_stride,//xd->plane[plane].dst.stride,
-                dst_ptr,//inter_pred, 
-                dst_stride,//inter_stride, 
-                (plane == 0) ? intra_pred : (plane == 1) ? intra_pred_cb : intra_pred_cr,//intra_pred, 
+                dst_ptr,//inter_pred,
+                dst_stride,//inter_stride,
+                (plane == 0) ? intra_pred : (plane == 1) ? intra_pred_cb : intra_pred_cr,//intra_pred,
                 intra_stride);//intra_stride);
 
         }
@@ -5912,7 +5918,7 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
 #if COMP_DIFF
                         &candidate_buffer_ptr->candidate_ptr->interinter_comp,
 #endif
-#if II_ED 
+#if II_ED
                         &md_context_ptr->sb_ptr->tile_info,
                         md_context_ptr->luma_recon_neighbor_array,
                         md_context_ptr->cb_recon_neighbor_array,
@@ -6001,7 +6007,7 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
 #if COMP_DIFF
                         &candidate_buffer_ptr->candidate_ptr->interinter_comp,
 #endif
-#if II_ED 
+#if II_ED
                         &md_context_ptr->sb_ptr->tile_info,
                         md_context_ptr->luma_recon_neighbor_array,
                         md_context_ptr->cb_recon_neighbor_array,
