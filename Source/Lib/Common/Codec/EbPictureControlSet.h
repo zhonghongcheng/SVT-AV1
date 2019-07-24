@@ -14494,6 +14494,14 @@ extern "C" {
 #if II_SEARCH
         uint8_t                              enable_inter_intra;
 #endif
+        
+#if COMP_MODE
+    //    OrderHintInfoEnc                        order_hint_info_st;
+        MD_COMP_TYPE                            compound_types_to_try;
+        uint8_t                                 compound_mode;
+
+
+#endif
     } PictureParentControlSet;
 
     typedef struct PictureControlSetInitData

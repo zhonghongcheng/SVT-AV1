@@ -108,6 +108,9 @@ extern "C" {
 #define  FIX_RATE_E_WEDGE   0   // Fix bug in wedge search 
 #endif
 
+#define DISABLE_QPM_SC              1
+#define DISABLE_ENH_SUBPEL_SC       1
+#define DISABLE_COMP_SC             1
 
 #define  NEW_NEAR_FIX                   1  //to add compound  here -- DONE
 
