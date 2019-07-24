@@ -433,6 +433,8 @@ typedef enum CAND_CLASS {
 #define ESTIMATE_INTRA   1 //use edge detection to bypass some angular modes
 
 
+#define  N0_COMP   1 //N0 test for compound  N0: no comp for 3x3, GG, PredMe
+
 typedef enum MD_STAGE {
     MD_STAGE_0,
     MD_STAGE_1,
