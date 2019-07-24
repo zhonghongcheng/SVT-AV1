@@ -84,7 +84,7 @@ int get_relative_dist_enc(SeqHeader *seq_header, int ref_hint, int order_hint);
     int bck_frame_index,
     int fwd_frame_index,
     const MACROBLOCKD *xd) {
-    ModeInfo *mi_ptr = *xd->mi;
+    //ModeInfo *mi_ptr = *xd->mi;
     //MB_MODE_INFO *mbmi = &mi_ptr->mbmi;
     //const RefCntBuffer *const bck_buf = get_ref_frame_buf(cm, mbmi->ref_frame[0]);
     //const RefCntBuffer *const fwd_buf = get_ref_frame_buf(cm, mbmi->ref_frame[1]);
@@ -6085,7 +6085,7 @@ static INLINE int is_interintra_allowed_ref(const MvReferenceFrame rf[2]) {
 
 static INLINE int is_interintra_allowed(const MB_MODE_INFO *mbmi) {
   return is_interintra_allowed_bsize(mbmi->sb_type) &&
-         is_interintra_allowed_mode(mbmi->mode) && 
+         is_interintra_allowed_mode(mbmi->mode) &&
          is_interintra_allowed_ref(mbmi->ref_frame);
 }
 
@@ -6526,7 +6526,7 @@ assert(bsize < BlockSizeS_ALL);
                         nmvc,
                         picture_control_set_ptr->parent_pcs_ptr->allow_high_precision_mv);
                 }
-#if II_EC                
+#if II_EC
 
                 MbModeInfo *mbmi = &mi_ptr->mbmi;
 
@@ -6568,8 +6568,8 @@ assert(bsize < BlockSizeS_ALL);
                 // First write idx to indicate current compound inter prediction mode group
                 // Group A (0): dist_wtd_comp, compound_average
                 // Group B (1): interintra, compound_diffwtd, wedge
-                
-#if !II_EC                
+
+#if !II_EC
 
                 MbModeInfo *mbmi = &mi_ptr->mbmi;
 #endif

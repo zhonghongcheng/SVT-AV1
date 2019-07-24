@@ -237,7 +237,7 @@ extern "C" {
 #endif
 #endif
 
-        SeqHeader                                seq_header;    
+        SeqHeader                                seq_header;
 #if COMP_MODE
         uint8_t                                 compound_mode;
 

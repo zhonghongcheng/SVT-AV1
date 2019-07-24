@@ -1362,17 +1362,12 @@ static INLINE int is_interintra_allowed_ref(const MvReferenceFrame rf[2]) {
     return (rf[0] > INTRA_FRAME) && (rf[1] <= INTRA_FRAME);
 }
 
-static INLINE int is_interintra_allowed(const MB_MODE_INFO *mbmi) {
-  return is_interintra_allowed_bsize(mbmi->sb_type) &&
-         is_interintra_allowed_mode(mbmi->mode) && 
-         is_interintra_allowed_ref(mbmi->ref_frame);
-}
 
 int is_interintra_wedge_used(BLOCK_SIZE sb_type);
 int svt_is_interintra_allowed(
     uint8_t enable_inter_intra,
     BlockSize sb_type,
-    PredictionMode mode,    
+    PredictionMode mode,
     MvReferenceFrame ref_frame[2]);
 #endif
 uint64_t av1_inter_fast_cost(

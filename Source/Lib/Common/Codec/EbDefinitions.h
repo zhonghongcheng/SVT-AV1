@@ -106,9 +106,9 @@ extern "C" {
 #define  II_EC              1   // ii EC
 #define  II_ED              1   // ii ED
 #define  II_CLASS           1   // ADD its own class
-#define  II_RATEE           1   // Rate estimation 
-#define  II_AVX             1   // AVX 
-#define  FIX_RATE_E_WEDGE   0   // Fix bug in wedge search 
+#define  II_RATEE           1   // Rate estimation
+#define  II_AVX             1   // AVX
+#define  FIX_RATE_E_WEDGE   0   // Fix bug in wedge search
 #endif
 
 #define DISABLE_QPM_SC              1

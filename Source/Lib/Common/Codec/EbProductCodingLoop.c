@@ -3096,7 +3096,9 @@ int32_t av1_mv_bit_cost(const MV *mv, const MV *ref, const int32_t *mvjcost,
 void predictive_me_search(
     PictureControlSet            *picture_control_set_ptr,
     ModeDecisionContext          *context_ptr,
+#if  !FASTER_PREDICTIVE_ME
     ModeDecisionCandidate        *fast_candidate_array,
+#endif
     EbPictureBufferDesc          *input_picture_ptr,
     uint32_t                      inputOriginIndex,
     uint32_t                      cuOriginIndex,
@@ -3326,7 +3328,7 @@ void predictive_me_search(
 
 #if HALF_QUARTER_BREAK_DOWN
                 uint8_t search_pattern;
-                // 0: all possible position(s): horizontal, vertical, diagonal 
+                // 0: all possible position(s): horizontal, vertical, diagonal
                 // 1: horizontal, vertical only
                 // 2: horizontal only
                 // 3: vertical only
@@ -5797,7 +5799,7 @@ void md_stage_2(
     uint64_t        cb_coeff_bits = 0;
     uint64_t        cr_coeff_bits = 0;
 #if ADAPTIVE_TXB_SEARCH_LEVEL
-    uint64_t ref_best_rd  = MAX_CU_COST; 
+    uint64_t ref_best_rd  = MAX_CU_COST;
 #endif
 
 #if !FULL_LOOP_SPLIT
@@ -6406,7 +6408,7 @@ void AV1PerformFullLoop(
     best_inter_luma_zero_coeff = 1;
     bestfullCost = 0xFFFFFFFFull;
 #if ADAPTIVE_TXB_SEARCH_LEVEL
-    uint64_t ref_best_rd  = MAX_CU_COST; 
+    uint64_t ref_best_rd  = MAX_CU_COST;
 #endif
 
     ModeDecisionCandidateBuffer         **candidateBufferPtrArrayBase = context_ptr->candidate_buffer_ptr_array;
@@ -6681,7 +6683,7 @@ void AV1PerformFullLoop(
 #endif
 #endif
 #if ADAPTIVE_TXB_SEARCH_LEVEL
-                ref_best_rd, 
+                ref_best_rd,
 #endif
                 end_tx_depth,
                 context_ptr->cu_ptr->qp,
@@ -6775,7 +6777,7 @@ void AV1PerformFullLoop(
                     candidateBuffer,
                     context_ptr,
 #if ADAPTIVE_TXB_SEARCH_LEVEL
-                    ref_best_rd, 
+                    ref_best_rd,
 #endif
                     picture_control_set_ptr);
 
@@ -8255,7 +8257,7 @@ void md_encode_block(
     candidate_buffer_ptr_array = &(candidateBufferPtrArrayBase[0]);
 #if PRUNE_REF_FRAME_FRO_REC_PARTITION
     for (uint8_t ref_idx = 0; ref_idx < MAX_REF_TYPE_CAND; ref_idx++)
-        context_ptr->ref_best_cost_sq_table[ref_idx] = MAX_CU_COST;  
+        context_ptr->ref_best_cost_sq_table[ref_idx] = MAX_CU_COST;
 #endif
 #if PREDICT_NSQ_SHAPE
  #if ADP_BQ
@@ -8444,7 +8446,9 @@ void md_encode_block(
             predictive_me_search(
                 picture_control_set_ptr,
                 context_ptr,
+#if  !FASTER_PREDICTIVE_ME
                 fast_candidate_array,
+#endif
                 input_picture_ptr,
                 inputOriginIndex,
                 cuOriginIndex,
@@ -9357,7 +9361,7 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #if MD_EXIT
 
 #if MD_EXIT
-       
+
         if (/*blk_geom->quadi != 3 &&*/ blk_geom->quadi > 0 && blk_geom->shape == PART_N) {
 
             uint32_t  blk_mds = context_ptr->blk_geom->sqi_mds;
@@ -9429,9 +9433,9 @@ EB_EXTERN EbErrorType mode_decision_sb(
             }
 #endif
             else {
-            // If the block is out of the boundaries, md is not performed. 
+            // If the block is out of the boundaries, md is not performed.
                 // - For square blocks, since the blocks can be further splitted, they are considered in d2_inter_depth_block_decision with cost of zero.
-            // - For non square blocks, since they can not be splitted further the cost is set to a large value (MAX_MODE_COST >> 4) to make sure they are not selected. 
+            // - For non square blocks, since they can not be splitted further the cost is set to a large value (MAX_MODE_COST >> 4) to make sure they are not selected.
                 //   The value is set to MAX_MODE_COST >> 4 to make sure there is not overflow when adding costs.
                 if (context_ptr->blk_geom->shape != PART_N)
                     context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost = (MAX_MODE_COST >> 4);

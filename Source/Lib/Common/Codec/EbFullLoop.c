@@ -4681,8 +4681,8 @@ void   compute_depth_costs_md_skip(
     else
         *above_depth_cost = MAX_MODE_COST;
 
-    
-    *curr_depth_cost +=        
+
+    *curr_depth_cost +=
         above_split_rate;
 }
 
