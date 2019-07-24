@@ -2352,7 +2352,7 @@ void set_md_stage_counts(
 #else
     context_ptr->md_stage_3_count[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ?
         context_ptr->md_stage_2_count[CAND_CLASS_0] :
-#if CLASS_0_NFL_MD_STAGE_3
+#if CLASS_0_NFL_MD_STAGE_3 && !CLASS_0_NFL_MD_STAGE_3_4_4
         (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 1;
 #else
         (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 4;

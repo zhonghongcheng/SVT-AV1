@@ -62,6 +62,7 @@ extern "C" {
 #define CLASS_0_I_SLICE_NFL_MD_STAGE_3         1 // CIN03 modified
 #define CLASS_123_NFL_MD_STAGE_2_3             1 // CIN13,CIN23,CIN33
 #define CLASS_0_NFL_MD_STAGE_2                 0
+#define CLASS_0_NFL_MD_STAGE_3_4_4             1 // CIN03 4 for non ref
 
 #define PRE_BILINEAR_CLEAN_UP                  1
 #define BILINEAR_FAST_LOOP                     1
