@@ -2040,20 +2040,20 @@ void perform_fast_loop(
         if (!candidate_ptr->distortion_ready || fastLoopCandidateIndex == bestFirstFastCostSearchCandidateIndex) {
 
 #if REFACTOR_FAST_LOOP
-                fast_loop_core(
-                    candidateBuffer,
-                    picture_control_set_ptr,
-                    context_ptr,
-                    input_picture_ptr,
-                    inputOriginIndex,
-                    inputCbOriginIndex,
-                    inputCrOriginIndex,
-                    cu_ptr,
-                    cuOriginIndex,
-                    cuChromaOriginIndex,
-                    use_ssd,
-                    asm_type
-                );
+                    fast_loop_core(
+                        candidateBuffer,
+                        picture_control_set_ptr,
+                        context_ptr,
+                        input_picture_ptr,
+                        inputOriginIndex,
+                        inputCbOriginIndex,
+                        inputCrOriginIndex,
+                        cu_ptr,
+                        cuOriginIndex,
+                        cuChromaOriginIndex,
+                        use_ssd,
+                        asm_type
+                    );
 
 #else
             // Prediction
@@ -2426,19 +2426,19 @@ void md_stage_1(
             uint64_t  tmp_cost = *(candidateBuffer->fast_cost_ptr);
         #endif
 
-            fast_loop_core(
-                candidateBuffer,
-                picture_control_set_ptr,
-                context_ptr,
-                input_picture_ptr,
-                inputOriginIndex,
-                inputCbOriginIndex,
-                inputCrOriginIndex,
-                cu_ptr,
-                cuOriginIndex,
-                cuChromaOriginIndex,
-                use_ssd,
-                asm_type);
+                fast_loop_core(
+                    candidateBuffer,
+                    picture_control_set_ptr,
+                    context_ptr,
+                    input_picture_ptr,
+                    inputOriginIndex,
+                    inputCbOriginIndex,
+                    inputCrOriginIndex,
+                    cu_ptr,
+                    cuOriginIndex,
+                    cuChromaOriginIndex,
+                    use_ssd,
+                    asm_type);
 
          #if 0//MDLEVELS
             if (tmp_cost != *(candidateBuffer->fast_cost_ptr))
@@ -4660,6 +4660,9 @@ void perform_intra_tx_partitioning(
     uint32_t                      best_fastLoop_candidate_index,
     uint64_t                      ref_fast_cost,
 #endif
+#if ADAPTIVE_TXB_SEARCH_LEVEL
+    uint64_t                      ref_best_rd,
+#endif
     uint8_t                       end_tx_depth,
     uint32_t                      qp,
     uint32_t                     *y_count_non_zero_coeffs,
@@ -5224,6 +5227,15 @@ void perform_intra_tx_partitioning(
             best_cost_search = cost;
             best_tx_depth = context_ptr->tx_depth;
         }
+
+#if ADAPTIVE_TXB_SEARCH_LEVEL
+        if (picture_control_set_ptr->parent_pcs_ptr->adaptive_txb_search_level) {
+            if ((best_cost_search - (best_cost_search >> picture_control_set_ptr->parent_pcs_ptr->adaptive_txb_search_level)) >
+                ref_best_rd) {
+                break;
+            }
+      }
+#endif
     } // Transform Depth Loop
 
     // ATB Recon
@@ -5552,6 +5564,9 @@ void md_stage_2(
     uint64_t        cr_coeff_bits = 0;
     best_inter_luma_zero_coeff = 1;
     bestfullCost = 0xFFFFFFFFull;
+#if ADAPTIVE_TXB_SEARCH_LEVEL
+    uint64_t ref_best_rd  = MAX_CU_COST; 
+#endif
 
     ModeDecisionCandidateBuffer         **candidateBufferPtrArrayBase = context_ptr->candidate_buffer_ptr_array;
     ModeDecisionCandidateBuffer         **candidate_buffer_ptr_array = &(candidateBufferPtrArrayBase[0]);
@@ -5815,6 +5830,9 @@ void md_stage_2(
                 best_fastLoop_candidate_index,
                 ref_fast_cost,
 #endif
+#if ADAPTIVE_TXB_SEARCH_LEVEL
+                ref_best_rd,
+#endif
                 end_tx_depth,
                 context_ptr->cu_ptr->qp,
                 &(*count_non_zero_coeffs[0]),
@@ -5875,6 +5893,9 @@ void md_stage_2(
                 product_full_loop_tx_search(
                     candidateBuffer,
                     context_ptr,
+#if ADAPTIVE_TXB_SEARCH_LEVEL
+                    ref_best_rd,
+#endif
                     picture_control_set_ptr);
 
                 candidate_ptr->full_distortion = 0;
@@ -6032,6 +6053,11 @@ void md_stage_2(
 
         candidateBuffer->y_coeff_bits = y_coeff_bits;
         candidate_ptr->full_distortion = (uint32_t)(y_full_distortion[0]);
+#if ADAPTIVE_TXB_SEARCH_LEVEL
+        if (*candidateBuffer->full_cost_ptr < ref_best_rd) {
+            ref_best_rd = *candidateBuffer->full_cost_ptr;
+        }
+#endif
 #if !FULL_LOOP_SPLIT //---
             if (context_ptr->full_loop_escape)
             {
@@ -6114,6 +6140,9 @@ void AV1PerformFullLoop(
     uint64_t        cr_coeff_bits = 0;
     best_inter_luma_zero_coeff = 1;
     bestfullCost = 0xFFFFFFFFull;
+#if ADAPTIVE_TXB_SEARCH_LEVEL
+    uint64_t ref_best_rd  = MAX_CU_COST; 
+#endif
 
     ModeDecisionCandidateBuffer         **candidateBufferPtrArrayBase = context_ptr->candidate_buffer_ptr_array;
     ModeDecisionCandidateBuffer         **candidate_buffer_ptr_array = &(candidateBufferPtrArrayBase[0]);
@@ -6372,6 +6401,9 @@ void AV1PerformFullLoop(
                 best_fastLoop_candidate_index,
                 ref_fast_cost,
 #endif
+#if ADAPTIVE_TXB_SEARCH_LEVEL
+                ref_best_rd, 
+#endif
                 end_tx_depth,
                 context_ptr->cu_ptr->qp,
                 &(*count_non_zero_coeffs[0]),
@@ -6446,6 +6478,9 @@ void AV1PerformFullLoop(
                 product_full_loop_tx_search(
                     candidateBuffer,
                     context_ptr,
+#if ADAPTIVE_TXB_SEARCH_LEVEL
+                    ref_best_rd, 
+#endif
                     picture_control_set_ptr);
 
                 candidate_ptr->full_distortion = 0;
@@ -6586,6 +6621,12 @@ void AV1PerformFullLoop(
 
         candidateBuffer->y_coeff_bits = y_coeff_bits;
         candidate_ptr->full_distortion = (uint32_t)(y_full_distortion[0]);
+
+#if ADAPTIVE_TXB_SEARCH_LEVEL
+        if (*candidateBuffer->full_cost_ptr < bestfullCost) {
+            ref_best_rd = *candidateBuffer->full_cost_ptr;
+        }
+#endif
 
         if (context_ptr->full_loop_escape)
         {
@@ -6970,6 +7011,9 @@ void inter_depth_tx_search(
     ModeDecisionContext                    *context_ptr,
     EbPictureBufferDesc                    *input_picture_ptr,
     uint64_t                                ref_fast_cost,
+#if ADAPTIVE_TXB_SEARCH_LEVEL
+    uint64_t                                ref_best_rd,
+#endif
     EbAsm                                   asm_type)
 {
 #if ATB_MD
@@ -7006,6 +7050,9 @@ void inter_depth_tx_search(
         product_full_loop_tx_search(
             candidateBuffer,
             context_ptr,
+#if ADAPTIVE_TXB_SEARCH_LEVEL
+            ref_best_rd,
+#endif
             picture_control_set_ptr
         );
 
@@ -7894,6 +7941,10 @@ void md_encode_block(
     const uint32_t cuChromaOriginIndex = ROUND_UV(blk_geom->origin_x) / 2 + ROUND_UV(blk_geom->origin_y) / 2 * SB_STRIDE_UV;
     CodingUnit *  cu_ptr = context_ptr->cu_ptr;
     candidate_buffer_ptr_array = &(candidateBufferPtrArrayBase[0]);
+#if PRUNE_REF_FRAME_FRO_REC_PARTITION
+    for (uint8_t ref_idx = 0; ref_idx < MAX_REF_TYPE_CAND; ref_idx++)
+        context_ptr->ref_best_cost_sq_table[ref_idx] = MAX_CU_COST;  
+#endif
 #if PREDICT_NSQ_SHAPE
  #if ADP_BQ
     // Derive is_nsq_table_used
@@ -8632,6 +8683,9 @@ void md_encode_block(
 #else
             context_ptr->best_candidate_index_array,
 #endif
+#if PRUNE_REF_FRAME_FRO_REC_PARTITION
+            picture_control_set_ptr->parent_pcs_ptr->prune_ref_frame_for_rec_partitions,
+#endif
             &best_intra_mode);
 
         candidateBuffer = candidate_buffer_ptr_array[candidateIndex];
@@ -8656,6 +8710,9 @@ void md_encode_block(
             context_ptr,
             input_picture_ptr,
             ref_fast_cost,
+#if ADAPTIVE_TXB_SEARCH_LEVEL
+            *(candidate_buffer_ptr_array[candidateIndex]->full_cost_ptr),
+#endif
             asm_type);
 
         uint8_t sq_index = LOG2F(context_ptr->blk_geom->sq_size) - 2;

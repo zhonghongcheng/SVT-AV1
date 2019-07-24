@@ -291,6 +291,9 @@ extern "C" {
         ModeDecisionCandidateBuffer **buffer_ptr_array,
         uint32_t                        candidate_total_count,
         uint32_t                        *best_candidate_index_array,
+#if PRUNE_REF_FRAME_FRO_REC_PARTITION
+       uint8_t                            prune_ref_frame_for_rec_partitions,
+#endif
         uint32_t                       *best_intra_mode);
     void sort_fast_loop_candidates(
         struct ModeDecisionContext   *context_ptr,

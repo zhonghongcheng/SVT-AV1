@@ -1661,6 +1661,24 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->enable_skip_atb = 1;
 
 #endif
+#if ADAPTIVE_TXB_SEARCH_LEVEL
+        if (MR_MODE || picture_control_set_ptr->sc_content_detected)
+            picture_control_set_ptr->adaptive_txb_search_level = 0;
+        else
+            picture_control_set_ptr->adaptive_txb_search_level = 6;
+#endif
+#if PRUNE_REF_FRAME_FRO_REC_PARTITION
+        if (MR_MODE || picture_control_set_ptr->sc_content_detected)
+            picture_control_set_ptr->prune_ref_frame_for_rec_partitions = 0;
+        else
+            picture_control_set_ptr->prune_ref_frame_for_rec_partitions = 1;
+#endif
+#if PRUNE_REF_FRAME_AT_ME
+        if (MR_MODE || picture_control_set_ptr->sc_content_detected)
+            picture_control_set_ptr->prune_unipred_at_me = 0;
+        else
+            picture_control_set_ptr->prune_unipred_at_me = 1;
+#endif
     return return_error;
 }
 

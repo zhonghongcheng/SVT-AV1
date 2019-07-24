@@ -2683,6 +2683,9 @@ uint8_t allowed_tx_set_b[TX_SIZES_ALL][TX_TYPES] = {
 void product_full_loop_tx_search(
     ModeDecisionCandidateBuffer  *candidateBuffer,
     ModeDecisionContext          *context_ptr,
+#if ADAPTIVE_TXB_SEARCH_LEVEL
+    uint64_t                      ref_best_rd,
+#endif
     PictureControlSet            *picture_control_set_ptr)
 {
     uint32_t                       tu_origin_index;
@@ -3040,6 +3043,15 @@ void product_full_loop_tx_search(
             best_tx_type = tx_type;
         }
 
+
+#if ADAPTIVE_TXB_SEARCH_LEVEL
+        if (picture_control_set_ptr->parent_pcs_ptr->adaptive_txb_search_level) {
+            if ((bestFullCost - (bestFullCost >> picture_control_set_ptr->parent_pcs_ptr->adaptive_txb_search_level)) >
+                ref_best_rd) {
+                break;
+            }
+      }
+#endif
         //if (cpi->sf.adaptive_txb_search_level) {
         //    if ((best_rd - (best_rd >> cpi->sf.adaptive_txb_search_level)) >
         //        ref_best_rd) {

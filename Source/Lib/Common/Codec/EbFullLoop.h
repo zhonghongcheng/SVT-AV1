@@ -52,6 +52,9 @@ extern "C" {
     void product_full_loop_tx_search(
         ModeDecisionCandidateBuffer  *candidateBuffer,
         ModeDecisionContext          *context_ptr,
+#if ADAPTIVE_TXB_SEARCH_LEVEL
+        uint64_t                     ref_best_rd,
+#endif
         PictureControlSet            *picture_control_set_ptr);
     extern uint32_t d2_inter_depth_block_decision(
         ModeDecisionContext          *context_ptr,

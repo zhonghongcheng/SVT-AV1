@@ -471,7 +471,14 @@ typedef enum ME_QP_MODE {
 } ME_QP_MODE;
 #endif
 
-#define TBX_SPLIT_CAP                                   1 //SKIP TXB SPLIT WHEN PARENT BLOCK EOB IS 0
+#define TBX_SPLIT_CAP                         1 //SKIP TXB SPLIT WHEN PARENT BLOCK EOB IS 0
+#define ADAPTIVE_TXB_SEARCH_LEVEL             0 // adaptive_txb_search_level
+#define PRUNE_REF_FRAME_FRO_REC_PARTITION     0 // prune_ref_frame_for_rec_partitions
+#define PRUNE_REF_FRAME_AT_ME                 0 // Reduce the nunmber of bipred based on the unipred data.
+
+#if PRUNE_REF_FRAME_FRO_REC_PARTITION
+#define MAX_REF_TYPE_CAND                     30
+#endif
 struct Buf2D
 {
     uint8_t *buf;

@@ -307,6 +307,10 @@ extern "C" {
         uint8_t                        md_staging_mode;
         uint32_t                       bypass_stage1[CAND_CLASS_TOTAL];
 #endif
+#if PRUNE_REF_FRAME_FRO_REC_PARTITION
+        uint64_t                        ref_best_cost_sq_table[MAX_REF_TYPE_CAND];
+        uint32_t                        ref_best_ref_sq_table[MAX_REF_TYPE_CAND];
+#endif
 #if MD_CLASS
 #if FULL_LOOP_SPLIT
         uint32_t                       md_stage_2_count[CAND_CLASS_TOTAL]; //how many full candiates per class @ md_stage_2
