@@ -34,6 +34,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#define MD_EXIT  0
 
 #define M1_CAND                         0
 
