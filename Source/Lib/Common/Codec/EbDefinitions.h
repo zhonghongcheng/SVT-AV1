@@ -432,9 +432,9 @@ typedef enum CAND_CLASS {
 
 #define ESTIMATE_INTRA   1 //use edge detection to bypass some angular modes
 
-
+#if M1_CAND
 #define  N0_COMP   1 //N0 test for compound  N0: no comp for 3x3, GG, PredMe
-
+#endif
 typedef enum MD_STAGE {
     MD_STAGE_0,
     MD_STAGE_1,
@@ -520,8 +520,9 @@ typedef enum ME_QP_MODE {
 #define TBX_SPLIT_CAP                         1 // SKIP TXB SPLIT WHEN PARENT BLOCK EOB IS 0
 #define ADAPTIVE_TXB_SEARCH_LEVEL             0 // adaptive_txb_search_level
 #define PRUNE_REF_FRAME_FRO_REC_PARTITION     0 // prune_ref_frame_for_rec_partitions
-#define PRUNE_REF_FRAME_AT_ME                 0 // Reduce the nunmber of bipred based on the unipred data.
-
+#if M1_CAND
+#define PRUNE_REF_FRAME_AT_ME                 1 // Reduce the nunmber of bipred based on the unipred data.
+#endif
 #if PRUNE_REF_FRAME_FRO_REC_PARTITION
 #define MAX_REF_TYPE_CAND                     30
 #endif
