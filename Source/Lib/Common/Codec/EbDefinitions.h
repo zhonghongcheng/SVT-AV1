@@ -98,7 +98,7 @@ extern "C" {
 #define    COMP_FULL                       1 // test compound in full loop
 #define    COMP_AVX                        1 // test compound in full loop
 #endif
-#define II_COMP_FLAG 1
+#define II_COMP_FLAG 0
 
 #if II_COMP_FLAG
 #define  II_COMP            1   // Inter-intra compound

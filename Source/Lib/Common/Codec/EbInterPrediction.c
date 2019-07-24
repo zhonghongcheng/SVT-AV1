@@ -2127,7 +2127,9 @@ int64_t pick_wedge_fixed_sign(
 #else
 static int64_t pick_wedge_fixed_sign(
 #endif
+#if FIX_RATE_E_WEDGE || II_COMP
     ModeDecisionCandidate        *candidate_ptr,
+#endif
     PictureControlSet                    *picture_control_set_ptr,
     ModeDecisionContext                  *context_ptr,
     //const AV1_COMP *const cpi,
