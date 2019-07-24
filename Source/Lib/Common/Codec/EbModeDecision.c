@@ -6600,6 +6600,93 @@ void  inject_intra_bc_candidates(
 #endif
     }
 }
+#if ESTIMATE_INTRA
+// Indices are sign, integer, and fractional part of the gradient value
+static const uint8_t gradient_to_angle_bin[2][7][16] = {
+  {
+      { 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 0, 0, 0, 0 },
+      { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1 },
+      { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
+      { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
+      { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
+      { 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
+      { 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
+  },
+  {
+      { 6, 6, 6, 6, 5, 5, 5, 5, 5, 5, 5, 5, 4, 4, 4, 4 },
+      { 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3 },
+      { 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3 },
+      { 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3 },
+      { 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3 },
+      { 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
+      { 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
+  },
+};
+
+/* clang-format off */
+static const uint8_t mode_to_angle_bin[INTRA_MODES] = {
+  0, 2, 6, 0, 4, 3, 5, 7, 1, 0,
+  0,
+};
+static void get_gradient_hist(const uint8_t *src, int src_stride, int rows,
+    int cols, uint64_t *hist) {
+    src += src_stride;
+    for (int r = 1; r < rows; ++r) {
+        for (int c = 1; c < cols; ++c) {
+            int dx = src[c] - src[c - 1];
+            int dy = src[c] - src[c - src_stride];
+            int index;
+            const int temp = dx * dx + dy * dy;
+            if (dy == 0) {
+                index = 2;
+            }
+            else {
+                const int sn = (dx > 0) ^ (dy > 0);
+                dx = abs(dx);
+                dy = abs(dy);
+                const int remd = (dx % dy) * 16 / dy;
+                const int quot = dx / dy;
+                index = gradient_to_angle_bin[sn][AOMMIN(quot, 6)][AOMMIN(remd, 15)];
+            }
+            hist[index] += temp;
+        }
+        src += src_stride;
+    }
+}
+static void angle_estimation(const uint8_t *src, int src_stride, int rows,
+    int cols, BLOCK_SIZE bsize,   uint8_t *directional_mode_skip_mask)
+{
+    // Check if angle_delta is used
+    //if (!av1_use_angle_delta(bsize)) return;
+
+    uint64_t hist[DIRECTIONAL_MODES] = { 0 };
+    //if (is_hbd)
+    //    get_highbd_gradient_hist(src, src_stride, rows, cols, hist);
+    //else
+        get_gradient_hist(src, src_stride, rows, cols, hist);
+
+    int i;
+    uint64_t hist_sum = 0;
+    for (i = 0; i < DIRECTIONAL_MODES; ++i) hist_sum += hist[i];
+    for (i = 0; i < INTRA_MODES; ++i) {
+        if (av1_is_directional_mode(i)) {
+            const uint8_t angle_bin = mode_to_angle_bin[i];
+            uint64_t score = 2 * hist[angle_bin];
+            int weight = 2;
+            if (angle_bin > 0) {
+                score += hist[angle_bin - 1];
+                ++weight;
+            }
+            if (angle_bin < DIRECTIONAL_MODES - 1) {
+                score += hist[angle_bin + 1];
+                ++weight;
+            }
+            const int thresh = 10;
+            if (score * thresh < hist_sum * weight) directional_mode_skip_mask[i] = 1;
+        }
+    }
+}
+#endif
 // END of Function Declarations
 void  inject_intra_candidates(
     PictureControlSet            *picture_control_set_ptr,
@@ -6635,6 +6722,21 @@ void  inject_intra_candidates(
     uint8_t                     disable_z2_prediction;
     uint8_t                     disable_angle_refinement;
     uint8_t                     disable_angle_prediction;
+
+#if ESTIMATE_INTRA
+    context_ptr->estimate_angle_intra = picture_control_set_ptr->enc_mode == ENC_M0 ? 1 : 0;
+    uint8_t directional_mode_skip_mask[INTRA_MODES] = { 0 };  
+
+    if (context_ptr->estimate_angle_intra==1 && use_angle_delta  )   
+    {
+        EbPictureBufferDesc   *src_pic = picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr;
+        uint8_t               *src_buf = src_pic->buffer_y + (context_ptr->cu_origin_x + src_pic->origin_x) + (context_ptr->cu_origin_y + src_pic->origin_y) * src_pic->stride_y;
+        const int rows = block_size_high[context_ptr->blk_geom->bsize];
+        const int cols = block_size_wide[context_ptr->blk_geom->bsize];
+        angle_estimation(src_buf, src_pic->stride_y, rows, cols, context_ptr->blk_geom->bsize,directional_mode_skip_mask);
+    }
+#endif
+
 #if M9_INTRA
         uint8_t     angle_delta_shift = 1;
     if (picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode == 4) {
@@ -6705,7 +6807,13 @@ void  inject_intra_candidates(
     for (openLoopIntraCandidate = intra_mode_start; openLoopIntraCandidate <= intra_mode_end ; ++openLoopIntraCandidate) {
 
         if (av1_is_directional_mode((PredictionMode)openLoopIntraCandidate)) {
+
+#if ESTIMATE_INTRA
+            if (!disable_angle_prediction &&
+                 directional_mode_skip_mask[(PredictionMode)openLoopIntraCandidate]==0) {               
+#else
             if (!disable_angle_prediction) {
+#endif
                 for (angleDeltaCounter = 0; angleDeltaCounter < angleDeltaCandidateCount; ++angleDeltaCounter) {
 #if M9_INTRA
                     int32_t angle_delta = CLIP( angle_delta_shift * (angleDeltaCandidateCount == 1 ? 0 : angleDeltaCounter - (angleDeltaCandidateCount >> 1)), -3 , 3);

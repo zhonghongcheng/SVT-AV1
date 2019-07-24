@@ -424,6 +424,8 @@ typedef enum CAND_CLASS {
 
  #define    TF_KEY                   1  //Temporal Filtering  for Key frame. OFF for Screen Content.
 
+#define ESTIMATE_INTRA   1 //use edge detection to bypass some angular modes
+
 
 typedef enum MD_STAGE {
     MD_STAGE_0,

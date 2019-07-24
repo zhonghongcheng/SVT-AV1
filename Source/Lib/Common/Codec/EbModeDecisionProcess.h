@@ -406,7 +406,9 @@ extern "C" {
 #if RE_FACTURE_PRED_KERNEL
     EbBool shut_chroma_comp;
 #endif
-
+#if ESTIMATE_INTRA
+    uint8_t  estimate_angle_intra;
+#endif
   } ModeDecisionContext;
 
     typedef void(*EbAv1LambdaAssignFunc)(
