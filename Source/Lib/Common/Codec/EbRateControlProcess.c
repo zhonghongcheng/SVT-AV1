@@ -3627,8 +3627,11 @@ static void sb_qp_derivation(
     uint32_t                  sb_addr;
     RATE_CONTROL               rc;
     picture_control_set_ptr->parent_pcs_ptr->average_qp = 0;
-
+#if DISABLE_QPM_SC
+    if (picture_control_set_ptr->slice_type == 2 && picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH && !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#else
     if (picture_control_set_ptr->slice_type == 2 && picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH)
+#endif
         picture_control_set_ptr->parent_pcs_ptr->delta_q_present_flag = 1;
     else
         picture_control_set_ptr->parent_pcs_ptr->delta_q_present_flag = 0;
@@ -3663,7 +3666,6 @@ static void sb_qp_derivation(
             if (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128) {
                 uint32_t me_sb_x = (sb_ptr->origin_x / me_sb_size);
                 uint32_t me_sb_y = (sb_ptr->origin_y / me_sb_size);
-                uint32_t me_sb_addr = me_sb_x + me_sb_y * me_pic_width_in_sb;
                 uint32_t me_sb_addr_0 = me_sb_x + me_sb_y * me_pic_width_in_sb;
                 uint32_t me_sb_addr_1 = (me_sb_x + 1) < me_pic_width_in_sb ? (me_sb_x + 1) + ((me_sb_y + 0) * me_pic_width_in_sb) : me_sb_addr_0;
                 uint32_t me_sb_addr_2 = (me_sb_y + 1) < me_pic_height_in_sb ? (me_sb_x + 0) + ((me_sb_y + 1) * me_pic_width_in_sb) : me_sb_addr_0;

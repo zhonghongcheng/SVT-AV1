@@ -282,7 +282,7 @@ extern "C" {
 #if NEW_NEAREST_NEW_INJECTION
         uint32_t                        me_sb_addr;
 #endif
-#if ME_MVP_DEVIATION
+#if FASTER_PREDICTIVE_ME
         uint32_t                        geom_offset_x;
         uint32_t                        geom_offset_y;
 #endif
@@ -405,6 +405,13 @@ extern "C" {
 #if PRE_BILINEAR_CLEAN_UP
     CAND_CLASS target_class;
 #endif
+#endif
+
+#if RE_FACTURE_PRED_KERNEL
+    EbBool shut_chroma_comp;
+#endif
+#if ESTIMATE_INTRA
+    uint8_t  estimate_angle_intra;
 #endif
   } ModeDecisionContext;
 

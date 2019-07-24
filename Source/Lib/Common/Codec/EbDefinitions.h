@@ -40,14 +40,21 @@ extern "C" {
 #define M0_HME_ME_TUNING                1
 #define PREDICTIVE_ME                   1 // Perform ME search around MVP
 #define QPM                             1 // Use SB QP Mod
-#define ME_MVP_DEVIATION                0 // Skip Predictive ME Search if significant ME-to-MVP difference
+#if PREDICTIVE_ME
+#define FASTER_PREDICTIVE_ME            1
+#define HALF_QUARTER_BREAK_DOWN         1
+#endif
 #define USE_M0_HME_ME_SETTINGS          0 // To enable when running ME related experiments in context of non-M0
+
+#define RE_FACTURE_PRED_KERNEL          1
+
 
 #define FULL_LOOP_SPLIT                 1
 #if FULL_LOOP_SPLIT
 #define FIRST_FULL_LOOP_CHROMA_BLIND           1
 #define FIRST_FULL_LOOP_ATB_OFF                1
 #define FIRST_FULL_LOOP_TX_SEARCH_OFF          1
+#define FIRST_FULL_LOOP_CHROMA_BLIND_INTER     0
 #define FIRST_FULL_LOOP_TX_SEARCH_OFF_INTER    0
 #define STRENGHTHEN_MD_STAGE_3                 1
 #define CLASS_0_NFL_MD_STAGE_3                 1 // CIN03
@@ -58,6 +65,14 @@ extern "C" {
 #define BILINEAR_FAST_LOOP                     1
 #define BILINEAR_PREDICTIVE_ME                 0
 #define BILINEAR_INJECTION                     0
+
+
+#define SHUT_RATE_MD_STAGE                     0 // Move fast rate estimation from md_stage_0 to md_stage_1
+#define CHROMA_MD_STAGE_0_TO_MD_STAGE_1        1 // Move fast chroma compensation from md_stage_0 to md_stage_1
+#if CHROMA_MD_STAGE_0_TO_MD_STAGE_1
+#define CHROMA_MD_STAGE_1_TO_MD_STAGE_3        0 // Move fast chroma compensation from md_stage_1 to md_stage_3
+#endif
+
 
 #define FIRST_FULL_LOOP_INTERPOLATION_SEARCH   0
 #define FIRST_RDOQ_INTRA                       0
@@ -80,6 +95,23 @@ extern "C" {
 #define    COMP_FULL                       1 // test compound in full loop
 #define    COMP_AVX                        1 // test compound in full loop
 #endif
+#define II_COMP_FLAG 1
+
+#if II_COMP_FLAG
+#define  II_COMP            1   // Inter-intra compound
+#define  II_SEARCH          1   // Inject inter Intra
+#define  II_EC              1   // ii EC
+#define  II_ED              1   // ii ED
+#define  II_CLASS           1   // ADD its own class
+#define  II_RATEE           1   // Rate estimation 
+#define  II_AVX             1   // AVX 
+#define  FIX_RATE_E_WEDGE   0   // Fix bug in wedge search 
+#endif
+
+#define DISABLE_QPM_SC              1
+#define DISABLE_ENH_SUBPEL_SC       1
+#define DISABLE_COMP_SC             1
+
 #define  NEW_NEAR_FIX                   1  //to add compound  here -- DONE
 
 #define SC_DETECTION                            1 // Change SC detection to blk based VAR.
@@ -369,6 +401,9 @@ typedef enum CAND_CLASS {
 #if COMP_FULL
     CAND_CLASS_3,
 #endif
+#if II_CLASS
+    CAND_CLASS_4,
+#endif
     CAND_CLASS_TOTAL
 } CAND_CLASS;
 #else
@@ -388,6 +423,12 @@ typedef enum CAND_CLASS {
 #if BDR_MODE
 #define  MD_STAGE_3_NFL_BDRATE        1 // 10 NFL @ md_stage_3
 #endif
+
+
+ #define    TF_KEY                   1  //Temporal Filtering  for Key frame. OFF for Screen Content.
+
+#define ESTIMATE_INTRA   1 //use edge detection to bypass some angular modes
+
 
 typedef enum MD_STAGE {
     MD_STAGE_0,
@@ -471,7 +512,7 @@ typedef enum ME_QP_MODE {
 } ME_QP_MODE;
 #endif
 
-#define TBX_SPLIT_CAP                         1 //SKIP TXB SPLIT WHEN PARENT BLOCK EOB IS 0
+#define TBX_SPLIT_CAP                         1 // SKIP TXB SPLIT WHEN PARENT BLOCK EOB IS 0
 #define ADAPTIVE_TXB_SEARCH_LEVEL             0 // adaptive_txb_search_level
 #define PRUNE_REF_FRAME_FRO_REC_PARTITION     0 // prune_ref_frame_for_rec_partitions
 #define PRUNE_REF_FRAME_AT_ME                 0 // Reduce the nunmber of bipred based on the unipred data.
@@ -1483,6 +1524,14 @@ typedef struct {
     DIFFWTD_MASK_TYPE mask_type;
     COMPOUND_TYPE type;
 } INTERINTER_COMPOUND_DATA;
+#endif
+
+#if II_COMP
+#define AOM_BLEND_A64(a, v0, v1)                                          \
+  ROUND_POWER_OF_TWO((a) * (v0) + (AOM_BLEND_A64_MAX_ALPHA - (a)) * (v1), \
+                     AOM_BLEND_A64_ROUND_BITS)
+#define IS_POWER_OF_TWO(x) (((x) & ((x)-1)) == 0)
+#define INTERINTRA_MODE  InterIntraMode
 #endif
 
 typedef enum ATTRIBUTE_PACKED

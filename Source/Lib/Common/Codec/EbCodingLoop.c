@@ -2648,7 +2648,9 @@ void perform_intra_coding_loop(
                 &picture_control_set_ptr->ec_ctx_array[tbAddr],
                 picture_control_set_ptr,
                 candidateBuffer,
+#if !FIXED_128x128_CONTEXT_UPDATE
                 cu_ptr,
+#endif
                 coeff1dOffset,
                 context_ptr->coded_area_sb_uv,
                 coeff_est_entropy_coder_ptr,
@@ -2965,7 +2967,9 @@ void perform_intra_coding_loop(
                 &picture_control_set_ptr->ec_ctx_array[tbAddr],
                 picture_control_set_ptr,
                 candidateBuffer,
+#if !FIXED_128x128_CONTEXT_UPDATE
                 cu_ptr,
+#endif
                 coeff1dOffset,
                 context_ptr->coded_area_sb_uv,
                 coeff_est_entropy_coder_ptr,
@@ -3734,6 +3738,17 @@ EB_EXTERN void av1_encode_pass(
 #if COMP_DIFF
                                     &cu_ptr->interinter_comp,
 #endif
+#if II_ED
+                                    &sb_ptr->tile_info,
+                                    ep_luma_recon_neighbor_array,
+                                    ep_cb_recon_neighbor_array ,
+                                    ep_cr_recon_neighbor_array ,
+                                    cu_ptr->is_interintra_used,
+                                    cu_ptr->interintra_mode,
+                                    cu_ptr->use_wedge_interintra,
+                                    cu_ptr->interintra_wedge_index,
+
+#endif
                                     context_ptr->cu_origin_x,
                                     context_ptr->cu_origin_y,
                                     blk_geom->bwidth,
@@ -3957,7 +3972,9 @@ EB_EXTERN void av1_encode_pass(
                                         &picture_control_set_ptr->ec_ctx_array[tbAddr],
                                         picture_control_set_ptr,
                                         candidateBuffer,
+#if !FIXED_128x128_CONTEXT_UPDATE
                                         cu_ptr,
+#endif
                                         coeff1dOffset,
                                         context_ptr->coded_area_sb_uv,
                                         coeff_est_entropy_coder_ptr,
@@ -4305,6 +4322,17 @@ EB_EXTERN void av1_encode_pass(
 #if COMP_DIFF
                                     &cu_ptr->interinter_comp,
 #endif
+#if II_ED
+                                    &sb_ptr->tile_info,
+                                    ep_luma_recon_neighbor_array,
+                                    ep_cb_recon_neighbor_array ,
+                                    ep_cr_recon_neighbor_array ,
+                                    cu_ptr->is_interintra_used,
+                                    cu_ptr->interintra_mode,
+                                    cu_ptr->use_wedge_interintra,
+                                    cu_ptr->interintra_wedge_index,
+
+#endif
                                     context_ptr->cu_origin_x,
                                     context_ptr->cu_origin_y,
                                     blk_geom->bwidth,
@@ -4554,7 +4582,9 @@ EB_EXTERN void av1_encode_pass(
 #endif
                                         picture_control_set_ptr,
                                         candidateBuffer,
+#if !FIXED_128x128_CONTEXT_UPDATE
                                         cu_ptr,
+#endif
                                         coeff1dOffset,
                                         context_ptr->coded_area_sb_uv,
                                         coeff_est_entropy_coder_ptr,
@@ -4671,7 +4701,9 @@ EB_EXTERN void av1_encode_pass(
                                         &picture_control_set_ptr->ec_ctx_array[tbAddr],
                                         picture_control_set_ptr,
                                         candidateBuffer,
+#if !FIXED_128x128_CONTEXT_UPDATE
                                         cu_ptr,
+#endif
                                         coeff1dOffset,
                                         context_ptr->coded_area_sb_uv,
                                         coeff_est_entropy_coder_ptr,
@@ -4922,7 +4954,9 @@ EB_EXTERN void av1_encode_pass(
                                     &picture_control_set_ptr->ec_ctx_array[tbAddr],
                                     picture_control_set_ptr,
                                     candidateBuffer,
+#if !FIXED_128x128_CONTEXT_UPDATE
                                     cu_ptr,
+#endif
                                     coeff1dOffset,
                                     context_ptr->coded_area_sb_uv,
                                     coeff_est_entropy_coder_ptr,

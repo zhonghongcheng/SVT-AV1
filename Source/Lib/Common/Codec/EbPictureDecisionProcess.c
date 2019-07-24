@@ -262,7 +262,12 @@ uint8_t  circ_inc(uint8_t max, uint8_t off, uint8_t input)
 #define POC_CIRCULAR_ADD(base, offset/*, bits*/)             (/*(((int32_t) (base)) + ((int32_t) (offset)) > ((int32_t) (1 << (bits))))   ? ((base) + (offset) - (1 << (bits))) : \
                                                              (((int32_t) (base)) + ((int32_t) (offset)) < 0)                           ? ((base) + (offset) + (1 << (bits))) : \
                                                                                                                                        */((base) + (offset)))
+
+#if TF_KEY
+#define FUTURE_WINDOW_WIDTH                 6
+#else
 #define FUTURE_WINDOW_WIDTH                 4
+#endif
 #define FLASH_TH                            5
 #define FADE_TH                             3
 #define SCENE_TH                            3000
@@ -1660,6 +1665,40 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
             picture_control_set_ptr->enable_skip_atb = 1;
 
+#endif
+#if II_SEARCH
+        // inter intra pred                      Settings
+        // 0                                     OFF
+        // 1                                     ON
+            picture_control_set_ptr->enable_inter_intra = sequence_control_set_ptr->seq_header.enable_interintra_compound;
+
+#endif
+#if COMP_MODE
+                        // Set compound mode      Settings
+            // 0                 OFF: No compond mode search : AVG only
+            // 1                 ON: compond mode search: 4 modes
+            // 2                 ON: full
+#if DISABLE_COMP_SC
+#if FULL_COMPOUND_BDRATE
+            picture_control_set_ptr->compound_mode = picture_control_set_ptr->sc_content_detected ? 0 : 2;
+#else
+            picture_control_set_ptr->compound_mode = picture_control_set_ptr->sc_content_detected ? 0 : 1;
+#endif
+#else            
+#if FULL_COMPOUND_BDRATE
+            picture_control_set_ptr->compound_mode =  2;
+#else
+            picture_control_set_ptr->compound_mode =  1;
+#endif
+#endif
+            if (picture_control_set_ptr->compound_mode) 
+#if COMP_OPT
+                picture_control_set_ptr->compound_types_to_try = picture_control_set_ptr->compound_mode == 1 ? MD_COMP_DIFF0 : MD_COMP_WEDGE;
+#else
+                picture_control_set_ptr->compound_types_to_try = MD_COMP_WEDGE;//  MD_COMP_DIST;//MD_COMP_AVG;//
+#endif
+            else
+                picture_control_set_ptr->compound_types_to_try = MD_COMP_AVG;
 #endif
 #if ADAPTIVE_TXB_SEARCH_LEVEL
         if (MR_MODE || picture_control_set_ptr->sc_content_detected)
@@ -3516,22 +3555,42 @@ void* picture_decision_kernel(void *input_ptr)
         queueEntryPtr = encode_context_ptr->picture_decision_reorder_queue[encode_context_ptr->picture_decision_reorder_queue_head_index];
 
         while (queueEntryPtr->parent_pcs_wrapper_ptr != EB_NULL) {
+#if TF_KEY
+            if (
+                ((PictureParentControlSet *)(queueEntryPtr->parent_pcs_wrapper_ptr->object_ptr))->end_of_sequence_flag == EB_TRUE) {
+                framePasseThru = EB_TRUE;
+            }
+            else
+                framePasseThru = EB_FALSE;
+#else
             if (queueEntryPtr->picture_number == 0 ||
                 ((PictureParentControlSet *)(queueEntryPtr->parent_pcs_wrapper_ptr->object_ptr))->end_of_sequence_flag == EB_TRUE){
                 framePasseThru = EB_TRUE;
             }
             else
                 framePasseThru = EB_FALSE;
+#endif
             windowAvail = EB_TRUE;
             previousEntryIndex = QUEUE_GET_PREVIOUS_SPOT(encode_context_ptr->picture_decision_reorder_queue_head_index);
 
 #if ALTREF_FILTERING_SUPPORT
             ParentPcsWindow[0] = ParentPcsWindow[1] = ParentPcsWindow[2] = ParentPcsWindow[3] = ParentPcsWindow[4] = ParentPcsWindow[5] = NULL;
 #endif
+
+#if TF_KEY
+            //for poc 0, ignore previous frame check
+            if (queueEntryPtr->picture_number > 0 && encode_context_ptr->picture_decision_reorder_queue[previousEntryIndex]->parent_pcs_wrapper_ptr == NULL)
+#else
             if (encode_context_ptr->picture_decision_reorder_queue[previousEntryIndex]->parent_pcs_wrapper_ptr == NULL)
+#endif
                 windowAvail = EB_FALSE;
             else {
+
+#if TF_KEY
+                ParentPcsWindow[0] = queueEntryPtr->picture_number > 0 ? (PictureParentControlSet *)encode_context_ptr->picture_decision_reorder_queue[previousEntryIndex]->parent_pcs_wrapper_ptr->object_ptr : NULL;
+#else
                 ParentPcsWindow[0] = (PictureParentControlSet *)encode_context_ptr->picture_decision_reorder_queue[previousEntryIndex]->parent_pcs_wrapper_ptr->object_ptr;
+#endif
                 ParentPcsWindow[1] = (PictureParentControlSet *)encode_context_ptr->picture_decision_reorder_queue[encode_context_ptr->picture_decision_reorder_queue_head_index]->parent_pcs_wrapper_ptr->object_ptr;
                 for (windowIndex = 0; windowIndex < FUTURE_WINDOW_WIDTH; windowIndex++) {
                     entryIndex = QUEUE_GET_NEXT_SPOT(encode_context_ptr->picture_decision_reorder_queue_head_index, windowIndex + 1);
@@ -3556,8 +3615,11 @@ void* picture_decision_kernel(void *input_ptr)
             picture_control_set_ptr->fade_in_to_black = 0;
             if (picture_control_set_ptr->idr_flag == EB_TRUE)
                 context_ptr->last_solid_color_frame_poc = 0xFFFFFFFF;
-
+#if TF_KEY
+            if (windowAvail == EB_TRUE && queueEntryPtr->picture_number > 0) {
+#else
             if (windowAvail == EB_TRUE) {
+#endif
                 if (sequence_control_set_ptr->static_config.scene_change_detection) {
                     picture_control_set_ptr->scene_change_flag = SceneTransitionDetector(
                         context_ptr,
@@ -4304,8 +4366,43 @@ void* picture_decision_kernel(void *input_ptr)
 
 #if ALTREF_FILTERING_SUPPORT
                             if ( sequence_control_set_ptr->enable_altrefs == EB_TRUE &&
-                                 picture_control_set_ptr->slice_type != I_SLICE && picture_control_set_ptr->temporal_layer_index == 0) {
+#if TF_KEY
+                                ((picture_control_set_ptr->idr_flag && picture_control_set_ptr->sc_content_detected==0) ||
+#endif
+                                (picture_control_set_ptr->slice_type != I_SLICE && picture_control_set_ptr->temporal_layer_index == 0)
+                                )) {
                                 int altref_nframes = picture_control_set_ptr->sequence_control_set_ptr->static_config.altref_nframes;
+
+#if TF_KEY
+                                if (picture_control_set_ptr->idr_flag) {
+
+                                    //initilize list
+                                    for (int pic_itr = 0; pic_itr < ALTREF_MAX_NFRAMES; pic_itr++)
+                                        picture_control_set_ptr->temp_filt_pcs_list[pic_itr] = NULL;
+
+                                    picture_control_set_ptr->temp_filt_pcs_list[0] = picture_control_set_ptr;
+
+                                    uint32_t num_future_pics = 6;
+                                    uint32_t num_past_pics = 0;
+                                    uint32_t pic_i;
+                                    //search reord-queue to get the future pictures
+                                    for (pic_i = 0; pic_i < num_future_pics; pic_i++) {
+                                        int32_t q_index = QUEUE_GET_NEXT_SPOT(picture_control_set_ptr->pic_decision_reorder_queue_idx, pic_i + 1);
+                                        if (encode_context_ptr->picture_decision_reorder_queue[q_index]->parent_pcs_wrapper_ptr != NULL) {
+                                            PictureParentControlSet* pcs_itr = (PictureParentControlSet *)encode_context_ptr->picture_decision_reorder_queue[q_index]->parent_pcs_wrapper_ptr->object_ptr;
+                                            picture_control_set_ptr->temp_filt_pcs_list[pic_i + num_past_pics + 1] = pcs_itr;
+
+                                        }
+                                        else
+                                           break;
+                                    }
+
+                                    picture_control_set_ptr->past_altref_nframes = 0;
+                                    picture_control_set_ptr->future_altref_nframes = pic_i;
+                                }
+                                else
+                                {
+#endif
                                 int num_past_pics = altref_nframes / 2;
                                 int num_future_pics = altref_nframes - num_past_pics - 1;
                                 ASSERT(num_future_pics >= 0);
@@ -4374,7 +4471,9 @@ void* picture_decision_kernel(void *input_ptr)
                                     for (regionInPictureWidthIndex = 0; regionInPictureWidthIndex < sequence_control_set_ptr->picture_analysis_number_of_regions_per_width; regionInPictureWidthIndex++) {
                                         for (regionInPictureHeightIndex = 0; regionInPictureHeightIndex < sequence_control_set_ptr->picture_analysis_number_of_regions_per_height; regionInPictureHeightIndex++) {
                                             for (int bin = 0; bin < HISTOGRAM_NUMBER_OF_BINS; ++bin) {
-                                                ahd += ABS((int32_t)picture_control_set_ptr->temp_filt_pcs_list[index_center]->picture_histogram[regionInPictureWidthIndex][regionInPictureHeightIndex][0][bin] - (int32_t)picture_control_set_ptr->temp_filt_pcs_list[pic_itr]->picture_histogram[regionInPictureWidthIndex][regionInPictureHeightIndex][0][bin]);
+                                                ahd += ABS(
+                                                    (int32_t)picture_control_set_ptr->temp_filt_pcs_list[index_center]->picture_histogram[regionInPictureWidthIndex][regionInPictureHeightIndex][0][bin] -
+                                                    (int32_t)picture_control_set_ptr->temp_filt_pcs_list[pic_itr]->picture_histogram[regionInPictureWidthIndex][regionInPictureHeightIndex][0][bin]);
                                             }
                                         }
                                     }
@@ -4412,6 +4511,10 @@ void* picture_decision_kernel(void *input_ptr)
                                     printf("%i   ", picture_control_set_ptr->temp_filt_pcs_list[tt]->picture_number);
                                 }*/
                                 picture_control_set_ptr->altref_nframes = altref_nframes;
+#endif
+
+#if TF_KEY
+                                }
 #endif
                                 //clock_t start_time;
                                 //start_time = clock();
@@ -4461,8 +4564,8 @@ void* picture_decision_kernel(void *input_ptr)
                                 }
 
                                 //clock_t elapsed_time = clock() - start_time;
-                                //double time_taken = ((double)elapsed_time) / CLOCKS_PER_SEC; // in seconds
-                                //printf("Producing the alt-ref frame at POC %d took %f seconds.\n", picture_control_set_ptr->picture_number, time_taken);
+                               // double time_taken = ((double)elapsed_time) / CLOCKS_PER_SEC; // in seconds
+                               // printf("Producing the alt-ref frame at POC %d took %f seconds.\n", picture_control_set_ptr->picture_number, time_taken);
                             }
 #endif
                         }

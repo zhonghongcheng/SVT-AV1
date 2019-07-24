@@ -811,6 +811,17 @@ EbErrorType av1_inter_prediction(
 #if COMP_DIFF
     INTERINTER_COMPOUND_DATA             *interinter_comp,
 #endif
+#if II_ED
+    TileInfo                                * tile,
+    NeighborArrayUnit                       *luma_recon_neighbor_array,
+    NeighborArrayUnit                       *cb_recon_neighbor_array ,
+    NeighborArrayUnit                       *cr_recon_neighbor_array ,
+    uint8_t                                 is_interintra_used ,
+    INTERINTRA_MODE                        interintra_mode,
+    uint8_t                                use_wedge_interintra,
+    int32_t                                interintra_wedge_index,
+
+#endif
     uint16_t                             pu_origin_x,
     uint16_t                             pu_origin_y,
     uint8_t                              bwidth,
@@ -823,7 +834,7 @@ EbErrorType av1_inter_prediction(
     EbBool                               perform_chroma,
     EbAsm                                asm_type);
 
-uint32_t get_mds_idx(uint32_t  orgx, uint32_t  orgy, uint32_t  size, uint32_t use_128x128);
+uint32_t get_mds_idx(uint32_t  org_x, uint32_t  org_y, int32_t  size, uint32_t use_128x128);
 
 void tf_inter_prediction(
     PictureParentControlSet   *picture_control_set_ptr,
@@ -861,7 +872,7 @@ void tf_inter_prediction(
 
     for (uint32_t idx_32x32 = 0; idx_32x32 < 4; idx_32x32++) {
         if (use_16x16_subblocks[idx_32x32] != 0) {
-            uint32_t    bsize = 16;
+            int32_t bsize = 16;
 
             for (uint32_t idx_16x16 = 0; idx_16x16 < 4; idx_16x16++) {
                 uint32_t pu_index = index_16x16_from_subindexes[idx_32x32][idx_16x16];
@@ -887,8 +898,8 @@ void tf_inter_prediction(
 
 #if ALTREF_EIGHTH_PEL_SEARCH
                 uint64_t best_distortion = (uint64_t)~0;
-                signed short best_mv_x;
-                signed short best_mv_y;
+                signed short best_mv_x = 0;
+                signed short best_mv_y = 0;
                 signed short mv_x = (_MVXT(context_ptr->p_best_mv16x16[mv_index])) << 1;
                 signed short mv_y = (_MVYT(context_ptr->p_best_mv16x16[mv_index])) << 1;
 #if ALTREF_AV1_SUBPEL
@@ -913,6 +924,16 @@ void tf_inter_prediction(
 #endif
 #if COMP_DIFF
                             NULL,// interinter_comp not used
+#endif
+#if II_ED
+                            NULL,
+                            NULL,
+                            NULL,
+                            NULL,
+                            0,
+                            0,
+                            0,
+                            0,
 #endif
                             pu_origin_x,
                             pu_origin_y,
@@ -958,6 +979,16 @@ void tf_inter_prediction(
 #endif
 #if COMP_DIFF
                     NULL,// interinter_comp not used
+#endif
+#if II_ED
+                    NULL,
+                    NULL,
+                    NULL,
+                    NULL,
+                    0,
+                    0,
+                    0,
+                    0,
 #endif
                     pu_origin_x,
                     pu_origin_y,
@@ -1322,7 +1353,12 @@ void DownsampleFilteringInputPicture(
     EbPictureBufferDesc           *quarter_picture_ptr,
     EbPictureBufferDesc           *sixteenth_picture_ptr);
 // Produce the filtered alt-ref picture
-static EbErrorType produce_temporally_filtered_pic(PictureParentControlSet **list_picture_control_set_ptr,
+static EbErrorType produce_temporally_filtered_pic(
+
+#if TF_KEY
+    int              index_center_input,
+#endif
+    PictureParentControlSet **list_picture_control_set_ptr,
                                             EbPictureBufferDesc **list_input_picture_ptr,
 #if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
                                             uint8_t altref_strength_y,
@@ -1360,8 +1396,11 @@ static EbErrorType produce_temporally_filtered_pic(PictureParentControlSet **lis
     EbPictureBufferDesc *input_picture_ptr_central;
 
     // index of the center frame
+#if TF_KEY
+    index_center = index_center_input;
+#else
     index_center = (uint8_t)(list_picture_control_set_ptr[0]->sequence_control_set_ptr->static_config.altref_nframes / 2);
-
+#endif
     picture_control_set_ptr_central = list_picture_control_set_ptr[index_center];
     input_picture_ptr_central = list_input_picture_ptr[index_center];
 
@@ -1934,7 +1973,13 @@ void init_temporal_filtering(PictureParentControlSet **list_picture_control_set_
 #endif
 
     // index of the central source frame
+#if TF_KEY
+    index_center =
+         picture_control_set_ptr_central->idr_flag ? picture_control_set_ptr_central->past_altref_nframes :
+                  (uint8_t)(picture_control_set_ptr_central->sequence_control_set_ptr->static_config.altref_nframes / 2);
+#else
     index_center = (uint8_t)(picture_control_set_ptr_central->sequence_control_set_ptr->static_config.altref_nframes / 2);
+#endif
 
     // source central frame picture buffer
     input_picture_ptr = picture_control_set_ptr_central->enhanced_picture_ptr;
@@ -2007,7 +2052,11 @@ void init_temporal_filtering(PictureParentControlSet **list_picture_control_set_
 #if QPS_TUNING
     uint64_t filtered_sse, filtered_sse_uv;
 #if ALTREF_DYNAMIC_WINDOW
-    produce_temporally_filtered_pic(list_picture_control_set_ptr, list_input_picture_ptr, picture_control_set_ptr_central->altref_strength_y, picture_control_set_ptr_central->altref_strength_uv, alt_ref_buffer, &filtered_sse, &filtered_sse_uv, (MotionEstimationContext_t *)me_context_ptr, segment_index);
+    produce_temporally_filtered_pic(
+#if TF_KEY
+        index_center,
+#endif
+        list_picture_control_set_ptr, list_input_picture_ptr, picture_control_set_ptr_central->altref_strength_y, picture_control_set_ptr_central->altref_strength_uv, alt_ref_buffer, &filtered_sse, &filtered_sse_uv, (MotionEstimationContext_t *)me_context_ptr, segment_index);
 #else
     produce_temporally_filtered_pic(list_picture_control_set_ptr, list_input_picture_ptr, picture_control_set_ptr_central->altref_strength_y, picture_control_set_ptr_central->altref_strength_uv, altref_nframes, alt_ref_buffer, &filtered_sse, &filtered_sse_uv, (MotionEstimationContext_t *)me_context_ptr, segment_index);
 #endif

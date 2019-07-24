@@ -4313,7 +4313,7 @@ static void half_pel_refinement_block(
     uint64_t distortion_top_position = 0;
     uint64_t distortion_topleft_position = 0;
     uint64_t distortion_topright_position = 0;
-#if HP_REF_OPT
+#if !HP_REF_OPT
     uint64_t distortion_bottomleft_position = 0;
     uint64_t distortion_bottomright_position = 0;
 #endif
@@ -5897,7 +5897,7 @@ void half_pel_refinement_sb(
  *******************************************/
 #if OPTIMISED_EX_SUBPEL
 static void open_loop_me_half_pel_search_sblock(
-    SequenceControlSet *sequence_control_set_ptr,
+    //SequenceControlSet *sequence_control_set_ptr,
     PictureParentControlSet *picture_control_set_ptr, MeContext *context_ptr,
     uint32_t list_index, uint32_t ref_pic_index, int16_t x_search_area_origin,
     int16_t y_search_area_origin, uint32_t search_area_width,
@@ -6008,7 +6008,8 @@ static void open_loop_me_half_pel_search_sblock(
  *******************************************/
 static void open_loop_me_quarter_pel_search_sblock(
     //SequenceControlSet *sequence_control_set_ptr,
-    PictureParentControlSet *picture_control_set_ptr, MeContext *context_ptr,
+    //PictureParentControlSet *picture_control_set_ptr,
+    MeContext *context_ptr,
     uint32_t list_index, uint32_t ref_pic_index, int16_t x_search_area_origin,
     int16_t y_search_area_origin, uint32_t search_area_width,
     uint32_t search_area_height, EbAsm asm_type) {
@@ -9962,7 +9963,7 @@ static void quarter_pel_refinemnet_block(
 }
 #define Q_PEL_SEARCH_WIND 2
 /*******************************************
- * quarter_pel_refinement_sb
+ * quarter_pel _refinement_sb
  *   performs Quarter Pel refinement
  *******************************************/
 static void quarter_pel_refinement_sb(
@@ -15671,7 +15672,7 @@ EbErrorType motion_estimate_lcu(
                                       [ME_TIER_ZERO_PU_16x64_0]);
                             // half-Pel search
                             open_loop_me_half_pel_search_sblock(
-                                sequence_control_set_ptr,
+                                //sequence_control_set_ptr,
                                 picture_control_set_ptr,
                                 context_ptr,
                                 listIndex,
@@ -15696,7 +15697,7 @@ EbErrorType motion_estimate_lcu(
                                        ->p_sb_best_mv[listIndex][ref_pic_index],
                                    MAX_ME_PU_COUNT * sizeof(uint32_t));
                             open_loop_me_quarter_pel_search_sblock(
-                                sequence_control_set_ptr,
+                                //sequence_control_set_ptr,
                                 //picture_control_set_ptr,
                                 context_ptr,
                                 listIndex,

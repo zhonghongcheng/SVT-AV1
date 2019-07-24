@@ -203,6 +203,11 @@ extern "C" {
 #if ATB_SUPPORT
         uint8_t tx_depth;
 #endif
+ #if II_EC
+        INTERINTRA_MODE                        interintra_mode;
+        uint8_t                                use_wedge_interintra;
+        int32_t                                interintra_wedge_index;//inter_intra wedge index
+#endif
     } MbModeInfo;
 
     typedef struct ModeInfo {
@@ -419,6 +424,13 @@ extern "C" {
         uint32_t                    best_d1_blk;
 #if ATB_SUPPORT
         uint8_t                     tx_depth;
+#endif
+#if II_COMP
+        INTERINTRA_MODE                        interintra_mode;
+        uint8_t                                is_interintra_used;
+        uint8_t                                use_wedge_interintra;
+        int32_t                                interintra_wedge_index;//inter_intra wedge index
+        int32_t                                ii_wedge_sign;//inter_intra wedge sign=-1
 #endif
     } CodingUnit;
 
