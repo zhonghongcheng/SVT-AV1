@@ -39,6 +39,10 @@ extern "C" {
 
 #define TFK_QPS_TUNING                  1
 #define MD_EXIT                         1
+#define MD_NSQ_EXIT  1
+//MD_EXIT_THSL -->0 is lossless 100 is maximum. Increase with a step of 10-20.
+#define MD_EXIT_THSL 0
+
 
 #define M1_CAND                         0
 #define M2_CAND 						0

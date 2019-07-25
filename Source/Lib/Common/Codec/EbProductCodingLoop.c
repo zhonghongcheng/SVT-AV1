@@ -9228,7 +9228,7 @@ EB_EXTERN EbErrorType mode_decision_sb(
 
 #if MD_EXIT
 
-        if (/*blk_geom->quadi != 3 &&*/ blk_geom->quadi > 0 && blk_geom->shape == PART_N) {
+        if ( blk_geom->quadi > 0 && blk_geom->shape == PART_N) {
 
             uint32_t  blk_mds = context_ptr->blk_geom->sqi_mds;
             uint64_t                    parent_depth_cost = 0, current_depth_cost = 0;
@@ -9250,19 +9250,12 @@ EB_EXTERN EbErrorType mode_decision_sb(
             if (!sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[parent_depth_idx_mds])
                 parent_depth_cost = MAX_MODE_COST;
 #endif
-            if (parent_depth_cost <= current_depth_cost) {
-                //printf("%d\t%d\n",
-                //    context_ptr->blk_geom->depth,
-                //    context_ptr->blk_geom->quadi);
+            if (parent_depth_cost <= current_depth_cost + (current_depth_cost* (4 - context_ptr->blk_geom->quadi)* MD_EXIT_THSL/ context_ptr->blk_geom->quadi/100)) {
                 skip_next_sq = 1;
                 next_non_skip_blk_idx_mds = parent_depth_idx_mds + ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][context_ptr->blk_geom->depth - 1];
-                //  context_ptr->md_cu_arr_nsq[parent_depth_idx_mds].split_flag = EB_FALSE;
-                //  context_ptr->md_local_cu_unit[parent_depth_idx_mds].cost = parent_depth_cost;
             }
             else {
                 skip_next_sq = 0;
-                //    context_ptr->md_local_cu_unit[parent_depth_idx_mds].cost = current_depth_cost;
-                //    context_ptr->md_cu_arr_nsq[parent_depth_idx_mds].part = PARTITION_SPLIT;
             }
         }
         if(cu_ptr->mds_idx >= next_non_skip_blk_idx_mds && skip_next_sq == 1)
@@ -9342,13 +9335,14 @@ EB_EXTERN EbErrorType mode_decision_sb(
             for (int blk_it = 0; blk_it < blk_geom->nsi + 1; blk_it++)
             {
                 tot_cost += context_ptr->md_local_cu_unit[first_blk_idx + blk_it].cost;
-
             }
-            if (tot_cost > context_ptr->md_local_cu_unit[context_ptr->blk_geom->sqi_mds].cost) {
-       /*         printf("BREAK:POC:%d\t%d\n",
-                    blk_geom->nsi,
-                    blk_geom->totns);*/
-               // skip_next_nsq = 1;
+            //if (tot_cost*(100 + MD_EXIT_THSL * (blk_geom->totns - (blk_geom->nsi + 1))) / 100 > context_ptr->md_local_cu_unit[context_ptr->blk_geom->sqi_mds].cost) {
+            if ((tot_cost + tot_cost * (blk_geom->totns - (blk_geom->nsi + 1))* MD_EXIT_THSL/ (blk_geom->nsi + 1) / 100) > context_ptr->md_local_cu_unit[context_ptr->blk_geom->sqi_mds].cost) {
+#if MD_NSQ_EXIT
+                skip_next_nsq = 1;
+#else
+                skip_next_nsq = 0;
+#endif
             }
         }
 #endif
