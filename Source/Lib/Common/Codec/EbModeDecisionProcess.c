@@ -159,6 +159,10 @@ EbErrorType mode_decision_context_ctor(
         }
 #endif
     }
+#if PRUNE_REF_FRAME_FRO_REC_PARTITION
+    EB_MALLOC(uint64_t*, context_ptr->ref_best_cost_sq_table, sizeof(uint64_t) * MAX_REF_TYPE_CAND, EB_N_PTR);
+    EB_MALLOC(uint32_t*, context_ptr->ref_best_ref_sq_table, sizeof(uint32_t) * MAX_REF_TYPE_CAND, EB_N_PTR);
+#endif
     return EB_ErrorNone;
 }
 
