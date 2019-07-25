@@ -41,6 +41,7 @@ extern "C" {
 #define MD_EXIT                         1
 
 #define M1_CAND                         0
+#define M2_CAND 						0
 
 #define M0_HME_ME_TUNING                1
 #define PREDICTIVE_ME                   1 // Perform ME search around MVP
@@ -412,16 +413,16 @@ typedef enum CAND_CLASS {
 #define  REFACTOR_FAST_LOOP           1 // Lossless
 #define  FAST_LOOP_OPT                1 // Use fast loop stages to speed up encoder
 #define  COMP_OPT                     1 // cut some compound injection/modes
+#if !M2_CAND
 #define  FULL_COMPOUND_BDRATE         1 // enable to run compound in full mode for best bd rate
-
-
- #define    TF_KEY                   1  //Temporal Filtering  for Key frame. OFF for Screen Content.
-
-#define ESTIMATE_INTRA   1 //use edge detection to bypass some angular modes
-
+#endif
 #if M1_CAND
 #define  N0_COMP   1 //N0 test for compound  N0: no comp for 3x3, GG, PredMe
 #endif
+
+#define    TF_KEY                     1 //Temporal Filtering  for Key frame. OFF for Screen Content.
+#define ESTIMATE_INTRA                1 //use edge detection to bypass some angular modes
+
 typedef enum MD_STAGE {
     MD_STAGE_0,
     MD_STAGE_1,
