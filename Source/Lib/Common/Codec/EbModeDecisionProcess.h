@@ -306,6 +306,7 @@ extern "C" {
 #if    FAST_LOOP_OPT
         uint8_t                        md_staging_mode;
         uint32_t                       bypass_stage1[CAND_CLASS_TOTAL];
+        uint8_t                        nic_level;
 #endif
 #if PRUNE_REF_FRAME_FRO_REC_PARTITION
         uint64_t                       *ref_best_cost_sq_table;
