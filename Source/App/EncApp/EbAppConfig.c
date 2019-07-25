@@ -227,7 +227,7 @@ static void SetHighDynamicRangeInput            (const char *value, EbConfig *cf
 static void SetProfile                          (const char *value, EbConfig *cfg) {cfg->profile                          = strtol(value,  NULL, 0);};
 static void SetTier                             (const char *value, EbConfig *cfg) {cfg->tier                             = strtol(value,  NULL, 0);};
 static void SetLevel                            (const char *value, EbConfig *cfg) {
-    if (strtoul( value, NULL,0) != 0 || EB_STRCMP(value, "0") == 0 )
+    if (strtoul( value, NULL,0) != 0 || strcmp(value, "0") == 0 )
         cfg->level = (uint32_t)(10*strtod(value,  NULL));
     else
         cfg->level = 9999999;
@@ -623,7 +623,7 @@ static void SetConfigValue(
     int32_t i=0;
 
     while(config_entry[i].name != NULL) {
-        if(EB_STRCMP(config_entry[i].name, name) == 0)
+        if(strcmp(config_entry[i].name, name) == 0)
             (*config_entry[i].scf)((const char *) value, config);
         ++i;
     }
@@ -704,7 +704,7 @@ static int32_t FindToken(
     int32_t return_error = -1;
 
     while((argc > 0) && (return_error != 0)) {
-        return_error = EB_STRCMP(argv[--argc], token);
+        return_error = strcmp(argv[--argc], token);
         if (return_error == 0) {
             EB_STRCPY(configStr, COMMAND_LINE_MAX_SIZE, argv[argc + 1]);
         }
@@ -858,13 +858,13 @@ int32_t FindTokenMultipleInputs(
     int32_t return_error = -1;
     int32_t done = 0;
     while((argc > 0) && (return_error != 0)) {
-        return_error = EB_STRCMP(argv[--argc], token);
+        return_error = strcmp(argv[--argc], token);
         if (return_error == 0) {
             int32_t count;
             for (count=0; count < MAX_CHANNEL_NUMBER  ; ++count){
                 if (done ==0){
                     if (argv[argc + count + 1] ){
-                        if (strtoul(argv[argc + count + 1], NULL,0) != 0 || EB_STRCMP(argv[argc + count + 1], "0") == 0 ){
+                        if (strtoul(argv[argc + count + 1], NULL,0) != 0 || strcmp(argv[argc + count + 1], "0") == 0 ){
                             EB_STRCPY(configStr[count], COMMAND_LINE_MAX_SIZE, argv[argc + count + 1]);
                         }else if (argv[argc + count + 1][0] != '-'){
                             EB_STRCPY(configStr[count], COMMAND_LINE_MAX_SIZE, argv[argc + count + 1]);
@@ -934,7 +934,7 @@ void mark_token_as_read(
 {
     int32_t cmd_copy_index;
     for (cmd_copy_index = 0; cmd_copy_index < *(cmd_token_cnt); ++cmd_copy_index) {
-        if (!EB_STRCMP(cmd_copy[cmd_copy_index], token))
+        if (!strcmp(cmd_copy[cmd_copy_index], token))
             cmd_copy[cmd_copy_index] = cmd_copy[--(*cmd_token_cnt)];
     }
 }
@@ -1049,7 +1049,7 @@ EbErrorType read_command_line(
 
                 // Fill up the values corresponding to each channel
                 for (index = 0; index < num_channels; ++index) {
-                    if (EB_STRCMP(config_strings[index], " "))
+                    if (strcmp(config_strings[index], " "))
                         (*config_entry[token_index].scf)(config_strings[index], configs[index]);
                     else
                         break;
@@ -1086,7 +1086,7 @@ EbErrorType read_command_line(
         for (index = 0; done && (index < num_channels); ++index){
             configs[index]->hme_level0_column_index = 0;
             for (inputIndex = lastIndex; inputIndex < configs[index]->number_hme_search_region_in_width + lastIndex; ++inputIndex){
-                if (EB_STRCMP(config_strings[inputIndex], " "))
+                if (strcmp(config_strings[inputIndex], " "))
                     SetHmeLevel0SearchAreaInWidthArray(config_strings[inputIndex], configs[index]);
                 else{
                     done = 0;
@@ -1107,7 +1107,7 @@ EbErrorType read_command_line(
         for (index = 0; done && (index < num_channels); ++index){
             configs[index]->hme_level0_row_index = 0;
             for (inputIndex = lastIndex; inputIndex < configs[index]->number_hme_search_region_in_height + lastIndex; ++inputIndex){
-                if (EB_STRCMP(config_strings[inputIndex], " "))
+                if (strcmp(config_strings[inputIndex], " "))
                     SetHmeLevel0SearchAreaInHeightArray(config_strings[inputIndex], configs[index]);
                 else{
                     done = 0;
@@ -1128,7 +1128,7 @@ EbErrorType read_command_line(
         for (index = 0; done && (index < num_channels); ++index){
             configs[index]->hme_level1_row_index = 0;
             for (inputIndex = lastIndex; inputIndex < configs[index]->number_hme_search_region_in_height + lastIndex; ++inputIndex){
-                if (EB_STRCMP(config_strings[inputIndex], " "))
+                if (strcmp(config_strings[inputIndex], " "))
                     SetHmeLevel1SearchAreaInHeightArray(config_strings[inputIndex], configs[index]);
                 else{
                     done = 0;
@@ -1149,7 +1149,7 @@ EbErrorType read_command_line(
         for (index = 0; done && (index < num_channels); ++index){
             configs[index]->hme_level1_column_index = 0;
             for (inputIndex = lastIndex; inputIndex < configs[index]->number_hme_search_region_in_width + lastIndex; ++inputIndex){
-                if (EB_STRCMP(config_strings[inputIndex], " "))
+                if (strcmp(config_strings[inputIndex], " "))
                     SetHmeLevel1SearchAreaInWidthArray(config_strings[inputIndex], configs[index]);
                 else{
                     done = 0;
@@ -1170,7 +1170,7 @@ EbErrorType read_command_line(
         for (index = 0; done && (index < num_channels); ++index){
             configs[index]->hme_level2_column_index = 0;
             for (inputIndex = lastIndex; inputIndex < configs[index]->number_hme_search_region_in_width + lastIndex; ++inputIndex){
-                if (EB_STRCMP(config_strings[inputIndex], " "))
+                if (strcmp(config_strings[inputIndex], " "))
                     SetHmeLevel2SearchAreaInWidthArray(config_strings[inputIndex], configs[index]);
                 else{
                     done = 0;
@@ -1191,7 +1191,7 @@ EbErrorType read_command_line(
         for (index = 0; done && (index < num_channels); ++index){
             configs[index]->hme_level2_row_index = 0;
             for (inputIndex = lastIndex; inputIndex < configs[index]->number_hme_search_region_in_height + lastIndex; ++inputIndex){
-                if (EB_STRCMP(config_strings[inputIndex], " "))
+                if (strcmp(config_strings[inputIndex], " "))
                     SetHmeLevel2SearchAreaInHeightArray(config_strings[inputIndex], configs[index]);
                 else{
                     done = 0;
