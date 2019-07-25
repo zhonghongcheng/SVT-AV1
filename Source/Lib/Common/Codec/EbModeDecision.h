@@ -152,6 +152,14 @@ extern "C" {
         uint8_t                                compound_idx;
         uint8_t                                comp_group_idx;
 #endif
+#if II_COMP
+        INTERINTRA_MODE                        interintra_mode;
+        uint8_t                                is_interintra_used;
+        uint8_t                                use_wedge_interintra;
+        int32_t                                interintra_wedge_index;//inter_intra wedge index
+        int32_t                                ii_wedge_sign;//inter_intra wedge sign=-1
+#endif
+
     } ModeDecisionCandidate;
 
     /**************************************
@@ -291,6 +299,9 @@ extern "C" {
         ModeDecisionCandidateBuffer **buffer_ptr_array,
         uint32_t                        candidate_total_count,
         uint32_t                        *best_candidate_index_array,
+#if PRUNE_REF_FRAME_FRO_REC_PARTITION
+       uint8_t                            prune_ref_frame_for_rec_partitions,
+#endif
         uint32_t                       *best_intra_mode);
     void sort_fast_loop_candidates(
         struct ModeDecisionContext   *context_ptr,

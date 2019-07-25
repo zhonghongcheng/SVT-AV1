@@ -178,8 +178,11 @@ EbErrorType eb_sequence_control_set_ctor(
 
     sequence_control_set_ptr->seq_header.enable_filter_intra = 0;
     sequence_control_set_ptr->seq_header.enable_intra_edge_filter = 0;
-
+#if II_EC
     sequence_control_set_ptr->seq_header.enable_interintra_compound = 0;
+#else
+    sequence_control_set_ptr->seq_header.enable_interintra_compound = 0;
+#endif
     sequence_control_set_ptr->seq_header.enable_masked_compound = 0;
 
     sequence_control_set_ptr->seq_header.order_hint_info.enable_ref_frame_mvs = 1;

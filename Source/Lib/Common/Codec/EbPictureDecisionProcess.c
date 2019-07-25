@@ -1666,6 +1666,63 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->enable_skip_atb = 1;
 
 #endif
+#if II_SEARCH
+        // inter intra pred                      Settings
+        // 0                                     OFF
+        // 1                                     ON
+            picture_control_set_ptr->enable_inter_intra = sequence_control_set_ptr->seq_header.enable_interintra_compound;
+
+#endif
+#if COMP_MODE
+                        // Set compound mode      Settings
+            // 0                 OFF: No compond mode search : AVG only
+            // 1                 ON: compond mode search: 4 modes
+            // 2                 ON: full
+            if (sequence_control_set_ptr->compound_mode)
+#if DISABLE_COMP_SC
+#if FULL_COMPOUND_BDRATE
+                picture_control_set_ptr->compound_mode = picture_control_set_ptr->sc_content_detected ? 0 : 2;
+#else
+                picture_control_set_ptr->compound_mode = picture_control_set_ptr->sc_content_detected ? 0 : 1;
+#endif
+#else
+#if FULL_COMPOUND_BDRATE
+                picture_control_set_ptr->compound_mode =  2;
+#else
+                picture_control_set_ptr->compound_mode =  1;
+#endif
+#endif
+            else
+                picture_control_set_ptr->compound_mode = 0;
+
+            // set compound_types_to_try
+            if (picture_control_set_ptr->compound_mode)
+#if COMP_OPT
+                picture_control_set_ptr->compound_types_to_try = picture_control_set_ptr->compound_mode == 1 ? MD_COMP_DIFF0 : MD_COMP_WEDGE;
+#else
+                picture_control_set_ptr->compound_types_to_try = MD_COMP_WEDGE;//  MD_COMP_DIST;//MD_COMP_AVG;//
+#endif
+            else
+                picture_control_set_ptr->compound_types_to_try = MD_COMP_AVG;
+#endif
+#if ADAPTIVE_TXB_SEARCH_LEVEL
+        if (MR_MODE || picture_control_set_ptr->sc_content_detected)
+            picture_control_set_ptr->adaptive_txb_search_level = 0;
+        else
+            picture_control_set_ptr->adaptive_txb_search_level = 6;
+#endif
+#if PRUNE_REF_FRAME_FRO_REC_PARTITION
+        if (MR_MODE || picture_control_set_ptr->sc_content_detected)
+            picture_control_set_ptr->prune_ref_frame_for_rec_partitions = 0;
+        else
+            picture_control_set_ptr->prune_ref_frame_for_rec_partitions = 1;
+#endif
+#if PRUNE_REF_FRAME_AT_ME
+        if (MR_MODE || picture_control_set_ptr->sc_content_detected)
+            picture_control_set_ptr->prune_unipred_at_me = 0;
+        else
+            picture_control_set_ptr->prune_unipred_at_me = 1;
+#endif
     return return_error;
 }
 
@@ -4315,11 +4372,10 @@ void* picture_decision_kernel(void *input_ptr)
 #if ALTREF_FILTERING_SUPPORT
                             if ( sequence_control_set_ptr->enable_altrefs == EB_TRUE &&
 #if TF_KEY
-                                ( (picture_control_set_ptr->idr_flag && picture_control_set_ptr->sc_content_detected==0) ||
-                                  picture_control_set_ptr->slice_type != I_SLICE && picture_control_set_ptr->temporal_layer_index == 0 )) {
-#else
-                                 picture_control_set_ptr->slice_type != I_SLICE && picture_control_set_ptr->temporal_layer_index == 0) {
+                                ((picture_control_set_ptr->idr_flag && picture_control_set_ptr->sc_content_detected==0) ||
 #endif
+                                (picture_control_set_ptr->slice_type != I_SLICE && picture_control_set_ptr->temporal_layer_index == 0)
+                                )) {
                                 int altref_nframes = picture_control_set_ptr->sequence_control_set_ptr->static_config.altref_nframes;
 
 #if TF_KEY

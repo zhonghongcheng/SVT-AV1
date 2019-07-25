@@ -282,7 +282,7 @@ extern "C" {
 #if NEW_NEAREST_NEW_INJECTION
         uint32_t                        me_sb_addr;
 #endif
-#if ME_MVP_DEVIATION
+#if PREDICTIVE_ME
         uint32_t                        geom_offset_x;
         uint32_t                        geom_offset_y;
 #endif
@@ -306,6 +306,10 @@ extern "C" {
 #if    FAST_LOOP_OPT
         uint8_t                        md_staging_mode;
         uint32_t                       bypass_stage1[CAND_CLASS_TOTAL];
+#endif
+#if PRUNE_REF_FRAME_FRO_REC_PARTITION
+        uint64_t                        ref_best_cost_sq_table[MAX_REF_TYPE_CAND];
+        uint32_t                        ref_best_ref_sq_table[MAX_REF_TYPE_CAND];
 #endif
 #if MD_CLASS
 #if FULL_LOOP_SPLIT
@@ -332,7 +336,7 @@ extern "C" {
         uint8_t                         unipred3x3_injection;
         uint8_t                         bipred3x3_injection;
 #if PREDICTIVE_ME
-        uint8_t                         predictive_me_injection;
+        uint8_t                         predictive_me_level;
 #endif
 
         uint8_t                         interpolation_filter_search_blk_size;
@@ -398,7 +402,7 @@ extern "C" {
     uint64_t full_cost_per_class[MAX_NFL];
     uint32_t full_index_per_class[CAND_CLASS_TOTAL][MAX_NFL];
     uint8_t bypass_stage2[CAND_CLASS_TOTAL];
-#if PRE_BILINEAR_CLEAN_UP 
+#if PRE_BILINEAR_CLEAN_UP
     CAND_CLASS target_class;
 #endif
 #endif
@@ -406,7 +410,9 @@ extern "C" {
 #if RE_FACTURE_PRED_KERNEL
     EbBool shut_chroma_comp;
 #endif
-    
+#if ESTIMATE_INTRA
+    uint8_t  estimate_angle_intra;
+#endif
   } ModeDecisionContext;
 
     typedef void(*EbAv1LambdaAssignFunc)(

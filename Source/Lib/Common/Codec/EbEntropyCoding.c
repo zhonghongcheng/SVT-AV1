@@ -84,8 +84,8 @@ int get_relative_dist_enc(SeqHeader *seq_header, int ref_hint, int order_hint);
     int bck_frame_index,
     int fwd_frame_index,
     const MACROBLOCKD *xd) {
-    ModeInfo *mi_ptr = *xd->mi;
-    MB_MODE_INFO *mbmi = &mi_ptr->mbmi;
+    //ModeInfo *mi_ptr = *xd->mi;
+    //MB_MODE_INFO *mbmi = &mi_ptr->mbmi;
     //const RefCntBuffer *const bck_buf = get_ref_frame_buf(cm, mbmi->ref_frame[0]);
     //const RefCntBuffer *const fwd_buf = get_ref_frame_buf(cm, mbmi->ref_frame[1]);
     //int bck_frame_index = 0, fwd_frame_index = 0;
@@ -6070,6 +6070,27 @@ void code_tx_size(
         skip);
 }
 #endif
+#if II_COMP
+static INLINE int is_interintra_allowed_bsize(const BLOCK_SIZE bsize) {
+    return (bsize >= BLOCK_8X8) && (bsize <= BLOCK_32X32);
+}
+
+static INLINE int is_interintra_allowed_mode(const PredictionMode mode) {
+    return (mode >= SINGLE_INTER_MODE_START) && (mode < SINGLE_INTER_MODE_END);
+}
+
+static INLINE int is_interintra_allowed_ref(const MvReferenceFrame rf[2]) {
+    return (rf[0] > INTRA_FRAME) && (rf[1] <= INTRA_FRAME);
+}
+
+static INLINE int is_interintra_allowed(const MB_MODE_INFO *mbmi) {
+  return is_interintra_allowed_bsize(mbmi->sb_type) &&
+         is_interintra_allowed_mode(mbmi->mode) &&
+         is_interintra_allowed_ref(mbmi->ref_frame);
+}
+
+int is_interintra_wedge_used(BLOCK_SIZE sb_type);
+#endif
 EbErrorType write_modes_b(
     PictureControlSet     *picture_control_set_ptr,
     EntropyCodingContext  *context_ptr,
@@ -6505,7 +6526,32 @@ assert(bsize < BlockSizeS_ALL);
                         nmvc,
                         picture_control_set_ptr->parent_pcs_ptr->allow_high_precision_mv);
                 }
+#if II_EC
 
+                MbModeInfo *mbmi = &mi_ptr->mbmi;
+
+                if (picture_control_set_ptr->parent_pcs_ptr->reference_mode != COMPOUND_REFERENCE &&
+                    sequence_control_set_ptr->seq_header.enable_interintra_compound &&
+                    is_interintra_allowed(mbmi)) {
+                  const int interintra = cu_ptr->is_interintra_used;//mbmi->ref_frame[1] == INTRA_FRAME;
+                  const int bsize_group = size_group_lookup[bsize];
+                  aom_write_symbol(ec_writer, cu_ptr->is_interintra_used, frameContext->interintra_cdf[bsize_group], 2);
+                  if (interintra) {
+                    aom_write_symbol(ec_writer, cu_ptr->interintra_mode,
+                                     frameContext->interintra_mode_cdf[bsize_group],
+                                     INTERINTRA_MODES);
+                    if (is_interintra_wedge_used(bsize)) {
+                      aom_write_symbol(ec_writer, cu_ptr->use_wedge_interintra,
+                                       frameContext->wedge_interintra_cdf[bsize], 2);
+                      if (cu_ptr->use_wedge_interintra) {
+                        aom_write_symbol(ec_writer, cu_ptr->interintra_wedge_index,
+                                         frameContext->wedge_idx_cdf[bsize], 16);
+                      }
+                    }
+                  }
+                }
+
+#endif
                 if (picture_control_set_ptr->parent_pcs_ptr->switchable_motion_mode
                     && rf[1] != INTRA_FRAME) {
                     write_motion_mode(
@@ -6522,7 +6568,11 @@ assert(bsize < BlockSizeS_ALL);
                 // First write idx to indicate current compound inter prediction mode group
                 // Group A (0): dist_wtd_comp, compound_average
                 // Group B (1): interintra, compound_diffwtd, wedge
+
+#if !II_EC
+
                 MbModeInfo *mbmi = &mi_ptr->mbmi;
+#endif
 
                 if (has_second_ref(mbmi)) {
 

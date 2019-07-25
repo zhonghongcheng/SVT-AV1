@@ -14491,6 +14491,26 @@ extern "C" {
 #if TBX_SPLIT_CAP
         uint8_t                              enable_skip_atb;
 #endif
+#if II_SEARCH
+        uint8_t                              enable_inter_intra;
+#endif
+
+#if COMP_MODE
+    //    OrderHintInfoEnc                        order_hint_info_st;
+        MD_COMP_TYPE                            compound_types_to_try;
+        uint8_t                                 compound_mode;
+
+
+#endif
+#if ADAPTIVE_TXB_SEARCH_LEVEL
+        uint8_t                              adaptive_txb_search_level;
+#endif
+#if PRUNE_REF_FRAME_FRO_REC_PARTITION
+        uint8_t                              prune_ref_frame_for_rec_partitions;
+#endif
+#if PRUNE_REF_FRAME_AT_ME
+        uint8_t                              prune_unipred_at_me;
+#endif
     } PictureParentControlSet;
 
     typedef struct PictureControlSetInitData

@@ -1432,7 +1432,65 @@ void aom_lowbd_blend_a64_d16_mask_c(
     }
 }
 int is_masked_compound_type(COMPOUND_TYPE type);
+#if II_COMP
+/* clang-format off */
+static const uint8_t ii_weights1d[MAX_SB_SIZE] = {
+  60, 58, 56, 54, 52, 50, 48, 47, 45, 44, 42, 41, 39, 38, 37, 35, 34, 33, 32,
+  31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 22, 21, 20, 19, 19, 18, 18, 17, 16,
+  16, 15, 15, 14, 14, 13, 13, 12, 12, 12, 11, 11, 10, 10, 10,  9,  9,  9,  8,
+  8,  8,  8,  7,  7,  7,  7,  6,  6,  6,  6,  6,  5,  5,  5,  5,  5,  4,  4,
+  4,  4,  4,  4,  4,  4,  3,  3,  3,  3,  3,  3,  3,  3,  3,  2,  2,  2,  2,
+  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  1,  1,  1,  1,  1,  1,  1,  1,
+  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1
+};
+static uint8_t ii_size_scales[BlockSizeS_ALL] = {
+    32, 16, 16, 16, 8, 8, 8, 4,
+    4,  4,  2,  2,  2, 1, 1, 1,
+    8,  8,  4,  4,  2, 2
+};
+/* clang-format on */
 
+static void build_smooth_interintra_mask(uint8_t *mask, int stride,
+                                         BLOCK_SIZE plane_bsize,
+                                         INTERINTRA_MODE mode) {
+  int i, j;
+  const int bw = block_size_wide[plane_bsize];
+  const int bh = block_size_high[plane_bsize];
+  const int size_scale = ii_size_scales[plane_bsize];
+
+  switch (mode) {
+    case II_V_PRED:
+      for (i = 0; i < bh; ++i) {
+        memset(mask, ii_weights1d[i * size_scale], bw * sizeof(mask[0]));
+        mask += stride;
+      }
+      break;
+
+    case II_H_PRED:
+      for (i = 0; i < bh; ++i) {
+        for (j = 0; j < bw; ++j) mask[j] = ii_weights1d[j * size_scale];
+        mask += stride;
+      }
+      break;
+
+    case II_SMOOTH_PRED:
+      for (i = 0; i < bh; ++i) {
+        for (j = 0; j < bw; ++j)
+          mask[j] = ii_weights1d[(i < j ? i : j) * size_scale];
+        mask += stride;
+      }
+      break;
+
+    case II_DC_PRED:
+    default:
+      for (i = 0; i < bh; ++i) {
+        memset(mask, 32, bw * sizeof(mask[0]));
+        mask += stride;
+      }
+      break;
+  }
+}
+#endif
 static INLINE const uint8_t *av1_get_contiguous_soft_mask(int wedge_index,
     int wedge_sign,
     BLOCK_SIZE sb_type) {
@@ -2175,10 +2233,18 @@ void av1_model_rd_curvfit(BLOCK_SIZE bsize, double sse_norm, double xqr,
 
     assert(xi > 0);
 
+#if NO_LOG2_DOUBLE
+    const double *prate = &interp_rgrid_curv[rcat][(xi - 1)];
+    *rate_f = prate[1];
+    const double *pdist = &interp_dgrid_curv[dcat][(xi - 1)];
+    *distbysse_f = pdist[1];
+#else
     const double *prate_precalc = &interp_rgrid_curv_precalc[rcat][(xi - 1)];
     *rate_f = interp_cubic_precalc(prate_precalc, xo);
     const double *pdist_precalc = &interp_dgrid_curv_precalc[dcat][(xi - 1)];
     *distbysse_f = interp_cubic_precalc(pdist_precalc, xo);
+#endif
+
 }
 // Fits a curve for rate and distortion using as feature:
 // log2(sse_norm/qstep^2)
@@ -2211,8 +2277,12 @@ static void model_rd_with_curvfit(
     }
     aom_clear_system_state();
     const double sse_norm = (double)sse / num_samples;
+#if NO_LOG2_DOUBLE
+    const double xqr = (double)LOG2F((sse / num_samples) / (qstep * qstep));
+#else
     const double qstepsqr = (double)qstep * qstep;
     const double xqr = log2(sse_norm / qstepsqr);
+#endif
 
     double rate_f, dist_by_sse_norm_f;
     av1_model_rd_curvfit(plane_bsize, sse_norm, xqr, &rate_f,&dist_by_sse_norm_f);
@@ -2481,7 +2551,14 @@ static int8_t estimate_wedge_sign(
 }
 
 // Choose the best wedge index the specified sign
+#if II_COMP
+int64_t pick_wedge_fixed_sign(
+#else
 static int64_t pick_wedge_fixed_sign(
+#endif
+#if FIX_RATE_E_WEDGE || II_COMP
+    ModeDecisionCandidate        *candidate_ptr,
+#endif
     PictureControlSet                    *picture_control_set_ptr,
     ModeDecisionContext                  *context_ptr,
     //const AV1_COMP *const cpi,
@@ -2504,7 +2581,7 @@ static int64_t pick_wedge_fixed_sign(
   int8_t wedge_types = (1 << get_wedge_bits_lookup(bsize));
   const uint8_t *mask;
   uint64_t sse;
-  const int hbd = 0;// is_cur_buf_hbd(xd);
+  //const int hbd = 0;// is_cur_buf_hbd(xd);
   const int bd_round = 0;//hbd ? (xd->bd - 8) * 2 : 0;
   for (wedge_index = 0; wedge_index < wedge_types; ++wedge_index) {
     mask = av1_get_contiguous_soft_mask(wedge_index, wedge_sign, bsize);
@@ -2515,6 +2592,9 @@ static int64_t pick_wedge_fixed_sign(
    // model_rd_sse_fn[MODELRD_TYPE_MASKED_COMPOUND](cpi, x, bsize, 0, sse, N, &rate, &dist);
 
    // rate += x->wedge_idx_cost[bsize][wedge_index];
+#if FIX_RATE_E_WEDGE
+    rate  += candidate_ptr->md_rate_estimation_ptr->wedge_idx_fac_bits[bsize][wedge_index];
+#endif
     rd = RDCOST(/*x->rdmult*/context_ptr->full_lambda, rate, dist);
 
     if (rd < best_rd) {
@@ -2527,6 +2607,9 @@ static int64_t pick_wedge_fixed_sign(
 int is_interinter_compound_used(COMPOUND_TYPE type,
     BLOCK_SIZE sb_type);
 static void /*int64_t*/ pick_interinter_wedge(
+#if FIX_RATE_E_WEDGE  || II_COMP
+    ModeDecisionCandidate               *candidate_ptr,
+#endif
     PictureControlSet                    *picture_control_set_ptr,
     ModeDecisionContext                  *context_ptr,
     INTERINTER_COMPOUND_DATA             *interinter_comp,
@@ -2554,7 +2637,15 @@ static void /*int64_t*/ pick_interinter_wedge(
 
   if (picture_control_set_ptr->parent_pcs_ptr->wedge_mode == 2 || picture_control_set_ptr->parent_pcs_ptr->wedge_mode == 3) {
     wedge_sign = estimate_wedge_sign(/*cpi, x, */picture_control_set_ptr,context_ptr, bsize, p0, bw, p1, bw);
+#if FIX_RATE_E_WEDGE || II_COMP
+    rd = pick_wedge_fixed_sign(/*cpi, x, */
+#if FIX_RATE_E_WEDGE
+        candidate_ptr,
+#endif
+        picture_control_set_ptr,context_ptr, bsize, residual1, diff10, wedge_sign,
+#else
     rd = pick_wedge_fixed_sign(/*cpi, x, */picture_control_set_ptr,context_ptr, bsize, residual1, diff10, wedge_sign,
+#endif
                                &wedge_index);
   } else {
     /*rd =*/ pick_wedge(/*cpi, x, */picture_control_set_ptr,context_ptr,
@@ -2631,6 +2722,9 @@ static void  pick_interinter_seg(
     //return best_rd;
 }
 void pick_interinter_mask(
+#if FIX_RATE_E_WEDGE  || II_COMP
+    ModeDecisionCandidate        *candidate_ptr,
+#endif
     PictureControlSet                    *picture_control_set_ptr,
     ModeDecisionContext                  *context_ptr,
     INTERINTER_COMPOUND_DATA             *interinter_comp,
@@ -2644,7 +2738,11 @@ void pick_interinter_mask(
     if (interinter_comp->type == COMPOUND_WEDGE) {
 
         //return
+#if FIX_RATE_E_WEDGE  || II_COMP
+        pick_interinter_wedge(candidate_ptr,picture_control_set_ptr,context_ptr, interinter_comp, bsize, p0, p1, residual1, diff10);
+#else
         pick_interinter_wedge(picture_control_set_ptr,context_ptr, interinter_comp, bsize, p0, p1, residual1, diff10);
+#endif
     }
     else if (interinter_comp->type == COMPOUND_DIFFWTD) {
         pick_interinter_seg(picture_control_set_ptr,context_ptr, interinter_comp,bsize, p0, p1, residual1, diff10);
@@ -2733,6 +2831,16 @@ void search_compound_diff_wedge(
 #if COMP_DIFF
             NULL,// interinter_comp not used
 #endif
+#if II_ED
+            NULL,
+            NULL,
+            NULL,
+            NULL,
+            0,
+            0,
+            0,
+            0,
+#endif
             context_ptr->cu_origin_x,
             context_ptr->cu_origin_y,
             bwidth,
@@ -2766,6 +2874,16 @@ void search_compound_diff_wedge(
 #endif
 #if COMP_DIFF
             NULL,// interinter_comp not used
+#endif
+#if II_ED
+            NULL,
+            NULL,
+            NULL,
+            NULL,
+            0,
+            0,
+            0,
+            0,
 #endif
             context_ptr->cu_origin_x,
             context_ptr->cu_origin_y,
@@ -2819,6 +2937,9 @@ void search_compound_diff_wedge(
 #endif
     }
     pick_interinter_mask(
+#if FIX_RATE_E_WEDGE    || II_COMP
+        candidate_ptr,
+#endif
         picture_control_set_ptr,
         context_ptr,
         &candidate_ptr->interinter_comp,
@@ -2845,7 +2966,11 @@ int64_t aom_sse_c(const uint8_t *a, int a_stride, const uint8_t *b,
     }
     return sse;
 }
+#if II_COMP
+void model_rd_for_sb_with_curvfit(
+#else
 static void model_rd_for_sb_with_curvfit(
+#endif
     //const AV1_COMP *const cpi,  MACROBLOCK *x, MACROBLOCKD *xd,
     PictureControlSet      *picture_control_set_ptr,
     ModeDecisionContext                  *context_ptr,
@@ -3003,6 +3128,16 @@ void search_compound_avg_dist(
 #if COMP_DIFF
             &candidate_ptr->interinter_comp,
 #endif
+#if II_ED
+            NULL,
+            NULL,
+            NULL,
+            NULL,
+            0,
+            0,
+            0,
+            0,
+#endif
             context_ptr->cu_origin_x,
             context_ptr->cu_origin_y,
             bwidth,
@@ -3048,6 +3183,141 @@ void search_compound_avg_dist(
 
 }
 #endif
+
+#if II_COMP
+// Blending with alpha mask. Mask values come from the range [0, 64],
+// as described for AOM_BLEND_A64 in aom_dsp/blend.h. src0 or src1 can
+// be the same as dst, or dst can be different from both sources.
+
+void aom_blend_a64_mask_c(uint8_t *dst, uint32_t dst_stride,
+    const uint8_t *src0, uint32_t src0_stride,
+    const uint8_t *src1, uint32_t src1_stride,
+    const uint8_t *mask, uint32_t mask_stride, int w,
+    int h, int subw, int subh) {
+    int i, j;
+
+    assert(IMPLIES(src0 == dst, src0_stride == dst_stride));
+    assert(IMPLIES(src1 == dst, src1_stride == dst_stride));
+
+    assert(h >= 1);
+    assert(w >= 1);
+    assert(IS_POWER_OF_TWO(h));
+    assert(IS_POWER_OF_TWO(w));
+
+    if (subw == 0 && subh == 0) {
+        for (i = 0; i < h; ++i) {
+            for (j = 0; j < w; ++j) {
+                const int m = mask[i * mask_stride + j];
+                dst[i * dst_stride + j] = AOM_BLEND_A64(m, src0[i * src0_stride + j],
+                    src1[i * src1_stride + j]);
+            }
+        }
+    }
+    else if (subw == 1 && subh == 1) {
+        for (i = 0; i < h; ++i) {
+            for (j = 0; j < w; ++j) {
+                const int m = ROUND_POWER_OF_TWO(
+                    mask[(2 * i) * mask_stride + (2 * j)] +
+                    mask[(2 * i + 1) * mask_stride + (2 * j)] +
+                    mask[(2 * i) * mask_stride + (2 * j + 1)] +
+                    mask[(2 * i + 1) * mask_stride + (2 * j + 1)],
+                    2);
+                dst[i * dst_stride + j] = AOM_BLEND_A64(m, src0[i * src0_stride + j],
+                    src1[i * src1_stride + j]);
+            }
+        }
+    }
+    else if (subw == 1 && subh == 0) {
+        for (i = 0; i < h; ++i) {
+            for (j = 0; j < w; ++j) {
+                const int m = AOM_BLEND_AVG(mask[i * mask_stride + (2 * j)],
+                    mask[i * mask_stride + (2 * j + 1)]);
+                dst[i * dst_stride + j] = AOM_BLEND_A64(m, src0[i * src0_stride + j],
+                    src1[i * src1_stride + j]);
+            }
+        }
+    }
+    else {
+        for (i = 0; i < h; ++i) {
+            for (j = 0; j < w; ++j) {
+                const int m = AOM_BLEND_AVG(mask[(2 * i) * mask_stride + j],
+                    mask[(2 * i + 1) * mask_stride + j]);
+                dst[i * dst_stride + j] = AOM_BLEND_A64(m, src0[i * src0_stride + j],
+                    src1[i * src1_stride + j]);
+            }
+        }
+    }
+}
+
+int is_interintra_wedge_used(BLOCK_SIZE sb_type);
+
+ void combine_interintra(INTERINTRA_MODE mode,
+    int8_t use_wedge_interintra, int wedge_index,
+    int wedge_sign, BLOCK_SIZE bsize,
+    BLOCK_SIZE plane_bsize, uint8_t *comppred,
+    int compstride, const uint8_t *interpred,
+    int interstride, const uint8_t *intrapred,
+    int intrastride)
+ {
+    const int bw = block_size_wide[plane_bsize];
+    const int bh = block_size_high[plane_bsize];
+
+    if (use_wedge_interintra) {
+        if (is_interintra_wedge_used(bsize)) {
+            const uint8_t *mask =
+                av1_get_contiguous_soft_mask(wedge_index, wedge_sign, bsize);
+            const int subw = 2 * mi_size_wide[bsize] == bw;
+            const int subh = 2 * mi_size_high[bsize] == bh;
+            aom_blend_a64_mask/*_c*/(comppred, compstride, intrapred, intrastride,     ////------------------------------ASM
+                interpred, interstride, mask, block_size_wide[bsize],
+                bw, bh, subw, subh);
+        }
+        return;
+    }
+    else {
+        /* assert(0 && "TBD_smooth");*/
+
+        uint8_t mask[MAX_SB_SQUARE];
+        build_smooth_interintra_mask(mask, bw, plane_bsize, mode);
+        aom_blend_a64_mask/*_c*/(comppred, compstride, intrapred, intrastride, interpred, ////------------------------------ASM
+            interstride, mask, bw, bw, bh, 0, 0);
+    }
+}
+#endif
+#if II_ED
+ extern void av1_predict_intra_block(
+    TileInfo * tile,
+    STAGE       stage,
+    const BlockGeom            * blk_geom,
+    const Av1Common *cm,
+    int32_t wpx,
+    int32_t hpx,
+    TxSize tx_size,
+    PredictionMode mode,
+    int32_t angle_delta,
+    int32_t use_palette,
+    FilterIntraMode filter_intra_mode,
+    uint8_t* topNeighArray,
+    uint8_t* leftNeighArray,
+    EbPictureBufferDesc  *recon_buffer,
+    int32_t col_off,
+    int32_t row_off,
+    int32_t plane,
+    BlockSize bsize,
+#if ATB_EP
+    uint32_t tu_org_x_pict,
+    uint32_t tu_org_y_pict,
+#endif
+    uint32_t bl_org_x_pict,
+    uint32_t bl_org_y_pict,
+    uint32_t bl_org_x_mb,
+    uint32_t bl_org_y_mb);
+ #define INTERINTRA_WEDGE_SIGN 0
+ // Mapping of interintra to intra mode for use in the intra component
+static const PredictionMode interintra_to_intra_mode[INTERINTRA_MODES] = {
+  DC_PRED, V_PRED, H_PRED, SMOOTH_PRED
+};
+#endif
 EbErrorType av1_inter_prediction(
     PictureControlSet                    *picture_control_set_ptr,
     uint32_t                                interp_filters,
@@ -3060,6 +3330,17 @@ EbErrorType av1_inter_prediction(
 #endif
 #if COMP_DIFF
     INTERINTER_COMPOUND_DATA               *interinter_comp,
+#endif
+#if II_ED
+    TileInfo                                * tile,
+    NeighborArrayUnit                       *luma_recon_neighbor_array,
+    NeighborArrayUnit                       *cb_recon_neighbor_array ,
+    NeighborArrayUnit                       *cr_recon_neighbor_array ,
+    uint8_t                                 is_interintra_used ,
+    INTERINTRA_MODE                        interintra_mode,
+    uint8_t                                use_wedge_interintra,
+    int32_t                                interintra_wedge_index,
+
 #endif
     uint16_t                                pu_origin_x,
     uint16_t                                pu_origin_y,
@@ -3617,6 +3898,161 @@ EbErrorType av1_inter_prediction(
         }
     }
 
+#if II_ED
+    if ( is_interintra_used ) {
+        int32_t start_plane = 0;
+        int32_t end_plane = blk_geom->has_uv ? MAX_MB_PLANE: 1;
+            // temp buffer for intra pred
+            DECLARE_ALIGNED(16, uint8_t, intra_pred[MAX_SB_SQUARE]);
+            DECLARE_ALIGNED(16, uint8_t, intra_pred_cb[MAX_SB_SQUARE]);
+            DECLARE_ALIGNED(16, uint8_t, intra_pred_cr[MAX_SB_SQUARE]);
+
+        int32_t  intra_stride;
+
+        for (int32_t plane = start_plane; plane < end_plane; ++plane) {
+
+            EbPictureBufferDesc  inra_pred_desc;
+            inra_pred_desc.origin_x     = inra_pred_desc.origin_y  = 0;
+            inra_pred_desc.stride_y     = bwidth;
+            inra_pred_desc.stride_cb    = bwidth/2;
+            inra_pred_desc.stride_cr    = bwidth/2;
+            inra_pred_desc.buffer_y     = intra_pred;
+            inra_pred_desc.buffer_cb    = intra_pred_cb;
+            inra_pred_desc.buffer_cr    = intra_pred_cr;
+
+            const int ssx = plane ? 1 : 0;
+            const int ssy = plane ? 1 : 0;
+            const BLOCK_SIZE plane_bsize = get_plane_block_size(blk_geom->bsize, ssx, ssy);
+            //av1_build_interintra_predictors_sbp
+            uint8_t    topNeighArray[64 * 2 + 1];
+            uint8_t    leftNeighArray[64 * 2 + 1];
+
+            uint32_t cu_originx_uv = (dst_origin_x >> 3 << 3) >> 1;
+            uint32_t cu_originy_uv = (dst_origin_y >> 3 << 3) >> 1;
+
+            if (plane == 0) {
+                dst_ptr = prediction_ptr->buffer_y + prediction_ptr->origin_x + dst_origin_x + (prediction_ptr->origin_y + dst_origin_y) * prediction_ptr->stride_y;
+                dst_stride = prediction_ptr->stride_y;
+                intra_stride = inra_pred_desc.stride_y;
+                if (dst_origin_y != 0)
+                    memcpy(topNeighArray + 1, luma_recon_neighbor_array->top_array + dst_origin_x,  blk_geom->bwidth * 2);
+                if (dst_origin_x != 0)
+                    memcpy(leftNeighArray + 1, luma_recon_neighbor_array->left_array + dst_origin_y, blk_geom->bheight * 2);
+                if (dst_origin_y != 0 && dst_origin_x != 0)
+                    topNeighArray[0] = leftNeighArray[0] = luma_recon_neighbor_array->top_left_array[MAX_PICTURE_HEIGHT_SIZE + dst_origin_x - dst_origin_y];
+            }
+
+            else if (plane == 1) {
+                dst_ptr = prediction_ptr->buffer_cb + (prediction_ptr->origin_x + ((dst_origin_x >> 3) << 3)) / 2 + (prediction_ptr->origin_y + ((dst_origin_y >> 3) << 3)) / 2 * prediction_ptr->stride_cb;
+                 dst_stride = prediction_ptr->stride_cb;
+                intra_stride = inra_pred_desc.stride_cb;
+                if (cu_originy_uv != 0)
+                    memcpy(topNeighArray + 1, cb_recon_neighbor_array->top_array + cu_originx_uv, blk_geom->bwidth_uv * 2);
+
+                if (cu_originx_uv != 0)
+
+                    memcpy(leftNeighArray + 1, cb_recon_neighbor_array->left_array + cu_originy_uv, blk_geom->bheight_uv * 2);
+
+                if (cu_originy_uv != 0 && cu_originx_uv != 0)
+                    topNeighArray[0] = leftNeighArray[0] = cb_recon_neighbor_array->top_left_array[MAX_PICTURE_HEIGHT_SIZE / 2 + cu_originx_uv - cu_originy_uv / 2];
+            }
+            else {
+                dst_ptr = prediction_ptr->buffer_cr + (prediction_ptr->origin_x + ((dst_origin_x >> 3) << 3)) / 2 + (prediction_ptr->origin_y + ((dst_origin_y >> 3) << 3)) / 2 * prediction_ptr->stride_cr;
+                 dst_stride = prediction_ptr->stride_cr;
+                 intra_stride = inra_pred_desc.stride_cr;
+                if (cu_originy_uv != 0)
+
+                    memcpy(topNeighArray + 1, cr_recon_neighbor_array->top_array + cu_originx_uv, blk_geom->bwidth_uv * 2);
+
+                if (cu_originx_uv != 0)
+
+                    memcpy(leftNeighArray + 1, cr_recon_neighbor_array->left_array + cu_originy_uv, blk_geom->bheight_uv * 2);
+
+                if (cu_originy_uv != 0 && cu_originx_uv != 0)
+                    topNeighArray[0] = leftNeighArray[0] = cr_recon_neighbor_array->top_left_array[MAX_PICTURE_HEIGHT_SIZE / 2 + cu_originx_uv - cu_originy_uv / 2];
+            }
+            TxSize  tx_size = blk_geom->txsize[0][0]; // Nader - Intra 128x128 not supported
+            TxSize  tx_size_Chroma = blk_geom->txsize_uv[0][0]; //Nader - Intra 128x128 not supported
+
+            av1_predict_intra_block(
+                tile,
+#if MDLEVELS
+                !ED_STAGE,
+#else
+                MD_STAGE,
+#endif
+                blk_geom,
+                picture_control_set_ptr->parent_pcs_ptr->av1_cm,                                    //const Av1Common *cm,
+                plane ? blk_geom->bwidth_uv : blk_geom->bwidth,     //int32_t wpx,
+                plane ? blk_geom->bheight_uv : blk_geom->bheight,   //int32_t hpx,
+                plane ? tx_size_Chroma : tx_size,                                                   //TxSize tx_size,
+                interintra_to_intra_mode[interintra_mode],                                  //PredictionMode mode,
+#if SEARCH_UV_MODE // conformance
+                0,
+#else
+                plane ? 0 : candidate_buffer_ptr->candidate_ptr->angle_delta[PLANE_TYPE_Y],         //int32_t angle_delta,
+#endif
+                0,                                                                              //int32_t use_palette,
+                FILTER_INTRA_MODES,                                                             //CHKN FilterIntraMode filter_intra_mode,
+                topNeighArray + 1,
+                leftNeighArray + 1,
+                &inra_pred_desc,                                              //uint8_t *dst,
+                                                                                                //int32_t dst_stride,
+                0,                                                                              //int32_t col_off,
+                0,                                                                              //int32_t row_off,
+                plane,                                                                          //int32_t plane,
+                blk_geom->bsize,       //uint32_t puSize,
+#if ATB_EP
+                dst_origin_x,
+                dst_origin_y,
+#endif
+                dst_origin_x,                  //uint32_t cuOrgX,
+                dst_origin_y,                  //uint32_t cuOrgY
+                0,  //uint32_t cuOrgX used only for prediction Ptr
+                0   //uint32_t cuOrgY used only for prediction Ptr
+            );
+
+            //combine_interintra
+            combine_interintra(
+                interintra_mode,//xd->mi[0]->interintra_mode,
+                use_wedge_interintra,//xd->mi[0]->use_wedge_interintra,
+                interintra_wedge_index,//xd->mi[0]->interintra_wedge_index,
+                INTERINTRA_WEDGE_SIGN,
+                blk_geom->bsize,//bsize,
+                plane_bsize,
+                dst_ptr,//xd->plane[plane].dst.buf,
+                dst_stride,//xd->plane[plane].dst.stride,
+                dst_ptr,//inter_pred,
+                dst_stride,//inter_stride,
+                (plane == 0) ? intra_pred : (plane == 1) ? intra_pred_cb : intra_pred_cr,//intra_pred,
+                intra_stride);//intra_stride);
+
+        }
+    }
+
+#endif
+    //if (is_interintra_pred(xd->mi[0])) {
+    //    BUFFER_SET default_ctx = { { NULL, NULL, NULL }, { 0, 0, 0 } };
+    //    if (!ctx) {
+    //        default_ctx.plane[plane_idx] = xd->plane[plane_idx].dst.buf;
+    //        default_ctx.stride[plane_idx] = xd->plane[plane_idx].dst.stride;
+    //        ctx = &default_ctx;
+    //    }
+    //    av1_build_interintra_predictors_sbp(cm, xd, xd->plane[plane_idx].dst.buf,
+    //        xd->plane[plane_idx].dst.stride, ctx,
+    //        plane_idx, bsize);
+    //av1_predict_intra_block
+  /*  DECLARE_ALIGNED(16, uint8_t, intrapredictor[MAX_SB_SQUARE]);
+    av1_build_intra_predictors_for_interintra(cm, xd, bsize, plane, ctx,
+        intrapredictor, MAX_SB_SIZE);
+  combine_interintra(
+      xd->mi[0]->interintra_mode, xd->mi[0]->use_wedge_interintra,
+      xd->mi[0]->interintra_wedge_index, INTERINTRA_WEDGE_SIGN, bsize,
+      plane_bsize, xd->plane[plane].dst.buf, xd->plane[plane].dst.stride,
+      inter_pred, inter_stride, intra_pred, intra_stride);
+
+    //}
+    */
     return return_error;
 }
 
@@ -5818,6 +6254,16 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
 #if COMP_DIFF
         &candidate_buffer_ptr->candidate_ptr->interinter_comp,
 #endif
+#if II_ED
+        &md_context_ptr->sb_ptr->tile_info,
+        md_context_ptr->luma_recon_neighbor_array,
+        md_context_ptr->cb_recon_neighbor_array,
+        md_context_ptr->cr_recon_neighbor_array,
+        candidate_buffer_ptr->candidate_ptr->is_interintra_used,
+        candidate_buffer_ptr->candidate_ptr->interintra_mode,
+        candidate_buffer_ptr->candidate_ptr->use_wedge_interintra,
+        candidate_buffer_ptr->candidate_ptr->interintra_wedge_index,
+#endif
         md_context_ptr->cu_origin_x,
         md_context_ptr->cu_origin_y,
         md_context_ptr->blk_geom->bwidth,
@@ -5901,6 +6347,16 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
 #if COMP_DIFF
                         &candidate_buffer_ptr->candidate_ptr->interinter_comp,
 #endif
+#if II_ED
+                        &md_context_ptr->sb_ptr->tile_info,
+                        md_context_ptr->luma_recon_neighbor_array,
+                        md_context_ptr->cb_recon_neighbor_array,
+                        md_context_ptr->cr_recon_neighbor_array,
+                        candidate_buffer_ptr->candidate_ptr->is_interintra_used,
+                        candidate_buffer_ptr->candidate_ptr->interintra_mode,
+                        candidate_buffer_ptr->candidate_ptr->use_wedge_interintra,
+                        candidate_buffer_ptr->candidate_ptr->interintra_wedge_index,
+#endif
                         md_context_ptr->cu_origin_x,
                         md_context_ptr->cu_origin_y,
                         md_context_ptr->blk_geom->bwidth,
@@ -5979,6 +6435,16 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
 #endif
 #if COMP_DIFF
                         &candidate_buffer_ptr->candidate_ptr->interinter_comp,
+#endif
+#if II_ED
+                        &md_context_ptr->sb_ptr->tile_info,
+                        md_context_ptr->luma_recon_neighbor_array,
+                        md_context_ptr->cb_recon_neighbor_array,
+                        md_context_ptr->cr_recon_neighbor_array,
+                        candidate_buffer_ptr->candidate_ptr->is_interintra_used,
+                        candidate_buffer_ptr->candidate_ptr->interintra_mode,
+                        candidate_buffer_ptr->candidate_ptr->use_wedge_interintra,
+                        candidate_buffer_ptr->candidate_ptr->interintra_wedge_index,
 #endif
                         md_context_ptr->cu_origin_x,
                         md_context_ptr->cu_origin_y,
@@ -6060,6 +6526,16 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
 #endif
 #if COMP_DIFF
                         &candidate_buffer_ptr->candidate_ptr->interinter_comp,
+#endif
+#if II_ED
+                        &md_context_ptr->sb_ptr->tile_info,
+                        md_context_ptr->luma_recon_neighbor_array,
+                        md_context_ptr->cb_recon_neighbor_array,
+                        md_context_ptr->cr_recon_neighbor_array,
+                        candidate_buffer_ptr->candidate_ptr->is_interintra_used,
+                        candidate_buffer_ptr->candidate_ptr->interintra_mode,
+                        candidate_buffer_ptr->candidate_ptr->use_wedge_interintra,
+                        candidate_buffer_ptr->candidate_ptr->interintra_wedge_index,
 #endif
                         md_context_ptr->cu_origin_x,
                         md_context_ptr->cu_origin_y,
@@ -6529,6 +7005,16 @@ EbErrorType inter_pu_prediction_av1(
 #if COMP_DIFF
             &candidate_buffer_ptr->candidate_ptr->interinter_comp,
 #endif
+#if II_ED
+            NULL,
+            NULL,
+            NULL,
+            NULL,
+            0,
+            0,
+            0,
+            0,
+#endif
             md_context_ptr->cu_origin_x,
             md_context_ptr->cu_origin_y,
             md_context_ptr->blk_geom->bwidth,
@@ -6726,6 +7212,16 @@ EbErrorType inter_pu_prediction_av1(
 #endif
 #if COMP_DIFF
             &candidate_buffer_ptr->candidate_ptr->interinter_comp,
+#endif
+#if II_ED
+            &md_context_ptr->sb_ptr->tile_info,
+            md_context_ptr->luma_recon_neighbor_array,
+            md_context_ptr->cb_recon_neighbor_array,
+            md_context_ptr->cr_recon_neighbor_array,
+            candidate_ptr->is_interintra_used,
+            candidate_ptr->interintra_mode,
+            candidate_ptr->use_wedge_interintra,
+            candidate_ptr->interintra_wedge_index,
 #endif
             md_context_ptr->cu_origin_x,
             md_context_ptr->cu_origin_y,

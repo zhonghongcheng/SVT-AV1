@@ -52,6 +52,9 @@ extern "C" {
     void product_full_loop_tx_search(
         ModeDecisionCandidateBuffer  *candidateBuffer,
         ModeDecisionContext          *context_ptr,
+#if ADAPTIVE_TXB_SEARCH_LEVEL
+        uint64_t                     ref_best_rd,
+#endif
         PictureControlSet            *picture_control_set_ptr);
     extern uint32_t d2_inter_depth_block_decision(
         ModeDecisionContext          *context_ptr,
@@ -63,6 +66,18 @@ extern "C" {
         uint64_t                          full_lambda,
         MdRateEstimationContext      *md_rate_estimation_ptr,
         PictureControlSet            *picture_control_set_ptr);
+#if MD_EXIT
+    /// compute the cost of curr depth, and the depth above
+    extern void   compute_depth_costs_md_skip(
+        ModeDecisionContext    *context_ptr,
+        SequenceControlSet     *sequence_control_set_ptr,
+        uint32_t                  curr_depth_mds,
+        uint32_t                  above_depth_mds,
+        uint32_t                  step,
+        uint64_t                 *above_depth_cost,
+        uint64_t                 *curr_depth_cost);
+#endif
+
 
     void  d1_non_square_block_decision(
         ModeDecisionContext               *context_ptr

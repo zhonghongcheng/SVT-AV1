@@ -811,6 +811,17 @@ EbErrorType av1_inter_prediction(
 #if COMP_DIFF
     INTERINTER_COMPOUND_DATA             *interinter_comp,
 #endif
+#if II_ED
+    TileInfo                                * tile,
+    NeighborArrayUnit                       *luma_recon_neighbor_array,
+    NeighborArrayUnit                       *cb_recon_neighbor_array ,
+    NeighborArrayUnit                       *cr_recon_neighbor_array ,
+    uint8_t                                 is_interintra_used ,
+    INTERINTRA_MODE                        interintra_mode,
+    uint8_t                                use_wedge_interintra,
+    int32_t                                interintra_wedge_index,
+
+#endif
     uint16_t                             pu_origin_x,
     uint16_t                             pu_origin_y,
     uint8_t                              bwidth,
@@ -887,8 +898,8 @@ void tf_inter_prediction(
 
 #if ALTREF_EIGHTH_PEL_SEARCH
                 uint64_t best_distortion = (uint64_t)~0;
-                signed short best_mv_x;
-                signed short best_mv_y;
+                signed short best_mv_x = 0;
+                signed short best_mv_y = 0;
                 signed short mv_x = (_MVXT(context_ptr->p_best_mv16x16[mv_index])) << 1;
                 signed short mv_y = (_MVYT(context_ptr->p_best_mv16x16[mv_index])) << 1;
 #if ALTREF_AV1_SUBPEL
@@ -913,6 +924,16 @@ void tf_inter_prediction(
 #endif
 #if COMP_DIFF
                             NULL,// interinter_comp not used
+#endif
+#if II_ED
+                            NULL,
+                            NULL,
+                            NULL,
+                            NULL,
+                            0,
+                            0,
+                            0,
+                            0,
 #endif
                             pu_origin_x,
                             pu_origin_y,
@@ -958,6 +979,16 @@ void tf_inter_prediction(
 #endif
 #if COMP_DIFF
                     NULL,// interinter_comp not used
+#endif
+#if II_ED
+                    NULL,
+                    NULL,
+                    NULL,
+                    NULL,
+                    0,
+                    0,
+                    0,
+                    0,
 #endif
                     pu_origin_x,
                     pu_origin_y,

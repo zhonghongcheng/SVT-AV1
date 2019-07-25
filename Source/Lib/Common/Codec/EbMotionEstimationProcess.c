@@ -101,10 +101,6 @@ void* set_me_hme_params_oq(
     UNUSED(sequence_control_set_ptr);
     uint8_t  hmeMeLevel =  picture_control_set_ptr->enc_mode; // OMK to be revised after new presets
 
-#if USE_M0_HME_ME_SETTINGS
-    hmeMeLevel = 0;
-#endif
-
     // HME/ME default settings
     me_context_ptr->number_hme_search_region_in_width = 2;
     me_context_ptr->number_hme_search_region_in_height = 2;
@@ -496,7 +492,11 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
     }
     else if (picture_control_set_ptr->enc_mode ==
         ENC_M0) {
+#if DISABLE_ENH_SUBPEL_SC
+        context_ptr->me_context_ptr->half_pel_mode = picture_control_set_ptr->sc_content_detected ? REFINMENT_HP_MODE :
+#else
         context_ptr->me_context_ptr->half_pel_mode =
+#endif
             EX_HP_MODE;
         context_ptr->me_context_ptr->quarter_pel_mode =
             REFINMENT_QP_MODE;

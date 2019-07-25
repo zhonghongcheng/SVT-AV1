@@ -1876,12 +1876,14 @@ void av1_quantize_inv_quantize(
 #if !ADD_DELTA_QP_SUPPORT
     (void) qp;
 #endif
+#if !NO_MEMSET
     uint32_t i;
     for (i = 0; i < height; i++)
     {
         memset(quant_coeff + i * width, 0, width * sizeof(int32_t));
         memset(recon_coeff + i * width, 0, width * sizeof(int32_t));
     }
+#endif
     MacroblockPlane      candidate_plane ;
 
     const QmVal *qMatrix = picture_control_set_ptr->parent_pcs_ptr->gqmatrix[NUM_QM_LEVELS - 1][0][txsize];
@@ -1980,7 +1982,11 @@ void av1_quantize_inv_quantize(
     EbBool perform_rdoq = ((is_encode_pass || md_context->md_stage == MD_STAGE_2 || is_inter) && md_context->trellis_quant_coeff_optimization && component_type == COMPONENT_LUMA && !is_intra_bc);
 #endif
 #else
+#if FIRST_RDOQ_INTER
+    EbBool perform_rdoq = ((is_encode_pass || md_context->md_stage == MD_STAGE_2 || !is_inter) && md_context->trellis_quant_coeff_optimization && component_type == COMPONENT_LUMA && !is_intra_bc);
+#else
     EbBool perform_rdoq = (md_context->trellis_quant_coeff_optimization && component_type == COMPONENT_LUMA && !is_intra_bc);
+#endif
 #endif
     // Hsan: set to FALSE until adding x86 quantize_fp
 #if ENABLE_QUANT_FP
@@ -2685,6 +2691,9 @@ uint8_t allowed_tx_set_b[TX_SIZES_ALL][TX_TYPES] = {
 void product_full_loop_tx_search(
     ModeDecisionCandidateBuffer  *candidateBuffer,
     ModeDecisionContext          *context_ptr,
+#if ADAPTIVE_TXB_SEARCH_LEVEL
+    uint64_t                      ref_best_rd,
+#endif
     PictureControlSet            *picture_control_set_ptr)
 {
     uint32_t                       tu_origin_index;
@@ -3044,6 +3053,15 @@ void product_full_loop_tx_search(
             best_tx_type = tx_type;
         }
 
+
+#if ADAPTIVE_TXB_SEARCH_LEVEL
+        if (picture_control_set_ptr->parent_pcs_ptr->adaptive_txb_search_level) {
+            if ((bestFullCost - (bestFullCost >> picture_control_set_ptr->parent_pcs_ptr->adaptive_txb_search_level)) >
+                ref_best_rd) {
+                break;
+            }
+      }
+#endif
         //if (cpi->sf.adaptive_txb_search_level) {
         //    if ((best_rd - (best_rd >> cpi->sf.adaptive_txb_search_level)) >
         //        ref_best_rd) {
@@ -4590,3 +4608,149 @@ uint32_t d2_inter_depth_block_decision(
 
     return lastCuIndex;
 }
+#if MD_EXIT
+/// compute the cost of curr depth, and the depth above
+void   compute_depth_costs_md_skip(
+    ModeDecisionContext    *context_ptr,
+    SequenceControlSet     *sequence_control_set_ptr,
+    uint32_t                  curr_depth_mds,
+    uint32_t                  above_depth_mds,
+    uint32_t                  step,
+    uint64_t                 *above_depth_cost,
+    uint64_t                 *curr_depth_cost)
+{
+    uint64_t       above_non_split_rate = 0;
+    uint64_t       above_split_rate = 0;
+    *curr_depth_cost = 0;
+    // sum the previous ones
+    for (int i = 1; i < context_ptr->blk_geom->quadi+1; i++) {
+    //for (int i = 0; i < context_ptr->blk_geom->quadi+1; i++) {
+        uint32_t curr_depth_cur_blk_mds = context_ptr->blk_geom->sqi_mds - i * step;
+        uint64_t       curr_non_split_rate_blk = 0;
+        if (context_ptr->blk_geom->bsize > BLOCK_4X4) {
+            if (context_ptr->md_cu_arr_nsq[curr_depth_cur_blk_mds].mdc_split_flag == 0)
+                av1_split_flag_rate(
+                    sequence_control_set_ptr,
+                    context_ptr,
+                    &context_ptr->md_cu_arr_nsq[curr_depth_cur_blk_mds],
+                    0,
+                    PARTITION_NONE,
+                    &curr_non_split_rate_blk,
+                    context_ptr->full_lambda,
+                    context_ptr->md_rate_estimation_ptr,
+                    sequence_control_set_ptr->max_sb_depth);
+        }
+        *curr_depth_cost +=
+            context_ptr->md_local_cu_unit[curr_depth_cur_blk_mds].cost + curr_non_split_rate_blk;
+
+    }
+    /*
+    ___________
+    |     |     |
+    |blk0 |blk1 |
+    |-----|-----|
+    |blk2 |blk3 |
+    |_____|_____|
+    */
+    // current depth blocks
+    uint32_t       curr_depth_blk0_mds = context_ptr->blk_geom->sqi_mds - context_ptr->blk_geom->quadi * step;
+
+    context_ptr->md_local_cu_unit[above_depth_mds].left_neighbor_mode = context_ptr->md_local_cu_unit[curr_depth_blk0_mds].left_neighbor_mode;
+    context_ptr->md_local_cu_unit[above_depth_mds].left_neighbor_depth = context_ptr->md_local_cu_unit[curr_depth_blk0_mds].left_neighbor_depth;
+    context_ptr->md_local_cu_unit[above_depth_mds].top_neighbor_mode = context_ptr->md_local_cu_unit[curr_depth_blk0_mds].top_neighbor_mode;
+    context_ptr->md_local_cu_unit[above_depth_mds].top_neighbor_depth = context_ptr->md_local_cu_unit[curr_depth_blk0_mds].top_neighbor_depth;
+    context_ptr->md_local_cu_unit[above_depth_mds].left_neighbor_partition = context_ptr->md_local_cu_unit[curr_depth_blk0_mds].left_neighbor_partition;
+    context_ptr->md_local_cu_unit[above_depth_mds].above_neighbor_partition = context_ptr->md_local_cu_unit[curr_depth_blk0_mds].above_neighbor_partition;
+
+    // Compute above depth  cost
+    if (context_ptr->md_local_cu_unit[above_depth_mds].tested_cu_flag == EB_TRUE)
+    {
+        *above_depth_cost = context_ptr->md_local_cu_unit[above_depth_mds].cost + above_non_split_rate;
+#if SPLIT_RATE_FIX
+        // Compute curr depth  cost
+        av1_split_flag_rate(
+            sequence_control_set_ptr,
+            context_ptr,
+            &context_ptr->md_cu_arr_nsq[above_depth_mds],
+            0,
+            PARTITION_SPLIT,
+            &above_split_rate,
+            context_ptr->full_lambda,
+            context_ptr->md_rate_estimation_ptr,
+            sequence_control_set_ptr->max_sb_depth);
+#endif
+    }
+    else
+        *above_depth_cost = MAX_MODE_COST;
+
+
+    *curr_depth_cost +=
+        above_split_rate;
+}
+
+uint32_t d2_inter_depth_block_decision_md_skip(
+    ModeDecisionContext          *context_ptr,
+    uint32_t                        blk_mds,
+    LargestCodingUnit            *tb_ptr,
+    uint32_t                          lcuAddr,
+    uint32_t                          tbOriginX,
+    uint32_t                          tbOriginY,
+    uint64_t                          full_lambda,
+    MdRateEstimationContext      *md_rate_estimation_ptr,
+    PictureControlSet            *picture_control_set_ptr)
+{
+    UNUSED(tb_ptr);
+    UNUSED(lcuAddr);
+    UNUSED(tbOriginX);
+    UNUSED(tbOriginY);
+    UNUSED(full_lambda);
+    UNUSED(md_rate_estimation_ptr);
+
+    uint32_t                  lastCuIndex, d0_idx_mds, d1_idx_mds, d2_idx_mds, top_left_idx_mds;
+    UNUSED(top_left_idx_mds);
+    UNUSED(d2_idx_mds);
+    UNUSED(d1_idx_mds);
+    UNUSED(d0_idx_mds);
+    uint64_t                    parent_depth_cost = 0, current_depth_cost = 0;
+    SequenceControlSet     *sequence_control_set_ptr = (SequenceControlSet*)picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr;
+    EbBool                    lastDepthFlag;
+    const BlockGeom          * blk_geom;
+
+    lastDepthFlag = context_ptr->md_cu_arr_nsq[blk_mds].split_flag == EB_FALSE ? EB_TRUE : EB_FALSE;
+    d1_idx_mds = blk_mds;
+    d2_idx_mds = blk_mds;
+    lastCuIndex = blk_mds;
+    blk_geom = get_blk_geom_mds(blk_mds);
+    uint32_t    parent_depth_idx_mds = blk_mds;
+    uint32_t    current_depth_idx_mds = blk_mds;
+
+    //get parent idx
+    parent_depth_idx_mds = (context_ptr->blk_geom->sqi_mds - context_ptr->blk_geom->quadi * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
+#if INTRA64_FIX
+    if (picture_control_set_ptr->slice_type == I_SLICE && parent_depth_idx_mds == 0 && sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128)
+#else
+    if (picture_control_set_ptr->slice_type == I_SLICE && parent_depth_idx_mds == 0)
+#endif
+        parent_depth_cost = MAX_MODE_COST;
+    else
+        compute_depth_costs_md_skip(context_ptr, sequence_control_set_ptr, current_depth_idx_mds, parent_depth_idx_mds, ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth], &parent_depth_cost, &current_depth_cost);
+#if INCOMPLETE_SB_FIX
+    if (!sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[parent_depth_idx_mds])
+        parent_depth_cost = MAX_MODE_COST;
+#endif
+    if (parent_depth_cost <= current_depth_cost) {
+        context_ptr->md_cu_arr_nsq[parent_depth_idx_mds].split_flag = EB_FALSE;
+        context_ptr->md_local_cu_unit[parent_depth_idx_mds].cost = parent_depth_cost;
+        lastCuIndex = parent_depth_idx_mds;
+    }
+    else {
+        context_ptr->md_local_cu_unit[parent_depth_idx_mds].cost = current_depth_cost;
+        context_ptr->md_cu_arr_nsq[parent_depth_idx_mds].part = PARTITION_SPLIT;
+    }
+
+
+
+    return lastCuIndex;
+}
+
+#endif
