@@ -12938,13 +12938,13 @@ EbErrorType BiPredictionCompensation(MeContext *context_ptr, uint32_t pu_index,
 }
 
 #if PRUNE_REF_FRAME_AT_ME
-#define bi_th 2
+#define PRUNE_REF_ME_TH 2
 uint8_t skip_bi_pred(
     uint8_t ref_type,
     uint8_t ref_type_table[7]) {
     uint8_t allow_cand = 0;
     uint8_t ref_idx;
-    for (ref_idx = 0; ref_idx < bi_th; ref_idx++) {
+    for (ref_idx = 0; ref_idx < PRUNE_REF_ME_TH; ref_idx++) {
         if (ref_type == ref_type_table[ref_idx])
             allow_cand = 1;
     }
