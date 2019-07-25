@@ -56,13 +56,7 @@ extern "C" {
 #define FIRST_FULL_LOOP_CHROMA_BLIND_INTER     0
 #define FIRST_FULL_LOOP_TX_SEARCH_OFF_INTER    0
 #define STRENGHTHEN_MD_STAGE_3                 1
-#define CLASS_0_NFL_MD_STAGE_3                 1 // CIN03
-#define CLASS_0_I_SLICE_NFL_MD_STAGE_3         1 // CIN03 modified
-#define CLASS_123_NFL_MD_STAGE_2_3             1 // CIN13,CIN23,CIN33
-#define CLASS_0_NFL_MD_STAGE_2                 0
-#if !M1_CAND
-#define CLASS_0_NFL_MD_STAGE_3_4_4             1 // CIN03 4 for non ref
-#endif
+
 #define PRE_BILINEAR_CLEAN_UP                  1
 #define BILINEAR_FAST_LOOP                     1
 #define BILINEAR_PREDICTIVE_ME                 0
@@ -419,10 +413,6 @@ typedef enum CAND_CLASS {
 #define  FAST_LOOP_OPT                1 // Use fast loop stages to speed up encoder
 #define  COMP_OPT                     1 // cut some compound injection/modes
 #define  FULL_COMPOUND_BDRATE         1 // enable to run compound in full mode for best bd rate
-#define  BDR_MODE                     0 // enable to run for best bd rate
-#if BDR_MODE
-#define  MD_STAGE_3_NFL_BDRATE        1 // 10 NFL @ md_stage_3
-#endif
 
 
  #define    TF_KEY                   1  //Temporal Filtering  for Key frame. OFF for Screen Content.
