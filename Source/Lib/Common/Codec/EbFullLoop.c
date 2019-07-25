@@ -1876,12 +1876,14 @@ void av1_quantize_inv_quantize(
 #if !ADD_DELTA_QP_SUPPORT
     (void) qp;
 #endif
+#if !NO_MEMSET
     uint32_t i;
     for (i = 0; i < height; i++)
     {
         memset(quant_coeff + i * width, 0, width * sizeof(int32_t));
         memset(recon_coeff + i * width, 0, width * sizeof(int32_t));
     }
+#endif
     MacroblockPlane      candidate_plane ;
 
     const QmVal *qMatrix = picture_control_set_ptr->parent_pcs_ptr->gqmatrix[NUM_QM_LEVELS - 1][0][txsize];

@@ -1815,11 +1815,17 @@ void av1_model_rd_curvfit(BLOCK_SIZE bsize, double sse_norm, double xqr,
     const double xo = x - xi;
 
     assert(xi > 0);
-
+#if NO_LOG2_DOUBLE
+    const double *prate = &interp_rgrid_curv[rcat][(xi - 1)];
+    *rate_f = prate[1];
+    const double *pdist = &interp_dgrid_curv[dcat][(xi - 1)];
+    *distbysse_f = pdist[1];
+#else
     const double *prate = &interp_rgrid_curv[rcat][(xi - 1)];
     *rate_f = interp_cubic(prate, xo);
     const double *pdist = &interp_dgrid_curv[dcat][(xi - 1)];
     *distbysse_f = interp_cubic(pdist, xo);
+#endif
 }
 // Fits a curve for rate and distortion using as feature:
 // log2(sse_norm/qstep^2)
@@ -1852,8 +1858,12 @@ static void model_rd_with_curvfit(
     }
     aom_clear_system_state();
     const double sse_norm = (double)sse / num_samples;
+#if NO_LOG2_DOUBLE
+    const double xqr = (double)LOG2F((sse / num_samples) / (qstep * qstep));
+#else
     const double qstepsqr = (double)qstep * qstep;
     const double xqr = log2(sse_norm / qstepsqr);
+#endif
 
     double rate_f, dist_by_sse_norm_f;
     av1_model_rd_curvfit(plane_bsize, sse_norm, xqr, &rate_f,&dist_by_sse_norm_f);
