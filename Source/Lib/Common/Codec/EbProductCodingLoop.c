@@ -1760,7 +1760,7 @@ void ProductMdFastPuPrediction(
     context_ptr->pu_itr = 0;
     // Prediction
 #if FIRST_FULL_LOOP_INTERPOLATION_SEARCH
-    if (context_ptr->md_staging_mode == 1 && (context_ptr->md_stage == MD_STAGE_0 || context_ptr->md_stage == MD_STAGE_1 || context_ptr->md_stage == MD_STAGE_2))
+    if (context_ptr->md_staging_mode  && (context_ptr->md_stage == MD_STAGE_0 || context_ptr->md_stage == MD_STAGE_1 || context_ptr->md_stage == MD_STAGE_2))
         context_ptr->skip_interpolation_search = 1;
     else
         context_ptr->skip_interpolation_search = picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? 0 : 1;
@@ -1768,13 +1768,13 @@ void ProductMdFastPuPrediction(
     context_ptr->skip_interpolation_search = picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? 0 : 1;
 
 #if FAST_LOOP_OPT
-    if (context_ptr->md_staging_mode == 1 && context_ptr->md_stage == MD_STAGE_0)
+    if (context_ptr->md_staging_mode  && context_ptr->md_stage == MD_STAGE_0)
         context_ptr->skip_interpolation_search = 1;
 #endif
 #endif
 
 #if BILINEAR_FAST_LOOP
-    if (context_ptr->md_stage == MD_STAGE_0 && context_ptr->md_staging_mode == 1)
+    if (context_ptr->md_stage == MD_STAGE_0 && context_ptr->md_staging_mode )
         candidateBuffer->candidate_ptr->interp_filters = av1_make_interp_filters(BILINEAR, BILINEAR);
     else
         candidateBuffer->candidate_ptr->interp_filters = 0;
@@ -1815,7 +1815,7 @@ void fast_loop_core(
     context_ptr->pu_itr = 0;
     // Prediction
 #if FIRST_FULL_LOOP_INTERPOLATION_SEARCH
-    if (context_ptr->md_staging_mode == 1 && (context_ptr->md_stage == MD_STAGE_0 || context_ptr->md_stage == MD_STAGE_1 || context_ptr->md_stage == MD_STAGE_2))
+    if (context_ptr->md_staging_mode  && (context_ptr->md_stage == MD_STAGE_0 || context_ptr->md_stage == MD_STAGE_1 || context_ptr->md_stage == MD_STAGE_2))
         context_ptr->skip_interpolation_search = 1;
     else
         context_ptr->skip_interpolation_search = picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? 0 : 1;
@@ -1823,13 +1823,13 @@ void fast_loop_core(
     context_ptr->skip_interpolation_search = picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? 0 : 1;
 
 #if FAST_LOOP_OPT
-    if (context_ptr->md_staging_mode == 1 && context_ptr->md_stage == MD_STAGE_0)
+    if (context_ptr->md_staging_mode  && context_ptr->md_stage == MD_STAGE_0)
         context_ptr->skip_interpolation_search = 1;
 #endif
 #endif
 
 #if BILINEAR_FAST_LOOP
-    if (context_ptr->md_stage == MD_STAGE_0 && context_ptr->md_staging_mode == 1)
+    if (context_ptr->md_stage == MD_STAGE_0 && context_ptr->md_staging_mode )
         candidateBuffer->candidate_ptr->interp_filters = av1_make_interp_filters(BILINEAR, BILINEAR);
     else
         candidateBuffer->candidate_ptr->interp_filters = 0;
@@ -1841,12 +1841,12 @@ void fast_loop_core(
 #if CHROMA_MD_STAGE_0_TO_MD_STAGE_1
 #if CHROMA_MD_STAGE_1_TO_MD_STAGE_3
     context_ptr->shut_chroma_comp = (
-        context_ptr->md_staging_mode == 1 &&
+        context_ptr->md_staging_mode  &&
         (context_ptr->md_stage == MD_STAGE_0 || context_ptr->md_stage == MD_STAGE_1 || context_ptr->md_stage == MD_STAGE_2) &&
         (context_ptr->target_class == CAND_CLASS_1 || context_ptr->target_class == CAND_CLASS_2 || context_ptr->target_class == CAND_CLASS_3));
 #else
     context_ptr->shut_chroma_comp =
-        (context_ptr->md_staging_mode == 1 && context_ptr->md_stage == MD_STAGE_0 &&
+        (context_ptr->md_staging_mode  && context_ptr->md_stage == MD_STAGE_0 &&
         (context_ptr->target_class == CAND_CLASS_1 || context_ptr->target_class == CAND_CLASS_2 || context_ptr->target_class == CAND_CLASS_3) &&
             context_ptr->bypass_stage1[context_ptr->target_class] == EB_FALSE);
 #endif
@@ -1939,7 +1939,7 @@ void fast_loop_core(
         chromaFastDistortion = 0;
     // Fast Cost
 #if SHUT_RATE_MD_STAGE
-    if (context_ptr->md_staging_mode == 1 && context_ptr->md_stage == MD_STAGE_0 && (context_ptr->target_class == CAND_CLASS_1 || context_ptr->target_class == CAND_CLASS_2 || context_ptr->target_class == CAND_CLASS_3) && context_ptr->bypass_stage1[context_ptr->target_class] == EB_FALSE)
+    if (context_ptr->md_staging_mode  && context_ptr->md_stage == MD_STAGE_0 && (context_ptr->target_class == CAND_CLASS_1 || context_ptr->target_class == CAND_CLASS_2 || context_ptr->target_class == CAND_CLASS_3) && context_ptr->bypass_stage1[context_ptr->target_class] == EB_FALSE)
         *(candidateBuffer->fast_cost_ptr) = lumaFastDistortion + chromaFastDistortion;
     else
 #endif
@@ -2034,7 +2034,7 @@ void perform_fast_loop(
 
             // Fast Cost
 #if SHUT_RATE_MD_STAGE
-            if (context_ptr->md_staging_mode == 1 && context_ptr->md_stage == MD_STAGE_0 && (context_ptr->target_class == CAND_CLASS_1 || context_ptr->target_class == CAND_CLASS_2 || context_ptr->target_class == CAND_CLASS_3) && context_ptr->bypass_stage1[context_ptr->target_class] == EB_FALSE)
+            if (context_ptr->md_staging_mode  && context_ptr->md_stage == MD_STAGE_0 && (context_ptr->target_class == CAND_CLASS_1 || context_ptr->target_class == CAND_CLASS_2 || context_ptr->target_class == CAND_CLASS_3) && context_ptr->bypass_stage1[context_ptr->target_class] == EB_FALSE)
                 *(candidateBuffer->fast_cost_ptr) = lumaFastDistortion;
             else
 #endif
@@ -2260,7 +2260,7 @@ void set_md_stage_counts(
     uint32_t                 fastCandidateTotalCount)
 {
     // Derive bypass_stage1
-    if (context_ptr->md_staging_mode == 1)
+    if (context_ptr->md_staging_mode )
 #if FIRST_FULL_LOOP_INTERPOLATION_SEARCH
         memset(context_ptr->bypass_stage1, EB_TRUE, CAND_CLASS_TOTAL * sizeof(uint32_t));
 #else
@@ -2278,7 +2278,7 @@ void set_md_stage_counts(
         memset(context_ptr->bypass_stage1, EB_TRUE, CAND_CLASS_TOTAL * sizeof(uint32_t));
 
     // Derive bypass_stage2
-    if (context_ptr->md_staging_mode == 1)
+    if (context_ptr->md_staging_mode )
     {
         context_ptr->bypass_stage2[CAND_CLASS_0] = EB_FALSE;
 #if FIRST_FULL_LOOP_CHROMA_BLIND_INTER || FIRST_FULL_LOOP_INTERPOLATION_SEARCH || FIRST_FULL_LOOP_TX_SEARCH_OFF_INTER || FIRST_RDOQ_INTER
@@ -2400,7 +2400,7 @@ void set_md_stage_counts(
     //stage1 bypass decision
     memset(context_ptr->bypass_stage1, 0, CAND_CLASS_TOTAL * sizeof(uint32_t));
 
-    if(context_ptr->md_staging_mode == 1)
+    if(context_ptr->md_staging_mode )
         context_ptr->bypass_stage1[CAND_CLASS_0] = 1;
     else
         memset(context_ptr->bypass_stage1, 1, CAND_CLASS_TOTAL * sizeof(uint32_t));
@@ -6565,7 +6565,7 @@ void AV1PerformFullLoop(
             // Transform partitioning free patch (except the 128x128 case)
 #if FIRST_FULL_LOOP_INTERPOLATION_SEARCH
             if (candidate_ptr->type != INTRA_MODE) {
-                if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level == IT_SEARCH_FULL_LOOP || context_ptr->md_staging_mode == 1) {
+                if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level == IT_SEARCH_FULL_LOOP || context_ptr->md_staging_mode ) {
                     context_ptr->skip_interpolation_search = (best_fastLoop_candidate_index > NFL_IT_TH && context_ptr->md_staging_mode == 0) ? 1 : 0;
 #if RE_FACTURE_PRED_KERNEL
                     context_ptr->shut_chroma_comp = EB_TRUE;
@@ -6593,7 +6593,7 @@ void AV1PerformFullLoop(
                 }
             }
 #if CHROMA_MD_STAGE_1_TO_MD_STAGE_3
-            else if (context_ptr->md_staging_mode == 1 && (candidate_ptr->cand_class == CAND_CLASS_1 || candidate_ptr->cand_class == CAND_CLASS_2 || candidate_ptr->cand_class == CAND_CLASS_3))
+            else if (context_ptr->md_staging_mode  && (candidate_ptr->cand_class == CAND_CLASS_1 || candidate_ptr->cand_class == CAND_CLASS_2 || candidate_ptr->cand_class == CAND_CLASS_3))
             {
                 context_ptr->shut_chroma_comp = EB_FALSE;
                 ProductPredictionFunTable[INTER_MODE](
