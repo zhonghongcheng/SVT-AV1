@@ -16,7 +16,7 @@
 
 static int parse_name(const char* value, const char* const* names) {
     for (int i = 0; names[i]; i++)
-        if (!strcmp(value, names[i]))
+        if (!EB_STRCMP(value, names[i]))
             return i;
     return -1;
 }
@@ -87,7 +87,7 @@ EbErrorType read_command_line(int32_t argc, char *const argv[],
     // Parse command line for tokens
     while (token_index < cmd_token_cnt) {
         if (cmd_copy[token_index] != NULL) {
-            if (strcmp(cmd_copy[token_index], INPUT_FILE_TOKEN) == 0) {
+            if (EB_STRCMP(cmd_copy[token_index], INPUT_FILE_TOKEN) == 0) {
                 FILE * fin = NULL;
                 FOPEN(fin, config_strings[token_index], "rb");
                 if (!fin) {
@@ -105,7 +105,7 @@ EbErrorType read_command_line(int32_t argc, char *const argv[],
                     }
                 }
             }
-            else if (strcmp(cmd_copy[token_index], OUTPUT_FILE_TOKEN) == 0) {
+            else if (EB_STRCMP(cmd_copy[token_index], OUTPUT_FILE_TOKEN) == 0) {
                 FILE * fout = NULL;
                 FOPEN(fout, config_strings[token_index], "wb");
                 if (!fout) {
@@ -117,16 +117,16 @@ EbErrorType read_command_line(int32_t argc, char *const argv[],
                     cli->outFilename = config_strings[token_index];
                 }
             }
-            else if (strcmp(cmd_copy[token_index], MD5_SUPPORT_TOKEN) == 0)
+            else if (EB_STRCMP(cmd_copy[token_index], MD5_SUPPORT_TOKEN) == 0)
                 cli->enable_md5 = 1;
-            else if (strcmp(cmd_copy[token_index], HELP_TOKEN) == 0)
+            else if (EB_STRCMP(cmd_copy[token_index], HELP_TOKEN) == 0)
                 showHelp();
             else {
                 int temp_ind = 0;
                 int cli_read = 0;
                 while (config_entry[temp_ind].name != NULL)
                 {
-                    if (strcmp(cmd_copy[token_index], config_entry[temp_ind].token) == 0) {
+                    if (EB_STRCMP(cmd_copy[token_index], config_entry[temp_ind].token) == 0) {
                         if (config_strings[token_index] == NULL) {
                             if (config_entry[temp_ind].valueRequired == 1) {
                                 printf("Invalid CLI option: %s \n", cmd_copy[token_index]);

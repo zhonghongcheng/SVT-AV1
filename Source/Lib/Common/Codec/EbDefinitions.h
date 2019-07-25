@@ -34,8 +34,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#define NO_MEMSET                      0 
-#define NO_LOG2_DOUBLE                 0 
+#define NO_MEMSET                      0
+#define NO_LOG2_DOUBLE                 0
 
 #define TFK_QPS_TUNING 0
 #define MD_EXIT  0

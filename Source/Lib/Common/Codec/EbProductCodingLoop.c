@@ -3140,7 +3140,7 @@ void predictive_me_search(
                     if (context_ptr->predictive_me_level >= 2) {
 
                         uint8_t search_pattern;
-                        // 0: all possible position(s): horizontal, vertical, diagonal 
+                        // 0: all possible position(s): horizontal, vertical, diagonal
                         // 1: horizontal, vertical
                         // 2: horizontal only
                         // 3: vertical only
@@ -4296,10 +4296,12 @@ uint8_t get_end_tx_depth(
 }
 
 #if ATB_RATE
+#if !SHUT_TX_SIZE_RATE
 static INLINE int block_signals_txsize(BlockSize bsize) {
     return bsize > BLOCK_4X4;
 }
 static INLINE int is_rect_tx(TxSize tx_size) { return tx_size >= TX_SIZES; }
+#endif
 static INLINE int is_intrabc_block(const MbModeInfo *mbmi) {
     return mbmi->use_intrabc;
 }
@@ -4315,7 +4317,6 @@ static INLINE int get_vartx_max_txsize(/*const MbModeInfo *xd,*/ BlockSize bsize
     if (plane == 0) return max_txsize;            // luma
     return av1_get_adjusted_tx_size(max_txsize);  // chroma
 }
-#endif
 
 static INLINE int max_block_wide(const MacroBlockD *xd, BlockSize bsize,
     int plane) {
@@ -4385,6 +4386,7 @@ static INLINE int txfm_partition_context(TXFM_CONTEXT *above_ctx,
     assert(category != TXFM_PARTITION_CONTEXTS);
     return category * 3 + above + left;
 }
+#endif
 
 #if !ATB_SUPPORT
 static INLINE int av1_get_txb_size_index(BlockSize bsize, int blk_row,
@@ -4485,6 +4487,8 @@ static INLINE int tx_size_to_depth(TxSize tx_size, BlockSize bsize) {
     return depth;
 }
 
+#if !SHUT_TX_SIZE_RATE
+
 static INLINE int bsize_to_max_depth(BlockSize bsize) {
     TxSize tx_size = max_txsize_rect_lookup[bsize];
     int depth = 0;
@@ -4578,7 +4582,6 @@ static INLINE int get_tx_size_context(const MacroBlockD *xd) {
         return 0;
 }
 
-#if !SHUT_TX_SIZE_RATE
 static uint64_t cost_selected_tx_size(
     const MacroBlockD *xd,
     MdRateEstimationContext  *md_rate_estimation_ptr) {

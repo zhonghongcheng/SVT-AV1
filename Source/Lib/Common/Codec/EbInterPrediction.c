@@ -1701,6 +1701,7 @@ static const uint8_t bsize_curvfit_model_cat_lookup[BlockSizeS_ALL] = {
 static int sse_norm_curvfit_model_cat_lookup(double sse_norm) {
     return (sse_norm > 16.0);
 }
+#if NO_LOG2_DOUBLE
 static const double interp_rgrid_curv[4][65] = {
   {
       0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
@@ -1792,6 +1793,8 @@ static const double interp_dgrid_curv[2][65] = {
       0.000348,  0.000193,  0.000085,  0.000021,  -0.000000,
   },
 };
+
+#endif
 
 /*
   Precalucation factors to interp_cubic()
@@ -2204,12 +2207,12 @@ static const double interp_dgrid_curv_precalc[2][62][4] = {
   },
 };
 
-static double interp_cubic(const double *p, double x) {
-    return p[1] + 0.5 * x *
-        (p[2] - p[0] +
-            x * (2.0 * p[0] - 5.0 * p[1] + 4.0 * p[2] - p[3] +
-                x * (3.0 * (p[1] - p[2]) + p[3] - p[0])));
-}
+//static double interp_cubic(const double *p, double x) {
+//    return p[1] + 0.5 * x *
+//        (p[2] - p[0] +
+//            x * (2.0 * p[0] - 5.0 * p[1] + 4.0 * p[2] - p[3] +
+//                x * (3.0 * (p[1] - p[2]) + p[3] - p[0])));
+//}
 
 static /*INLINE*/ double interp_cubic_precalc(const double *p, double x) {
     return p[3] + x * (p[2] + x * (p[1] + x * p[0]));
@@ -2239,9 +2242,9 @@ void av1_model_rd_curvfit(BLOCK_SIZE bsize, double sse_norm, double xqr,
     const double *pdist = &interp_dgrid_curv[dcat][(xi - 1)];
     *distbysse_f = pdist[1];
 #else
-    const double *prate_precalc = &interp_rgrid_curv_precalc[rcat][(xi - 1)];
+    const double *prate_precalc = &interp_rgrid_curv_precalc[rcat][(xi - 1)][0];
     *rate_f = interp_cubic_precalc(prate_precalc, xo);
-    const double *pdist_precalc = &interp_dgrid_curv_precalc[dcat][(xi - 1)];
+    const double *pdist_precalc = &interp_dgrid_curv_precalc[dcat][(xi - 1)][0];
     *distbysse_f = interp_cubic_precalc(pdist_precalc, xo);
 #endif
 

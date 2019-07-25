@@ -7266,7 +7266,7 @@ EbErrorType ProductGenerateMdCandidatesCu(
                 context_ptr->parent_sq_has_coeff[sq_index] != 0 ? inject_intra_candidate : 0;
         }
      }
-#if AVOID_INTER_4X4_CHROMA 
+#if AVOID_INTER_4X4_CHROMA
     inject_inter_candidate = (context_ptr->blk_geom->has_uv && (context_ptr->blk_geom->bwidth == 4 || context_ptr->blk_geom->bheight == 4)) ? 0 : inject_inter_candidate;
     inject_intra_candidate = (context_ptr->blk_geom->has_uv && (context_ptr->blk_geom->bwidth == 4 || context_ptr->blk_geom->bheight == 4)) ? 1 : inject_intra_candidate;
 #endif
