@@ -282,7 +282,7 @@ extern "C" {
 #if NEW_NEAREST_NEW_INJECTION
         uint32_t                        me_sb_addr;
 #endif
-#if FASTER_PREDICTIVE_ME
+#if PREDICTIVE_ME
         uint32_t                        geom_offset_x;
         uint32_t                        geom_offset_y;
 #endif
@@ -336,7 +336,7 @@ extern "C" {
         uint8_t                         unipred3x3_injection;
         uint8_t                         bipred3x3_injection;
 #if PREDICTIVE_ME
-        uint8_t                         predictive_me_injection;
+        uint8_t                         predictive_me_level;
 #endif
 
         uint8_t                         interpolation_filter_search_blk_size;

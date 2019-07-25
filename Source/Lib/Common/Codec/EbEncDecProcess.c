@@ -1572,16 +1572,21 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
 #if PREDICTIVE_ME
     // Level                Settings
-    // 0                    OFF
-    // 1                    ON
+    // 0                    Level 0: OFF
+    // 1                    Level 1: 7x5 full-pel search + sub-pel refinement off
+    // 2                    Level 2: 7x5 full-pel search +  (H + V) sub-pel refinement only = 4 half-pel + 4 quarter-pel = 8 positions + pred_me_distortion to pa_me_distortion deviation on
+    // 3                    Level 3: 7x5 full-pel search +  (H + V + D only ~ the best) sub-pel refinement = up to 6 half-pel + up to 6  quarter-pel = up to 12 positions + pred_me_distortion to pa_me_distortion deviation on
+    // 4                    Level 4: 7x5 full-pel search +  (H + V + D) sub-pel refinement = 8 half-pel + 8 quarter-pel = 16 positions + pred_me_distortion to pa_me_distortion deviation on
+    // 5                    Level 5: 7x5 full-pel search +  (H + V + D) sub-pel refinement = 8 half-pel + 8 quarter-pel = 16 positions + pred_me_distortion to pa_me_distortion deviation off
+
     if (picture_control_set_ptr->slice_type != I_SLICE)
         // Hsan: kept ON for sc_content_detected as ~5% gain for minecraft clip
         if (picture_control_set_ptr->enc_mode == ENC_M0)
-            context_ptr->predictive_me_injection = 1;
+            context_ptr->predictive_me_level = 4;
         else
-            context_ptr->predictive_me_injection = 0;
+            context_ptr->predictive_me_level = 0;
     else
-        context_ptr->predictive_me_injection = 0;
+        context_ptr->predictive_me_level = 0;
 #endif
 
     // Set interpolation filter search blk size

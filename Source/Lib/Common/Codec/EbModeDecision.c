@@ -4625,7 +4625,7 @@ void  inject_inter_candidates(
 #if !NEW_NEAREST_NEW_INJECTION && !ENHANCED_Nx4_4xN_NEW_MV
     uint32_t me_sb_addr;
 #endif
-#if !FASTER_PREDICTIVE_ME
+#if !PREDICTIVE_ME
     uint32_t geom_offset_x = 0;
     uint32_t geom_offset_y = 0;
 
@@ -4649,13 +4649,13 @@ void  inject_inter_candidates(
         me_sb_addr = lcuAddr;
 #endif
 #endif
-#if !FASTER_PREDICTIVE_ME
+#if !PREDICTIVE_ME
     uint32_t max_number_of_pus_per_sb;
 
     max_number_of_pus_per_sb = picture_control_set_ptr->parent_pcs_ptr->max_number_of_pus_per_sb;
 #endif
 #if MEMORY_FOOTPRINT_OPT_ME_MV
-#if !FASTER_PREDICTIVE_ME
+#if !PREDICTIVE_ME
     context_ptr->me_block_offset =
         (context_ptr->blk_geom->bwidth == 4 || context_ptr->blk_geom->bheight == 4 || context_ptr->blk_geom->bwidth == 128 || context_ptr->blk_geom->bheight == 128) ?
             0 :
@@ -4863,7 +4863,7 @@ void  inject_inter_candidates(
                 uint32_t bheight_to_search = context_ptr->blk_geom->bheight + bheight_offset_to_8;
 
                 // Align parent block has origin inherited by current block
-#if FASTER_PREDICTIVE_ME
+#if PREDICTIVE_ME
                 uint32_t x_to_search = context_ptr->blk_geom->origin_x - (context_ptr->geom_offset_x + ((context_ptr->blk_geom->origin_x & 0x7) ? 4 : 0));
                 uint32_t y_to_search = context_ptr->blk_geom->origin_y - (context_ptr->geom_offset_y + ((context_ptr->blk_geom->origin_y & 0x7) ? 4 : 0));
 #else
@@ -4873,7 +4873,7 @@ void  inject_inter_candidates(
                 // Search the me_info_index of the parent block
                 uint32_t me_info_index = 0;
 
-#if FASTER_PREDICTIVE_ME
+#if PREDICTIVE_ME
                 for (uint32_t block_index = 0; block_index < picture_control_set_ptr->parent_pcs_ptr->max_number_of_pus_per_sb; block_index++) {
 #else
                 for (uint32_t block_index = 0; block_index < max_number_of_pus_per_sb; block_index++) {
@@ -5546,7 +5546,7 @@ void  inject_inter_candidates(
             }
 #endif
 #if PREDICTIVE_ME // inject them
-            if (context_ptr->predictive_me_injection)
+            if (context_ptr->predictive_me_level)
                 inject_predictive_me_candidates(
                     //sequence_control_set_ptr,
                     context_ptr,

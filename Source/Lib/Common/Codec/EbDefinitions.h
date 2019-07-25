@@ -45,12 +45,6 @@ extern "C" {
 #define M0_HME_ME_TUNING                1
 #define PREDICTIVE_ME                   1 // Perform ME search around MVP
 #define QPM                             1 // Use SB QP Mod
-#if PREDICTIVE_ME
-#define FASTER_PREDICTIVE_ME            1
-#define HALF_QUARTER_BREAK_DOWN         1
-#endif
-#define USE_M0_HME_ME_SETTINGS          0 // To enable when running ME related experiments in context of non-M0
-
 #define RE_FACTURE_PRED_KERNEL          1
 
 
@@ -584,11 +578,7 @@ enum {
 #define MAX_TXB_COUNT                             4 // Maximum number of transform blocks.
 #endif
 #if DECOUPLED_FAST_LOOP /*|| MD_CLASS*/  //CHKn this is temp, and needed to get same behaviour for the I framewith the simulation code
-#if PREDICTIVE_ME
-#define MAX_NFL                                   520
-#else
 #define MAX_NFL                                   488 //MODE_DECISION_CANDIDATE_MAX_COUNT
-#endif
 #else
 
 #if MD_CLASS
