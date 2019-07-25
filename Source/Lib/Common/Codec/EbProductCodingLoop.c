@@ -4305,11 +4305,11 @@ static INLINE int is_rect_tx(TxSize tx_size) { return tx_size >= TX_SIZES; }
 static INLINE int is_intrabc_block(const MbModeInfo *mbmi) {
     return mbmi->use_intrabc;
 }
+#if !SHUT_TX_SIZE_RATE
 static INLINE int is_inter_block(const MbModeInfo *mbmi) {
     return is_intrabc_block(mbmi) || mbmi->ref_frame[0] > INTRA_FRAME;
 }
 
-#if !SHUT_TX_SIZE_RATE
 static INLINE int get_vartx_max_txsize(/*const MbModeInfo *xd,*/ BlockSize bsize,
     int plane) {
     /* if (xd->lossless[xd->mi[0]->segment_id]) return TX_4X4;*/
@@ -4476,6 +4476,7 @@ static INLINE void set_txfm_ctxs(TxSize tx_size, int n8_w, int n8_h, int skip,
 }
 #endif
 
+#if !SHUT_TX_SIZE_RATE
 static INLINE int tx_size_to_depth(TxSize tx_size, BlockSize bsize) {
     TxSize ctx_size = max_txsize_rect_lookup[bsize];
     int depth = 0;
@@ -4487,7 +4488,6 @@ static INLINE int tx_size_to_depth(TxSize tx_size, BlockSize bsize) {
     return depth;
 }
 
-#if !SHUT_TX_SIZE_RATE
 
 static INLINE int bsize_to_max_depth(BlockSize bsize) {
     TxSize tx_size = max_txsize_rect_lookup[bsize];

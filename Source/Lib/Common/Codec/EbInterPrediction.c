@@ -2627,7 +2627,7 @@ static void /*int64_t*/ pick_interinter_wedge(
 //  MB_MODE_INFO *const mbmi = xd->mi[0];
   const int bw = block_size_wide[bsize];
 
-  int64_t rd;
+  //int64_t rd;
   int8_t wedge_index = -1;
   int8_t wedge_sign = 0;
 
@@ -2647,9 +2647,9 @@ static void /*int64_t*/ pick_interinter_wedge(
 #endif
         picture_control_set_ptr,context_ptr, bsize, residual1, diff10, wedge_sign,
 #else
-    rd = pick_wedge_fixed_sign(/*cpi, x, */picture_control_set_ptr,context_ptr, bsize, residual1, diff10, wedge_sign,
+    //rd = pick_wedge_fixed_sign(/*cpi, x, */picture_control_set_ptr,context_ptr, bsize, residual1, diff10, wedge_sign,
 #endif
-                               &wedge_index);
+                               //&wedge_index);
   } else {
     /*rd =*/ pick_wedge(/*cpi, x, */picture_control_set_ptr,context_ptr,
         bsize, p0, residual1, diff10, &wedge_sign,

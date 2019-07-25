@@ -2772,7 +2772,7 @@ static INLINE void compute_stats_win7_avx2(
             const __m128i d0 = _mm_unpacklo_epi64(deltas128[0], deltas128[1]);
             const __m128i d1 = _mm_unpacklo_epi64(deltas128[2], deltas128[3]);
             const __m128i d2 = _mm_unpacklo_epi64(deltas128[4], deltas128[5]);
-            const __m128i d3 = _mm_unpacklo_epi64(deltas128[6], deltas128[7]);
+            const __m128i d3 = _mm_unpacklo_epi64(deltas128[6], deltas128[6]);
             const __m128i d4 = _mm_unpackhi_epi64(deltas128[0], deltas128[1]);
             const __m128i d5 = _mm_unpackhi_epi64(deltas128[2], deltas128[3]);
             const __m128i d6 = _mm_unpackhi_epi64(deltas128[4], deltas128[5]);
