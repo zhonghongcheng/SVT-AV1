@@ -238,6 +238,11 @@ extern "C" {
 #endif
 
         SeqHeader                                seq_header;
+#if COMP_MODE
+        uint8_t                                 compound_mode;
+
+
+#endif
     } SequenceControlSet;
 
     typedef struct EbSequenceControlSetInitData

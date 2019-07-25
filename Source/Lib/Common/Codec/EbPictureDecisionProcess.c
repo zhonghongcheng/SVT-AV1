@@ -1678,20 +1678,25 @@ EbErrorType signal_derivation_multi_processes_oq(
             // 0                 OFF: No compond mode search : AVG only
             // 1                 ON: compond mode search: 4 modes
             // 2                 ON: full
+            if (sequence_control_set_ptr->compound_mode)
 #if DISABLE_COMP_SC
 #if FULL_COMPOUND_BDRATE
-            picture_control_set_ptr->compound_mode = picture_control_set_ptr->sc_content_detected ? 0 : 2;
+                picture_control_set_ptr->compound_mode = picture_control_set_ptr->sc_content_detected ? 0 : 2;
 #else
-            picture_control_set_ptr->compound_mode = picture_control_set_ptr->sc_content_detected ? 0 : 1;
+                picture_control_set_ptr->compound_mode = picture_control_set_ptr->sc_content_detected ? 0 : 1;
 #endif
-#else            
+#else
 #if FULL_COMPOUND_BDRATE
-            picture_control_set_ptr->compound_mode =  2;
+                picture_control_set_ptr->compound_mode =  2;
 #else
-            picture_control_set_ptr->compound_mode =  1;
+                picture_control_set_ptr->compound_mode =  1;
 #endif
 #endif
-            if (picture_control_set_ptr->compound_mode) 
+            else
+                picture_control_set_ptr->compound_mode = 0;
+
+            // set compound_types_to_try
+            if (picture_control_set_ptr->compound_mode)
 #if COMP_OPT
                 picture_control_set_ptr->compound_types_to_try = picture_control_set_ptr->compound_mode == 1 ? MD_COMP_DIFF0 : MD_COMP_WEDGE;
 #else

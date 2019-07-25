@@ -34,6 +34,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#define NO_MEMSET                      0 
+#define NO_LOG2_DOUBLE                 0 
+
+#define TFK_QPS_TUNING 0
+#define MD_EXIT  0
 
 #define M1_CAND                         0
 
@@ -58,8 +63,10 @@ extern "C" {
 #define FIRST_FULL_LOOP_TX_SEARCH_OFF_INTER    0
 #define STRENGHTHEN_MD_STAGE_3                 1
 #define CLASS_0_NFL_MD_STAGE_3                 1 // CIN03
+#define CLASS_0_I_SLICE_NFL_MD_STAGE_3         1 // CIN03 modified
 #define CLASS_123_NFL_MD_STAGE_2_3             1 // CIN13,CIN23,CIN33
 #define CLASS_0_NFL_MD_STAGE_2                 0
+#define CLASS_0_NFL_MD_STAGE_3_4_4             1 // CIN03 4 for non ref
 
 #define PRE_BILINEAR_CLEAN_UP                  1
 #define BILINEAR_FAST_LOOP                     1
@@ -95,7 +102,7 @@ extern "C" {
 #define    COMP_FULL                       1 // test compound in full loop
 #define    COMP_AVX                        1 // test compound in full loop
 #endif
-#define II_COMP_FLAG 1
+#define II_COMP_FLAG 0
 
 #if II_COMP_FLAG
 #define  II_COMP            1   // Inter-intra compound
@@ -103,9 +110,9 @@ extern "C" {
 #define  II_EC              1   // ii EC
 #define  II_ED              1   // ii ED
 #define  II_CLASS           1   // ADD its own class
-#define  II_RATEE           1   // Rate estimation 
-#define  II_AVX             1   // AVX 
-#define  FIX_RATE_E_WEDGE   0   // Fix bug in wedge search 
+#define  II_RATEE           1   // Rate estimation
+#define  II_AVX             1   // AVX
+#define  FIX_RATE_E_WEDGE   0   // Fix bug in wedge search
 #endif
 
 #define DISABLE_QPM_SC              1
@@ -429,7 +436,9 @@ typedef enum CAND_CLASS {
 
 #define ESTIMATE_INTRA   1 //use edge detection to bypass some angular modes
 
-
+#if M1_CAND
+#define  N0_COMP   1 //N0 test for compound  N0: no comp for 3x3, GG, PredMe
+#endif
 typedef enum MD_STAGE {
     MD_STAGE_0,
     MD_STAGE_1,
@@ -515,8 +524,9 @@ typedef enum ME_QP_MODE {
 #define TBX_SPLIT_CAP                         1 // SKIP TXB SPLIT WHEN PARENT BLOCK EOB IS 0
 #define ADAPTIVE_TXB_SEARCH_LEVEL             0 // adaptive_txb_search_level
 #define PRUNE_REF_FRAME_FRO_REC_PARTITION     0 // prune_ref_frame_for_rec_partitions
-#define PRUNE_REF_FRAME_AT_ME                 0 // Reduce the nunmber of bipred based on the unipred data.
-
+#if M1_CAND
+#define PRUNE_REF_FRAME_AT_ME                 1 // Reduce the nunmber of bipred based on the unipred data.
+#endif
 #if PRUNE_REF_FRAME_FRO_REC_PARTITION
 #define MAX_REF_TYPE_CAND                     30
 #define PRUNE_REF_FRAME_FRO_REC_PARTITION_MVP  0 // Reduce the nunmber of bipred based on the unipred data.

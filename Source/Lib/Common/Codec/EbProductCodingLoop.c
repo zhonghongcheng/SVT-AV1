@@ -2352,7 +2352,7 @@ void set_md_stage_counts(
 #else
     context_ptr->md_stage_3_count[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ?
         context_ptr->md_stage_2_count[CAND_CLASS_0] :
-#if CLASS_0_NFL_MD_STAGE_3
+#if CLASS_0_NFL_MD_STAGE_3 && !CLASS_0_NFL_MD_STAGE_3_4_4
         (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 1;
 #else
         (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 4;
@@ -2383,7 +2383,11 @@ void set_md_stage_counts(
         context_ptr->md_stage_3_count[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ?
             context_ptr->md_stage_2_count[CAND_CLASS_0] :
 #if CLASS_0_NFL_MD_STAGE_3
+#if CLASS_0_I_SLICE_NFL_MD_STAGE_3
+            10;
+#else
             (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 1;
+#endif
 #else
             (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 4;
 #endif
@@ -3092,7 +3096,9 @@ int32_t av1_mv_bit_cost(const MV *mv, const MV *ref, const int32_t *mvjcost,
 void predictive_me_search(
     PictureControlSet            *picture_control_set_ptr,
     ModeDecisionContext          *context_ptr,
+#if  !FASTER_PREDICTIVE_ME
     ModeDecisionCandidate        *fast_candidate_array,
+#endif
     EbPictureBufferDesc          *input_picture_ptr,
     uint32_t                      inputOriginIndex,
     uint32_t                      cuOriginIndex,
@@ -3322,7 +3328,7 @@ void predictive_me_search(
 
 #if HALF_QUARTER_BREAK_DOWN
                 uint8_t search_pattern;
-                // 0: all possible position(s): horizontal, vertical, diagonal 
+                // 0: all possible position(s): horizontal, vertical, diagonal
                 // 1: horizontal, vertical only
                 // 2: horizontal only
                 // 3: vertical only
@@ -5793,7 +5799,7 @@ void md_stage_2(
     uint64_t        cb_coeff_bits = 0;
     uint64_t        cr_coeff_bits = 0;
 #if ADAPTIVE_TXB_SEARCH_LEVEL
-    uint64_t ref_best_rd  = MAX_CU_COST; 
+    uint64_t ref_best_rd  = MAX_CU_COST;
 #endif
 
 #if !FULL_LOOP_SPLIT
@@ -6402,7 +6408,7 @@ void AV1PerformFullLoop(
     best_inter_luma_zero_coeff = 1;
     bestfullCost = 0xFFFFFFFFull;
 #if ADAPTIVE_TXB_SEARCH_LEVEL
-    uint64_t ref_best_rd  = MAX_CU_COST; 
+    uint64_t ref_best_rd  = MAX_CU_COST;
 #endif
 
     ModeDecisionCandidateBuffer         **candidateBufferPtrArrayBase = context_ptr->candidate_buffer_ptr_array;
@@ -6677,7 +6683,7 @@ void AV1PerformFullLoop(
 #endif
 #endif
 #if ADAPTIVE_TXB_SEARCH_LEVEL
-                ref_best_rd, 
+                ref_best_rd,
 #endif
                 end_tx_depth,
                 context_ptr->cu_ptr->qp,
@@ -6771,7 +6777,7 @@ void AV1PerformFullLoop(
                     candidateBuffer,
                     context_ptr,
 #if ADAPTIVE_TXB_SEARCH_LEVEL
-                    ref_best_rd, 
+                    ref_best_rd,
 #endif
                     picture_control_set_ptr);
 
@@ -8251,7 +8257,7 @@ void md_encode_block(
     candidate_buffer_ptr_array = &(candidateBufferPtrArrayBase[0]);
 #if PRUNE_REF_FRAME_FRO_REC_PARTITION
     for (uint8_t ref_idx = 0; ref_idx < MAX_REF_TYPE_CAND; ref_idx++)
-        context_ptr->ref_best_cost_sq_table[ref_idx] = MAX_CU_COST;  
+        context_ptr->ref_best_cost_sq_table[ref_idx] = MAX_CU_COST;
 #endif
 #if PREDICT_NSQ_SHAPE
  #if ADP_BQ
@@ -8440,7 +8446,9 @@ void md_encode_block(
             predictive_me_search(
                 picture_control_set_ptr,
                 context_ptr,
+#if  !FASTER_PREDICTIVE_ME
                 fast_candidate_array,
+#endif
                 input_picture_ptr,
                 inputOriginIndex,
                 cuOriginIndex,
@@ -9229,6 +9237,11 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #if !OPT_LOSSLESS_0
     UNUSED(all_d1_blocks_done);
 #endif
+#if MD_EXIT
+    int skip_next_nsq = 0;
+    int skip_next_sq = 0;
+    uint32_t next_non_skip_blk_idx_mds = 0;
+#endif
 #if M8_SKIP_BLK
 
     uint8_t skip_sub_blocks;
@@ -9267,39 +9280,39 @@ EB_EXTERN EbErrorType mode_decision_sb(
         cu_ptr->split_flag = (uint16_t)leafDataPtr->split_flag; //mdc indicates smallest or non valid CUs with split flag=
         cu_ptr->qp = context_ptr->qp;
         cu_ptr->best_d1_blk = blk_idx_mds;
- #if PREDICT_NSQ_SHAPE
+#if PREDICT_NSQ_SHAPE
         uint8_t open_loop_block_rank = leafDataPtr->open_loop_ranking;
         uint8_t early_split_flag = leafDataPtr->early_split_flag;
 #endif
-            if (leafDataPtr->tot_d1_blocks != 1)
-            {
-                if (blk_geom->shape == PART_N)
-                    copy_neighbour_arrays(      //save a clean neigh in [1], encode uses [0], reload the clean in [0] after done last ns block in a partition
-                        picture_control_set_ptr,
-                        context_ptr,
-                        0, 1,
-                        blk_idx_mds,
-                        sb_origin_x,
-                        sb_origin_y);
-            }
+        if (leafDataPtr->tot_d1_blocks != 1)
+        {
+            if (blk_geom->shape == PART_N)
+                copy_neighbour_arrays(      //save a clean neigh in [1], encode uses [0], reload the clean in [0] after done last ns block in a partition
+                    picture_control_set_ptr,
+                    context_ptr,
+                    0, 1,
+                    blk_idx_mds,
+                    sb_origin_x,
+                    sb_origin_y);
+        }
 
 #if MRP_COST_EST
-            int32_t mi_row = context_ptr->cu_origin_y >> MI_SIZE_LOG2;
-            int32_t mi_col = context_ptr->cu_origin_x >> MI_SIZE_LOG2;
-            int mi_stride = picture_control_set_ptr->parent_pcs_ptr->av1_cm->mi_stride;
-            const int32_t offset = mi_row * mi_stride + mi_col;
-            cu_ptr->av1xd->mi = picture_control_set_ptr->parent_pcs_ptr->av1_cm->pcs_ptr->mi_grid_base + offset;
-            ModeInfo *mi_ptr = *cu_ptr->av1xd->mi;
-            cu_ptr->av1xd->up_available = (mi_row > sb_ptr->tile_info.mi_row_start);
-            cu_ptr->av1xd->left_available = (mi_col > sb_ptr->tile_info.mi_col_start);
-            if (cu_ptr->av1xd->up_available)
-                cu_ptr->av1xd->above_mbmi = &mi_ptr[-mi_stride].mbmi;
-            else
-                cu_ptr->av1xd->above_mbmi = NULL;
-            if (cu_ptr->av1xd->left_available)
-                cu_ptr->av1xd->left_mbmi = &mi_ptr[-1].mbmi;
-            else
-                cu_ptr->av1xd->left_mbmi = NULL;
+        int32_t mi_row = context_ptr->cu_origin_y >> MI_SIZE_LOG2;
+        int32_t mi_col = context_ptr->cu_origin_x >> MI_SIZE_LOG2;
+        int mi_stride = picture_control_set_ptr->parent_pcs_ptr->av1_cm->mi_stride;
+        const int32_t offset = mi_row * mi_stride + mi_col;
+        cu_ptr->av1xd->mi = picture_control_set_ptr->parent_pcs_ptr->av1_cm->pcs_ptr->mi_grid_base + offset;
+        ModeInfo *mi_ptr = *cu_ptr->av1xd->mi;
+        cu_ptr->av1xd->up_available = (mi_row > sb_ptr->tile_info.mi_row_start);
+        cu_ptr->av1xd->left_available = (mi_col > sb_ptr->tile_info.mi_col_start);
+        if (cu_ptr->av1xd->up_available)
+            cu_ptr->av1xd->above_mbmi = &mi_ptr[-mi_stride].mbmi;
+        else
+            cu_ptr->av1xd->above_mbmi = NULL;
+        if (cu_ptr->av1xd->left_available)
+            cu_ptr->av1xd->left_mbmi = &mi_ptr[-1].mbmi;
+        else
+            cu_ptr->av1xd->left_mbmi = NULL;
 #endif
 
 #if RED_CU
@@ -9340,11 +9353,96 @@ EB_EXTERN EbErrorType mode_decision_sb(
         {
 #endif
 #if ATB_SUPPORT
-        // Initialize tx_depth
-        cu_ptr->tx_depth = 0;
+            // Initialize tx_depth
+            cu_ptr->tx_depth = 0;
 #endif
+
 #if  INCOMPLETE_SB_FIX
-        if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[cu_ptr->mds_idx]) {
+#if MD_EXIT
+
+#if MD_EXIT
+
+        if (/*blk_geom->quadi != 3 &&*/ blk_geom->quadi > 0 && blk_geom->shape == PART_N) {
+
+            uint32_t  blk_mds = context_ptr->blk_geom->sqi_mds;
+            uint64_t                    parent_depth_cost = 0, current_depth_cost = 0;
+            SequenceControlSet     *sequence_control_set_ptr = (SequenceControlSet*)picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr;
+            uint32_t    parent_depth_idx_mds = blk_mds;
+            uint32_t    current_depth_idx_mds = blk_mds;
+
+            //get parent idx
+            parent_depth_idx_mds = (context_ptr->blk_geom->sqi_mds - (context_ptr->blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][context_ptr->blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
+#if INTRA64_FIX
+            if (picture_control_set_ptr->slice_type == I_SLICE && parent_depth_idx_mds == 0 && sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128)
+#else
+            if (picture_control_set_ptr->slice_type == I_SLICE && parent_depth_idx_mds == 0)
+#endif
+                parent_depth_cost = MAX_MODE_COST;
+            else
+                compute_depth_costs_md_skip(context_ptr, sequence_control_set_ptr, current_depth_idx_mds, parent_depth_idx_mds, ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][context_ptr->blk_geom->depth], &parent_depth_cost, &current_depth_cost);
+#if INCOMPLETE_SB_FIX
+            if (!sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[parent_depth_idx_mds])
+                parent_depth_cost = MAX_MODE_COST;
+#endif
+            if (parent_depth_cost <= current_depth_cost) {
+                //printf("%d\t%d\n",
+                //    context_ptr->blk_geom->depth,
+                //    context_ptr->blk_geom->quadi);
+                skip_next_sq = 1;
+                next_non_skip_blk_idx_mds = parent_depth_idx_mds + ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][context_ptr->blk_geom->depth - 1];
+                //  context_ptr->md_cu_arr_nsq[parent_depth_idx_mds].split_flag = EB_FALSE;
+                //  context_ptr->md_local_cu_unit[parent_depth_idx_mds].cost = parent_depth_cost;
+            }
+            else {
+                skip_next_sq = 0;
+                //    context_ptr->md_local_cu_unit[parent_depth_idx_mds].cost = current_depth_cost;
+                //    context_ptr->md_cu_arr_nsq[parent_depth_idx_mds].part = PARTITION_SPLIT;
+            }
+        }
+        if(cu_ptr->mds_idx >= next_non_skip_blk_idx_mds && skip_next_sq == 1)
+            skip_next_sq = 0;
+#endif
+            if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[cu_ptr->mds_idx] && !skip_next_nsq && !skip_next_sq) {
+#else
+            if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[cu_ptr->mds_idx]) {
+#endif
+                md_encode_block(
+                    sequence_control_set_ptr,
+                    picture_control_set_ptr,
+                    context_ptr,
+                    ss_mecontext,
+#if M8_SKIP_BLK
+                    &skip_sub_blocks,
+#else
+                    0xFFFFFFFF,
+#endif
+                    lcuAddr,
+#if PREDICT_NSQ_SHAPE
+                    open_loop_block_rank,
+                    early_split_flag,
+#endif
+#if TBX_SPLIT_CAP
+                skip_atb,
+#endif
+                    bestCandidateBuffers);
+
+            }
+#if MD_EXIT
+            else if (skip_next_sq) {
+                context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost = (MAX_MODE_COST >> 10);
+            }
+#endif
+            else {
+            // If the block is out of the boundaries, md is not performed.
+                // - For square blocks, since the blocks can be further splitted, they are considered in d2_inter_depth_block_decision with cost of zero.
+            // - For non square blocks, since they can not be splitted further the cost is set to a large value (MAX_MODE_COST >> 4) to make sure they are not selected.
+                //   The value is set to MAX_MODE_COST >> 4 to make sure there is not overflow when adding costs.
+                if (context_ptr->blk_geom->shape != PART_N)
+                    context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost = (MAX_MODE_COST >> 4);
+                else
+                    context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost = 0;
+            }
+#else
             md_encode_block(
                 sequence_control_set_ptr,
                 picture_control_set_ptr,
@@ -9356,46 +9454,35 @@ EB_EXTERN EbErrorType mode_decision_sb(
                 0xFFFFFFFF,
 #endif
                 lcuAddr,
- #if PREDICT_NSQ_SHAPE
-                open_loop_block_rank,
-                early_split_flag,
-#endif
-#if TBX_SPLIT_CAP
-                skip_atb,
-#endif
                 bestCandidateBuffers);
-
-        }
-        else {
-            // If the block is out of the boundaries, md is not performed.
-            // - For square blocks, since the blocks can be further splitted, they are considered in d2_inter_depth_block_decision with cost of zero.
-            // - For non square blocks, since they can not be splitted further the cost is set to a large value (MAX_MODE_COST >> 4) to make sure they are not selected.
-            //   The value is set to MAX_MODE_COST >> 4 to make sure there is not overflow when adding costs.
-            if (context_ptr->blk_geom->shape != PART_N)
-                context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost = (MAX_MODE_COST >> 4);
-            else
-                context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost = 0;
-        }
-#else
-        md_encode_block(
-            sequence_control_set_ptr,
-            picture_control_set_ptr,
-            context_ptr,
-            ss_mecontext,
-#if M8_SKIP_BLK
-            &skip_sub_blocks,
-#else
-            0xFFFFFFFF,
-#endif
-            lcuAddr,
-            bestCandidateBuffers);
 #if FIX_ATB_SUPPORT
-        }
+            }
 #endif
+#endif
+#if MD_EXIT
+        skip_next_nsq = 0;
 #endif
         if (blk_geom->nsi + 1 == blk_geom->totns)
             d1_non_square_block_decision(context_ptr);
 
+
+#if MD_EXIT
+        else {
+            uint64_t tot_cost = 0;
+            uint32_t first_blk_idx = context_ptr->cu_ptr->mds_idx - (blk_geom->nsi);//index of first block in this partition
+            for (int blk_it = 0; blk_it < blk_geom->nsi + 1; blk_it++)
+            {
+                tot_cost += context_ptr->md_local_cu_unit[first_blk_idx + blk_it].cost;
+
+            }
+            if (tot_cost > context_ptr->md_local_cu_unit[context_ptr->blk_geom->sqi_mds].cost) {
+       /*         printf("BREAK:POC:%d\t%d\n",
+                    blk_geom->nsi,
+                    blk_geom->totns);*/
+               // skip_next_nsq = 1;
+            }
+        }
+#endif
         if (blk_geom->shape != PART_N) {
             if (blk_geom->nsi + 1 < blk_geom->totns)
                 md_update_all_neighbour_arrays(
@@ -9441,6 +9528,8 @@ EB_EXTERN EbErrorType mode_decision_sb(
                     sb_origin_y);
             }
         }
+
+
 #if !M8_SKIP_BLK
 
         cuIdx++;

@@ -71,10 +71,10 @@ static INLINE int is_interintra_allowed(const MB_MODE_INFO *mbmi) {
 int svt_is_interintra_allowed(
     uint8_t enable_inter_intra,
     BlockSize sb_type,
-    PredictionMode mode,    
+    PredictionMode mode,
     MvReferenceFrame ref_frame[2])
 {
-    return 
+    return
         enable_inter_intra &&
         is_interintra_allowed_bsize((const BlockSize)sb_type) &&
         is_interintra_allowed_mode(mode)  &&
@@ -86,11 +86,11 @@ int svt_is_interintra_allowed(
 * Constants
 ********************************************/
 #if II_SEARCH
-// 1 - Regular uni-pred , 
+// 1 - Regular uni-pred ,
 // 2 - Regular uni-pred + Wedge compound Inter Intra
 // 3 - Regular uni-pred + Wedge compound Inter Intra + Smooth compound Inter Intra
 
-#define II_COUNT                3 
+#define II_COUNT                3
 #endif
 #if COMP_MODE
 
@@ -206,7 +206,7 @@ EbErrorType  intra_luma_prediction_for_interintra(
     PictureControlSet           *picture_control_set_ptr,
     INTERINTRA_MODE              interintra_mode,
     EbPictureBufferDesc         *prediction_ptr);
-int64_t pick_wedge_fixed_sign(    
+int64_t pick_wedge_fixed_sign(
     ModeDecisionCandidate        *candidate_ptr,
     PictureControlSet                    *picture_control_set_ptr,
     ModeDecisionContext                  *context_ptr,
@@ -253,7 +253,7 @@ static int64_t pick_interintra_wedge(
     //    aom_highbd_subtract_block(bh, bw, diff10, bw, CONVERT_TO_BYTEPTR(p1), bw,
     //        CONVERT_TO_BYTEPTR(p0), bw, xd->bd);
     //}
-    //else 
+    //else
     {
 
         //int rows, int cols, int16_t *diff,
@@ -271,7 +271,7 @@ static int64_t pick_interintra_wedge(
         pick_wedge_fixed_sign(candidate_ptr,picture_control_set_ptr, context_ptr, bsize, residual1, diff10, 0, &wedge_index);
 
     *wedge_index_out = wedge_index;
-    
+
    // mbmi->interintra_wedge_sign = 0;
    // mbmi->interintra_wedge_index = wedge_index;
     return rd;
@@ -290,7 +290,7 @@ void inter_intra_search(
 {
     DECLARE_ALIGNED(16, uint8_t, tmp_buf[ MAX_INTERINTRA_SB_SQUARE]);
     DECLARE_ALIGNED(16, uint8_t, intrapred[ MAX_INTERINTRA_SB_SQUARE]);
-    
+
     DECLARE_ALIGNED(16, uint8_t, ii_pred_buf[MAX_INTERINTRA_SB_SQUARE]);
     //get inter pred for ref0
     EbPictureBufferDesc   *src_pic = picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr;
@@ -334,9 +334,9 @@ void inter_intra_search(
         ref_pic_list1 = ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[list_idx1][ref_idx_l1]->object_ptr)->reference_picture;
     else
         ref_pic_list1 = (EbPictureBufferDesc*)EB_NULL;
-   
+
     mv_unit.pred_direction = candidate_ptr->prediction_direction[0];
-  
+
     pred_desc.buffer_y = tmp_buf;
 
     //int64_t skip_sse_sb = INT64_MAX;
@@ -371,7 +371,7 @@ void inter_intra_search(
         &mv_unit,
         0,//use_intrabc,
 #if COMP_MODE
-        1,//compound_idx not used 
+        1,//compound_idx not used
 #endif
 #if COMP_DIFF
         NULL,// interinter_comp not used
@@ -401,14 +401,14 @@ void inter_intra_search(
 
     const int is_wedge_used = is_interintra_wedge_used(context_ptr->blk_geom->bsize);
     assert(is_wedge_used);//if not I need to add nowedge path!!
-    
+
     int64_t best_interintra_rd_wedge = INT64_MAX;
     int64_t rd = INT64_MAX;
     int64_t best_interintra_rd = INT64_MAX;
-    int rmode = 0, rate_sum;  
+    int rmode = 0, rate_sum;
     int64_t dist_sum;
     int tmp_rate_mv = 0;
-   
+
 
     INTERINTRA_MODE best_interintra_mode = INTERINTRA_MODES;
     EbPictureBufferDesc  inra_pred_desc;
@@ -493,7 +493,7 @@ void inter_intra_search(
     int enable_wedge_interintra_search = 0;
     if (enable_wedge_interintra_search)
     {
-        if (best_interintra_mode == INTERINTRA_MODES) {//Optimization TBD: search only for the first MV mode per ref 
+        if (best_interintra_mode == INTERINTRA_MODES) {//Optimization TBD: search only for the first MV mode per ref
 
             INTERINTRA_MODE   interintra_mode = II_SMOOTH_PRED;
             intra_luma_prediction_for_interintra(
@@ -504,12 +504,12 @@ void inter_intra_search(
 
             candidate_ptr->ii_wedge_sign = 0;
 
-            pick_interintra_wedge(    
+            pick_interintra_wedge(
                 candidate_ptr,
                 picture_control_set_ptr,
                 context_ptr,
                 context_ptr->blk_geom->bsize,
-                intrapred, 
+                intrapred,
                 tmp_buf,
                 src_buf,
                 src_pic->stride_y,
@@ -518,8 +518,8 @@ void inter_intra_search(
 
             int j = 0;
             for (j = 0; j < INTERINTRA_MODES; ++j) {
-                
-                interintra_mode = (INTERINTRA_MODE)j;   
+
+                interintra_mode = (INTERINTRA_MODE)j;
 
                 const int bsize_group = size_group_lookup[context_ptr->blk_geom->bsize];
                 rmode  = candidate_ptr->md_rate_estimation_ptr->inter_intra_mode_fac_bits[bsize_group][interintra_mode];
@@ -539,13 +539,13 @@ void inter_intra_search(
                     context_ptr->blk_geom->bsize,// plane_bsize,
                     ii_pred_buf, bwidth, /*uint8_t *comppred, int compstride,*/
                     tmp_buf, bwidth,  /*const uint8_t *interpred, int interstride,*/
-                    intrapred, bwidth /*const uint8_t *intrapred,   int intrastride*/); 
+                    intrapred, bwidth /*const uint8_t *intrapred,   int intrastride*/);
 
 
                 model_rd_for_sb_with_curvfit(picture_control_set_ptr, context_ptr, context_ptr->blk_geom->bsize, bwidth, bheight,
                     src_buf, src_pic->stride_y, ii_pred_buf, bwidth,
                    0, 0, 0, 0, &rate_sum,  &dist_sum, NULL, NULL, NULL, NULL, NULL);
-                
+
                 rd = RDCOST(context_ptr->full_lambda, tmp_rate_mv + rate_sum + rmode, dist_sum);
                 if (rd < best_interintra_rd) {
                     best_interintra_rd_wedge = rd;
@@ -553,7 +553,7 @@ void inter_intra_search(
 
                     //CHKN added this as fix from lib-aom
                     best_interintra_rd = rd;
-                }  
+                }
             }
 
             candidate_ptr->interintra_mode      = best_interintra_mode;
@@ -1257,9 +1257,9 @@ void Unipred3x3CandidatesInjection(
 #else
         if (context_ptr->injected_mv_count_l0 == 0 || is_already_injected_mv_l0(context_ptr, to_inject_mv_x, to_inject_mv_y) == EB_FALSE) {
 #endif
-#if II_SEARCH // 3x3  L0 
-             MvReferenceFrame rf[2];  
-             rf[0] = to_inject_ref_type;  
+#if II_SEARCH // 3x3  L0
+             MvReferenceFrame rf[2];
+             rf[0] = to_inject_ref_type;
              rf[1] = -1;
             uint8_t tot_ii_types =    svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra,context_ptr->blk_geom->bsize, NEWMV, rf) ? II_COUNT : 1;
             uint8_t ii_type;
@@ -1319,7 +1319,7 @@ void Unipred3x3CandidatesInjection(
 
             candidateArray[canTotalCnt].motion_vector_pred_x[REF_LIST_0] = bestPredmv[0].as_mv.col;
             candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_0] = bestPredmv[0].as_mv.row;
-#if II_SEARCH              
+#if II_SEARCH
                 candidateArray[canTotalCnt].is_interintra_used = ii_type == 0 ? 0 : 1;
                 if (ii_type == 1) {
                     inter_intra_search(
@@ -1414,9 +1414,9 @@ void Unipred3x3CandidatesInjection(
 #else
             if (context_ptr->injected_mv_count_l1 == 0 || is_already_injected_mv_l1(context_ptr, to_inject_mv_x, to_inject_mv_y) == EB_FALSE) {
 #endif
-#if II_SEARCH // 3x3  L1 
-             MvReferenceFrame rf[2]; 
-             rf[0] = to_inject_ref_type;  
+#if II_SEARCH // 3x3  L1
+             MvReferenceFrame rf[2];
+             rf[0] = to_inject_ref_type;
              rf[1] = -1;
             uint8_t tot_ii_types =    svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra,context_ptr->blk_geom->bsize, NEWMV, rf) ? II_COUNT : 1;
             uint8_t ii_type;
@@ -1473,7 +1473,7 @@ void Unipred3x3CandidatesInjection(
 
                 candidateArray[canTotalCnt].motion_vector_pred_x[REF_LIST_1] = bestPredmv[0].as_mv.col;
                 candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_1] = bestPredmv[0].as_mv.row;
-#if II_SEARCH              
+#if II_SEARCH
                 candidateArray[canTotalCnt].is_interintra_used = ii_type == 0 ? 0 : 1;
                 if (ii_type == 1) {
                     inter_intra_search(
@@ -1562,6 +1562,12 @@ void Bipred3x3CandidatesInjection(
         (bsize >= BLOCK_8X8 && bsize <= BLOCK_32X32) ? compound_types_to_try :
         (compound_types_to_try == MD_COMP_WEDGE) ? MD_COMP_DIFF0 :
         picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;
+
+
+#if N0_COMP
+    tot_comp_types = picture_control_set_ptr->enc_mode == ENC_M1 ? MD_COMP_AVG : tot_comp_types;
+#endif
+
 #else
     MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize<= BLOCK_32X32 ) ? compound_types_to_try :
                                   (compound_types_to_try == MD_COMP_WEDGE )? MD_COMP_DIFF0 :
@@ -1681,7 +1687,7 @@ void Bipred3x3CandidatesInjection(
             candidateArray[canTotalCnt].pred_mode = NEW_NEWMV;
             candidateArray[canTotalCnt].motion_mode = SIMPLE_TRANSLATION;
             candidateArray[canTotalCnt].is_compound = 1;
-#if II_COMP            
+#if II_COMP
             candidateArray[canTotalCnt].is_interintra_used = 0;
 #endif
             candidateArray[canTotalCnt].prediction_direction[0] = (EbPredDirection)2;
@@ -1840,7 +1846,7 @@ void Bipred3x3CandidatesInjection(
                 candidateArray[canTotalCnt].pred_mode = NEW_NEWMV;
                 candidateArray[canTotalCnt].motion_mode = SIMPLE_TRANSLATION;
                 candidateArray[canTotalCnt].is_compound = 1;
-#if II_COMP            
+#if II_COMP
                 candidateArray[canTotalCnt].is_interintra_used = 0;
 #endif
                 candidateArray[canTotalCnt].prediction_direction[0] = (EbPredDirection)2;
@@ -2344,7 +2350,7 @@ void inject_mvp_candidates_II(
 
         if (inj_mv) {
 
-#if II_SEARCH // NEARESTMV             
+#if II_SEARCH // NEARESTMV
             uint8_t tot_ii_types = svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra,bsize, NEARESTMV, rf) ? II_COUNT : 1;
             uint8_t ii_type;
             for (ii_type = 0; ii_type < tot_ii_types; ii_type++)
@@ -2392,7 +2398,7 @@ void inject_mvp_candidates_II(
                 context_ptr->injected_ref_type_l1_array[context_ptr->injected_mv_count_l1] = frame_type;
                 ++context_ptr->injected_mv_count_l1;
             }
-#if II_SEARCH              
+#if II_SEARCH
                 candidateArray[canIdx].is_interintra_used = ii_type == 0 ? 0 : 1;
                 if (ii_type == 1) {
                     inter_intra_search(
@@ -2440,7 +2446,7 @@ void inject_mvp_candidates_II(
                 context_ptr->injected_mv_count_l1 == 0 || mrp_is_already_injected_mv_l1(context_ptr, to_inject_mv_x, to_inject_mv_y, frame_type) == EB_FALSE;
 
             if (inj_mv) {
-#if II_SEARCH // NEARMV           
+#if II_SEARCH // NEARMV
             uint8_t tot_ii_types = svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra,bsize, NEARMV, rf) ? II_COUNT : 1;
             uint8_t ii_type;
             for (ii_type = 0; ii_type < tot_ii_types; ii_type++)
@@ -2488,7 +2494,7 @@ void inject_mvp_candidates_II(
                     context_ptr->injected_ref_type_l1_array[context_ptr->injected_mv_count_l1] = frame_type;
                     ++context_ptr->injected_mv_count_l1;
                 }
-#if II_SEARCH              
+#if II_SEARCH
                 candidateArray[canIdx].is_interintra_used = ii_type == 0 ? 0 : 1;
                 if (ii_type == 1) {
                     inter_intra_search(
@@ -3876,6 +3882,11 @@ void inject_new_candidates(
         (bsize >= BLOCK_8X8 && bsize <= BLOCK_32X32) ? compound_types_to_try :
         (compound_types_to_try == MD_COMP_WEDGE) ? MD_COMP_DIFF0 :
         picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;
+
+#if N0_COMP
+    tot_comp_types = picture_control_set_ptr->enc_mode == ENC_M1 ? MD_COMP_AVG : tot_comp_types;
+#endif
+
 #else
     MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize<= BLOCK_32X32 ) ? compound_types_to_try :
                                   (compound_types_to_try == MD_COMP_WEDGE )? MD_COMP_DIFF0 :
@@ -3920,7 +3931,7 @@ void inject_new_candidates(
 #endif
 
 
-#if II_SEARCH    // NEWMV L0 
+#if II_SEARCH    // NEWMV L0
              MvReferenceFrame rf[2];
              rf[0] = to_inject_ref_type;
              rf[1] = -1;
@@ -3984,7 +3995,7 @@ void inject_new_candidates(
                 candidateArray[canTotalCnt].motion_vector_pred_x[REF_LIST_0] = bestPredmv[0].as_mv.col;
                 candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_0] = bestPredmv[0].as_mv.row;
 
-#if II_SEARCH              
+#if II_SEARCH
                 candidateArray[canTotalCnt].is_interintra_used = ii_type == 0 ? 0 : 1;
                 if (ii_type == 1) {
                     inter_intra_search(
@@ -4057,9 +4068,9 @@ void inject_new_candidates(
                 if (context_ptr->injected_mv_count_l1 == 0 || is_already_injected_mv_l1(context_ptr, to_inject_mv_x, to_inject_mv_y) == EB_FALSE) {
 #endif
 
-#if II_SEARCH // NEWMV L1 
-             MvReferenceFrame rf[2];  
-             rf[0] = to_inject_ref_type;  
+#if II_SEARCH // NEWMV L1
+             MvReferenceFrame rf[2];
+             rf[0] = to_inject_ref_type;
              rf[1] = -1;
             uint8_t tot_ii_types =    svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra,bsize, NEWMV, rf) ? II_COUNT : 1;
             uint8_t ii_type;
@@ -4120,7 +4131,7 @@ void inject_new_candidates(
 
                     candidateArray[canTotalCnt].motion_vector_pred_x[REF_LIST_1] = bestPredmv[0].as_mv.col;
                     candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_1] = bestPredmv[0].as_mv.row;
-#if II_SEARCH              
+#if II_SEARCH
                 candidateArray[canTotalCnt].is_interintra_used = ii_type == 0 ? 0 : 1;
                 if (ii_type == 1) {
                     inter_intra_search(
@@ -4146,7 +4157,7 @@ void inject_new_candidates(
                     ++canTotalCnt;
 #endif
 
-#if II_SEARCH            
+#if II_SEARCH
             }
 #endif
                     context_ptr->injected_mv_x_l1_array[context_ptr->injected_mv_count_l1] = to_inject_mv_x;
@@ -4346,6 +4357,10 @@ void inject_predictive_me_candidates(
     MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize <= BLOCK_32X32) ? compound_types_to_try :
         (compound_types_to_try == MD_COMP_WEDGE) ? MD_COMP_DIFF0 :
         picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;//MD_COMP_DIST;// MD_COMP_AVG;//
+#if N0_COMP
+    tot_comp_types = picture_control_set_ptr->enc_mode == ENC_M1 ? MD_COMP_AVG : tot_comp_types;
+#endif
+
 #endif
 
     uint8_t listIndex;
@@ -4369,7 +4384,7 @@ void inject_predictive_me_candidates(
                     candidateArray[canTotalCnt].pred_mode = NEWMV;
                     candidateArray[canTotalCnt].motion_mode = SIMPLE_TRANSLATION;
                     candidateArray[canTotalCnt].is_compound = 0;
-#if II_SEARCH // PME OFF   L0          
+#if II_SEARCH // PME OFF   L0
                     candidateArray[canTotalCnt].is_interintra_used = 0;
 #endif
                     candidateArray[canTotalCnt].is_new_mv = 1;
@@ -4432,7 +4447,7 @@ void inject_predictive_me_candidates(
                         candidateArray[canTotalCnt].pred_mode = NEWMV;
                         candidateArray[canTotalCnt].motion_mode = SIMPLE_TRANSLATION;
                         candidateArray[canTotalCnt].is_compound = 0;
-#if II_SEARCH // PME OFF   L1               
+#if II_SEARCH // PME OFF   L1
                         candidateArray[canTotalCnt].is_interintra_used = 0;
 #endif
                         candidateArray[canTotalCnt].is_new_mv = 1;
@@ -4524,7 +4539,7 @@ void inject_predictive_me_candidates(
                                 candidateArray[canTotalCnt].pred_mode = NEW_NEWMV;
                                 candidateArray[canTotalCnt].motion_mode = SIMPLE_TRANSLATION;
                                 candidateArray[canTotalCnt].is_compound = 1;
-#if II_COMP            
+#if II_COMP
                                 candidateArray[canTotalCnt].is_interintra_used = 0;
 #endif
                                 candidateArray[canTotalCnt].prediction_direction[0] = (EbPredDirection)2;
@@ -4604,7 +4619,7 @@ void  inject_inter_candidates(
 
     (void)sequence_control_set_ptr;
     uint32_t                   canTotalCnt = *candidateTotalCnt;
-    const uint32_t             lcuAddr = sb_ptr->index;
+    //const uint32_t             lcuAddr = sb_ptr->index;
     ModeDecisionCandidate    *candidateArray = context_ptr->fast_candidate_array;
     EbBool isCompoundEnabled = (picture_control_set_ptr->parent_pcs_ptr->reference_mode == SINGLE_REFERENCE) ? 0 : 1;
 #if !NEW_NEAREST_NEW_INJECTION && !ENHANCED_Nx4_4xN_NEW_MV
@@ -4712,6 +4727,10 @@ void  inject_inter_candidates(
         (bsize >= BLOCK_8X8 && bsize <= BLOCK_32X32) ? compound_types_to_try :
         (compound_types_to_try == MD_COMP_WEDGE) ? MD_COMP_DIFF0 :
         picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;
+#if N0_COMP
+    tot_comp_types = picture_control_set_ptr->enc_mode == ENC_M1 ? MD_COMP_AVG : tot_comp_types;
+#endif
+
 #else
     MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize<= BLOCK_32X32 ) ? compound_types_to_try :
                                   (compound_types_to_try == MD_COMP_WEDGE )? MD_COMP_DIFF0 :
@@ -5214,7 +5233,7 @@ void  inject_inter_candidates(
             if (context_ptr->injected_mv_count_l0 == 0 || is_already_injected_mv_l0(context_ptr, to_inject_mv_x, to_inject_mv_y) == EB_FALSE) {
 #endif
 #if II_SEARCH      // GLOBALMV L0
-             MvReferenceFrame rf[2];  
+             MvReferenceFrame rf[2];
              rf[0] = to_inject_ref_type;
              rf[1] = -1;
             uint8_t tot_ii_types = svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra,bsize, GLOBALMV, rf) ? II_COUNT : 1;
@@ -5257,7 +5276,7 @@ void  inject_inter_candidates(
                 // Set the MV to frame MV
                 candidateArray[canTotalCnt].motion_vector_xl0 = to_inject_mv_x;
                 candidateArray[canTotalCnt].motion_vector_yl0 = to_inject_mv_y;
-#if II_SEARCH              
+#if II_SEARCH
                 candidateArray[canTotalCnt].is_interintra_used = ii_type == 0 ? 0 : 1;
                 if (ii_type == 1) {
                     inter_intra_search(
@@ -5281,7 +5300,7 @@ void  inject_inter_candidates(
 #else
                 ++canTotalCnt;
 #endif
-#if II_SEARCH            
+#if II_SEARCH
             }
 #endif
 
@@ -6791,8 +6810,13 @@ static void get_gradient_hist(const uint8_t *src, int src_stride, int rows,
         src += src_stride;
     }
 }
-static void angle_estimation(const uint8_t *src, int src_stride, int rows,
-    int cols, BLOCK_SIZE bsize,   uint8_t *directional_mode_skip_mask)
+static void angle_estimation(
+    const uint8_t *src,
+    int src_stride,
+    int rows,
+    int cols,
+    //BLOCK_SIZE bsize,
+    uint8_t *directional_mode_skip_mask)
 {
     // Check if angle_delta is used
     //if (!av1_use_angle_delta(bsize)) return;
@@ -6863,15 +6887,15 @@ void  inject_intra_candidates(
 
 #if ESTIMATE_INTRA
     context_ptr->estimate_angle_intra = picture_control_set_ptr->enc_mode == ENC_M0 ? 1 : 0;
-    uint8_t directional_mode_skip_mask[INTRA_MODES] = { 0 };  
+    uint8_t directional_mode_skip_mask[INTRA_MODES] = { 0 };
 
-    if (context_ptr->estimate_angle_intra==1 && use_angle_delta  )   
+    if (context_ptr->estimate_angle_intra==1 && use_angle_delta  )
     {
         EbPictureBufferDesc   *src_pic = picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr;
         uint8_t               *src_buf = src_pic->buffer_y + (context_ptr->cu_origin_x + src_pic->origin_x) + (context_ptr->cu_origin_y + src_pic->origin_y) * src_pic->stride_y;
         const int rows = block_size_high[context_ptr->blk_geom->bsize];
         const int cols = block_size_wide[context_ptr->blk_geom->bsize];
-        angle_estimation(src_buf, src_pic->stride_y, rows, cols, context_ptr->blk_geom->bsize,directional_mode_skip_mask);
+        angle_estimation(src_buf, src_pic->stride_y, rows, cols, /*context_ptr->blk_geom->bsize,*/directional_mode_skip_mask);
     }
 #endif
 
@@ -6948,7 +6972,7 @@ void  inject_intra_candidates(
 
 #if ESTIMATE_INTRA
             if (!disable_angle_prediction &&
-                 directional_mode_skip_mask[(PredictionMode)openLoopIntraCandidate]==0) {               
+                 directional_mode_skip_mask[(PredictionMode)openLoopIntraCandidate]==0) {
 #else
             if (!disable_angle_prediction) {
 #endif
@@ -7420,7 +7444,7 @@ uint8_t product_full_mode_decision(
                     assert(ref_frame_type < MAX_REF_TYPE_CAND);
                     context_ptr->ref_best_cost_sq_table[ref_frame_type] = *(buffer_ptr_array[candidateIndex]->full_cost_ptr);
                 }
-                
+
             }
             //Sort ref_frame by sq cost.
             uint32_t i, j, index;
