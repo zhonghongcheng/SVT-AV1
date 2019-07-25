@@ -1683,7 +1683,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->md_staging_mode = 0; //use fast-loop0->full-loop
 
-    // Derive nic level 
+    // Derive nic level
 #if M1_CAND
     context_ptr->nic_level = 1;
 #else

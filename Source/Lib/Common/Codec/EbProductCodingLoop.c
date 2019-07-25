@@ -2325,7 +2325,7 @@ void set_md_stage_counts(
 #if MR_MODE
     context_ptr->md_stage_3_count[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ? context_ptr->md_stage_2_count[CAND_CLASS_0] : (picture_control_set_ptr->slice_type == I_SLICE) ? 10 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 10 : 10;
 #else
-    if (context_ptr->nic_level == 1) // to use a lookup table if more changes 
+    if (context_ptr->nic_level == 1) // to use a lookup table if more changes
         context_ptr->md_stage_3_count[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ? context_ptr->md_stage_2_count[CAND_CLASS_0] : (picture_control_set_ptr->slice_type == I_SLICE) ? 10 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 1;
     else
         context_ptr->md_stage_3_count[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ? context_ptr->md_stage_2_count[CAND_CLASS_0] : (picture_control_set_ptr->slice_type == I_SLICE) ? 10 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 4;
@@ -4301,11 +4301,11 @@ static INLINE int block_signals_txsize(BlockSize bsize) {
     return bsize > BLOCK_4X4;
 }
 static INLINE int is_rect_tx(TxSize tx_size) { return tx_size >= TX_SIZES; }
-#endif
+
 static INLINE int is_intrabc_block(const MbModeInfo *mbmi) {
     return mbmi->use_intrabc;
 }
-#if !SHUT_TX_SIZE_RATE
+
 static INLINE int is_inter_block(const MbModeInfo *mbmi) {
     return is_intrabc_block(mbmi) || mbmi->ref_frame[0] > INTRA_FRAME;
 }
@@ -4474,9 +4474,7 @@ static INLINE void set_txfm_ctxs(TxSize tx_size, int n8_w, int n8_h, int skip,
     set_txfm_ctx(xd->above_txfm_context, bw, n8_w);
     set_txfm_ctx(xd->left_txfm_context, bh, n8_h);
 }
-#endif
 
-#if !SHUT_TX_SIZE_RATE
 static INLINE int tx_size_to_depth(TxSize tx_size, BlockSize bsize) {
     TxSize ctx_size = max_txsize_rect_lookup[bsize];
     int depth = 0;

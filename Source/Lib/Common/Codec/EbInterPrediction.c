@@ -2553,60 +2553,60 @@ static int8_t estimate_wedge_sign(
   return (tl + br > 0);
 }
 
-// Choose the best wedge index the specified sign
-#if II_COMP
-int64_t pick_wedge_fixed_sign(
-#else
-static int64_t pick_wedge_fixed_sign(
-#endif
-#if FIX_RATE_E_WEDGE || II_COMP
-    ModeDecisionCandidate        *candidate_ptr,
-#endif
-    PictureControlSet                    *picture_control_set_ptr,
-    ModeDecisionContext                  *context_ptr,
-    //const AV1_COMP *const cpi,
-    //const MACROBLOCK *const x,
-    const BLOCK_SIZE bsize,
-    const int16_t *const residual1,
-    const int16_t *const diff10,
-    const int8_t wedge_sign,
-    int8_t *const best_wedge_index) {
-  //const MACROBLOCKD *const xd = &x->e_mbd;
-
-  const int bw = block_size_wide[bsize];
-  const int bh = block_size_high[bsize];
-  const int N = bw * bh;
-  assert(N >= 64);
-  int rate;
-  int64_t dist;
-  int64_t rd, best_rd = INT64_MAX;
-  int8_t wedge_index;
-  int8_t wedge_types = (1 << get_wedge_bits_lookup(bsize));
-  const uint8_t *mask;
-  uint64_t sse;
-  //const int hbd = 0;// is_cur_buf_hbd(xd);
-  const int bd_round = 0;//hbd ? (xd->bd - 8) * 2 : 0;
-  for (wedge_index = 0; wedge_index < wedge_types; ++wedge_index) {
-    mask = av1_get_contiguous_soft_mask(wedge_index, wedge_sign, bsize);
-    sse = av1_wedge_sse_from_residuals(residual1, diff10, mask, N);
-    sse = ROUND_POWER_OF_TWO(sse, bd_round);
-
-    model_rd_with_curvfit(picture_control_set_ptr,bsize, /*0,*/ sse, N,    &rate, &dist, context_ptr->full_lambda);
-   // model_rd_sse_fn[MODELRD_TYPE_MASKED_COMPOUND](cpi, x, bsize, 0, sse, N, &rate, &dist);
-
-   // rate += x->wedge_idx_cost[bsize][wedge_index];
-#if FIX_RATE_E_WEDGE
-    rate  += candidate_ptr->md_rate_estimation_ptr->wedge_idx_fac_bits[bsize][wedge_index];
-#endif
-    rd = RDCOST(/*x->rdmult*/context_ptr->full_lambda, rate, dist);
-
-    if (rd < best_rd) {
-      *best_wedge_index = wedge_index;
-      best_rd = rd;
-    }
-  }
-  return best_rd ;//- RDCOST(x->rdmult, x->wedge_idx_cost[bsize][*best_wedge_index], 0);
-}
+//// Choose the best wedge index the specified sign
+//#if II_COMP
+//int64_t pick_wedge_fixed_sign(
+//#else
+//static int64_t pick_wedge_fixed_sign(
+//#endif
+//#if FIX_RATE_E_WEDGE || II_COMP
+//    ModeDecisionCandidate        *candidate_ptr,
+//#endif
+//    PictureControlSet                    *picture_control_set_ptr,
+//    ModeDecisionContext                  *context_ptr,
+//    //const AV1_COMP *const cpi,
+//    //const MACROBLOCK *const x,
+//    const BLOCK_SIZE bsize,
+//    const int16_t *const residual1,
+//    const int16_t *const diff10,
+//    const int8_t wedge_sign,
+//    int8_t *const best_wedge_index) {
+//  //const MACROBLOCKD *const xd = &x->e_mbd;
+//
+//  const int bw = block_size_wide[bsize];
+//  const int bh = block_size_high[bsize];
+//  const int N = bw * bh;
+//  assert(N >= 64);
+//  int rate;
+//  int64_t dist;
+//  int64_t rd, best_rd = INT64_MAX;
+//  int8_t wedge_index;
+//  int8_t wedge_types = (1 << get_wedge_bits_lookup(bsize));
+//  const uint8_t *mask;
+//  uint64_t sse;
+//  //const int hbd = 0;// is_cur_buf_hbd(xd);
+//  const int bd_round = 0;//hbd ? (xd->bd - 8) * 2 : 0;
+//  for (wedge_index = 0; wedge_index < wedge_types; ++wedge_index) {
+//    mask = av1_get_contiguous_soft_mask(wedge_index, wedge_sign, bsize);
+//    sse = av1_wedge_sse_from_residuals(residual1, diff10, mask, N);
+//    sse = ROUND_POWER_OF_TWO(sse, bd_round);
+//
+//    model_rd_with_curvfit(picture_control_set_ptr,bsize, /*0,*/ sse, N,    &rate, &dist, context_ptr->full_lambda);
+//   // model_rd_sse_fn[MODELRD_TYPE_MASKED_COMPOUND](cpi, x, bsize, 0, sse, N, &rate, &dist);
+//
+//   // rate += x->wedge_idx_cost[bsize][wedge_index];
+//#if FIX_RATE_E_WEDGE
+//    rate  += candidate_ptr->md_rate_estimation_ptr->wedge_idx_fac_bits[bsize][wedge_index];
+//#endif
+//    rd = RDCOST(/*x->rdmult*/context_ptr->full_lambda, rate, dist);
+//
+//    if (rd < best_rd) {
+//      *best_wedge_index = wedge_index;
+//      best_rd = rd;
+//    }
+//  }
+//  return best_rd ;//- RDCOST(x->rdmult, x->wedge_idx_cost[bsize][*best_wedge_index], 0);
+//}
 int is_interinter_compound_used(COMPOUND_TYPE type,
     BLOCK_SIZE sb_type);
 static void /*int64_t*/ pick_interinter_wedge(
