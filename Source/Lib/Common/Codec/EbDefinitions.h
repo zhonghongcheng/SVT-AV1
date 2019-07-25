@@ -60,8 +60,9 @@ extern "C" {
 #define CLASS_0_I_SLICE_NFL_MD_STAGE_3         1 // CIN03 modified
 #define CLASS_123_NFL_MD_STAGE_2_3             1 // CIN13,CIN23,CIN33
 #define CLASS_0_NFL_MD_STAGE_2                 0
+#if !M1_CAND
 #define CLASS_0_NFL_MD_STAGE_3_4_4             1 // CIN03 4 for non ref
-
+#endif
 #define PRE_BILINEAR_CLEAN_UP                  1
 #define BILINEAR_FAST_LOOP                     1
 #define BILINEAR_PREDICTIVE_ME                 0
@@ -417,9 +418,7 @@ typedef enum CAND_CLASS {
 #define  REFACTOR_FAST_LOOP           1 // Lossless
 #define  FAST_LOOP_OPT                1 // Use fast loop stages to speed up encoder
 #define  COMP_OPT                     1 // cut some compound injection/modes
-#if !M1_CAND
 #define  FULL_COMPOUND_BDRATE         1 // enable to run compound in full mode for best bd rate
-#endif
 #define  BDR_MODE                     0 // enable to run for best bd rate
 #if BDR_MODE
 #define  MD_STAGE_3_NFL_BDRATE        1 // 10 NFL @ md_stage_3
@@ -442,8 +441,9 @@ typedef enum MD_STAGE {
 #endif
     MD_STAGE_TOTAL
 } MD_STAGE;
-
-#define FIX_ATB_SUPPORT                                 0 // ENABLE_SKIP_REDUNDANT_BLOCK
+#if M1_CAND
+#define FIX_ATB_SUPPORT                                 1 // ENABLE_SKIP_REDUNDANT_BLOCK
+#endif
 #define FIX_TX_SEARCH_FOR_MR_MODE                       1
 #define TURN_OFF_DUAL_MODE                              1 // Turn OFF IF search dual mode
 #if BEST_Q_M0
@@ -517,8 +517,8 @@ typedef enum ME_QP_MODE {
 
 #define TBX_SPLIT_CAP                         1 // SKIP TXB SPLIT WHEN PARENT BLOCK EOB IS 0
 #define ADAPTIVE_TXB_SEARCH_LEVEL             0 // adaptive_txb_search_level
-#define PRUNE_REF_FRAME_FRO_REC_PARTITION     0 // prune_ref_frame_for_rec_partitions
 #if M1_CAND
+#define PRUNE_REF_FRAME_FRO_REC_PARTITION     1 // prune_ref_frame_for_rec_partitions
 #define PRUNE_REF_FRAME_AT_ME                 1 // Reduce the nunmber of bipred based on the unipred data.
 #endif
 #if PRUNE_REF_FRAME_FRO_REC_PARTITION

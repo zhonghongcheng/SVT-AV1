@@ -1636,9 +1636,6 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->atb_mode = 0;
 
 #endif
-#if M1_CAND
-        picture_control_set_ptr->atb_mode = 0;
-#endif
 
 #if COMP_MODE
         // Set Wedge mode      Settings

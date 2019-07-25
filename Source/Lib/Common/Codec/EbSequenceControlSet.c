@@ -240,11 +240,7 @@ EbErrorType eb_sequence_control_set_ctor(
     }
 #endif
 #if MRP_ME
-#if M1_CAND
-    sequence_control_set_ptr->reference_count = 2;
-#else
     sequence_control_set_ptr->reference_count = 4;
-#endif
 #endif
 
     return EB_ErrorNone;
