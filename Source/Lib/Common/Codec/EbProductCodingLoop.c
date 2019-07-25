@@ -9376,6 +9376,9 @@ EB_EXTERN EbErrorType mode_decision_sb(
                 else
                     context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost = 0;
             }
+#if FIX_ATB_SUPPORT
+            }
+#endif
 #else
             md_encode_block(
                 sequence_control_set_ptr,
