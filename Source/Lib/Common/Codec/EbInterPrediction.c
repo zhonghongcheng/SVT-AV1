@@ -2281,7 +2281,7 @@ static void model_rd_with_curvfit(
     aom_clear_system_state();
     const double sse_norm = (double)sse / num_samples;
 #if NO_LOG2_DOUBLE
-    const double xqr = (double)LOG2F((sse / num_samples) / (qstep * qstep));
+    const double xqr = (double)LOG2F((uint32_t)(sse / num_samples) / (qstep * qstep));
 #else
     const double qstepsqr = (double)qstep * qstep;
     const double xqr = log2(sse_norm / qstepsqr);

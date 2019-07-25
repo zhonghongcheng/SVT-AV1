@@ -34,11 +34,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#define NO_MEMSET                      0
-#define NO_LOG2_DOUBLE                 0
+#define NO_MEMSET                       1
+#define NO_LOG2_DOUBLE                  1
 
-#define TFK_QPS_TUNING 0
-#define MD_EXIT  0
+#define TFK_QPS_TUNING                  1
+#define MD_EXIT                         1
 
 #define M1_CAND                         0
 
