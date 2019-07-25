@@ -829,7 +829,7 @@ uint8_t check_ref_beackout(
 {
     uint8_t skip_candidate = 0;
     uint8_t ref_cnt = 0;
-    uint8_t allowed_nsq_ref_th = 1;
+    uint8_t allowed_nsq_ref_th = 5;
     if (picture_control_set_ptr->parent_pcs_ptr->prune_ref_frame_for_rec_partitions) {
         if (shape != PART_N) {
             if (1/*is_inter && is_simple_translation*/) {
@@ -3050,7 +3050,18 @@ void inject_new_nearest_new_comb_candidates(
 
                 inj_mv = context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, ref_pair) == EB_FALSE;
 
+#if PRUNE_REF_FRAME_FRO_REC_PARTITION_MVP
+                uint8_t to_inject_ref_type = av1_ref_frame_type(rf);
+                uint8_t skip_cand = check_ref_beackout(
+                    picture_control_set_ptr,
+                    context_ptr,
+                    to_inject_ref_type,
+                    context_ptr->blk_geom->shape);
+
+                if (!skip_cand && (inj_mv)) {
+#else
                 if (inj_mv) {
+#endif
 
 #if COMP_MODE
 
@@ -3162,9 +3173,19 @@ void inject_new_nearest_new_comb_candidates(
                 int16_t to_inject_mv_y_l1 = context_ptr->md_local_cu_unit[context_ptr->blk_geom->blkidx_mds].ed_ref_mv_stack[ref_pair][0].comp_mv.as_mv.row;
 
                 inj_mv = context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, ref_pair) == EB_FALSE;
+#if PRUNE_REF_FRAME_FRO_REC_PARTITION_MVP
+                uint8_t to_inject_ref_type = av1_ref_frame_type(rf);
+                uint8_t skip_cand = check_ref_beackout(
+                    picture_control_set_ptr,
+                    context_ptr,
+                    to_inject_ref_type,
+                    context_ptr->blk_geom->shape);
 
+                if (!skip_cand && (inj_mv)) {
+#else
                 if (inj_mv)
                 {
+#endif
 #if COMP_MODE
 
                 context_ptr->variance_ready = 0 ;
@@ -3293,8 +3314,18 @@ void inject_new_nearest_new_comb_candidates(
                         int16_t to_inject_mv_y_l1 = nearmv[1].as_mv.row;
 
                         inj_mv = context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, ref_pair) == EB_FALSE;
+#if PRUNE_REF_FRAME_FRO_REC_PARTITION_MVP
+                        uint8_t to_inject_ref_type = av1_ref_frame_type(rf);
+                        uint8_t skip_cand = check_ref_beackout(
+                            picture_control_set_ptr,
+                            context_ptr,
+                            to_inject_ref_type,
+                            context_ptr->blk_geom->shape);
 
+                        if (!skip_cand && (inj_mv)) {
+#else
                         if (inj_mv) {
+#endif
 
 #if COMP_MODE
 
@@ -3395,8 +3426,18 @@ void inject_new_nearest_new_comb_candidates(
                    int16_t to_inject_mv_y_l1 = me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? (get_list_idx(rf[1]) << 2) : (get_list_idx(rf[1]) << 1)) + ref_idx_1].y_mv << 1;//context_ptr->md_local_cu_unit[context_ptr->blk_geom->blkidx_mds].ed_ref_mv_stack[ref_pair][0].comp_mv.as_mv.row;
 
                    inj_mv = context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, ref_pair) == EB_FALSE;
+#if PRUNE_REF_FRAME_FRO_REC_PARTITION_MVP
+                   uint8_t to_inject_ref_type = av1_ref_frame_type(rf);
+                   uint8_t skip_cand = check_ref_beackout(
+                   picture_control_set_ptr,
+                   context_ptr,
+                   to_inject_ref_type,
+                   context_ptr->blk_geom->shape);
 
+                   if (!skip_cand && (inj_mv)) {
+#else
                    if (inj_mv) {
+#endif
 
 #if COMP_MODE
                 context_ptr->variance_ready = 0 ;
@@ -7200,7 +7241,11 @@ EbErrorType ProductGenerateMdCandidatesCu(
             inject_intra_candidate = context_ptr->blk_geom->shape == PART_N ? 1 :
                 context_ptr->parent_sq_has_coeff[sq_index] != 0 ? inject_intra_candidate : 0;
         }
-}
+     }
+#if AVOID_INTER_4X4_CHROMA 
+    inject_inter_candidate = (context_ptr->blk_geom->has_uv && (context_ptr->blk_geom->bwidth == 4 || context_ptr->blk_geom->bheight == 4)) ? 0 : inject_inter_candidate;
+    inject_intra_candidate = (context_ptr->blk_geom->has_uv && (context_ptr->blk_geom->bwidth == 4 || context_ptr->blk_geom->bheight == 4)) ? 1 : inject_intra_candidate;
+#endif
     //----------------------
     // Intra
     if (context_ptr->blk_geom->sq_size < 128) {

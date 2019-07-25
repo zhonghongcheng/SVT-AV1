@@ -519,6 +519,7 @@ typedef enum ME_QP_MODE {
 
 #if PRUNE_REF_FRAME_FRO_REC_PARTITION
 #define MAX_REF_TYPE_CAND                     30
+#define PRUNE_REF_FRAME_FRO_REC_PARTITION_MVP  0 // Reduce the nunmber of bipred based on the unipred data.
 #endif
 struct Buf2D
 {
