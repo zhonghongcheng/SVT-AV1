@@ -4705,16 +4705,13 @@ uint32_t d2_inter_depth_block_decision_md_skip(
     UNUSED(d0_idx_mds);
     uint64_t                    parent_depth_cost = 0, current_depth_cost = 0;
     SequenceControlSet     *sequence_control_set_ptr = (SequenceControlSet*)picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr;
-    EbBool                    lastDepthFlag;
     const BlockGeom          * blk_geom;
 
-    lastDepthFlag = context_ptr->md_cu_arr_nsq[blk_mds].split_flag == EB_FALSE ? EB_TRUE : EB_FALSE;
     d1_idx_mds = blk_mds;
     d2_idx_mds = blk_mds;
     lastCuIndex = blk_mds;
     blk_geom = get_blk_geom_mds(blk_mds);
     uint32_t    parent_depth_idx_mds = blk_mds;
-    uint32_t    current_depth_idx_mds = blk_mds;
 
     //get parent idx
     parent_depth_idx_mds = (context_ptr->blk_geom->sqi_mds - context_ptr->blk_geom->quadi * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];

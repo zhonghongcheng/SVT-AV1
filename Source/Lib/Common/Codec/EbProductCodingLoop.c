@@ -9222,7 +9222,6 @@ EB_EXTERN EbErrorType mode_decision_sb(
             uint64_t                    parent_depth_cost = 0, current_depth_cost = 0;
             SequenceControlSet     *sequence_control_set_ptr = (SequenceControlSet*)picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr;
             uint32_t    parent_depth_idx_mds = blk_mds;
-            uint32_t    current_depth_idx_mds = blk_mds;
 
             //get parent idx
             parent_depth_idx_mds = (context_ptr->blk_geom->sqi_mds - (context_ptr->blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][context_ptr->blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];

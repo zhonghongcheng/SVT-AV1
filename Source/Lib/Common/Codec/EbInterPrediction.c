@@ -2211,6 +2211,19 @@ static const double interp_dgrid_curv_precalc[2][62][4] = {
 
 #endif
 
+#if !NO_LOG2_DOUBLE
+static double interp_cubic(const double *p, double x) {
+    return p[1] + 0.5 * x *
+        (p[2] - p[0] +
+            x * (2.0 * p[0] - 5.0 * p[1] + 4.0 * p[2] - p[3] +
+                x * (3.0 * (p[1] - p[2]) + p[3] - p[0])));
+}
+
+static /*INLINE*/ double interp_cubic_precalc(const double *p, double x) {
+    return p[3] + x * (p[2] + x * (p[1] + x * p[0]));
+}
+#endif
+
 void av1_model_rd_curvfit(BLOCK_SIZE bsize, double sse_norm, double xqr,
     double *rate_f, double *distbysse_f) {
     const double x_start = -15.5;
