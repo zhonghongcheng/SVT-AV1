@@ -16375,11 +16375,11 @@ if (context_ptr->me_alt_ref == EB_FALSE) {
             if (pu_width == 64 || pu_height == 64)
                 total_me_candidate_index = MIN(total_me_candidate_index, START_ME_CANDIDATE_COUNT);
             else if (pu_width == 32 || pu_height == 32)
-                total_me_candidate_index = MIN(total_me_candidate_index, (START_ME_CANDIDATE_COUNT));
+                total_me_candidate_index = MIN(total_me_candidate_index, (START_ME_CANDIDATE_COUNT - 1));
             else if (pu_width == 16 || pu_height == 16)
-                total_me_candidate_index = MIN(total_me_candidate_index, (START_ME_CANDIDATE_COUNT));
+                total_me_candidate_index = MIN(total_me_candidate_index, (START_ME_CANDIDATE_COUNT - 2));
             else
-                total_me_candidate_index = MIN(total_me_candidate_index, (START_ME_CANDIDATE_COUNT));
+                total_me_candidate_index = MIN(total_me_candidate_index, (START_ME_CANDIDATE_COUNT - 3));
         }
 #endif
         mePuResult->total_me_candidate_index[pu_index] =
