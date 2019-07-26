@@ -2390,6 +2390,12 @@ extern "C" {
     void av1_txb_init_levels_avx2(const TranLow *const coeff, const int32_t width, const int32_t height, uint8_t *const levels);
     RTCD_EXTERN void(*av1_txb_init_levels)(const TranLow *const coeff, const int32_t width, const int32_t height, uint8_t *const levels);
 
+#if ESTIMATE_INTRA
+    void av1_get_gradient_hist_c(const uint8_t *src, int src_stride, int rows, int cols, uint64_t *hist);
+    void av1_get_gradient_hist_avx2(const uint8_t *src, int src_stride, int rows, int cols, uint64_t *hist);
+    RTCD_EXTERN void(*av1_get_gradient_hist)(const uint8_t *src, int src_stride, int rows, int cols, uint64_t *hist);
+#endif
+
     void aom_dsp_rtcd(void);
 
 #ifdef RTCD_C
@@ -3625,6 +3631,12 @@ extern "C" {
         /*if (flags & HAS_AVX2)*/ aom_ifft8x8_float = aom_ifft8x8_float_avx2;
         aom_ifft2x2_float = aom_ifft2x2_float_c;
         /*if (flags & HAS_SSE2)*/ aom_ifft4x4_float = aom_ifft4x4_float_sse2;
+
+#if ESTIMATE_INTRA
+        av1_get_gradient_hist = av1_get_gradient_hist_c;
+        if (flags & HAS_AVX2) av1_get_gradient_hist = av1_get_gradient_hist_avx2;
+#endif
+
     }
 #endif
 
