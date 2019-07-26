@@ -28,6 +28,7 @@
 #include "EbTransformUnit.h"
 #include "EbModeDecisionProcess.h"
 #include "EbMotionEstimation.h"
+#include "aom_dsp_rtcd.h"
 
 #include "av1me.h"
 #include "hash.h"
@@ -6785,7 +6786,7 @@ static const uint8_t mode_to_angle_bin[INTRA_MODES] = {
   0, 2, 6, 0, 4, 3, 5, 7, 1, 0,
   0,
 };
-static void get_gradient_hist(const uint8_t *src, int src_stride, int rows,
+void av1_get_gradient_hist_c(const uint8_t *src, int src_stride, int rows,
     int cols, uint64_t *hist) {
     src += src_stride;
     for (int r = 1; r < rows; ++r) {
@@ -6825,7 +6826,7 @@ static void angle_estimation(
     //if (is_hbd)
     //    get_highbd_gradient_hist(src, src_stride, rows, cols, hist);
     //else
-        get_gradient_hist(src, src_stride, rows, cols, hist);
+        av1_get_gradient_hist(src, src_stride, rows, cols, hist);
 
     int i;
     uint64_t hist_sum = 0;

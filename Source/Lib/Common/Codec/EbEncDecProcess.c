@@ -1464,7 +1464,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
 #if ENHANCED_Nx4_4xN_NEW_MV
     if (picture_control_set_ptr->enc_mode == ENC_M0)
+#if M2_CAND
+        context_ptr->nx4_4xn_parent_mv_injection = 0;
+#else
         context_ptr->nx4_4xn_parent_mv_injection = 1;
+#endif
     else
         context_ptr->nx4_4xn_parent_mv_injection = 0;
 #endif
