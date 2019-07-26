@@ -1822,17 +1822,25 @@ void fast_loop_core(
 #endif
 
 #if BILINEAR_FAST_LOOP
+#if MD_STAGE_MODE_3_TEST_1
+    candidateBuffer->candidate_ptr->interp_filters = 0;
+#else
     if (context_ptr->md_stage == MD_STAGE_0 && context_ptr->md_staging_mode )
         candidateBuffer->candidate_ptr->interp_filters = av1_make_interp_filters(BILINEAR, BILINEAR);
     else
         candidateBuffer->candidate_ptr->interp_filters = 0;
+#endif
 #else
     candidateBuffer->candidate_ptr->interp_filters = 0;
 #endif
 
 
 #if CHROMA_MD_STAGE_0_TO_MD_STAGE_1
+#if MD_STAGE_MODE_3_TEST_0
+    context_ptr->shut_chroma_comp = context_ptr->md_staging_mode && (context_ptr->md_stage == MD_STAGE_0 || (context_ptr->md_stage == MD_STAGE_1 && context_ptr->md_staging_mode >= 3)) && context_ptr->target_class != CAND_CLASS_0;
+#else
     context_ptr->shut_chroma_comp = context_ptr->md_staging_mode && context_ptr->md_stage == MD_STAGE_0 && context_ptr->target_class != CAND_CLASS_0;
+#endif
 #else
     context_ptr->shut_chroma_comp = EB_FALSE;
 #endif
@@ -2244,9 +2252,11 @@ void set_md_stage_counts(
 {
     // Derive bypass_stage1
     if (context_ptr->md_staging_mode)
-        if (0/*context_ptr->md_staging_mode >= 3*/) // ---> to test bypassing md_stage_1
+#if MD_STAGE_MODE_3_TEST_1
+        if (context_ptr->md_staging_mode >= 3) // ---> to test bypassing md_stage_1
             memset(context_ptr->bypass_stage1, EB_TRUE, CAND_CLASS_TOTAL * sizeof(uint32_t));
         else
+#endif
         {
             context_ptr->bypass_stage1[CAND_CLASS_0] = EB_TRUE;
             context_ptr->bypass_stage1[CAND_CLASS_1] = EB_FALSE;
