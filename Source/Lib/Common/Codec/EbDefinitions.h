@@ -67,6 +67,9 @@ extern "C" {
 
 #define SHUT_RATE_MD_STAGE                     0 // Move fast rate estimation from md_stage_0 to md_stage_1
 #define CHROMA_MD_STAGE_0_TO_MD_STAGE_1        1 // Move fast chroma compensation from md_stage_0 to md_stage_1
+    
+#define MD_STAGE_MODE_3_TEST_0                  0 // Shut chroma @ md_stage_1 for md_staging_mode_2
+#define MD_STAGE_MODE_3_TEST_1                  0 // Bypass md_stage_1, and perform regular @ md_stage_0
 
 
 #define FIRST_FULL_LOOP_INTERPOLATION_SEARCH   1
