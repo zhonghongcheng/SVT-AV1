@@ -37,6 +37,7 @@ extern "C" {
 #define NO_MEMSET                       1
 #define NO_LOG2_DOUBLE                  1
 
+#define TFK_ALTREF_DYNAMIC_WINDOW       1 // Applying Dynamic window to key frame temporal filtering
 #define TFK_QPS_TUNING                  1
 #define MD_EXIT                         1
 #define MD_NSQ_EXIT                     1

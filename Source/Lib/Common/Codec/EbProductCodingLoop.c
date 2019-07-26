@@ -9213,9 +9213,6 @@ EB_EXTERN EbErrorType mode_decision_sb(
 
 #if  INCOMPLETE_SB_FIX
 #if MD_EXIT
-
-#if MD_EXIT
-
         if ( blk_geom->quadi > 0 && blk_geom->shape == PART_N) {
 
             uint32_t  blk_mds = context_ptr->blk_geom->sqi_mds;
@@ -9247,7 +9244,6 @@ EB_EXTERN EbErrorType mode_decision_sb(
         }
         if(cu_ptr->mds_idx >= next_non_skip_blk_idx_mds && skip_next_sq == 1)
             skip_next_sq = 0;
-#endif
             if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[cu_ptr->mds_idx] && !skip_next_nsq && !skip_next_sq) {
 #else
             if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[cu_ptr->mds_idx]) {
@@ -9320,17 +9316,15 @@ EB_EXTERN EbErrorType mode_decision_sb(
             uint64_t tot_cost = 0;
             uint32_t first_blk_idx = context_ptr->cu_ptr->mds_idx - (blk_geom->nsi);//index of first block in this partition
             for (int blk_it = 0; blk_it < blk_geom->nsi + 1; blk_it++)
-            {
                 tot_cost += context_ptr->md_local_cu_unit[first_blk_idx + blk_it].cost;
-            }
-            //if (tot_cost*(100 + MD_EXIT_THSL * (blk_geom->totns - (blk_geom->nsi + 1))) / 100 > context_ptr->md_local_cu_unit[context_ptr->blk_geom->sqi_mds].cost) {
-            if ((tot_cost + tot_cost * (blk_geom->totns - (blk_geom->nsi + 1))* MD_EXIT_THSL/ (blk_geom->nsi + 1) / 100) > context_ptr->md_local_cu_unit[context_ptr->blk_geom->sqi_mds].cost) {
+            
+            if ((tot_cost + tot_cost * (blk_geom->totns - (blk_geom->nsi + 1))* MD_EXIT_THSL/ (blk_geom->nsi + 1) / 100) > context_ptr->md_local_cu_unit[context_ptr->blk_geom->sqi_mds].cost)
 #if MD_NSQ_EXIT
                 skip_next_nsq = 1;
 #else
                 skip_next_nsq = 0;
 #endif
-            }
+            
         }
 #endif
         if (blk_geom->shape != PART_N) {
