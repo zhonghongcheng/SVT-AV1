@@ -4606,7 +4606,6 @@ uint32_t d2_inter_depth_block_decision(
 void   compute_depth_costs_md_skip(
     ModeDecisionContext    *context_ptr,
     SequenceControlSet     *sequence_control_set_ptr,
-    uint32_t                  curr_depth_mds,
     uint32_t                  above_depth_mds,
     uint32_t                  step,
     uint64_t                 *above_depth_cost,
@@ -4726,7 +4725,7 @@ uint32_t d2_inter_depth_block_decision_md_skip(
 #endif
         parent_depth_cost = MAX_MODE_COST;
     else
-        compute_depth_costs_md_skip(context_ptr, sequence_control_set_ptr, current_depth_idx_mds, parent_depth_idx_mds, ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth], &parent_depth_cost, &current_depth_cost);
+        compute_depth_costs_md_skip(context_ptr, sequence_control_set_ptr, parent_depth_idx_mds, ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth], &parent_depth_cost, &current_depth_cost);
 #if INCOMPLETE_SB_FIX
     if (!sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[parent_depth_idx_mds])
         parent_depth_cost = MAX_MODE_COST;
