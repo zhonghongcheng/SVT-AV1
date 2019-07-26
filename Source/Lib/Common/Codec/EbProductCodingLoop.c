@@ -1832,10 +1832,7 @@ void fast_loop_core(
 
 
 #if CHROMA_MD_STAGE_0_TO_MD_STAGE_1
-    context_ptr->shut_chroma_comp =
-        (context_ptr->md_staging_mode  && context_ptr->md_stage == MD_STAGE_0 &&
-        (context_ptr->target_class == CAND_CLASS_1 || context_ptr->target_class == CAND_CLASS_2 || context_ptr->target_class == CAND_CLASS_3) &&
-            context_ptr->bypass_stage1[context_ptr->target_class] == EB_FALSE);
+    context_ptr->shut_chroma_comp = context_ptr->md_staging_mode && context_ptr->md_stage == MD_STAGE_0 && context_ptr->target_class != CAND_CLASS_0;
 #else
     context_ptr->shut_chroma_comp = EB_FALSE;
 #endif
@@ -2247,7 +2244,7 @@ void set_md_stage_counts(
 {
     // Derive bypass_stage1
     if (context_ptr->md_staging_mode)
-        if (context_ptr->md_staging_mode >= 3)
+        if (0/*context_ptr->md_staging_mode >= 3*/) // ---> to test bypassing md_stage_1
             memset(context_ptr->bypass_stage1, EB_TRUE, CAND_CLASS_TOTAL * sizeof(uint32_t));
         else
         {
@@ -6393,6 +6390,23 @@ void AV1PerformFullLoop(
 
         //TOADD
 #endif
+
+#if FIRST_FULL_LOOP_INTERPOLATION_SEARCH
+        if (candidate_ptr->type != INTRA_MODE) {
+            if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level == IT_SEARCH_FULL_LOOP || context_ptr->md_staging_mode >= 3) {
+                context_ptr->skip_interpolation_search = (best_fastLoop_candidate_index > NFL_IT_TH && context_ptr->md_staging_mode == 0) ? 1 : 0;
+#if RE_FACTURE_PRED_KERNEL
+                context_ptr->shut_chroma_comp = EB_FALSE;
+#endif
+                ProductPredictionFunTable[candidate_ptr->type](
+                    context_ptr,
+                    picture_control_set_ptr,
+                    candidateBuffer,
+                    asm_type);
+            }
+        }
+#endif
+
         //Cb Residual
         if (context_ptr->blk_geom->has_uv && context_ptr->chroma_level <= CHROMA_MODE_1) {
             ResidualKernel(
@@ -6531,21 +6545,7 @@ void AV1PerformFullLoop(
         }
         else {
             // Transform partitioning free patch (except the 128x128 case)
-#if FIRST_FULL_LOOP_INTERPOLATION_SEARCH
-            if (candidate_ptr->type != INTRA_MODE) {
-                if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level == IT_SEARCH_FULL_LOOP || context_ptr->md_staging_mode >= 3) {
-                    context_ptr->skip_interpolation_search = (best_fastLoop_candidate_index > NFL_IT_TH && context_ptr->md_staging_mode == 0) ? 1 : 0;
-#if RE_FACTURE_PRED_KERNEL
-                    context_ptr->shut_chroma_comp = EB_FALSE;
-#endif
-                    ProductPredictionFunTable[candidate_ptr->type](
-                        context_ptr,
-                        picture_control_set_ptr,
-                        candidateBuffer,
-                        asm_type);
-                }
-            }
-#else
+#if !FIRST_FULL_LOOP_INTERPOLATION_SEARCH
             if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level == IT_SEARCH_FULL_LOOP) {
                 context_ptr->skip_interpolation_search = 0;
                 context_ptr->skip_interpolation_search = (best_fastLoop_candidate_index > NFL_IT_TH) ? 1 : context_ptr->skip_interpolation_search;
