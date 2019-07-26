@@ -46,6 +46,7 @@ extern "C" {
 
 #define M1_CAND                         0
 #define M2_CAND                         0
+#define COMBINE_C1_C2                   0
 
 #define M0_HME_ME_TUNING                1
 #define PREDICTIVE_ME                   1 // Perform ME search around MVP
@@ -395,7 +396,7 @@ typedef enum CAND_CLASS {
     CAND_CLASS_0,
     CAND_CLASS_1,
     CAND_CLASS_2,
-#if COMP_FULL
+#if COMP_FULL && !COMBINE_C1_C2
     CAND_CLASS_3,
 #endif
 #if II_CLASS

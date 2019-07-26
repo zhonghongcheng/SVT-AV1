@@ -7355,6 +7355,10 @@ EbErrorType ProductGenerateMdCandidatesCu(
 
                 }else
 #endif
+#if COMBINE_C1_C2
+                cand_ptr->cand_class = CAND_CLASS_1;
+                context_ptr->fast_cand_count[CAND_CLASS_1]++;
+#else
                 if (cand_ptr->is_new_mv) {
                     cand_ptr->cand_class = CAND_CLASS_1;
                     context_ptr->fast_cand_count[CAND_CLASS_1]++;
@@ -7363,11 +7367,17 @@ EbErrorType ProductGenerateMdCandidatesCu(
                     cand_ptr->cand_class = CAND_CLASS_2;
                     context_ptr->fast_cand_count[CAND_CLASS_2]++;
                 }
+#endif
 #if COMP_FULL
             }
             else {
+#if COMBINE_C1_C2
+                cand_ptr->cand_class = CAND_CLASS_2;
+                context_ptr->fast_cand_count[CAND_CLASS_2]++;
+#else
                 cand_ptr->cand_class = CAND_CLASS_3;
                 context_ptr->fast_cand_count[CAND_CLASS_3]++;
+#endif
 
             }
 #endif
