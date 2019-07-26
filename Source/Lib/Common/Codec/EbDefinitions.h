@@ -45,7 +45,7 @@ extern "C" {
 
 
 #define M1_CAND                         0
-#define M2_CAND 						0
+#define M2_CAND                         0
 
 #define M0_HME_ME_TUNING                1
 #define PREDICTIVE_ME                   1 // Perform ME search around MVP
@@ -57,9 +57,6 @@ extern "C" {
 #if FULL_LOOP_SPLIT
 #define FIRST_FULL_LOOP_CHROMA_BLIND           1
 #define FIRST_FULL_LOOP_ATB_OFF                1
-#define FIRST_FULL_LOOP_TX_SEARCH_OFF          1
-#define FIRST_FULL_LOOP_CHROMA_BLIND_INTER     0
-#define FIRST_FULL_LOOP_TX_SEARCH_OFF_INTER    0
 #define STRENGHTHEN_MD_STAGE_3                 1
 
 #define PRE_BILINEAR_CLEAN_UP                  1
@@ -70,14 +67,10 @@ extern "C" {
 
 #define SHUT_RATE_MD_STAGE                     0 // Move fast rate estimation from md_stage_0 to md_stage_1
 #define CHROMA_MD_STAGE_0_TO_MD_STAGE_1        1 // Move fast chroma compensation from md_stage_0 to md_stage_1
-#if CHROMA_MD_STAGE_0_TO_MD_STAGE_1
-#define CHROMA_MD_STAGE_1_TO_MD_STAGE_3        0 // Move fast chroma compensation from md_stage_1 to md_stage_3
-#endif
 
 
-#define FIRST_FULL_LOOP_INTERPOLATION_SEARCH   0
-#define FIRST_RDOQ_INTRA                       0
-#define FIRST_RDOQ_INTER                       0
+#define FIRST_FULL_LOOP_INTERPOLATION_SEARCH   1
+
 #endif
 #define BUG_FIXES                       1
 #if BUG_FIXES
