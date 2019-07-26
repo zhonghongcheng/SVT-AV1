@@ -1823,6 +1823,7 @@ void fast_loop_core(
 
 #if BILINEAR_FAST_LOOP
 #if MD_STAGE_MODE_3_TEST_1
+    // Hsan: if we decide to do it for md_staging_3 then we should also do it for md_staging_1 to md_staging_2 to statisfy the onion ring constraint
     candidateBuffer->candidate_ptr->interp_filters = 0;
 #else
     if (context_ptr->md_stage == MD_STAGE_0 && context_ptr->md_staging_mode )
