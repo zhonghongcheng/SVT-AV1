@@ -7119,6 +7119,17 @@ EbBool allowed_ns_cu(
             ret = 0;
     }
 #endif
+#if MDC_ONLY
+    if (is_nsq_table_used) {
+        uint8_t depth = get_depth(context_ptr->blk_geom->sq_size);
+        uint8_t shape_rank_th_tab[6] = { 6,9,9,9,4,1 };
+        uint8_t shape_rank = context_ptr->open_loop_block_rank;
+        if (shape_rank > shape_rank_th_tab[depth])
+            ret = 0;
+    }
+#else
+    
+
     if (is_nsq_table_used) {
 #if PREDICT_NSQ_SHAPE
         ret = 1;
@@ -7161,6 +7172,7 @@ EbBool allowed_ns_cu(
         }
 #endif
     }
+#endif
     return ret;
 }
 
@@ -8128,6 +8140,9 @@ void md_encode_block(
         context_ptr->ref_best_cost_sq_table[ref_idx] = MAX_CU_COST;
 #endif
 #if PREDICT_NSQ_SHAPE
+#if MDC_ONLY
+    EbBool is_nsq_table_used = (picture_control_set_ptr->slice_type == !I_SLICE) ? EB_TRUE : EB_FALSE;
+#else
  #if ADP_BQ
     // Derive is_nsq_table_used
     EbBool is_nsq_table_used;
@@ -8146,6 +8161,7 @@ void md_encode_block(
         picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL) ? EB_TRUE : EB_FALSE;
+#endif
 #endif
     context_ptr->open_loop_block_rank = open_loop_block_rank;
     context_ptr->early_split_flag = early_split_flag;
