@@ -47,7 +47,9 @@ extern "C" {
 
 #define M1_CAND                         0
 #define M2_CAND                         0
-#define COMBINE_C1_C2                   0
+#if M2_CAND
+#define COMBINE_C1_C2                   1
+#endif
 
 #define M0_HME_ME_TUNING                1
 #define PREDICTIVE_ME                   1 // Perform ME search around MVP
