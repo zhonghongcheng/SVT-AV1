@@ -493,7 +493,9 @@ typedef enum MD_STAGE {
 #define NUMBER_OF_DEPTH                                 6
 #define NUMBER_OF_SHAPES                                10
 #define ADP_BQ                                          1 // Added the ability to perform ADP for best quality mode
-#define P_NSQ_NEW                                       1
+#define P_NSQ_NEW                                       0
+#define MDC_ONLY                                        1
+#define ADD_SAD_FOR_128X128                             1
 #endif
 #if IMPROVED_SUBPEL_SEARCH
 typedef enum ME_HP_MODE {

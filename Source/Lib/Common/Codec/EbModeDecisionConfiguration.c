@@ -897,6 +897,9 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
     uint64_t depth_cost[NUMBER_OF_DEPTH] = { 0 };
     uint8_t depth_table[NUMBER_OF_DEPTH] = {0, 1, 2 , 3 ,4 ,5};
 #endif
+#if ADD_SAD_FOR_128X128
+    uint64_t me_128x128 = 0;
+#endif
 
     do {
         EbMdcLeafData * leaf_data_ptr = &mdcResultTbPtr->leaf_data_array[cuIdx];
@@ -923,6 +926,58 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
                 me_sb_addr = me_sb_x + me_sb_y * me_pic_width_in_sb;
                 geom_offset_x = (me_sb_x & 0x1) * me_sb_size;
                 geom_offset_y = (me_sb_y & 0x1) * me_sb_size;
+#if ADD_SAD_FOR_128X128
+                uint64_t sb_6x6_index;
+                uint64_t sb_6x6_dist_0 = 0;
+                uint64_t sb_6x6_dist_1 = 0;
+                uint64_t sb_6x6_dist_2 = 0;
+                uint64_t sb_6x6_dist_3 = 0;
+                if (blk_geom->sq_size == 128) {
+                    sb_6x6_index = me_sb_addr;
+                    SbParams *sb_params = &sequence_control_set_ptr->sb_params_array[sb_6x6_index];
+                    if (sb_params->is_complete_sb) {
+                        MeLcuResults *me_results_64x64 = picture_control_set_ptr->parent_pcs_ptr->me_results[sb_6x6_index];
+                        const MeCandidate *me_block_results_64x64 = me_results_64x64->me_candidate[0];
+                        sb_6x6_dist_0 = me_block_results_64x64[0].distortion;
+                    }
+                    if (blk_geom->bsize == BLOCK_128X128 || blk_geom->bsize == BLOCK_128X64) {
+                        sb_6x6_index = me_sb_addr + 1;
+                        SbParams *sb_params = &sequence_control_set_ptr->sb_params_array[sb_6x6_index];
+                        if (sb_params->is_complete_sb) {
+                            MeLcuResults *me_results_64x64 = picture_control_set_ptr->parent_pcs_ptr->me_results[sb_6x6_index];
+                            const MeCandidate *me_block_results_64x64 = me_results_64x64->me_candidate[0];
+                            sb_6x6_dist_1 = me_block_results_64x64[0].distortion;
+                        }
+                    }
+                    if (blk_geom->bsize == BLOCK_128X128 || blk_geom->bsize == BLOCK_64X128) {
+                        sb_6x6_index = me_sb_addr + me_pic_width_in_sb;
+                        SbParams *sb_params = &sequence_control_set_ptr->sb_params_array[sb_6x6_index];
+                        if (sb_params->is_complete_sb) {
+                            MeLcuResults *me_results_64x64 = picture_control_set_ptr->parent_pcs_ptr->me_results[sb_6x6_index];
+                            const MeCandidate *me_block_results_64x64 = me_results_64x64->me_candidate[0];
+                            sb_6x6_dist_2 = me_block_results_64x64[0].distortion;
+                        }
+                    }
+                    if (blk_geom->bsize == BLOCK_128X128) {
+                        sb_6x6_index = me_sb_addr + me_pic_width_in_sb + 1;
+                        SbParams *sb_params = &sequence_control_set_ptr->sb_params_array[sb_6x6_index];
+                        if (sb_params->is_complete_sb) {
+                            MeLcuResults *me_results_64x64 = picture_control_set_ptr->parent_pcs_ptr->me_results[sb_6x6_index];
+                            const MeCandidate *me_block_results_64x64 = me_results_64x64->me_candidate[0];
+                            sb_6x6_dist_3 = me_block_results_64x64[0].distortion;
+                        }
+                    }
+                    if (blk_geom->bsize == BLOCK_128X128)
+                        me_128x128 = sb_6x6_dist_0 + sb_6x6_dist_1 + sb_6x6_dist_2 + sb_6x6_dist_3;
+                    if (blk_geom->bsize == BLOCK_128X64) {
+                        me_128x128 = sb_6x6_dist_0 + sb_6x6_dist_1 + sb_6x6_dist_2 + sb_6x6_dist_3;
+                        if (blk_geom->bsize == BLOCK_64X128) {
+                            me_128x128 = sb_6x6_dist_0 + sb_6x6_dist_1 + sb_6x6_dist_2 + sb_6x6_dist_3;
+                        }
+                    }
+                }
+       
+#endif
             }
             else
                 me_sb_addr = sb_index;
@@ -1017,7 +1072,11 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
                 context_ptr->mdc_candidate_ptr,
                 context_ptr->qp,
 #if MD_INJECTION
+#if ADD_SAD_FOR_128X128
+                blk_geom->sq_size == 128 ? me_128x128 : me_block_results[me_index].distortion,
+#else
                 me_block_results[me_index].distortion,
+#endif
 #else
                 mePuResult->distortion_direction[0].distortion,
 #endif
