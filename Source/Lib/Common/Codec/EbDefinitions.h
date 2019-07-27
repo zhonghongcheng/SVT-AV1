@@ -522,6 +522,10 @@ typedef enum ME_QP_MODE {
 #if PRUNE_REF_FRAME_AT_ME
 #define PRUNE_REF_ME_TH                        2
 #endif
+
+#define  PRUNE_ME_FIX   1//fix for PRUNE_REF_FRAME_AT_ME
+
+
 struct Buf2D
 {
     uint8_t *buf;

@@ -13066,8 +13066,11 @@ EbErrorType BiPredictionSearch(
             uint8_t add_bi = skip_bi_pred(
                 to_inject_ref_type_0,
                 ref_type_table);
-
+#if PRUNE_ME_FIX  
+            if (add_bi) {  
+#else             
             if (!add_bi) {
+#endif
 #endif
                 BiPredictionCompensation(
                     context_ptr,
@@ -13089,7 +13092,7 @@ EbErrorType BiPredictionSearch(
         }
         // NM: Within list 1    bipred: (BWD, ALT)
         for (secondListRefPictdx = 1;
-             secondListRefPictdx < MIN(activeRefPicSecondLisNum, 1);
+             secondListRefPictdx < MIN(activeRefPicSecondLisNum, 1);   //CHKN THIS WILL NOT GET HERE, even if fixed need to use normal_order
              secondListRefPictdx++) {
 
 #if PRUNE_REF_FRAME_AT_ME
@@ -13097,8 +13100,11 @@ EbErrorType BiPredictionSearch(
             uint8_t add_bi = skip_bi_pred(
                 to_inject_ref_type_0,
                 ref_type_table);
-
+#if PRUNE_ME_FIX
+            if (add_bi) {
+#else
             if (!add_bi) {
+#endif
 #endif
                 BiPredictionCompensation(
                     context_ptr,
