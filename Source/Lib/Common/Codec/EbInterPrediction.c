@@ -1817,6 +1817,8 @@ static const double interp_dgrid_curv[2][65] = {
     PRECALC[A][B][2] = 0.5 * (ARRAY[A][B+2] - ARRAY[A][B]);
     PRECALC[A][B][3] = ARRAY[A][B+1]
 */
+
+#if !NO_LOG2_DOUBLE
 static const double interp_rgrid_curv_precalc[4][62][4] = {
   {
     {0.000000000000, 0.000000000000, 0.000000000000, 0.000000000000},
@@ -2207,16 +2209,20 @@ static const double interp_dgrid_curv_precalc[2][62][4] = {
   },
 };
 
-//static double interp_cubic(const double *p, double x) {
-//    return p[1] + 0.5 * x *
-//        (p[2] - p[0] +
-//            x * (2.0 * p[0] - 5.0 * p[1] + 4.0 * p[2] - p[3] +
-//                x * (3.0 * (p[1] - p[2]) + p[3] - p[0])));
-//}
+#endif
+
+#if !NO_LOG2_DOUBLE
+static double interp_cubic(const double *p, double x) {
+    return p[1] + 0.5 * x *
+        (p[2] - p[0] +
+            x * (2.0 * p[0] - 5.0 * p[1] + 4.0 * p[2] - p[3] +
+                x * (3.0 * (p[1] - p[2]) + p[3] - p[0])));
+}
 
 static /*INLINE*/ double interp_cubic_precalc(const double *p, double x) {
     return p[3] + x * (p[2] + x * (p[1] + x * p[0]));
 }
+#endif
 
 void av1_model_rd_curvfit(BLOCK_SIZE bsize, double sse_norm, double xqr,
     double *rate_f, double *distbysse_f) {
@@ -2232,8 +2238,9 @@ void av1_model_rd_curvfit(BLOCK_SIZE bsize, double sse_norm, double xqr,
     xqr = AOMMIN(xqr, x_end - x_step - epsilon);
     const double x = (xqr - x_start) / x_step;
     const int xi = (int)floor(x);
+#if !NO_LOG2_DOUBLE
     const double xo = x - xi;
-
+#endif
     assert(xi > 0);
 
 #if NO_LOG2_DOUBLE

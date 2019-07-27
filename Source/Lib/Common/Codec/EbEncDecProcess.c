@@ -1583,7 +1583,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         // Hsan: kept ON for sc_content_detected as ~5% gain for minecraft clip
         if (picture_control_set_ptr->enc_mode == ENC_M0)
 #if M2_CAND
-			context_ptr->predictive_me_level = 3;
+            context_ptr->predictive_me_level = 3;
 #else
             context_ptr->predictive_me_level = 4;
 #endif

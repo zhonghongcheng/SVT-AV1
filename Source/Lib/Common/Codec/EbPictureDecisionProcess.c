@@ -1014,11 +1014,11 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
         else if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #if M2_CAND
-			if (picture_control_set_ptr->is_used_as_reference_flag)
+            if (picture_control_set_ptr->is_used_as_reference_flag)
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL5;
             else
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL2;
-#elif M1_CAND 
+#elif M1_CAND
             picture_control_set_ptr->nsq_search_level = (picture_control_set_ptr->is_used_as_reference_flag) ? NSQ_SEARCH_LEVEL6 : NSQ_SEARCH_LEVEL3;
 #else
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL6;
@@ -1634,7 +1634,11 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
         if (picture_control_set_ptr->enc_mode == ENC_M0 && sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
 #if STRENGHTHEN_MD_STAGE_3
+#if M2_CAND
+            picture_control_set_ptr->atb_mode = 0;
+#else
             picture_control_set_ptr->atb_mode = 1;
+#endif
 #else
             if (MR_MODE || USE_MR_CHROMA) // ATB
                 picture_control_set_ptr->atb_mode = 2;
@@ -4410,6 +4414,32 @@ void* picture_decision_kernel(void *input_ptr)
 
                                     picture_control_set_ptr->past_altref_nframes = 0;
                                     picture_control_set_ptr->future_altref_nframes = pic_i;
+#if TFK_ALTREF_DYNAMIC_WINDOW
+                                    int index_center = 0;
+                                    uint32_t actual_future_pics = picture_control_set_ptr->future_altref_nframes;
+                                    int pic_itr, ahd;
+                                    uint32_t regionInPictureWidthIndex;
+                                    uint32_t regionInPictureHeightIndex;
+
+                                    int ahd_th = (((sequence_control_set_ptr->seq_header.max_frame_width * sequence_control_set_ptr->seq_header.max_frame_height) * 50) / 100);
+
+                                    // Accumulative histogram absolute differences between the central and future frame
+                                    for (pic_itr = (index_center + actual_future_pics); pic_itr > index_center; pic_itr--) {
+                                        ahd = 0;
+                                        for (regionInPictureWidthIndex = 0; regionInPictureWidthIndex < sequence_control_set_ptr->picture_analysis_number_of_regions_per_width; regionInPictureWidthIndex++) {
+                                            for (regionInPictureHeightIndex = 0; regionInPictureHeightIndex < sequence_control_set_ptr->picture_analysis_number_of_regions_per_height; regionInPictureHeightIndex++) {
+                                                for (int bin = 0; bin < HISTOGRAM_NUMBER_OF_BINS; ++bin) {
+                                                    ahd += ABS((int32_t)picture_control_set_ptr->temp_filt_pcs_list[index_center]->picture_histogram[regionInPictureWidthIndex][regionInPictureHeightIndex][0][bin] - (int32_t)picture_control_set_ptr->temp_filt_pcs_list[pic_itr]->picture_histogram[regionInPictureWidthIndex][regionInPictureHeightIndex][0][bin]);
+                                                }
+                                            }
+                                        }
+
+                                        if (ahd < ahd_th)
+                                            break;
+                                    }
+                                    picture_control_set_ptr->future_altref_nframes = pic_itr - index_center;
+                                    //printf("\nPOC %d\t PAST %d\t FUTURE %d\n", picture_control_set_ptr->picture_number, picture_control_set_ptr->past_altref_nframes, picture_control_set_ptr->future_altref_nframes);
+#endif
                                 }
                                 else
                                 {

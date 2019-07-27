@@ -37,6 +37,7 @@ extern "C" {
 #define NO_MEMSET                       1
 #define NO_LOG2_DOUBLE                  1
 
+#define TFK_ALTREF_DYNAMIC_WINDOW       1 // Applying Dynamic window to key frame temporal filtering
 #define TFK_QPS_TUNING                  1
 #define MD_EXIT                         1
 #define MD_NSQ_EXIT                     1
@@ -46,6 +47,9 @@ extern "C" {
 
 #define M1_CAND                         0
 #define M2_CAND                         0
+#if M2_CAND
+#define COMBINE_C1_C2                   1
+#endif
 
 #define M0_HME_ME_TUNING                1
 #define PREDICTIVE_ME                   1 // Perform ME search around MVP
@@ -67,7 +71,7 @@ extern "C" {
 
 #define SHUT_RATE_MD_STAGE                     0 // Move fast rate estimation from md_stage_0 to md_stage_1
 #define CHROMA_MD_STAGE_0_TO_MD_STAGE_1        1 // Move fast chroma compensation from md_stage_0 to md_stage_1
-    
+
 #define MD_STAGE_MODE_3_TEST_0                  0 // Shut chroma @ md_stage_1 for md_staging_mode_2
 #define MD_STAGE_MODE_3_TEST_1                  0 // Bypass md_stage_1, and perform regular @ md_stage_0
 
@@ -395,7 +399,7 @@ typedef enum CAND_CLASS {
     CAND_CLASS_0,
     CAND_CLASS_1,
     CAND_CLASS_2,
-#if COMP_FULL
+#if COMP_FULL && !COMBINE_C1_C2
     CAND_CLASS_3,
 #endif
 #if II_CLASS
@@ -522,6 +526,10 @@ typedef enum ME_QP_MODE {
 #if PRUNE_REF_FRAME_AT_ME
 #define PRUNE_REF_ME_TH                        2
 #endif
+
+#define  PRUNE_ME_FIX   1//fix for PRUNE_REF_FRAME_AT_ME
+
+
 struct Buf2D
 {
     uint8_t *buf;

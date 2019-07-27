@@ -71,7 +71,6 @@ extern "C" {
     extern void   compute_depth_costs_md_skip(
         ModeDecisionContext    *context_ptr,
         SequenceControlSet     *sequence_control_set_ptr,
-        uint32_t                  curr_depth_mds,
         uint32_t                  above_depth_mds,
         uint32_t                  step,
         uint64_t                 *above_depth_cost,
