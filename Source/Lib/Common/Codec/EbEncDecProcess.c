@@ -1586,7 +1586,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     if (picture_control_set_ptr->slice_type != I_SLICE)
         // Hsan: kept ON for sc_content_detected as ~5% gain for minecraft clip
         if (picture_control_set_ptr->enc_mode == ENC_M0)
-#if M3_CAND
+#if M3_CAND_TEST
             context_ptr->predictive_me_level = 0;
 #elif M2_CAND
             context_ptr->predictive_me_level = 3;
