@@ -2280,7 +2280,7 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
 #if MEMORY_FOOTPRINT_OPT_ME_MV
     //0: MRP Mode 0 (4,3)
     //1: MRP Mode 1 (2,2)
-#if M3_CAND_TEST
+#if 0//M3_CAND_TEST
     sequence_control_set_ptr->mrp_mode = 1;
 #else
     sequence_control_set_ptr->mrp_mode = (uint8_t) (sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 0 : 1;

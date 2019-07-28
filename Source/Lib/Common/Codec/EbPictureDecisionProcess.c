@@ -1019,6 +1019,10 @@ EbErrorType signal_derivation_multi_processes_oq(
                     picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
 
 #endif
+// 3 and 1
+// 2 and off
+// 2 at Intra
+// 1 at Intra 
         else if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #if M2_CAND
             if (picture_control_set_ptr->is_used_as_reference_flag)

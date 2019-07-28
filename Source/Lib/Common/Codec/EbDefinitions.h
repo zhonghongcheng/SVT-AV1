@@ -56,6 +56,7 @@ extern "C" {
 #define CLASS1_TEST                     1
 #endif
 #define CLASS0_TEST                     0
+#define CLASS2_TEST                     0 // comp class
 
 #define M0_HME_ME_TUNING                1
 #define PREDICTIVE_ME                   1 // Perform ME search around MVP

@@ -1556,7 +1556,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
 #endif
     if (picture_control_set_ptr->enc_mode <= ENC_M1)
-#if M3_CAND_TEST
+#if 0//M3_CAND_TEST
         context_ptr->bipred3x3_injection = 0;
 #else
         context_ptr->bipred3x3_injection = 1;
