@@ -395,7 +395,9 @@ extern "C" {
 #define MRP_DISABLE_ADDED_CAND_M1                        0
 
 #define EIGTH_PEL_MV                                    0
+#if !M1_CAND
 #define DISABLE_NSQ_TABLE_FOR_M0                        1 // On wil disable the nsq_table ordering algrithm for sc content. This is a temporarily adoption that will be disable once we comeup with a better ordreing mecanisme when MRP i ON.
+#endif
 #define IMPROVED_SUBPEL_SEARCH                          1
 
 
@@ -427,7 +429,7 @@ typedef enum CAND_CLASS {
 #if !M2_CAND
 #define  FULL_COMPOUND_BDRATE         1 // enable to run compound in full mode for best bd rate
 #endif
-#if M1_CAND
+#if 0//M1_CAND
 #define  N0_COMP   1 //N0 test for compound  N0: no comp for 3x3, GG, PredMe
 #endif
 
