@@ -51,7 +51,10 @@ extern "C" {
 #define COMBINE_C1_C2                   1
 #endif
 #define M3_CAND                         0
-#define CLASS1_TEST                     0
+#define M3_CAND_TEST                    0
+#if M3_CAND_TEST
+#define CLASS1_TEST                     1
+#endif
 #define CLASS0_TEST                     0
 
 #define M0_HME_ME_TUNING                1

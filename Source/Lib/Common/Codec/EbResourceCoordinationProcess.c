@@ -707,7 +707,11 @@ void* resource_coordination_kernel(void *input_ptr)
             // Set compound mode      Settings
             // 0                 OFF: No compond mode search : AVG only
             // 1                 ON: full
+#if M3_CAND_TEST
+            sequence_control_set_ptr->compound_mode = 0;
+#else
             sequence_control_set_ptr->compound_mode = 1;
+#endif
 
 
             //sequence_control_set_ptr->order_hint_info_st.enable_order_hint = 1;

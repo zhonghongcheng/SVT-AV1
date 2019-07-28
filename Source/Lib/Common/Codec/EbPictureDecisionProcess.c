@@ -917,7 +917,14 @@ EbErrorType signal_derivation_multi_processes_oq(
             else
                 picture_control_set_ptr->pic_depth_mode = PIC_SB_SWITCH_NSQ_DEPTH_MODE;
 #else
+#if M3_CAND_TEST
+            if (picture_control_set_ptr->slice_type == I_SLICE)
+                picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
+            else
+                picture_control_set_ptr->pic_depth_mode = PIC_ALL_C_DEPTH_MODE;
+#else
             picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
+#endif
 #endif
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
             if (picture_control_set_ptr->slice_type == I_SLICE)
