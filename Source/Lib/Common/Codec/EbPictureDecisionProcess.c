@@ -1459,7 +1459,11 @@ EbErrorType signal_derivation_multi_processes_oq(
     if (picture_control_set_ptr->tx_search_level == TX_SEARCH_ENC_DEC)
         picture_control_set_ptr->tx_search_reduced_set = 0;
     else if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#if M3_CAND_TEST
+        picture_control_set_ptr->tx_search_reduced_set = 1;
+#else
         picture_control_set_ptr->tx_search_reduced_set = 0;
+#endif
     else if (picture_control_set_ptr->enc_mode <= ENC_M3)
         if (picture_control_set_ptr->is_used_as_reference_flag)
             picture_control_set_ptr->tx_search_reduced_set = 0;
