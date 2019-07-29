@@ -7156,11 +7156,13 @@ EbBool allowed_ns_cu(
 #endif
 #if MDC_ONLY
     if (is_nsq_table_used) {
-        uint8_t depth = get_depth(context_ptr->blk_geom->sq_size);
-        uint8_t shape_rank_th_tab[6] = { 6,9,9,9,4,1 };
-        uint8_t shape_rank = context_ptr->open_loop_block_rank;
-        if (shape_rank > shape_rank_th_tab[depth])
-            ret = 0;
+        if (context_ptr->blk_geom->shape != PART_N) {
+            uint8_t depth = get_depth(context_ptr->blk_geom->sq_size);
+            uint8_t shape_rank_th_tab[6] = { 6,9,9,9,4,1 };
+            uint8_t shape_rank = context_ptr->open_loop_block_rank;
+            if (shape_rank > shape_rank_th_tab[depth])
+                ret = 0;
+        }
     }
 #else
     
@@ -7614,6 +7616,44 @@ PART get_partition_shape(
         printf("error: unsupported above_size && left_size\n");
     return part;
 };
+
+#if ADJUST_NSQ_RANK_BASED_ON_NEIGH
+/****************************************************
+* Adjust the nsq_rank in order to keep the most
+* probable Shape to be selected in the lowest index
+****************************************************/
+void  adjust_nsq_rank(
+    PictureControlSet            *picture_control_set_ptr,
+    ModeDecisionContext          *context_ptr,
+    const SequenceControlSet     *sequence_control_set_ptr,
+    LargestCodingUnit            *sb_ptr,
+    NeighborArrayUnit            *leaf_partition_neighbor_array) {
+    const uint32_t             lcuAddr = sb_ptr->index;
+
+    // Generate Partition context
+    uint32_t partition_left_neighbor_index = get_neighbor_array_unit_left_index(
+        leaf_partition_neighbor_array,
+        context_ptr->cu_origin_y);
+    uint32_t partition_above_neighbor_index = get_neighbor_array_unit_top_index(
+        leaf_partition_neighbor_array,
+        context_ptr->cu_origin_x);
+    const PartitionContextType above_ctx = (((PartitionContext*)leaf_partition_neighbor_array->top_array)[partition_above_neighbor_index].above == (int8_t)INVALID_NEIGHBOR_DATA) ?
+        0 : ((PartitionContext*)leaf_partition_neighbor_array->top_array)[partition_above_neighbor_index].above;
+    const PartitionContextType left_ctx = (((PartitionContext*)leaf_partition_neighbor_array->left_array)[partition_left_neighbor_index].left == (int8_t)INVALID_NEIGHBOR_DATA) ?
+        0 : ((PartitionContext*)leaf_partition_neighbor_array->left_array)[partition_left_neighbor_index].left;
+
+    PART neighbor_part = get_partition_shape(
+        above_ctx,
+        left_ctx,
+        context_ptr->blk_geom->bwidth,
+        context_ptr->blk_geom->bheight);
+
+    // Insert predicted Shapes based on neighbor information
+    if (neighbor_part == context_ptr->blk_geom->shape) {
+        context_ptr->open_loop_block_rank = 0;
+    }
+}
+#endif
 /****************************************************
 * Reorder the nsq_table in order to keep the most
 * probable Shape to be selected in the lowest index
@@ -8201,6 +8241,18 @@ void md_encode_block(
     context_ptr->open_loop_block_rank = open_loop_block_rank;
     context_ptr->early_split_flag = early_split_flag;
     context_ptr->nsq_mode_idx = picture_control_set_ptr->parent_pcs_ptr->sb_depth_mode_array[lcuAddr] - 1;
+#if ADJUST_NSQ_RANK_BASED_ON_NEIGH
+    if (is_nsq_table_used) {
+        if (context_ptr->blk_geom->shape == PART_N) {
+            adjust_nsq_rank(
+                picture_control_set_ptr,
+                context_ptr,
+                sequence_control_set_ptr,
+                context_ptr->sb_ptr,
+                context_ptr->leaf_partition_neighbor_array);
+        }
+    }
+#endif
 #else
 #if ADP_BQ
     // Derive is_nsq_table_used

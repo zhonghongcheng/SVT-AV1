@@ -510,6 +510,7 @@ typedef enum MD_STAGE {
 #define P_NSQ_NEW                                       0
 #define MDC_ONLY                                        1
 #define ADD_SAD_FOR_128X128                             1
+#define ADJUST_NSQ_RANK_BASED_ON_NEIGH                  1
 #endif
 #if IMPROVED_SUBPEL_SEARCH
 typedef enum ME_HP_MODE {
