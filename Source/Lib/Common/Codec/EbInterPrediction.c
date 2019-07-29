@@ -2288,7 +2288,7 @@ static void model_rd_with_curvfit(
     aom_clear_system_state();
     const double sse_norm = (double)sse / num_samples;
 #if NO_LOG2_DOUBLE
-    const double xqr = (double)LOG2F((uint32_t)(sse / num_samples) / (qstep * qstep));
+    const double xqr = (double)LOG2F((uint32_t) sse_norm / (qstep * qstep));
 #else
     const double qstepsqr = (double)qstep * qstep;
     const double xqr = log2(sse_norm / qstepsqr);
@@ -2298,8 +2298,8 @@ static void model_rd_with_curvfit(
     av1_model_rd_curvfit(plane_bsize, sse_norm, xqr, &rate_f,&dist_by_sse_norm_f);
 
     const double dist_f = dist_by_sse_norm_f * sse_norm;
-    int rate_i = (int)(AOMMAX(0.0, rate_f * num_samples) + 0.5);
-    int64_t dist_i = (int64_t)(AOMMAX(0.0, dist_f * num_samples) + 0.5);
+    int rate_i = (int)((rate_f * num_samples) + 0.5);
+    int64_t dist_i = (int64_t)((dist_f * num_samples) + 0.5);
     aom_clear_system_state();
 
     // Check if skip is better
