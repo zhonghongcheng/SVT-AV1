@@ -1137,8 +1137,10 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->interpolation_search_level = IT_SEARCH_OFF;
 #endif
 #endif
+#if !SET_1
         else if (picture_control_set_ptr->enc_mode <= ENC_M1)
             picture_control_set_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;
+#endif
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
             if (picture_control_set_ptr->is_used_as_reference_flag)
                 picture_control_set_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;
@@ -1215,9 +1217,12 @@ EbErrorType signal_derivation_multi_processes_oq(
 
 #endif
 #if LOOP_FILTER_FIX
+#if !SET_1
         if (picture_control_set_ptr->enc_mode == ENC_M0)
             picture_control_set_ptr->loop_filter_mode = 3;
-        else if (picture_control_set_ptr->enc_mode <= ENC_M5)
+        else 
+#endif
+        if (picture_control_set_ptr->enc_mode <= ENC_M5)
             picture_control_set_ptr->loop_filter_mode = picture_control_set_ptr->is_used_as_reference_flag ? 3 : 0;
         else
             picture_control_set_ptr->loop_filter_mode = picture_control_set_ptr->is_used_as_reference_flag ? 1 : 0;
@@ -1411,8 +1416,10 @@ EbErrorType signal_derivation_multi_processes_oq(
     else{
         if (picture_control_set_ptr->tx_search_level == TX_SEARCH_ENC_DEC)
             picture_control_set_ptr->tx_weight = MAX_MODE_COST;
+#if !SET_1
         else if (!MR_MODE && picture_control_set_ptr->enc_mode <= ENC_M1)
             picture_control_set_ptr->tx_weight = FC_SKIP_TX_SR_TH025;
+#endif
         else if (!MR_MODE){
             if (picture_control_set_ptr->is_used_as_reference_flag)
                 picture_control_set_ptr->tx_weight = FC_SKIP_TX_SR_TH025;
@@ -1559,6 +1566,7 @@ EbErrorType signal_derivation_multi_processes_oq(
     else
 
 #endif
+#if !SET_1
         if (picture_control_set_ptr->enc_mode == ENC_M0)
             picture_control_set_ptr->intra_pred_mode = 0;
         else if (picture_control_set_ptr->enc_mode  <= ENC_M1)
@@ -1566,7 +1574,9 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->intra_pred_mode = 1;
             else
                 picture_control_set_ptr->intra_pred_mode = 2;
-        else if(picture_control_set_ptr->enc_mode <= ENC_M6)
+        else 
+#endif
+        if(picture_control_set_ptr->enc_mode <= ENC_M6)
             if (picture_control_set_ptr->temporal_layer_index == 0)
                 picture_control_set_ptr->intra_pred_mode = 1;
             else

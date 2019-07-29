@@ -58,6 +58,8 @@ extern "C" {
 #define CLASS0_TEST                     0
 #define CLASS2_TEST                     0 // comp class
 
+#define SET_1                           0
+
 #define M0_HME_ME_TUNING                1
 #define PREDICTIVE_ME                   1 // Perform ME search around MVP
 #define QPM                             1 // Use SB QP Mod
