@@ -1137,7 +1137,7 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->interpolation_search_level = IT_SEARCH_OFF;
 #endif
 #endif
-#if !SET_1
+#if 1//!SET_1
         else if (picture_control_set_ptr->enc_mode <= ENC_M1)
             picture_control_set_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;
 #endif
