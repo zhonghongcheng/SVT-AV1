@@ -7165,7 +7165,7 @@ EbBool allowed_ns_cu(
         }
     }
 #else
-    
+
 
     if (is_nsq_table_used) {
 #if PREDICT_NSQ_SHAPE
@@ -9431,14 +9431,14 @@ EB_EXTERN EbErrorType mode_decision_sb(
             uint32_t first_blk_idx = context_ptr->cu_ptr->mds_idx - (blk_geom->nsi);//index of first block in this partition
             for (int blk_it = 0; blk_it < blk_geom->nsi + 1; blk_it++)
                 tot_cost += context_ptr->md_local_cu_unit[first_blk_idx + blk_it].cost;
-            
+
             if ((tot_cost + tot_cost * (blk_geom->totns - (blk_geom->nsi + 1))* MD_EXIT_THSL/ (blk_geom->nsi + 1) / 100) > context_ptr->md_local_cu_unit[context_ptr->blk_geom->sqi_mds].cost)
 #if MD_NSQ_EXIT
                 skip_next_nsq = 1;
 #else
                 skip_next_nsq = 0;
 #endif
-            
+
         }
 #endif
         if (blk_geom->shape != PART_N) {

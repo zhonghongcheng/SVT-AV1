@@ -1529,7 +1529,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if !SET_1
     if (picture_control_set_ptr->enc_mode <= ENC_M1)
         context_ptr->unipred3x3_injection = 1;
-    else 
+    else
 #endif
     if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->unipred3x3_injection = 2;

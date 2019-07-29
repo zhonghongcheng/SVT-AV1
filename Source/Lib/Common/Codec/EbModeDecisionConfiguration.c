@@ -976,7 +976,7 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
                         }
                     }
                 }
-       
+
 #endif
             }
             else

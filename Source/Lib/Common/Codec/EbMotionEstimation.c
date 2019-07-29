@@ -13066,9 +13066,9 @@ EbErrorType BiPredictionSearch(
             uint8_t add_bi = skip_bi_pred(
                 to_inject_ref_type_0,
                 ref_type_table);
-#if PRUNE_ME_FIX  
-            if (add_bi) {  
-#else             
+#if PRUNE_ME_FIX
+            if (add_bi) {
+#else
             if (!add_bi) {
 #endif
 #endif

@@ -8,7 +8,7 @@
 
 #include "EbMotionEstimationContext.h"
 
-void MotionEstimetionPredUnitCtor(
+void MotionEstimationPredUnitCtor(
     MePredUnit   *pu)
 {
     pu->distortion = 0xFFFFFFFFull;
@@ -139,7 +139,7 @@ EbErrorType me_context_ctor(
 #else
         for (meCandidateIndex = 0; meCandidateIndex < MAX_ME_CANDIDATE_PER_PU; meCandidateIndex++) {
 #endif
-            MotionEstimetionPredUnitCtor(&((*object_dbl_ptr)->me_candidate[meCandidateIndex]).pu[pu_index]);
+            MotionEstimationPredUnitCtor(&((*object_dbl_ptr)->me_candidate[meCandidateIndex]).pu[pu_index]);
         }
     }
 

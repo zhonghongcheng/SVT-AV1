@@ -1024,7 +1024,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 // 3 and 1
 // 2 and off
 // 2 at Intra
-// 1 at Intra 
+// 1 at Intra
         else if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #if SET_2
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
@@ -1222,7 +1222,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 #if !SET_1
         if (picture_control_set_ptr->enc_mode == ENC_M0)
             picture_control_set_ptr->loop_filter_mode = 3;
-        else 
+        else
 #endif
         if (picture_control_set_ptr->enc_mode <= ENC_M5)
             picture_control_set_ptr->loop_filter_mode = picture_control_set_ptr->is_used_as_reference_flag ? 3 : 0;
@@ -1576,7 +1576,7 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->intra_pred_mode = 1;
             else
                 picture_control_set_ptr->intra_pred_mode = 2;
-        else 
+        else
 #endif
         if(picture_control_set_ptr->enc_mode <= ENC_M6)
             if (picture_control_set_ptr->temporal_layer_index == 0)
