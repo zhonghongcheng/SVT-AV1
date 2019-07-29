@@ -51,21 +51,20 @@ extern "C" {
 #define COMBINE_C1_C2                   1
 #endif
 #define M3_CAND                         0
-#define M3_CAND_TEST                    0
-#if M3_CAND_TEST
-#define CLASS1_TEST                     1
+#if M3_CAND
+#define M3_CAND_TEST                    1
+#define CLASS1_TEST                     1 // reduce NIC inter class
+#define CLASS2_TEST                     1 // reduce NIC comp class
+#define SET_1                           1
+#define SET_2                           1
 #endif
-#define CLASS0_TEST                     0
-#define CLASS2_TEST                     0 // comp class
 
-#define SET_1                           0
+#define CLASS0_TEST                     0
 
 #define M0_HME_ME_TUNING                1
 #define PREDICTIVE_ME                   1 // Perform ME search around MVP
 #define QPM                             1 // Use SB QP Mod
 #define RE_FACTURE_PRED_KERNEL          1
-
-
 #define FULL_LOOP_SPLIT                 1
 #if FULL_LOOP_SPLIT
 #define FIRST_FULL_LOOP_CHROMA_BLIND           1

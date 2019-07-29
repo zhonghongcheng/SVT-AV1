@@ -6887,7 +6887,7 @@ void  inject_intra_candidates(
     uint8_t                     disable_angle_prediction;
 
 #if ESTIMATE_INTRA
-    context_ptr->estimate_angle_intra = picture_control_set_ptr->enc_mode == ENC_M0 ? 1 : 0;
+    context_ptr->estimate_angle_intra = picture_control_set_ptr->enc_mode == ENC_M0 && !MR_MODE ? 1 : 0;
     uint8_t directional_mode_skip_mask[INTRA_MODES] = { 0 };
 
     if (context_ptr->estimate_angle_intra==1 && use_angle_delta  )
