@@ -44,17 +44,19 @@ extern "C" {
 //MD_EXIT_THSL -->0 is lossless 100 is maximum. Increase with a step of 10-20.
 #define MD_EXIT_THSL                    0
 
-#define NEW_M1_CAND_TEST                0
 #define M1_CAND                         0
 #define M2_CAND                         0
-#if M2_CAND || NEW_M1_CAND_TEST
+#define M3_CAND                         0
+
+#if M1_CAND
 #define COMBINE_C1_C2                   1
 #endif
-#define M3_CAND                         0
-#if M3_CAND
+#if M2_CAND
 #define M3_CAND_TEST                    1
 #define CLASS1_TEST                     1 // reduce NIC inter class
 #define CLASS2_TEST                     1 // reduce NIC comp class
+#endif
+#if M3_CAND
 #define SET_1                           1
 #define SET_2                           1
 #endif
