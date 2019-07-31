@@ -384,7 +384,9 @@ void* tf_set_me_hme_params_oq(
 {
     UNUSED(sequence_control_set_ptr);
     uint8_t  hmeMeLevel = picture_control_set_ptr->enc_mode; // OMK to be revised after new presets
-
+#if M4_CAND
+    hmeMeLevel = ENC_M4;
+#endif
 #if M0_SETTINGS
     hmeMeLevel = 0;
 #endif
