@@ -100,7 +100,7 @@ void* set_me_hme_params_oq(
 {
     UNUSED(sequence_control_set_ptr);
     uint8_t  hmeMeLevel =  picture_control_set_ptr->enc_mode; // OMK to be revised after new presets
-#if M4_CAND
+#if M4_SET_ME
      hmeMeLevel = 4;
 #endif
     // HME/ME default settings
@@ -350,7 +350,7 @@ EbErrorType signal_derivation_me_kernel_oq(
             context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH;
     else
 #endif
-#if M4_CAND
+#if M4_SET_ME
     context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH;
 #else
     context_ptr->me_context_ptr->me_search_method = (picture_control_set_ptr->enc_mode <= ENC_M1) ?
@@ -384,7 +384,7 @@ void* tf_set_me_hme_params_oq(
 {
     UNUSED(sequence_control_set_ptr);
     uint8_t  hmeMeLevel = picture_control_set_ptr->enc_mode; // OMK to be revised after new presets
-#if M4_CAND
+#if M4_SET_ME
     hmeMeLevel = ENC_M4;
 #endif
 #if M0_SETTINGS
@@ -563,7 +563,7 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
         else
             context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH;
     else
-#if M4_CAND
+#if M4_SET_ME
         context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH;
 #else
         context_ptr->me_context_ptr->me_search_method = (picture_control_set_ptr->enc_mode <= ENC_M1) ?

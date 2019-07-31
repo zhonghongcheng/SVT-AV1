@@ -1332,7 +1332,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
 #endif
 #if SEARCH_UV_BASE
-#if M4_CAND
+#if M4_SET_CHR
     if (0)
 #else
     if (picture_control_set_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->temporal_layer_index == 0)
@@ -1563,7 +1563,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
 #endif
     if (picture_control_set_ptr->enc_mode <= ENC_M1)
-#if M4_CAND
+#if M4_SET_ME
         context_ptr->bipred3x3_injection = 2;
 #else
         context_ptr->bipred3x3_injection = 1;
@@ -1589,7 +1589,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 3                    Level 3: 7x5 full-pel search +  (H + V + D only ~ the best) sub-pel refinement = up to 6 half-pel + up to 6  quarter-pel = up to 12 positions + pred_me_distortion to pa_me_distortion deviation on
     // 4                    Level 4: 7x5 full-pel search +  (H + V + D) sub-pel refinement = 8 half-pel + 8 quarter-pel = 16 positions + pred_me_distortion to pa_me_distortion deviation on
     // 5                    Level 5: 7x5 full-pel search +  (H + V + D) sub-pel refinement = 8 half-pel + 8 quarter-pel = 16 positions + pred_me_distortion to pa_me_distortion deviation off
-#if M4_CAND
+#if M4_SET_MD_STAGE
     if (0)
 #else
     if (picture_control_set_ptr->slice_type != I_SLICE)
@@ -1713,12 +1713,12 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->md_staging_mode = 0; //use fast-loop0->full-loop
 
-#if M4_CAND
+#if M4_SET_MD_STAGE
     context_ptr->md_staging_mode = 0; //use fast-loop0->full-loop
 #endif
 
     // Derive nic level
-#if M1_CAND && !M4_CAND
+#if M1_CAND && !M4_SET_MD_STAGE
     context_ptr->nic_level = 1;
 #else
     context_ptr->nic_level = 0;

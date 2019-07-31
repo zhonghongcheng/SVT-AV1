@@ -888,7 +888,7 @@ EbErrorType signal_derivation_multi_processes_oq(
     picture_control_set_ptr->tf_enable_hme_level2_flag = tf_enable_hme_level2_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][picture_control_set_ptr->enc_mode];
 #endif
 
-#if M4_CAND
+#if M4_SET_ME
     uint8_t enc_mode = ENC_M4;
     #if M0_HME_ME_TUNING
         picture_control_set_ptr->enable_hme_flag = enable_hme_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][enc_mode];
@@ -933,7 +933,7 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
 
 #endif
-#if !M4_CAND
+#if !M4_SET_DEPTH
         if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #if ADP_BQ
             if (picture_control_set_ptr->slice_type == I_SLICE)
@@ -1167,7 +1167,7 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->interpolation_search_level = IT_SEARCH_OFF;
 #endif
 #endif
-#if !M4_CAND
+#if !M4_SET_DEPTH
         else if (picture_control_set_ptr->enc_mode <= ENC_M1)
             picture_control_set_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)

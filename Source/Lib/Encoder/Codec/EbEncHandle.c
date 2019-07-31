@@ -2248,7 +2248,7 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
         sequence_control_set_ptr->seq_header.max_frame_width*sequence_control_set_ptr->seq_header.max_frame_height);
 #if NEW_PRESETS
 #if NEW_M0_SC
-#if M4_CAND
+#if M4_SET_64
     if (1)
 #else
     if (sequence_control_set_ptr->static_config.screen_content_mode == 1)
@@ -2284,7 +2284,7 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
 #if MEMORY_FOOTPRINT_OPT_ME_MV
     //0: MRP Mode 0 (4,3)
     //1: MRP Mode 1 (2,2)
-#if M4_CAND
+#if M4_SET_MRP
     sequence_control_set_ptr->mrp_mode = 1;
 #else
     sequence_control_set_ptr->mrp_mode = (uint8_t) (sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 0 : 1;
@@ -2305,7 +2305,7 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
     // Set down-sampling method     Settings
     // 0                            0: filtering
     // 1                            1: decimation
-#if !M4_CAND
+#if !M4_SET_FREE
     if (sequence_control_set_ptr->static_config.enc_mode == ENC_M0)
         sequence_control_set_ptr->down_sampling_method_me_search = ME_FILTERED_DOWNSAMPLED;
     else

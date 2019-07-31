@@ -94,7 +94,7 @@ EbErrorType signal_derivation_pre_analysis_oq(
 #if DECOUPLE_ALTREF_ME
     uint8_t  hme_me_level = picture_control_set_ptr->enc_mode;
 #endif
-#if M4_CAND
+#if M4_SET_ME
     hme_me_level = 4;
 #endif
     // Derive HME Flag
