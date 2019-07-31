@@ -60,7 +60,7 @@ extern "C" {
 #define SET_1                           1
 #define SET_2                           1
 #endif
-
+#define IT_SEARCH_FIX                   1 // bug fix to allow shutting interpolation in MD Staging
 #define CLASS0_TEST                     0
 
 #define M0_HME_ME_TUNING                1

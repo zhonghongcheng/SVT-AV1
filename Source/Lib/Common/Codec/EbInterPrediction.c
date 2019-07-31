@@ -7193,7 +7193,7 @@ EbErrorType inter_pu_prediction_av1(
 #if !PRE_BILINEAR_CLEAN_UP
         candidate_buffer_ptr->candidate_ptr->interp_filters = 0;
 #endif
-#if SET_1
+#if IT_SEARCH_FIX
         if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level == IT_SEARCH_OFF)
             candidate_buffer_ptr->candidate_ptr->interp_filters = 0;
         else
