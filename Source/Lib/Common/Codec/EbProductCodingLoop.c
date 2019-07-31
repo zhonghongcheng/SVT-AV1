@@ -2251,6 +2251,7 @@ void set_md_stage_counts(
     ModeDecisionContext     *context_ptr,
     uint32_t                 fastCandidateTotalCount)
 {
+    SequenceControlSet* scs = (SequenceControlSet*)(picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr);
     // Derive bypass_stage1
     if (context_ptr->md_staging_mode)
 #if MD_STAGE_MODE_3_TEST_1
@@ -2322,6 +2323,16 @@ void set_md_stage_counts(
 #if II_CLASS
     context_ptr->fast1_cand_count[CAND_CLASS_4] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : context_ptr->fast_cand_count[CAND_CLASS_4] ;//(picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
 #endif
+#if TEST_RES_NIC
+    if (scs->input_resolution >= INPUT_SIZE_1080i_RANGE){
+        context_ptr->fast1_cand_count[CAND_CLASS_3] = (picture_control_set_ptr->slice_type == I_SLICE && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag == EB_TRUE) ?
+                     context_ptr->fast1_cand_count[CAND_CLASS_3] : context_ptr->fast1_cand_count[CAND_CLASS_3] - 2;
+        context_ptr->fast1_cand_count[CAND_CLASS_2] = (picture_control_set_ptr->slice_type == I_SLICE && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag == EB_TRUE) ?
+                     context_ptr->fast1_cand_count[CAND_CLASS_2] : context_ptr->fast1_cand_count[CAND_CLASS_2] - 2;
+        context_ptr->fast1_cand_count[CAND_CLASS_1] = (picture_control_set_ptr->slice_type == I_SLICE && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag == EB_TRUE) ?
+                    context_ptr->fast1_cand_count[CAND_CLASS_1] : context_ptr->fast1_cand_count[CAND_CLASS_1] - 2;
+    }
+#endif
 
     // Set # of md_stage_2 candidates
 #if CLASS0_TEST
@@ -2336,7 +2347,7 @@ void set_md_stage_counts(
     context_ptr->md_stage_2_count[CAND_CLASS_3] = context_ptr->bypass_stage1[CAND_CLASS_3] ? context_ptr->fast1_cand_count[CAND_CLASS_3] : (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
 #endif
 #else
-#if M2_CAND
+#if M2_CAND && !M4_CAND
     context_ptr->md_stage_2_count[CAND_CLASS_1] = context_ptr->bypass_stage1[CAND_CLASS_1] ? context_ptr->fast1_cand_count[CAND_CLASS_1] : (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 7 : 2;
 #if CLASS2_TEST
     context_ptr->md_stage_2_count[CAND_CLASS_2] = context_ptr->bypass_stage1[CAND_CLASS_2] ? context_ptr->fast1_cand_count[CAND_CLASS_2] : (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 2;
@@ -2364,6 +2375,16 @@ void set_md_stage_counts(
 #endif
 #if II_CLASS
     context_ptr->md_stage_2_count[CAND_CLASS_4] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : context_ptr->fast_cand_count[CAND_CLASS_4] ;//(picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
+#endif
+#if TEST_RES_NIC
+    if (scs->input_resolution >= INPUT_SIZE_1080i_RANGE) {
+        context_ptr->md_stage_2_count[CAND_CLASS_3] = (picture_control_set_ptr->slice_type == I_SLICE && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag == EB_TRUE) ?
+            context_ptr->md_stage_2_count[CAND_CLASS_3] : context_ptr->md_stage_2_count[CAND_CLASS_3] - 2;
+        context_ptr->md_stage_2_count[CAND_CLASS_2] = (picture_control_set_ptr->slice_type == I_SLICE && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag == EB_TRUE) ?
+            context_ptr->md_stage_2_count[CAND_CLASS_2] : context_ptr->md_stage_2_count[CAND_CLASS_2] - 2;
+        context_ptr->md_stage_2_count[CAND_CLASS_1] = (picture_control_set_ptr->slice_type == I_SLICE && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag == EB_TRUE) ?
+            context_ptr->md_stage_2_count[CAND_CLASS_1] : context_ptr->md_stage_2_count[CAND_CLASS_1] - 2;
+    }
 #endif
 
     // Set # of md_stage_3 candidates
@@ -9413,6 +9434,9 @@ EB_EXTERN EbErrorType mode_decision_sb(
                 0xFFFFFFFF,
 #endif
                 lcuAddr,
+#if TBX_SPLIT_CAP
+                skip_atb,
+#endif
                 bestCandidateBuffers);
 #if FIX_ATB_SUPPORT
             }

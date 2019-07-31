@@ -47,19 +47,24 @@ extern "C" {
 #define M1_CAND                         0
 #define M2_CAND                         0
 #define M3_CAND                         0
+#define M4_CAND                         0
 
-#if M1_CAND
+#if M1_CAND && !M4_CAND
 #define COMBINE_C1_C2                   1
 #endif
 #if M2_CAND
 #define M3_CAND_TEST                    1
+#if !M4_CAND
 #define CLASS1_TEST                     1 // reduce NIC inter class
 #define CLASS2_TEST                     1 // reduce NIC comp class
+#endif
 #endif
 #if M3_CAND
 #define SET_1                           1
 #define SET_2                           1
 #endif
+
+#define TEST_RES_NIC                    0 // lower NIC for higher resolutions 
 #define IT_SEARCH_FIX                   1 // bug fix to allow shutting interpolation in MD Staging
 #define CLASS0_TEST                     0
 
@@ -429,7 +434,7 @@ typedef enum CAND_CLASS {
 #define  REFACTOR_FAST_LOOP           1 // Lossless
 #define  FAST_LOOP_OPT                1 // Use fast loop stages to speed up encoder
 #define  COMP_OPT                     1 // cut some compound injection/modes
-#if !M2_CAND
+#if !M2_CAND || M4_CAND
 #define  FULL_COMPOUND_BDRATE         1 // enable to run compound in full mode for best bd rate
 #endif
 #if 0//M1_CAND
@@ -448,7 +453,7 @@ typedef enum MD_STAGE {
 #endif
     MD_STAGE_TOTAL
 } MD_STAGE;
-#if M1_CAND
+#if M1_CAND 
 #define FIX_ATB_SUPPORT                                 1 // ENABLE_SKIP_REDUNDANT_BLOCK
 #endif
 #define FIX_TX_SEARCH_FOR_MR_MODE                       1
@@ -527,7 +532,7 @@ typedef enum ME_QP_MODE {
 
 #define TBX_SPLIT_CAP                         1 // SKIP TXB SPLIT WHEN PARENT BLOCK EOB IS 0
 #define ADAPTIVE_TXB_SEARCH_LEVEL             0 // adaptive_txb_search_level
-#if M1_CAND
+#if M1_CAND && !M4_CAND
 #define PRUNE_REF_FRAME_FRO_REC_PARTITION     1 // prune_ref_frame_for_rec_partitions
 #define PRUNE_REF_FRAME_AT_ME                 1 // Reduce the nunmber of bipred based on the unipred data.
 #endif

@@ -100,7 +100,9 @@ void* set_me_hme_params_oq(
 {
     UNUSED(sequence_control_set_ptr);
     uint8_t  hmeMeLevel =  picture_control_set_ptr->enc_mode; // OMK to be revised after new presets
-
+#if M4_CAND
+     hmeMeLevel = 4;
+#endif
     // HME/ME default settings
     me_context_ptr->number_hme_search_region_in_width = 2;
     me_context_ptr->number_hme_search_region_in_height = 2;
@@ -348,9 +350,13 @@ EbErrorType signal_derivation_me_kernel_oq(
             context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH;
     else
 #endif
+#if M4_CAND
+    context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH;
+#else
     context_ptr->me_context_ptr->me_search_method = (picture_control_set_ptr->enc_mode <= ENC_M1) ?
         FULL_SAD_SEARCH :
         SUB_SAD_SEARCH;
+#endif
 #else
 #if MOD_M0
     context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH;
@@ -555,9 +561,13 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
         else
             context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH;
     else
+#if M4_CAND
+        context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH;
+#else
         context_ptr->me_context_ptr->me_search_method = (picture_control_set_ptr->enc_mode <= ENC_M1) ?
         FULL_SAD_SEARCH :
         SUB_SAD_SEARCH;
+#endif
     return return_error;
     };
 #endif
