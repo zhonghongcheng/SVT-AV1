@@ -2251,7 +2251,9 @@ void set_md_stage_counts(
     ModeDecisionContext     *context_ptr,
     uint32_t                 fastCandidateTotalCount)
 {
+#if TEST_RES_NIC
     SequenceControlSet* scs = (SequenceControlSet*)(picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr);
+#endif
     // Derive bypass_stage1
     if (context_ptr->md_staging_mode)
 #if MD_STAGE_MODE_3_TEST_1
