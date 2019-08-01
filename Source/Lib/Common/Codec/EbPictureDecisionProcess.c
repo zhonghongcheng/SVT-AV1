@@ -893,17 +893,17 @@ EbErrorType signal_derivation_multi_processes_oq(
     #if M0_HME_ME_TUNING
         picture_control_set_ptr->enable_hme_flag = enable_hme_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][enc_mode];
     #endif
-    
+
     #if SCREEN_CONTENT_SETTINGS && PCS_ME_FIX
         picture_control_set_ptr->enable_hme_level0_flag = enable_hme_level0_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][enc_mode];
         picture_control_set_ptr->enable_hme_level1_flag = enable_hme_level1_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][enc_mode];
         picture_control_set_ptr->enable_hme_level2_flag = enable_hme_level2_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][enc_mode];
     #endif
-    
+
     #if M0_HME_ME_TUNING
         picture_control_set_ptr->tf_enable_hme_flag = tf_enable_hme_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][enc_mode];
     #endif
-    
+
     #if DECOUPLE_ALTREF_ME
         picture_control_set_ptr->tf_enable_hme_level0_flag = tf_enable_hme_level0_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][enc_mode];
         picture_control_set_ptr->tf_enable_hme_level1_flag = tf_enable_hme_level1_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][enc_mode];
@@ -957,7 +957,7 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->pic_depth_mode = PIC_ALL_C_DEPTH_MODE;
             else
                 picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
-         else 
+         else
 #endif
          if (picture_control_set_ptr->enc_mode <= ENC_M5)
             picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
