@@ -51,12 +51,10 @@ extern "C" {
 #if M4_CAND
 #define M4_SET_ME                       0
 #define M4_SET_FREE                     0
-#define M4_SET_MD_STAGE                 0
 #define M4_SET_DEPTH                    0
 #define M4_SET_MRP                      0
 #define M4_SET_64                       0
-#define M4_SET_COMP                     0
-#define M4_SET_CHR                      0
+
 #endif
 #if M1_CAND && !M4_SET_MD_STAGE
 #define COMBINE_C1_C2                   1
@@ -73,6 +71,10 @@ extern "C" {
 #define SET_2                           1
 #endif
 
+#define M4_SET_MD_STAGE                 0
+#define M4_SET_COMP                     0
+#define M4_SET_CHR                      0
+#define M4_COMP_OFF                     0
 
 #define TEST_RES_NIC                    0 // lower NIC for higher resolutions 
 #define IT_SEARCH_FIX                   1 // bug fix to allow shutting interpolation in MD Staging
