@@ -49,12 +49,11 @@ extern "C" {
 #define M3_CAND                         0
 #define M4_CAND                         0
 #if M4_CAND
-#define M4_SET_ME                       0
-#define M4_SET_FREE                     0
-#define M4_SET_DEPTH                    0
-#define M4_SET_MRP                      0
-#define M4_SET_64                       0
-
+#define M4_SET_ME                       1
+#define M4_SET_FREE                     1
+#define M4_SET_DEPTH                    1
+#define M4_SET_MRP                      1
+#define M4_SET_64                       1
 #endif
 #if M1_CAND && !M4_SET_MD_STAGE
 #define COMBINE_C1_C2                   1
