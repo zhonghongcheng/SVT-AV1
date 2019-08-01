@@ -48,6 +48,7 @@ extern "C" {
 #define M2_CAND                         0
 #define M3_CAND                         0
 #define M4_CAND                         0
+#define USE_MDS3_C1C2_REDUCED_NIC       0
 #if M4_CAND
 #define M4_SET_ME                       1
 #define M4_SET_FREE                     1
@@ -55,7 +56,7 @@ extern "C" {
 #define M4_SET_MRP                      1
 #define M4_SET_64                       1
 #endif
-#if M1_CAND && !M4_SET_MD_STAGE
+#if M1_CAND || USE_MDS3_C1C2_REDUCED_NIC 
 #define COMBINE_C1_C2                   1
 #endif
 #if M2_CAND
@@ -69,7 +70,10 @@ extern "C" {
 #define SET_1                           1
 #define SET_2                           1
 #endif
-
+#if USE_MDS3_C1C2_REDUCED_NIC
+#define CLASS1_TEST                     1 // reduce NIC inter class
+#define CLASS2_TEST                     1 // reduce NIC comp class
+#endif
 #define M4_SET_MD_STAGE                 0
 #define M4_SET_COMP                     0
 #define M4_SET_CHR                      0

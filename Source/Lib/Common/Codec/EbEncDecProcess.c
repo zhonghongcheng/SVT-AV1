@@ -1724,6 +1724,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     context_ptr->nic_level = 0;
 #endif
 
+#if USE_MDS3_C1C2_REDUCED_NIC
+    context_ptr->md_staging_mode = 3;
+    context_ptr->nic_level = 1;
+#endif
 #endif
 
     return return_error;
