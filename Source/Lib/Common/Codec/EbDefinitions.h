@@ -75,7 +75,7 @@ extern "C" {
 #define M4_SET_CHR                      0
 #define M4_COMP_OFF                     0
 
-#define TEST_RES_NIC                    0 // lower NIC for higher resolutions 
+#define TEST_RES_NIC                    0 // lower NIC for higher resolutions
 #define IT_SEARCH_FIX                   1 // bug fix to allow shutting interpolation in MD Staging
 #define CLASS0_TEST                     0
 
@@ -464,7 +464,7 @@ typedef enum MD_STAGE {
 #endif
     MD_STAGE_TOTAL
 } MD_STAGE;
-#if M1_CAND 
+#if M1_CAND
 #define FIX_ATB_SUPPORT                                 1 // ENABLE_SKIP_REDUNDANT_BLOCK
 #endif
 #define FIX_TX_SEARCH_FOR_MR_MODE                       1
