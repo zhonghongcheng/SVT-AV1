@@ -366,7 +366,7 @@ void av1_jnt_convolve_x_avx2(const uint8_t *src, int32_t src_stride,
         const int32_t fo_horiz = 0;
         const uint8_t *const src_ptr = src - fo_horiz;
 
-        prepare_coeffs_lowbd_2tap(filter_params_x, subpel_x_qn, coeffs);
+        prepare_coeffs_lowbd_2tap_avx2(filter_params_x, subpel_x_qn, coeffs);
 
         for (i = 0; i < h; i += 2) {
             const uint8_t *src_data = src_ptr + i * src_stride;
@@ -578,7 +578,7 @@ void av1_jnt_convolve_y_avx2(const uint8_t *src, int32_t src_stride,
             const uint8_t *data = &src_ptr[j];
             __m256i src2;
 
-            prepare_coeffs_lowbd_2tap(filter_params_y, subpel_y_qn, coeffs);
+            prepare_coeffs_lowbd_2tap_avx2(filter_params_y, subpel_y_qn, coeffs);
 
             src2 = _mm256_castsi128_si256(_mm_loadu_si128((__m128i *)data));
 
@@ -1162,7 +1162,7 @@ void av1_jnt_convolve_2d_avx2(const uint8_t *src, int32_t src_stride,
         const int32_t fo_horiz = 0;
         const uint8_t *const src_ptr = src - fo_vert * src_stride - fo_horiz;
 
-        prepare_coeffs_lowbd_2tap(filter_params_x, subpel_x_qn, coeffs_h);
+        prepare_coeffs_lowbd_2tap_avx2(filter_params_x, subpel_x_qn, coeffs_h);
 
         if (v_tap == 2) {
             const int16_t *const t_block = im_block + 3 * im_stride;

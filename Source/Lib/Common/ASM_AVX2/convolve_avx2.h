@@ -79,7 +79,28 @@ static INLINE void prepare_coeffs_lowbd(
     coeffs[3] = _mm256_shuffle_epi8(coeffs_1, _mm256_set1_epi16(0x0e0cu));
 }
 
-static INLINE void prepare_coeffs_lowbd_2tap(
+static INLINE void prepare_coeffs_lowbd_2tap_ssse3(
+    const InterpFilterParams *const filter_params, const int32_t subpel_q4,
+    __m128i *const coeffs /* [4] */) {
+    const int16_t *const filter = av1_get_interp_filter_subpel_kernel(
+        *filter_params, subpel_q4 & SUBPEL_MASK);
+    const __m128i coeffs_8 = _mm_cvtsi32_si128(*(const int32_t *)(filter + 3));
+
+    // right shift all filter co-efficients by 1 to reduce the bits required.
+    // This extra right shift will be taken care of at the end while rounding
+    // the result.
+    // Since all filter co-efficients are even, this change will not affect the
+    // end result
+    assert(_mm_test_all_zeros(_mm_and_si128(coeffs_8, _mm_set1_epi16(1)),
+        _mm_set1_epi16((short)0xffff)));
+
+    const __m128i coeffs_1 = _mm_srai_epi16(coeffs_8, 1);
+
+    // coeffs 3 4 3 4 3 4 3 4
+    *coeffs = _mm_shuffle_epi8(coeffs_1, _mm_set1_epi16(0x0200u));
+}
+
+static INLINE void prepare_coeffs_lowbd_2tap_avx2(
     const InterpFilterParams *const filter_params, const int32_t subpel_q4,
     __m256i *const coeffs /* [4] */) {
     const int16_t *const filter = av1_get_interp_filter_subpel_kernel(
@@ -158,6 +179,11 @@ static INLINE __m256i convolve_lowbd_4tap(const __m256i *const s,
     return res;
 }
 
+static INLINE __m128i convolve_lowbd_2tap_ssse3(const __m128i *const s,
+    const __m128i *const coeffs) {
+    return _mm_maddubs_epi16(s[0], coeffs[0]);
+}
+
 static INLINE __m256i convolve_lowbd_2tap(const __m256i *const s,
     const __m256i *const coeffs) {
     return _mm256_maddubs_epi16(s[0], coeffs[0]);
@@ -220,6 +246,64 @@ static INLINE __m256i convolve_lowbd_x_2tap(const __m256i data,
     const __m256i s = _mm256_shuffle_epi8(data, filt[0]);
 
     return convolve_lowbd_2tap(&s, coeffs);
+}
+
+static INLINE __m128i convolve_round_sse2(const __m128i src) {
+    __m128i dst;
+    const __m128i round = _mm_set1_epi16(34);
+    dst = _mm_add_epi16(src, round);
+    dst = _mm_srai_epi16(dst, 6);
+    return dst;
+}
+
+static INLINE __m256i convolve_round_avx2(const __m256i src) {
+    __m256i dst;
+    const __m256i round = _mm256_set1_epi16(34);
+    dst = _mm256_add_epi16(src, round);
+    dst = _mm256_srai_epi16(dst, 6);
+    return dst;
+}
+
+static INLINE __m128i convolve_lowbd_x_32_2tap_kernel_ssse3(const __m128i src,
+    const __m128i *const coeffs) {
+    __m128i res_16b;
+
+    res_16b = convolve_lowbd_2tap_ssse3(&src, coeffs);
+    res_16b = convolve_round_sse2(res_16b);
+    return _mm_packus_epi16(res_16b, res_16b);
+}
+
+static INLINE __m256i convolve_lowbd_x_32_2tap_kernel_avx2(const __m256i src[2],
+    const __m256i *const coeffs) {
+    const __m256i s0 = _mm256_unpacklo_epi8(src[0], src[1]);
+    const __m256i s1 = _mm256_unpackhi_epi8(src[0], src[1]);
+    __m256i res_16b[2];
+
+    res_16b[0] = convolve_lowbd_2tap(&s0, coeffs);
+    res_16b[1] = convolve_lowbd_2tap(&s1, coeffs);
+    res_16b[0] = convolve_round_avx2(res_16b[0]);
+    res_16b[1] = convolve_round_avx2(res_16b[1]);
+    return _mm256_packus_epi16(res_16b[0], res_16b[1]);
+}
+
+static INLINE void convolve_lowbd_x_32_2tap(const uint8_t *const src,
+    const __m256i *const coeffs, uint8_t *const dst) {
+    __m256i s[2];
+
+    s[0] = _mm256_loadu_si256((__m256i *)src);
+    s[1] = _mm256_loadu_si256((__m256i *)(src + 1));
+    const __m256i d = convolve_lowbd_x_32_2tap_kernel_avx2(s, coeffs);
+    _mm256_storeu_si256((__m256i *)dst, d);
+}
+
+static INLINE void convolve_lowbd_x_32_2tap_avg(const uint8_t *const src,
+    const __m256i *const coeffs, uint8_t *const dst) {
+    __m256i s[2];
+
+    s[0] = _mm256_loadu_si256((__m256i *)src);
+    s[1] = _mm256_loadu_si256((__m256i *)(src + 1));
+    const __m256i d = _mm256_avg_epu8(s[0], s[1]);
+    _mm256_storeu_si256((__m256i *)dst, d);
 }
 
 static INLINE void add_store_aligned_256(ConvBufType *const dst,
