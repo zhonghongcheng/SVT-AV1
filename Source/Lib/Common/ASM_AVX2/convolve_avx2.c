@@ -25,6 +25,16 @@
 #define UNLIKELY(v) (v)
 #endif
 #endif
+
+#ifndef _mm256_set_m128i
+#define _mm256_set_m128i(/* __m128i */ hi, /* __m128i */ lo) \
+    _mm256_insertf128_si256(_mm256_castsi128_si256(lo), (hi), 0x1)
+#endif
+
+#ifndef _mm256_setr_m128i
+#define _mm256_setr_m128i(/* __m128i */ lo, /* __m128i */ hi) \
+    _mm256_set_m128i((hi), (lo))
+#endif 
 void av1_convolve_y_sr_avx2(const uint8_t *src, int32_t src_stride,
     uint8_t *dst, int32_t dst_stride, int32_t w, int32_t h,
     InterpFilterParams *filter_params_x, InterpFilterParams *filter_params_y,
