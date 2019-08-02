@@ -15,6 +15,7 @@
 #include "aom_dsp_rtcd.h"
 #include "convolve_avx2.h"
 #include "EbInterPrediction.h"
+#include "EbMemory_AVX2.h"
 #include "synonyms.h"
 #if II_AVX
 #ifdef __GNUC__
@@ -26,15 +27,6 @@
 #endif
 #endif
 
-#ifndef _mm256_set_m128i
-#define _mm256_set_m128i(/* __m128i */ hi, /* __m128i */ lo) \
-    _mm256_insertf128_si256(_mm256_castsi128_si256(lo), (hi), 0x1)
-#endif
-
-#ifndef _mm256_setr_m128i
-#define _mm256_setr_m128i(/* __m128i */ lo, /* __m128i */ hi) \
-    _mm256_set_m128i((hi), (lo))
-#endif 
 void av1_convolve_y_sr_avx2(const uint8_t *src, int32_t src_stride,
     uint8_t *dst, int32_t dst_stride, int32_t w, int32_t h,
     InterpFilterParams *filter_params_x, InterpFilterParams *filter_params_y,
@@ -598,7 +590,7 @@ void av1_convolve_x_sr_avx2(const uint8_t *src, int32_t src_stride,
                 else if (w == 32) {
                     i = h;
                     do {
-                        convolve_lowbd_x_32_2tap_avg(src_ptr, coeffs, dst);
+                        convolve_lowbd_x_32_2tap_avg(src_ptr, dst);
                         src_ptr += src_stride;
                         dst += dst_stride;
                     } while (--i);
@@ -606,8 +598,8 @@ void av1_convolve_x_sr_avx2(const uint8_t *src, int32_t src_stride,
                 else if (w == 64) {
                     i = h;
                     do {
-                        convolve_lowbd_x_32_2tap_avg(src_ptr + 0 * 32, coeffs, dst + 0 * 32);
-                        convolve_lowbd_x_32_2tap_avg(src_ptr + 1 * 32, coeffs, dst + 1 * 32);
+                        convolve_lowbd_x_32_2tap_avg(src_ptr + 0 * 32, dst + 0 * 32);
+                        convolve_lowbd_x_32_2tap_avg(src_ptr + 1 * 32, dst + 1 * 32);
                         src_ptr += src_stride;
                         dst += dst_stride;
                     } while (--i);
@@ -615,10 +607,10 @@ void av1_convolve_x_sr_avx2(const uint8_t *src, int32_t src_stride,
                 else { // w == 128
                     i = h;
                     do {
-                        convolve_lowbd_x_32_2tap_avg(src_ptr + 0 * 32, coeffs, dst + 0 * 32);
-                        convolve_lowbd_x_32_2tap_avg(src_ptr + 1 * 32, coeffs, dst + 1 * 32);
-                        convolve_lowbd_x_32_2tap_avg(src_ptr + 2 * 32, coeffs, dst + 2 * 32);
-                        convolve_lowbd_x_32_2tap_avg(src_ptr + 3 * 32, coeffs, dst + 3 * 32);
+                        convolve_lowbd_x_32_2tap_avg(src_ptr + 0 * 32, dst + 0 * 32);
+                        convolve_lowbd_x_32_2tap_avg(src_ptr + 1 * 32, dst + 1 * 32);
+                        convolve_lowbd_x_32_2tap_avg(src_ptr + 2 * 32, dst + 2 * 32);
+                        convolve_lowbd_x_32_2tap_avg(src_ptr + 3 * 32, dst + 3 * 32);
                         src_ptr += src_stride;
                         dst += dst_stride;
                     } while (--i);

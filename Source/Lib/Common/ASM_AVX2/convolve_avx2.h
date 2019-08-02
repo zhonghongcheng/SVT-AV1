@@ -297,7 +297,7 @@ static INLINE void convolve_lowbd_x_32_2tap(const uint8_t *const src,
 }
 
 static INLINE void convolve_lowbd_x_32_2tap_avg(const uint8_t *const src,
-    const __m256i *const coeffs, uint8_t *const dst) {
+    uint8_t *const dst) {
     __m256i s[2];
 
     s[0] = _mm256_loadu_si256((__m256i *)src);
