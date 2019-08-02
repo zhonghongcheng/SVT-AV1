@@ -599,7 +599,7 @@ EbErrorType sb_geom_init(SequenceControlSet * sequence_control_set_ptr)
                 sequence_control_set_ptr->sb_geom[sb_index].block_is_allowed[md_scan_block_index] = EB_FALSE;
 
 
-#if INCOMPLETE_SB_LINK                
+#if INCOMPLETE_SB_ASSERT               
             sequence_control_set_ptr->sb_geom[sb_index].block_is_completely_inside[md_scan_block_index] =
                 ((sequence_control_set_ptr->sb_geom[sb_index].origin_x + blk_geom->origin_x + blk_geom->bwidth <= sequence_control_set_ptr->seq_header.max_frame_width) &&
                 (sequence_control_set_ptr->sb_geom[sb_index].origin_y + blk_geom->origin_y + blk_geom->bheight <= sequence_control_set_ptr->seq_header.max_frame_height)) ?

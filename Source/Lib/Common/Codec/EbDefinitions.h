@@ -35,7 +35,7 @@
 extern "C" {
 #endif
 
-#define    INCOMPLETE_SB_ASSERT         0 //add an assert to link incomplete SBs to usage of root-CBF skip decision in MD
+#define    INCOMPLETE_SB_ASSERT         1 //add an assert to link incomplete SBs to usage of root-CBF skip decision in MD
 
 
 #define NO_MEMSET                       1
