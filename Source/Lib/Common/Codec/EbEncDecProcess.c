@@ -1343,9 +1343,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->chroma_level = CHROMA_MODE_0;
     else
 #endif
+#if !M5_CAND
     if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->chroma_level = CHROMA_MODE_1;
     else
+#endif
         context_ptr->chroma_level = (sequence_control_set_ptr->encoder_bit_depth == EB_8BIT) ?
             CHROMA_MODE_2 :
             CHROMA_MODE_3 ;
@@ -1539,6 +1541,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->unipred3x3_injection = 2;
     else
         context_ptr->unipred3x3_injection = 0;
+
+#if M5_CAND
+    context_ptr->unipred3x3_injection = 0;
+#endif
+
 #else
     if (picture_control_set_ptr->enc_mode == ENC_M0)
         context_ptr->unipred3x3_injection = 1;
@@ -1581,6 +1588,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->bipred3x3_injection = 0;
 #endif
 
+#if M5_CAND
+    context_ptr->bipred3x3_injection = 0;
+#endif
+
 #if PREDICTIVE_ME
     // Level                Settings
     // 0                    Level 0: OFF
@@ -1609,6 +1620,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->predictive_me_level = 0;
 #endif
 
+#if M5_CAND
+    context_ptr->predictive_me_level = 0;
+#endif
+
     // Set interpolation filter search blk size
     // Level                Settings
     // 0                    ON for 8x8 and above
@@ -1619,6 +1634,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->interpolation_filter_search_blk_size = 0;
     else
         context_ptr->interpolation_filter_search_blk_size = 1;
+
+#if M5_CAND
+    context_ptr->interpolation_filter_search_blk_size = 1;
+#endif
 #else
     if (picture_control_set_ptr->enc_mode == ENC_M0)
         context_ptr->interpolation_filter_search_blk_size = 0;
@@ -1721,6 +1740,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if M1_CAND && !M4_SET_MD_STAGE
     context_ptr->nic_level = 1;
 #else
+    context_ptr->nic_level = 0;
+#endif
+
+#if M5_CAND
     context_ptr->nic_level = 0;
 #endif
 

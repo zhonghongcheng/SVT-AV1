@@ -52,16 +52,25 @@ extern "C" {
 #define M2_CAND                         0
 #define M3_CAND                         0
 #define M4_CAND                         0
-#define USE_MDS3_C1C2_REDUCED_NIC       0
+#define M5_CAND                         0
+#define INC_SB                          0
+#if M5_CAND
+#define M4_SET_MD_STAGE                 1
+#define M4_SET_COMP                     1
+#define M4_SET_CHR                      1
+#define M4_COMP_OFF                     1
+#endif
+
 #if M4_CAND
-#define M4_SET_ME                       1
 #define M4_SET_FREE                     1
+#define M4_SET_ME                       1
 #define M4_SET_DEPTH                    1
 #define M4_SET_MRP                      1
 #define M4_SET_64                       1
 #endif
-#if M1_CAND || USE_MDS3_C1C2_REDUCED_NIC 
+#if M1_CAND && !M4_SET_MD_STAGE 
 #define COMBINE_C1_C2                   1
+#define S3_TEST                         1
 #endif
 #if M2_CAND
 #define M3_CAND_TEST                    1
@@ -74,14 +83,6 @@ extern "C" {
 #define SET_1                           1
 #define SET_2                           1
 #endif
-#if USE_MDS3_C1C2_REDUCED_NIC
-#define CLASS1_TEST                     1 // reduce NIC inter class
-#define CLASS2_TEST                     1 // reduce NIC comp class
-#endif
-#define M4_SET_MD_STAGE                 0
-#define M4_SET_COMP                     0
-#define M4_SET_CHR                      0
-#define M4_COMP_OFF                     0
 
 #define TEST_RES_NIC                    0 // lower NIC for higher resolutions
 #define IT_SEARCH_FIX                   1 // bug fix to allow shutting interpolation in MD Staging

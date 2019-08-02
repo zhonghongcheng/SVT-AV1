@@ -97,6 +97,9 @@ EbErrorType signal_derivation_pre_analysis_oq(
 #if M4_SET_ME
     hme_me_level = 4;
 #endif
+#if M5_CAND
+    hme_me_level = ENC_M5;
+#endif
     // Derive HME Flag
     if (sequence_control_set_ptr->static_config.use_default_me_hme) {
 #if !DECOUPLE_ALTREF_ME
