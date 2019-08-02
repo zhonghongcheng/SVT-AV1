@@ -35,7 +35,7 @@
 extern "C" {
 #endif
 
-#define    INCOMPLETE_SB_ASSERT   1 //add an assert to link incomplete SBs to usage of root-CBF skip decision in MD
+#define    INCOMPLETE_SB_ASSERT         0 //add an assert to link incomplete SBs to usage of root-CBF skip decision in MD
 
 
 #define NO_MEMSET                       1
@@ -53,20 +53,22 @@ extern "C" {
 #define M3_CAND                         0
 #define M4_CAND                         0
 #define M5_CAND                         0
+#define M6_CAND                         0  // use -enc-mode 6 and desable M1_CAND - M5_CAND
 #define INC_SB                          0
+#if M6_CAND
+#define M4_SET_COMP                     0
+#define M4_SET_CHR                      0
+#define M5_CAND_CHRM                    0
+#define M5_CAND_ADP                     0
+#endif
 #if M5_CAND
 #define M4_SET_MD_STAGE                 1
-#define M4_SET_COMP                     1
-#define M4_SET_CHR                      1
 #define M4_COMP_OFF                     1
-#define M5_CAND_CHRM                    1
 #define M5_CAND_ME                      1
 #define M5_CAND_FILTER                  1
 #define M5_CAND_TX                      1
-#define M5_CAND_ADP                     1
 #define M5_CAND_MD                      1
 #endif
-
 #if M4_CAND
 #define M4_SET_FREE                     1
 #define M4_SET_ME                       1

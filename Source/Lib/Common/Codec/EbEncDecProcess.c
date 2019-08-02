@@ -1753,6 +1753,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
 #if M5_CAND
     context_ptr->nic_level = 0;
+    context_ptr->md_staging_mode = 0;
 #endif
 
 #if USE_MDS3_C1C2_REDUCED_NIC
