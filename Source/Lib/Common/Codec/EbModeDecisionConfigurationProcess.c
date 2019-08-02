@@ -2168,7 +2168,7 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
 #if M4_SET_DEPTH
     context_ptr->adp_level = ENC_M4;
 #endif
-#if M5_CAND
+#if M5_CAND_ADP
     context_ptr->adp_level = ENC_M5;
 #endif
 

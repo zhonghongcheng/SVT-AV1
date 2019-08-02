@@ -1343,7 +1343,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->chroma_level = CHROMA_MODE_0;
     else
 #endif
-#if !M5_CAND
+#if !M5_CAND_CHRM
     if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->chroma_level = CHROMA_MODE_1;
     else
@@ -1390,7 +1390,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         else
             context_ptr->decoupled_fast_loop_search_method = FULL_SAD_SEARCH;
 
-#if M5_CAND
+#if M5_CAND_ME
     context_ptr->decoupled_fast_loop_search_method = FULL_SAD_SEARCH;
 #endif
 #else
@@ -1546,7 +1546,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->unipred3x3_injection = 0;
 
-#if M5_CAND
+#if M5_CAND_ME
     context_ptr->unipred3x3_injection = 0;
 #endif
 
@@ -1592,7 +1592,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->bipred3x3_injection = 0;
 #endif
 
-#if M5_CAND
+#if M5_CAND_ME
     context_ptr->bipred3x3_injection = 0;
 #endif
 
@@ -1624,7 +1624,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->predictive_me_level = 0;
 #endif
 
-#if M5_CAND
+#if M5_CAND_MD
     context_ptr->predictive_me_level = 0;
 #endif
 
@@ -1639,7 +1639,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->interpolation_filter_search_blk_size = 1;
 
-#if M5_CAND
+#if M5_CAND_MD
     context_ptr->interpolation_filter_search_blk_size = 1;
 #endif
 #else
@@ -1672,7 +1672,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->spatial_sse_full_loop = EB_FALSE;
 
-#if M5_CAND
+#if M5_CAND_MD
     context_ptr->spatial_sse_full_loop = EB_FALSE;
 #endif
 #else

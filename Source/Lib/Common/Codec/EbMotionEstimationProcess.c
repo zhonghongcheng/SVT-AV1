@@ -103,7 +103,7 @@ void* set_me_hme_params_oq(
 #if M4_SET_ME
      hmeMeLevel = ENC_M4;
 #endif
-#if M5_CAND
+#if M5_CAND_ME
      hmeMeLevel = ENC_M5;
 #endif
     // HME/ME default settings
@@ -390,7 +390,7 @@ void* tf_set_me_hme_params_oq(
 #if M4_SET_ME
     hmeMeLevel = ENC_M4;
 #endif
-#if M5_CAND
+#if M5_CAND_ME
     hmeMeLevel = ENC_M5;
 #endif
 #if M0_SETTINGS

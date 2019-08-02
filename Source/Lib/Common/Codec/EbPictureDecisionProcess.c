@@ -890,7 +890,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 
 #if M4_SET_ME
     uint8_t enc_mode = ENC_M4;
-#if M5_CAND
+#if M5_CAND_ME
     enc_mode = ENC_M5;
 #endif
     #if M0_HME_ME_TUNING
@@ -1343,7 +1343,7 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
             cm->sg_filter_mode = 0;
     else
-#if !M5_CAND
+#if !M5_CAND_FILTER
     if (picture_control_set_ptr->enc_mode <= ENC_M4)
         cm->sg_filter_mode = 4;
     else 
@@ -1411,7 +1411,7 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->tx_search_level = TX_SEARCH_ENC_DEC;
     else
 #endif
-#if !M5_CAND
+#if !M5_CAND_TX
     if (picture_control_set_ptr->enc_mode <= ENC_M4)
         picture_control_set_ptr->tx_search_level = TX_SEARCH_FULL_LOOP;
     else 

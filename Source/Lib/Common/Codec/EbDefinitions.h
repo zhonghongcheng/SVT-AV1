@@ -59,6 +59,12 @@ extern "C" {
 #define M4_SET_COMP                     1
 #define M4_SET_CHR                      1
 #define M4_COMP_OFF                     1
+#define M5_CAND_CHRM                    1
+#define M5_CAND_ME                      1
+#define M5_CAND_FILTER                  1
+#define M5_CAND_TX                      1
+#define M5_CAND_ADP                     1
+#define M5_CAND_MD                      1
 #endif
 
 #if M4_CAND
@@ -68,7 +74,7 @@ extern "C" {
 #define M4_SET_MRP                      1
 #define M4_SET_64                       1
 #endif
-#if M1_CAND && !M4_SET_MD_STAGE 
+#if 1//M1_CAND && !M4_SET_MD_STAGE 
 #define COMBINE_C1_C2                   1
 #define S3_TEST                         1
 #endif

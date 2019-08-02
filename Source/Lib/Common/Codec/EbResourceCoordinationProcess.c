@@ -97,7 +97,7 @@ EbErrorType signal_derivation_pre_analysis_oq(
 #if M4_SET_ME
     hme_me_level = 4;
 #endif
-#if M5_CAND
+#if M5_CAND_ME
     hme_me_level = ENC_M5;
 #endif
     // Derive HME Flag
