@@ -1389,6 +1389,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             context_ptr->decoupled_fast_loop_search_method = SSD_SEARCH;
         else
             context_ptr->decoupled_fast_loop_search_method = FULL_SAD_SEARCH;
+
+#if M5_CAND
+    context_ptr->decoupled_fast_loop_search_method = FULL_SAD_SEARCH;
+#endif
 #else
     if (picture_control_set_ptr->enc_mode <= ENC_M5)
         context_ptr->decoupled_fast_loop_search_method = SSD_SEARCH;
@@ -1667,6 +1671,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->spatial_sse_full_loop = EB_TRUE;
     else
         context_ptr->spatial_sse_full_loop = EB_FALSE;
+
+#if M5_CAND
+    context_ptr->spatial_sse_full_loop = EB_FALSE;
+#endif
 #else
     if (picture_control_set_ptr->enc_mode == ENC_M0)
 #if MOD_M0
