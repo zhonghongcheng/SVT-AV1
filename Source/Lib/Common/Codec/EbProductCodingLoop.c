@@ -9381,6 +9381,15 @@ EB_EXTERN EbErrorType mode_decision_sb(
         }
         if(cu_ptr->mds_idx >= next_non_skip_blk_idx_mds && skip_next_sq == 1)
             skip_next_sq = 0;
+
+
+#if  INCOMPLETE_SB_ASSERT       
+        if (sequence_control_set_ptr->sb_geom[lcuAddr].block_is_completely_inside[cu_ptr->mds_idx] == 0 &&
+            sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[cu_ptr->mds_idx])
+            assert(context_ptr->blk_skip_decision == EB_TRUE && "blocks that go beyond picture boundaries need skip decision mechanism with chroma on");
+#endif
+
+
             if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[cu_ptr->mds_idx] && !skip_next_nsq && !skip_next_sq) {
 #else
             if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[cu_ptr->mds_idx]) {

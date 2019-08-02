@@ -34,6 +34,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define    INCOMPLETE_SB_ASSERT   1 //add an assert to link incomplete SBs to usage of root-CBF skip decision in MD
+
+
 #define NO_MEMSET                       1
 #define NO_LOG2_DOUBLE                  1
 
