@@ -962,7 +962,11 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
          else
 #endif
+#if M6_DEPTH
+         if (picture_control_set_ptr->enc_mode <= ENC_M6)
+#else
          if (picture_control_set_ptr->enc_mode <= ENC_M5)
+#endif
             picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
          else
             if (picture_control_set_ptr->slice_type == I_SLICE)

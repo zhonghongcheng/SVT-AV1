@@ -35,8 +35,7 @@
 extern "C" {
 #endif
 
-#define    INCOMPLETE_SB_ASSERT         0 //add an assert to link incomplete SBs to usage of root-CBF skip decision in MD
-
+#define INCOMPLETE_SB_ASSERT            0 //add an assert to link incomplete SBs to usage of root-CBF skip decision in MD
 
 #define NO_MEMSET                       1
 #define NO_LOG2_DOUBLE                  1
@@ -56,6 +55,8 @@ extern "C" {
 #define M6_CAND                         0  // use -enc-mode 6 and desable M1_CAND - M5_CAND
 #define INC_SB                          0
 #if M6_CAND
+#define M6_DEPTH                        1
+#define M6_FL_ESC                       1
 #define M4_SET_COMP                     0
 #define M4_SET_CHR                      0
 #define M5_CAND_CHRM                    0
@@ -76,9 +77,8 @@ extern "C" {
 #define M4_SET_MRP                      1
 #define M4_SET_64                       1
 #endif
-#if 1//M1_CAND && !M4_SET_MD_STAGE 
+#if M1_CAND || M6_CAND
 #define COMBINE_C1_C2                   1
-#define S3_TEST                         1
 #endif
 #if M2_CAND
 #define M3_CAND_TEST                    1
@@ -91,7 +91,7 @@ extern "C" {
 #define SET_1                           1
 #define SET_2                           1
 #endif
-
+#define S3_TEST                         1 // lower NIC count for M5-M8
 #define TEST_RES_NIC                    0 // lower NIC for higher resolutions
 #define IT_SEARCH_FIX                   1 // bug fix to allow shutting interpolation in MD Staging
 #define CLASS0_TEST                     0

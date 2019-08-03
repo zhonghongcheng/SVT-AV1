@@ -1421,7 +1421,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             context_ptr->full_loop_escape = 2;
     else
 #endif
+#if M6_FL_ESC
+    if (picture_control_set_ptr->enc_mode <= ENC_M6)
+#else
     if (picture_control_set_ptr->enc_mode <= ENC_M5)
+#endif
         context_ptr->full_loop_escape = 0;
     else
         context_ptr->full_loop_escape = 2;
