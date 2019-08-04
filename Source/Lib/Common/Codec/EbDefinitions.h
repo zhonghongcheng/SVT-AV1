@@ -47,7 +47,7 @@ extern "C" {
 //MD_EXIT_THSL -->0 is lossless 100 is maximum. Increase with a step of 10-20.
 #define MD_EXIT_THSL                    0
 
-#define NEW_SC_M0_M5                    1
+#define NEW_SC_M0_M5                    0
 
 #define M1_CAND                         0
 #define M2_CAND                         0
