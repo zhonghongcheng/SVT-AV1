@@ -961,8 +961,10 @@ EbErrorType signal_derivation_multi_processes_oq(
 #elif M3_CAND_TEST
             if (picture_control_set_ptr->slice_type == I_SLICE)
                 picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
-            else
+            else if (picture_control_set_ptr->is_used_as_reference_flag)
                 picture_control_set_ptr->pic_depth_mode = PIC_ALL_C_DEPTH_MODE;
+            else
+                picture_control_set_ptr->pic_depth_mode = PIC_SQ_DEPTH_MODE;
 #else
             picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
 #endif
