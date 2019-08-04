@@ -1534,10 +1534,14 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if NEW_PRESETS
 #if SCREEN_CONTENT_SETTINGS
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if SET_1
+            context_ptr->unipred3x3_injection = 2;
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
             context_ptr->unipred3x3_injection = 1;
         else
             context_ptr->unipred3x3_injection = 0;
+#endif
     else
 #endif
 #if !SET_1
@@ -1735,7 +1739,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
 #if FULL_LOOP_SPLIT
     // Derive md_staging_mode
+#if M0_SC
+    if (picture_control_set_ptr->enc_mode == ENC_M0 )
+#else
     if (picture_control_set_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == EB_FALSE)
+#endif
 #if M1_CAND
         context_ptr->md_staging_mode = 3;
 #else

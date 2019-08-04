@@ -278,7 +278,11 @@ EbErrorType signal_derivation_me_kernel_oq(
 #if !SET_1
     else if (picture_control_set_ptr->enc_mode ==
         ENC_M0 ) {
+#if DISABLE_ENH_SUBPEL_SC
+        context_ptr->me_context_ptr->half_pel_mode = picture_control_set_ptr->sc_content_detected ? REFINMENT_HP_MODE :
+#else
         context_ptr->me_context_ptr->half_pel_mode =
+#endif
             EX_HP_MODE;
         context_ptr->me_context_ptr->quarter_pel_mode =
             REFINMENT_QP_MODE;
