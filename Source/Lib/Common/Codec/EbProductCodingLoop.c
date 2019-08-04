@@ -2465,7 +2465,11 @@ void set_md_stage_counts(
 #endif
 
 #if S3_TEST
+#if M5_CAND
+    if (1) {
+#else
     if (picture_control_set_ptr->enc_mode >= ENC_M5){
+#endif
         if (context_ptr->md_staging_mode == 0 && picture_control_set_ptr->enc_mode <= ENC_M6) {
             context_ptr->fast1_cand_count[CAND_CLASS_0] = (picture_control_set_ptr->slice_type == I_SLICE) ? 8 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 3 : 1;
     #if COMBINE_C1_C2
