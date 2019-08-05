@@ -14,17 +14,12 @@ extern "C" {
 #endif
 
 // Max Search Area
-#if SCREEN_CONTENT_SETTINGS
 #if REDUCE_ME_SEARCH_AREA
 #define MAX_SEARCH_AREA_WIDTH       1280
 #define MAX_SEARCH_AREA_HEIGHT      1280
 #else
 #define MAX_SEARCH_AREA_WIDTH       MAX_PICTURE_WIDTH_SIZE  + (PAD_VALUE << 1)
 #define MAX_SEARCH_AREA_HEIGHT      MAX_PICTURE_HEIGHT_SIZE + (PAD_VALUE << 1)
-#endif
-#else
-#define MAX_SEARCH_AREA_WIDTH       1350 // This should be a function for the MAX HME L0 * the multiplications per layers and per Hierarchichal structures
-#define MAX_SEARCH_AREA_HEIGHT      675 // This should be a function for the MAX HME L0 * the multiplications per layers and per Hierarchichal structures
 #endif
 #define MAX_SEARCH_AREA_WIDTH_CH       MAX_SEARCH_AREA_WIDTH  + PAD_VALUE
 #define MAX_SEARCH_AREA_HEIGHT_CH      MAX_SEARCH_AREA_HEIGHT  + PAD_VALUE

@@ -110,7 +110,6 @@ void* set_me_hme_params_oq(
     me_context_ptr->number_hme_search_region_in_width = 2;
     me_context_ptr->number_hme_search_region_in_height = 2;
 
-#if SCREEN_CONTENT_SETTINGS
     uint8_t sc_content_detected = picture_control_set_ptr->sc_content_detected;
 #if !DECOUPLE_ALTREF_ME
 
@@ -119,7 +118,7 @@ void* set_me_hme_params_oq(
         sc_content_detected = 0;
 #endif
 #endif
-#if SCREEN_CONTENT_SETTINGS && !PCS_ME_FIX
+#if !PCS_ME_FIX
     picture_control_set_ptr->enable_hme_level0_flag = enable_hme_level0_flag[sc_content_detected][input_resolution][hmeMeLevel];
     picture_control_set_ptr->enable_hme_level1_flag = enable_hme_level1_flag[sc_content_detected][input_resolution][hmeMeLevel];
     picture_control_set_ptr->enable_hme_level2_flag = enable_hme_level2_flag[sc_content_detected][input_resolution][hmeMeLevel];
@@ -151,29 +150,6 @@ void* set_me_hme_params_oq(
     assert(me_context_ptr->search_area_height <= MAX_SEARCH_AREA_HEIGHT && "increase MAX_SEARCH_AREA_HEIGHT");
 #endif
 
-#else
-    // HME Level0
-    me_context_ptr->hme_level0_total_search_area_width = hme_level0_total_search_area_width[input_resolution][hmeMeLevel];
-    me_context_ptr->hme_level0_total_search_area_height = hme_level0_total_search_area_height[input_resolution][hmeMeLevel];
-    me_context_ptr->hme_level0_search_area_in_width_array[0] = hme_level0_search_area_in_width_array_right[input_resolution][hmeMeLevel];
-    me_context_ptr->hme_level0_search_area_in_width_array[1] = hme_level0_search_area_in_width_array_left[input_resolution][hmeMeLevel];
-    me_context_ptr->hme_level0_search_area_in_height_array[0] = hme_level0_search_area_in_height_array_top[input_resolution][hmeMeLevel];
-    me_context_ptr->hme_level0_search_area_in_height_array[1] = hme_level0_search_area_in_height_array_bottom[input_resolution][hmeMeLevel];
-    // HME Level1
-    me_context_ptr->hme_level1_search_area_in_width_array[0] = hme_level1_search_area_in_width_array_right[input_resolution][hmeMeLevel];
-    me_context_ptr->hme_level1_search_area_in_width_array[1] = hme_level1_search_area_in_width_array_left[input_resolution][hmeMeLevel];
-    me_context_ptr->hme_level1_search_area_in_height_array[0] = hme_level1_search_area_in_height_array_top[input_resolution][hmeMeLevel];
-    me_context_ptr->hme_level1_search_area_in_height_array[1] = hme_level1_search_area_in_height_array_bottom[input_resolution][hmeMeLevel];
-    // HME Level2
-    me_context_ptr->hme_level2_search_area_in_width_array[0] = hme_level2_search_area_in_width_array_right[input_resolution][hmeMeLevel];
-    me_context_ptr->hme_level2_search_area_in_width_array[1] = hme_level2_search_area_in_width_array_left[input_resolution][hmeMeLevel];
-    me_context_ptr->hme_level2_search_area_in_height_array[0] = hme_level2_search_area_in_height_array_top[input_resolution][hmeMeLevel];
-    me_context_ptr->hme_level2_search_area_in_height_array[1] = hme_level2_search_area_in_height_array_bottom[input_resolution][hmeMeLevel];
-
-    // ME
-    me_context_ptr->search_area_width = search_area_width[input_resolution][hmeMeLevel];
-    me_context_ptr->search_area_height = search_area_height[input_resolution][hmeMeLevel];
-#endif
 
     me_context_ptr->update_hme_search_center_flag = 1;
 
@@ -205,7 +181,6 @@ EbErrorType signal_derivation_me_kernel_oq(
         set_me_hme_params_from_config(
             sequence_control_set_ptr,
             context_ptr->me_context_ptr);
-#if SCREEN_CONTENT_SETTINGS
         if (picture_control_set_ptr->sc_content_detected)
 #if NEW_M0_SC
             context_ptr->me_context_ptr->fractional_search_method = SUB_SAD_SEARCH;
@@ -216,7 +191,6 @@ EbErrorType signal_derivation_me_kernel_oq(
                 context_ptr->me_context_ptr->fractional_search_method = SUB_SAD_SEARCH;
 #endif
         else
-#endif
         if (picture_control_set_ptr->enc_mode <= ENC_M6)
         context_ptr->me_context_ptr->fractional_search_method = SSD_SEARCH ;
 #if M9_FRAC_ME_SEARCH_METHOD
@@ -228,7 +202,6 @@ EbErrorType signal_derivation_me_kernel_oq(
         else
         context_ptr->me_context_ptr->fractional_search_method = FULL_SAD_SEARCH;
 #endif
-#if SCREEN_CONTENT_SETTINGS
         if (picture_control_set_ptr->sc_content_detected)
 #if NEW_M0_SC
             context_ptr->me_context_ptr->fractional_search64x64 = EB_FALSE;
@@ -241,7 +214,6 @@ EbErrorType signal_derivation_me_kernel_oq(
         else
             context_ptr->me_context_ptr->fractional_search64x64 = EB_TRUE;
 
-#endif
 #if M9_FRAC_ME_SEARCH_64x64
     //if (picture_control_set_ptr->sc_content_detected)
     //    context_ptr->fractional_search64x64 = EB_TRUE;
@@ -317,28 +289,24 @@ EbErrorType signal_derivation_me_kernel_oq(
 
 #if USE_SAD_HME
     // HME Search Method
-#if SCREEN_CONTENT_SETTINGS
     if (picture_control_set_ptr->sc_content_detected)
         if (picture_control_set_ptr->enc_mode <= ENC_M6)
             context_ptr->me_context_ptr->hme_search_method = FULL_SAD_SEARCH;
         else
             context_ptr->me_context_ptr->hme_search_method = SUB_SAD_SEARCH;
     else
-#endif
     context_ptr->me_context_ptr->hme_search_method = FULL_SAD_SEARCH;
 #else
     context_ptr->me_context_ptr->hme_search_method = SUB_SAD_SEARCH;
 #endif
 #if USE_SAD_ME
     // ME Search Method
-#if SCREEN_CONTENT_SETTINGS
     if (picture_control_set_ptr->sc_content_detected)
         if (picture_control_set_ptr->enc_mode <= ENC_M3)
             context_ptr->me_context_ptr->me_search_method = FULL_SAD_SEARCH;
         else
             context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH;
     else
-#endif
 #if M4_SET_ME
     context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH;
 #else
