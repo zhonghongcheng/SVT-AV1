@@ -1232,7 +1232,6 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 5                  6
     // 6                  4
     // 7                  3
-#if NEW_PRESETS
 #if SCREEN_CONTENT_SETTINGS
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
@@ -1271,41 +1270,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             context_ptr->nfl_level = 6;
         else
             context_ptr->nfl_level = 7;
-#else
-    if (picture_control_set_ptr->enc_mode == ENC_M0)
-#if MOD_M0
-        context_ptr->nfl_level = 2;
-#else
-        if (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
-            context_ptr->nfl_level = (sequence_control_set_ptr->input_resolution <= INPUT_SIZE_576p_RANGE_OR_LOWER) ? 0 : 1;
-        else
-            context_ptr->nfl_level = 2;
-#endif
-    else if (picture_control_set_ptr->enc_mode <= ENC_M1)
-        if (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
-            context_ptr->nfl_level = 2;
-        else
-            context_ptr->nfl_level = 3;
-    else if (picture_control_set_ptr->enc_mode <= ENC_M3)
-        if (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
-            context_ptr->nfl_level = 2;
-        else
-            context_ptr->nfl_level = 4;
-    else if (picture_control_set_ptr->enc_mode <= ENC_M5)
-        if (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
-            context_ptr->nfl_level = 4;
-        else
-            context_ptr->nfl_level = 5;
-    else if(picture_control_set_ptr->enc_mode <= ENC_M7)
-        context_ptr->nfl_level = 5;
-    else
-        if (picture_control_set_ptr->parent_pcs_ptr->slice_type == I_SLICE)
-            context_ptr->nfl_level  = 5;
-        else if (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
-            context_ptr->nfl_level  = 6;
-        else
-            context_ptr->nfl_level  = 7;
-#endif
+
     // Set Chroma Mode
     // Level                Settings
     // CHROMA_MODE_0  0     Full chroma search @ MD
@@ -1357,7 +1322,6 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // Level                Settings
     //  0                   Collapsed fast loop
     //  1                   Decoupled fast loops ( intra/inter)
-#if NEW_PRESETS
 #if SCREEN_CONTENT_SETTINGS
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
@@ -1367,16 +1331,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
 #endif
     context_ptr->decouple_intra_inter_fast_loop = 0;
-#else
-    if (picture_control_set_ptr->enc_mode == ENC_M0)
-        context_ptr->decouple_intra_inter_fast_loop = 0;
-    else
-        context_ptr->decouple_intra_inter_fast_loop = 1;
-#endif
 
     // Set the search method when decoupled fast loop is used
     // Hsan: FULL_SAD_SEARCH not supported
-#if NEW_PRESETS
 #if SCREEN_CONTENT_SETTINGS
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
@@ -1393,13 +1350,6 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if M5_CAND_ME
     context_ptr->decoupled_fast_loop_search_method = FULL_SAD_SEARCH;
 #endif
-#else
-    if (picture_control_set_ptr->enc_mode <= ENC_M5)
-        context_ptr->decoupled_fast_loop_search_method = SSD_SEARCH;
-    else
-        context_ptr->decoupled_fast_loop_search_method = FULL_SAD_SEARCH;
-#endif
-
 
     //MD_CLASS
     //context_ptr->decouple_intra_inter_fast_loop = 0;
@@ -1412,7 +1362,6 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 1                    On but only INTRA
     // 2                    On both INTRA and INTER
 #if M9_FULL_LOOP_ESCAPE
-#if NEW_PRESETS
 #if SCREEN_CONTENT_SETTINGS
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
@@ -1429,14 +1378,6 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->full_loop_escape = 0;
     else
         context_ptr->full_loop_escape = 2;
-#else
-    if (picture_control_set_ptr->enc_mode <= ENC_M7)
-        context_ptr->full_loop_escape = 0;
-    else if (picture_control_set_ptr->enc_mode <= ENC_M8)
-        context_ptr->full_loop_escape = 1;
-    else
-        context_ptr->full_loop_escape = 2;
-#endif
 #else
     if (picture_control_set_ptr->enc_mode <= ENC_M7)
         context_ptr->full_loop_escape = 0;
@@ -1505,7 +1446,6 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // Level                Settings
     // 0                    OFF
     // 1                    On
-#if NEW_PRESETS
 #if SCREEN_CONTENT_SETTINGS
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
 #if NEW_M0_SC
@@ -1519,19 +1459,12 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
 #endif
     context_ptr->warped_motion_injection = 1;
-#else
-    if (picture_control_set_ptr->enc_mode <= ENC_M5)
-        context_ptr->warped_motion_injection = 1;
-    else
-        context_ptr->warped_motion_injection = 0;
-#endif
 
     // Set unipred3x3 injection
     // Level                Settings
     // 0                    OFF
     // 1                    ON FULL
     // 2                    Reduced set
-#if NEW_PRESETS
 #if SCREEN_CONTENT_SETTINGS
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
 #if SET_1
@@ -1558,21 +1491,12 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     context_ptr->unipred3x3_injection = 0;
 #endif
 
-#else
-    if (picture_control_set_ptr->enc_mode == ENC_M0)
-        context_ptr->unipred3x3_injection = 1;
-    else if (picture_control_set_ptr->enc_mode <= ENC_M3)
-        context_ptr->unipred3x3_injection = 2;
-    else
-        context_ptr->unipred3x3_injection = 0;
-#endif
 
     // Set bipred3x3 injection
     // Level                Settings
     // 0                    OFF
     // 1                    ON FULL
     // 2                    Reduced set
-#if NEW_PRESETS
 #if SCREEN_CONTENT_SETTINGS
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
@@ -1591,14 +1515,6 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->bipred3x3_injection = 2;
     else
         context_ptr->bipred3x3_injection = 0;
-#else
-    if (picture_control_set_ptr->enc_mode == ENC_M0)
-        context_ptr->bipred3x3_injection = 1;
-    else if (picture_control_set_ptr->enc_mode <= ENC_M3)
-        context_ptr->bipred3x3_injection = 2;
-    else
-        context_ptr->bipred3x3_injection = 0;
-#endif
 
 #if M5_CAND_ME
     context_ptr->bipred3x3_injection = 0;
@@ -1641,7 +1557,6 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 0                    ON for 8x8 and above
     // 1                    ON for 16x16 and above
     // 2                    ON for 32x32 and above
-#if NEW_PRESETS
     if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->interpolation_filter_search_blk_size = 0;
     else
@@ -1649,14 +1564,6 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
 #if M5_CAND_MD
     context_ptr->interpolation_filter_search_blk_size = 1;
-#endif
-#else
-    if (picture_control_set_ptr->enc_mode == ENC_M0)
-        context_ptr->interpolation_filter_search_blk_size = 0;
-    else if (picture_control_set_ptr->enc_mode <= ENC_M2)
-        context_ptr->interpolation_filter_search_blk_size = 1;
-    else
-        context_ptr->interpolation_filter_search_blk_size = 2;
 #endif
 
 #if PF_N2_SUPPORT
@@ -1666,7 +1573,6 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
 #if SPATIAL_SSE
     // Derive Spatial SSE Flag
-#if NEW_PRESETS
 #if SCREEN_CONTENT_SETTINGS
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         if (picture_control_set_ptr->enc_mode <= ENC_M6)
@@ -1683,16 +1589,6 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if M5_CAND_MD
     context_ptr->spatial_sse_full_loop = EB_FALSE;
 #endif
-#else
-    if (picture_control_set_ptr->enc_mode == ENC_M0)
-#if MOD_M0
-        context_ptr->spatial_sse_full_loop = EB_FALSE;
-#else
-        context_ptr->spatial_sse_full_loop = EB_TRUE;
-#endif
-    else
-        context_ptr->spatial_sse_full_loop = EB_FALSE;
-#endif
 #endif
 
 #if M9_INTER_SRC_SRC_FAST_LOOP
@@ -1704,14 +1600,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
 
 #if BLK_SKIP_DECISION
-#if NEW_PRESETS
     if (context_ptr->chroma_level <= CHROMA_MODE_1)
         context_ptr->blk_skip_decision = EB_TRUE;
     else
         context_ptr->blk_skip_decision = EB_FALSE;
-#else
-        context_ptr->blk_skip_decision = EB_TRUE;
-#endif
 #endif
     // Derive Trellis Quant Coeff Optimization Flag
 #if !SET_1
@@ -1721,7 +1613,6 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
         context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
 
-#if NEW_PRESETS
     // Derive redundant block
 #if SCREEN_CONTENT_SETTINGS
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
@@ -1735,7 +1626,6 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->redundant_blk = EB_TRUE;
     else
         context_ptr->redundant_blk = EB_FALSE;
-#endif
 
 #if FULL_LOOP_SPLIT
     // Derive md_staging_mode
