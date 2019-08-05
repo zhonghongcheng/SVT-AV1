@@ -956,7 +956,7 @@ EbErrorType signal_derivation_multi_processes_oq(
             else
                 picture_control_set_ptr->pic_depth_mode = PIC_SB_SWITCH_NSQ_DEPTH_MODE;
 #else
-#if M4_CAND
+#if SET_2
             picture_control_set_ptr->pic_depth_mode = PIC_SQ_DEPTH_MODE;
 #elif M3_CAND_TEST
             if (picture_control_set_ptr->slice_type == I_SLICE)
@@ -1089,14 +1089,9 @@ EbErrorType signal_derivation_multi_processes_oq(
 // 2 at Intra
 // 1 at Intra
         else if (picture_control_set_ptr->enc_mode <= ENC_M1)
-#if M4_CAND
+#if SET_2
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
-#elif SET_2
 
-        if (picture_control_set_ptr->is_used_as_reference_flag)
-            picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL3;
-        else
-            picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
 #elif M2_CAND
             if (picture_control_set_ptr->is_used_as_reference_flag)
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL5;
