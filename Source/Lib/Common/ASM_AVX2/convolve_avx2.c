@@ -380,12 +380,13 @@ void av1_convolve_x_sr_avx2(const uint8_t *src, int32_t src_stride,
 
         if (subpel_x_qn != 8) {
             if (w <= 4) {
-                const __m128i c = _mm_setr_epi8(0, 1, 1, 2, 2, 3, 3, 4, 8, 9, 9, 10, 10, 11, 11, 12);
                 __m128i s;
 
                 prepare_coeffs_lowbd_2tap_ssse3(filter_params_x, subpel_x_qn, coeffs_128);
 
                 if (w == 2) {
+                    const __m128i c = _mm_setr_epi8(0, 1, 1, 2, 2, 3, 3, 4, 8, 9, 9, 10, 10, 11, 11, 12);
+
                     i = h;
                     do {
                         s = _mm_cvtsi32_si128(*(const int32_t *)src_ptr);
@@ -400,7 +401,9 @@ void av1_convolve_x_sr_avx2(const uint8_t *src, int32_t src_stride,
                         i -= 2;
                     } while (i);
                 }
-                else { // w == 4
+                else if (w == 4) {
+                    const __m128i c = _mm_setr_epi8(0, 1, 1, 2, 2, 3, 3, 4, 8, 9, 9, 10, 10, 11, 11, 12);
+
                     i = h;
                     do {
                         s = _mm_loadl_epi64((__m128i *)src_ptr);
@@ -416,44 +419,37 @@ void av1_convolve_x_sr_avx2(const uint8_t *src, int32_t src_stride,
                         i -= 2;
                     } while (i);
                 }
+                else { // w == 8
+                    i = h;
+                    do {
+                        __m128i s[2];
+
+                        const __m128i s00 = _mm_loadu_si128((__m128i *)src_ptr);
+                        const __m128i s10 = _mm_loadu_si128((__m128i *)(src_ptr + 1 * src_stride));
+                        const __m128i s01 = _mm_srli_si128(s00, 1);
+                        const __m128i s11 = _mm_srli_si128(s10, 1);
+                        s[0] = _mm_unpacklo_epi64(s00, s10);
+                        s[1] = _mm_unpacklo_epi64(s01, s11);
+                        __m128i res_16b[2];
+
+                        res_16b[0] = convolve_lowbd_2tap_ssse3(&s[0], coeffs_128);
+                        res_16b[1] = convolve_lowbd_2tap_ssse3(&s[1], coeffs_128);
+                        res_16b[0] = convolve_round_sse2(res_16b[0]);
+                        res_16b[1] = convolve_round_sse2(res_16b[1]);
+                        const __m128i d = _mm_packus_epi16(res_16b[0], res_16b[1]);
+                        _mm_storel_epi64((__m128i *)(dst + 0 * dst_stride), d);
+                        _mm_storeh_epi64((__m128i *)(dst + 1 * dst_stride), d);
+
+                        src_ptr += 2 * src_stride;
+                        dst += 2 * dst_stride;
+                        i -= 2;
+                    } while (i);
+                }
             }
             else {
                 prepare_coeffs_lowbd_2tap_avx2(filter_params_x, subpel_x_qn, coeffs);
 
-                if (w == 8) {
-                    i = h;
-                    do {
-                        __m128i s_128[2][2];
-                        __m256i s[2];
-
-                        const __m128i s00 = _mm_loadu_si128((__m128i *)src_ptr);
-                        const __m128i s10 = _mm_loadu_si128((__m128i *)(src_ptr + 1 * src_stride));
-                        const __m128i s20 = _mm_loadu_si128((__m128i *)(src_ptr + 2 * src_stride));
-                        const __m128i s30 = _mm_loadu_si128((__m128i *)(src_ptr + 3 * src_stride));
-                        const __m128i s01 = _mm_srli_si128(s00, 1);
-                        const __m128i s11 = _mm_srli_si128(s10, 1);
-                        const __m128i s21 = _mm_srli_si128(s20, 1);
-                        const __m128i s31 = _mm_srli_si128(s30, 1);
-                        s_128[0][0] = _mm_unpacklo_epi64(s00, s10);
-                        s_128[0][1] = _mm_unpacklo_epi64(s01, s11);
-                        s_128[1][0] = _mm_unpacklo_epi64(s20, s30);
-                        s_128[1][1] = _mm_unpacklo_epi64(s21, s31);
-                        s[0] = _mm256_setr_m128i(s_128[0][0], s_128[1][0]);
-                        s[1] = _mm256_setr_m128i(s_128[0][1], s_128[1][1]);
-                        const __m256i d = convolve_lowbd_x_32_2tap_kernel_avx2(s, coeffs);
-                        const __m128i d01 = _mm256_castsi256_si128(d);
-                        const __m128i d23 = _mm256_extracti128_si256(d, 1);
-                        _mm_storel_epi64((__m128i *)(dst + 0 * dst_stride), d01);
-                        _mm_storeh_epi64((__m128i *)(dst + 1 * dst_stride), d01);
-                        _mm_storel_epi64((__m128i *)(dst + 2 * dst_stride), d23);
-                        _mm_storeh_epi64((__m128i *)(dst + 3 * dst_stride), d23);
-
-                        src_ptr += 4 * src_stride;
-                        dst += 4 * dst_stride;
-                        i -= 4;
-                    } while (i);
-                }
-                else if (w == 16) {
+                if (w == 16) {
                     i = h;
                     do {
                         __m128i s_128[2][2];
@@ -508,7 +504,6 @@ void av1_convolve_x_sr_avx2(const uint8_t *src, int32_t src_stride,
         }
         else {
             // average to get half pel
-
             if (w == 2) {
                 i = h;
                 do {
@@ -544,77 +539,67 @@ void av1_convolve_x_sr_avx2(const uint8_t *src, int32_t src_stride,
                     i -= 2;
                 } while (i);
             }
-            else {
-                if (w == 8) {
-                    i = h;
-                    do {
-                        const __m128i s00 = _mm_loadu_si128((__m128i *)src_ptr);
-                        const __m128i s10 = _mm_loadu_si128((__m128i *)(src_ptr + 1 * src_stride));
-                        const __m128i s20 = _mm_loadu_si128((__m128i *)(src_ptr + 2 * src_stride));
-                        const __m128i s30 = _mm_loadu_si128((__m128i *)(src_ptr + 3 * src_stride));
-                        const __m128i s01 = _mm_srli_si128(s00, 1);
-                        const __m128i s11 = _mm_srli_si128(s10, 1);
-                        const __m128i s21 = _mm_srli_si128(s20, 1);
-                        const __m128i s31 = _mm_srli_si128(s30, 1);
-                        const __m128i d0 = _mm_avg_epu8(s00, s01);
-                        const __m128i d1 = _mm_avg_epu8(s10, s11);
-                        const __m128i d2 = _mm_avg_epu8(s20, s21);
-                        const __m128i d3 = _mm_avg_epu8(s30, s31);
-                        _mm_storel_epi64((__m128i *)(dst + 0 * dst_stride), d0);
-                        _mm_storel_epi64((__m128i *)(dst + 1 * dst_stride), d1);
-                        _mm_storel_epi64((__m128i *)(dst + 2 * dst_stride), d2);
-                        _mm_storel_epi64((__m128i *)(dst + 3 * dst_stride), d3);
+            else if (w == 8) {
+                i = h;
+                do {
+                    const __m128i s00 = _mm_loadu_si128((__m128i *)src_ptr);
+                    const __m128i s10 = _mm_loadu_si128((__m128i *)(src_ptr + 1 * src_stride));
+                    const __m128i s01 = _mm_srli_si128(s00, 1);
+                    const __m128i s11 = _mm_srli_si128(s10, 1);
+                    const __m128i d0 = _mm_avg_epu8(s00, s01);
+                    const __m128i d1 = _mm_avg_epu8(s10, s11);
+                    _mm_storel_epi64((__m128i *)(dst + 0 * dst_stride), d0);
+                    _mm_storel_epi64((__m128i *)(dst + 1 * dst_stride), d1);
 
-                        src_ptr += 4 * src_stride;
-                        dst += 4 * dst_stride;
-                        i -= 4;
-                    } while (i);
-                }
-                else if (w == 16) {
-                    i = h;
-                    do {
-                        const __m128i s00 = _mm_loadu_si128((__m128i *)src_ptr);
-                        const __m128i s01 = _mm_loadu_si128((__m128i *)(src_ptr + 1));
-                        const __m128i s10 = _mm_loadu_si128((__m128i *)(src_ptr + src_stride));
-                        const __m128i s11 = _mm_loadu_si128((__m128i *)(src_ptr + src_stride + 1));
-                        const __m128i d0 = _mm_avg_epu8(s00, s01);
-                        const __m128i d1 = _mm_avg_epu8(s10, s11);
-                        _mm_storeu_si128((__m128i *)dst, d0);
-                        _mm_storeu_si128((__m128i *)(dst + 1 * dst_stride), d1);
+                    src_ptr += 2 * src_stride;
+                    dst += 2 * dst_stride;
+                    i -= 2;
+                } while (i);
+            }
+            else if (w == 16) {
+                i = h;
+                do {
+                    const __m128i s00 = _mm_loadu_si128((__m128i *)src_ptr);
+                    const __m128i s01 = _mm_loadu_si128((__m128i *)(src_ptr + 1));
+                    const __m128i s10 = _mm_loadu_si128((__m128i *)(src_ptr + src_stride));
+                    const __m128i s11 = _mm_loadu_si128((__m128i *)(src_ptr + src_stride + 1));
+                    const __m128i d0 = _mm_avg_epu8(s00, s01);
+                    const __m128i d1 = _mm_avg_epu8(s10, s11);
+                    _mm_storeu_si128((__m128i *)dst, d0);
+                    _mm_storeu_si128((__m128i *)(dst + 1 * dst_stride), d1);
 
-                        src_ptr += 2 * src_stride;
-                        dst += 2 * dst_stride;
-                        i -= 2;
-                    } while (i);
-                }
-                else if (w == 32) {
-                    i = h;
-                    do {
-                        convolve_lowbd_x_32_2tap_avg(src_ptr, dst);
-                        src_ptr += src_stride;
-                        dst += dst_stride;
-                    } while (--i);
-                }
-                else if (w == 64) {
-                    i = h;
-                    do {
-                        convolve_lowbd_x_32_2tap_avg(src_ptr + 0 * 32, dst + 0 * 32);
-                        convolve_lowbd_x_32_2tap_avg(src_ptr + 1 * 32, dst + 1 * 32);
-                        src_ptr += src_stride;
-                        dst += dst_stride;
-                    } while (--i);
-                }
-                else { // w == 128
-                    i = h;
-                    do {
-                        convolve_lowbd_x_32_2tap_avg(src_ptr + 0 * 32, dst + 0 * 32);
-                        convolve_lowbd_x_32_2tap_avg(src_ptr + 1 * 32, dst + 1 * 32);
-                        convolve_lowbd_x_32_2tap_avg(src_ptr + 2 * 32, dst + 2 * 32);
-                        convolve_lowbd_x_32_2tap_avg(src_ptr + 3 * 32, dst + 3 * 32);
-                        src_ptr += src_stride;
-                        dst += dst_stride;
-                    } while (--i);
-                }
+                    src_ptr += 2 * src_stride;
+                    dst += 2 * dst_stride;
+                    i -= 2;
+                } while (i);
+            }
+            else if (w == 32) {
+                i = h;
+                do {
+                    convolve_lowbd_x_32_2tap_avg(src_ptr, dst);
+                    src_ptr += src_stride;
+                    dst += dst_stride;
+                } while (--i);
+            }
+            else if (w == 64) {
+                i = h;
+                do {
+                    convolve_lowbd_x_32_2tap_avg(src_ptr + 0 * 32, dst + 0 * 32);
+                    convolve_lowbd_x_32_2tap_avg(src_ptr + 1 * 32, dst + 1 * 32);
+                    src_ptr += src_stride;
+                    dst += dst_stride;
+                } while (--i);
+            }
+            else { // w == 128
+                i = h;
+                do {
+                    convolve_lowbd_x_32_2tap_avg(src_ptr + 0 * 32, dst + 0 * 32);
+                    convolve_lowbd_x_32_2tap_avg(src_ptr + 1 * 32, dst + 1 * 32);
+                    convolve_lowbd_x_32_2tap_avg(src_ptr + 2 * 32, dst + 2 * 32);
+                    convolve_lowbd_x_32_2tap_avg(src_ptr + 3 * 32, dst + 3 * 32);
+                    src_ptr += src_stride;
+                    dst += dst_stride;
+                } while (--i);
             }
         }
     }
