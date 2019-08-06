@@ -2254,7 +2254,7 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
 #endif
         sequence_control_set_ptr->static_config.super_block_size       =  64;
     else
-        sequence_control_set_ptr->static_config.super_block_size       = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M1 && sequence_control_set_ptr->input_resolution >= INPUT_SIZE_1080i_RANGE) ? 128 : 64;
+        sequence_control_set_ptr->static_config.super_block_size       = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M2 && sequence_control_set_ptr->input_resolution >= INPUT_SIZE_1080i_RANGE) ? 128 : 64;
 
 #else
     sequence_control_set_ptr->static_config.super_block_size       = (sequence_control_set_ptr->static_config.enc_mode == ENC_M0 && sequence_control_set_ptr->input_resolution >= INPUT_SIZE_1080i_RANGE) ? 128 : 64;
@@ -2283,7 +2283,7 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
 #if M4_SET_MRP
     sequence_control_set_ptr->mrp_mode = 1;
 #else
-    sequence_control_set_ptr->mrp_mode = (uint8_t) (sequence_control_set_ptr->static_config.enc_mode <= ENC_M1) ? 0 : 1;
+    sequence_control_set_ptr->mrp_mode = (uint8_t) (sequence_control_set_ptr->static_config.enc_mode <= ENC_M2) ? 0 : 1;
 #endif
 
     //0: ON
@@ -2302,7 +2302,7 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
     // 0                            0: filtering
     // 1                            1: decimation
 #if !M4_SET_FREE
-    if (sequence_control_set_ptr->static_config.enc_mode <= ENC_M1)
+    if (sequence_control_set_ptr->static_config.enc_mode <= ENC_M2)
         sequence_control_set_ptr->down_sampling_method_me_search = ME_FILTERED_DOWNSAMPLED;
     else
 #endif
@@ -3094,7 +3094,7 @@ EB_API EbErrorType eb_svt_enc_set_parameter(
     // Initialize the Prediction Structure Group
     return_error = (EbErrorType)prediction_structure_group_ctor(
 #if MRP_M1
-        pEncCompData->sequence_control_set_instance_array[instance_index]->sequence_control_set_ptr->mrp_mode,
+        pEncCompData->sequence_control_set_instance_array[instance_index]->sequence_control_set_ptr->static_config.enc_mode,
 #endif
         &pEncCompData->sequence_control_set_instance_array[instance_index]->encode_context_ptr->prediction_structure_group_ptr,
         pEncCompData->sequence_control_set_instance_array[instance_index]->sequence_control_set_ptr->static_config.base_layer_switch_mode);

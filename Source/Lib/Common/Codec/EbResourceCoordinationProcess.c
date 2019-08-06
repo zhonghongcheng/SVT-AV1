@@ -699,7 +699,7 @@ void* resource_coordination_kernel(void *input_ptr)
 #if M4_COMP_OFF
             sequence_control_set_ptr->compound_mode = 0;
 #else
-            sequence_control_set_ptr->compound_mode = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M1) ? 1 : 0;
+            sequence_control_set_ptr->compound_mode = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M2) ? 1 : 0;
 #endif
 
 

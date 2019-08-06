@@ -240,11 +240,7 @@ EbErrorType eb_sequence_control_set_ctor(
     }
 #endif
 #if MRP_ME
-#if M2_CAND
-    sequence_control_set_ptr->reference_count = 2;
-#else
     sequence_control_set_ptr->reference_count = 4;
-#endif
 #endif
 
     return EB_ErrorNone;
@@ -610,7 +606,7 @@ EbErrorType sb_geom_init(SequenceControlSet * sequence_control_set_ptr)
             if (1) {
 #else
 
-            if (sequence_control_set_ptr->static_config.enc_mode <= ENC_M1) {
+            if (sequence_control_set_ptr->static_config.enc_mode <= ENC_M2) {
 #endif
                 sequence_control_set_ptr->sb_geom[sb_index].block_is_allowed[md_scan_block_index] =
                     ((sequence_control_set_ptr->sb_geom[sb_index].origin_x + blk_geom->origin_x + blk_geom->bwidth / 2 < sequence_control_set_ptr->seq_header.max_frame_width) &&
