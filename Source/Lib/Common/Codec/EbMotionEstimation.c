@@ -12939,8 +12939,13 @@ EbErrorType BiPredictionCompensation(MeContext *context_ptr, uint32_t pu_index,
 
 #if PRUNE_REF_FRAME_AT_ME
 uint8_t skip_bi_pred(
+    PictureParentControlSet *picture_control_set_ptr,
     uint8_t ref_type,
     uint8_t ref_type_table[7]) {
+
+    if (!picture_control_set_ptr->prune_unipred_at_me)
+        return 1;
+
     uint8_t allow_cand = 0;
     uint8_t ref_idx;
     for (ref_idx = 0; ref_idx < PRUNE_REF_ME_TH; ref_idx++) {
@@ -13014,13 +13019,15 @@ EbErrorType BiPredictionSearch(
                 uint8_t to_inject_ref_type_0 = svt_get_ref_frame_type(REF_LIST_0, firstListRefPictdx);
                 uint8_t to_inject_ref_type_1 = svt_get_ref_frame_type(REF_LIST_1, secondListRefPictdx);
                 uint8_t add_bi = skip_bi_pred(
+                    picture_control_set_ptr,
                     to_inject_ref_type_0,
                     ref_type_table);
                 add_bi += skip_bi_pred(
+                    picture_control_set_ptr,
                     to_inject_ref_type_1,
                     ref_type_table);
 
-                if (add_bi) {
+              if (add_bi) {
 #endif
                     BiPredictionCompensation(
                         context_ptr,
@@ -13064,6 +13071,7 @@ EbErrorType BiPredictionSearch(
 #if PRUNE_REF_FRAME_AT_ME
             uint8_t to_inject_ref_type_0 = svt_get_ref_frame_type(REF_LIST_0, firstListRefPictdx);
             uint8_t add_bi = skip_bi_pred(
+                picture_control_set_ptr,
                 to_inject_ref_type_0,
                 ref_type_table);
 #if PRUNE_ME_FIX
@@ -13098,10 +13106,11 @@ EbErrorType BiPredictionSearch(
 #if PRUNE_REF_FRAME_AT_ME
             uint8_t to_inject_ref_type_0 = svt_get_ref_frame_type(REF_LIST_0, firstListRefPictdx);
             uint8_t add_bi = skip_bi_pred(
+                picture_control_set_ptr,
                 to_inject_ref_type_0,
                 ref_type_table);
 #if PRUNE_ME_FIX
-            if (add_bi) {
+           if (add_bi) {
 #else
             if (!add_bi) {
 #endif
