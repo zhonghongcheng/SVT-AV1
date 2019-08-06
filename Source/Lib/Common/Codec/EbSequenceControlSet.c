@@ -610,7 +610,7 @@ EbErrorType sb_geom_init(SequenceControlSet * sequence_control_set_ptr)
             if (1) {
 #else
 
-            if (sequence_control_set_ptr->static_config.enc_mode == ENC_M0) {
+            if (sequence_control_set_ptr->static_config.enc_mode <= ENC_M1) {
 #endif
                 sequence_control_set_ptr->sb_geom[sb_index].block_is_allowed[md_scan_block_index] =
                     ((sequence_control_set_ptr->sb_geom[sb_index].origin_x + blk_geom->origin_x + blk_geom->bwidth / 2 < sequence_control_set_ptr->seq_header.max_frame_width) &&

@@ -1296,7 +1296,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if M4_SET_CHR
     if (0)
 #else
-    if (picture_control_set_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->temporal_layer_index == 0)
+    if (picture_control_set_ptr->enc_mode <= ENC_M1 && picture_control_set_ptr->temporal_layer_index == 0)
 #endif
 #else
     if (picture_control_set_ptr->enc_mode == ENC_M0)
@@ -1396,21 +1396,13 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
 #if NEW_NEAREST_NEW_INJECTION
     if (picture_control_set_ptr->enc_mode == ENC_M0)
-#if M1_CAND
-        context_ptr->new_nearest_near_comb_injection = 0;
-#else
         context_ptr->new_nearest_near_comb_injection = 1;
-#endif
     else
         context_ptr->new_nearest_near_comb_injection = 0;
 #endif
 #if ENHANCED_Nx4_4xN_NEW_MV
     if (picture_control_set_ptr->enc_mode == ENC_M0)
-#if M1_CAND
-        context_ptr->nx4_4xn_parent_mv_injection = 0;
-#else
         context_ptr->nx4_4xn_parent_mv_injection = 1;
-#endif
     else
         context_ptr->nx4_4xn_parent_mv_injection = 0;
 #endif
@@ -1514,7 +1506,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     if (picture_control_set_ptr->slice_type != I_SLICE)
 #endif
         // Hsan: kept ON for sc_content_detected as ~5% gain for minecraft clip
-        if (picture_control_set_ptr->enc_mode == ENC_M0)
+        if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #if M3_CAND_TEST
             context_ptr->predictive_me_level = 2;
 #elif M2_CAND
@@ -1584,7 +1576,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
     // Derive Trellis Quant Coeff Optimization Flag
 #if !SET_1
-    if (picture_control_set_ptr->enc_mode == ENC_M0)
+    if (picture_control_set_ptr->enc_mode <= ENC_M1)
         context_ptr->trellis_quant_coeff_optimization = EB_TRUE;
     else
 #endif
@@ -1592,27 +1584,21 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
     // Derive redundant block
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
-        if (picture_control_set_ptr->enc_mode <= ENC_M1)
+        if (picture_control_set_ptr->enc_mode == ENC_M1)
             context_ptr->redundant_blk = EB_TRUE;
         else
             context_ptr->redundant_blk = EB_FALSE;
-    else if (picture_control_set_ptr->enc_mode <= ENC_M5)
+    else if (picture_control_set_ptr->enc_mode >= ENC_M1 && picture_control_set_ptr->enc_mode <= ENC_M5)
         context_ptr->redundant_blk = EB_TRUE;
     else
         context_ptr->redundant_blk = EB_FALSE;
 
 #if FULL_LOOP_SPLIT
     // Derive md_staging_mode
-#if M0_SC
-    if (picture_control_set_ptr->enc_mode == ENC_M0 )
-#else
-    if (picture_control_set_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == EB_FALSE)
-#endif
-#if M1_CAND
-        context_ptr->md_staging_mode = 3;
-#else
+    if (picture_control_set_ptr->enc_mode == ENC_M0)
         context_ptr->md_staging_mode = 1;
-#endif
+    else if (picture_control_set_ptr->enc_mode <= ENC_M1)
+        context_ptr->md_staging_mode = 3;
     else
         context_ptr->md_staging_mode = 0; //use fast-loop0->full-loop
 
@@ -1621,8 +1607,8 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
 
     // Derive nic level
-#if M1_CAND && !M4_SET_MD_STAGE
-    context_ptr->nic_level = 1;
+#if !M4_SET_MD_STAGE
+    context_ptr->nic_level = (picture_control_set_ptr->enc_mode == ENC_M0) ? 0 : 1;
 #else
     context_ptr->nic_level = 0;
 #endif

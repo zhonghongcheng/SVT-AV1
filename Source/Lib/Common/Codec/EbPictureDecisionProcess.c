@@ -1033,11 +1033,12 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL5;
             else
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL2;
-#elif M1_SC
-            picture_control_set_ptr->nsq_search_level = (picture_control_set_ptr->is_used_as_reference_flag) ? NSQ_SEARCH_LEVEL6 : NSQ_SEARCH_LEVEL3;
 #else
-            if (picture_control_set_ptr->enc_mode <= ENC_M1)
+            if (picture_control_set_ptr->enc_mode == ENC_M0)
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL6;
+            else if (picture_control_set_ptr->enc_mode <= ENC_M1)
+                picture_control_set_ptr->nsq_search_level = (picture_control_set_ptr->is_used_as_reference_flag) ?
+                             NSQ_SEARCH_LEVEL6 : NSQ_SEARCH_LEVEL3;
             else if (picture_control_set_ptr->enc_mode <= ENC_M2)
                 if (picture_control_set_ptr->temporal_layer_index == 0)
                     picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL6;
@@ -1060,6 +1061,8 @@ EbErrorType signal_derivation_multi_processes_oq(
 // 2 and off
 // 2 at Intra
 // 1 at Intra
+        else if (picture_control_set_ptr->enc_mode <= ENC_M0)
+            picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL6;
         else if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #if SET_2
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
@@ -1069,11 +1072,8 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL5;
             else
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL2;
-#elif M1_CAND
-            picture_control_set_ptr->nsq_search_level = (picture_control_set_ptr->is_used_as_reference_flag) ? NSQ_SEARCH_LEVEL6 : NSQ_SEARCH_LEVEL3;
-#else
-            picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL6;
 #endif
+            picture_control_set_ptr->nsq_search_level = (picture_control_set_ptr->is_used_as_reference_flag) ? NSQ_SEARCH_LEVEL6 : NSQ_SEARCH_LEVEL3;
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
             if (picture_control_set_ptr->is_used_as_reference_flag)
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL5;
@@ -1197,7 +1197,7 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->loop_filter_mode = picture_control_set_ptr->is_used_as_reference_flag ? 3 : 0;
 #else
 #if LOOP_FILTER_FIX
-        if (picture_control_set_ptr->enc_mode == ENC_M0)
+        if (picture_control_set_ptr->enc_mode <= ENC_M1)
             picture_control_set_ptr->loop_filter_mode = 3;
         else if (picture_control_set_ptr->enc_mode == ENC_M1)
             picture_control_set_ptr->loop_filter_mode = picture_control_set_ptr->is_used_as_reference_flag ? 3 : 0;
@@ -1212,7 +1212,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 
 #if LOOP_FILTER_FIX
 #if !SET_1
-        if (picture_control_set_ptr->enc_mode == ENC_M0)
+        if (picture_control_set_ptr->enc_mode <= ENC_M1)
             picture_control_set_ptr->loop_filter_mode = 3;
         else
 #endif
@@ -1426,7 +1426,7 @@ EbErrorType signal_derivation_multi_processes_oq(
             else
                 picture_control_set_ptr->intra_pred_mode = 2;
 #else
-        if (picture_control_set_ptr->enc_mode == ENC_M0)
+        if (picture_control_set_ptr->enc_mode <= ENC_M1)
             picture_control_set_ptr->intra_pred_mode = 0;
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
             if (picture_control_set_ptr->temporal_layer_index == 0)
@@ -1444,7 +1444,7 @@ EbErrorType signal_derivation_multi_processes_oq(
     else
 
 #if !SET_1
-        if (picture_control_set_ptr->enc_mode == ENC_M0)
+        if (picture_control_set_ptr->enc_mode <= ENC_M1)
             picture_control_set_ptr->intra_pred_mode = 0;
         else if (picture_control_set_ptr->enc_mode  <= ENC_M1)
             if (picture_control_set_ptr->temporal_layer_index == 0)
@@ -1504,7 +1504,7 @@ EbErrorType signal_derivation_multi_processes_oq(
         // 1                 Fast: perform transform partitioning for sensitive block sizes
         // 2                 Full: perform transform partitioning for all block sizes
 #endif
-        if (picture_control_set_ptr->enc_mode == ENC_M0 && sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
+        if (picture_control_set_ptr->enc_mode <= ENC_M1 && sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
 #if STRENGHTHEN_MD_STAGE_3
 #if M2_CAND
             picture_control_set_ptr->atb_mode = 0;
@@ -1594,13 +1594,13 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->adaptive_txb_search_level = 6;
 #endif
 #if PRUNE_REF_FRAME_FRO_REC_PARTITION
-        if (MR_MODE || picture_control_set_ptr->sc_content_detected)
+        if (picture_control_set_ptr->sc_content_detected || picture_control_set_ptr->enc_mode == ENC_M0)
             picture_control_set_ptr->prune_ref_frame_for_rec_partitions = 0;
         else
             picture_control_set_ptr->prune_ref_frame_for_rec_partitions = 1;
 #endif
 #if PRUNE_REF_FRAME_AT_ME
-        if (MR_MODE || picture_control_set_ptr->sc_content_detected)
+        if (picture_control_set_ptr->sc_content_detected || picture_control_set_ptr->enc_mode == ENC_M0)
             picture_control_set_ptr->prune_unipred_at_me = 0;
         else
             picture_control_set_ptr->prune_unipred_at_me = 1;
