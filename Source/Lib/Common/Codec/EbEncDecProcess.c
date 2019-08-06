@@ -1515,6 +1515,14 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     context_ptr->predictive_me_level = 0;
 #endif
 
+
+#if AUTO_C1C2
+    // Combine MD Class1&2  
+    // 0                    OFF 
+    // 1                    ON 
+    context_ptr->combine_class12 = (picture_control_set_ptr->enc_mode == ENC_M0) ? 0 : 1;    
+#endif
+
     // Set interpolation filter search blk size
     // Level                Settings
     // 0                    ON for 8x8 and above

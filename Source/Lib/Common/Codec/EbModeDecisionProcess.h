@@ -313,6 +313,9 @@ extern "C" {
         uint32_t                       *ref_best_ref_sq_table;
 #endif
 #if MD_CLASS
+#if AUTO_C1C2
+        uint8_t  combine_class12; //1:class1 and 2 are combined.
+#endif
 #if FULL_LOOP_SPLIT
         uint32_t                       md_stage_2_count[CAND_CLASS_TOTAL]; //how many full candiates per class @ md_stage_2
         uint32_t                       md_stage_3_count[CAND_CLASS_TOTAL]; //how many full candiates per class @ md_stage_3

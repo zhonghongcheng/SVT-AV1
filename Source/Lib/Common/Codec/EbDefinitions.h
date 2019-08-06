@@ -91,8 +91,11 @@ extern "C" {
 #define M4_SET_64                       1
 #endif
 #if M1_CAND || M6_CAND
-#define COMBINE_C1_C2                   1
+#define COMBINE_C1_C2                   0
 #endif
+
+#define AUTO_C1C2                       1 //combine Class1 and Class2 via a run-time signal
+
 #define S3_TEST                         1 // lower NIC count for M5-M8
 #define IT_SEARCH_FIX                   1 // bug fix to allow shutting interpolation in MD Staging
 
@@ -441,7 +444,7 @@ typedef enum CAND_CLASS {
     CAND_CLASS_0,
     CAND_CLASS_1,
     CAND_CLASS_2,
-#if COMP_FULL && !COMBINE_C1_C2
+#if COMP_FULL && (!COMBINE_C1_C2 || AUTO_C1C2) 
     CAND_CLASS_3,
 #endif
 #if II_CLASS
