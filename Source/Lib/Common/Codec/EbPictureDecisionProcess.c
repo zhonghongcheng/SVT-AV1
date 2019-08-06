@@ -1287,7 +1287,7 @@ EbErrorType signal_derivation_multi_processes_oq(
     else{
         if (picture_control_set_ptr->tx_search_level == TX_SEARCH_ENC_DEC)
             picture_control_set_ptr->tx_weight = MAX_MODE_COST;
-        else if (!MR_MODE && (picture_control_set_ptr->enc_mode <= ENC_M2 || (sc_content_detected && picture_control_set_ptr->enc_mode <= ENC_M3)))
+        else if (!MR_MODE && picture_control_set_ptr->enc_mode <= ENC_M3)
             picture_control_set_ptr->tx_weight = FC_SKIP_TX_SR_TH025;
         else if (!MR_MODE){
             if (picture_control_set_ptr->is_used_as_reference_flag)
