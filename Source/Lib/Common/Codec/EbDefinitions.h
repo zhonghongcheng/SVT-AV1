@@ -34,8 +34,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+#define TWO_PASS                        0
 #define INCOMPLETE_SB_ASSERT            0 //add an assert to link incomplete SBs to usage of root-CBF skip decision in MD
+
 
 #define NO_MEMSET                       1
 #define NO_LOG2_DOUBLE                  1
@@ -3933,7 +3934,12 @@ static const uint32_t MD_SCAN_TO_OIS_32x32_SCAN[CU_MAX_COUNT] =
     /*83 */3,
     /*84 */3,
 };
-
+#if TWO_PASS
+typedef struct stat_struct_t
+{
+    uint32_t                        referenced_area[MAX_NUMBER_OF_TREEBLOCKS_PER_PICTURE];
+} stat_struct_t;
+#endif
 #define SC_MAX_LEVEL 2 // 2 sets of HME/ME settings are used depending on the scene content mode
 
 /******************************************************************************

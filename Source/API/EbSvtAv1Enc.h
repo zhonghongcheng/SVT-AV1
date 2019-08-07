@@ -26,7 +26,15 @@ extern "C" {
 #define EB_BUFFERFLAG_HAS_TD        0x00000004  // signals that the packet contains a TD
 #define EB_BUFFERFLAG_IS_ALT_REF    0x00000008  // signals that the packet contains an ALT_REF frame
 #define EB_BUFFERFLAG_ERROR_MASK    0xFFFFFFF0  // mask for signalling error assuming top flags fit in 4 bits. To be changed, if more flags are added.
-
+#if 1 // TWO_PASS
+#ifndef _FILE_DEFINED
+#define _FILE_DEFINED
+    typedef struct _iobuf
+    {
+        void* _Placeholder;
+    } FILE;
+#endif
+#endif
 // Will contain the EbEncApi which will live in the EncHandle class
 // Only modifiable during config-time.
 typedef struct EbSvtAv1EncConfiguration
@@ -181,6 +189,20 @@ typedef struct EbSvtAv1EncConfiguration
     * Default is 0.*/
     EbBool                   use_qp_file;
 
+#if 1 //TWO_PASS
+    /* Input stats file */
+    FILE                    *input_stat_file;
+    /* output stats file */
+    FILE                    *output_stat_file;
+    /* Get stats from the input_stat_file
+*
+* Default is 0.*/
+    EbBool                   use_input_stat_file;
+    /* Write stats to the input_stat_file
+*
+* Default is 0.*/
+    EbBool                   use_output_stat_file;
+#endif
     /* Enable picture QP scaling between hierarchical levels
     *
     * Default is null.*/

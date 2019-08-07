@@ -212,5 +212,9 @@ EbErrorType encode_context_ctor(
 #if ALT_REF_OVERLAY
     encode_context_ptr->picture_number_alt = 0;
 #endif
+
+#if TWO_PASS
+    EB_CREATEMUTEX(EbHandle, encode_context_ptr->stat_file_mutex, sizeof(EbHandle), EB_MUTEX);
+#endif
     return EB_ErrorNone;
 }

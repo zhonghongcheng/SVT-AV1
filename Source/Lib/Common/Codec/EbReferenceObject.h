@@ -9,7 +9,6 @@
 #include "EbDefinitions.h"
 #include "EbDefinitions.h"
 #include "EbAdaptiveMotionVectorPrediction.h"
-
 typedef struct EbReferenceObject
 {
     EbPictureBufferDesc          *reference_picture;
@@ -44,6 +43,10 @@ typedef struct EbReferenceObject
 #if ENABLE_CDF_UPDATE
     FRAME_CONTEXT                   frame_context;
     EbWarpedMotionParams            global_motion[TOTAL_REFS_PER_FRAME];
+#endif
+#if TWO_PASS
+    stat_struct_t                   stat_struct;
+    EbHandle                        referenced_area_mutex;
 #endif
 } EbReferenceObject;
 

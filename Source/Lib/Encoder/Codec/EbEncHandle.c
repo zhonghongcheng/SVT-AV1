@@ -2361,7 +2361,12 @@ void CopyApiFromApp(
     sequence_control_set_ptr->intra_refresh_type = sequence_control_set_ptr->static_config.intra_refresh_type;
     sequence_control_set_ptr->max_temporal_layers = sequence_control_set_ptr->static_config.hierarchical_levels;
     sequence_control_set_ptr->static_config.use_qp_file = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->use_qp_file;
-
+#if TWO_PASS
+    sequence_control_set_ptr->static_config.input_stat_file = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->input_stat_file;
+    sequence_control_set_ptr->static_config.output_stat_file = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->output_stat_file;
+    sequence_control_set_ptr->static_config.use_input_stat_file = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->use_input_stat_file;
+    sequence_control_set_ptr->static_config.use_output_stat_file = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->use_output_stat_file;
+#endif
 #if SHUT_FILTERING
     sequence_control_set_ptr->static_config.disable_dlf_flag = 1;//
 #else
@@ -2869,6 +2874,10 @@ EbErrorType eb_svt_enc_init_parameter(
 
     config_ptr->qp = 50;
     config_ptr->use_qp_file = EB_FALSE;
+#if TWO_PASS
+    config_ptr->use_input_stat_file = EB_FALSE;
+    config_ptr->use_output_stat_file = EB_FALSE;
+#endif
     config_ptr->scene_change_detection = 0;
     config_ptr->rate_control_mode = 0;
     config_ptr->look_ahead_distance = (uint32_t)~0;

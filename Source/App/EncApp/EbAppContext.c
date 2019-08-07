@@ -175,6 +175,12 @@ EbErrorType CopyConfigurationParameters(
     callback_data->eb_enc_parameters.min_qp_allowed = config->min_qp_allowed;
     callback_data->eb_enc_parameters.qp = config->qp;
     callback_data->eb_enc_parameters.use_qp_file = (EbBool)config->use_qp_file;
+#if 1 //TWO_PASS
+    callback_data->eb_enc_parameters.input_stat_file = config->input_stat_file;
+    callback_data->eb_enc_parameters.output_stat_file = config->output_stat_file;
+    callback_data->eb_enc_parameters.use_input_stat_file = (EbBool)config->use_input_stat_file;
+    callback_data->eb_enc_parameters.use_output_stat_file = (EbBool)config->use_output_stat_file;
+#endif
     callback_data->eb_enc_parameters.disable_dlf_flag = (EbBool)config->disable_dlf_flag;
     callback_data->eb_enc_parameters.enable_warped_motion = (EbBool)config->enable_warped_motion;
     callback_data->eb_enc_parameters.use_default_me_hme = (EbBool)config->use_default_me_hme;

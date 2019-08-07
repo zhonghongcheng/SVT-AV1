@@ -172,6 +172,13 @@ typedef struct EbConfig
 
     FILE                    *qp_file;
 
+#if 1 //TWO_PASS
+    FILE                    *input_stat_file;
+    FILE                    *output_stat_file;
+    EbBool                  use_input_stat_file;
+    EbBool                  use_output_stat_file;
+#endif
+
     EbBool                  y4m_input;
     unsigned char           y4m_buf[9];
 

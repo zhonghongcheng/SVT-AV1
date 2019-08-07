@@ -1271,7 +1271,11 @@ AppExitConditionType ProcessOutputStreamBuffer(
 #if ALT_REF_OVERLAY_APP
             if (!(headerPtr->flags & EB_BUFFERFLAG_IS_ALT_REF))
 #endif
+#if 0//TWO_PASS
+                frame_count++;
+#else
                 printf("\b\b\b\b\b\b\b\b\b%9d", ++frame_count);
+#endif
 #endif
 
             //++frame_count;

@@ -22,11 +22,9 @@
 #include "EbRateControlTables.h"
 #include "EbRestoration.h"
 #include "noise_model.h"
-
 #if CABAC_UP
 #include "EbMdRateEstimation.h"
 #endif
-
 #include "EbCdef.h"
 
 #include"av1me.h"
@@ -13935,10 +13933,7 @@ extern "C" {
 #if ENABLE_CDF_UPDATE
         FRAME_CONTEXT           ref_frame_context[REF_FRAMES];
         EbWarpedMotionParams    ref_global_motion[TOTAL_REFS_PER_FRAME];
-#if ENABLE_CDF_UPDATE
         struct MdRateEstimationContext *md_rate_estimation_array;
-#endif
-
 #endif
     } PictureControlSet;
 
@@ -14518,6 +14513,10 @@ extern "C" {
 #if PRUNE_REF_FRAME_AT_ME
         uint8_t                              prune_unipred_at_me;
 #endif
+#if TWO_PASS
+        struct stat_struct_t                   stat_struct;
+#endif
+
     } PictureParentControlSet;
 
     typedef struct PictureControlSetInitData

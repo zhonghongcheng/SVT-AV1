@@ -28,6 +28,12 @@
 #define OUTPUT_RECON_TOKEN              "-o"
 #define ERROR_FILE_TOKEN                "-errlog"
 #define QP_FILE_TOKEN                   "-qp-file"
+#if 1 //TWO_PASS
+#define INPUT_STAT_FILE_TOKEN           "-input-stat-file"
+#define OUTPUT_STAT_FILE_TOKEN          "-output-stat-file"
+#define USE_INPUT_STAT_FILE_TOKEN       "-use-input-stat-file"
+#define USE_OUTPUT_STAT_FILE_TOKEN      "-use-output-stat-file"
+#endif
 #define WIDTH_TOKEN                     "-w"
 #define HEIGHT_TOKEN                    "-h"
 #define NUMBER_OF_PICTURES_TOKEN        "-n"
@@ -156,6 +162,25 @@ static void SetCfgQpFile                        (const char *value, EbConfig *cf
     if (cfg->qp_file) { fclose(cfg->qp_file); }
     FOPEN(cfg->qp_file,value, "r");
 };
+#if 1 //TWO_PASS
+static void set_input_stat_file(const char *value, EbConfig *cfg)
+{
+    if (cfg->use_input_stat_file) {
+        if (cfg->input_stat_file) { fclose(cfg->input_stat_file); }
+        FOPEN(cfg->input_stat_file, value, "rb");
+    }
+};
+static void set_output_stat_file(const char *value, EbConfig *cfg)
+{
+    if (cfg->use_output_stat_file) {
+        if (cfg->output_stat_file) { fclose(cfg->output_stat_file); }
+        FOPEN(cfg->output_stat_file, value, "wb");
+    }
+};
+static void set_use_input_stat_file(const char *value, EbConfig *cfg) { cfg->use_input_stat_file = (EbBool)strtol(value, NULL, 0); };
+static void set_use_output_stat_file(const char *value, EbConfig *cfg) { cfg->use_output_stat_file = (EbBool)strtol(value, NULL, 0); };
+
+#endif
 static void SetCfgSourceWidth                   (const char *value, EbConfig *cfg) {cfg->source_width = strtoul(value, NULL, 0);};
 static void SetInterlacedVideo                  (const char *value, EbConfig *cfg) {cfg->interlaced_video  = (EbBool) strtoul(value, NULL, 0);};
 static void SetSeperateFields                   (const char *value, EbConfig *cfg) {cfg->separate_fields = (EbBool) strtoul(value, NULL, 0);};
@@ -271,6 +296,12 @@ config_entry_t config_entry[] = {
     { SINGLE_INPUT, ERROR_FILE_TOKEN, "ErrorFile", SetCfgErrorFile },
     { SINGLE_INPUT, OUTPUT_RECON_TOKEN, "ReconFile", SetCfgReconFile },
     { SINGLE_INPUT, QP_FILE_TOKEN, "QpFile", SetCfgQpFile },
+#if 1 //TWO_PASS
+    { SINGLE_INPUT, USE_INPUT_STAT_FILE_TOKEN, "use_input_stat_file", set_use_input_stat_file },
+    { SINGLE_INPUT, INPUT_STAT_FILE_TOKEN, "input_stat_file", set_input_stat_file },
+    { SINGLE_INPUT, USE_OUTPUT_STAT_FILE_TOKEN, "use_output_stat_file", set_use_output_stat_file },
+    { SINGLE_INPUT, OUTPUT_STAT_FILE_TOKEN, "output_stat_file", set_output_stat_file },
+#endif
     // Interlaced Video
     { SINGLE_INPUT, INTERLACED_VIDEO_TOKEN , "InterlacedVideo" , SetInterlacedVideo },
     { SINGLE_INPUT, SEPERATE_FILDS_TOKEN, "SeperateFields", SetSeperateFields },
@@ -375,6 +406,12 @@ void eb_config_ctor(EbConfig *config_ptr)
     config_ptr->recon_file                            = NULL;
     config_ptr->error_log_file                         = stderr;
     config_ptr->qp_file                               = NULL;
+#if 1 //TWO_PASS
+    config_ptr->input_stat_file                       = NULL;
+    config_ptr->output_stat_file                      = NULL;
+    config_ptr->use_input_stat_file                   = 0;
+    config_ptr->use_output_stat_file                  = 0;
+#endif
 
     config_ptr->frame_rate                            = 30 << 16;
     config_ptr->frame_rate_numerator                   = 0;
@@ -548,6 +585,16 @@ void eb_config_dtor(EbConfig *config_ptr)
         fclose(config_ptr->qp_file);
         config_ptr->qp_file = (FILE *)NULL;
     }
+#if 1 //TWO_PASS
+    if (config_ptr->input_stat_file) {
+        fclose(config_ptr->input_stat_file);
+        config_ptr->input_stat_file = (FILE *)NULL;
+    }
+    if (config_ptr->output_stat_file) {
+        fclose(config_ptr->output_stat_file);
+        config_ptr->output_stat_file = (FILE *)NULL;
+    }
+#endif
 
     return;
 }
@@ -787,6 +834,17 @@ static EbErrorType VerifySettings(EbConfig *config, uint32_t channelNumber)
         fprintf(config->error_log_file, "Error instance %u: Could not find QP file, UseQpFile is set to 1\n", channelNumber + 1);
         return_error = EB_ErrorBadParameter;
     }
+
+#if 1 //TWO_PASS
+    if (config->use_input_stat_file == EB_TRUE && config->input_stat_file == NULL) {
+        fprintf(config->error_log_file, "Error instance %u: Could not find input stat file, use_input_stat_file is set to 1\n", channelNumber + 1);
+        return_error = EB_ErrorBadParameter;
+    }
+    if (config->use_output_stat_file == EB_TRUE && config->output_stat_file == NULL) {
+        fprintf(config->error_log_file, "Error instance %u: Could not find output stat file, use_output_stat_file is set to 1\n", channelNumber + 1);
+        return_error = EB_ErrorBadParameter;
+    }
+#endif
 
     if (config->separate_fields > 1) {
         fprintf(config->error_log_file, "Error Instance %u: Invalid SeperateFields Input\n", channelNumber + 1);

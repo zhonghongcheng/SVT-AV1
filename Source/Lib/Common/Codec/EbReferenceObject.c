@@ -203,8 +203,10 @@ EbErrorType eb_reference_object_ctor(
             return EB_ErrorInsufficientResources;
     }
 #endif
-    memset(&referenceObject->film_grain_params, 0, sizeof(referenceObject->film_grain_params));
-
+    memset(&referenceObject->film_grain_params, 0, sizeof(referenceObject->film_grain_params));    
+#if TWO_PASS 
+    EB_CREATEMUTEX(EbHandle, referenceObject->referenced_area_mutex, sizeof(EbHandle), EB_MUTEX);
+#endif
     return EB_ErrorNone;
 }
 

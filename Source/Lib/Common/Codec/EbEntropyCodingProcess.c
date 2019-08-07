@@ -15,7 +15,9 @@
 */
 
 #include <stdlib.h>
-
+#if TWO_PASS
+#include <stdio.h>
+#endif
 #include "EbEntropyCodingProcess.h"
 #include "EbEncDecResults.h"
 #include "EbEntropyCodingResults.h"
@@ -518,7 +520,53 @@ static EbBool UpdateEntropyCodingRows(
 
     return processNextRow;
 }
+#if TWO_PASS
+/******************************************************
+ * Write Stat to File
+ ******************************************************/
+static void write_stat_to_file(
+    PictureControlSet     *picture_control_set_ptr,
+    SequenceControlSet    *sequence_control_set_ptr,
+    stat_struct_t          stat_struct,
+    uint64_t               ref_poc)
+{
+    eb_block_on_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
+    uint32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
 
+    if (ref_poc % 16 == 0) {
+        printf("\nRELEASED POC:%d\n",
+            ref_poc);
+        for (int sb_index = 0; sb_index < sequence_control_set_ptr->sb_tot_cnt; sb_index++) {
+            if (sb_index % pic_width_in_sb == 0)
+                printf("\n");
+
+            printf("%d\t", stat_struct.referenced_area[sb_index] / 64/64);
+        }
+    }
+    ////Sets the File position to the beginning of the file.
+    //rewind(sequence_control_set_ptr->static_config.output_stat_file);
+    //uint64_t frameNum = ref_poc;
+    //while (frameNum > 0) {
+    //    int32_t fseek_return_value = fseek(sequence_control_set_ptr->static_config.output_stat_file, sizeof(stat_struct_t), SEEK_CUR);
+
+    //    if (fseek_return_value != 0) {
+    //        printf("Error in fseeko64  returnVal %i\n", fseek_return_value);
+    //    }
+    //    frameNum = frameNum - 1;
+    //}
+    int32_t fseek_return_value = fseek(sequence_control_set_ptr->static_config.output_stat_file, ref_poc * sizeof(stat_struct_t), SEEK_SET);
+
+    if (fseek_return_value != 0) {
+        printf("Error in fseek  returnVal %i\n", fseek_return_value);
+    }
+
+    int return_write = fwrite(&stat_struct,
+        sizeof(stat_struct_t),
+        1,
+        sequence_control_set_ptr->static_config.output_stat_file);
+    eb_release_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
+}
+#endif
 /******************************************************
  * Entropy Coding Kernel
  ******************************************************/
@@ -671,8 +719,27 @@ void* entropy_coding_kernel(void *input_ptr)
                         picture_control_set_ptr->entropy_coding_pic_done = EB_TRUE;
 
                         encode_slice_finish(picture_control_set_ptr->entropy_coder_ptr);
+#if TWO_PASS
+                        // for Non Reference frames, write zero
+                        if (sequence_control_set_ptr->static_config.use_output_stat_file &&
+                            !picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
+                            write_stat_to_file(
+                                picture_control_set_ptr,
+                                sequence_control_set_ptr,
+                                picture_control_set_ptr->parent_pcs_ptr->stat_struct,
+                                picture_control_set_ptr->parent_pcs_ptr->picture_number);
+#endif
                         // Release the List 0 Reference Pictures
                         for (ref_idx = 0; ref_idx < picture_control_set_ptr->parent_pcs_ptr->ref_list0_count; ++ref_idx) {
+#if TWO_PASS
+                            if (sequence_control_set_ptr->static_config.use_output_stat_file && 
+                                picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx] != EB_NULL && picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx]->live_count == 1)
+                                write_stat_to_file(
+                                    picture_control_set_ptr,
+                                    sequence_control_set_ptr,
+                                    ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx]->object_ptr)->stat_struct,
+                                    ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx]->object_ptr)->ref_poc);
+#endif
 #if MRP_MD
                             if (picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx] != EB_NULL) {
 #else
@@ -686,9 +753,17 @@ void* entropy_coding_kernel(void *input_ptr)
 #endif
                             }
                         }
-
                         // Release the List 1 Reference Pictures
                         for (ref_idx = 0; ref_idx < picture_control_set_ptr->parent_pcs_ptr->ref_list1_count; ++ref_idx) {
+#if TWO_PASS
+                            if (sequence_control_set_ptr->static_config.use_output_stat_file &&
+                                picture_control_set_ptr->ref_pic_ptr_array[1][ref_idx] != EB_NULL && picture_control_set_ptr->ref_pic_ptr_array[1][ref_idx]->live_count == 1)
+                                write_stat_to_file(
+                                    picture_control_set_ptr,
+                                    sequence_control_set_ptr,
+                                    ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[1][ref_idx]->object_ptr)->stat_struct,
+                                    ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[1][ref_idx]->object_ptr)->ref_poc);
+#endif
 #if MRP_MD
                             if (picture_control_set_ptr->ref_pic_ptr_array[1][ref_idx] != EB_NULL)
                                 eb_release_object(picture_control_set_ptr->ref_pic_ptr_array[1][ref_idx]);

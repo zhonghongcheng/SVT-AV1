@@ -1118,6 +1118,10 @@ void PadRefAndSetFlags(
 
     // set up the Slice Type
     referenceObject->slice_type = picture_control_set_ptr->parent_pcs_ptr->slice_type;
+
+#if TWO_PASS
+    memset(&referenceObject->stat_struct, 0, sizeof(stat_struct_t));
+#endif
 }
 
 void CopyStatisticsToRefObject(
