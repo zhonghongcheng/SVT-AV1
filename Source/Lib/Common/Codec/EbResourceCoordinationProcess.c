@@ -94,9 +94,6 @@ EbErrorType signal_derivation_pre_analysis_oq(
 #if DECOUPLE_ALTREF_ME
     uint8_t  hme_me_level = picture_control_set_ptr->enc_mode;
 #endif
-#if M4_SET_ME
-    hme_me_level = 4;
-#endif
 #if M5_CAND_ME
     hme_me_level = ENC_M5;
 #endif
@@ -699,7 +696,7 @@ void* resource_coordination_kernel(void *input_ptr)
 #if M4_COMP_OFF
             sequence_control_set_ptr->compound_mode = 0;
 #else
-            sequence_control_set_ptr->compound_mode = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M3) ? 1 : 0;
+            sequence_control_set_ptr->compound_mode = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M4) ? 1 : 0;
 #endif
 
 

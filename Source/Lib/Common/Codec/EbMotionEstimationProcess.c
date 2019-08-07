@@ -100,9 +100,6 @@ void* set_me_hme_params_oq(
 {
     UNUSED(sequence_control_set_ptr);
     uint8_t  hmeMeLevel =  picture_control_set_ptr->enc_mode; // OMK to be revised after new presets
-#if M4_SET_ME
-     hmeMeLevel = ENC_M4;
-#endif
 #if M5_CAND_ME
      hmeMeLevel = ENC_M5;
 #endif
@@ -235,7 +232,7 @@ EbErrorType signal_derivation_me_kernel_oq(
 
     // Set the default settings of subpel
     if (picture_control_set_ptr->sc_content_detected)
-        if (picture_control_set_ptr->enc_mode <= ENC_M3)
+        if (picture_control_set_ptr->enc_mode <= ENC_M4)
             context_ptr->me_context_ptr->use_subpel_flag = 1;
         else
             context_ptr->me_context_ptr->use_subpel_flag = 0;
@@ -299,18 +296,14 @@ EbErrorType signal_derivation_me_kernel_oq(
 #if USE_SAD_ME
     // ME Search Method
     if (picture_control_set_ptr->sc_content_detected)
-        if (picture_control_set_ptr->enc_mode <= ENC_M3)
+        if (picture_control_set_ptr->enc_mode <= ENC_M4)
             context_ptr->me_context_ptr->me_search_method = FULL_SAD_SEARCH;
         else
             context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH;
     else
-#if M4_SET_ME
-    context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH;
-#else
-    context_ptr->me_context_ptr->me_search_method = (picture_control_set_ptr->enc_mode <= ENC_M3) ?
-        FULL_SAD_SEARCH :
-        SUB_SAD_SEARCH;
-#endif
+        context_ptr->me_context_ptr->me_search_method = (picture_control_set_ptr->enc_mode <= ENC_M3) ?
+            FULL_SAD_SEARCH :
+            SUB_SAD_SEARCH;
 #else
     context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH  ;
 #endif
@@ -329,9 +322,6 @@ void* tf_set_me_hme_params_oq(
 {
     UNUSED(sequence_control_set_ptr);
     uint8_t  hmeMeLevel = picture_control_set_ptr->enc_mode; // OMK to be revised after new presets
-#if M4_SET_ME
-    hmeMeLevel = ENC_M4;
-#endif
 #if M5_CAND_ME
     hmeMeLevel = ENC_M5;
 #endif
@@ -402,7 +392,7 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
         sequence_control_set_ptr->input_resolution);
 
     if (picture_control_set_ptr->sc_content_detected)
-        if (picture_control_set_ptr->enc_mode <= ENC_M3)
+        if (picture_control_set_ptr->enc_mode <= ENC_M4)
             context_ptr->me_context_ptr->fractional_search_method = SSD_SEARCH;
         else
             context_ptr->me_context_ptr->fractional_search_method = SUB_SAD_SEARCH;
@@ -412,7 +402,7 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
         else
             context_ptr->me_context_ptr->fractional_search_method = FULL_SAD_SEARCH;
     if (picture_control_set_ptr->sc_content_detected)
-        if (picture_control_set_ptr->enc_mode <= ENC_M3)
+        if (picture_control_set_ptr->enc_mode <= ENC_M4)
             context_ptr->me_context_ptr->fractional_search64x64 = EB_TRUE;
         else
             context_ptr->me_context_ptr->fractional_search64x64 = EB_FALSE;
@@ -428,7 +418,7 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
 
     // Set the default settings of subpel
     if (picture_control_set_ptr->sc_content_detected)
-        if (picture_control_set_ptr->enc_mode <= ENC_M3)
+        if (picture_control_set_ptr->enc_mode <= ENC_M4)
             context_ptr->me_context_ptr->use_subpel_flag = 1;
         else
             context_ptr->me_context_ptr->use_subpel_flag = 0;
@@ -503,18 +493,14 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
         context_ptr->me_context_ptr->hme_search_method = FULL_SAD_SEARCH;
     // ME Search Method
     if (picture_control_set_ptr->sc_content_detected)
-        if (picture_control_set_ptr->enc_mode <= ENC_M3)
+        if (picture_control_set_ptr->enc_mode <= ENC_M4)
             context_ptr->me_context_ptr->me_search_method = FULL_SAD_SEARCH;
         else
             context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH;
     else
-#if M4_SET_ME
-        context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH;
-#else
         context_ptr->me_context_ptr->me_search_method = (picture_control_set_ptr->enc_mode <= ENC_M3) ?
-        FULL_SAD_SEARCH :
-        SUB_SAD_SEARCH;
-#endif
+            FULL_SAD_SEARCH :
+            SUB_SAD_SEARCH;
     return return_error;
     };
 #endif
