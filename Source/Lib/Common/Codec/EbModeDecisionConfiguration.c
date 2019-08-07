@@ -1096,7 +1096,11 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
         }
 #if ADD_MDC_INTRA
         // Check best Intra OIS Candidate
+#if FIX_CRASH
+        if (sequence_control_set_ptr->seq_header.sb_size == BLOCK_64X64 && context_ptr->blk_geom->sq_size > 4 && context_ptr->blk_geom->sq_size < 128 && context_ptr->blk_geom->shape == PART_N) {
+#else
         if (context_ptr->blk_geom->sq_size > 4 && context_ptr->blk_geom->sq_size < 128 && context_ptr->blk_geom->shape == PART_N) {
+#endif
             context_ptr->mdc_cu_ptr->is_inter_ctx = 0;
             context_ptr->mdc_cu_ptr->skip_flag_context = 0;
             context_ptr->mdc_cu_ptr->inter_mode_ctx[context_ptr->mdc_candidate_ptr->ref_frame_type] = 0;

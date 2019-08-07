@@ -498,6 +498,7 @@ typedef enum MD_STAGE {
 #define ADJUST_NSQ_RANK_BASED_ON_NEIGH                  1
 #define COMBINE_MDC_NSQ_TABLE                           1
 #define NSQ_SUB_LEVEL                                   1
+#define FIX_CRASH                                       1
 #endif
 #if COMBINE_MDC_NSQ_TABLE
 #define NSQ_TAB_SIZE                                    8
