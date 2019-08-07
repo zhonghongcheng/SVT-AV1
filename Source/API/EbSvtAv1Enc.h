@@ -9,7 +9,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
-
+#if 1 //TWO_PASS
+#include <stdlib.h>
+#include <stdio.h>
+#endif
 #include "stdint.h"
 #include "EbSvtAv1.h"
 
@@ -26,15 +29,6 @@ extern "C" {
 #define EB_BUFFERFLAG_HAS_TD        0x00000004  // signals that the packet contains a TD
 #define EB_BUFFERFLAG_IS_ALT_REF    0x00000008  // signals that the packet contains an ALT_REF frame
 #define EB_BUFFERFLAG_ERROR_MASK    0xFFFFFFF0  // mask for signalling error assuming top flags fit in 4 bits. To be changed, if more flags are added.
-#if 1 // TWO_PASS
-#ifndef _FILE_DEFINED
-#define _FILE_DEFINED
-    typedef struct _iobuf
-    {
-        void* _Placeholder;
-    } FILE;
-#endif
-#endif
 // Will contain the EbEncApi which will live in the EncHandle class
 // Only modifiable during config-time.
 typedef struct EbSvtAv1EncConfiguration

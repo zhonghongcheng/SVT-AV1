@@ -532,7 +532,7 @@ static void write_stat_to_file(
 {
     eb_block_on_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
     uint32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
-
+#if 0
     if (ref_poc % 16 == 0) {
         printf("\nRELEASED POC:%d\n",
             ref_poc);
@@ -543,6 +543,7 @@ static void write_stat_to_file(
             printf("%d\t", stat_struct.referenced_area[sb_index] / 64/64);
         }
     }
+#endif
     ////Sets the File position to the beginning of the file.
     //rewind(sequence_control_set_ptr->static_config.output_stat_file);
     //uint64_t frameNum = ref_poc;
@@ -554,7 +555,7 @@ static void write_stat_to_file(
     //    }
     //    frameNum = frameNum - 1;
     //}
-    int32_t fseek_return_value = fseek(sequence_control_set_ptr->static_config.output_stat_file, ref_poc * sizeof(stat_struct_t), SEEK_SET);
+    int32_t fseek_return_value = fseek(sequence_control_set_ptr->static_config.output_stat_file, (long)ref_poc * sizeof(stat_struct_t), SEEK_SET);
 
     if (fseek_return_value != 0) {
         printf("Error in fseek  returnVal %i\n", fseek_return_value);
@@ -562,7 +563,7 @@ static void write_stat_to_file(
 
     int return_write = fwrite(&stat_struct,
         sizeof(stat_struct_t),
-        1,
+        (size_t)1,
         sequence_control_set_ptr->static_config.output_stat_file);
     eb_release_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
 }
