@@ -1042,6 +1042,18 @@ EbErrorType signal_derivation_multi_processes_oq(
 #if ADP_BQ
     }
 #endif
+#if NSQ_SUB_LEVEL
+        // NSQ search sub Level                           Settings
+        // Feature off                                    OFF
+        // NSQ_SEARCH_SUB_LEVEL1                          // NSQ LEVEL -1 at base 
+        // NSQ Off for 8x8 at non-base
+        // NSQ Off for 8x8/16x16 at non-ref
+        // NSQ_LEVEL, Otherwise.
+        // NSQ_SEARCH_SUB_LEVEL2                          // NSQ LEVEL at ref 
+        // NSQ Off for 8x8/16x16 at non-ref
+        picture_control_set_ptr->nsq_search_sub_level = NO_SUB_LEVEL;
+
+#endif
     // Interpolation search Level                     Settings
     // 0                                              OFF
     // 1                                              Interpolation search at inter-depth

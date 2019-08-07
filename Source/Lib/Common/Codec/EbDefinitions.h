@@ -384,7 +384,6 @@ extern "C" {
 #if BASE_LAYER_REF
 #define MAX_FRAMES_TO_REF_I                             64
 #endif
-#define NSQ_TAB_SIZE                                    6
 #define AOM_INTERP_EXTEND 4
 #define MRP_DISABLE_ADDED_CAND_M1                        0
 
@@ -487,15 +486,22 @@ typedef enum MD_STAGE {
 #define OPTIMISED_EX_SUBPEL                                 1
 #define PREDICT_NSQ_SHAPE                               0
 #if PREDICT_NSQ_SHAPE
-#define ADD_MDC_INTRA                                   0
+#define ADD_MDC_INTRA                                   1
 #define DEPTH_RANKING                                   1
 #define NUMBER_OF_DEPTH                                 6
 #define NUMBER_OF_SHAPES                                10
-#define ADP_BQ                                          1 // Added the ability to perform ADP for best quality mode
+#define ADP_BQ                                          0 // Added the ability to perform ADP for best quality mode
 #define P_NSQ_NEW                                       0
-#define MDC_ONLY                                        1
+#define MDC_ONLY                                        0
 #define ADD_SAD_FOR_128X128                             1
 #define ADJUST_NSQ_RANK_BASED_ON_NEIGH                  1
+#define COMBINE_MDC_NSQ_TABLE                           1
+#define NSQ_SUB_LEVEL                                   1
+#endif
+#if COMBINE_MDC_NSQ_TABLE
+#define NSQ_TAB_SIZE                                    8
+#else
+#define NSQ_TAB_SIZE                                    6
 #endif
 #if IMPROVED_SUBPEL_SEARCH
 typedef enum ME_HP_MODE {
@@ -948,6 +954,15 @@ typedef enum NsqSearchLevel
     NSQ_SEARCH_LEVEL6,
     NSQ_SEARCH_FULL
 } NsqSearchLevel;
+
+#if NSQ_SUB_LEVEL
+typedef enum NsqSearchSubLevel
+{
+    NO_SUB_LEVEL,
+    NSQ_SEARCH_SUB_LEVEL1,
+    NSQ_SEARCH_SUB_LEVEL2
+} NsqSearchSubLevel;
+#endif
 
 #define MAX_PARENT_SQ     6
 typedef enum CompoundDistWeightMode {

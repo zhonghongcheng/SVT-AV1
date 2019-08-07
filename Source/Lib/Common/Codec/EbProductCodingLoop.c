@@ -7347,6 +7347,10 @@ uint8_t shape_rank_th[NUMBER_OF_DEPTH] = {10,10,10,10,10,10}; // Range 0-10;  0:
 *   performs CL (LCU)
 *******************************************/
 EbBool allowed_ns_cu(
+#if NSQ_SUB_LEVEL
+    uint8_t                            temporal_layer,
+    uint8_t                            nsq_search_sub_level,
+#endif
     EbBool                             is_nsq_table_used,
     uint8_t                            nsq_max_shapes_md,
     ModeDecisionContext                *context_ptr,
@@ -7361,6 +7365,64 @@ EbBool allowed_ns_cu(
             ret = 0;
     }
 #endif
+#if COMBINE_MDC_NSQ_TABLE
+    if (is_nsq_table_used) {
+        if (context_ptr->blk_geom->shape != PART_N) {
+            ret = 0;
+#if NSQ_SUB_LEVEL
+            if (nsq_search_sub_level == NSQ_SEARCH_SUB_LEVEL1) {
+                if (temporal_layer > 3) {
+                    if (context_ptr->blk_geom->bheight > 16 && context_ptr->blk_geom->bwidth > 16) {
+                        for (int i = 0; i < nsq_max_shapes_md; i++) {
+                            if (context_ptr->blk_geom->shape == context_ptr->nsq_table[i])
+                                ret = 1;
+                        }
+                    }
+                }
+                else if (temporal_layer > 0) {
+                    if (context_ptr->blk_geom->bheight > 8 && context_ptr->blk_geom->bwidth > 8) {
+                        for (int i = 0; i < nsq_max_shapes_md; i++) {
+                            if (context_ptr->blk_geom->shape == context_ptr->nsq_table[i])
+                                ret = 1;
+                        }
+                    }
+                }
+                else {
+                    for (int i = 0; i < nsq_max_shapes_md + 1; i++) {
+                        if (context_ptr->blk_geom->shape == context_ptr->nsq_table[i])
+                            ret = 1;
+                    }
+                }
+            }
+            else if (nsq_search_sub_level == NSQ_SEARCH_SUB_LEVEL2) {
+                if (temporal_layer > 3) {
+                    if (context_ptr->blk_geom->bheight > 16 && context_ptr->blk_geom->bwidth > 16) {
+                        for (int i = 0; i < nsq_max_shapes_md; i++) {
+                            if (context_ptr->blk_geom->shape == context_ptr->nsq_table[i])
+                                ret = 1;
+                        }
+                    }
+                }
+                else {
+                    for (int i = 0; i < nsq_max_shapes_md + 1; i++) {
+                        if (context_ptr->blk_geom->shape == context_ptr->nsq_table[i])
+                            ret = 1;
+                    }
+                }
+
+            }
+            else {
+#endif
+                for (int i = 0; i < nsq_max_shapes_md; i++) {
+                    if (context_ptr->blk_geom->shape == context_ptr->nsq_table[i])
+                        ret = 1;
+                }
+            }
+#if NSQ_SUB_LEVEL
+        }
+#endif
+    }
+#else
 #if MDC_ONLY
     if (is_nsq_table_used) {
         if (context_ptr->blk_geom->shape != PART_N) {
@@ -7416,6 +7478,7 @@ EbBool allowed_ns_cu(
         }
 #endif
     }
+#endif
 #endif
     return ret;
 }
@@ -7829,6 +7892,240 @@ PART get_partition_shape(
 * Adjust the nsq_rank in order to keep the most
 * probable Shape to be selected in the lowest index
 ****************************************************/
+#if COMBINE_MDC_NSQ_TABLE
+void  adjust_nsq_rank(
+    PictureControlSet            *picture_control_set_ptr,
+    ModeDecisionContext          *context_ptr,
+    const SequenceControlSet     *sequence_control_set_ptr,
+    LargestCodingUnit            *sb_ptr,
+    NeighborArrayUnit            *leaf_partition_neighbor_array) {
+    const uint32_t                lcuAddr = sb_ptr->index;
+
+    uint8_t ol_part1 = context_ptr->best_nsq_sahpe1;
+    uint8_t ol_part2 = context_ptr->best_nsq_sahpe2;
+    uint8_t ol_part3 = context_ptr->best_nsq_sahpe3;
+    uint8_t ol_part4 = context_ptr->best_nsq_sahpe4;
+    uint8_t ol_part5 = context_ptr->best_nsq_sahpe5;
+    uint8_t ol_part6 = context_ptr->best_nsq_sahpe6;
+    uint8_t ol_part7 = context_ptr->best_nsq_sahpe7;
+    uint8_t ol_part8 = context_ptr->best_nsq_sahpe8;
+
+    EbBool isCompoundEnabled = (picture_control_set_ptr->parent_pcs_ptr->reference_mode == SINGLE_REFERENCE) ? 0 : 1;
+    uint32_t me_sb_addr;
+    uint32_t me2Nx2NTableOffset;
+    uint32_t max_number_of_pus_per_sb;
+    uint32_t geom_offset_x = 0;
+    uint32_t geom_offset_y = 0;
+    uint8_t cnt[PART_S + 1] = { 0 };
+    if (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128) {
+        uint32_t me_sb_size = sequence_control_set_ptr->sb_sz;
+        uint32_t me_pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / me_sb_size;
+        uint32_t me_sb_x = (context_ptr->cu_origin_x / me_sb_size);
+        uint32_t me_sb_y = (context_ptr->cu_origin_y / me_sb_size);
+        me_sb_addr = me_sb_x + me_sb_y * me_pic_width_in_sb;
+        geom_offset_x = (me_sb_x & 0x1) * me_sb_size;
+        geom_offset_y = (me_sb_y & 0x1) * me_sb_size;
+    }
+    else
+        me_sb_addr = lcuAddr;
+    max_number_of_pus_per_sb = picture_control_set_ptr->parent_pcs_ptr->max_number_of_pus_per_sb;
+    me2Nx2NTableOffset = (context_ptr->blk_geom->bwidth == 4 || context_ptr->blk_geom->bheight == 4 || context_ptr->blk_geom->bwidth == 128 || context_ptr->blk_geom->bheight == 128) ? 0 :
+
+        get_me_info_index(
+            max_number_of_pus_per_sb,
+            context_ptr->blk_geom,
+            geom_offset_x,
+            geom_offset_y);
+
+#if MD_INJECTION
+    const MeLcuResults *me_results = picture_control_set_ptr->parent_pcs_ptr->me_results[me_sb_addr];
+    uint8_t nsq0 = me_results->me_nsq_0[me2Nx2NTableOffset];
+    uint8_t nsq1 = me_results->me_nsq_1[me2Nx2NTableOffset];
+#else
+    MeCuResults * mePuResult = &picture_control_set_ptr->parent_pcs_ptr->me_results[me_sb_addr][me2Nx2NTableOffset];
+    uint8_t nsq0 = mePuResult->me_nsq[0];
+    uint8_t nsq1 = mePuResult->me_nsq[1];
+#endif
+    uint8_t me_part_0 = nsq0 == 0 ? PART_N : nsq0 == 1 ? PART_H : nsq0 == 2 ? PART_V : nsq0 == 3 ? PART_H4 : nsq0 == 4 ? PART_V4 : nsq0 == 5 ? PART_S : 0;
+    uint8_t me_part_1 = nsq1 == 0 ? PART_N : nsq1 == 1 ? PART_H : nsq1 == 2 ? PART_V : nsq1 == 3 ? PART_H4 : nsq1 == 4 ? PART_V4 : nsq1 == 5 ? PART_S : 0;
+
+    // Generate Partition context
+    uint32_t partition_left_neighbor_index = get_neighbor_array_unit_left_index(
+        leaf_partition_neighbor_array,
+        context_ptr->cu_origin_y);
+    uint32_t partition_above_neighbor_index = get_neighbor_array_unit_top_index(
+        leaf_partition_neighbor_array,
+        context_ptr->cu_origin_x);
+    const PartitionContextType above_ctx = (((PartitionContext*)leaf_partition_neighbor_array->top_array)[partition_above_neighbor_index].above == (int8_t)INVALID_NEIGHBOR_DATA) ?
+        0 : ((PartitionContext*)leaf_partition_neighbor_array->top_array)[partition_above_neighbor_index].above;
+    const PartitionContextType left_ctx = (((PartitionContext*)leaf_partition_neighbor_array->left_array)[partition_left_neighbor_index].left == (int8_t)INVALID_NEIGHBOR_DATA) ?
+        0 : ((PartitionContext*)leaf_partition_neighbor_array->left_array)[partition_left_neighbor_index].left;
+
+    PART neighbor_part = get_partition_shape(
+        above_ctx,
+        left_ctx,
+        context_ptr->blk_geom->bwidth,
+        context_ptr->blk_geom->bheight);
+
+    //init table
+    context_ptr->nsq_table[0] = PART_H;
+    context_ptr->nsq_table[1] = PART_V;
+    context_ptr->nsq_table[2] = PART_HA;
+    context_ptr->nsq_table[3] = PART_HB;
+    context_ptr->nsq_table[4] = PART_VA;
+    context_ptr->nsq_table[5] = PART_VB;
+
+    if (isCompoundEnabled == 0) me_part_1 = me_part_0;
+
+    // Insert predicted Shapes based on ME information
+    if (me_part_0 != me_part_1) {
+        context_ptr->nsq_table[0] = me_part_0;
+        context_ptr->nsq_table[1] = me_part_1;
+
+        if (me_part_0 == PART_H) {
+            context_ptr->nsq_table[2] = PART_HA;
+            context_ptr->nsq_table[3] = PART_HB;
+            context_ptr->nsq_table[4] = me_part_1 != PART_H4 ? PART_H4 : PART_V;
+        }
+        else if (me_part_0 == PART_V) {
+            context_ptr->nsq_table[2] = PART_VA;
+            context_ptr->nsq_table[3] = PART_VB;
+            context_ptr->nsq_table[4] = me_part_1 != PART_V4 ? PART_V4 : PART_H;
+        }
+        else if (me_part_0 == PART_H4) {
+            context_ptr->nsq_table[2] = PART_HA;
+            context_ptr->nsq_table[3] = PART_HB;
+            context_ptr->nsq_table[4] = me_part_1 != PART_H ? PART_H : PART_V;
+        }
+        else if (me_part_0 == PART_V4) {
+            context_ptr->nsq_table[2] = PART_VA;
+            context_ptr->nsq_table[3] = PART_VB;
+            context_ptr->nsq_table[4] = me_part_1 != PART_V ? PART_V : PART_H;
+        }
+        else if (me_part_0 == PART_S) {
+            context_ptr->nsq_table[2] = PART_VA;
+            context_ptr->nsq_table[3] = PART_HB;
+            context_ptr->nsq_table[4] = me_part_1 != PART_V ? PART_V : PART_H;
+        }
+    }
+    else {
+        context_ptr->nsq_table[0] = me_part_0;
+        if (me_part_0 == PART_H) {
+            context_ptr->nsq_table[1] = PART_HA;
+            context_ptr->nsq_table[2] = PART_HB;
+            context_ptr->nsq_table[3] = PART_H4;
+            context_ptr->nsq_table[4] = PART_V;
+        }
+        else if (me_part_0 == PART_V) {
+            context_ptr->nsq_table[1] = PART_VA;
+            context_ptr->nsq_table[2] = PART_VB;
+            context_ptr->nsq_table[3] = PART_V4;
+            context_ptr->nsq_table[4] = PART_H;
+        }
+        else if (me_part_0 == PART_H4) {
+            context_ptr->nsq_table[1] = PART_H;
+            context_ptr->nsq_table[2] = PART_HA;
+            context_ptr->nsq_table[3] = PART_HB;
+            context_ptr->nsq_table[4] = PART_V;
+        }
+        else if (me_part_0 == PART_V4) {
+            context_ptr->nsq_table[1] = PART_V;
+            context_ptr->nsq_table[2] = PART_VA;
+            context_ptr->nsq_table[3] = PART_VB;
+            context_ptr->nsq_table[4] = PART_H;
+        }
+        else if (me_part_0 == PART_S) {
+            context_ptr->nsq_table[1] = PART_HA;
+            context_ptr->nsq_table[2] = PART_VA;
+            context_ptr->nsq_table[3] = PART_HB;
+            context_ptr->nsq_table[4] = PART_VB;
+        }
+    }
+    // Insert predicted Shapes based on neighbor information
+    if (neighbor_part == PART_S && me_part_0 == PART_S && me_part_1 == PART_S) {
+        context_ptr->nsq_table[0] = PART_HA;
+        context_ptr->nsq_table[1] = PART_VA;
+        context_ptr->nsq_table[2] = PART_HB;
+        context_ptr->nsq_table[3] = PART_VB;
+        context_ptr->nsq_table[4] = PART_H4;
+        context_ptr->nsq_table[5] = PART_V4;
+    }
+    else {
+        if (neighbor_part != PART_N && neighbor_part != PART_S && neighbor_part != me_part_0 && neighbor_part != me_part_1) {
+            context_ptr->nsq_table[5] = context_ptr->nsq_table[4];
+            context_ptr->nsq_table[4] = context_ptr->nsq_table[3];
+            context_ptr->nsq_table[3] = context_ptr->nsq_table[2];
+            context_ptr->nsq_table[2] = context_ptr->nsq_table[1];
+            context_ptr->nsq_table[1] = context_ptr->nsq_table[0];
+            context_ptr->nsq_table[0] = neighbor_part;
+        }
+        else
+            context_ptr->nsq_table[5] = neighbor_part != PART_N && neighbor_part != PART_S ? neighbor_part : me_part_0;
+    }
+    context_ptr->nsq_table[2] = context_ptr->nsq_table[0] != ol_part1 && context_ptr->nsq_table[1] != ol_part1 ? ol_part1
+        : context_ptr->nsq_table[0] != ol_part2 && context_ptr->nsq_table[1] != ol_part2 ? ol_part2
+        : ol_part3 != PART_N ? ol_part3 : context_ptr->nsq_table[2];
+    context_ptr->nsq_table[3] = context_ptr->nsq_table[0] != ol_part1 && context_ptr->nsq_table[1] != ol_part1 && context_ptr->nsq_table[2] != ol_part1 ? ol_part1
+        : context_ptr->nsq_table[0] != ol_part2 && context_ptr->nsq_table[1] != ol_part2 && context_ptr->nsq_table[2] != ol_part2 ? ol_part2
+        : context_ptr->nsq_table[0] != ol_part3 && context_ptr->nsq_table[1] != ol_part3 && context_ptr->nsq_table[2] != ol_part3 ? ol_part3
+        : ol_part4 != PART_N ? ol_part4 : context_ptr->nsq_table[3];
+    context_ptr->nsq_table[4] = context_ptr->nsq_table[0] != ol_part1 && context_ptr->nsq_table[1] != ol_part1 && context_ptr->nsq_table[2] != ol_part1 && context_ptr->nsq_table[3] != ol_part1 ? ol_part1
+        : context_ptr->nsq_table[0] != ol_part2 && context_ptr->nsq_table[1] != ol_part2 && context_ptr->nsq_table[2] != ol_part2 && context_ptr->nsq_table[3] != ol_part2 ? ol_part2
+        : context_ptr->nsq_table[0] != ol_part3 && context_ptr->nsq_table[1] != ol_part3 && context_ptr->nsq_table[2] != ol_part3 && context_ptr->nsq_table[3] != ol_part3 ? ol_part3
+        : context_ptr->nsq_table[0] != ol_part4 && context_ptr->nsq_table[1] != ol_part4 && context_ptr->nsq_table[2] != ol_part4 && context_ptr->nsq_table[3] != ol_part4 ? ol_part4
+        : ol_part5 != PART_N ? ol_part5 : context_ptr->nsq_table[4];
+    context_ptr->nsq_table[5] = context_ptr->nsq_table[0] != ol_part1 && context_ptr->nsq_table[1] != ol_part1 && context_ptr->nsq_table[2] != ol_part1 && context_ptr->nsq_table[3] != ol_part1 && context_ptr->nsq_table[4] != ol_part1 ? ol_part1
+        : context_ptr->nsq_table[0] != ol_part2 && context_ptr->nsq_table[1] != ol_part2 && context_ptr->nsq_table[2] != ol_part2 && context_ptr->nsq_table[3] != ol_part2 && context_ptr->nsq_table[4] != ol_part2 ? ol_part2
+        : context_ptr->nsq_table[0] != ol_part3 && context_ptr->nsq_table[1] != ol_part3 && context_ptr->nsq_table[2] != ol_part3 && context_ptr->nsq_table[3] != ol_part3 && context_ptr->nsq_table[4] != ol_part3 ? ol_part3
+        : context_ptr->nsq_table[0] != ol_part4 && context_ptr->nsq_table[1] != ol_part4 && context_ptr->nsq_table[2] != ol_part4 && context_ptr->nsq_table[3] != ol_part4 && context_ptr->nsq_table[4] != ol_part4 ? ol_part4
+        : context_ptr->nsq_table[0] != ol_part5 && context_ptr->nsq_table[1] != ol_part5 && context_ptr->nsq_table[2] != ol_part5 && context_ptr->nsq_table[3] != ol_part5 && context_ptr->nsq_table[4] != ol_part5 ? ol_part5
+        : ol_part6 != PART_N ? ol_part6 : context_ptr->nsq_table[5];
+    context_ptr->nsq_table[6] = context_ptr->nsq_table[0] != ol_part1 && context_ptr->nsq_table[1] != ol_part1 && context_ptr->nsq_table[2] != ol_part1 && context_ptr->nsq_table[3] != ol_part1 && context_ptr->nsq_table[4] != ol_part1 && context_ptr->nsq_table[5] != ol_part1 ? ol_part1
+        : context_ptr->nsq_table[0] != ol_part2 && context_ptr->nsq_table[1] != ol_part2 && context_ptr->nsq_table[2] != ol_part2 && context_ptr->nsq_table[3] != ol_part2 && context_ptr->nsq_table[4] != ol_part2 && context_ptr->nsq_table[5] != ol_part2 ? ol_part2
+        : context_ptr->nsq_table[0] != ol_part3 && context_ptr->nsq_table[1] != ol_part3 && context_ptr->nsq_table[2] != ol_part3 && context_ptr->nsq_table[3] != ol_part3 && context_ptr->nsq_table[4] != ol_part3 && context_ptr->nsq_table[5] != ol_part3 ? ol_part3
+        : context_ptr->nsq_table[0] != ol_part4 && context_ptr->nsq_table[1] != ol_part4 && context_ptr->nsq_table[2] != ol_part4 && context_ptr->nsq_table[3] != ol_part4 && context_ptr->nsq_table[4] != ol_part4 && context_ptr->nsq_table[5] != ol_part4 ? ol_part4
+        : context_ptr->nsq_table[0] != ol_part5 && context_ptr->nsq_table[1] != ol_part5 && context_ptr->nsq_table[2] != ol_part5 && context_ptr->nsq_table[3] != ol_part5 && context_ptr->nsq_table[4] != ol_part5 && context_ptr->nsq_table[5] != ol_part5 ? ol_part5
+        : context_ptr->nsq_table[0] != ol_part6 && context_ptr->nsq_table[1] != ol_part6 && context_ptr->nsq_table[2] != ol_part6 && context_ptr->nsq_table[3] != ol_part6 && context_ptr->nsq_table[4] != ol_part6 && context_ptr->nsq_table[5] != ol_part6 ? ol_part6
+        : ol_part7;
+    // Replace PART_N by best MDC.
+    for (uint8_t idx = 0; idx < 7; idx++) {
+        if (context_ptr->nsq_table[idx] == PART_N) {
+            context_ptr->nsq_table[idx] = ol_part1 != PART_N ? ol_part1 :
+                ol_part2 != PART_N ? ol_part2 :
+                ol_part3 != PART_N ? ol_part3 :
+                ol_part4 != PART_N ? ol_part4 :
+                ol_part5 != PART_N ? ol_part5 :
+                ol_part6 != PART_N ? ol_part6 :
+                ol_part7 != PART_N ? ol_part7 : ol_part8;
+            break;
+        }
+    }
+
+    // Remove duplicate candidates
+    for (int pidx = 0; pidx < NSQ_TAB_SIZE; pidx++)
+        cnt[context_ptr->nsq_table[pidx]]++;
+    cnt[context_ptr->nsq_table[0]] = 1;
+    for (int iter = 0; iter < NSQ_TAB_SIZE - 1; iter++) {
+        for (int idx = 1 + iter; idx < NSQ_TAB_SIZE; idx++) {
+            if (context_ptr->nsq_table[iter] != context_ptr->nsq_table[idx])
+                continue;
+            else {
+                for (int i = idx; i < NSQ_TAB_SIZE; i++) {
+                    if (idx < NSQ_TAB_SIZE - 1)
+                        context_ptr->nsq_table[idx] = context_ptr->nsq_table[idx + 1];
+                    else if (idx == NSQ_TAB_SIZE - 1) {
+                        for (int pidx = 1; pidx < PART_S; pidx++) {
+                            if (cnt[pidx] == 0)
+                                context_ptr->nsq_table[idx] = (PART)pidx;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#else
 void  adjust_nsq_rank(
     PictureControlSet            *picture_control_set_ptr,
     ModeDecisionContext          *context_ptr,
@@ -7860,6 +8157,7 @@ void  adjust_nsq_rank(
         context_ptr->open_loop_block_rank = 0;
     }
 }
+#endif
 #endif
 /****************************************************
 * Reorder the nsq_table in order to keep the most
@@ -8443,6 +8741,9 @@ void md_encode_block(
         picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL) ? EB_TRUE : EB_FALSE;
+#if DISABLE_NSQ_TABLE_FOR_M0
+    is_nsq_table_used = picture_control_set_ptr->enc_mode == ENC_M0 ? EB_FALSE : is_nsq_table_used;
+#endif
 #endif
 #endif
     context_ptr->open_loop_block_rank = open_loop_block_rank;
@@ -8508,6 +8809,10 @@ void md_encode_block(
     if (allowed_ns_cu(is_nsq_table_used, nsq_max_shapes_md, context_ptr, is_complete_sb))
 #else
     if (allowed_ns_cu(
+#if NSQ_SUB_LEVEL
+        picture_control_set_ptr->temporal_layer_index,
+        picture_control_set_ptr->parent_pcs_ptr->nsq_search_sub_level,
+#endif
         is_nsq_table_used, picture_control_set_ptr->parent_pcs_ptr->nsq_max_shapes_md, context_ptr, is_complete_sb))
 #endif
     {
@@ -9458,6 +9763,16 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #if PREDICT_NSQ_SHAPE
         uint8_t open_loop_block_rank = leafDataPtr->open_loop_ranking;
         uint8_t early_split_flag = leafDataPtr->early_split_flag;
+#if COMBINE_MDC_NSQ_TABLE
+        context_ptr->best_nsq_sahpe1 = leafDataPtr->ol_best_nsq_shape1;
+        context_ptr->best_nsq_sahpe2 = leafDataPtr->ol_best_nsq_shape2;
+        context_ptr->best_nsq_sahpe3 = leafDataPtr->ol_best_nsq_shape3;
+        context_ptr->best_nsq_sahpe4 = leafDataPtr->ol_best_nsq_shape4;
+        context_ptr->best_nsq_sahpe5 = leafDataPtr->ol_best_nsq_shape5;
+        context_ptr->best_nsq_sahpe6 = leafDataPtr->ol_best_nsq_shape6;
+        context_ptr->best_nsq_sahpe7 = leafDataPtr->ol_best_nsq_shape7;
+        context_ptr->best_nsq_sahpe8 = leafDataPtr->ol_best_nsq_shape8;
+#endif
 #endif
         if (leafDataPtr->tot_d1_blocks != 1)
         {
