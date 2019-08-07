@@ -379,7 +379,7 @@ void av1_convolve_x_sr_avx2(const uint8_t *src, int32_t src_stride,
         const uint8_t *src_ptr = src;
 
         if (subpel_x_qn != 8) {
-            if (w <= 4) {
+            if (w <= 8) {
                 __m128i s;
 
                 prepare_coeffs_lowbd_2tap_ssse3(filter_params_x, subpel_x_qn, coeffs_128);
@@ -428,8 +428,8 @@ void av1_convolve_x_sr_avx2(const uint8_t *src, int32_t src_stride,
                         const __m128i s10 = _mm_loadu_si128((__m128i *)(src_ptr + 1 * src_stride));
                         const __m128i s01 = _mm_srli_si128(s00, 1);
                         const __m128i s11 = _mm_srli_si128(s10, 1);
-                        s[0] = _mm_unpacklo_epi64(s00, s10);
-                        s[1] = _mm_unpacklo_epi64(s01, s11);
+                        s[0] = _mm_unpacklo_epi8(s00, s01);
+                        s[1] = _mm_unpacklo_epi8(s10, s11);
                         __m128i res_16b[2];
 
                         res_16b[0] = convolve_lowbd_2tap_ssse3(&s[0], coeffs_128);

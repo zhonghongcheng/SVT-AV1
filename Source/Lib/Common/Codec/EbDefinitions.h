@@ -48,9 +48,7 @@ extern "C" {
 #define MD_EXIT_THSL                    0
 
 #define M0_SC                           1  
-
 #define INC_SB                          0
-
 #define COMBINE_C1_C2                   0
 #define AUTO_C1C2                       1 //combine Class1 and Class2 via a run-time signal
 #define S3_TEST                         1 // lower NIC count for M5-M8
