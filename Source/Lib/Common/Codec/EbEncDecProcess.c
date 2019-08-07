@@ -1293,22 +1293,16 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
 #endif
 #if SEARCH_UV_BASE
-#if M4_SET_CHR
-    if (0)
-#else
     if (picture_control_set_ptr->enc_mode <= ENC_M5 && picture_control_set_ptr->temporal_layer_index == 0)
-#endif
 #else
     if (picture_control_set_ptr->enc_mode == ENC_M0)
 #endif
         context_ptr->chroma_level = CHROMA_MODE_0;
     else
 #endif
-#if !M5_CAND_CHRM
     if (picture_control_set_ptr->enc_mode <= ENC_M5)
         context_ptr->chroma_level = CHROMA_MODE_1;
     else
-#endif
         context_ptr->chroma_level = (sequence_control_set_ptr->encoder_bit_depth == EB_8BIT) ?
             CHROMA_MODE_2 :
             CHROMA_MODE_3 ;
@@ -1354,12 +1348,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             context_ptr->full_loop_escape = 0;
         else
             context_ptr->full_loop_escape = 2;
-    else
-#if M6_FL_ESC
-    if (picture_control_set_ptr->enc_mode <= ENC_M6)
-#else
-    if (picture_control_set_ptr->enc_mode <= ENC_M5)
-#endif
+    else if (picture_control_set_ptr->enc_mode <= ENC_M6)
         context_ptr->full_loop_escape = 0;
     else
         context_ptr->full_loop_escape = 2;

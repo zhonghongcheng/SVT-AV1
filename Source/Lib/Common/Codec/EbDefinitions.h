@@ -48,17 +48,8 @@ extern "C" {
 #define MD_EXIT_THSL                    0
 
 #define M0_SC                           1  
-#define M6_CAND                         0  // use -enc-mode 6 and desable M1_CAND - M5_CAND
 
 #define INC_SB                          0
-#if M6_CAND
-#define M6_DEPTH                        1
-#define M6_FL_ESC                       1
-#define M4_SET_COMP                     0
-#define M4_SET_CHR                      0
-#define M5_CAND_CHRM                    0
-#define M5_CAND_ADP                     0
-#endif
 
 #define COMBINE_C1_C2                   0
 #define AUTO_C1C2                       1 //combine Class1 and Class2 via a run-time signal
