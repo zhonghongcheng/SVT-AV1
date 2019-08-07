@@ -920,7 +920,16 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->pic_depth_mode = PIC_ALL_C_DEPTH_MODE;
 #endif
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#if NSQ_MDC_L01
+            if (picture_control_set_ptr->slice_type == I_SLICE)
+                picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
+            else if (picture_control_set_ptr->is_used_as_reference_flag)
+                picture_control_set_ptr->nsq_search_level = PIC_ALL_C_DEPTH_MODE;
+            else
+                picture_control_set_ptr->nsq_search_level = PIC_SQ_DEPTH_MODE;
+#else
             picture_control_set_ptr->pic_depth_mode = PIC_SQ_DEPTH_MODE;
+#endif
         else if (picture_control_set_ptr->enc_mode <= ENC_M6)
             picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
          else
@@ -993,6 +1002,15 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL5;
             else
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL2;
+#if NSQ_MDC_L01
+        else if (picture_control_set_ptr->enc_mode <= ENC_M3)
+            if (picture_control_set_ptr->slice_type == I_SLICE)
+                picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL4;
+            else if (picture_control_set_ptr->is_used_as_reference_flag)
+                picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL1;
+            else
+                picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
+#endif
         else
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
 
@@ -1051,8 +1069,11 @@ EbErrorType signal_derivation_multi_processes_oq(
         // NSQ_LEVEL, Otherwise.
         // NSQ_SEARCH_SUB_LEVEL2                          // NSQ LEVEL at ref 
         // NSQ Off for 8x8/16x16 at non-ref
+#if NSQ_MDC_L01
+        picture_control_set_ptr->nsq_search_sub_level = (picture_control_set_ptr->enc_mode == ENC_M3) ? NSQ_SEARCH_SUB_LEVEL1 : NO_SUB_LEVEL;
+#else
         picture_control_set_ptr->nsq_search_sub_level = NO_SUB_LEVEL;
-
+#endif
 #endif
     // Interpolation search Level                     Settings
     // 0                                              OFF
