@@ -2475,10 +2475,7 @@ if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_cont
 #endif
 
 #if S3_TEST
-#if M5_CAND
-    if (1) {
-#else
-    if (picture_control_set_ptr->enc_mode >= ENC_M2) {
+    if (picture_control_set_ptr->enc_mode >= ENC_M2 && picture_control_set_ptr->enc_mode <= ENC_M4) {
 
         context_ptr->md_stage_3_count[CAND_CLASS_1] = context_ptr->bypass_stage2[CAND_CLASS_1] ? context_ptr->md_stage_2_count[CAND_CLASS_1] : (picture_control_set_ptr->slice_type == I_SLICE) ?
             0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 2;
@@ -2499,7 +2496,6 @@ if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_cont
 #endif
 #endif
     } else if (picture_control_set_ptr->enc_mode >= ENC_M5){
-#endif
         if (context_ptr->md_staging_mode == 0 && picture_control_set_ptr->enc_mode <= ENC_M6) {
             context_ptr->fast1_cand_count[CAND_CLASS_0] = (picture_control_set_ptr->slice_type == I_SLICE) ? 8 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 3 : 1;
  

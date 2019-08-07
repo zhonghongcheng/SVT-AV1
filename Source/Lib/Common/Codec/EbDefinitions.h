@@ -47,18 +47,8 @@ extern "C" {
 //MD_EXIT_THSL -->0 is lossless 100 is maximum. Increase with a step of 10-20.
 #define MD_EXIT_THSL                    0
 
-#define NEW_SC_M0_M5                    1
 #define M0_SC                           1  
-#define M1_CAND                         0  // if not enc-mode 0 this should be always on
-#define M5_CAND                         0
 #define M6_CAND                         0  // use -enc-mode 6 and desable M1_CAND - M5_CAND
-
-#if NEW_SC_M0_M5
-
-#endif
-#if NEW_SC_M0_M5 && M5_CAND
-#define M5_SC                           1
-#endif
 
 #define INC_SB                          0
 #if M6_CAND
@@ -69,20 +59,9 @@ extern "C" {
 #define M5_CAND_CHRM                    0
 #define M5_CAND_ADP                     0
 #endif
-#if M5_CAND
-#define M4_SET_MD_STAGE                 1
-#define M4_COMP_OFF                     1
-#define M5_CAND_ME                      1
-#define M5_CAND_FILTER                  1
-#define M5_CAND_TX                      1
-#define M5_CAND_MD                      1
-#endif
-#if M1_CAND || M6_CAND
+
 #define COMBINE_C1_C2                   0
-#endif
-
 #define AUTO_C1C2                       1 //combine Class1 and Class2 via a run-time signal
-
 #define S3_TEST                         1 // lower NIC count for M5-M8
 #define IT_SEARCH_FIX                   1 // bug fix to allow shutting interpolation in MD Staging
 
@@ -4301,12 +4280,7 @@ static const uint16_t search_area_width[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPP
         { 128,   64,   64,   64,   64,   64,   48,   48,   48,   48,   48,    48,   48 }
 #endif
     } , {
-#if M5_SC
-        {168 ,  640,  640,  288,  208,  168,  128,  128,   64,   80,   80,    80,   80 },
-        {168 ,  640,  640,  288,  208,  168,  128,  128,   64,   80,   80,    80,   80 },
-        {168 ,  640,  640,  288,  208,  168,  128,  128,   64,   80,   80,    80,   80 },
-        {168 ,  640,  640,  288,  208,  168,  128,  128,   64,   80,   80,    80,   80 }
-#elif NEW_M0_SC
+#if NEW_M0_SC
         {960 ,  640,  640,  288,  288,  168,  128,  128,   64,   80,   80,    80,   80 },
         {960 ,  640,  640,  288,  288,  168,  128,  128,   64,   80,   80,    80,   80 },
         {960 ,  640,  640,  288,  288,  168,  128,  128,   64,   80,   80,    80,   80 },
@@ -4339,16 +4313,11 @@ static const uint16_t search_area_height[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUP
         { 128,   64,   64,   32,   32,   32,   48,   48,   16,   16,   16,    16,   16 }
 #endif
     } , {
-#if M5_SC
-        {168 ,  640,  640,  288,  208,  168,  128,  128,   64,   80,   80,    80,   80 },
-        {168 ,  640,  640,  288,  208,  168,  128,  128,   64,   80,   80,    80,   80 },
-        {168 ,  640,  640,  288,  208,  168,  128,  128,   64,   80,   80,    80,   80 },
-        {168 ,  640,  640,  288,  208,  168,  128,  128,   64,   80,   80,    80,   80 }
-#elif NEW_M0_SC
-        {960 ,  640,  640,  288,  288,  128,   80,   80,   48,   80,   80,    80,   80 },
-        {960 ,  640,  640,  288,  288,  128,   80,   80,   48,   80,   80,    80,   80 },
-        {960 ,  640,  640,  288,  288,  128,   80,   80,   48,   80,   80,    80,   80 },
-        {960 ,  640,  640,  288,  288,  128,   80,   80,   48,   80,   80,    80,   80 }
+#if NEW_M0_SC
+        {960 ,  640,  640,  288,  288,  168,   80,   80,   48,   80,   80,    80,   80 },
+        {960 ,  640,  640,  288,  288,  168,   80,   80,   48,   80,   80,    80,   80 },
+        {960 ,  640,  640,  288,  288,  168,   80,   80,   48,   80,   80,    80,   80 },
+        {960 ,  640,  640,  288,  288,  168,   80,   80,   48,   80,   80,    80,   80 }
 #else
         {1280,  640,  640,  248,  168,  128,   80,   80,   48,   80,   80,    80,   80 },
         {1280,  640,  640,  248,  168,  128,   80,   80,   48,   80,   80,    80,   80 },
@@ -4624,7 +4593,7 @@ static const uint16_t tf_search_area_width[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_S
 };
 static const uint16_t tf_search_area_height[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
     {
-        {  48,   48,   48,   48,    32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        {  48,   48,   48,   48,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
         { 112,  112,  112,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
         { 112,  112,  112,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
         { 112,  112,  112,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 }

@@ -94,9 +94,6 @@ EbErrorType signal_derivation_pre_analysis_oq(
 #if DECOUPLE_ALTREF_ME
     uint8_t  hme_me_level = picture_control_set_ptr->enc_mode;
 #endif
-#if M5_CAND_ME
-    hme_me_level = ENC_M5;
-#endif
     // Derive HME Flag
     if (sequence_control_set_ptr->static_config.use_default_me_hme) {
 #if !DECOUPLE_ALTREF_ME
@@ -693,12 +690,7 @@ void* resource_coordination_kernel(void *input_ptr)
             // Set compound mode      Settings
             // 0                 OFF: No compond mode search : AVG only
             // 1                 ON: full
-#if M4_COMP_OFF
-            sequence_control_set_ptr->compound_mode = 0;
-#else
             sequence_control_set_ptr->compound_mode = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M4) ? 1 : 0;
-#endif
-
 
             //sequence_control_set_ptr->order_hint_info_st.enable_order_hint = 1;
             //sequence_control_set_ptr->order_hint_info_st.order_hint_bits_minus_1 = 6;
