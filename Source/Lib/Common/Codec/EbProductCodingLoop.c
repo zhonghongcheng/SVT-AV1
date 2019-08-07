@@ -2251,9 +2251,7 @@ void set_md_stage_counts(
     ModeDecisionContext     *context_ptr,
     uint32_t                 fastCandidateTotalCount)
 {
-#if TEST_RES_NIC
     SequenceControlSet* scs = (SequenceControlSet*)(picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr);
-#endif
     // Derive bypass_stage1
     if (context_ptr->md_staging_mode)
 #if MD_STAGE_MODE_3_TEST_1
@@ -2420,7 +2418,9 @@ void set_md_stage_counts(
     if (context_ptr->nic_level == 1) // to use a lookup table if more changes
         context_ptr->md_stage_3_count[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ? context_ptr->md_stage_2_count[CAND_CLASS_0] : (picture_control_set_ptr->slice_type == I_SLICE) ? 10 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 1;
     else
-        context_ptr->md_stage_3_count[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ? context_ptr->md_stage_2_count[CAND_CLASS_0] : (picture_control_set_ptr->slice_type == I_SLICE) ? 10 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 4;
+        context_ptr->md_stage_3_count[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ? context_ptr->md_stage_2_count[CAND_CLASS_0] : (picture_control_set_ptr->slice_type == I_SLICE) ?
+                 10 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ?
+                 ((scs->input_resolution >= INPUT_SIZE_1080i_RANGE)? 7 : 10) : 4;
 #endif
     context_ptr->md_stage_3_count[CAND_CLASS_1] = context_ptr->bypass_stage2[CAND_CLASS_1] ? context_ptr->md_stage_2_count[CAND_CLASS_1] : (picture_control_set_ptr->slice_type == I_SLICE) ?  0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 3 : 1;
     context_ptr->md_stage_3_count[CAND_CLASS_2] = context_ptr->bypass_stage2[CAND_CLASS_2] ? context_ptr->md_stage_2_count[CAND_CLASS_2] : (picture_control_set_ptr->slice_type == I_SLICE) ?  0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 3 : 1;
