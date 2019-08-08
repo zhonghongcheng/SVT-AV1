@@ -900,6 +900,7 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
 #if ADD_SAD_FOR_128X128
     uint64_t me_128x128 = 0;
 #endif
+    uint64_t tot_me_sb;
 
     do {
         EbMdcLeafData * leaf_data_ptr = &mdcResultTbPtr->leaf_data_array[cuIdx];
@@ -921,6 +922,8 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
             if (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128) {
                 uint32_t me_sb_size = sequence_control_set_ptr->sb_sz;
                 uint32_t me_pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / me_sb_size;
+                uint32_t me_pic_height_in_sb = (sequence_control_set_ptr->seq_header.max_frame_height + sequence_control_set_ptr->sb_sz - 1) / me_sb_size;
+                tot_me_sb = me_pic_width_in_sb * me_pic_height_in_sb;
                 uint32_t me_sb_x = (cu_origin_x / me_sb_size);
                 uint32_t me_sb_y = (cu_origin_y / me_sb_size);
                 me_sb_addr = me_sb_x + me_sb_y * me_pic_width_in_sb;
@@ -941,7 +944,7 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
                         sb_6x6_dist_0 = me_block_results_64x64[0].distortion;
                     }
                     if (blk_geom->bsize == BLOCK_128X128 || blk_geom->bsize == BLOCK_128X64) {
-                        sb_6x6_index = me_sb_addr + 1;
+                        sb_6x6_index = MIN(tot_me_sb - 1,me_sb_addr + 1);
                         SbParams *sb_params = &sequence_control_set_ptr->sb_params_array[sb_6x6_index];
                         if (sb_params->is_complete_sb) {
                             MeLcuResults *me_results_64x64 = picture_control_set_ptr->parent_pcs_ptr->me_results[sb_6x6_index];
@@ -950,7 +953,8 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
                         }
                     }
                     if (blk_geom->bsize == BLOCK_128X128 || blk_geom->bsize == BLOCK_64X128) {
-                        sb_6x6_index = me_sb_addr + me_pic_width_in_sb;
+                        sb_6x6_index = MIN(tot_me_sb - 1, me_sb_addr + me_pic_width_in_sb);
+
                         SbParams *sb_params = &sequence_control_set_ptr->sb_params_array[sb_6x6_index];
                         if (sb_params->is_complete_sb) {
                             MeLcuResults *me_results_64x64 = picture_control_set_ptr->parent_pcs_ptr->me_results[sb_6x6_index];
@@ -959,7 +963,7 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
                         }
                     }
                     if (blk_geom->bsize == BLOCK_128X128) {
-                        sb_6x6_index = me_sb_addr + me_pic_width_in_sb + 1;
+                        sb_6x6_index = MIN(tot_me_sb - 1, me_sb_addr + me_pic_width_in_sb + 1);
                         SbParams *sb_params = &sequence_control_set_ptr->sb_params_array[sb_6x6_index];
                         if (sb_params->is_complete_sb) {
                             MeLcuResults *me_results_64x64 = picture_control_set_ptr->parent_pcs_ptr->me_results[sb_6x6_index];
