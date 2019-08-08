@@ -7974,6 +7974,8 @@ void  adjust_nsq_rank(
     context_ptr->nsq_table[3] = PART_HB;
     context_ptr->nsq_table[4] = PART_VA;
     context_ptr->nsq_table[5] = PART_VB;
+    context_ptr->nsq_table[6] = PART_H4;
+    context_ptr->nsq_table[7] = PART_V4;
 
     if (isCompoundEnabled == 0) me_part_1 = me_part_0;
 
@@ -8088,7 +8090,7 @@ void  adjust_nsq_rank(
         : context_ptr->nsq_table[0] != ol_part6 && context_ptr->nsq_table[1] != ol_part6 && context_ptr->nsq_table[2] != ol_part6 && context_ptr->nsq_table[3] != ol_part6 && context_ptr->nsq_table[4] != ol_part6 && context_ptr->nsq_table[5] != ol_part6 ? ol_part6
         : ol_part7;
     // Replace PART_N by best MDC.
-    for (uint8_t idx = 0; idx < 7; idx++) {
+    for (uint8_t idx = 0; idx < NSQ_TAB_SIZE; idx++) {
         if (context_ptr->nsq_table[idx] == PART_N) {
             context_ptr->nsq_table[idx] = ol_part1 != PART_N ? ol_part1 :
                 ol_part2 != PART_N ? ol_part2 :
