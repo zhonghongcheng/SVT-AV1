@@ -505,6 +505,7 @@ typedef enum MD_STAGE {
 #else
 #define NSQ_TAB_SIZE                                    6
 #endif
+#define NSQ_EARLY_EXIT                                  0
 #if IMPROVED_SUBPEL_SEARCH
 typedef enum ME_HP_MODE {
     EX_HP_MODE = 0,

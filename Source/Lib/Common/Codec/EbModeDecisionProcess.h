@@ -427,6 +427,9 @@ extern "C" {
     PART best_nsq_sahpe7;
     PART best_nsq_sahpe8;
 #endif
+#if NSQ_EARLY_EXIT
+    uint64_t tot_cost;
+#endif
   } ModeDecisionContext;
 
     typedef void(*EbAv1LambdaAssignFunc)(
