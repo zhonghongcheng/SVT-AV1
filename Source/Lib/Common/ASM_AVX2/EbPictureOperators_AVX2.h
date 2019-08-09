@@ -43,28 +43,7 @@ extern "C" {
         uint32_t       width,
         uint32_t       height);
 
-    void unpack_avg_avx2_intrin(
-        uint16_t *ref16_l0,
-        uint32_t  ref_l0_stride,
-        uint16_t *ref16_l1,
-        uint32_t  ref_l1_stride,
-        uint8_t  *dst_ptr,
-        uint32_t  dst_stride,
-        uint32_t  width,
-        uint32_t  height);
-
-    void unpack_avg_safe_sub_avx2_intrin(
-        uint16_t *ref16_l0,
-        uint32_t  ref_l0_stride,
-        uint16_t *ref16_l1,
-        uint32_t  ref_l1_stride,
-        uint8_t  *dst_ptr,
-        uint32_t  dst_stride,
-        EbBool    sub_pred,
-        uint32_t  width,
-        uint32_t  height);
-
-    void picture_addition_kernel4x4_av1_sse2_intrin(
+     void picture_addition_kernel4x4_av1_sse2_intrin(
         uint8_t  *pred_ptr,
         uint32_t  pred_stride,
         int32_t  *residual_ptr,

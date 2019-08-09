@@ -157,16 +157,6 @@ extern "C" {
         uint32_t  area_height,
         uint8_t   last_line);
 
-    void picture_addition_kernel16bit_sse2_intrin(
-        uint16_t *pred_ptr,
-        uint32_t  pred_stride,
-        int16_t  *residual_ptr,
-        uint32_t  residual_stride,
-        uint16_t  *recon_ptr,
-        uint32_t  recon_stride,
-        uint32_t  width,
-        uint32_t  height);
-
     static INLINE int32_t Hadd32_SSE2_INTRIN(const __m128i src) {
         const __m128i dst0 = _mm_add_epi32(src, _mm_srli_si128(src, 8));
         const __m128i dst1 = _mm_add_epi32(dst0, _mm_srli_si128(dst0, 4));

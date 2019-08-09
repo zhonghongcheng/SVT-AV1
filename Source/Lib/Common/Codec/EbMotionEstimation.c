@@ -170,12 +170,6 @@ static EbCompute8x4SadType FUNC_TABLE
 /***************************************
  * Function Tables
  ***************************************/
-static EbExtSadCalculation8x8and16x16Type
-    ExtSadCalculation_8x8_16x16_funcPtrArray[ASM_TYPE_TOTAL] = {
-        // NON_AVX2
-        ext_sad_calculation_8x8_16x16,
-        // AVX2
-        ext_sad_calculation_8x8_16x16_avx2_intrin};
 static EbExtSadCalculation32x32and64x64Type
     ExtSadCalculation_32x32_64x64_funcPtrArray[ASM_TYPE_TOTAL] = {
         // NON_AVX2
@@ -228,7 +222,7 @@ Calcualte SAD for 16x16 and its 8x8 sublcoks
 and check if there is improvment, if yes keep
 the best SAD+MV
 *******************************************/
-void ext_sad_calculation_8x8_16x16(
+void ext_sad_calculation_8x8_16x16_c(
     uint8_t *src, uint32_t src_stride, uint8_t *ref, uint32_t ref_stride,
     uint32_t *p_best_sad8x8, uint32_t *p_best_sad16x16, uint32_t *p_best_mv8x8,
     uint32_t *p_best_mv16x16, uint32_t mv, uint32_t *p_sad16x16,
@@ -3280,7 +3274,7 @@ static void open_loop_me_get_search_point_results_block(
     blockIndex = 0;
     searchPositionIndex = searchPositionTLIndex;
 
-    ExtSadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    ext_sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3297,7 +3291,7 @@ static void open_loop_me_get_search_point_results_block(
     //---- 16x16 : 1
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionTLIndex + 16;
-    ExtSadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    ext_sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3314,7 +3308,7 @@ static void open_loop_me_get_search_point_results_block(
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
 
-    ExtSadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    ext_sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3331,7 +3325,7 @@ static void open_loop_me_get_search_point_results_block(
     //---- 16x16 : 5
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    ExtSadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    ext_sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3348,7 +3342,7 @@ static void open_loop_me_get_search_point_results_block(
     //---- 16x16 : 2
     blockIndex = srcNext16x16Offset;
     searchPositionIndex = searchPositionTLIndex + refNext16x16Offset;
-    ExtSadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    ext_sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3364,7 +3358,7 @@ static void open_loop_me_get_search_point_results_block(
     //---- 16x16 : 3
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    ExtSadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    ext_sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3380,7 +3374,7 @@ static void open_loop_me_get_search_point_results_block(
     //---- 16x16 : 6
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    ExtSadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    ext_sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3396,7 +3390,7 @@ static void open_loop_me_get_search_point_results_block(
     //---- 16x16 : 7
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    ExtSadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    ext_sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3413,7 +3407,7 @@ static void open_loop_me_get_search_point_results_block(
     //---- 16x16 : 8
     blockIndex = (srcNext16x16Offset << 1);
     searchPositionIndex = searchPositionTLIndex + (refNext16x16Offset << 1);
-    ExtSadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    ext_sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3429,7 +3423,7 @@ static void open_loop_me_get_search_point_results_block(
     //---- 16x16 : 9
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    ExtSadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    ext_sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3445,7 +3439,7 @@ static void open_loop_me_get_search_point_results_block(
     //---- 16x16 : 12
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    ExtSadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    ext_sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3461,7 +3455,7 @@ static void open_loop_me_get_search_point_results_block(
     //---- 16x16 : 13
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    ExtSadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    ext_sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3478,7 +3472,7 @@ static void open_loop_me_get_search_point_results_block(
     //---- 16x16 : 10
     blockIndex = (srcNext16x16Offset * 3);
     searchPositionIndex = searchPositionTLIndex + (refNext16x16Offset * 3);
-    ExtSadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    ext_sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3494,7 +3488,7 @@ static void open_loop_me_get_search_point_results_block(
     //---- 16x16 : 11
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    ExtSadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    ext_sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3510,7 +3504,7 @@ static void open_loop_me_get_search_point_results_block(
     //---- 16x16 : 14
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    ExtSadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    ext_sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3526,7 +3520,7 @@ static void open_loop_me_get_search_point_results_block(
     //---- 16x16 : 15
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    ExtSadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    ext_sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,

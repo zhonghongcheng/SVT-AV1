@@ -2096,7 +2096,7 @@ void av1_quantize_inv_quantize(
             txb_skip_context);
 #endif
 #if !RDOQ_INTRA
-        full_distortion_kernel32_bits_func_ptr_array[asm_type](
+        full_distortion_kernel32_bits(
             coeff,
             get_txb_wide(txsize),
             recon_coeff,
@@ -2162,7 +2162,7 @@ void av1_quantize_inv_quantize(
                     (component_type == COMPONENT_LUMA) ? 0 : 1,
                     txb_skip_context);
 #endif
-                full_distortion_kernel32_bits_func_ptr_array[asm_type](
+                full_distortion_kernel32_bits(
                     coeff,
                     get_txb_wide(txsize),
                     recon_coeff,
