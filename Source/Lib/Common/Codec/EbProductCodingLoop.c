@@ -2251,6 +2251,42 @@ void set_md_stage_counts(
     ModeDecisionContext     *context_ptr,
     uint32_t                 fastCandidateTotalCount)
 {
+    
+    /* TODO:CHKN
+      re-write this function using these guidelines
+
+      Step1) set the bypass flags for stage1 and stage2
+
+      Step2) set the following without checking on any bypass flag
+      stage1_cand_count[CAND_CLASS_0]
+      stage1_cand_count[CAND_CLASS_1]
+      stage1_cand_count[CAND_CLASS_2]
+      stage1_cand_count[CAND_CLASS_3]
+
+      Step3) set the following without checking on any bypass flag
+      stage2_cand_count[CAND_CLASS_0]
+      stage2_cand_count[CAND_CLASS_1]
+      stage2_cand_count[CAND_CLASS_2]
+      stage2_cand_count[CAND_CLASS_3]
+
+      Step4) set the following without checking on any bypass flag
+      stage3_cand_count[CAND_CLASS_0]
+      stage3_cand_count[CAND_CLASS_1]
+      stage3_cand_count[CAND_CLASS_2]
+      stage3_cand_count[CAND_CLASS_3]
+
+      ---------------NO NIC setting should be done beyond this point---------------
+
+      Step5) update numbers for stage1/2 if they are bypassed
+
+      stage2_cand_count[CAND_CLASS_i] = bypass_stage2 ? stage3_cand_count[CAND_CLASS_i] : stage2_cand_count[CAND_CLASS_i];
+      stage1_cand_count[CAND_CLASS_i] = bypass_stage1 ? stage2_cand_count[CAND_CLASS_i] : stage1_cand_count[CAND_CLASS_i];
+
+      Step6)combine control
+      if (context_ptr->combine_class12)
+        context_ptr->fast1_cand_count[CAND_CLASS_3] = context_ptr->md_stage_2_count[CAND_CLASS_3] = context_ptr->md_stage_3_count[CAND_CLASS_3] = 0;
+
+    */
     SequenceControlSet* scs = (SequenceControlSet*)(picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr);
     // Derive bypass_stage1
     if (context_ptr->md_staging_mode)
