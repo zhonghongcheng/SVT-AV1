@@ -128,12 +128,6 @@ extern "C" {
         uint32_t  mv,
         uint32_t p_sad32x32[4][8]);
 #endif
-    static EbInializeBuffer32Bits initialize_buffer32bits_func_ptr_array[ASM_TYPE_TOTAL] = {
-        // NON_AVX2
-        initialize_buffer_32bits_sse2_intrin,
-        // AVX2
-        initialize_buffer_32bits_sse2_intrin
-    };
 
 #ifdef __cplusplus
 }

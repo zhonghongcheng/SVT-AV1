@@ -11,12 +11,6 @@
 extern "C" {
 #endif
 
-    extern void initialize_buffer_32bits_sse2_intrin(
-        uint32_t *pointer,
-        uint32_t  count128,
-        uint32_t  count32,
-        uint32_t  value);
-
     void sad_calculation_8x8_16x16_sse2_intrin(
         uint8_t  *src,
         uint32_t  src_stride,

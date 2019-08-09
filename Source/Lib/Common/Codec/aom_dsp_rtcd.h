@@ -88,6 +88,20 @@ extern "C" {
     void unpack_avg_avx2_intrin(uint16_t *ref16_l0, uint32_t  ref_l0_stride, uint16_t *ref16_l1, uint32_t  ref_l1_stride, uint8_t  *dst_ptr, uint32_t  dst_stride, uint32_t  width, uint32_t  height);
     RTCD_EXTERN void(*unpack_avg)(uint16_t *ref16_l0, uint32_t  ref_l0_stride, uint16_t *ref16_l1, uint32_t  ref_l1_stride, uint8_t  *dst_ptr, uint32_t  dst_stride, uint32_t  width, uint32_t  height);
 
+    void ExtSadCalculation_c(uint32_t *p_sad8x8, uint32_t *p_sad16x16, uint32_t *p_sad32x32, uint32_t *p_best_sad64x32, uint32_t *p_best_mv64x32, uint32_t *p_best_sad32x16, uint32_t *p_best_mv32x16, uint32_t *p_best_sad16x8, uint32_t *p_best_mv16x8, uint32_t *p_best_sad32x64, uint32_t *p_best_mv32x64, uint32_t *p_best_sad16x32, uint32_t *p_best_mv16x32, uint32_t *p_best_sad8x16, uint32_t *p_best_mv8x16, uint32_t *p_best_sad32x8, uint32_t *p_best_mv32x8, uint32_t *p_best_sad8x32, uint32_t *p_best_mv8x32, uint32_t *p_best_sad64x16, uint32_t *p_best_mv64x16, uint32_t *p_best_sad16x64, uint32_t *p_best_mv16x64, uint32_t mv);
+    RTCD_EXTERN void(*ext_sad_calculation) (uint32_t *p_sad8x8, uint32_t *p_sad16x16, uint32_t *p_sad32x32, uint32_t *p_best_sad64x32, uint32_t *p_best_mv64x32, uint32_t *p_best_sad32x16, uint32_t *p_best_mv32x16, uint32_t *p_best_sad16x8, uint32_t *p_best_mv16x8, uint32_t *p_best_sad32x64, uint32_t *p_best_mv32x64, uint32_t *p_best_sad16x32, uint32_t *p_best_mv16x32, uint32_t *p_best_sad8x16, uint32_t *p_best_mv8x16, uint32_t *p_best_sad32x8, uint32_t *p_best_mv32x8, uint32_t *p_best_sad8x32, uint32_t *p_best_mv8x32, uint32_t *p_best_sad64x16, uint32_t *p_best_mv64x16, uint32_t *p_best_sad16x64, uint32_t *p_best_mv16x64, uint32_t mv);
+
+    void initialize_buffer_32bits_sse2_intrin(uint32_t *pointer, uint32_t  count128, uint32_t  count32, uint32_t  value);
+    RTCD_EXTERN void(*initialize_buffer_32bits)(uint32_t *pointer, uint32_t  count128, uint32_t  count32, uint32_t  value);
+
+    void sad_loop_kernel_sparse_sse4_1_intrin(uint8_t  *src, uint32_t  src_stride, uint8_t  *ref, uint32_t  ref_stride, uint32_t  height, uint32_t  width, uint64_t *best_sad, int16_t *x_search_center, int16_t *y_search_center, uint32_t  src_stride_raw, int16_t search_area_width, int16_t search_area_height);
+    void sad_loop_kernel_sparse_avx2_intrin(uint8_t  *src, uint32_t  src_stride, uint8_t  *ref, uint32_t  ref_stride, uint32_t  height, uint32_t  width, uint64_t *best_sad, int16_t *x_search_center, int16_t *y_search_center, uint32_t  src_stride_raw, int16_t search_area_width, int16_t search_area_height);
+    RTCD_EXTERN void(*nxm_sad_loop_kernel_sparse)(uint8_t  *src, uint32_t  src_stride, uint8_t  *ref, uint32_t  ref_stride, uint32_t  height, uint32_t  width, uint64_t *best_sad, int16_t *x_search_center, int16_t *y_search_center, uint32_t  src_stride_raw, int16_t search_area_width, int16_t search_area_height);
+
+    void sad_loop_kernel_sse4_1_intrin(uint8_t  *src, uint32_t  src_stride, uint8_t  *ref, uint32_t  ref_stride, uint32_t  height, uint32_t  width, uint64_t *best_sad, int16_t *x_search_center, int16_t *y_search_center, uint32_t  src_stride_raw, int16_t search_area_width, int16_t search_area_height);
+    void sad_loop_kernel_avx2_intrin(uint8_t  *src, uint32_t  src_stride, uint8_t  *ref, uint32_t  ref_stride, uint32_t  height, uint32_t  width, uint64_t *best_sad, int16_t *x_search_center, int16_t *y_search_center, uint32_t  src_stride_raw, int16_t search_area_width, int16_t search_area_height);
+    RTCD_EXTERN void(*nxm_sad_loop_kernel)(uint8_t  *src, uint32_t  src_stride, uint8_t  *ref, uint32_t  ref_stride, uint32_t  height, uint32_t  width, uint64_t *best_sad, int16_t *x_search_center, int16_t *y_search_center, uint32_t  src_stride_raw, int16_t search_area_width, int16_t search_area_height);
+
     void apply_selfguided_restoration_c(const uint8_t *dat, int32_t width, int32_t height, int32_t stride, int32_t eps, const int32_t *xqd, uint8_t *dst, int32_t dst_stride, int32_t *tmpbuf, int32_t bit_depth, int32_t highbd);
     void apply_selfguided_restoration_avx2(const uint8_t *dat, int32_t width, int32_t height, int32_t stride, int32_t eps, const int32_t *xqd, uint8_t *dst, int32_t dst_stride, int32_t *tmpbuf, int32_t bit_depth, int32_t highbd);
     RTCD_EXTERN void(*apply_selfguided_restoration)(const uint8_t *dat, int32_t width, int32_t height, int32_t stride, int32_t eps, const int32_t *xqd, uint8_t *dst, int32_t dst_stride, int32_t *tmpbuf, int32_t bit_depth, int32_t highbd);
@@ -118,12 +132,10 @@ extern "C" {
     uint64_t av1_wedge_sse_from_residuals_avx2(const int16_t *r1, const int16_t *d, const uint8_t *m, int N);
     RTCD_EXTERN uint64_t (*av1_wedge_sse_from_residuals)(const int16_t *r1, const int16_t *d, const uint8_t *m, int N);
 
-
     void aom_subtract_block_c(int rows, int cols, int16_t *diff_ptr, ptrdiff_t diff_stride, const uint8_t *src_ptr, ptrdiff_t src_stride, const uint8_t *pred_ptr, ptrdiff_t pred_stride);
     void aom_subtract_block_sse2(int rows, int cols, int16_t *diff_ptr, ptrdiff_t diff_stride, const uint8_t *src_ptr, ptrdiff_t src_stride, const uint8_t *pred_ptr, ptrdiff_t pred_stride);
     void aom_subtract_block_avx2(int rows, int cols, int16_t *diff_ptr, ptrdiff_t diff_stride, const uint8_t *src_ptr, ptrdiff_t src_stride, const uint8_t *pred_ptr, ptrdiff_t pred_stride);
     RTCD_EXTERN void (*aom_subtract_block)(int rows, int cols, int16_t *diff_ptr, ptrdiff_t diff_stride, const uint8_t *src_ptr, ptrdiff_t src_stride, const uint8_t *pred_ptr, ptrdiff_t pred_stride);
-
 
     int64_t aom_sse_c(const uint8_t *a, int a_stride, const uint8_t *b,int b_stride, int width, int height);
     int64_t aom_sse_avx2(const uint8_t *a, int a_stride, const uint8_t *b,int b_stride, int width, int height);
@@ -2481,6 +2493,16 @@ extern "C" {
 
         unpack_avg = unpack_avg_c;
         if (flags & HAS_AVX2) unpack_avg = unpack_avg_avx2_intrin;
+
+        ext_sad_calculation = ExtSadCalculation_c;
+
+        initialize_buffer_32bits = initialize_buffer_32bits_sse2_intrin;
+
+        nxm_sad_loop_kernel_sparse = sad_loop_kernel_sparse_sse4_1_intrin;
+        if (flags & HAS_AVX2) nxm_sad_loop_kernel_sparse = sad_loop_kernel_sparse_avx2_intrin;
+
+        nxm_sad_loop_kernel = sad_loop_kernel_sse4_1_intrin;
+        if (flags & HAS_AVX2) nxm_sad_loop_kernel = sad_loop_kernel_avx2_intrin;
 
         apply_selfguided_restoration = apply_selfguided_restoration_c;
         if (flags & HAS_AVX2) apply_selfguided_restoration = apply_selfguided_restoration_avx2;

@@ -1062,7 +1062,7 @@ Calcualte SAD for Rect H, V and H4, V4 partitions
 
 and update its Motion info if the result SAD is better
 ****************************************************/
-void ExtSadCalculation(uint32_t *p_sad8x8, uint32_t *p_sad16x16,
+void ExtSadCalculation_c(uint32_t *p_sad8x8, uint32_t *p_sad16x16,
                        uint32_t *p_sad32x32, uint32_t *p_best_sad64x32,
                        uint32_t *p_best_mv64x32, uint32_t *p_best_sad32x16,
                        uint32_t *p_best_mv32x16, uint32_t *p_best_sad16x8,
@@ -1831,13 +1831,6 @@ void ExtSadCalculation(uint32_t *p_sad8x8, uint32_t *p_sad16x16,
         p_best_mv8x32[15] = mv;
     }
 }
-static EbExtSadCalculationType ExtSadCalculation_funcPtrArray[ASM_TYPE_TOTAL] =
-    {
-        // Should be written in Assembly
-        // C_DEFAULT
-        ExtSadCalculation,
-        // Assembly
-        ExtSadCalculation};
 
 #if NSQ_ME_OPT
 /****************************************************
@@ -3542,30 +3535,30 @@ static void open_loop_me_get_search_point_results_block(
                                                          currMV,
                                                          &p_sad32x32[0]);
 
-    ExtSadCalculation_funcPtrArray[asm_type](p_sad8x8,
-                                             p_sad16x16,
-                                             p_sad32x32,
-                                             p_best_sad64x32,
-                                             p_best_mv64x32,
-                                             p_best_sad32x16,
-                                             p_best_mv32x16,
-                                             p_best_sad16x8,
-                                             p_best_mv16x8,
-                                             p_best_sad32x64,
-                                             p_best_mv32x64,
-                                             p_best_sad16x32,
-                                             p_best_mv16x32,
-                                             p_best_sad8x16,
-                                             p_best_mv8x16,
-                                             p_best_sad32x8,
-                                             p_best_mv32x8,
-                                             p_best_sad8x32,
-                                             p_best_mv8x32,
-                                             p_best_sad64x16,
-                                             p_best_mv64x16,
-                                             p_best_sad16x64,
-                                             p_best_mv16x64,
-                                             currMV);
+    ext_sad_calculation(p_sad8x8,
+                        p_sad16x16,
+                        p_sad32x32,
+                        p_best_sad64x32,
+                        p_best_mv64x32,
+                        p_best_sad32x16,
+                        p_best_mv32x16,
+                        p_best_sad16x8,
+                        p_best_mv16x8,
+                        p_best_sad32x64,
+                        p_best_mv32x64,
+                        p_best_sad16x32,
+                        p_best_mv16x32,
+                        p_best_sad8x16,
+                        p_best_mv8x16,
+                        p_best_sad32x8,
+                        p_best_mv32x8,
+                        p_best_sad8x32,
+                        p_best_mv8x32,
+                        p_best_sad64x16,
+                        p_best_mv64x16,
+                        p_best_sad16x64,
+                        p_best_mv16x64,
+                        currMV);
 }
 
 /*******************************************
@@ -11373,7 +11366,7 @@ void HmeOneQuadrantLevel0(
         // ensure that search area is multiple of 8.
         search_area_width = ((search_area_width >> 3) << 3);
 #endif
-        nxm_sad_loop_kernel_sparse_func_ptr_array[asm_type](
+        nxm_sad_loop_kernel_sparse(
             &context_ptr->sixteenth_sb_buffer[0],
             context_ptr->sixteenth_sb_buffer_stride,
             &sixteenthRefPicPtr->buffer_y[searchRegionIndex],
@@ -11443,7 +11436,7 @@ void HmeOneQuadrantLevel0(
                 search_area_height);
         } else {
             // Put the first search location into level0 results
-            nxm_sad_loop_kernel_func_ptr_array[asm_type](
+            nxm_sad_loop_kernel(
                 &context_ptr->sixteenth_sb_buffer[0],
                 context_ptr->sixteenth_sb_buffer_stride,
                 &sixteenthRefPicPtr->buffer_y[searchRegionIndex],
@@ -11701,7 +11694,7 @@ void HmeLevel0(
                 search_area_height);
         } else {
             // Put the first search location into level0 results
-            nxm_sad_loop_kernel_func_ptr_array[asm_type](
+            nxm_sad_loop_kernel(
                 &context_ptr->sixteenth_sb_buffer[0],
                 context_ptr->sixteenth_sb_buffer_stride,
                 &sixteenthRefPicPtr->buffer_y[searchRegionIndex],
@@ -11894,7 +11887,7 @@ void HmeLevel1(
 
     if (((sb_width & 7) == 0) || (sb_width == 4)) {
         // Put the first search location into level0 results
-        nxm_sad_loop_kernel_func_ptr_array[asm_type](
+        nxm_sad_loop_kernel(
             &context_ptr->quarter_sb_buffer[0],
             (context_ptr->hme_search_method == FULL_SAD_SEARCH)
                 ? context_ptr->quarter_sb_buffer_stride
@@ -12094,7 +12087,7 @@ void HmeLevel2(
         xTopLeftSearchRegion + yTopLeftSearchRegion * refPicPtr->stride_y;
     if ((((sb_width & 7) == 0) && (sb_width != 40) && (sb_width != 56))) {
         // Put the first search location into level0 results
-        nxm_sad_loop_kernel_func_ptr_array[asm_type](
+        nxm_sad_loop_kernel(
             context_ptr->sb_src_ptr,
             (context_ptr->hme_search_method == FULL_SAD_SEARCH)
                 ? context_ptr->sb_src_stride
@@ -15255,7 +15248,7 @@ EbErrorType motion_estimate_lcu(
                     if (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE) {
 #endif
 #if MRP_ME
-                        initialize_buffer32bits_func_ptr_array[asm_type](
+                        initialize_buffer_32bits(
                             context_ptr
                                 ->p_sb_best_sad[listIndex][ref_pic_index],
                             52,
@@ -15412,7 +15405,7 @@ EbErrorType motion_estimate_lcu(
 #else
                         uint8_t refPicIndex = 0;
 
-                        initialize_buffer32bits_func_ptr_array[asm_type](
+                        initialize_buffer_32bits(
                             context_ptr->p_sb_best_sad[listIndex][refPicIndex],
                             52,
                             1,
@@ -15625,7 +15618,7 @@ EbErrorType motion_estimate_lcu(
                                 8,
                                 asm_type);
 
-                            initialize_buffer32bits_func_ptr_array[asm_type](
+                            initialize_buffer_32bits(
                                 context_ptr
                                     ->p_sb_best_ssd[listIndex][ref_pic_index],
                                 52,
@@ -15735,7 +15728,7 @@ EbErrorType motion_estimate_lcu(
 #endif
                     } else {
 #if MRP_ME
-                        initialize_buffer32bits_func_ptr_array[asm_type](
+                    initialize_buffer_32bits(
                             context_ptr
                                 ->p_sb_best_sad[listIndex][ref_pic_index],
                             21,
@@ -15789,7 +15782,7 @@ EbErrorType motion_estimate_lcu(
                                                       [ME_TIER_ZERO_PU_8x8_0]);
 #endif
 #else
-                        initialize_buffer32bits_func_ptr_array[asm_type](
+                    initialize_buffer_32bits(
                             context_ptr->p_sb_best_sad[listIndex][0],
                             21,
                             1,
@@ -16762,7 +16755,7 @@ uint64_t SixteenthDecimatedSearch(MeContext *context_ptr, int16_t origin_x,
             search_area_height);
     } else {
         // Put the first search location into level0 results
-        nxm_sad_loop_kernel_func_ptr_array[asm_type](
+        nxm_sad_loop_kernel(
             &context_ptr->sixteenth_sb_buffer[0],
             context_ptr->sixteenth_sb_buffer_stride * 2,
             &sixteenthRefPicPtr->buffer_y[searchRegionIndex],
