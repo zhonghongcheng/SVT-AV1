@@ -24,6 +24,7 @@
 #include "EbIntraPrediction.h"
 #include "EbLambdaRateTables.h"
 #include "EbPictureOperators.h"
+#include "aom_dsp_rtcd.h"
 #define OIS_TH_COUNT 4
 
 int32_t OisPointTh[3][MAX_TEMPORAL_LAYERS][OIS_TH_COUNT] = {
@@ -12299,7 +12300,7 @@ static void QuarterPelCompensation(
     buf1 = buf1 + puShiftXIndex + puShiftYIndex * refStride1;
     buf2 = buf2 + puShiftXIndex + puShiftYIndex * refStride2;
 
-    picture_average_array[asm_type](buf1,
+    picture_average(buf1,
                                     refStride1,
                                     buf2,
                                     refStride2,
@@ -12481,7 +12482,7 @@ static void quarter_pel_compensation(
     buf1 = buf1 + puShiftXIndex + puShiftYIndex * refStride1;
     buf2 = buf2 + puShiftXIndex + puShiftYIndex * refStride2;
 
-    picture_average_array[asm_type](buf1,
+    picture_average(buf1,
                                     refStride1,
                                     buf2,
                                     refStride2,

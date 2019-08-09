@@ -212,16 +212,6 @@ extern "C" {
         uint32_t                frac_pos_x,
         uint32_t                frac_pos_y);
 
-    typedef void(*PictureAverage)(
-        EbByte                  src0,
-        uint32_t                   src0_stride,
-        EbByte                  src1,
-        uint32_t                   src1_stride,
-        EbByte                  dst,
-        uint32_t                   dst_stride,
-        uint32_t                   area_width,
-        uint32_t                   area_height);
-
     /***************************************
     * Function Tables
     ***************************************/
@@ -264,26 +254,6 @@ extern "C" {
             avc_style_luma_interpolation_filter_posq_ssse3,             //q
             avc_style_luma_interpolation_filter_posr_ssse3,             //r
         },
-    };
-
-    static const PictureAverage FUNC_TABLE picture_average_array[ASM_TYPE_TOTAL] = {
-        // NON_AVX2
-        picture_average_kernel_sse2_intrin,
-        // AVX2
-        picture_average_kernel_sse2_intrin,
-    };
-
-    typedef void(*PictureAverage1Line)(
-        EbByte                  src0,
-        EbByte                  src1,
-        EbByte                  dst,
-        uint32_t                   area_width);
-
-    static const PictureAverage1Line FUNC_TABLE picture_average1_line_array[ASM_TYPE_TOTAL] = {
-        // NON_AVX2
-        picture_average_kernel1_line_sse2_intrin,
-        // AVX2
-        picture_average_kernel1_line_sse2_intrin,
     };
 
 #ifdef __cplusplus

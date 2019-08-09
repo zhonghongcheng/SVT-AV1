@@ -192,42 +192,6 @@ extern "C" {
     static void picture_addition_void_func() {}
     static void pic_zero_out_coef_void_func() {}
 
-    int32_t sum_residual(
-        int16_t  *in_ptr,
-        uint32_t  size,
-        uint32_t  stride_in);
-
-    typedef int32_t(*EbSumRes)(
-        int16_t  *in_ptr,
-        uint32_t  size,
-        uint32_t  stride_in);
-
-    static EbSumRes FUNC_TABLE sum_residual_func_ptr_array[ASM_TYPE_TOTAL] = {
-        // NON_AVX2
-        sum_residual,
-        // AVX2
-        sum_residual8bit_avx2_intrin,
-    };
-
-    void memset16bit_block(
-        int16_t  *in_ptr,
-        uint32_t  stride_in,
-        uint32_t  size,
-        int16_t   value);
-
-    typedef void(*EbMemset16BitBlk)(
-        int16_t  *in_ptr,
-        uint32_t  stride_in,
-        uint32_t  size,
-        int16_t   value);
-
-    static EbMemset16BitBlk FUNC_TABLE memset16bit_block_func_ptr_array[ASM_TYPE_TOTAL] = {
-        // NON_AVX2
-        memset16bit_block,
-        // AVX2
-        memset16bit_block_avx2_intrin,
-    };
-
     void full_distortion_kernel_cbf_zero32_bits(
         int32_t  *coeff,
         uint32_t  coeff_stride,

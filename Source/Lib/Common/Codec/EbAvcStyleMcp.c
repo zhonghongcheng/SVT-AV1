@@ -5,6 +5,7 @@
 
 #include "EbAvcStyleMcp.h"
 #include "EbPictureOperators.h"
+#include "aom_dsp_rtcd.h"
 
 static const   uint8_t  frac_mapped_pos_tab_x[16] = { 0, 1, 2, 3,
     0, 1, 2, 3,
@@ -140,9 +141,9 @@ void estimate_bi_pred_interpolation_unpacked_avc_style(
         mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
 
     // bi-pred luma
-    picture_average_array[asm_type](ref_list0_temp_dst, pu_width << sub_sample_pred_flag, ref_list1_temp_dst, pu_width << sub_sample_pred_flag, bi_dst->buffer_y + dst_luma_index, luma_stride << sub_sample_pred_flag, pu_width, pu_height >> sub_sample_pred_flag);
+    picture_average(ref_list0_temp_dst, pu_width << sub_sample_pred_flag, ref_list1_temp_dst, pu_width << sub_sample_pred_flag, bi_dst->buffer_y + dst_luma_index, luma_stride << sub_sample_pred_flag, pu_width, pu_height >> sub_sample_pred_flag);
     if (sub_sample_pred_flag)
-        picture_average1_line_array[asm_type](ref_list0_temp_dst + (pu_height - 1)*pu_width, ref_list1_temp_dst + (pu_height - 1)*pu_width, bi_dst->buffer_y + dst_luma_index + (pu_height - 1)*luma_stride, pu_width);
+        picture_average1_line(ref_list0_temp_dst + (pu_height - 1)*pu_width, ref_list1_temp_dst + (pu_height - 1)*pu_width, bi_dst->buffer_y + dst_luma_index + (pu_height - 1)*luma_stride, pu_width);
 }
 
 /*******************************************************************************
@@ -350,9 +351,9 @@ void estimate_bi_pred_interpolation_avc_luma(
             mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
 
         // bi-pred luma
-        picture_average_array[asm_type](ref_list0_temp_dst, pu_width << sub_sample_pred_flag, ref_list1_temp_dst, pu_width << sub_sample_pred_flag, bi_dst->buffer_y + dst_luma_index, luma_stride << sub_sample_pred_flag, pu_width, pu_height >> sub_sample_pred_flag);
+        picture_average(ref_list0_temp_dst, pu_width << sub_sample_pred_flag, ref_list1_temp_dst, pu_width << sub_sample_pred_flag, bi_dst->buffer_y + dst_luma_index, luma_stride << sub_sample_pred_flag, pu_width, pu_height >> sub_sample_pred_flag);
         if (sub_sample_pred_flag)
-            picture_average1_line_array[asm_type](ref_list0_temp_dst + (pu_height - 1)*pu_width, ref_list1_temp_dst + (pu_height - 1)*pu_width, bi_dst->buffer_y + dst_luma_index + (pu_height - 1)*luma_stride, pu_width);
+            picture_average1_line(ref_list0_temp_dst + (pu_height - 1)*pu_width, ref_list1_temp_dst + (pu_height - 1)*pu_width, bi_dst->buffer_y + dst_luma_index + (pu_height - 1)*luma_stride, pu_width);
     }
 
     //uni-prediction List0 chroma
@@ -411,7 +412,7 @@ void estimate_bi_pred_interpolation_avc_luma(
             mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
 
         // bi-pred Chroma Cb
-        picture_average_array[asm_type](
+        picture_average(
             ref_list0_temp_dst,
             chroma_pu_width << shift,
             ref_list1_temp_dst,
@@ -476,7 +477,7 @@ void estimate_bi_pred_interpolation_avc_luma(
             mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
 
         // bi-pred Chroma Cr
-        picture_average_array[asm_type](
+        picture_average(
             ref_list0_temp_dst,
             chroma_pu_width << shift,
             ref_list1_temp_dst,
@@ -912,9 +913,9 @@ void bi_pred_i_free_ref8_bit(
             mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
 
         // bi-pred luma
-        picture_average_array[asm_type](ref_list0_temp_dst, pu_width << sub_sample_pred_flag, ref_list1_temp_dst, pu_width << sub_sample_pred_flag, bi_dst->buffer_y + dst_luma_index, luma_stride << sub_sample_pred_flag, pu_width, pu_height >> sub_sample_pred_flag);
+        picture_average(ref_list0_temp_dst, pu_width << sub_sample_pred_flag, ref_list1_temp_dst, pu_width << sub_sample_pred_flag, bi_dst->buffer_y + dst_luma_index, luma_stride << sub_sample_pred_flag, pu_width, pu_height >> sub_sample_pred_flag);
         if (sub_sample_pred_flag)
-            picture_average1_line_array[asm_type](ref_list0_temp_dst + (pu_height - 1)*pu_width, ref_list1_temp_dst + (pu_height - 1)*pu_width, bi_dst->buffer_y + dst_luma_index + (pu_height - 1)*luma_stride, pu_width);
+            picture_average1_line(ref_list0_temp_dst + (pu_height - 1)*pu_width, ref_list1_temp_dst + (pu_height - 1)*pu_width, bi_dst->buffer_y + dst_luma_index + (pu_height - 1)*luma_stride, pu_width);
     }
 
     //uni-prediction List0 chroma
@@ -974,7 +975,7 @@ void bi_pred_i_free_ref8_bit(
             mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
 
         // bi-pred Chroma Cb
-        picture_average_array[asm_type](
+        picture_average(
             ref_list0_temp_dst,
             chroma_pu_width << shift,
             ref_list1_temp_dst,
@@ -1037,7 +1038,7 @@ void bi_pred_i_free_ref8_bit(
             mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
 
         // bi-pred Chroma Cr
-        picture_average_array[asm_type](
+        picture_average(
             ref_list0_temp_dst,
             chroma_pu_width << shift,
             ref_list1_temp_dst,

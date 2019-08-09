@@ -52,6 +52,19 @@ extern "C" {
     uint64_t compute_mean_avx2_helper(uint8_t *input_samples, uint32_t input_stride, uint32_t input_area_width, uint32_t input_area_height, uint8_t  choice);
     RTCD_EXTERN uint64_t(*compute_mean)(uint8_t *input_samples, uint32_t input_stride, uint32_t input_area_width, uint32_t input_area_height, uint8_t  choice);
 
+    int32_t sum_residual_c(int16_t * in_ptr, uint32_t size, uint32_t stride_in);
+    int32_t sum_residual8bit_avx2_intrin(int16_t * in_ptr, uint32_t size, uint32_t stride_in);
+    RTCD_EXTERN int32_t(*sum_residual)(int16_t * in_ptr, uint32_t size, uint32_t stride_in);
+
+    void memset16bit_block_c(int16_t * in_ptr, uint32_t stride_in, uint32_t size, int16_t value);
+    void memset16bit_block_avx2_intrin(int16_t * in_ptr, uint32_t stride_in, uint32_t size, int16_t value);
+    RTCD_EXTERN void(*memset16bit_block)(int16_t * in_ptr, uint32_t stride_in, uint32_t size, int16_t value);
+
+    void picture_average_kernel_sse2_intrin(EbByte   src0, uint32_t src0_stride, EbByte   src1, uint32_t src1_stride, EbByte   dst, uint32_t dst_stride, uint32_t area_width, uint32_t area_height);
+    RTCD_EXTERN void(*picture_average)(EbByte   src0, uint32_t src0_stride, EbByte   src1, uint32_t src1_stride, EbByte   dst, uint32_t dst_stride, uint32_t area_width, uint32_t area_height);
+
+    void picture_average_kernel1_line_sse2_intrin(EbByte src0, EbByte src1, EbByte dst, uint32_t area_width);
+    RTCD_EXTERN void(*picture_average1_line)(EbByte src0, EbByte src1, EbByte dst, uint32_t area_width);
 
     void apply_selfguided_restoration_c(const uint8_t *dat, int32_t width, int32_t height, int32_t stride, int32_t eps, const int32_t *xqd, uint8_t *dst, int32_t dst_stride, int32_t *tmpbuf, int32_t bit_depth, int32_t highbd);
     void apply_selfguided_restoration_avx2(const uint8_t *dat, int32_t width, int32_t height, int32_t stride, int32_t eps, const int32_t *xqd, uint8_t *dst, int32_t dst_stride, int32_t *tmpbuf, int32_t bit_depth, int32_t highbd);
@@ -2418,6 +2431,18 @@ extern "C" {
 
         compute_mean = compute_mean_helper;
         if (flags & HAS_AVX2) compute_mean = compute_mean_avx2_helper;
+
+        sum_residual = sum_residual_c;
+        if (flags & HAS_AVX2) sum_residual = sum_residual8bit_avx2_intrin;
+
+        memset16bit_block = memset16bit_block_c;
+        if (flags & HAS_AVX2) memset16bit_block = memset16bit_block_avx2_intrin;
+
+        picture_average = picture_average_kernel_sse2_intrin;
+        if (flags & HAS_SSE2) picture_average = picture_average_kernel_sse2_intrin;
+
+        picture_average1_line = picture_average_kernel1_line_sse2_intrin;
+        if (flags & HAS_SSE2) picture_average1_line = picture_average_kernel1_line_sse2_intrin;
 
         apply_selfguided_restoration = apply_selfguided_restoration_c;
         if (flags & HAS_AVX2) apply_selfguided_restoration = apply_selfguided_restoration_avx2;

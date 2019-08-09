@@ -53,17 +53,6 @@ extern "C" {
         uint32_t  width,
         uint32_t  height);
 
-    int32_t sum_residual8bit_avx2_intrin(
-        int16_t  *in_ptr,
-        uint32_t  size,
-        uint32_t  stride_in);
-
-    void memset16bit_block_avx2_intrin(
-        int16_t *in_ptr,
-        uint32_t stride_in,
-        uint32_t size,
-        int16_t  value);
-
     void unpack_avg_safe_sub_avx2_intrin(
         uint16_t *ref16_l0,
         uint32_t  ref_l0_stride,

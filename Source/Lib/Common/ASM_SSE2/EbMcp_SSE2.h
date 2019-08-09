@@ -44,12 +44,6 @@ extern "C" {
         uint32_t area_width,
         uint32_t area_height);
 
-    void picture_average_kernel1_line_sse2_intrin(
-        EbByte   src0,
-        EbByte   src1,
-        EbByte   dst,
-        uint32_t area_width);
-
 #ifdef __cplusplus
 }
 #endif
