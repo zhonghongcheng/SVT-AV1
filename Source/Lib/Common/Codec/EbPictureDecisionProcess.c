@@ -916,7 +916,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 #else
             if (picture_control_set_ptr->slice_type == I_SLICE)
                 picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
-            else 
+            else
                 picture_control_set_ptr->pic_depth_mode = PIC_ALL_C_DEPTH_MODE;
 #endif
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
@@ -1059,11 +1059,11 @@ EbErrorType signal_derivation_multi_processes_oq(
 #if NSQ_SUB_LEVEL
         // NSQ search sub Level                           Settings
         // Feature off                                    OFF
-        // NSQ_SEARCH_SUB_LEVEL1                          // NSQ LEVEL -1 at base 
+        // NSQ_SEARCH_SUB_LEVEL1                          // NSQ LEVEL -1 at base
         // NSQ Off for 8x8 at non-base
         // NSQ Off for 8x8/16x16 at non-ref
         // NSQ_LEVEL, Otherwise.
-        // NSQ_SEARCH_SUB_LEVEL2                          // NSQ LEVEL at ref 
+        // NSQ_SEARCH_SUB_LEVEL2                          // NSQ LEVEL at ref
         // NSQ Off for 8x8/16x16 at non-ref
 #if NSQ_MDC_L01
         if (picture_control_set_ptr->nsq_search_level != NSQ_SEARCH_OFF)

@@ -3526,7 +3526,7 @@ static int adaptive_qindex_calc(
 
         rc->worst_quality = MAXQ;
         rc->best_quality = MINQ;
-        
+
 #if ADAPTIVE_QP_SCALING
 #if TFK_QPS_TUNING
         int max_qp_scaling_avg_comp_I = sequence_control_set_ptr->input_resolution < 2 ? (MAX_QPS_COMP_I / 3) :
@@ -3692,7 +3692,7 @@ static void sb_qp_derivation(
     RATE_CONTROL               rc;
     picture_control_set_ptr->parent_pcs_ptr->average_qp = 0;
 #if TWO_PASS
-    if (picture_control_set_ptr->temporal_layer_index == 0 && picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH && 
+    if (picture_control_set_ptr->temporal_layer_index == 0 && picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH &&
         !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && !sequence_control_set_ptr->static_config.use_output_stat_file)
 #else
 #if DISABLE_QPM_SC
@@ -3855,7 +3855,7 @@ static void sb_qp_derivation(
                     MIN(picture_control_set_ptr->parent_pcs_ptr->picture_qp, ((kf_low_motion_minq[active_worst_quality] + 2) >> 2)),
                     MAX(picture_control_set_ptr->parent_pcs_ptr->picture_qp, ((kf_high_motion_minq[active_worst_quality] + 2) >> 2))+3,
                     ((int16_t)picture_control_set_ptr->parent_pcs_ptr->picture_qp + (int16_t)delta_qp));
-            else            
+            else
                 sb_ptr->qp = CLIP3(
                     MIN(picture_control_set_ptr->parent_pcs_ptr->picture_qp,((arfgf_low_motion_minq[active_worst_quality] + 2) >> 2)) - 2,
                     MAX(picture_control_set_ptr->parent_pcs_ptr->picture_qp, ((arfgf_high_motion_minq[active_worst_quality] + 2) >> 2)) + 3,

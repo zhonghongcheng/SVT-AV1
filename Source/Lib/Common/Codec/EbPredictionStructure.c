@@ -1791,7 +1791,7 @@ EbErrorType prediction_structure_group_ctor(
     PredictionStructureGroup *predictionStructureGroupPtr;
     EB_MALLOC(PredictionStructureGroup*, predictionStructureGroupPtr, sizeof(PredictionStructureGroup), EB_N_PTR);
     *predictionStructureGroupDblPtr = predictionStructureGroupPtr;
-    
+
     uint8_t ref_count_used = enc_mode <= ENC_M1 ? MAX_REF_IDX : enc_mode <= ENC_M3 ? 2 : 1;
 
 #if MRP_M1

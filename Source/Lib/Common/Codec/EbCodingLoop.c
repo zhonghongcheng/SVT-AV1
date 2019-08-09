@@ -4199,7 +4199,7 @@ EB_EXTERN void av1_encode_pass(
                     doMC = (EbBool)(doRecon | doMC);
 
                     doMVpred = (EbBool)(doRecon | doMVpred);
-#if NEW_NEAR_FIX
+#if 0 //NEW_NEAR_FIX
                     IntMv  predmv__md[2];
                     predmv__md[0].as_int = cu_ptr->predmv[0].as_int;
                     predmv__md[1].as_int = cu_ptr->predmv[1].as_int;
@@ -4438,7 +4438,7 @@ EB_EXTERN void av1_encode_pass(
                                                 height = origin_y + blk_geom->bheight - MAX(sb_origin_y, origin_y);
                                                 refObj0->stat_struct.referenced_area[sb_index] += width * height*weight;
                                             }
-                                            if (origin_x + blk_geom->bwidth > sb_origin_x + context_ptr->sb_sz && 
+                                            if (origin_x + blk_geom->bwidth > sb_origin_x + context_ptr->sb_sz &&
                                                 origin_y + blk_geom->bheight > sb_origin_y + context_ptr->sb_sz) {
                                                 sb_origin_x = (origin_x / context_ptr->sb_sz + 1)* context_ptr->sb_sz;
                                                 sb_origin_y = (origin_y / context_ptr->sb_sz + 1) * context_ptr->sb_sz;

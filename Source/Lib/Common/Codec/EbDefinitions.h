@@ -48,7 +48,7 @@ extern "C" {
 //MD_EXIT_THSL -->0 is lossless 100 is maximum. Increase with a step of 10-20.
 #define MD_EXIT_THSL                    0
 
-#define M0_SC                           1  
+#define M0_SC                           1
 #define INC_SB                          0
 #define COMBINE_C1_C2                   0
 #define AUTO_C1C2                       1 //combine Class1 and Class2 via a run-time signal
@@ -400,7 +400,7 @@ typedef enum CAND_CLASS {
     CAND_CLASS_0,
     CAND_CLASS_1,
     CAND_CLASS_2,
-#if COMP_FULL && (!COMBINE_C1_C2 || AUTO_C1C2) 
+#if COMP_FULL && (!COMBINE_C1_C2 || AUTO_C1C2)
     CAND_CLASS_3,
 #endif
 #if II_CLASS

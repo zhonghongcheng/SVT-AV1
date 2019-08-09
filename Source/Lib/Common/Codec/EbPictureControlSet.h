@@ -13983,7 +13983,7 @@ extern "C" {
         EbBool     block_is_completely_inside[BLOCK_MAX_COUNT_SB_128];  //block(sq or nsq) is completely inside the pic
         //block_is_allowed means the block might be not be completely inside but at least 1/2 of it is inside
         //block_is_inside_md_scan has two meanings:
-        // if the incomplete SB is used: it means the parent square has at least one pixel inside 
+        // if the incomplete SB is used: it means the parent square has at least one pixel inside
         // if the incomplete SB is not used: it means the parent square is completely inside (old definition)
 #endif
     } SbGeom;

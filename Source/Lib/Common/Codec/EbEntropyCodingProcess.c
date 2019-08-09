@@ -733,7 +733,7 @@ void* entropy_coding_kernel(void *input_ptr)
                         // Release the List 0 Reference Pictures
                         for (ref_idx = 0; ref_idx < picture_control_set_ptr->parent_pcs_ptr->ref_list0_count; ++ref_idx) {
 #if TWO_PASS
-                            if (sequence_control_set_ptr->static_config.use_output_stat_file && 
+                            if (sequence_control_set_ptr->static_config.use_output_stat_file &&
                                 picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx] != EB_NULL && picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx]->live_count == 1)
                                 write_stat_to_file(
                                     picture_control_set_ptr,
