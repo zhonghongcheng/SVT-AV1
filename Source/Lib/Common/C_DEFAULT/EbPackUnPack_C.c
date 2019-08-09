@@ -165,7 +165,7 @@ void un_pack8_bit_data(
         }
     }
 }
-void unpack_avg(
+void unpack_avg_c(
     uint16_t *ref16_l0,
     uint32_t  ref_l0_stride,
     uint16_t *ref16_l1,
@@ -189,7 +189,7 @@ void unpack_avg(
     }
 }
 
-void unpack_avg_safe_sub(
+void unpack_avg_safe_sub_c(
     uint16_t *ref16_l0,
     uint32_t  ref_l0_stride,
     uint16_t *ref16_l1,

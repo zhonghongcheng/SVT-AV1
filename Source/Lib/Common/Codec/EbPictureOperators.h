@@ -201,7 +201,7 @@ extern "C" {
         uint32_t  area_width,
         uint32_t  area_height);
 
-    void full_distortion_kernel32_bits(
+    void full_distortion_kernel32_bits_c(
         int32_t  *coeff,
         uint32_t  coeff_stride,
         int32_t  *recon_coeff,
@@ -219,27 +219,11 @@ extern "C" {
         uint32_t  area_width,
         uint32_t  area_height);
 
-    typedef void(*EbFullDistortionKernel32Bits)(
-        int32_t  *coeff,
-        uint32_t  coeff_stride,
-        int32_t  *recon_coeff,
-        uint32_t  recon_coeff_stride,
-        uint64_t  distortion_result[DIST_CALC_TOTAL],
-        uint32_t  area_width,
-        uint32_t  area_height);
-
     static EbFullDistortionKernelCbfZero32Bits FUNC_TABLE full_distortion_kernel_cbf_zero32_bits_func_ptr_array[ASM_TYPE_TOTAL] = {
         // NON_AVX2
         full_distortion_kernel_cbf_zero32_bits,
         // AVX2
         full_distortion_kernel_cbf_zero32_bits_avx2,
-    };
-
-    static EbFullDistortionKernel32Bits FUNC_TABLE full_distortion_kernel32_bits_func_ptr_array[ASM_TYPE_TOTAL] = {
-        // NON_AVX2
-        full_distortion_kernel32_bits,
-        // AVX2
-        full_distortion_kernel32_bits_avx2,
     };
 
     /***************************************
@@ -255,27 +239,12 @@ extern "C" {
         uint32_t  width,
         uint32_t  height);
 
-    typedef void(*EbAddKernelType16Bit)(
-        uint16_t *pred_ptr,
-        uint32_t  pred_stride,
-        int16_t  *residual_ptr,
-        uint32_t  residual_stride,
-        uint16_t *recon_ptr,
-        uint32_t  recon_stride,
-        uint32_t  width,
-        uint32_t  height);
-
     typedef void(*EbZeroCoeffType)(
         int16_t *coeff_buffer,
         uint32_t coeff_stride,
         uint32_t coeff_origin_index,
         uint32_t area_width,
         uint32_t area_height);
-
-    typedef uint64_t(*EbSatdU8Type)(
-        uint8_t  *diff,
-        uint64_t *dc_value,
-        uint32_t  src_stride);
 
     /***************************************
     * Function Tables
@@ -307,12 +276,6 @@ extern "C" {
         },
     };
 
-    static EbAddKernelType16Bit FUNC_TABLE addition_kernel_func_ptr_array16bit[ASM_TYPE_TOTAL] = {
-        // NON_AVX2
-        picture_addition_kernel16bit_sse2_intrin,
-        // AVX2
-        picture_addition_kernel16bit_sse2_intrin,
-    };
     typedef void(*EB_RESDKERNELSUBSAMPLED_TYPE)(
         uint8_t  *input,
         uint32_t  input_stride,
@@ -363,14 +326,6 @@ extern "C" {
             /*4 32x32 */     zero_out_coeff32x32_sse2
         },
     };
-
-    static EbSatdU8Type FUNC_TABLE compute8x8_satd_u8_func_ptr_array[ASM_TYPE_TOTAL] = {
-        // NON_AVX2
-        compute8x8_satd_u8_sse4,
-        // ASM_AVX2
-        compute8x8_satd_u8_sse4
-    };
-
 
     // TODO: readjust this function table and all its functions to return uint32_t instead of uint64_t
     typedef uint64_t(*EbSpatialFullDistType)(

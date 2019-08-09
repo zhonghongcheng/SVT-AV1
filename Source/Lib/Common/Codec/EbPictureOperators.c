@@ -20,6 +20,7 @@
 
 #include "EbPictureOperators.h"
 #include "EbPackUnPack.h"
+#include "aom_dsp_rtcd.h"
 
 #define VARIANCE_PRECISION      16
 #define MEAN_PRECISION      (VARIANCE_PRECISION >> 1)
@@ -196,11 +197,10 @@ uint64_t ComputeNxMSatd8x8Units_U8(
     uint64_t satd = 0;
     uint32_t blockIndexInWidth;
     uint32_t blockIndexInHeight;
-    EbSatdU8Type Compute8x8SatdFunction = compute8x8_satd_u8_func_ptr_array[asm_type];
 
     for (blockIndexInHeight = 0; blockIndexInHeight < height >> 3; ++blockIndexInHeight) {
         for (blockIndexInWidth = 0; blockIndexInWidth < width >> 3; ++blockIndexInWidth)
-            satd += Compute8x8SatdFunction(&(src[(blockIndexInWidth << 3) + (blockIndexInHeight << 3) * src_stride]), dc_value, src_stride);
+            satd += compute8x8_satd_u8(&(src[(blockIndexInWidth << 3) + (blockIndexInHeight << 3) * src_stride]), dc_value, src_stride);
     }
 
     return satd;
@@ -267,7 +267,7 @@ uint64_t compute_nx_m_satd_sad_lcu(
 *  Used in the Full Mode Decision Loop for the only case of a MVP-SKIP candidate
 *******************************************/
 
-void full_distortion_kernel32_bits(
+void full_distortion_kernel32_bits_c(
     int32_t  *coeff,
     uint32_t   coeff_stride,
     int32_t  *recon_coeff,
@@ -363,7 +363,7 @@ EbErrorType picture_full_distortion32_bits(
         bheight = bheight < 64 ? bheight : 32;
 
         if (y_count_non_zero_coeffs) {
-            full_distortion_kernel32_bits_func_ptr_array[asm_type](
+            full_distortion_kernel32_bits(
                 &(((int32_t*)coeff->buffer_y)[coeff_luma_origin_index]),
                 bwidth,
                 &(((int32_t*)recon_coeff->buffer_y)[recon_coeff_luma_origin_index]),
@@ -390,7 +390,7 @@ EbErrorType picture_full_distortion32_bits(
 
         // CB
         if (cb_count_non_zero_coeffs) {
-            full_distortion_kernel32_bits_func_ptr_array[asm_type](
+            full_distortion_kernel32_bits(
                 &(((int32_t*)coeff->buffer_cb)[coeff_chroma_origin_index]),
                 bwidth_uv,
                 &(((int32_t*)recon_coeff->buffer_cb)[recon_coeff_chroma_origin_index]),
@@ -415,7 +415,7 @@ EbErrorType picture_full_distortion32_bits(
         cr_distortion[1] = 0;
         // CR
         if (cr_count_non_zero_coeffs) {
-            full_distortion_kernel32_bits_func_ptr_array[asm_type](
+            full_distortion_kernel32_bits(
                 &(((int32_t*)coeff->buffer_cr)[coeff_chroma_origin_index]),
                 bwidth_uv,
                 &(((int32_t*)recon_coeff->buffer_cr)[recon_coeff_chroma_origin_index]),
@@ -463,10 +463,9 @@ void unpack_l0l1_avg(
     uint8_t  *dst_ptr,
     uint32_t  dst_stride,
     uint32_t  width,
-    uint32_t  height,
-    EbAsm  asm_type)
+    uint32_t  height)
 {
-    un_pack_avg_func_ptr_array[asm_type](
+    unpack_avg(
         ref16_l0,
         ref_l0_stride,
         ref16_l1,
@@ -508,12 +507,11 @@ void unpack_l0l1_avg_safe_sub(
     uint32_t  dst_stride,
     uint32_t  width,
     uint32_t  height,
-    EbBool      sub_pred,
-    EbAsm  asm_type)
+    EbBool      sub_pred)
 {
     //fix C
 
-    unpack_avg_safe_sub_func_ptr_array[asm_type](
+    unpack_avg_safe_sub(
         ref16_l0,
         ref_l0_stride,
         ref16_l1,
