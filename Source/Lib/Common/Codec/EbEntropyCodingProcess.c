@@ -524,7 +524,7 @@ static EbBool UpdateEntropyCodingRows(
 /******************************************************
  * Write Stat to File
  ******************************************************/
-static void write_stat_to_file(
+void write_stat_to_file(
     PictureControlSet     *picture_control_set_ptr,
     SequenceControlSet    *sequence_control_set_ptr,
     stat_struct_t          stat_struct,
@@ -534,8 +534,19 @@ static void write_stat_to_file(
     uint32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
 #if 0
     if (ref_poc % 16 == 0) {
-        printf("\nRELEASED POC:%d\n",
-            ref_poc);
+        uint32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
+        uint64_t referenced_area_avg = 0;
+        for (int sb_addr = 0; sb_addr < sequence_control_set_ptr->sb_total_count; ++sb_addr) {
+            referenced_area_avg += (stat_struct.referenced_area[sb_addr] / sequence_control_set_ptr->sb_params_array[sb_addr].width / sequence_control_set_ptr->sb_params_array[sb_addr].height);
+        }
+        referenced_area_avg /= sequence_control_set_ptr->sb_total_count;
+
+        printf("\nRELEASED POC:%d\t%d\n",
+            picture_control_set_ptr->picture_number,
+            (int)referenced_area_avg);
+
+       // printf("\nRELEASED POC:%d\n",
+        //    ref_poc);
         for (int sb_index = 0; sb_index < sequence_control_set_ptr->sb_tot_cnt; sb_index++) {
             if (sb_index % pic_width_in_sb == 0)
                 printf("\n");

@@ -56,7 +56,13 @@ static void ConfigurePictureEdges(
 
     return;
 }
-
+#if TWO_PASS
+void write_stat_to_file(
+    PictureControlSet     *picture_control_set_ptr,
+    SequenceControlSet    *sequence_control_set_ptr,
+    stat_struct_t          stat_struct,
+    uint64_t               ref_poc);
+#endif
 /************************************************
  * Picture Manager Context Constructor
  ************************************************/
@@ -1199,6 +1205,16 @@ void* picture_manager_kernel(void *input_ptr)
                     (referenceEntryPtr->reference_object_ptr))
                 {
                     // Release the nominal live_count value
+#if TWO_PASS
+                    if (sequence_control_set_ptr->static_config.use_output_stat_file &&
+                        referenceEntryPtr->reference_object_ptr->live_count == 1)
+                        write_stat_to_file(
+                            ChildPictureControlSetPtr,
+                            sequence_control_set_ptr,
+                            ((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->stat_struct,
+                            ((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->ref_poc);
+#endif
+
                     eb_release_object(referenceEntryPtr->reference_object_ptr);
                     referenceEntryPtr->reference_object_ptr = (EbObjectWrapper*)EB_NULL;
                     referenceEntryPtr->reference_available = EB_FALSE;
