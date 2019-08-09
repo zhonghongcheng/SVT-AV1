@@ -48,6 +48,11 @@ extern "C" {
     struct ConvolveParams;
     struct InterpFilterParams;
 
+    uint64_t compute_mean_helper(uint8_t *input_samples, uint32_t input_stride, uint32_t input_area_width, uint32_t input_area_height, uint8_t  choice);
+    uint64_t compute_mean_avx2_helper(uint8_t *input_samples, uint32_t input_stride, uint32_t input_area_width, uint32_t input_area_height, uint8_t  choice);
+    RTCD_EXTERN uint64_t(*compute_mean)(uint8_t *input_samples, uint32_t input_stride, uint32_t input_area_width, uint32_t input_area_height, uint8_t  choice);
+
+
     void apply_selfguided_restoration_c(const uint8_t *dat, int32_t width, int32_t height, int32_t stride, int32_t eps, const int32_t *xqd, uint8_t *dst, int32_t dst_stride, int32_t *tmpbuf, int32_t bit_depth, int32_t highbd);
     void apply_selfguided_restoration_avx2(const uint8_t *dat, int32_t width, int32_t height, int32_t stride, int32_t eps, const int32_t *xqd, uint8_t *dst, int32_t dst_stride, int32_t *tmpbuf, int32_t bit_depth, int32_t highbd);
     RTCD_EXTERN void(*apply_selfguided_restoration)(const uint8_t *dat, int32_t width, int32_t height, int32_t stride, int32_t eps, const int32_t *xqd, uint8_t *dst, int32_t dst_stride, int32_t *tmpbuf, int32_t bit_depth, int32_t highbd);
@@ -2410,6 +2415,9 @@ extern "C" {
         //    flags = ~HAS_AVX2;
 
         //to use C: flags=0
+
+        compute_mean = compute_mean_helper;
+        if (flags & HAS_AVX2) compute_mean = compute_mean_avx2_helper;
 
         apply_selfguided_restoration = apply_selfguided_restoration_c;
         if (flags & HAS_AVX2) apply_selfguided_restoration = apply_selfguided_restoration_avx2;
