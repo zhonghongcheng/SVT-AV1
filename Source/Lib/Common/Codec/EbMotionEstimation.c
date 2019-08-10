@@ -11777,10 +11777,10 @@ void HmeLevel1(
     int16_t *xLevel1SearchCenter,         // output parameter, Level1 xMV at
                                           // (searchRegionNumberInWidth,
                                           // searchRegionNumberInHeight)
-    int16_t *yLevel1SearchCenter,         // output parameter, Level1 yMV at
+    int16_t *yLevel1SearchCenter          // output parameter, Level1 yMV at
                                           // (searchRegionNumberInWidth,
                                           // searchRegionNumberInHeight)
-    EbAsm asm_type) {
+    ) {
     int16_t xTopLeftSearchRegion;
     int16_t yTopLeftSearchRegion;
     uint32_t searchRegionIndex;
@@ -11973,10 +11973,10 @@ void HmeLevel2(
     int16_t *xLevel2SearchCenter,         // output parameter, Level2 xMV at
                                           // (searchRegionNumberInWidth,
                                           // searchRegionNumberInHeight)
-    int16_t *yLevel2SearchCenter,         // output parameter, Level2 yMV at
+    int16_t *yLevel2SearchCenter          // output parameter, Level2 yMV at
                                           // (searchRegionNumberInWidth,
                                           // searchRegionNumberInHeight)
-    EbAsm asm_type) {
+    ) {
     int16_t xTopLeftSearchRegion;
     int16_t yTopLeftSearchRegion;
     uint32_t searchRegionIndex;
@@ -12206,8 +12206,8 @@ static void QuarterPelCompensation(
     uint32_t refHalfStride,  //[IN]
     uint32_t refBufferFullStride,
     uint8_t *Dst,        //[IN]
-    uint32_t DstStride,  //[IN]
-    EbAsm asm_type) {
+    uint32_t DstStride   //[IN]
+    ) {
     uint32_t puShiftXIndex = pu_search_index_map[pu_index][0];
     uint32_t puShiftYIndex = pu_search_index_map[pu_index][1];
     uint32_t refStride1 = refHalfStride;
@@ -12379,8 +12379,8 @@ static void quarter_pel_compensation(
     uint32_t refHalfStride,  //[IN]
     uint32_t refBufferFullStride,
     uint8_t *Dst,        //[IN]
-    uint32_t DstStride,  //[IN]
-    EbAsm asm_type) {
+    uint32_t DstStride  //[IN]
+    ) {
     uint32_t puShiftXIndex;
     uint32_t puShiftYIndex;
 
@@ -12530,8 +12530,7 @@ void uni_pred_averaging(uint32_t pu_index, EbBool chroma, uint8_t firstFracPos,
                                  refBufferStride,
                                  refBufferFullList0Stride,
                                  firstRefTempDst,
-                                 BLOCK_SIZE_64,
-                                 asm_type);
+                                 BLOCK_SIZE_64);
 
         *comp_blk_ptr = firstRefTempDst;
         *comp_blk_ptr_stride = BLOCK_SIZE_64;
@@ -12591,8 +12590,7 @@ uint32_t BiPredAverging(
                                refBufferStride,
                                refBufferFullList0Stride,
                                firstRefTempDst,
-                               BLOCK_SIZE_64,
-                               asm_type);
+                               BLOCK_SIZE_64);
 
         ptrList0 = firstRefTempDst;
         ptrList0Stride = BLOCK_SIZE_64;
@@ -12626,8 +12624,7 @@ uint32_t BiPredAverging(
                                refBufferStride,
                                refBufferFullList1Stride,
                                secondRefTempDst,
-                               BLOCK_SIZE_64,
-                               asm_type);
+                               BLOCK_SIZE_64);
 
         ptrList1 = secondRefTempDst;
         ptrList1Stride = BLOCK_SIZE_64;
@@ -14781,8 +14778,7 @@ EbErrorType motion_estimate_lcu(
                                               [searchRegionNumberInHeight]),
                                         &(yHmeLevel1SearchCenter
                                               [searchRegionNumberInWidth]
-                                              [searchRegionNumberInHeight]),
-                                        asm_type);
+                                              [searchRegionNumberInHeight]));
 
                                     searchRegionNumberInWidth++;
                                 }
@@ -14829,8 +14825,7 @@ EbErrorType motion_estimate_lcu(
                                               [searchRegionNumberInHeight]),
                                         &(yHmeLevel2SearchCenter
                                               [searchRegionNumberInWidth]
-                                              [searchRegionNumberInHeight]),
-                                        asm_type);
+                                              [searchRegionNumberInHeight]));
 
                                     searchRegionNumberInWidth++;
                                 }

@@ -641,8 +641,7 @@ void estimate_bi_pred_interpolation_avc_chroma_ref10_bit(
         bi_dst->buffer_cb + dst_chroma_index,
         bi_dst->stride_cb << sub_pred,
         chroma_pu_width,
-        chroma_pu_height >> sub_pred,
-        asm_type
+        chroma_pu_height >> sub_pred
     );
 
     unpack_l0l1_avg(
@@ -653,8 +652,7 @@ void estimate_bi_pred_interpolation_avc_chroma_ref10_bit(
         bi_dst->buffer_cr + dst_chroma_index,
         bi_dst->stride_cr << sub_pred,
         chroma_pu_width,
-        chroma_pu_height >> sub_pred,
-        asm_type
+        chroma_pu_height >> sub_pred
     );
 }
 
@@ -695,8 +693,7 @@ void estimate_bi_pred_interpolation_avc_luma_ref10_bit(
             bi_dst->stride_y << sub_pred,
             pu_width,
             pu_height >> sub_pred,
-            sub_pred,
-            asm_type
+            sub_pred
         );
     }
 
@@ -711,8 +708,7 @@ void estimate_bi_pred_interpolation_avc_luma_ref10_bit(
             bi_dst->buffer_cb + dst_chroma_index,
             bi_dst->stride_cb << sub_pred,
             chroma_pu_width,
-            chroma_pu_height >> sub_pred,
-            asm_type);
+            chroma_pu_height >> sub_pred);
 
         unpack_l0l1_avg(
             (uint16_t *)ref_frame_pic_list0->buffer_cr + (ref_list0_pos_x >> 3) + (ref_list0_pos_y >> 3)*ref_frame_pic_list0->stride_cr,
@@ -722,8 +718,7 @@ void estimate_bi_pred_interpolation_avc_luma_ref10_bit(
             bi_dst->buffer_cr + dst_chroma_index,
             bi_dst->stride_cr << sub_pred,
             chroma_pu_width,
-            chroma_pu_height >> sub_pred,
-            asm_type);
+            chroma_pu_height >> sub_pred);
     }
 }
 

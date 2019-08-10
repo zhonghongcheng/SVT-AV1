@@ -132,8 +132,7 @@ extern "C" {
         uint8_t  *dst_ptr,
         uint32_t  dst_stride,
         uint32_t  width,
-        uint32_t  height,
-        EbAsm     asm_type);
+        uint32_t  height);
 
     void extract8_bitdata_safe_sub(
         uint16_t   *in16_bit_buffer,
@@ -154,8 +153,7 @@ extern "C" {
         uint32_t  dst_stride,
         uint32_t  width,
         uint32_t  height,
-        EbBool    sub_pred,
-        EbAsm     asm_type);
+        EbBool    sub_pred);
 
     void memcpy16bit(
         uint16_t *out_ptr,
