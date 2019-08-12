@@ -105,7 +105,7 @@ static void quarter_pel_refinement_sb(
  * Compute8x4SAD_Default
  *   Unoptimized 8x4 SAD
  *******************************************/
-uint32_t compute8x4_sad_kernel(
+uint32_t compute8x4_sad_kernel_c(
     uint8_t *src,         // input parameter, source samples Ptr
     uint32_t src_stride,  // input parameter, source stride
     uint8_t *ref,         // input parameter, reference samples Ptr
@@ -159,14 +159,7 @@ uint32_t compute8x8_sad_kernel(
 
     return sadBlock8x8;
 }
-static EbCompute8x4SadType FUNC_TABLE
-    compute8x4SAD_funcPtrArray[ASM_TYPE_TOTAL] =  // [C_DEFAULT/ASM]
-    {
-        // C_DEFAULT
-        compute8x4_sad_kernel,
-        // SSE2
-        compute8x4_sad_kernel,
-};
+
 /***************************************
  * Function Tables
  ***************************************/
@@ -176,13 +169,7 @@ static EbExtSadCalculation32x32and64x64Type
         ext_sad_calculation_32x32_64x64,
         // AVX2
         ext_sad_calculation_32x32_64x64_sse4_intrin};
-static EbSadCalculation8x8and16x16Type
-    SadCalculation_8x8_16x16_funcPtrArray[ASM_TYPE_TOTAL] = {
-        // NON_AVX2
-        sad_calculation_8x8_16x16_sse2_intrin,
-        // AVX2
-        sad_calculation_8x8_16x16_sse2_intrin,
-};
+
 static EbSadCalculation32x32and64x64Type
     SadCalculation_32x32_64x64_funcPtrArray[ASM_TYPE_TOTAL] = {
         // NON_AVX2
@@ -230,22 +217,22 @@ void ext_sad_calculation_8x8_16x16_c(
     uint32_t sad16x16;
 
     if (sub_sad) {
-        p_sad8x8[0] = (compute8x4SAD_funcPtrArray[0](src + 0 * src_stride + 0,
+        p_sad8x8[0] = (compute8x4_sad_kernel(src + 0 * src_stride + 0,
                                                      2 * src_stride,
                                                      ref + 0 * ref_stride + 0,
                                                      2 * ref_stride))
                       << 1;
-        p_sad8x8[1] = (compute8x4SAD_funcPtrArray[0](src + 0 * src_stride + 8,
+        p_sad8x8[1] = (compute8x4_sad_kernel(src + 0 * src_stride + 8,
                                                      2 * src_stride,
                                                      ref + 0 * ref_stride + 8,
                                                      2 * ref_stride))
                       << 1;
-        p_sad8x8[2] = (compute8x4SAD_funcPtrArray[0](src + 8 * src_stride + 0,
+        p_sad8x8[2] = (compute8x4_sad_kernel(src + 8 * src_stride + 0,
                                                      2 * src_stride,
                                                      ref + 8 * ref_stride + 0,
                                                      2 * ref_stride))
                       << 1;
-        p_sad8x8[3] = (compute8x4SAD_funcPtrArray[0](src + 8 * src_stride + 8,
+        p_sad8x8[3] = (compute8x4_sad_kernel(src + 8 * src_stride + 8,
                                                      2 * src_stride,
                                                      ref + 8 * ref_stride + 8,
                                                      2 * ref_stride))
@@ -394,25 +381,25 @@ void get_eight_horizontal_search_point_results_8x8_16x16_pu(
 
     for (xSearchIndex = 0; xSearchIndex < 8; xSearchIndex++) {
         if (sub_sad) {
-            sad8x8[0] = compute8x4SAD_funcPtrArray[0](
+            sad8x8[0] = compute8x4_sad_kernel(
                             src + 0 * src_stride + 0,
                             2 * src_stride,
                             ref + 0 * ref_stride + 0 + xSearchIndex,
                             2 * ref_stride)
                         << 1;
-            sad8x8[1] = compute8x4SAD_funcPtrArray[0](
+            sad8x8[1] = compute8x4_sad_kernel(
                             src + 0 * src_stride + 8,
                             2 * src_stride,
                             ref + 0 * ref_stride + 8 + xSearchIndex,
                             2 * ref_stride)
                         << 1;
-            sad8x8[2] = compute8x4SAD_funcPtrArray[0](
+            sad8x8[2] = compute8x4_sad_kernel(
                             src + 8 * src_stride + 0,
                             2 * src_stride,
                             ref + 8 * ref_stride + 0 + xSearchIndex,
                             2 * ref_stride)
                         << 1;
-            sad8x8[3] = compute8x4SAD_funcPtrArray[0](
+            sad8x8[3] = compute8x4_sad_kernel(
                             src + 8 * src_stride + 8,
                             2 * src_stride,
                             ref + 8 * ref_stride + 8 + xSearchIndex,
@@ -589,7 +576,7 @@ Calcualte SAD for 16x16 and its 8x8 sublcoks
 and check if there is improvment, if yes keep
 the best SAD+MV
 *******************************************/
-void sad_calculation_8x8_16x16(uint8_t *src, uint32_t src_stride, uint8_t *ref,
+void sad_calculation_8x8_16x16_c(uint8_t *src, uint32_t src_stride, uint8_t *ref,
                                uint32_t ref_stride, uint32_t *p_best_sad8x8,
                                uint32_t *p_best_sad16x16,
                                uint32_t *p_best_mv8x8, uint32_t *p_best_mv16x16,
@@ -599,22 +586,22 @@ void sad_calculation_8x8_16x16(uint8_t *src, uint32_t src_stride, uint8_t *ref,
     uint64_t sad16x16;
 
     if (sub_sad) {
-        sad8x8[0] = (compute8x4_sad_kernel(src + 0 * src_stride + 0,
+        sad8x8[0] = (compute8x4_sad_kernel_c(src + 0 * src_stride + 0,
                                            2 * src_stride,
                                            ref + 0 * ref_stride + 0,
                                            2 * ref_stride))
                     << 1;
-        sad8x8[1] = (compute8x4_sad_kernel(src + 0 * src_stride + 8,
+        sad8x8[1] = (compute8x4_sad_kernel_c(src + 0 * src_stride + 8,
                                            2 * src_stride,
                                            ref + 0 * ref_stride + 8,
                                            2 * ref_stride))
                     << 1;
-        sad8x8[2] = (compute8x4_sad_kernel(src + 8 * src_stride + 0,
+        sad8x8[2] = (compute8x4_sad_kernel_c(src + 8 * src_stride + 0,
                                            2 * src_stride,
                                            ref + 8 * ref_stride + 0,
                                            2 * ref_stride))
                     << 1;
-        sad8x8[3] = (compute8x4_sad_kernel(src + 8 * src_stride + 8,
+        sad8x8[3] = (compute8x4_sad_kernel_c(src + 8 * src_stride + 8,
                                            2 * src_stride,
                                            ref + 8 * ref_stride + 8,
                                            2 * ref_stride))
@@ -2894,7 +2881,7 @@ static void ext_eight_sad_calculation_8x8_16x16(
 
     for (search_index = 0; search_index < 8; search_index++) {
         p_eight_sad8x8[0 + start_8x8_pos][search_index] = sad8x8_0 =
-            (compute8x4SAD_funcPtrArray[0](
+            (compute8x4_sad_kernel(
                 src, srcStrideSub, ref + search_index, refStrideSub))
             << 1;
         if (sad8x8_0 < p_best_sad8x8[0]) {
@@ -2905,7 +2892,7 @@ static void ext_eight_sad_calculation_8x8_16x16(
         }
 
         p_eight_sad8x8[1 + start_8x8_pos][search_index] = sad8x8_1 =
-            (compute8x4SAD_funcPtrArray[0](
+            (compute8x4_sad_kernel(
                 src + 8, srcStrideSub, ref + 8 + search_index, refStrideSub))
             << 1;
         if (sad8x8_1 < p_best_sad8x8[1]) {
@@ -2916,7 +2903,7 @@ static void ext_eight_sad_calculation_8x8_16x16(
         }
 
         p_eight_sad8x8[2 + start_8x8_pos][search_index] = sad8x8_2 =
-            (compute8x4SAD_funcPtrArray[0](
+            (compute8x4_sad_kernel(
                 src + (src_stride << 3),
                 srcStrideSub,
                 ref + (ref_stride << 3) + search_index,
@@ -2930,7 +2917,7 @@ static void ext_eight_sad_calculation_8x8_16x16(
         }
 
         p_eight_sad8x8[3 + start_8x8_pos][search_index] = sad8x8_3 =
-            (compute8x4SAD_funcPtrArray[0](
+            (compute8x4_sad_kernel(
                 src + (src_stride << 3) + 8,
                 srcStrideSub,
                 ref + (ref_stride << 3) + 8 + search_index,
@@ -3635,7 +3622,7 @@ static void GetSearchPointResults(
     blockIndex = 0;
     searchPositionIndex = searchPositionTLIndex;
 
-    SadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3651,7 +3638,7 @@ static void GetSearchPointResults(
     //---- 16x16 : 1
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionTLIndex + 16;
-    SadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3667,7 +3654,7 @@ static void GetSearchPointResults(
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
 
-    SadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3683,7 +3670,7 @@ static void GetSearchPointResults(
     //---- 16x16 : 5
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    SadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3699,7 +3686,7 @@ static void GetSearchPointResults(
     //---- 16x16 : 2
     blockIndex = srcNext16x16Offset;
     searchPositionIndex = searchPositionTLIndex + refNext16x16Offset;
-    SadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3714,7 +3701,7 @@ static void GetSearchPointResults(
     //---- 16x16 : 3
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    SadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3729,7 +3716,7 @@ static void GetSearchPointResults(
     //---- 16x16 : 6
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    SadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3744,7 +3731,7 @@ static void GetSearchPointResults(
     //---- 16x16 : 7
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    SadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3760,7 +3747,7 @@ static void GetSearchPointResults(
     //---- 16x16 : 8
     blockIndex = (srcNext16x16Offset << 1);
     searchPositionIndex = searchPositionTLIndex + (refNext16x16Offset << 1);
-    SadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3775,7 +3762,7 @@ static void GetSearchPointResults(
     //---- 16x16 : 9
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    SadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3790,7 +3777,7 @@ static void GetSearchPointResults(
     //---- 16x16 : 12
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    SadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3805,7 +3792,7 @@ static void GetSearchPointResults(
     //---- 16x16 : 13
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    SadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3821,7 +3808,7 @@ static void GetSearchPointResults(
     //---- 16x16 : 10
     blockIndex = (srcNext16x16Offset * 3);
     searchPositionIndex = searchPositionTLIndex + (refNext16x16Offset * 3);
-    SadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3836,7 +3823,7 @@ static void GetSearchPointResults(
     //---- 16x16 : 11
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    SadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3851,7 +3838,7 @@ static void GetSearchPointResults(
     //---- 16x16 : 14
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    SadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,
@@ -3866,7 +3853,7 @@ static void GetSearchPointResults(
     //---- 16x16 : 15
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    SadCalculation_8x8_16x16_funcPtrArray[asm_type](
+    sad_calculation_8x8_16x16(
         src_ptr + blockIndex,
         src_stride,
         refPtr + searchPositionIndex,

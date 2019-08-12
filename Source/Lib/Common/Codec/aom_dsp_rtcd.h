@@ -55,6 +55,12 @@ extern "C" {
     uint32_t nxm_sad_avg_kernel_avx2_helper(uint8_t  *src, uint32_t  src_stride, uint8_t  *ref1, uint32_t  ref1_stride, uint8_t  *ref2, uint32_t  ref2_stride, uint32_t  height, uint32_t  width, uint8_t   choice);
     RTCD_EXTERN uint32_t(*nxm_sad_avg_kernel)(uint8_t  *src, uint32_t  src_stride, uint8_t  *ref1, uint32_t  ref1_stride, uint8_t  *ref2, uint32_t  ref2_stride, uint32_t  height, uint32_t  width, uint8_t   choice);
 
+    void sad_calculation_8x8_16x16_sse2_intrin(uint8_t  *src, uint32_t  src_stride, uint8_t  *ref, uint32_t  ref_stride, uint32_t *p_best_sad8x8, uint32_t *p_best_sad16x16, uint32_t *p_best_mv8x8, uint32_t *p_best_mv16x16, uint32_t  mv, uint32_t *p_sad16x16, EbBool    sub_sad);
+    RTCD_EXTERN void(*sad_calculation_8x8_16x16)(uint8_t  *src, uint32_t  src_stride, uint8_t  *ref, uint32_t  ref_stride, uint32_t *p_best_sad8x8, uint32_t *p_best_sad16x16, uint32_t *p_best_mv8x8, uint32_t *p_best_mv16x16, uint32_t  mv, uint32_t *p_sad16x16, EbBool    sub_sad);
+
+    uint32_t compute8x4_sad_kernel_c(uint8_t *src, uint32_t src_stride, uint8_t *ref, uint32_t ref_stride);
+    RTCD_EXTERN uint32_t(*compute8x4_sad_kernel)(uint8_t *src, uint32_t src_stride, uint8_t *ref, uint32_t ref_stride);
+
     uint64_t compute_mean_helper(uint8_t *input_samples, uint32_t input_stride, uint32_t input_area_width, uint32_t input_area_height, uint8_t  choice);
     uint64_t compute_mean_avx2_helper(uint8_t *input_samples, uint32_t input_stride, uint32_t input_area_width, uint32_t input_area_height, uint8_t  choice);
     RTCD_EXTERN uint64_t(*compute_mean)(uint8_t *input_samples, uint32_t input_stride, uint32_t input_area_width, uint32_t input_area_height, uint8_t  choice);
@@ -2470,10 +2476,15 @@ extern "C" {
 
         //to use C: flags=0
 
+
         avc_style_luma_interpolation_filter = avc_style_luma_interpolation_filter_ssse3_helper;
 
         nxm_sad_avg_kernel = nxm_sad_avg_kernel_helper;
         if (flags & HAS_AVX2) nxm_sad_avg_kernel = nxm_sad_avg_kernel_avx2_helper;
+
+        sad_calculation_8x8_16x16 = sad_calculation_8x8_16x16_sse2_intrin;
+
+        compute8x4_sad_kernel = compute8x4_sad_kernel_c;
 
         compute_mean = compute_mean_helper;
         if (flags & HAS_AVX2) compute_mean = compute_mean_avx2_helper;

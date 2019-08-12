@@ -1487,7 +1487,7 @@ void interpolate_search_region_AVC_chroma(
 
     static const uint8_t sub_position_type[16] = { 0, 2, 1, 2, 2, 2, 2, 2, 1, 2, 1, 2, 2, 2, 2, 2 };
 
-    extern uint32_t compute8x4_sad_kernel(
+    extern uint32_t compute8x4_sad_kernel_c(
         uint8_t  *src,                            // input parameter, source samples Ptr
         uint32_t  src_stride,                      // input parameter, source stride
         uint8_t  *ref,                            // input parameter, reference samples Ptr
@@ -1526,7 +1526,7 @@ void interpolate_search_region_AVC_chroma(
     and check if there is improvment, if yes keep
     the best SAD+MV
     *******************************************/
-    extern void sad_calculation_8x8_16x16(
+    extern void sad_calculation_8x8_16x16_c(
         uint8_t   *src,
         uint32_t   src_stride,
         uint8_t   *ref,
