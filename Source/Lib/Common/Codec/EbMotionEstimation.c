@@ -9415,10 +9415,10 @@ static void QuarterPelSearch_LCU(
 #if IMPROVED_SUBPEL_SEARCH
 #define QP_REF_OPT 1
 /*******************************************
- * quarter_pel_refinemnet_block
+ * quarter_pel_refinement_block
  *   performs Quarter Pel refinement for each block
  *******************************************/
-static void quarter_pel_refinemnet_block(
+static void quarter_pel_refinement_block(
     MeContext *context_ptr,  // [IN] ME context Ptr, used to get SB Ptr
     uint32_t *p_best_ssd,
     uint32_t
@@ -10052,7 +10052,7 @@ static void quarter_pel_refinement_sb(
                 buf2[6] = buf2[6];
                 buf1[7] = buf1[7];
                 buf2[7] = buf2[7];
-                quarter_pel_refinemnet_block(context_ptr,
+                quarter_pel_refinement_block(context_ptr,
                                              context_ptr->p_best_ssd64x64,
                                              0,
                                              buf1,
@@ -10138,7 +10138,7 @@ static void quarter_pel_refinement_sb(
                           block_index_shift_y * buf1_stride[7];
                 buf2[7] = buf2[7] + block_index_shift_x +
                           block_index_shift_y * buf2_stride[7];
-                quarter_pel_refinemnet_block(
+                quarter_pel_refinement_block(
                     context_ptr,
                     &context_ptr->p_best_ssd32x32[pu_index],
                     src_block_index,
@@ -10226,7 +10226,7 @@ static void quarter_pel_refinement_sb(
                           block_index_shift_y * buf1_stride[7];
                 buf2[7] = buf2[7] + block_index_shift_x +
                           block_index_shift_y * buf2_stride[7];
-                quarter_pel_refinemnet_block(
+                quarter_pel_refinement_block(
                     context_ptr,
                     &context_ptr->p_best_ssd16x16[nidx],
                     src_block_index,
@@ -10314,7 +10314,7 @@ static void quarter_pel_refinement_sb(
                           block_index_shift_y * buf1_stride[7];
                 buf2[7] = buf2[7] + block_index_shift_x +
                           block_index_shift_y * buf2_stride[7];
-                quarter_pel_refinemnet_block(context_ptr,
+                quarter_pel_refinement_block(context_ptr,
                                              &context_ptr->p_best_ssd8x8[nidx],
                                              src_block_index,
                                              buf1,
@@ -10400,7 +10400,7 @@ static void quarter_pel_refinement_sb(
                           block_index_shift_y * buf1_stride[7];
                 buf2[7] = buf2[7] + block_index_shift_x +
                           block_index_shift_y * buf2_stride[7];
-                quarter_pel_refinemnet_block(
+                quarter_pel_refinement_block(
                     context_ptr,
                     &context_ptr->p_best_ssd64x32[pu_index],
                     src_block_index,
@@ -10488,7 +10488,7 @@ static void quarter_pel_refinement_sb(
                           block_index_shift_y * buf1_stride[7];
                 buf2[7] = buf2[7] + block_index_shift_x +
                           block_index_shift_y * buf2_stride[7];
-                quarter_pel_refinemnet_block(
+                quarter_pel_refinement_block(
                     context_ptr,
                     &context_ptr->p_best_ssd32x16[nidx],
                     src_block_index,
@@ -10576,7 +10576,7 @@ static void quarter_pel_refinement_sb(
                           block_index_shift_y * buf1_stride[7];
                 buf2[7] = buf2[7] + block_index_shift_x +
                           block_index_shift_y * buf2_stride[7];
-                quarter_pel_refinemnet_block(context_ptr,
+                quarter_pel_refinement_block(context_ptr,
                                              &context_ptr->p_best_ssd16x8[nidx],
                                              src_block_index,
                                              buf1,
@@ -10662,7 +10662,7 @@ static void quarter_pel_refinement_sb(
                           block_index_shift_y * buf1_stride[7];
                 buf2[7] = buf2[7] + block_index_shift_x +
                           block_index_shift_y * buf2_stride[7];
-                quarter_pel_refinemnet_block(
+                quarter_pel_refinement_block(
                     context_ptr,
                     &context_ptr->p_best_ssd32x64[pu_index],
                     src_block_index,
@@ -10750,7 +10750,7 @@ static void quarter_pel_refinement_sb(
                           block_index_shift_y * buf1_stride[7];
                 buf2[7] = buf2[7] + block_index_shift_x +
                           block_index_shift_y * buf2_stride[7];
-                quarter_pel_refinemnet_block(
+                quarter_pel_refinement_block(
                     context_ptr,
                     &context_ptr->p_best_ssd16x32[nidx],
                     src_block_index,
@@ -10838,7 +10838,7 @@ static void quarter_pel_refinement_sb(
                           block_index_shift_y * buf1_stride[7];
                 buf2[7] = buf2[7] + block_index_shift_x +
                           block_index_shift_y * buf2_stride[7];
-                quarter_pel_refinemnet_block(context_ptr,
+                quarter_pel_refinement_block(context_ptr,
                                              &context_ptr->p_best_ssd8x16[nidx],
                                              src_block_index,
                                              buf1,
@@ -10925,7 +10925,7 @@ static void quarter_pel_refinement_sb(
                           block_index_shift_y * buf1_stride[7];
                 buf2[7] = buf2[7] + block_index_shift_x +
                           block_index_shift_y * buf2_stride[7];
-                quarter_pel_refinemnet_block(context_ptr,
+                quarter_pel_refinement_block(context_ptr,
                                              &context_ptr->p_best_ssd32x8[nidx],
                                              src_block_index,
                                              buf1,
@@ -11013,7 +11013,7 @@ static void quarter_pel_refinement_sb(
                           block_index_shift_y * buf1_stride[7];
                 buf2[7] = buf2[7] + block_index_shift_x +
                           block_index_shift_y * buf2_stride[7];
-                quarter_pel_refinemnet_block(context_ptr,
+                quarter_pel_refinement_block(context_ptr,
                                              &context_ptr->p_best_ssd8x32[nidx],
                                              src_block_index,
                                              buf1,
@@ -11101,7 +11101,7 @@ static void quarter_pel_refinement_sb(
                           block_index_shift_y * buf1_stride[7];
                 buf2[7] = buf2[7] + block_index_shift_x +
                           block_index_shift_y * buf2_stride[7];
-                quarter_pel_refinemnet_block(
+                quarter_pel_refinement_block(
                     context_ptr,
                     &context_ptr->p_best_ssd64x16[nidx],
                     src_block_index,
@@ -11189,7 +11189,7 @@ static void quarter_pel_refinement_sb(
                           block_index_shift_y * buf1_stride[7];
                 buf2[7] = buf2[7] + block_index_shift_x +
                           block_index_shift_y * buf2_stride[7];
-                quarter_pel_refinemnet_block(
+                quarter_pel_refinement_block(
                     context_ptr,
                     &context_ptr->p_best_ssd16x64[nidx],
                     src_block_index,

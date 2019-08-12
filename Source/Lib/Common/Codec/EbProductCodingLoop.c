@@ -12148,7 +12148,6 @@ static void in_loop_me_quarterpel_refinement_on_the_fly_block(
     uint32_t                 pu_height,                        // [IN]  PU height
     int16_t                 x_search_area_origin,               // [IN] search area origin in the horizontal direction, used to point to reference samples
     int16_t                 y_search_area_origin,               // [IN] search area origin in the vertical direction, used to point to reference samples
-    EbAsm                 asm_type,
     uint32_t                *pBestSad,
     uint32_t                *pBestMV,
     uint8_t                  sub_pel_direction)
@@ -12494,7 +12493,6 @@ static void in_loop_me_quarterpel_search_sblock(
                 4, 4,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad4x4[nidx],
                 &context_ptr->p_best_mv4x4[nidx],
                 context_ptr->psub_pel_direction4x4[nidx]);
@@ -12546,7 +12544,6 @@ static void in_loop_me_quarterpel_search_sblock(
                 8, 4,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad8x4[nidx],
                 &context_ptr->p_best_mv8x4[nidx],
                 context_ptr->psub_pel_direction8x4[nidx]);
@@ -12597,7 +12594,6 @@ static void in_loop_me_quarterpel_search_sblock(
                 4, 8,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad4x8[nidx],
                 &context_ptr->p_best_mv4x8[nidx],
                 context_ptr->psub_pel_direction4x8[nidx]);
@@ -12649,7 +12645,6 @@ static void in_loop_me_quarterpel_search_sblock(
                 8, 8,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad8x8[nidx],
                 &context_ptr->p_best_mv8x8[nidx],
                 context_ptr->psub_pel_direction8x8[nidx]);
@@ -12701,7 +12696,6 @@ static void in_loop_me_quarterpel_search_sblock(
                 16, 8,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad16x8[nidx],
                 &context_ptr->p_best_mv16x8[nidx],
                 context_ptr->psub_pel_direction16x8[nidx]);
@@ -12753,7 +12747,6 @@ static void in_loop_me_quarterpel_search_sblock(
                 8, 16,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad8x16[nidx],
                 &context_ptr->p_best_mv8x16[nidx],
                 context_ptr->psub_pel_direction8x16[nidx]);
@@ -12804,7 +12797,6 @@ static void in_loop_me_quarterpel_search_sblock(
                 32, 8,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad32x8[nidx],
                 &context_ptr->p_best_mv32x8[nidx],
                 context_ptr->psub_pel_direction32x8[nidx]);
@@ -12855,7 +12847,6 @@ static void in_loop_me_quarterpel_search_sblock(
                 8, 32,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad8x32[nidx],
                 &context_ptr->p_best_mv8x32[nidx],
                 context_ptr->psub_pel_direction8x32[nidx]);
@@ -12906,7 +12897,6 @@ static void in_loop_me_quarterpel_search_sblock(
                 16, 16,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad16x16[nidx],
                 &context_ptr->p_best_mv16x16[nidx],
                 context_ptr->psub_pel_direction16x16[nidx]);
@@ -12958,7 +12948,6 @@ static void in_loop_me_quarterpel_search_sblock(
                 32, 16,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad32x16[nidx],
                 &context_ptr->p_best_mv32x16[nidx],
                 context_ptr->psub_pel_direction32x16[nidx]);
@@ -13009,7 +12998,6 @@ static void in_loop_me_quarterpel_search_sblock(
                 16, 32,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad16x32[nidx],
                 &context_ptr->p_best_mv16x32[nidx],
                 context_ptr->psub_pel_direction16x32[nidx]);
@@ -13059,7 +13047,6 @@ static void in_loop_me_quarterpel_search_sblock(
                 32, 32,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad32x32[nidx],
                 &context_ptr->p_best_mv32x32[nidx],
                 context_ptr->psub_pel_direction32x32[nidx]);
@@ -13110,7 +13097,6 @@ static void in_loop_me_quarterpel_search_sblock(
                 64, 32,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad64x32[nidx],
                 &context_ptr->p_best_mv64x32[nidx],
                 context_ptr->psub_pel_direction64x32[nidx]);
@@ -13161,7 +13147,6 @@ static void in_loop_me_quarterpel_search_sblock(
                 32, 64,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad32x64[nidx],
                 &context_ptr->p_best_mv32x64[nidx],
                 context_ptr->psub_pel_direction32x64[nidx]);
@@ -13204,7 +13189,6 @@ static void in_loop_me_quarterpel_search_sblock(
             64, 64,
             x_search_area_origin,
             y_search_area_origin,
-            asm_type,
             &context_ptr->p_best_sad64x64[nidx],
             &context_ptr->p_best_mv64x64[nidx],
             context_ptr->psub_pel_direction64x64[nidx]);
@@ -13243,7 +13227,6 @@ static void in_loop_me_quarterpel_search_sblock(
                 128, 64,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad128x64[block_index],
                 &context_ptr->p_best_mv128x64[block_index],
                 context_ptr->psub_pel_direction128x64[block_index]);
@@ -13280,7 +13263,6 @@ static void in_loop_me_quarterpel_search_sblock(
                 64, 128,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad64x128[block_index],
                 &context_ptr->p_best_mv64x128[block_index],
                 context_ptr->psub_pel_direction64x128[block_index]);
@@ -13316,7 +13298,6 @@ static void in_loop_me_quarterpel_search_sblock(
             128, 128,
             x_search_area_origin,
             y_search_area_origin,
-            asm_type,
             &context_ptr->p_best_sad128x128[block_index],
             &context_ptr->p_best_mv128x128[block_index],
             context_ptr->psub_pel_direction128x128);
