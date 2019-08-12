@@ -42,6 +42,14 @@ static INLINE void xx_storeu_128(void *const a, const __m128i v) {
     _mm_storeu_si128((__m128i *)a, v);
 }
 
+static INLINE __m128i _mm_loadh_epi64(const void *const p, const __m128i s) {
+    return _mm_castpd_si128(_mm_loadh_pd(_mm_castsi128_pd(s), (double *)p));
+}
+
+static INLINE void _mm_storeh_epi64(__m128i *const p, const __m128i x) {
+    _mm_storeh_pd((double *)p, _mm_castsi128_pd(x));
+}
+
 // The _mm_set_epi64x() intrinsic is undefined for some Visual Studio
 // compilers. The following function is equivalent to _mm_set_epi64x()
 // acting on 32-bit integers.

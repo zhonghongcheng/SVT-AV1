@@ -9,6 +9,7 @@
 #include "EbPictureOperators_AVX2.h"
 #include "EbPictureOperators_SSE2.h"
 #include "EbMemory_AVX2.h"
+#include "synonyms.h"
 
 #define _mm256_set_m128i(/* __m128i */ hi, /* __m128i */ lo) \
     _mm256_insertf128_si256(_mm256_castsi128_si256(lo), (hi), 0x1)
@@ -1912,10 +1913,6 @@ void full_distortion_kernel_cbf_zero32_bits_avx2(
     temp1 = _mm_add_epi64(temp1, temp2);
     _mm_storeu_si128((__m128i *)distortion_result, temp1);
     (void)recon_coeff_stride;
-}
-
-static INLINE void _mm_storeh_epi64(__m128i *const d, const __m128i s) {
-    _mm_storeh_pi((__m64 *)d, _mm_castsi128_ps(s));
 }
 
 void ResidualKernel4x4_AVX2_INTRIN(

@@ -6,11 +6,7 @@
 #include "EbSvtAv1.h"
 #include "tmmintrin.h"
 #include "EbIntraPrediction_SSSE3.h"
-
-static void _mm_storeh_epi64(__m128i * p, __m128i x)
-{
-    _mm_storeh_pd((double *)p, _mm_castsi128_pd(x));
-}
+#include "synonyms.h"
 
 extern void intra_mode_angular_vertical_kernel_ssse3_intrin(
     uint32_t         size,                       //input parameter, denotes the size of the current PU

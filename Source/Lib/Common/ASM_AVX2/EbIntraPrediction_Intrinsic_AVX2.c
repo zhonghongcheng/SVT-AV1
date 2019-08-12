@@ -11,6 +11,7 @@
 #include "EbIntraPrediction_AVX2.h"
 #include "lpf_common_sse2.h"
 #include "aom_dsp_rtcd.h"
+#include "synonyms.h"
 #ifndef _mm256_setr_m128i
 #define _mm256_setr_m128i(/* __m128i */ lo, /* __m128i */ hi) \
     _mm256_insertf128_si256(_mm256_castsi128_si256(lo), (hi), 0x1)
@@ -203,10 +204,6 @@ static INLINE void highbd_transpose16x16_avx2(__m256i *x, __m256i *d) {
         d[i + 8] = _mm256_insertf128_si256(dd[i + 8],
             _mm256_extracti128_si256(dd[i], 1), 0);
     }
-}
-static void _mm_storeh_epi64(__m128i * p, __m128i x)
-{
-    _mm_storeh_pd((double *)p, _mm_castsi128_pd(x));
 }
 
 EB_EXTERN void intra_mode_planar_avx2_intrin(
