@@ -10181,7 +10181,7 @@ EB_EXTERN EbErrorType mode_decision_sb(
 * Compute4x4SAD_Default
 *   Unoptimized 4x4 SAD
 *******************************************/
-uint32_t Compute4x4SAD_Kernel(
+uint32_t compute4x4SAD_Kernel_c(
     const uint8_t  *src,                       // input parameter, source samples Ptr
     uint32_t  src_stride,                      // input parameter, source stride
     const uint8_t  *ref,                       // input parameter, reference samples Ptr
@@ -10205,14 +10205,6 @@ uint32_t Compute4x4SAD_Kernel(
     (void)width;
     return sadBlock4x4;
 }
-
-static EbSadKernelNxMType FUNC_TABLE compute4x4SAD_funcPtrArray[ASM_TYPE_TOTAL] =// [C_DEFAULT/ASM]
-{
-    // C_DEFAULT
-    Compute4x4SAD_Kernel,
-    // SSE2
-    compute4x_m_sad_avx2_intrin,
-};
 
 static uint32_t tab4x4[256] = {
     0, 1, 4, 5, 16, 17, 20, 21, 64, 65, 68, 69, 80, 81, 84, 85,
@@ -11007,7 +10999,7 @@ static void in_loop_me_get_search_point_results_block(
                                             uint32_t block_4x4_addr_ref = ref_index + ((block_4x4_addr_y * ref_luma_stride) + block_4x4_addr_x);
 
                                             //4x4
-                                            dist_4x4[block_4x4_index] = compute4x4SAD_funcPtrArray[asm_type](
+                                            dist_4x4[block_4x4_index] = compute4x4_SAD(
                                                 src_ptr + block_4x4_addr_src,
                                                 src_stride,
                                                 ref_ptr + block_4x4_addr_ref,
@@ -12415,15 +12407,15 @@ static void set_quarterpel_refinement_inputs_on_the_fly_block(
 *   perform the quarter-pel refinement for the whole super-block
 ***************************************************************/
 static void in_loop_me_quarterpel_search_sblock(
-    SsMeContext                *context_ptr,                     //[IN/OUT]  ME context Ptr, used to get/update ME results
+    SsMeContext                *context_ptr,                        //[IN/OUT]  ME context Ptr, used to get/update ME results
     uint8_t                        *pos_Full,                       //[IN]
-    uint32_t                        full_stride,                      //[IN]
+    uint32_t                        full_stride,                    //[IN]
     uint8_t                        *pos_b,                          //[IN]
     uint8_t                        *pos_h,                          //[IN]
     uint8_t                        *pos_j,                          //[IN]
     int16_t                        x_search_area_origin,            //[IN] search area origin in the horizontal direction, used to point to reference samples
-    int16_t                        y_search_area_origin,               //[IN] search area origin in the vertical direction, used to point to reference samples
-    EbAsm                        asm_type)
+    int16_t                        y_search_area_origin             //[IN] search area origin in the vertical direction, used to point to reference samples
+    )
 {
     uint32_t  block_index;
 
@@ -13612,8 +13604,7 @@ EB_EXTERN EbErrorType in_loop_motion_estimation_sblock(
                 &(context_ptr->pos_h_buffer[listIndex][0][1]),                                                      //points to h position of the figure above
                 &(context_ptr->pos_j_buffer[listIndex][0][0]),                                                      //points to j position of the figure above
                 x_search_area_origin,
-                y_search_area_origin,
-                asm_type);
+                y_search_area_origin);
         }
     }
 

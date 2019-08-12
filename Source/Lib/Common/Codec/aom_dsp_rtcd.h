@@ -19,11 +19,12 @@
 #define AOM_DSP_RTCD_H_
 
 #include "EbDefinitions.h"
+#include "EbPictureBufferDesc.h"
 
 #ifdef RTCD_C
-#define RTCD_EXTERN                //CHKN RTCD call in effect. declare the function pointers in  encHandle.
+#define RTCD_EXTERN                //CHKN RTCD call in effect. declare the function pointers in encHandle.
 #else
-#define RTCD_EXTERN extern         //CHKN run time externing the fucntion pointers.
+#define RTCD_EXTERN extern         //CHKN run time externing the function pointers.
 #endif
 
 /*
@@ -60,6 +61,32 @@ extern "C" {
 
     uint32_t compute8x4_sad_kernel_c(uint8_t *src, uint32_t src_stride, uint8_t *ref, uint32_t ref_stride);
     RTCD_EXTERN uint32_t(*compute8x4_sad_kernel)(uint8_t *src, uint32_t src_stride, uint8_t *ref, uint32_t ref_stride);
+
+    uint32_t combined_averaging_ssd_c(uint8_t *src, ptrdiff_t src_stride, uint8_t *ref1, ptrdiff_t ref1_stride, uint8_t *ref2, ptrdiff_t ref2_stride, uint32_t height, uint32_t width);
+    uint32_t combined_averaging_ssd_avx2(uint8_t *src, ptrdiff_t src_stride, uint8_t *ref1, ptrdiff_t ref1_stride, uint8_t *ref2, ptrdiff_t ref2_stride, uint32_t height, uint32_t width);
+    RTCD_EXTERN uint32_t(*combined_averaging_ssd)(uint8_t *src, ptrdiff_t src_stride, uint8_t *ref1, ptrdiff_t ref1_stride, uint8_t *ref2, ptrdiff_t ref2_stride, uint32_t height, uint32_t width);
+
+    uint32_t compute4x4SAD_Kernel_c(const uint8_t  *src, uint32_t  src_stride, const uint8_t  *ref, uint32_t  ref_stride, uint32_t  height, uint32_t  width);
+    uint32_t compute4x_m_sad_avx2_intrin(const uint8_t  *src, uint32_t  src_stride, const uint8_t  *ref, uint32_t  ref_stride, uint32_t  height, uint32_t  width);
+    RTCD_EXTERN uint32_t(*compute4x4_SAD)(const uint8_t  *src, uint32_t  src_stride, const uint8_t  *ref, uint32_t  ref_stride, uint32_t  height, uint32_t  width);
+
+    void noise_extract_luma_weak_avx2_intrin(EbPictureBufferDesc *input_picture_ptr, EbPictureBufferDesc *denoised_picture_ptr, EbPictureBufferDesc *noise_picture_ptr, uint32_t sb_origin_y, uint32_t sb_origin_x);
+    void noise_extract_luma_weak_c(EbPictureBufferDesc *input_picture_ptr, EbPictureBufferDesc *denoised_picture_ptr, EbPictureBufferDesc *noise_picture_ptr, uint32_t sb_origin_y, uint32_t sb_origin_x);
+    RTCD_EXTERN void(*noise_extract_luma_weak)(EbPictureBufferDesc *input_picture_ptr, EbPictureBufferDesc *denoised_picture_ptr, EbPictureBufferDesc *noise_picture_ptr, uint32_t sb_origin_y, uint32_t sb_origin_x);
+
+    void noise_extract_luma_weak_lcu_c(EbPictureBufferDesc *input_picture_ptr, EbPictureBufferDesc *denoised_picture_ptr, EbPictureBufferDesc *noise_picture_ptr, uint32_t sb_origin_y, uint32_t sb_origin_x);
+    void noise_extract_luma_weak_lcu_avx2_intrin(EbPictureBufferDesc *input_picture_ptr, EbPictureBufferDesc *denoised_picture_ptr, EbPictureBufferDesc *noise_picture_ptr, uint32_t sb_origin_y, uint32_t sb_origin_x);
+    RTCD_EXTERN void(*noise_extract_luma_weak_lcu)(EbPictureBufferDesc *input_picture_ptr, EbPictureBufferDesc *denoised_picture_ptr, EbPictureBufferDesc *noise_picture_ptr, uint32_t sb_origin_y, uint32_t sb_origin_x);
+
+#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
+    void av1_apply_temporal_filter_sse4_1(const uint8_t *y_frame1, int y_stride, const uint8_t *y_pred, int y_buf_stride, const uint8_t *u_frame1, const uint8_t *v_frame1, int uv_stride, const uint8_t *u_pred, const uint8_t *v_pred, int uv_buf_stride, unsigned int block_width, unsigned int block_height, int ss_x, int ss_y, int strength_y, int strength_uv, const int *blk_fw, int use_32x32, uint32_t *y_accumulator, uint16_t *y_count, uint32_t *u_accumulator, uint16_t *u_count, uint32_t *v_accumulator, uint16_t *v_count);
+    void apply_filtering_c(const uint8_t *y_frame1, int y_stride, const uint8_t *y_pred, int y_buf_stride, const uint8_t *u_frame1, const uint8_t *v_frame1, int uv_stride, const uint8_t *u_pred, const uint8_t *v_pred, int uv_buf_stride, unsigned int block_width, unsigned int block_height, int ss_x, int ss_y, int strength_y, int strength_uv, const int *blk_fw, int use_32x32, uint32_t *y_accumulator, uint16_t *y_count, uint32_t *u_accumulator, uint16_t *u_count, uint32_t *v_accumulator, uint16_t *v_count);
+    RTCD_EXTERN void(*apply_32x32_temporal_filtering)(const uint8_t *y_frame1, int y_stride, const uint8_t *y_pred, int y_buf_stride, const uint8_t *u_frame1, const uint8_t *v_frame1, int uv_stride, const uint8_t *u_pred, const uint8_t *v_pred, int uv_buf_stride, unsigned int block_width, unsigned int block_height, int ss_x, int ss_y, int strength_y, int strength_uv, const int *blk_fw, int use_32x32, uint32_t *y_accumulator, uint16_t *y_count, uint32_t *u_accumulator, uint16_t *u_count, uint32_t *v_accumulator, uint16_t *v_count);
+#else
+    void av1_apply_temporal_filter_sse4_1(const uint8_t *y_frame1, int y_stride, const uint8_t *y_pred, int y_buf_stride, const uint8_t *u_frame1, const uint8_t *v_frame1, int uv_stride, const uint8_t *u_pred, const uint8_t *v_pred, int uv_buf_stride, unsigned int block_width, unsigned int block_height, int ss_x, int ss_y, int strength, const int *blk_fw, int use_32x32, uint32_t *y_accumulator, uint16_t *y_count, uint32_t *u_accumulator, uint16_t *u_count, uint32_t *v_accumulator, uint16_t *v_count);
+    void apply_filtering_c(const uint8_t *y_frame1, int y_stride, const uint8_t *y_pred, int y_buf_stride, const uint8_t *u_frame1, const uint8_t *v_frame1, int uv_stride, const uint8_t *u_pred, const uint8_t *v_pred, int uv_buf_stride, unsigned int block_width, unsigned int block_height, int ss_x, int ss_y, int strength, const int *blk_fw, int use_32x32, uint32_t *y_accumulator, uint16_t *y_count, uint32_t *u_accumulator, uint16_t *u_count, uint32_t *v_accumulator, uint16_t *v_count);
+    RTCD_EXTERN void(*apply_32x32_temporal_filtering)(const uint8_t *y_frame1, int y_stride, const uint8_t *y_pred, int y_buf_stride, const uint8_t *u_frame1, const uint8_t *v_frame1, int uv_stride, const uint8_t *u_pred, const uint8_t *v_pred, int uv_buf_stride, unsigned int block_width, unsigned int block_height, int ss_x, int ss_y, int strength, const int *blk_fw, int use_32x32, uint32_t *y_accumulator, uint16_t *y_count, uint32_t *u_accumulator, uint16_t *u_count, uint32_t *v_accumulator, uint16_t *v_count);
+#endif
 
     uint64_t compute_mean_helper(uint8_t *input_samples, uint32_t input_stride, uint32_t input_area_width, uint32_t input_area_height, uint8_t  choice);
     uint64_t compute_mean_avx2_helper(uint8_t *input_samples, uint32_t input_stride, uint32_t input_area_width, uint32_t input_area_height, uint8_t  choice);
@@ -158,11 +185,9 @@ extern "C" {
     void av1_build_compound_diffwtd_mask_d16_avx2(uint8_t *mask, DIFFWTD_MASK_TYPE mask_type, const CONV_BUF_TYPE *src0, int src0_stride, const CONV_BUF_TYPE *src1, int src1_stride, int h, int w, ConvolveParams *conv_params, int bd);
     RTCD_EXTERN void (*av1_build_compound_diffwtd_mask_d16)(uint8_t *mask, DIFFWTD_MASK_TYPE mask_type, const CONV_BUF_TYPE *src0, int src0_stride, const CONV_BUF_TYPE *src1, int src1_stride, int h, int w, ConvolveParams *conv_params, int bd);
 
-
     void aom_lowbd_blend_a64_d16_mask_c(uint8_t *dst, uint32_t dst_stride, const CONV_BUF_TYPE *src0, uint32_t src0_stride, const CONV_BUF_TYPE *src1, uint32_t src1_stride, const uint8_t *mask, uint32_t mask_stride, int w, int h, int subw, int subh, ConvolveParams *conv_params);
     void aom_lowbd_blend_a64_d16_mask_avx2(uint8_t *dst, uint32_t dst_stride, const CONV_BUF_TYPE *src0, uint32_t src0_stride, const CONV_BUF_TYPE *src1, uint32_t src1_stride, const uint8_t *mask, uint32_t mask_stride, int w, int h, int subw, int subh, ConvolveParams *conv_params);
     RTCD_EXTERN void (*aom_lowbd_blend_a64_d16_mask)(uint8_t *dst, uint32_t dst_stride, const CONV_BUF_TYPE *src0, uint32_t src0_stride, const CONV_BUF_TYPE *src1, uint32_t src1_stride, const uint8_t *mask, uint32_t mask_stride, int w, int h, int subw, int subh, ConvolveParams *conv_params);
-
 
     void av1_wedge_compute_delta_squares_c(int16_t *d, const int16_t *a, const int16_t *b, int N);
     void av1_wedge_compute_delta_squares_avx2(int16_t *d, const int16_t *a, const int16_t *b, int N);
@@ -171,7 +196,6 @@ extern "C" {
     uint64_t aom_sum_squares_i16_c(const int16_t *src, uint32_t N);
     uint64_t aom_sum_squares_i16_sse2(const int16_t *src, uint32_t N);
     #define aom_sum_squares_i16 aom_sum_squares_i16_sse2
-
 
     int8_t av1_wedge_sign_from_residuals_c(const int16_t *ds, const uint8_t *m, int N, int64_t limit);
     int8_t av1_wedge_sign_from_residuals_avx2(const int16_t *ds, const uint8_t *m, int N, int64_t limit);
@@ -2476,7 +2500,6 @@ extern "C" {
 
         //to use C: flags=0
 
-
         avc_style_luma_interpolation_filter = avc_style_luma_interpolation_filter_ssse3_helper;
 
         nxm_sad_avg_kernel = nxm_sad_avg_kernel_helper;
@@ -2485,6 +2508,21 @@ extern "C" {
         sad_calculation_8x8_16x16 = sad_calculation_8x8_16x16_sse2_intrin;
 
         compute8x4_sad_kernel = compute8x4_sad_kernel_c;
+
+        combined_averaging_ssd = combined_averaging_ssd_c;
+        if (flags & HAS_AVX2) combined_averaging_ssd = combined_averaging_ssd_avx2;
+
+        compute4x4_SAD = compute4x4SAD_Kernel_c;
+        if (flags & HAS_AVX2) compute4x4_SAD = compute4x_m_sad_avx2_intrin;
+
+        noise_extract_luma_weak = noise_extract_luma_weak_c;
+        if (flags & HAS_AVX2) noise_extract_luma_weak = noise_extract_luma_weak_avx2_intrin;
+
+        noise_extract_luma_weak_lcu = noise_extract_luma_weak_lcu_c;
+        if (flags & HAS_AVX2) noise_extract_luma_weak_lcu = noise_extract_luma_weak_lcu_avx2_intrin;
+
+        apply_32x32_temporal_filtering = apply_filtering_c;
+        if (flags & HAS_SSE4_1) apply_32x32_temporal_filtering = av1_apply_temporal_filter_sse4_1;
 
         compute_mean = compute_mean_helper;
         if (flags & HAS_AVX2) compute_mean = compute_mean_avx2_helper;

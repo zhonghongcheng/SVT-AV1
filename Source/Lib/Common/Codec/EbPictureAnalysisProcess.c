@@ -1556,7 +1556,7 @@ void noise_extract_chroma_weak(
 * noise_extract_luma_weak
 *  weak filter Luma and store noise.
 *******************************************/
-void noise_extract_luma_weak(
+void noise_extract_luma_weak_c(
     EbPictureBufferDesc       *input_picture_ptr,
     EbPictureBufferDesc       *denoised_picture_ptr,
     EbPictureBufferDesc       *noise_picture_ptr,
@@ -1612,7 +1612,7 @@ void noise_extract_luma_weak(
     }
 }
 
-void noise_extract_luma_weak_lcu(
+void noise_extract_luma_weak_lcu_c(
     EbPictureBufferDesc       *input_picture_ptr,
     EbPictureBufferDesc       *denoised_picture_ptr,
     EbPictureBufferDesc       *noise_picture_ptr,
@@ -3318,7 +3318,7 @@ EbErrorType DetectInputPictureNoise(
         uint32_t  noiseOriginIndex = noise_picture_ptr->origin_x + sb_origin_x + noise_picture_ptr->origin_y * noise_picture_ptr->stride_y;
 
         if (sb_origin_x == 0)
-            weak_luma_filter_func_ptr_array[asm_type](
+            noise_extract_luma_weak(
                 input_picture_ptr,
                 denoised_picture_ptr,
                 noise_picture_ptr,
@@ -3327,7 +3327,7 @@ EbErrorType DetectInputPictureNoise(
 
         if (sb_origin_x + BLOCK_SIZE_64 > input_picture_ptr->width)
         {
-            noise_extract_luma_weak(
+            noise_extract_luma_weak_c(
                 input_picture_ptr,
                 denoised_picture_ptr,
                 noise_picture_ptr,
@@ -3517,7 +3517,7 @@ EbErrorType SubSampleFilterNoise(
             sb_origin_y = (lcuCodingOrder / picture_width_in_sb) * sequence_control_set_ptr->sb_sz;
 
             if (sb_origin_x == 0)
-                weak_luma_filter_func_ptr_array[asm_type](
+                noise_extract_luma_weak(
                     input_picture_ptr,
                     denoised_picture_ptr,
                     noise_picture_ptr,
@@ -3526,7 +3526,7 @@ EbErrorType SubSampleFilterNoise(
 
             if (sb_origin_x + BLOCK_SIZE_64 > input_picture_ptr->width)
             {
-                noise_extract_luma_weak(
+                noise_extract_luma_weak_c(
                     input_picture_ptr,
                     denoised_picture_ptr,
                     noise_picture_ptr,
@@ -3587,7 +3587,7 @@ EbErrorType SubSampleFilterNoise(
 
             if (sb_origin_x + 64 <= input_picture_ptr->width && sb_origin_y + 64 <= input_picture_ptr->height && picture_control_set_ptr->sb_flat_noise_array[lcuCodingOrder] == 1)
             {
-                weak_luma_filter_lcu_func_ptr_array[asm_type](
+                noise_extract_luma_weak_lcu(
                     input_picture_ptr,
                     denoised_picture_ptr,
                     noise_picture_ptr,
@@ -3596,7 +3596,7 @@ EbErrorType SubSampleFilterNoise(
 
                 if (sb_origin_x + BLOCK_SIZE_64 > input_picture_ptr->width)
                 {
-                    noise_extract_luma_weak_lcu(
+                    noise_extract_luma_weak_lcu_c(
                         input_picture_ptr,
                         denoised_picture_ptr,
                         noise_picture_ptr,
@@ -3696,7 +3696,7 @@ EbErrorType QuarterSampleDetectNoise(
             block64x64Y = vert64x64Index * 64;
 
             if (block64x64X == 0)
-                weak_luma_filter_func_ptr_array[asm_type](
+                noise_extract_luma_weak(
                     quarter_decimated_picture_ptr,
                     denoised_picture_ptr,
                     noise_picture_ptr,
@@ -3705,7 +3705,7 @@ EbErrorType QuarterSampleDetectNoise(
 
             if (block64x64Y + BLOCK_SIZE_64 > quarter_decimated_picture_ptr->width)
             {
-                noise_extract_luma_weak(
+                noise_extract_luma_weak_c(
                     quarter_decimated_picture_ptr,
                     denoised_picture_ptr,
                     noise_picture_ptr,
@@ -3818,7 +3818,7 @@ EbErrorType SubSampleDetectNoise(
             block64x64Y = vert64x64Index * 64;
 
             if (block64x64X == 0)
-                weak_luma_filter_func_ptr_array[asm_type](
+                noise_extract_luma_weak(
                     sixteenth_decimated_picture_ptr,
                     denoised_picture_ptr,
                     noise_picture_ptr,
@@ -3827,7 +3827,7 @@ EbErrorType SubSampleDetectNoise(
 
             if (block64x64Y + BLOCK_SIZE_64 > sixteenth_decimated_picture_ptr->width)
             {
-                noise_extract_luma_weak(
+                noise_extract_luma_weak_c(
                     sixteenth_decimated_picture_ptr,
                     denoised_picture_ptr,
                     noise_picture_ptr,

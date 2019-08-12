@@ -35,43 +35,6 @@ extern EbErrorType picture_analysis_context_ctor(
 
 extern void* picture_analysis_kernel(void *input_ptr);
 
-void noise_extract_luma_weak(
-    EbPictureBufferDesc *input_picture_ptr,
-    EbPictureBufferDesc *denoised_picture_ptr,
-    EbPictureBufferDesc *noise_picture_ptr,
-    uint32_t               sb_origin_y,
-    uint32_t               sb_origin_x);
-
-typedef void(*EbWeakLumaFilterType)(
-    EbPictureBufferDesc *input_picture_ptr,
-    EbPictureBufferDesc *denoised_picture_ptr,
-    EbPictureBufferDesc *noise_picture_ptr,
-    uint32_t               sb_origin_y,
-    uint32_t               sb_origin_x);
-
-static EbWeakLumaFilterType FUNC_TABLE weak_luma_filter_func_ptr_array[ASM_TYPE_TOTAL] =
-{
-    // NON_AVX2
-    noise_extract_luma_weak,
-    // AVX2
-    noise_extract_luma_weak_avx2_intrin,
-};
-
-void noise_extract_luma_weak_lcu(
-    EbPictureBufferDesc *input_picture_ptr,
-    EbPictureBufferDesc *denoised_picture_ptr,
-    EbPictureBufferDesc *noise_picture_ptr,
-    uint32_t               sb_origin_y,
-    uint32_t               sb_origin_x);
-
-static EbWeakLumaFilterType FUNC_TABLE weak_luma_filter_lcu_func_ptr_array[ASM_TYPE_TOTAL] =
-{
-    // NON_AVX2
-    noise_extract_luma_weak_lcu,
-    // AVX2
-    noise_extract_luma_weak_lcu_avx2_intrin,
-};
-
 void noise_extract_luma_strong(
     EbPictureBufferDesc *input_picture_ptr,
     EbPictureBufferDesc *denoised_picture_ptr,
