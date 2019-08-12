@@ -15621,8 +15621,7 @@ EbErrorType motion_estimate_lcu(
                                     (BLOCK_SIZE_64 - 1),
                                 (uint32_t)search_area_height +
                                     (BLOCK_SIZE_64 - 1),
-                                8,
-                                asm_type);
+                                8);
 
                             initialize_buffer_32bits(
                                 context_ptr
@@ -15934,8 +15933,7 @@ EbErrorType motion_estimate_lcu(
 #endif
                                     (uint32_t)search_area_width + (BLOCK_SIZE_64 - 1),
                                     (uint32_t)search_area_height + (BLOCK_SIZE_64 - 1),
-                                    8,
-                                    asm_type);
+                                    8);
 
                                 // Half-Pel Refinement [8 search positions]
 #if MRP_ME

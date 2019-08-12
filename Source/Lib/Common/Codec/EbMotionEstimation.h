@@ -49,8 +49,7 @@ void interpolate_search_region_AVC_chroma(
         uint32_t                interpolated_full_stride_ch,
         uint32_t                search_area_width,
         uint32_t                search_area_height,
-        uint32_t                input_bit_depth,
-        EbAsm                   asm_type);
+        uint32_t                input_bit_depth);
 
 #endif
 

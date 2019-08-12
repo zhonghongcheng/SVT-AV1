@@ -37,8 +37,7 @@ extern "C" {
         EbByte                ref_list0_temp_dst,
         EbByte                ref_list1_temp_dst,
         EbByte                first_pass_if_temp_dst,
-        EbBool                sub_sample_pred_flag,
-        EbAsm                 asm_type);
+        EbBool                sub_sample_pred_flag);
 
     void estimate_uni_pred_interpolation_avc_luma(
         EbPictureBufferDesc *ref_pic,
@@ -51,8 +50,7 @@ extern "C" {
         uint32_t                 dst_chroma_index,
         uint32_t                 component_mask,
         EbByte                temp_buf,
-        EbBool                sub_sample_pred_flag,
-        EbAsm                 asm_type);
+        EbBool                sub_sample_pred_flag);
 
     void estimate_bi_pred_interpolation_unpacked_avc_style(
         EbPictureBufferDesc *ref_pic_list0,
@@ -70,8 +68,7 @@ extern "C" {
         EbByte                ref_list0_temp_dst,
         EbByte                ref_list1_temp_dst,
         EbByte                first_pass_if_temp_dst,
-        EbBool                sub_sample_pred_flag,
-        EbAsm                 asm_type);
+        EbBool                sub_sample_pred_flag);
 
     void estimate_uni_pred_interpolation_unpacked_avc_style(
         EbPictureBufferDesc *ref_pic,
@@ -84,8 +81,7 @@ extern "C" {
         uint32_t                 dst_chroma_index,
         uint32_t                 component_mask,
         EbByte                temp_buf,
-        EbBool                sub_sample_pred_flag,
-        EbAsm                 asm_type);
+        EbBool                sub_sample_pred_flag);
 
     void estimate_uni_pred_interpolation_avc_chroma_ref10_bit(
         EbPictureBufferDesc *ref_frame_pic_list0,
@@ -165,8 +161,7 @@ extern "C" {
         uint32_t                 component_mask,
         EbByte                temp_buf,
         EbBool                sub_sample_pred_flag,
-        EbBool                subSamplePredFlagChroma,
-        EbAsm                 asm_type);
+        EbBool                subSamplePredFlagChroma);
     void bi_pred_i_free_ref8_bit(
         EbPictureBufferDesc *ref_pic_list0,
         EbPictureBufferDesc *ref_pic_list1,
@@ -184,8 +179,7 @@ extern "C" {
         EbByte                ref_list1_temp_dst,
         EbByte                first_pass_if_temp_dst,
         EbBool                sub_sample_pred_flag,
-        EbBool                subSamplePredFlagChroma,
-        EbAsm                 asm_type);
+        EbBool                subSamplePredFlagChroma);
 
 #ifdef __cplusplus
 }

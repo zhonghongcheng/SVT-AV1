@@ -1249,8 +1249,8 @@ void uni_motion_compensation(MeContext* context_ptr,
                                          interpolated_full_stride_ch,
                                          search_area_width_ch,
                                          search_area_height_ch,
-                                         8, // bit depth
-                                         0);
+                                         8 // bit depth
+                                         );
 
     // ----- Loop over all sub-blocks -----
 

@@ -13609,8 +13609,7 @@ EB_EXTERN EbErrorType in_loop_motion_estimation_sblock(
                 context_ptr->interpolated_full_stride[listIndex][0],
                 (uint32_t)search_area_width + (context_ptr->sb_side - 1),
                 (uint32_t)search_area_height + (context_ptr->sb_side - 1),
-                8,
-                asm_type);
+                8);
 
             // Half-Pel Refinement [8 search positions]
             in_loop_me_halfpel_search_sblock(
