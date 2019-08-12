@@ -38,8 +38,7 @@ void estimate_uni_pred_interpolation_unpacked_avc_style(
     uint32_t                 dst_chroma_index,          //input parameter, please refer to the detailed explanation above.
     uint32_t                 component_mask,
     EbByte                  temp_buf,
-    EbBool                   sub_sample_pred_flag,
-    EbAsm                   asm_type)
+    EbBool                   sub_sample_pred_flag)
 {
     uint8_t    frac_posx, mapped_frac_posx;
     uint8_t    frac_posy, mapped_frac_posy;
@@ -93,8 +92,7 @@ void estimate_bi_pred_interpolation_unpacked_avc_style(
     EbByte                  ref_list0_temp_dst,
     EbByte                  ref_list1_temp_dst,
     EbByte                  first_pass_if_temp_dst,
-    EbBool                   sub_sample_pred_flag,
-    EbAsm                    asm_type)
+    EbBool                   sub_sample_pred_flag)
 {
     uint32_t   integ_pos_x;
     uint32_t   integ_pos_y;
@@ -171,8 +169,7 @@ void estimate_uni_pred_interpolation_avc_luma(
     uint32_t                 dst_chroma_index,          //input parameter, please refer to the detailed explanation above.
     uint32_t                 component_mask,
     EbByte                  temp_buf,
-    EbBool                   sub_sample_pred_flag,
-    EbAsm                    asm_type)
+    EbBool                   sub_sample_pred_flag)
 {
     uint32_t   integ_pos_x;
     uint32_t   integ_pos_y;
@@ -287,8 +284,7 @@ void estimate_bi_pred_interpolation_avc_luma(
     EbByte                  ref_list0_temp_dst,
     EbByte                  ref_list1_temp_dst,
     EbByte                  first_pass_if_temp_dst,
-    EbBool                   sub_sample_pred_flag,
-    EbAsm                    asm_type)
+    EbBool                   sub_sample_pred_flag)
 {
     uint32_t   integ_pos_x;
     uint32_t   integ_pos_y;
@@ -744,8 +740,7 @@ void uni_pred_i_free_ref8_bit(
     uint32_t                 component_mask,
     EbByte                  temp_buf,
     EbBool                   sub_sample_pred_flag,
-    EbBool                   sub_sample_pred_flag_chroma,
-    EbAsm                    asm_type)
+    EbBool                   sub_sample_pred_flag_chroma)
 {
     uint32_t   integ_pos_x;
     uint32_t   integ_pos_y;
@@ -850,8 +845,8 @@ void bi_pred_i_free_ref8_bit(
     EbByte                  ref_list1_temp_dst,
     EbByte                  first_pass_if_temp_dst,
     EbBool                   sub_sample_pred_flag,
-    EbBool                   sub_sample_pred_flag_chroma,//needs to be connected
-    EbAsm                    asm_type)
+    EbBool                   sub_sample_pred_flag_chroma //needs to be connected
+    )
 {
     uint32_t   integ_pos_x;
     uint32_t   integ_pos_y;

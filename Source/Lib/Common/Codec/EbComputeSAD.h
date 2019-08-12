@@ -30,15 +30,6 @@ extern "C" {
         uint32_t  width);
 
     static void nxm_sad_kernel_void_func() {}
-    typedef uint32_t(*EbSadAvgKernelNxMType)(
-        uint8_t  *src,
-        uint32_t  src_stride,
-        uint8_t  *ref1,
-        uint32_t  ref1_stride,
-        uint8_t  *ref2,
-        uint32_t  ref2_stride,
-        uint32_t  height,
-        uint32_t  width);
 
     typedef uint32_t(*EbCompute8x4SadType)(
         uint8_t  *src,                            // input parameter, source samples Ptr
@@ -140,34 +131,6 @@ extern "C" {
             /*6 48xM */ compute48x_m_sad_avx2_intrin,
             /*7      */ (EbSadKernelNxMType)nxm_sad_kernel_void_func,
             /*8 64xM */ compute64x_m_sad_avx2_intrin,
-        },
-    };
-
-    static EbSadAvgKernelNxMType FUNC_TABLE nxm_sad_averaging_kernel_func_ptr_array[ASM_TYPE_TOTAL][9] =   // [asm_type][SAD - block height]
-    {
-        // NON_AVX2
-        {
-            /*0 4xM  */     combined_averaging_sad,
-            /*1 8xM  */     combined_averaging_sad,
-            /*2 16xM */     combined_averaging_sad,
-            /*3 24xM */     combined_averaging_sad,
-            /*4 32xM */     combined_averaging_sad,
-            /*5      */     (EbSadAvgKernelNxMType)nxm_sad_kernel_void_func,
-            /*6 48xM */     combined_averaging_sad,
-            /*7      */     (EbSadAvgKernelNxMType)nxm_sad_kernel_void_func,
-            /*8 64xM */     combined_averaging_sad
-        },
-        // AVX2
-        {
-            /*0 4xM  */     combined_averaging4x_msad_sse2_intrin,
-            /*1 8xM  */     combined_averaging8x_msad_avx2_intrin,
-            /*2 16xM */     combined_averaging16x_msad_avx2_intrin,
-            /*3 24xM */     combined_averaging24x_msad_avx2_intrin,
-            /*4 32xM */     combined_averaging32x_msad_avx2_intrin,
-            /*5      */     (EbSadAvgKernelNxMType)nxm_sad_kernel_void_func,
-            /*6 48xM */     combined_averaging48x_msad_avx2_intrin,
-            /*7      */     (EbSadAvgKernelNxMType)nxm_sad_kernel_void_func,
-            /*8 64xM */     combined_averaging64x_msad_avx2_intrin
         },
     };
 

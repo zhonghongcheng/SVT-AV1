@@ -11269,8 +11269,8 @@ static void in_loop_me_interpolate_search_region_avc_style(
     uint32_t                   lumaStride,                       // input parameter, reference Picture stride
     uint32_t                   search_area_width,                  // input parameter, search area width
     uint32_t                   search_area_height,                 // input parameter, search area height
-    uint32_t                   inputBitDepth,                    // input parameter, input sample bit depth
-    EbAsm                   asm_type)
+    uint32_t                   inputBitDepth                     // input parameter, input sample bit depth
+    )
 {
     //      0    1    2    3
     // 0    A    a    b    c
@@ -12212,7 +12212,7 @@ static void in_loop_me_quarterpel_refinement_on_the_fly_block(
         searchRegionIndex1 = (int32_t)xSearchIndex + (int32_t)buf1Stride[0] * (int32_t)ySearchIndex;
         searchRegionIndex2 = (int32_t)xSearchIndex + (int32_t)buf2Stride[0] * (int32_t)ySearchIndex;
 
-        dist = nxm_sad_averaging_kernel_func_ptr_array[asm_type][pu_width >> 3](&(context_ptr->sb_buffer[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, buf1[0] + searchRegionIndex1, buf1Stride[0] << 1, buf2[0] + searchRegionIndex2, buf2Stride[0] << 1, pu_height >> 1, pu_width);
+        dist = nxm_sad_avg_kernel(&(context_ptr->sb_buffer[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, buf1[0] + searchRegionIndex1, buf1Stride[0] << 1, buf2[0] + searchRegionIndex2, buf2Stride[0] << 1, pu_height >> 1, pu_width, pu_width >> 3);
 
         dist = dist << 1;
 
@@ -12226,7 +12226,7 @@ static void in_loop_me_quarterpel_refinement_on_the_fly_block(
     if (validR) {
         searchRegionIndex1 = (int32_t)xSearchIndex + (int32_t)buf1Stride[1] * (int32_t)ySearchIndex;
         searchRegionIndex2 = (int32_t)xSearchIndex + (int32_t)buf2Stride[1] * (int32_t)ySearchIndex;
-        dist = nxm_sad_averaging_kernel_func_ptr_array[asm_type][pu_width >> 3](&(context_ptr->sb_buffer[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, buf1[1] + searchRegionIndex1, buf1Stride[1] << 1, buf2[1] + searchRegionIndex2, buf2Stride[1] << 1, pu_height >> 1, pu_width);
+        dist = nxm_sad_avg_kernel(&(context_ptr->sb_buffer[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, buf1[1] + searchRegionIndex1, buf1Stride[1] << 1, buf2[1] + searchRegionIndex2, buf2Stride[1] << 1, pu_height >> 1, pu_width, pu_width >> 3);
         dist = dist << 1;
 
         if (dist < *pBestSad) {
@@ -12240,7 +12240,7 @@ static void in_loop_me_quarterpel_refinement_on_the_fly_block(
         searchRegionIndex1 = (int32_t)xSearchIndex + (int32_t)buf1Stride[2] * (int32_t)ySearchIndex;
         searchRegionIndex2 = (int32_t)xSearchIndex + (int32_t)buf2Stride[2] * (int32_t)ySearchIndex;
 
-        dist = nxm_sad_averaging_kernel_func_ptr_array[asm_type][pu_width >> 3](&(context_ptr->sb_buffer[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, buf1[2] + searchRegionIndex1, buf1Stride[2] << 1, buf2[2] + searchRegionIndex2, buf2Stride[2] << 1, pu_height >> 1, pu_width);
+        dist = nxm_sad_avg_kernel(&(context_ptr->sb_buffer[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, buf1[2] + searchRegionIndex1, buf1Stride[2] << 1, buf2[2] + searchRegionIndex2, buf2Stride[2] << 1, pu_height >> 1, pu_width, pu_width >> 3);
         dist = dist << 1;
 
         if (dist < *pBestSad) {
@@ -12254,7 +12254,7 @@ static void in_loop_me_quarterpel_refinement_on_the_fly_block(
         searchRegionIndex1 = (int32_t)xSearchIndex + (int32_t)buf1Stride[3] * (int32_t)ySearchIndex;
         searchRegionIndex2 = (int32_t)xSearchIndex + (int32_t)buf2Stride[3] * (int32_t)ySearchIndex;
 
-        dist = nxm_sad_averaging_kernel_func_ptr_array[asm_type][pu_width >> 3](&(context_ptr->sb_buffer[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, buf1[3] + searchRegionIndex1, buf1Stride[3] << 1, buf2[3] + searchRegionIndex2, buf2Stride[3] << 1, pu_height >> 1, pu_width);
+        dist = nxm_sad_avg_kernel(&(context_ptr->sb_buffer[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, buf1[3] + searchRegionIndex1, buf1Stride[3] << 1, buf2[3] + searchRegionIndex2, buf2Stride[3] << 1, pu_height >> 1, pu_width, pu_width >> 3);
         dist = dist << 1;
 
         if (dist < *pBestSad) {
@@ -12268,7 +12268,7 @@ static void in_loop_me_quarterpel_refinement_on_the_fly_block(
         searchRegionIndex1 = (int32_t)xSearchIndex + (int32_t)buf1Stride[4] * (int32_t)ySearchIndex;
         searchRegionIndex2 = (int32_t)xSearchIndex + (int32_t)buf2Stride[4] * (int32_t)ySearchIndex;
 
-        dist = nxm_sad_averaging_kernel_func_ptr_array[asm_type][pu_width >> 3](&(context_ptr->sb_buffer[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, buf1[4] + searchRegionIndex1, buf1Stride[4] << 1, buf2[4] + searchRegionIndex2, buf2Stride[4] << 1, pu_height >> 1, pu_width);
+        dist = nxm_sad_avg_kernel(&(context_ptr->sb_buffer[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, buf1[4] + searchRegionIndex1, buf1Stride[4] << 1, buf2[4] + searchRegionIndex2, buf2Stride[4] << 1, pu_height >> 1, pu_width, pu_width >> 3);
         dist = dist << 1;
 
         if (dist < *pBestSad) {
@@ -12282,7 +12282,7 @@ static void in_loop_me_quarterpel_refinement_on_the_fly_block(
         searchRegionIndex1 = (int32_t)xSearchIndex + (int32_t)buf1Stride[5] * (int32_t)ySearchIndex;
         searchRegionIndex2 = (int32_t)xSearchIndex + (int32_t)buf2Stride[5] * (int32_t)ySearchIndex;
 
-        dist = nxm_sad_averaging_kernel_func_ptr_array[asm_type][pu_width >> 3](&(context_ptr->sb_buffer[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, buf1[5] + searchRegionIndex1, buf1Stride[5] << 1, buf2[5] + searchRegionIndex2, buf2Stride[5] << 1, pu_height >> 1, pu_width);
+        dist = nxm_sad_avg_kernel(&(context_ptr->sb_buffer[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, buf1[5] + searchRegionIndex1, buf1Stride[5] << 1, buf2[5] + searchRegionIndex2, buf2Stride[5] << 1, pu_height >> 1, pu_width, pu_width >> 3);
         dist = dist << 1;
 
         if (dist < *pBestSad) {
@@ -12296,7 +12296,7 @@ static void in_loop_me_quarterpel_refinement_on_the_fly_block(
         searchRegionIndex1 = (int32_t)xSearchIndex + (int32_t)buf1Stride[6] * (int32_t)ySearchIndex;
         searchRegionIndex2 = (int32_t)xSearchIndex + (int32_t)buf2Stride[6] * (int32_t)ySearchIndex;
 
-        dist = nxm_sad_averaging_kernel_func_ptr_array[asm_type][pu_width >> 3](&(context_ptr->sb_buffer[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, buf1[6] + searchRegionIndex1, buf1Stride[6] << 1, buf2[6] + searchRegionIndex2, buf2Stride[6] << 1, pu_height >> 1, pu_width);
+        dist = nxm_sad_avg_kernel(&(context_ptr->sb_buffer[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, buf1[6] + searchRegionIndex1, buf1Stride[6] << 1, buf2[6] + searchRegionIndex2, buf2Stride[6] << 1, pu_height >> 1, pu_width, pu_width >> 3);
         dist = dist << 1;
 
         if (dist < *pBestSad) {
@@ -12310,7 +12310,7 @@ static void in_loop_me_quarterpel_refinement_on_the_fly_block(
         searchRegionIndex1 = (int32_t)xSearchIndex + (int32_t)buf1Stride[7] * (int32_t)ySearchIndex;
         searchRegionIndex2 = (int32_t)xSearchIndex + (int32_t)buf2Stride[7] * (int32_t)ySearchIndex;
 
-        dist = nxm_sad_averaging_kernel_func_ptr_array[asm_type][pu_width >> 3](&(context_ptr->sb_buffer[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, buf1[7] + searchRegionIndex1, buf1Stride[7] << 1, buf2[7] + searchRegionIndex2, buf2Stride[7] << 1, pu_height >> 1, pu_width);
+        dist = nxm_sad_avg_kernel(&(context_ptr->sb_buffer[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, buf1[7] + searchRegionIndex1, buf1Stride[7] << 1, buf2[7] + searchRegionIndex2, buf2Stride[7] << 1, pu_height >> 1, pu_width, pu_width >> 3);
         dist = dist << 1;
 
         if (dist < *pBestSad) {

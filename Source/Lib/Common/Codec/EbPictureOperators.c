@@ -230,8 +230,8 @@ uint64_t compute_nx_m_satd_sad_lcu(
     uint8_t  *src,        // input parameter, source samples Ptr
     uint32_t  src_stride,  // input parameter, source stride
     uint32_t  width,      // input parameter, block width (N)
-    uint32_t  height,     // input parameter, block height (M)
-    EbAsm  asm_type)
+    uint32_t  height      // input parameter, block height (M)
+    )
 {
     uint64_t satd = 0;
     uint64_t  dc_value = 0;

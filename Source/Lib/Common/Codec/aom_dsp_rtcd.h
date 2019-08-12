@@ -51,6 +51,10 @@ extern "C" {
     void avc_style_luma_interpolation_filter_ssse3_helper(EbByte ref_pic, uint32_t src_stride, EbByte dst, uint32_t dst_stride, uint32_t pu_width, uint32_t pu_height, EbByte temp_buf, EbBool skip, uint32_t frac_pos, uint8_t choice);
     RTCD_EXTERN void(*avc_style_luma_interpolation_filter)(EbByte ref_pic, uint32_t src_stride, EbByte dst, uint32_t dst_stride, uint32_t pu_width, uint32_t pu_height, EbByte temp_buf, EbBool skip, uint32_t frac_pos, uint8_t choice);
 
+    uint32_t nxm_sad_avg_kernel_helper(uint8_t  *src, uint32_t  src_stride, uint8_t  *ref1, uint32_t  ref1_stride, uint8_t  *ref2, uint32_t  ref2_stride, uint32_t  height, uint32_t  width, uint8_t   choice);
+    uint32_t nxm_sad_avg_kernel_avx2_helper(uint8_t  *src, uint32_t  src_stride, uint8_t  *ref1, uint32_t  ref1_stride, uint8_t  *ref2, uint32_t  ref2_stride, uint32_t  height, uint32_t  width, uint8_t   choice);
+    RTCD_EXTERN uint32_t(*nxm_sad_avg_kernel)(uint8_t  *src, uint32_t  src_stride, uint8_t  *ref1, uint32_t  ref1_stride, uint8_t  *ref2, uint32_t  ref2_stride, uint32_t  height, uint32_t  width, uint8_t   choice);
+
     uint64_t compute_mean_helper(uint8_t *input_samples, uint32_t input_stride, uint32_t input_area_width, uint32_t input_area_height, uint8_t  choice);
     uint64_t compute_mean_avx2_helper(uint8_t *input_samples, uint32_t input_stride, uint32_t input_area_width, uint32_t input_area_height, uint8_t  choice);
     RTCD_EXTERN uint64_t(*compute_mean)(uint8_t *input_samples, uint32_t input_stride, uint32_t input_area_width, uint32_t input_area_height, uint8_t  choice);
@@ -2467,6 +2471,9 @@ extern "C" {
         //to use C: flags=0
 
         avc_style_luma_interpolation_filter = avc_style_luma_interpolation_filter_ssse3_helper;
+
+        nxm_sad_avg_kernel = nxm_sad_avg_kernel_helper;
+        if (flags & HAS_AVX2) nxm_sad_avg_kernel = nxm_sad_avg_kernel_avx2_helper;
 
         compute_mean = compute_mean_helper;
         if (flags & HAS_AVX2) compute_mean = compute_mean_avx2_helper;
