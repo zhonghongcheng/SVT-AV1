@@ -31,6 +31,7 @@
 #include "EbAvcStyleMcp.h"
 #include "aom_dsp_rtcd.h"
 #include "EbCodingLoop.h"
+#include "aom_dsp_rtcd.h"
 
 #define TH_NFL_BIAS             7
 #if MD_CLASS
@@ -1877,13 +1878,14 @@ void fast_loop_core(
     }
     else {
         assert((context_ptr->blk_geom->bwidth >> 3) < 17);
-        lumaFastDistortion = (nxm_sad_kernel_sub_sampled_func_ptr_array[asm_type][context_ptr->blk_geom->bwidth >> 3](
+        lumaFastDistortion = (nxm_sad_kernel_sub_sampled(
             input_picture_ptr->buffer_y + inputOriginIndex,
             input_picture_ptr->stride_y,
             prediction_ptr->buffer_y + cuOriginIndex,
             prediction_ptr->stride_y,
             context_ptr->blk_geom->bheight,
-            context_ptr->blk_geom->bwidth));
+            context_ptr->blk_geom->bwidth,
+            context_ptr->blk_geom->bwidth >> 3));
         candidateBuffer->candidate_ptr->luma_fast_distortion = (uint32_t)lumaFastDistortion;
     }
 #if CHROMA_MD_STAGE_0_TO_MD_STAGE_1
@@ -1910,21 +1912,23 @@ void fast_loop_core(
         }
         else {
             assert((context_ptr->blk_geom->bwidth_uv >> 3) < 17);
-            chromaFastDistortion = nxm_sad_kernel_sub_sampled_func_ptr_array[asm_type][context_ptr->blk_geom->bwidth_uv >> 3](
+            chromaFastDistortion = nxm_sad_kernel_sub_sampled(
                 input_picture_ptr->buffer_cb + inputCbOriginIndex,
                 input_picture_ptr->stride_cb,
                 candidateBuffer->prediction_ptr->buffer_cb + cuChromaOriginIndex,
                 prediction_ptr->stride_cb,
                 context_ptr->blk_geom->bheight_uv,
-                context_ptr->blk_geom->bwidth_uv);
+                context_ptr->blk_geom->bwidth_uv,
+                context_ptr->blk_geom->bwidth >> 3);
 
-            chromaFastDistortion += nxm_sad_kernel_sub_sampled_func_ptr_array[asm_type][context_ptr->blk_geom->bwidth_uv >> 3](
+            chromaFastDistortion += nxm_sad_kernel_sub_sampled(
                 input_picture_ptr->buffer_cr + inputCrOriginIndex,
                 input_picture_ptr->stride_cb,
                 candidateBuffer->prediction_ptr->buffer_cr + cuChromaOriginIndex,
                 prediction_ptr->stride_cr,
                 context_ptr->blk_geom->bheight_uv,
-                context_ptr->blk_geom->bwidth_uv);
+                context_ptr->blk_geom->bwidth_uv,
+                context_ptr->blk_geom->bwidth >> 3);
         }
     }
     else
@@ -2134,13 +2138,14 @@ void perform_fast_loop(
             }
             else {
                 assert((context_ptr->blk_geom->bwidth >> 3) < 17);
-                candidateBuffer->candidate_ptr->luma_fast_distortion = lumaFastDistortion = (nxm_sad_kernel_sub_sampled_func_ptr_array[asm_type][context_ptr->blk_geom->bwidth >> 3](
+                candidateBuffer->candidate_ptr->luma_fast_distortion = lumaFastDistortion = (nxm_sad_kernel_sub_sampled(
                     input_picture_ptr->buffer_y + inputOriginIndex,
                     input_picture_ptr->stride_y,
                     prediction_ptr->buffer_y + cuOriginIndex,
                     prediction_ptr->stride_y,
                     context_ptr->blk_geom->bheight,
-                    context_ptr->blk_geom->bwidth));
+                    context_ptr->blk_geom->bwidth,
+                    context_ptr->blk_geom->bwidth >> 3));
             }
 
             if (context_ptr->blk_geom->has_uv && context_ptr->chroma_level <= CHROMA_MODE_1) {
@@ -2163,21 +2168,23 @@ void perform_fast_loop(
                 }
                 else {
                     assert((context_ptr->blk_geom->bwidth_uv >> 3) < 17);
-                    chromaFastDistortion = nxm_sad_kernel_sub_sampled_func_ptr_array[asm_type][context_ptr->blk_geom->bwidth_uv >> 3](
+                    chromaFastDistortion = nxm_sad_kernel_sub_sampled(
                         input_picture_ptr->buffer_cb + inputCbOriginIndex,
                         input_picture_ptr->stride_cb,
                         candidateBuffer->prediction_ptr->buffer_cb + cuChromaOriginIndex,
                         prediction_ptr->stride_cb,
                         context_ptr->blk_geom->bheight_uv,
-                        context_ptr->blk_geom->bwidth_uv);
+                        context_ptr->blk_geom->bwidth_uv,
+                        context_ptr->blk_geom->bwidth >> 3);
 
-                    chromaFastDistortion += nxm_sad_kernel_sub_sampled_func_ptr_array[asm_type][context_ptr->blk_geom->bwidth_uv >> 3](
+                    chromaFastDistortion += nxm_sad_kernel_sub_sampled(
                         input_picture_ptr->buffer_cr + inputCrOriginIndex,
                         input_picture_ptr->stride_cb,
                         candidateBuffer->prediction_ptr->buffer_cr + cuChromaOriginIndex,
                         prediction_ptr->stride_cr,
                         context_ptr->blk_geom->bheight_uv,
-                        context_ptr->blk_geom->bwidth_uv);
+                        context_ptr->blk_geom->bwidth_uv,
+                        context_ptr->blk_geom->bwidth >> 3);
                 }
             }
             else
@@ -3139,13 +3146,14 @@ void predictive_me_full_pel_search(
             }
             else {
                 assert((context_ptr->blk_geom->bwidth >> 3) < 17);
-                distortion = (nxm_sad_kernel_sub_sampled_func_ptr_array[asm_type][context_ptr->blk_geom->bwidth >> 3](
+                distortion = (nxm_sad_kernel_sub_sampled(
                     input_picture_ptr->buffer_y + inputOriginIndex,
                     input_picture_ptr->stride_y,
                     ref_ptr,
                     ref_pic->stride_y,
                     context_ptr->blk_geom->bheight,
-                    context_ptr->blk_geom->bwidth));
+                    context_ptr->blk_geom->bwidth,
+                    context_ptr->blk_geom->bwidth >> 3));
             }
 
 
@@ -3259,13 +3267,14 @@ void predictive_me_sub_pel_search(
             }
             else {
                 assert((context_ptr->blk_geom->bwidth >> 3) < 17);
-                distortion = (nxm_sad_kernel_sub_sampled_func_ptr_array[asm_type][context_ptr->blk_geom->bwidth >> 3](
+                distortion = (nxm_sad_kernel_sub_sampled(
                     input_picture_ptr->buffer_y + inputOriginIndex,
                     input_picture_ptr->stride_y,
                     prediction_ptr->buffer_y + cuOriginIndex,
                     prediction_ptr->stride_y,
                     context_ptr->blk_geom->bheight,
-                    context_ptr->blk_geom->bwidth));
+                    context_ptr->blk_geom->bwidth,
+                    context_ptr->blk_geom->bwidth >> 3));
             }
 
 
@@ -3365,13 +3374,14 @@ void predictive_me_search(
             }
             else {
                 assert((context_ptr->blk_geom->bwidth >> 3) < 17);
-                pa_me_distortion = (nxm_sad_kernel_sub_sampled_func_ptr_array[asm_type][context_ptr->blk_geom->bwidth >> 3](
+                pa_me_distortion = (nxm_sad_kernel_sub_sampled(
                     input_picture_ptr->buffer_y + inputOriginIndex,
                     input_picture_ptr->stride_y,
                     ref_ptr,
                     ref_pic->stride_y,
                     context_ptr->blk_geom->bheight,
-                    context_ptr->blk_geom->bwidth));
+                    context_ptr->blk_geom->bwidth,
+                    context_ptr->blk_geom->bwidth >> 3));
             }
 
             if (pa_me_distortion != 0 || context_ptr->predictive_me_level >= 5) {
@@ -3426,13 +3436,14 @@ void predictive_me_search(
                     }
                     else {
                         assert((context_ptr->blk_geom->bwidth >> 3) < 17);
-                        mvp_distortion = (nxm_sad_kernel_sub_sampled_func_ptr_array[asm_type][context_ptr->blk_geom->bwidth >> 3](
+                        mvp_distortion = (nxm_sad_kernel_sub_sampled(
                             input_picture_ptr->buffer_y + inputOriginIndex,
                             input_picture_ptr->stride_y,
                             ref_ptr,
                             ref_pic->stride_y,
                             context_ptr->blk_geom->bheight,
-                            context_ptr->blk_geom->bwidth));
+                            context_ptr->blk_geom->bwidth,
+                            context_ptr->blk_geom->bwidth >> 3));
                     }
 
                     if (mvp_distortion < best_mvp_distortion) {
@@ -10878,8 +10889,7 @@ static void in_loop_me_get_search_point_results_block(
     uint32_t                   ref_index,
     int32_t                   x_search_index,                  // input parameter, search region position in the horizontal direction, used to derive xMV
     int32_t                   y_search_index,                  // input parameter, search region position in the vertical direction, used to derive yMV
-    uint32_t                   number_of_sb_quad,
-    EbAsm                   asm_type)
+    uint32_t                   number_of_sb_quad)
 {
     uint8_t  *src_ptr = context_ptr->sb_buffer;
 
@@ -11164,8 +11174,7 @@ static void in_loop_me_fullpel_search_sblock(
                 x_search_index + y_search_index * context_ptr->interpolated_full_stride[list_index][0],
                 (int32_t)x_search_index + x_search_area_origin,
                 (int32_t)y_search_index + y_search_area_origin,
-                number_of_sb_quad,
-                asm_type);
+                number_of_sb_quad);
         }
     }
 }
@@ -11410,7 +11419,7 @@ static void in_loop_me_halfpel_refinement_block(
 
     // L position
     searchRegionIndex = xSearchIndex + (int16_t)context_ptr->interpolated_stride * ySearchIndex;
-    distortionLeftPosition = (nxm_sad_kernel_func_ptr_array[asm_type][pu_width >> 3](&(context_ptr->sb_src_ptr[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, &(pos_b_buffer[searchRegionIndex]), context_ptr->interpolated_stride << 1, pu_height >> 1, pu_width)) << 1;
+    distortionLeftPosition = (nxm_sad_kernel(&(context_ptr->sb_src_ptr[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, &(pos_b_buffer[searchRegionIndex]), context_ptr->interpolated_stride << 1, pu_height >> 1, pu_width, pu_width >> 3)) << 1;
     if (distortionLeftPosition < *pBestSad) {
         *pBestSad = (uint32_t)distortionLeftPosition;
         *pBestMV = ((uint16_t)yMvHalf[0] << 16) | ((uint16_t)xMvHalf[0]);
@@ -11418,7 +11427,7 @@ static void in_loop_me_halfpel_refinement_block(
 
     // R position
     searchRegionIndex++;
-    distortionRightPosition = (nxm_sad_kernel_func_ptr_array[asm_type][pu_width >> 3](&(context_ptr->sb_src_ptr[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, &(pos_b_buffer[searchRegionIndex]), context_ptr->interpolated_stride << 1, pu_height >> 1, pu_width)) << 1;
+    distortionRightPosition = (nxm_sad_kernel(&(context_ptr->sb_src_ptr[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, &(pos_b_buffer[searchRegionIndex]), context_ptr->interpolated_stride << 1, pu_height >> 1, pu_width, pu_width >> 3)) << 1;
 
     if (distortionRightPosition < *pBestSad) {
         *pBestSad = (uint32_t)distortionRightPosition;
@@ -11427,7 +11436,7 @@ static void in_loop_me_halfpel_refinement_block(
 
     // T position
     searchRegionIndex = xSearchIndex + (int16_t)context_ptr->interpolated_stride * ySearchIndex;
-    distortionTopPosition = (nxm_sad_kernel_func_ptr_array[asm_type][pu_width >> 3](&(context_ptr->sb_src_ptr[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, &(pos_h_buffer[searchRegionIndex]), context_ptr->interpolated_stride << 1, pu_height >> 1, pu_width)) << 1;
+    distortionTopPosition = (nxm_sad_kernel(&(context_ptr->sb_src_ptr[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, &(pos_h_buffer[searchRegionIndex]), context_ptr->interpolated_stride << 1, pu_height >> 1, pu_width, pu_width >> 3)) << 1;
     if (distortionTopPosition < *pBestSad) {
         *pBestSad = (uint32_t)distortionTopPosition;
         *pBestMV = ((uint16_t)yMvHalf[2] << 16) | ((uint16_t)xMvHalf[2]);
@@ -11435,7 +11444,7 @@ static void in_loop_me_halfpel_refinement_block(
 
     // B position
     searchRegionIndex += (int16_t)context_ptr->interpolated_stride;
-    distortionBottomPosition = (nxm_sad_kernel_func_ptr_array[asm_type][pu_width >> 3](&(context_ptr->sb_src_ptr[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, &(pos_h_buffer[searchRegionIndex]), context_ptr->interpolated_stride << 1, pu_height >> 1, pu_width)) << 1;
+    distortionBottomPosition = (nxm_sad_kernel(&(context_ptr->sb_src_ptr[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, &(pos_h_buffer[searchRegionIndex]), context_ptr->interpolated_stride << 1, pu_height >> 1, pu_width, pu_width >> 3)) << 1;
     if (distortionBottomPosition < *pBestSad) {
         *pBestSad = (uint32_t)distortionBottomPosition;
         *pBestMV = ((uint16_t)yMvHalf[3] << 16) | ((uint16_t)xMvHalf[3]);
@@ -11443,7 +11452,7 @@ static void in_loop_me_halfpel_refinement_block(
 
     //TL position
     searchRegionIndex = xSearchIndex + (int16_t)context_ptr->interpolated_stride * ySearchIndex;
-    distortionTopLeftPosition = (nxm_sad_kernel_func_ptr_array[asm_type][pu_width >> 3](&(context_ptr->sb_src_ptr[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, &(pos_j_buffer[searchRegionIndex]), context_ptr->interpolated_stride << 1, pu_height >> 1, pu_width)) << 1;
+    distortionTopLeftPosition = (nxm_sad_kernel(&(context_ptr->sb_src_ptr[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, &(pos_j_buffer[searchRegionIndex]), context_ptr->interpolated_stride << 1, pu_height >> 1, pu_width, pu_width >> 3)) << 1;
     if (distortionTopLeftPosition < *pBestSad) {
         *pBestSad = (uint32_t)distortionTopLeftPosition;
         *pBestMV = ((uint16_t)yMvHalf[4] << 16) | ((uint16_t)xMvHalf[4]);
@@ -11451,7 +11460,7 @@ static void in_loop_me_halfpel_refinement_block(
 
     //TR position
     searchRegionIndex++;
-    distortionTopRightPosition = (nxm_sad_kernel_func_ptr_array[asm_type][pu_width >> 3](&(context_ptr->sb_src_ptr[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, &(pos_j_buffer[searchRegionIndex]), context_ptr->interpolated_stride << 1, pu_height >> 1, pu_width)) << 1;
+    distortionTopRightPosition = (nxm_sad_kernel(&(context_ptr->sb_src_ptr[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, &(pos_j_buffer[searchRegionIndex]), context_ptr->interpolated_stride << 1, pu_height >> 1, pu_width, pu_width >> 3)) << 1;
     if (distortionTopRightPosition < *pBestSad) {
         *pBestSad = (uint32_t)distortionTopRightPosition;
         *pBestMV = ((uint16_t)yMvHalf[5] << 16) | ((uint16_t)xMvHalf[5]);
@@ -11459,7 +11468,7 @@ static void in_loop_me_halfpel_refinement_block(
 
     //BR position
     searchRegionIndex += (int16_t)context_ptr->interpolated_stride;
-    distortionBottomRightPosition = (nxm_sad_kernel_func_ptr_array[asm_type][pu_width >> 3](&(context_ptr->sb_src_ptr[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, &(pos_j_buffer[searchRegionIndex]), context_ptr->interpolated_stride << 1, pu_height >> 1, pu_width)) << 1;
+    distortionBottomRightPosition = (nxm_sad_kernel(&(context_ptr->sb_src_ptr[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, &(pos_j_buffer[searchRegionIndex]), context_ptr->interpolated_stride << 1, pu_height >> 1, pu_width, pu_width >> 3)) << 1;
     if (distortionBottomRightPosition < *pBestSad) {
         *pBestSad = (uint32_t)distortionBottomRightPosition;
         *pBestMV = ((uint16_t)yMvHalf[6] << 16) | ((uint16_t)xMvHalf[6]);
@@ -11467,7 +11476,7 @@ static void in_loop_me_halfpel_refinement_block(
 
     //BL position
     searchRegionIndex--;
-    distortionBottomLeftPosition = (nxm_sad_kernel_func_ptr_array[asm_type][pu_width >> 3](&(context_ptr->sb_src_ptr[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, &(pos_j_buffer[searchRegionIndex]), context_ptr->interpolated_stride << 1, pu_height >> 1, pu_width)) << 1;
+    distortionBottomLeftPosition = (nxm_sad_kernel(&(context_ptr->sb_src_ptr[block_index_in_sb_buffer]), context_ptr->sb_src_stride << 1, &(pos_j_buffer[searchRegionIndex]), context_ptr->interpolated_stride << 1, pu_height >> 1, pu_width, pu_width >> 3)) << 1;
     if (distortionBottomLeftPosition < *pBestSad) {
         *pBestSad = (uint32_t)distortionBottomLeftPosition;
         *pBestMV = ((uint16_t)yMvHalf[7] << 16) | ((uint16_t)xMvHalf[7]);

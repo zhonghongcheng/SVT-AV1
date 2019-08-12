@@ -645,8 +645,7 @@ void apply_filtering_block(int block_row,
 #else
                            int altref_strength,
 #endif
-                           const int *blk_fw,
-                           EbAsm asm_type) {
+                           const int *blk_fw) {
     int offset_src_buffer_Y = block_row * (BH>>1) * stride[C_Y] + block_col * (BW>>1);
     int offset_src_buffer_U = block_row * (BH>>2) * stride[C_U] + block_col * (BW>>2);
     int offset_src_buffer_V = block_row * (BH>>2) * stride[C_V] + block_col * (BW>>2);
@@ -1643,8 +1642,7 @@ static EbErrorType produce_temporally_filtered_pic(
 #else
                                                   altref_strength,
 #endif
-                                                  blk_fw,
-                                                  asm_type);
+                                                  blk_fw);
                         }
                     }
                 }

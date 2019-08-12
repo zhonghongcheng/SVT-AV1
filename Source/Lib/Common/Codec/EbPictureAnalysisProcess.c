@@ -3664,8 +3664,7 @@ EbErrorType QuarterSampleDetectNoise(
     EbPictureBufferDesc       *quarter_decimated_picture_ptr,
     EbPictureBufferDesc       *noise_picture_ptr,
     EbPictureBufferDesc       *denoised_picture_ptr,
-    uint32_t                         picture_width_in_sb,
-    EbAsm                         asm_type)
+    uint32_t                         picture_width_in_sb)
 {
     EbErrorType return_error = EB_ErrorNone;
 
@@ -3786,8 +3785,7 @@ EbErrorType SubSampleDetectNoise(
     EbPictureBufferDesc       *sixteenth_decimated_picture_ptr,
     EbPictureBufferDesc       *noise_picture_ptr,
     EbPictureBufferDesc       *denoised_picture_ptr,
-    uint32_t                         picture_width_in_sb,
-    EbAsm                         asm_type)
+    uint32_t                         picture_width_in_sb)
 {
     EbErrorType return_error = EB_ErrorNone;
 
@@ -3940,8 +3938,7 @@ EbErrorType QuarterSampleDenoise(
         quarter_decimated_picture_ptr,
         noise_picture_ptr,
         denoised_picture_ptr,
-        picture_width_in_sb,
-        asm_type);
+        picture_width_in_sb);
 
     if (denoise_flag == EB_TRUE) {
         // Turn OFF the de-noiser for Class 2 at QP=29 and lower (for Fixed_QP) and at the target rate of 14Mbps and higher (for RC=ON)
@@ -4000,8 +3997,7 @@ EbErrorType SubSampleDenoise(
         sixteenth_decimated_picture_ptr,
         noise_picture_ptr,
         denoised_picture_ptr,
-        picture_width_in_sb,
-        asm_type);
+        picture_width_in_sb);
 
     if (denoise_flag == EB_TRUE) {
         // Turn OFF the de-noiser for Class 2 at QP=29 and lower (for Fixed_QP) and at the target rate of 14Mbps and higher (for RC=ON)

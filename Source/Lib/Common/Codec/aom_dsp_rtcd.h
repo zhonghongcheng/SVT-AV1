@@ -88,6 +88,13 @@ extern "C" {
     RTCD_EXTERN void(*apply_32x32_temporal_filtering)(const uint8_t *y_frame1, int y_stride, const uint8_t *y_pred, int y_buf_stride, const uint8_t *u_frame1, const uint8_t *v_frame1, int uv_stride, const uint8_t *u_pred, const uint8_t *v_pred, int uv_buf_stride, unsigned int block_width, unsigned int block_height, int ss_x, int ss_y, int strength, const int *blk_fw, int use_32x32, uint32_t *y_accumulator, uint16_t *y_count, uint32_t *u_accumulator, uint16_t *u_count, uint32_t *v_accumulator, uint16_t *v_count);
 #endif
 
+    uint32_t nxm_sad_kernel_helper(const uint8_t  *src, uint32_t  src_stride, const uint8_t  *ref, uint32_t  ref_stride, uint32_t  height, uint32_t  width, uint8_t choice);
+    uint32_t nxm_sad_kernel_sub_sampled_avx2_helper(const uint8_t  *src, uint32_t  src_stride, const uint8_t  *ref, uint32_t  ref_stride, uint32_t  height, uint32_t  width, uint8_t choice);
+    RTCD_EXTERN uint32_t(*nxm_sad_kernel_sub_sampled)(const uint8_t  *src, uint32_t  src_stride, const uint8_t  *ref, uint32_t  ref_stride, uint32_t  height, uint32_t  width, uint8_t choice);
+
+    uint32_t nxm_sad_kernel_avx2_helper(const uint8_t  *src, uint32_t  src_stride, const uint8_t  *ref, uint32_t  ref_stride, uint32_t  height, uint32_t  width, uint8_t choice);
+    RTCD_EXTERN uint32_t(*nxm_sad_kernel)(const uint8_t  *src, uint32_t  src_stride, const uint8_t  *ref, uint32_t  ref_stride, uint32_t  height, uint32_t  width, uint8_t choice);
+
     uint64_t compute_mean_helper(uint8_t *input_samples, uint32_t input_stride, uint32_t input_area_width, uint32_t input_area_height, uint8_t  choice);
     uint64_t compute_mean_avx2_helper(uint8_t *input_samples, uint32_t input_stride, uint32_t input_area_width, uint32_t input_area_height, uint8_t  choice);
     RTCD_EXTERN uint64_t(*compute_mean)(uint8_t *input_samples, uint32_t input_stride, uint32_t input_area_width, uint32_t input_area_height, uint8_t  choice);
@@ -2523,6 +2530,12 @@ extern "C" {
 
         apply_32x32_temporal_filtering = apply_filtering_c;
         if (flags & HAS_SSE4_1) apply_32x32_temporal_filtering = av1_apply_temporal_filter_sse4_1;
+
+        nxm_sad_kernel_sub_sampled = nxm_sad_kernel_helper;
+        if (flags & HAS_AVX2) nxm_sad_kernel_sub_sampled = nxm_sad_kernel_sub_sampled_avx2_helper;
+
+        nxm_sad_kernel = nxm_sad_kernel_helper;
+        if (flags & HAS_AVX2) nxm_sad_kernel = nxm_sad_kernel_avx2_helper;
 
         compute_mean = compute_mean_helper;
         if (flags & HAS_AVX2) compute_mean = compute_mean_avx2_helper;
