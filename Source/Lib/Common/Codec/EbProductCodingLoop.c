@@ -11305,7 +11305,7 @@ static void in_loop_me_interpolate_search_region_avc_style(
     (void)inputBitDepth;
     // Half pel interpolation of the search region using f1 -> pos_b_buffer
     if (searchAreaWidthForAsm) {
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][2](
+        avc_style_luma_interpolation_filter(
             searchRegionBuffer - (ME_FILTER_TAP >> 1) * lumaStride - (ME_FILTER_TAP >> 1) + 1,
             lumaStride,
             context_ptr->pos_b_buffer[listIndex][0],
@@ -11314,12 +11314,13 @@ static void in_loop_me_interpolate_search_region_avc_style(
             search_area_height + ME_FILTER_TAP,
             context_ptr->avctemp_buffer,
             EB_FALSE,
+            2,
             2);
     }
 
     // Half pel interpolation of the search region using f1 -> pos_h_buffer
     if (searchAreaWidthForAsm) {
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][8](
+        avc_style_luma_interpolation_filter(
             searchRegionBuffer - (ME_FILTER_TAP >> 1) * lumaStride - 1 + lumaStride,
             lumaStride,
             context_ptr->pos_h_buffer[listIndex][0],
@@ -11328,12 +11329,13 @@ static void in_loop_me_interpolate_search_region_avc_style(
             search_area_height + 1,
             context_ptr->avctemp_buffer,
             EB_FALSE,
-            2);
+            2,
+            8);
     }
 
     if (searchAreaWidthForAsm) {
         // Half pel interpolation of the search region using f1 -> pos_j_buffer
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][8](
+        avc_style_luma_interpolation_filter(
             context_ptr->pos_b_buffer[listIndex][0] + context_ptr->interpolated_stride,
             context_ptr->interpolated_stride,
             context_ptr->pos_j_buffer[listIndex][0],
@@ -11342,7 +11344,8 @@ static void in_loop_me_interpolate_search_region_avc_style(
             search_area_height + 1,
             context_ptr->avctemp_buffer,
             EB_FALSE,
-            2);
+            2,
+            8);
     }
 
     return;

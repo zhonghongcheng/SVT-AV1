@@ -56,13 +56,14 @@ void estimate_uni_pred_interpolation_unpacked_avc_style(
     (void)component_mask;
     (void)dst_chroma_index;
     //doing the luma interpolation
-    avc_style_uni_pred_luma_if_function_ptr_array[asm_type][mapped_frac_posx + (mapped_frac_posy << 2)](
+    avc_style_luma_interpolation_filter(
         ref_pic->buffer_y + 2 + 2 * ref_pic->stride_y, ref_pic->stride_y,
         dst->buffer_y + dst_luma_index, luma_stride,
         pu_width, pu_height,
         temp_buf,
         sub_sample_pred_flag,
-        mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
+        mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy,
+        mapped_frac_posx + (mapped_frac_posy << 2));
 }
 
 /*******************************************************************************
@@ -117,13 +118,14 @@ void estimate_bi_pred_interpolation_unpacked_avc_style(
     mapped_frac_posx = frac_posx;
     mapped_frac_posy = frac_posy;
 
-    avc_style_uni_pred_luma_if_function_ptr_array[asm_type][mapped_frac_posx + (mapped_frac_posy << 2)](
+    avc_style_luma_interpolation_filter(
         ref_pic_list0->buffer_y + integ_pos_x + integ_pos_y * ref_luma_stride, ref_luma_stride,
         ref_list0_temp_dst, pu_width,
         pu_width, pu_height,
         first_pass_if_temp_dst,
         sub_sample_pred_flag,
-        mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
+        mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy,
+        mapped_frac_posx + (mapped_frac_posy << 2));
 
     frac_posx = ref_list1_pos_x & 0x03;
     frac_posy = ref_list1_pos_y & 0x03;
@@ -132,13 +134,14 @@ void estimate_bi_pred_interpolation_unpacked_avc_style(
     mapped_frac_posy = frac_posy;
 
     //doing the luma interpolation
-    avc_style_uni_pred_luma_if_function_ptr_array[asm_type][mapped_frac_posx + (mapped_frac_posy << 2)](
+    avc_style_luma_interpolation_filter(
         ref_pic_list1->buffer_y + integ_pos_x + integ_pos_y * ref_luma_stride, ref_luma_stride,
         ref_list1_temp_dst, pu_width,
         pu_width, pu_height,
         first_pass_if_temp_dst,
         sub_sample_pred_flag,
-        mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
+        mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy,
+        mapped_frac_posx + (mapped_frac_posy << 2));
 
     // bi-pred luma
     picture_average(ref_list0_temp_dst, pu_width << sub_sample_pred_flag, ref_list1_temp_dst, pu_width << sub_sample_pred_flag, bi_dst->buffer_y + dst_luma_index, luma_stride << sub_sample_pred_flag, pu_width, pu_height >> sub_sample_pred_flag);
@@ -203,13 +206,14 @@ void estimate_uni_pred_interpolation_avc_luma(
     if (component_mask & PICTURE_BUFFER_DESC_LUMA_MASK)
     {
         //doing the luma interpolation
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][mapped_frac_posx + (mapped_frac_posy << 2)](
+        avc_style_luma_interpolation_filter(
             ref_pic->buffer_y + integ_pos_x + integ_pos_y * ref_pic->stride_y, ref_pic->stride_y,
             dst->buffer_y + dst_luma_index, luma_stride,
             pu_width, pu_height,
             temp_buf,
             sub_sample_pred_flag,
-            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
+            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy,
+            mapped_frac_posx + (mapped_frac_posy << 2));
     }
     //chroma
     if (component_mask & PICTURE_BUFFER_DESC_CHROMA_MASK) {
@@ -229,7 +233,7 @@ void estimate_uni_pred_interpolation_avc_luma(
         // Note: chroma_pu_width equals 4 is only supported in Intrinsic
        //       for integer positions ( mapped_frac_posx + (mapped_frac_posy << 3) equals 0 )
        //doing the chroma Cb interpolation
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][mapped_frac_posx + (mapped_frac_posy << 3)](
+        avc_style_luma_interpolation_filter(
             ref_pic->buffer_cb + integ_pos_x + integ_pos_y * ref_pic->stride_cb,
             ref_pic->stride_cb,
             dst->buffer_cb + dst_chroma_index,
@@ -238,10 +242,11 @@ void estimate_uni_pred_interpolation_avc_luma(
             chroma_pu_height,
             temp_buf,
             sub_sample_pred_flag,
-            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
+            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy,
+            mapped_frac_posx + (mapped_frac_posy << 3));
 
         //doing the chroma Cr interpolation
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][mapped_frac_posx + (mapped_frac_posy << 3)](
+        avc_style_luma_interpolation_filter(
             ref_pic->buffer_cr + integ_pos_x + integ_pos_y * ref_pic->stride_cr,
             ref_pic->stride_cr,
             dst->buffer_cr + dst_chroma_index,
@@ -250,7 +255,8 @@ void estimate_uni_pred_interpolation_avc_luma(
             chroma_pu_height,
             temp_buf,
             sub_sample_pred_flag,
-            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
+            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy,
+            mapped_frac_posx + (mapped_frac_posy << 3));
     }
 }
 
@@ -317,13 +323,14 @@ void estimate_bi_pred_interpolation_avc_luma(
         integ_pos_x += integer_posoffset_tab_x[frac_pos];
         integ_pos_y += integer_posoffset_tab_y[frac_pos];
 
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][mapped_frac_posx + (mapped_frac_posy << 2)](
+        avc_style_luma_interpolation_filter(
             ref_pic_list0->buffer_y + integ_pos_x + integ_pos_y * ref_luma_stride, ref_luma_stride,
             ref_list0_temp_dst, pu_width,
             pu_width, pu_height,
             first_pass_if_temp_dst,
             sub_sample_pred_flag,
-            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
+            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy,
+            mapped_frac_posx + (mapped_frac_posy << 2));
 
         //uni-prediction List1 luma
         //compute the luma fractional position
@@ -342,13 +349,14 @@ void estimate_bi_pred_interpolation_avc_luma(
         integ_pos_x += integer_posoffset_tab_x[frac_pos];
         integ_pos_y += integer_posoffset_tab_y[frac_pos];
         //doing the luma interpolation
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][mapped_frac_posx + (mapped_frac_posy << 2)](
+        avc_style_luma_interpolation_filter(
             ref_pic_list1->buffer_y + integ_pos_x + integ_pos_y * ref_luma_stride, ref_luma_stride,
             ref_list1_temp_dst, pu_width,
             pu_width, pu_height,
             first_pass_if_temp_dst,
             sub_sample_pred_flag,
-            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
+            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy,
+            mapped_frac_posx + (mapped_frac_posy << 2));
 
         // bi-pred luma
         picture_average(ref_list0_temp_dst, pu_width << sub_sample_pred_flag, ref_list1_temp_dst, pu_width << sub_sample_pred_flag, bi_dst->buffer_y + dst_luma_index, luma_stride << sub_sample_pred_flag, pu_width, pu_height >> sub_sample_pred_flag);
@@ -375,7 +383,7 @@ void estimate_bi_pred_interpolation_avc_luma(
         if (frac_posy > 4)
             integ_pos_y++;
 
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][mapped_frac_posx + (mapped_frac_posy << 3)](
+        avc_style_luma_interpolation_filter(
             ref_pic_list0->buffer_cb + integ_pos_x + integ_pos_y * ref_pic_list0->stride_cb,
             ref_pic_list0->stride_cb,
             ref_list0_temp_dst,
@@ -384,7 +392,8 @@ void estimate_bi_pred_interpolation_avc_luma(
             chroma_pu_height,
             first_pass_if_temp_dst,
             sub_sample_pred_flag,
-            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
+            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy,
+            mapped_frac_posx + (mapped_frac_posy << 3));
 
         //doing the chroma Cb interpolation list 1
 
@@ -400,7 +409,7 @@ void estimate_bi_pred_interpolation_avc_luma(
         if (frac_posy > 4)
             integ_pos_y++;
 
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][mapped_frac_posx + (mapped_frac_posy << 3)](
+        avc_style_luma_interpolation_filter(
             ref_pic_list1->buffer_cb + integ_pos_x + integ_pos_y * ref_pic_list1->stride_cb,
             ref_pic_list1->stride_cb,
             ref_list1_temp_dst,
@@ -409,7 +418,8 @@ void estimate_bi_pred_interpolation_avc_luma(
             chroma_pu_height,
             first_pass_if_temp_dst,
             sub_sample_pred_flag,
-            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
+            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy,
+            mapped_frac_posx + (mapped_frac_posy << 3));
 
         // bi-pred Chroma Cb
         picture_average(
@@ -440,7 +450,7 @@ void estimate_bi_pred_interpolation_avc_luma(
         if (frac_posy > 4)
             integ_pos_y++;
 
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][mapped_frac_posx + (mapped_frac_posy << 3)](
+        avc_style_luma_interpolation_filter(
             ref_pic_list0->buffer_cr + integ_pos_x + integ_pos_y * ref_pic_list0->stride_cr,
             ref_pic_list0->stride_cr,
             ref_list0_temp_dst,
@@ -449,7 +459,8 @@ void estimate_bi_pred_interpolation_avc_luma(
             chroma_pu_height,
             first_pass_if_temp_dst,
             sub_sample_pred_flag,
-            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
+            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy,
+            mapped_frac_posx + (mapped_frac_posy << 3));
 
         //doing the chroma Cb interpolation list 1
 
@@ -465,7 +476,7 @@ void estimate_bi_pred_interpolation_avc_luma(
         if (frac_posy > 4)
             integ_pos_y++;
 
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][mapped_frac_posx + (mapped_frac_posy << 3)](
+        avc_style_luma_interpolation_filter(
             ref_pic_list1->buffer_cr + integ_pos_x + integ_pos_y * ref_pic_list1->stride_cr,
             ref_pic_list1->stride_cr,
             ref_list1_temp_dst,
@@ -474,7 +485,8 @@ void estimate_bi_pred_interpolation_avc_luma(
             chroma_pu_height,
             first_pass_if_temp_dst,
             sub_sample_pred_flag,
-            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
+            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy,
+            mapped_frac_posx + (mapped_frac_posy << 3));
 
         // bi-pred Chroma Cr
         picture_average(
@@ -622,8 +634,7 @@ void estimate_bi_pred_interpolation_avc_chroma_ref10_bit(
     EbByte                  ref_list0_temp_dst,
     EbByte                  ref_list1_temp_dst,
     EbByte                  first_pass_if_temp_dst,
-    EbBool                   sub_pred,
-    EbAsm                    asm_type)
+    EbBool                   sub_pred)
 {
     uint32_t   chroma_pu_width = pu_width >> 1;
     uint32_t   chroma_pu_height = pu_height >> 1;
@@ -673,8 +684,7 @@ void estimate_bi_pred_interpolation_avc_luma_ref10_bit(
     EbByte                  ref_list1_temp_dst,
     EbByte                  first_pass_if_temp_dst,
     EbBool                   sub_pred,
-    EbBool                   sub_pred_chroma,
-    EbAsm                    asm_type)
+    EbBool                   sub_pred_chroma)
 {
     uint32_t   chroma_pu_width = pu_width >> 1;
     uint32_t   chroma_pu_height = pu_height >> 1;
@@ -769,13 +779,14 @@ void uni_pred_i_free_ref8_bit(
     if (component_mask & PICTURE_BUFFER_DESC_LUMA_MASK)
     {
         //doing the luma interpolation
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][mapped_frac_posx + (mapped_frac_posy << 2)](
+        avc_style_luma_interpolation_filter(
             ref_pic->buffer_y + integ_pos_x + integ_pos_y * ref_pic->stride_y, ref_pic->stride_y,
             dst->buffer_y + dst_luma_index, luma_stride,
             pu_width, pu_height,
             temp_buf,
             sub_sample_pred_flag,
-            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
+            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy,
+            mapped_frac_posx + (mapped_frac_posy << 2));
     }
     //chroma
     if (component_mask & PICTURE_BUFFER_DESC_CHROMA_MASK) {
@@ -795,7 +806,7 @@ void uni_pred_i_free_ref8_bit(
         // Note: chroma_pu_width equals 4 is only supported in Intrinsic
        //       for integer positions ( mapped_frac_posx + (mapped_frac_posy << 3) equals 0 )
        //doing the chroma Cb interpolation
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][mapped_frac_posx + (mapped_frac_posy << 3)](
+        avc_style_luma_interpolation_filter(
             ref_pic->buffer_cb + integ_pos_x + integ_pos_y * ref_pic->stride_cb,
             ref_pic->stride_cb,
             dst->buffer_cb + dst_chroma_index,
@@ -804,10 +815,11 @@ void uni_pred_i_free_ref8_bit(
             chroma_pu_height,
             temp_buf,
             sub_sample_pred_flag_chroma,
-            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
+            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy,
+            mapped_frac_posx + (mapped_frac_posy << 3));
 
         //doing the chroma Cr interpolation
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][mapped_frac_posx + (mapped_frac_posy << 3)](
+        avc_style_luma_interpolation_filter(
             ref_pic->buffer_cr + integ_pos_x + integ_pos_y * ref_pic->stride_cr,
             ref_pic->stride_cr,
             dst->buffer_cr + dst_chroma_index,
@@ -816,7 +828,8 @@ void uni_pred_i_free_ref8_bit(
             chroma_pu_height,
             temp_buf,
             sub_sample_pred_flag_chroma,
-            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
+            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy,
+            mapped_frac_posx + (mapped_frac_posy << 3));
     }
 }
 
@@ -873,13 +886,14 @@ void bi_pred_i_free_ref8_bit(
         integ_pos_x += integer_posoffset_tab_x[frac_pos];
         integ_pos_y += integer_posoffset_tab_y[frac_pos];
 
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][mapped_frac_posx + (mapped_frac_posy << 2)](
+        avc_style_luma_interpolation_filter(
             ref_pic_list0->buffer_y + integ_pos_x + integ_pos_y * ref_luma_stride, ref_luma_stride,
             ref_list0_temp_dst, pu_width,
             pu_width, pu_height,
             first_pass_if_temp_dst,
             sub_sample_pred_flag,
-            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
+            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy,
+            mapped_frac_posx + (mapped_frac_posy << 2));
 
         //uni-prediction List1 luma
         //compute the luma fractional position
@@ -899,13 +913,14 @@ void bi_pred_i_free_ref8_bit(
         integ_pos_y += integer_posoffset_tab_y[frac_pos];
 
         //doing the luma interpolation
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][mapped_frac_posx + (mapped_frac_posy << 2)](
+        avc_style_luma_interpolation_filter(
             ref_pic_list1->buffer_y + integ_pos_x + integ_pos_y * ref_luma_stride, ref_luma_stride,
             ref_list1_temp_dst, pu_width,
             pu_width, pu_height,
             first_pass_if_temp_dst,
             sub_sample_pred_flag,
-            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
+            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy,
+            mapped_frac_posx + (mapped_frac_posy << 2));
 
         // bi-pred luma
         picture_average(ref_list0_temp_dst, pu_width << sub_sample_pred_flag, ref_list1_temp_dst, pu_width << sub_sample_pred_flag, bi_dst->buffer_y + dst_luma_index, luma_stride << sub_sample_pred_flag, pu_width, pu_height >> sub_sample_pred_flag);
@@ -934,7 +949,7 @@ void bi_pred_i_free_ref8_bit(
         if (frac_posy > 4)
             integ_pos_y++;
 
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][mapped_frac_posx + (mapped_frac_posy << 3)](
+        avc_style_luma_interpolation_filter(
             ref_pic_list0->buffer_cb + integ_pos_x + integ_pos_y * ref_pic_list0->stride_cb,
             ref_pic_list0->stride_cb,
             ref_list0_temp_dst,
@@ -943,7 +958,8 @@ void bi_pred_i_free_ref8_bit(
             chroma_pu_height,
             first_pass_if_temp_dst,
             sub_sample_pred_flag_chroma,
-            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
+            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy,
+            mapped_frac_posx + (mapped_frac_posy << 3));
 
         //doing the chroma Cb interpolation list 1
         integ_pos_x = (ref_list1_pos_x >> 3);
@@ -958,7 +974,7 @@ void bi_pred_i_free_ref8_bit(
         if (frac_posy > 4)
             integ_pos_y++;
 
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][mapped_frac_posx + (mapped_frac_posy << 3)](
+        avc_style_luma_interpolation_filter(
             ref_pic_list1->buffer_cb + integ_pos_x + integ_pos_y * ref_pic_list1->stride_cb,
             ref_pic_list1->stride_cb,
             ref_list1_temp_dst,
@@ -967,7 +983,8 @@ void bi_pred_i_free_ref8_bit(
             chroma_pu_height,
             first_pass_if_temp_dst,
             sub_sample_pred_flag_chroma,
-            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
+            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy,
+            mapped_frac_posx + (mapped_frac_posy << 3));
 
         // bi-pred Chroma Cb
         picture_average(
@@ -997,7 +1014,7 @@ void bi_pred_i_free_ref8_bit(
         if (frac_posy > 4)
             integ_pos_y++;
 
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][mapped_frac_posx + (mapped_frac_posy << 3)](
+        avc_style_luma_interpolation_filter(
             ref_pic_list0->buffer_cr + integ_pos_x + integ_pos_y * ref_pic_list0->stride_cr,
             ref_pic_list0->stride_cr,
             ref_list0_temp_dst,
@@ -1006,7 +1023,8 @@ void bi_pred_i_free_ref8_bit(
             chroma_pu_height,
             first_pass_if_temp_dst,
             sub_sample_pred_flag_chroma,
-            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
+            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy,
+            mapped_frac_posx + (mapped_frac_posy << 3));
 
         //doing the chroma Cb interpolation list 1
         integ_pos_x = (ref_list1_pos_x >> 3);
@@ -1021,7 +1039,7 @@ void bi_pred_i_free_ref8_bit(
         if (frac_posy > 4)
             integ_pos_y++;
 
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][mapped_frac_posx + (mapped_frac_posy << 3)](
+        avc_style_luma_interpolation_filter(
             ref_pic_list1->buffer_cr + integ_pos_x + integ_pos_y * ref_pic_list1->stride_cr,
             ref_pic_list1->stride_cr,
             ref_list1_temp_dst,
@@ -1030,7 +1048,8 @@ void bi_pred_i_free_ref8_bit(
             chroma_pu_height,
             first_pass_if_temp_dst,
             sub_sample_pred_flag_chroma,
-            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
+            mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy,
+            mapped_frac_posx + (mapped_frac_posy << 3));
 
         // bi-pred Chroma Cr
         picture_average(
@@ -1042,5 +1061,71 @@ void bi_pred_i_free_ref8_bit(
             bi_dst->stride_cr << shift,
             chroma_pu_width,
             chroma_pu_height >> shift);
+    }
+}
+
+void avc_style_luma_interpolation_filter_ssse3_helper(
+    EbByte ref_pic,
+    uint32_t src_stride,
+    EbByte dst,
+    uint32_t dst_stride,
+    uint32_t pu_width,
+    uint32_t pu_height,
+    EbByte temp_buf,
+    EbBool skip,
+    uint32_t frac_pos,
+    uint8_t choice
+) {
+    switch (choice) {
+    case 0:
+        avc_style_copy_sse2(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, temp_buf, skip, frac_pos);
+        break;
+    case 1:
+        avc_style_luma_interpolation_filter_horizontal_ssse3_intrin(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, temp_buf, skip, frac_pos);
+        break;
+    case 2:
+        avc_style_luma_interpolation_filter_horizontal_ssse3_intrin(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, temp_buf, skip, frac_pos);
+        break;
+    case 3:
+        avc_style_luma_interpolation_filter_horizontal_ssse3_intrin(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, temp_buf, skip, frac_pos);
+        break;
+    case 4:
+        avc_style_luma_interpolation_filter_vertical_ssse3_intrin(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, temp_buf, skip, frac_pos);
+        break;
+    case 5:
+        avc_style_luma_interpolation_filter_pose_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, temp_buf, skip, frac_pos);
+        break;
+    case 6:
+        avc_style_luma_interpolation_filter_posf_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, temp_buf, skip, frac_pos);
+        break;
+    case 7:
+        avc_style_luma_interpolation_filter_posg_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, temp_buf, skip, frac_pos);
+        break;
+    case 8:
+        avc_style_luma_interpolation_filter_vertical_ssse3_intrin(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, temp_buf, skip, frac_pos);
+        break;
+    case 9:
+        avc_style_luma_interpolation_filter_posi_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, temp_buf, skip, frac_pos);
+        break;
+    case 10:
+        avc_style_luma_interpolation_filter_posj_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, temp_buf, skip, frac_pos);
+        break;
+    case 11:
+        avc_style_luma_interpolation_filter_posk_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, temp_buf, skip, frac_pos);
+        break;
+    case 12:
+        avc_style_luma_interpolation_filter_vertical_ssse3_intrin(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, temp_buf, skip, frac_pos);
+        break;
+    case 13:
+        avc_style_luma_interpolation_filter_posp_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, temp_buf, skip, frac_pos);
+        break;
+    case 14:
+        avc_style_luma_interpolation_filter_posq_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, temp_buf, skip, frac_pos);
+        break;
+    case 15:
+        avc_style_luma_interpolation_filter_posr_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, temp_buf, skip, frac_pos);
+        break;
+    default:
+        assert(0);
     }
 }

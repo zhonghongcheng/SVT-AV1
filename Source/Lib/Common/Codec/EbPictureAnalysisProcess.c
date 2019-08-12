@@ -4088,8 +4088,7 @@ void SubSampleLumaGeneratePixelIntensityHistogramBins(
     SequenceControlSet            *sequence_control_set_ptr,
     PictureParentControlSet       *picture_control_set_ptr,
     EbPictureBufferDesc           *input_picture_ptr,
-    uint64_t                          *sumAverageIntensityTotalRegionsLuma,
-    EbAsm                           asm_type) {
+    uint64_t                          *sumAverageIntensityTotalRegionsLuma) {
     uint32_t                          regionWidth;
     uint32_t                          regionHeight;
     uint32_t                          regionWidthOffset;
@@ -4144,8 +4143,7 @@ void SubSampleChromaGeneratePixelIntensityHistogramBins(
     PictureParentControlSet       *picture_control_set_ptr,
     EbPictureBufferDesc           *input_picture_ptr,
     uint64_t                          *sumAverageIntensityTotalRegionsCb,
-    uint64_t                          *sumAverageIntensityTotalRegionsCr,
-    EbAsm                           asm_type) {
+    uint64_t                          *sumAverageIntensityTotalRegionsCr) {
     uint64_t                          sum;
     uint32_t                          regionWidth;
     uint32_t                          regionHeight;
@@ -4680,8 +4678,7 @@ void GatheringPictureStatistics(
         sequence_control_set_ptr,
         picture_control_set_ptr,
         sixteenth_decimated_picture_ptr,
-        &sumAverageIntensityTotalRegionsLuma,
-        asm_type);
+        &sumAverageIntensityTotalRegionsLuma);
 
     // Use 1/4 Chroma for Histogram generation
     // 1/4 input not ready => perform operation on the fly
@@ -4690,8 +4687,7 @@ void GatheringPictureStatistics(
         picture_control_set_ptr,
         input_picture_ptr,
         &sumAverageIntensityTotalRegionsCb,
-        &sumAverageIntensityTotalRegionsCr,
-        asm_type);
+        &sumAverageIntensityTotalRegionsCr);
     //
     // Calculate the LUMA average intensity
     CalculateInputAverageIntensity(

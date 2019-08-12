@@ -6319,7 +6319,7 @@ void InterpolateSearchRegionAVC(
     (void)inputBitDepth;
     // Half pel interpolation of the search region using f1 -> pos_b_buffer
     if (searchAreaWidthForAsm) {
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][2](
+        avc_style_luma_interpolation_filter(
             searchRegionBuffer - (ME_FILTER_TAP >> 1) * lumaStride -
                 (ME_FILTER_TAP >> 1) + 1,
             lumaStride,
@@ -6333,12 +6333,13 @@ void InterpolateSearchRegionAVC(
             search_area_height + ME_FILTER_TAP,
             context_ptr->avctemp_buffer,
             EB_FALSE,
+            2,
             2);
     }
 
     // Half pel interpolation of the search region using f1 -> pos_h_buffer
     if (searchAreaWidthForAsm) {
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][8](
+        avc_style_luma_interpolation_filter(
             searchRegionBuffer - (ME_FILTER_TAP >> 1) * lumaStride - 1 +
                 lumaStride,
             lumaStride,
@@ -6352,12 +6353,13 @@ void InterpolateSearchRegionAVC(
             search_area_height + 1,
             context_ptr->avctemp_buffer,
             EB_FALSE,
-            2);
+            2,
+            8);
     }
 
     if (searchAreaWidthForAsm) {
         // Half pel interpolation of the search region using f1 -> pos_j_buffer
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][8](
+        avc_style_luma_interpolation_filter(
 #if MRP_ME
             context_ptr->pos_b_buffer[listIndex][ref_pic_index] +
                 context_ptr->interpolated_stride,
@@ -6374,7 +6376,8 @@ void InterpolateSearchRegionAVC(
             search_area_height + 1,
             context_ptr->avctemp_buffer,
             EB_FALSE,
-            2);
+            2,
+            8);
     }
 
 #else
@@ -6479,7 +6482,7 @@ void interpolate_search_region_AVC_chroma(
     // Half pel interpolation of the search region using f1 -> pos_b_buffer
     if (searchAreaWidthForAsm) {
         // Cb
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][2](
+        avc_style_luma_interpolation_filter(
             search_region_buffer_cb -
                 (ME_FILTER_TAP >> 1) * interpolated_full_stride_ch -
                 (ME_FILTER_TAP >> 1) + 1,
@@ -6490,9 +6493,10 @@ void interpolate_search_region_AVC_chroma(
             search_area_height + ME_FILTER_TAP,
             context_ptr->avctemp_buffer,
             EB_FALSE,
+            2,
             2);
         // Cr
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][2](
+        avc_style_luma_interpolation_filter(
             search_region_buffer_cr -
                 (ME_FILTER_TAP >> 1) * interpolated_full_stride_ch -
                 (ME_FILTER_TAP >> 1) + 1,
@@ -6503,13 +6507,14 @@ void interpolate_search_region_AVC_chroma(
             search_area_height + ME_FILTER_TAP,
             context_ptr->avctemp_buffer,
             EB_FALSE,
+            2,
             2);
     }
 
     // Half pel interpolation of the search region using f1 -> pos_h_buffer
     if (searchAreaWidthForAsm) {
         // Cb
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][8](
+        avc_style_luma_interpolation_filter(
             search_region_buffer_cb -
                 (ME_FILTER_TAP >> 1) * interpolated_full_stride_ch - 1 +
                 interpolated_full_stride_ch,
@@ -6520,9 +6525,10 @@ void interpolate_search_region_AVC_chroma(
             search_area_height + 1,
             context_ptr->avctemp_buffer,
             EB_FALSE,
-            2);
+            2,
+            8);
         // Cr
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][8](
+        avc_style_luma_interpolation_filter(
             search_region_buffer_cr -
                 (ME_FILTER_TAP >> 1) * interpolated_full_stride_ch - 1 +
                 interpolated_full_stride_ch,
@@ -6533,13 +6539,14 @@ void interpolate_search_region_AVC_chroma(
             search_area_height + 1,
             context_ptr->avctemp_buffer,
             EB_FALSE,
-            2);
+            2,
+            8);
     }
 
     // Half pel interpolation of the search region using f1 -> pos_j_buffer
     if (searchAreaWidthForAsm) {
         // Cb
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][8](
+        avc_style_luma_interpolation_filter(
             pos_b_buffer_ch[0] + interpolated_stride_ch,
             interpolated_stride_ch,
             pos_j_buffer_ch[0],
@@ -6548,9 +6555,10 @@ void interpolate_search_region_AVC_chroma(
             search_area_height + 1,
             context_ptr->avctemp_buffer,
             EB_FALSE,
-            2);
+            2,
+            8);
         // Cr
-        avc_style_uni_pred_luma_if_function_ptr_array[asm_type][8](
+        avc_style_luma_interpolation_filter(
             pos_b_buffer_ch[1] + interpolated_stride_ch,
             interpolated_stride_ch,
             pos_j_buffer_ch[1],
@@ -6559,7 +6567,8 @@ void interpolate_search_region_AVC_chroma(
             search_area_height + 1,
             context_ptr->avctemp_buffer,
             EB_FALSE,
-            2);
+            2,
+            8);
     }
 }
 

@@ -191,7 +191,6 @@ uint64_t ComputeNxMSatd8x8Units_U8(
     uint32_t  src_stride, //uint32_t  diffStride, // input parameter, source stride
     uint32_t  width,      // input parameter, block width (N)
     uint32_t  height,     // input parameter, block height (M)
-    EbAsm  asm_type,
     uint64_t *dc_value)
 {
     uint64_t satd = 0;
@@ -244,7 +243,6 @@ uint64_t compute_nx_m_satd_sad_lcu(
             src_stride,
             width,
             height,
-            asm_type,
             &dc_value);
     }
     else {
