@@ -4297,7 +4297,7 @@ static void half_pel_refinement_block(
      uint32_t           search_area_height,
      uint32_t           search_area_width,
 #endif
-    EbAsm asm_type, uint32_t *p_best_sad, uint32_t *p_best_mv,
+    uint32_t *p_best_sad, uint32_t *p_best_mv,
     uint8_t *p_sub_pel_direction, uint32_t *best_pervious_stage_mv,
     uint32_t ineteger_mv) {
     int32_t search_region_index;
@@ -4840,7 +4840,7 @@ static void half_pel_refinement_block(
     int16_t y_search_area_origin,  // input parameter, search area origin in the
                                    // vertical direction, used to point to
                                    // reference samples
-    EbAsm asm_type, uint32_t *p_best_sad, uint32_t *p_best_mv,
+    uint32_t *p_best_sad, uint32_t *p_best_mv,
     uint8_t *p_sub_pel_direction, uint32_t *best_pervious_stage_mv,
     uint32_t ineteger_mv) {
     int32_t search_region_index;
@@ -5393,7 +5393,6 @@ void half_pel_refinement_sb(
                                   search_area_height,
                                   search_area_width,
 #endif
-                                  asm_type,
                                   context_ptr->p_best_sad64x64,
                                   context_ptr->p_best_mv64x64,
                                   &context_ptr->psub_pel_direction64x64,
@@ -5432,7 +5431,6 @@ void half_pel_refinement_sb(
             search_area_height,
             search_area_width,
 #endif
-            asm_type,
             &context_ptr->p_best_sad32x32[pu_index],
             &context_ptr->p_best_mv32x32[pu_index],
             &context_ptr->psub_pel_direction32x32[pu_index],
@@ -5472,7 +5470,6 @@ void half_pel_refinement_sb(
                                   search_area_height,
                                   search_area_width,
 #endif
-                                  asm_type,
                                   &context_ptr->p_best_sad16x16[idx],
                                   &context_ptr->p_best_mv16x16[idx],
                                   &context_ptr->psub_pel_direction16x16[idx],
@@ -5512,7 +5509,6 @@ void half_pel_refinement_sb(
                                   search_area_height,
                                   search_area_width,
 #endif
-                                  asm_type,
                                   &context_ptr->p_best_sad8x8[idx],
                                   &context_ptr->p_best_mv8x8[idx],
                                   &context_ptr->psub_pel_direction8x8[idx],
@@ -5557,7 +5553,6 @@ void half_pel_refinement_sb(
                 search_area_height,
                 search_area_width,
 #endif
-                asm_type,
                 &context_ptr->p_best_sad64x32[pu_index],
                 &context_ptr->p_best_mv64x32[pu_index],
                 &context_ptr->psub_pel_direction64x32[pu_index],
@@ -5598,7 +5593,6 @@ void half_pel_refinement_sb(
                 search_area_height,
                 search_area_width,
 #endif
-                asm_type,
                 &context_ptr->p_best_sad32x16[idx],
                 &context_ptr->p_best_mv32x16[idx],
                 &context_ptr->psub_pel_direction32x16[idx],
@@ -5639,7 +5633,6 @@ void half_pel_refinement_sb(
                 search_area_height,
                 search_area_width,
 #endif
-                asm_type,
                 &context_ptr->p_best_sad16x8[idx],
                 &context_ptr->p_best_mv16x8[idx],
                 &context_ptr->psub_pel_direction16x8[idx],
@@ -5679,7 +5672,6 @@ void half_pel_refinement_sb(
                 search_area_height,
                 search_area_width,
 #endif
-                asm_type,
                 &context_ptr->p_best_sad32x64[pu_index],
                 &context_ptr->p_best_mv32x64[pu_index],
                 &context_ptr->psub_pel_direction32x64[pu_index],
@@ -5720,7 +5712,6 @@ void half_pel_refinement_sb(
                 search_area_height,
                 search_area_width,
 #endif
-                asm_type,
                 &context_ptr->p_best_sad16x32[idx],
                 &context_ptr->p_best_mv16x32[idx],
                 &context_ptr->psub_pel_direction16x32[idx],
@@ -5761,7 +5752,6 @@ void half_pel_refinement_sb(
                 search_area_height,
                 search_area_width,
 #endif
-                asm_type,
                 &context_ptr->p_best_sad8x16[idx],
                 &context_ptr->p_best_mv8x16[idx],
                 &context_ptr->psub_pel_direction8x16[idx],
@@ -5802,7 +5792,6 @@ void half_pel_refinement_sb(
                 search_area_height,
                 search_area_width,
 #endif
-                asm_type,
                 &context_ptr->p_best_sad32x8[idx],
                 &context_ptr->p_best_mv32x8[idx],
                 &context_ptr->psub_pel_direction32x8[idx],
@@ -5842,7 +5831,6 @@ void half_pel_refinement_sb(
                 search_area_height,
                 search_area_width,
 #endif
-                asm_type,
                 &context_ptr->p_best_sad8x32[idx],
                 &context_ptr->p_best_mv8x32[idx],
                 &context_ptr->psub_pel_direction8x32[idx],
@@ -5882,7 +5870,6 @@ void half_pel_refinement_sb(
                 search_area_height,
                 search_area_width,
 #endif
-                asm_type,
                 &context_ptr->p_best_sad64x16[idx],
                 &context_ptr->p_best_mv64x16[idx],
                 &context_ptr->psub_pel_direction64x16[idx],
@@ -5922,7 +5909,6 @@ void half_pel_refinement_sb(
                 search_area_height,
                 search_area_width,
 #endif
-                asm_type,
                 &context_ptr->p_best_sad16x64[idx],
                 &context_ptr->p_best_mv16x64[idx],
                 &context_ptr->psub_pel_direction16x64[idx],

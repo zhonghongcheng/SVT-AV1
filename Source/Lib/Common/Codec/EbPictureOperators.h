@@ -26,8 +26,7 @@ extern "C" {
         uint8_t  *recon_ptr,
         uint32_t  recon_stride,
         uint32_t  width,
-        uint32_t  height,
-        EbAsm     asm_type);
+        uint32_t  height);
 
     extern EbErrorType picture_copy8_bit(
         EbPictureBufferDesc  *src,
@@ -227,15 +226,6 @@ extern "C" {
     /***************************************
     * Function Types
     ***************************************/
-    typedef void(*EbAddKernelType)(
-        uint8_t  *pred_ptr,
-        uint32_t  pred_stride,
-        int16_t  *residual_ptr,
-        uint32_t  residual_stride,
-        uint8_t  *recon_ptr,
-        uint32_t  recon_stride,
-        uint32_t  width,
-        uint32_t  height);
 
     typedef void(*EbZeroCoeffType)(
         int16_t *coeff_buffer,
@@ -247,45 +237,6 @@ extern "C" {
     /***************************************
     * Function Tables
     ***************************************/
-    static EbAddKernelType FUNC_TABLE addition_kernel_func_ptr_array[ASM_TYPE_TOTAL][9] = {
-        // NON_AVX2
-        {
-            /*0 4x4   */    picture_addition_kernel4x4_sse_intrin,
-            /*1 8x8   */    picture_addition_kernel8x8_sse2_intrin,
-            /*2 16x16 */    picture_addition_kernel16x16_sse2_intrin,
-            /*3       */    (EbAddKernelType)picture_addition_void_func,
-            /*4 32x32 */    picture_addition_kernel32x32_sse2_intrin,
-            /*5       */    (EbAddKernelType)picture_addition_void_func,
-            /*6       */    (EbAddKernelType)picture_addition_void_func,
-            /*7       */    (EbAddKernelType)picture_addition_void_func,
-            /*8 64x64 */    picture_addition_kernel64x64_sse2_intrin,
-        },
-        // AVX2
-        {
-            /*0 4x4   */    picture_addition_kernel4x4_sse_intrin,
-            /*1 8x8   */    picture_addition_kernel8x8_sse2_intrin,
-            /*2 16x16 */    picture_addition_kernel16x16_sse2_intrin,
-            /*3       */    (EbAddKernelType)picture_addition_void_func,
-            /*4 32x32 */    picture_addition_kernel32x32_sse2_intrin,
-            /*5       */    (EbAddKernelType)picture_addition_void_func,
-            /*6       */    (EbAddKernelType)picture_addition_void_func,
-            /*7       */    (EbAddKernelType)picture_addition_void_func,
-            /*8 64x64 */    picture_addition_kernel64x64_sse2_intrin,
-        },
-    };
-
-    typedef void(*EB_RESDKERNELSUBSAMPLED_TYPE)(
-        uint8_t  *input,
-        uint32_t  input_stride,
-        uint8_t  *pred,
-        uint32_t  pred_stride,
-        int16_t  *residual,
-        uint32_t  residual_stride,
-        uint32_t  area_width,
-        uint32_t  area_height,
-        uint8_t   last_line
-        );
-
     void residual_kernel16bit(
         uint16_t *input,
         uint32_t  input_stride,

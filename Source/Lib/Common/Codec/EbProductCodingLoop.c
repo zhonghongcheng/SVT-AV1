@@ -3123,8 +3123,7 @@ void predictive_me_full_pel_search(
     int16_t                       search_step,
     int16_t                      *best_mvx,
     int16_t                      *best_mvy,
-    uint32_t                     *best_distortion,
-    EbAsm                         asm_type)
+    uint32_t                     *best_distortion)
 {
 
     uint32_t  distortion;
@@ -3484,8 +3483,7 @@ void predictive_me_search(
                     8,
                     &best_search_mvx,
                     &best_search_mvy,
-                    &best_search_distortion,
-                    asm_type);
+                    &best_search_distortion);
 
                 EbBool exit_predictive_me_sub_pel;
                 #define DEVIATION_TH 50

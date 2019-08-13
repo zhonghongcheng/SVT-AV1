@@ -38,10 +38,9 @@ void picture_addition(
     uint8_t  *recon_ptr,
     uint32_t  recon_stride,
     uint32_t  width,
-    uint32_t  height,
-    EbAsm  asm_type)
+    uint32_t  height)
 {
-    addition_kernel_func_ptr_array[asm_type][width >> 3](
+    picture_addition_kernel_t(
         pred_ptr,
         pred_stride,
         residual_ptr,
@@ -49,7 +48,8 @@ void picture_addition(
         recon_ptr,
         recon_stride,
         width,
-        height
+        height,
+        width >> 3
         );
 
     return;
@@ -887,4 +887,31 @@ void aom_yv12_copy_v_c(const Yv12BufferConfig *src_bc,
         src += src_bc->uv_stride;
         dst += dst_bc->uv_stride;
     }
+}
+
+void picture_addition_kernel_helper(uint8_t  *pred_ptr,
+    uint32_t  pred_stride,
+    int16_t *residual_ptr,
+    uint32_t  residual_stride,
+    uint8_t  *recon_ptr,
+    uint32_t  recon_stride,
+    uint32_t  width,
+    uint32_t  height,
+    uint8_t  choice) {
+
+    switch (choice) {
+    case 0:
+        picture_addition_kernel4x4_sse_intrin(pred_ptr, pred_stride, residual_ptr, residual_stride, recon_ptr, recon_stride, width, height);break;
+    case 1:
+        picture_addition_kernel8x8_sse2_intrin(pred_ptr, pred_stride, residual_ptr, residual_stride, recon_ptr, recon_stride, width, height);break;
+    case 2:
+        picture_addition_kernel16x16_sse2_intrin(pred_ptr, pred_stride, residual_ptr, residual_stride, recon_ptr, recon_stride, width, height);break;
+    case 4:
+        picture_addition_kernel32x32_sse2_intrin(pred_ptr, pred_stride, residual_ptr, residual_stride, recon_ptr, recon_stride, width, height);break;
+    case 8:
+        picture_addition_kernel64x64_sse2_intrin(pred_ptr, pred_stride, residual_ptr, residual_stride, recon_ptr, recon_stride, width, height);break;
+    default:
+        break;
+    }
+
 }
