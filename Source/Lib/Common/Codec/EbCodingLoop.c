@@ -578,7 +578,6 @@ static void Av1EncodeLoop(
             transformScratchBuffer,
             BIT_INCREMENT_8BIT,
             txb_ptr->transform_type[PLANE_TYPE_Y],
-            asm_type,
             PLANE_TYPE_Y,
 #if PF_N2_SUPPORT
             DEFAULT_SHAPE);
@@ -1000,7 +999,6 @@ static void Av1EncodeLoop(
             transformScratchBuffer,
             BIT_INCREMENT_8BIT,
             txb_ptr->transform_type[PLANE_TYPE_UV],
-            asm_type,
             PLANE_TYPE_UV,
 #if PF_N2_SUPPORT
             DEFAULT_SHAPE);
@@ -1077,7 +1075,6 @@ static void Av1EncodeLoop(
             transformScratchBuffer,
             BIT_INCREMENT_8BIT,
             txb_ptr->transform_type[PLANE_TYPE_UV],
-            asm_type,
             PLANE_TYPE_UV,
 #if PF_N2_SUPPORT
             DEFAULT_SHAPE);
@@ -1321,7 +1318,6 @@ static void Av1EncodeLoop16bit(
                 transformScratchBuffer,
                 BIT_INCREMENT_10BIT,
                 txb_ptr->transform_type[PLANE_TYPE_Y],
-                asm_type,
                 PLANE_TYPE_Y,
 #if PF_N2_SUPPORT
                 DEFAULT_SHAPE);
@@ -1544,7 +1540,6 @@ static void Av1EncodeLoop16bit(
                 transformScratchBuffer,
                 BIT_INCREMENT_10BIT,
                 txb_ptr->transform_type[PLANE_TYPE_UV],
-                asm_type,
                 PLANE_TYPE_UV,
 #if PF_N2_SUPPORT
                 DEFAULT_SHAPE);
@@ -1621,7 +1616,6 @@ static void Av1EncodeLoop16bit(
                 transformScratchBuffer,
                 BIT_INCREMENT_10BIT,
                 txb_ptr->transform_type[PLANE_TYPE_UV],
-                asm_type,
                 PLANE_TYPE_UV,
 #if PF_N2_SUPPORT
                 DEFAULT_SHAPE);

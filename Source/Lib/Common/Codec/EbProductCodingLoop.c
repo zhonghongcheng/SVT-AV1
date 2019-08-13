@@ -5291,7 +5291,6 @@ void perform_intra_tx_partitioning(
                     context_ptr->transform_inner_array_ptr,
                     0,
                     tx_type,
-                    asm_type,
                     PLANE_TYPE_Y,
                     DEFAULT_SHAPE);
 
@@ -5452,7 +5451,6 @@ void perform_intra_tx_partitioning(
 #else
                 candidateBuffer->candidate_ptr->transform_type[PLANE_TYPE_Y],
 #endif
-                asm_type,
                 PLANE_TYPE_Y,
                 DEFAULT_SHAPE);
 #if DC_SIGN_CONTEXT_FIX
@@ -5792,7 +5790,6 @@ void perform_intra_tx_partitioning(
 #else
                 candidateBuffer->candidate_ptr->transform_type[PLANE_TYPE_Y],
 #endif
-                asm_type,
                 PLANE_TYPE_Y,
                 DEFAULT_SHAPE);
 

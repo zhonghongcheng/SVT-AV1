@@ -2332,7 +2332,6 @@ void product_full_loop(
 #else
             candidateBuffer->candidate_ptr->transform_type[PLANE_TYPE_Y],
 #endif
-            asm_type,
             PLANE_TYPE_Y,
 #if PF_N2_SUPPORT
             DEFAULT_SHAPE);
@@ -2802,7 +2801,6 @@ void product_full_loop_tx_search(
                 context_ptr->transform_inner_array_ptr,
                 0,
                 tx_type,
-                asm_type,
                 PLANE_TYPE_Y,
                 context_ptr->pf_md_mode);
 
@@ -3159,7 +3157,6 @@ void encode_pass_tx_search(
             transformScratchBuffer,
             BIT_INCREMENT_8BIT,
             tx_type,
-            asm_type,
             PLANE_TYPE_Y,
 #if PF_N2_SUPPORT
             DEFAULT_SHAPE);
@@ -3405,7 +3402,6 @@ void encode_pass_tx_search_hbd(
             transformScratchBuffer,
             BIT_INCREMENT_10BIT,
             tx_type,
-            asm_type,
             PLANE_TYPE_Y,
 #if PF_N2_SUPPORT
             DEFAULT_SHAPE);
@@ -3691,7 +3687,6 @@ void full_loop_r(
 #else
                 candidateBuffer->candidate_ptr->transform_type[PLANE_TYPE_UV],
 #endif
-                asm_type,
                 PLANE_TYPE_UV,
 #if PF_N2_SUPPORT
                 DEFAULT_SHAPE);
@@ -3835,7 +3830,6 @@ void full_loop_r(
 #else
                 candidateBuffer->candidate_ptr->transform_type[PLANE_TYPE_UV],
 #endif
-                asm_type,
                 PLANE_TYPE_UV,
 #if PF_N2_SUPPORT
                 DEFAULT_SHAPE);
