@@ -2695,7 +2695,7 @@ static INLINE void Distortion_AVX2_INTRIN(const __m256i input,
     *sum = _mm256_add_epi32(*sum, dist);
 }
 
-uint64_t spatial_full_distortion_kernel4x_n_avx2_intrin(
+uint32_t spatial_full_distortion_kernel4x_n_avx2_intrin(
     uint8_t   *input,
     uint32_t   input_stride,
     uint8_t   *recon,
@@ -2730,7 +2730,7 @@ uint64_t spatial_full_distortion_kernel4x_n_avx2_intrin(
     return _mm_cvtsi128_si32(s);
 }
 
-uint64_t spatial_full_distortion_kernel8x_n_avx2_intrin(
+uint32_t spatial_full_distortion_kernel8x_n_avx2_intrin(
     uint8_t   *input,
     uint32_t   input_stride,
     uint8_t   *recon,
@@ -2771,7 +2771,7 @@ static INLINE void SpatialFullDistortionKernel16_AVX2_INTRIN(
     *sum = _mm256_add_epi32(*sum, dist);
 }
 
-uint64_t spatial_full_distortion_kernel16x_n_avx2_intrin(
+uint32_t spatial_full_distortion_kernel16x_n_avx2_intrin(
     uint8_t   *input,
     uint32_t   input_stride,
     uint8_t   *recon,
@@ -2816,7 +2816,7 @@ static INLINE void SpatialFullDistortionKernel64_AVX2_INTRIN(
     SpatialFullDistortionKernel32_AVX2_INTRIN(input + 1 * 32, recon + 1 * 32, sum);
 }
 
-uint64_t spatial_full_distortion_kernel32x_n_avx2_intrin(
+uint32_t spatial_full_distortion_kernel32x_n_avx2_intrin(
     uint8_t   *input,
     uint32_t   input_stride,
     uint8_t   *recon,
@@ -2838,7 +2838,7 @@ uint64_t spatial_full_distortion_kernel32x_n_avx2_intrin(
     return Hadd32_AVX2_INTRIN(sum);
 }
 
-uint64_t spatial_full_distortion_kernel64x_n_avx2_intrin(
+uint32_t spatial_full_distortion_kernel64x_n_avx2_intrin(
     uint8_t   *input,
     uint32_t   input_stride,
     uint8_t   *recon,
@@ -2860,7 +2860,7 @@ uint64_t spatial_full_distortion_kernel64x_n_avx2_intrin(
     return Hadd32_AVX2_INTRIN(sum);
 }
 
-uint64_t spatial_full_distortion_kernel128x_n_avx2_intrin(
+uint32_t spatial_full_distortion_kernel128x_n_avx2_intrin(
     uint8_t   *input,
     uint32_t   input_stride,
     uint8_t   *recon,

@@ -63,6 +63,10 @@ extern "C" {
     void pfreq_n2_transform_helper(int16_t *src, const uint32_t src_stride, int16_t *dst, const uint32_t dst_stride, int16_t *intermediate, uint32_t addshift, uint8_t choice);
     RTCD_EXTERN void(*pfreq_n2_transform)(int16_t *src, const uint32_t src_stride, int16_t *dst, const uint32_t dst_stride, int16_t *intermediate, uint32_t addshift, uint8_t choice);
 
+    uint32_t spatial_full_distortion_helper(uint8_t  *input, uint32_t  input_stride, uint8_t  *recon, uint32_t  recon_stride, uint32_t  area_width, uint32_t  area_height, uint8_t  choice);
+    uint32_t spatial_full_distortion_avx2_helper(uint8_t  *input,uint32_t  input_stride,uint8_t  *recon,uint32_t  recon_stride,uint32_t  area_width,uint32_t  area_height,uint8_t  choice);
+    RTCD_EXTERN uint32_t(*spatial_full_distortion)(uint8_t  *input, uint32_t  input_stride, uint8_t  *recon, uint32_t  recon_stride, uint32_t  area_width, uint32_t  area_height, uint8_t  choice);
+
     void avc_style_luma_interpolation_filter_ssse3_helper(EbByte ref_pic, uint32_t src_stride, EbByte dst, uint32_t dst_stride, uint32_t pu_width, uint32_t pu_height, EbByte temp_buf, EbBool skip, uint32_t frac_pos, uint8_t choice);
     RTCD_EXTERN void(*avc_style_luma_interpolation_filter)(EbByte ref_pic, uint32_t src_stride, EbByte dst, uint32_t dst_stride, uint32_t pu_width, uint32_t pu_height, EbByte temp_buf, EbBool skip, uint32_t frac_pos, uint8_t choice);
 
@@ -2529,6 +2533,9 @@ extern "C" {
 
         pfreq_n2_transform = pfreq_n2_transform_helper;
         if (flags & HAS_AVX2) pfreq_n2_transform = pfreq_n2_transform_avx2_helper;
+
+        spatial_full_distortion = spatial_full_distortion_helper;
+        if (flags & HAS_AVX2) spatial_full_distortion = spatial_full_distortion_avx2_helper;
 
         avc_style_luma_interpolation_filter = avc_style_luma_interpolation_filter_ssse3_helper;
 
