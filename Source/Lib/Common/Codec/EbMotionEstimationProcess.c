@@ -55,8 +55,7 @@ EbErrorType CheckZeroZeroCenter(
     uint32_t                       sb_width,
     uint32_t                       sb_height,
     int16_t                       *x_search_center,
-    int16_t                       *y_search_center,
-    EbAsm                       asm_type);
+    int16_t                       *y_search_center);
 
 /************************************************
  * Set ME/HME Params from Config
@@ -991,8 +990,7 @@ void* motion_estimation_kernel(void *input_ptr)
                             picture_control_set_ptr,
                             sb_index,
                             context_ptr,
-                            input_picture_ptr,
-                            asm_type);
+                            input_picture_ptr);
                     }
                 }
             }

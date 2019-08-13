@@ -89,8 +89,8 @@ static void quarter_pel_refinement_sb(
     int16_t y_search_area_origin,  //[IN] search area origin in the vertical
                                    //direction, used to point to reference
                                    //samples
-    uint32_t integer_mv,           // input parameter, integer MV
-    EbAsm asm_type);
+    uint32_t integer_mv            // input parameter, integer MV
+    );
 
 #define AVCCODEL
 /********************************************
@@ -6052,7 +6052,7 @@ static void open_loop_me_quarter_pel_search_sblock(
     MeContext *context_ptr,
     uint32_t list_index, uint32_t ref_pic_index, int16_t x_search_area_origin,
     int16_t y_search_area_origin, uint32_t search_area_width,
-    uint32_t search_area_height, EbAsm asm_type) {
+    uint32_t search_area_height) {
     uint32_t search_index_x, search_index_y;
     for (search_index_y = 0; search_index_y < search_area_height;
          search_index_y++) {
@@ -6104,8 +6104,7 @@ static void open_loop_me_quarter_pel_search_sblock(
                                                   // figure above
                 x_search_area_origin,
                 y_search_area_origin,
-                inetger_mv,
-                asm_type);
+                inetger_mv);
         }
     }
 }
@@ -8574,7 +8573,7 @@ static void QuarterPelSearch_LCU(
     int16_t
         y_search_area_origin,  //[IN] search area origin in the vertical
                                // direction, used to point to reference samples
-    EbAsm asm_type, EbBool disable8x8CuInMeFlag,
+    EbBool disable8x8CuInMeFlag,
 #if M9_SUBPEL_SELECTION
     EbBool enable_half_pel32x32, EbBool enable_half_pel16x16,
     EbBool enable_half_pel8x8,
@@ -10039,7 +10038,7 @@ static void quarter_pel_refinement_sb(
     int16_t
         y_search_area_origin,  //[IN] search area origin in the vertical
                                // direction, used to point to reference samples
-    uint32_t integer_mv, EbAsm asm_type) {
+    uint32_t integer_mv) {
     uint32_t pu_index;
     uint32_t block_index_shift_x;
     uint32_t block_index_shift_y;
@@ -13264,7 +13263,7 @@ EbErrorType CheckZeroZeroCenter(EbPictureBufferDesc *refPicPtr,
                                 MeContext *context_ptr, uint32_t sb_origin_x,
                                 uint32_t sb_origin_y, uint32_t sb_width,
                                 uint32_t sb_height, int16_t *x_search_center,
-                                int16_t *y_search_center, EbAsm asm_type)
+                                int16_t *y_search_center)
 
 {
     EbErrorType return_error = EB_ErrorNone;
@@ -14021,8 +14020,7 @@ static void hme_mv_center_check(EbPictureBufferDesc *ref_pic_ptr,
                                 MeContext *context_ptr, int16_t *xsc,
                                 int16_t *ysc, uint32_t list_index,
                                 int16_t origin_x, int16_t origin_y,
-                                uint32_t sb_width, uint32_t sb_height,
-                                EbAsm asm_type) {
+                                uint32_t sb_width, uint32_t sb_height) {
     // Search for (-srx/2, 0),  (+srx/2, 0),  (0, -sry/2), (0, +sry/2),
     /*
     |------------C-------------|
@@ -14637,8 +14635,7 @@ EbErrorType motion_estimate_lcu(
                                         origin_x,
                                         origin_y,
                                         sb_width,
-                                        sb_height,
-                                        asm_type);
+                                        sb_height);
                 else {
                     x_search_center = 0;
                     y_search_center = 0;
@@ -15139,8 +15136,7 @@ EbErrorType motion_estimate_lcu(
                                     sb_width,
                                     sb_height,
                                     &x_search_center,
-                                    &y_search_center,
-                                    asm_type);
+                                    &y_search_center);
             }
             x_search_area_origin = x_search_center - (search_area_width >> 1);
             y_search_area_origin = y_search_center - (search_area_height >> 1);
@@ -15765,8 +15761,7 @@ EbErrorType motion_estimate_lcu(
                                 x_search_area_origin,
                                 y_search_area_origin,
                                 search_area_width,
-                                search_area_height,
-                                asm_type);
+                                search_area_height);
                         }
 #endif
                     } else {
@@ -16090,7 +16085,6 @@ EbErrorType motion_estimate_lcu(
                                                // of the figure above
                                     x_search_area_origin,
                                     y_search_area_origin,
-                                    asm_type,
                                     picture_control_set_ptr->cu8x8_mode ==
                                     CU_8x8_MODE_1,
 #if M9_SUBPEL_SELECTION
@@ -16200,7 +16194,6 @@ EbErrorType motion_estimate_lcu(
                                                // of the figure above
                                     x_search_area_origin,
                                     y_search_area_origin,
-                                    asm_type,
                                     picture_control_set_ptr->cu8x8_mode ==
                                     CU_8x8_MODE_1,
 #if M9_SUBPEL_SELECTION
@@ -16956,8 +16949,7 @@ EbBool IsComplexLcu(PictureParentControlSet *previousParentPcs,
 
 EbErrorType open_loop_intra_search_sb(
     PictureParentControlSet *picture_control_set_ptr, uint32_t sb_index,
-    MotionEstimationContext_t *context_ptr, EbPictureBufferDesc *input_ptr,
-    EbAsm asm_type) {
+    MotionEstimationContext_t *context_ptr, EbPictureBufferDesc *input_ptr) {
     EbErrorType return_error = EB_ErrorNone;
     SequenceControlSet *sequence_control_set_ptr =
         (SequenceControlSet *)picture_control_set_ptr
