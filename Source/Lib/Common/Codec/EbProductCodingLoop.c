@@ -13465,9 +13465,7 @@ EB_EXTERN EbErrorType in_loop_motion_estimation_sblock(
                 searchAreaBuffer,
                 MAX_TATAL_SEARCH_AREA_WIDTH,
                 search_area_width + context_ptr->sb_side + ME_FILTER_TAP,
-                search_area_height + context_ptr->sb_side + ME_FILTER_TAP,
-                EB_FALSE,
-                asm_type);
+                search_area_height + context_ptr->sb_side + ME_FILTER_TAP);
 
             context_ptr->integer_buffer_ptr[listIndex][0] = &(searchAreaBuffer[0]);
             context_ptr->interpolated_full_stride[listIndex][0] = MAX_TATAL_SEARCH_AREA_WIDTH;

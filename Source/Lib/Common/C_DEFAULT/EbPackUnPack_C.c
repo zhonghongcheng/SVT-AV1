@@ -143,7 +143,7 @@ void eb_enc_msb_un_pack2_d(
         }
     }
 }
-void un_pack8_bit_data(
+void un_pack8_bit_data_c(
     uint16_t      *in16_bit_buffer,
     uint32_t       in_stride,
     uint8_t       *out8_bit_buffer,

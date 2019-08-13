@@ -59,8 +59,7 @@ extern "C" {
         uint32_t                y_count_non_zero_coeffs,
         uint32_t                cb_count_non_zero_coeffs,
         uint32_t                cr_count_non_zero_coeffs,
-        COMPONENT_TYPE          component_type,
-        EbAsm                   asm_type);
+        COMPONENT_TYPE          component_type);
 
     extern uint64_t compute_nx_m_satd_sad_lcu(
         uint8_t  *src,        // input parameter, source samples Ptr
@@ -139,9 +138,7 @@ extern "C" {
         uint8_t    *out8_bit_buffer,
         uint32_t    out8_stride,
         uint32_t    width,
-        uint32_t    height,
-        EbBool      sub_pred,
-        EbAsm       asm_type);
+        uint32_t    height);
 
     void unpack_l0l1_avg_safe_sub(
         uint16_t *ref16_l0,

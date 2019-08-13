@@ -99,34 +99,21 @@ extern "C" {
         uint32_t  width,
         uint32_t  height);
 
+    void un_pack8_bit_data_c(uint16_t *in16_bit_buffer, uint32_t  in_stride, uint8_t  *out8_bit_buffer, uint32_t  out8_stride, uint32_t  width, uint32_t  height);
+    void eb_enc_un_pack8_bit_data_avx2_intrin(uint16_t *in16_bit_buffer, uint32_t  in_stride, uint8_t  *out8_bit_buffer, uint32_t  out8_stride, uint32_t  width, uint32_t  height);
+
     EbEncUnPack8BitDataType unpack8_bit_func_ptr_array_16_bit[2][ASM_TYPE_TOTAL] =
     {
         {
-           un_pack8_bit_data,
-           un_pack8_bit_data,
+           un_pack8_bit_data_c,
+           un_pack8_bit_data_c,
         },
         {
             // NON_AVX2
-            un_pack8_bit_data,
+            un_pack8_bit_data_c,
             // AVX2
             eb_enc_un_pack8_bit_data_avx2_intrin,
         }
-    };
-
-    typedef void(*EbEncUnPack8BitDataSubType)(
-        uint16_t *in16_bit_buffer,
-        uint32_t  in_stride,
-        uint8_t  *out8_bit_buffer,
-        uint32_t  out8_stride,
-        uint32_t  width,
-        uint32_t  height);
-
-    EbEncUnPack8BitDataSubType unpack8_bit_safe_sub_func_ptr_array_16_bit[ASM_TYPE_TOTAL] =
-    {
-        // NON_AVX2
-        un_pack8_bit_data,
-        // AVX2
-        eb_enc_un_pack8_bit_data_avx2_intrin,
     };
 
 #ifdef __cplusplus

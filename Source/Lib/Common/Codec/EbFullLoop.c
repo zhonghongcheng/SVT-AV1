@@ -2527,8 +2527,7 @@ void product_full_loop(
                 y_count_non_zero_coeffs[txb_itr],
                 0,
                 0,
-                COMPONENT_LUMA,
-                asm_type);
+                COMPONENT_LUMA);
 
             tuFullDistortion[0][DIST_CALC_RESIDUAL] += context_ptr->three_quad_energy;
             tuFullDistortion[0][DIST_CALC_PREDICTION] += context_ptr->three_quad_energy;
@@ -2943,8 +2942,7 @@ void product_full_loop_tx_search(
                     yCountNonZeroCoeffsTemp,
                     0,
                     0,
-                    COMPONENT_LUMA,
-                    asm_type);
+                    COMPONENT_LUMA);
 
                 tuFullDistortion[0][DIST_CALC_RESIDUAL] += context_ptr->three_quad_energy;
                 tuFullDistortion[0][DIST_CALC_PREDICTION] += context_ptr->three_quad_energy;
@@ -3229,8 +3227,7 @@ void encode_pass_tx_search(
             yCountNonZeroCoeffsTemp,
             0,
             0,
-            COMPONENT_LUMA,
-            asm_type);
+            COMPONENT_LUMA);
 
         tuFullDistortion[0][DIST_CALC_RESIDUAL] += context_ptr->three_quad_energy;
         tuFullDistortion[0][DIST_CALC_PREDICTION] += context_ptr->three_quad_energy;
@@ -3473,8 +3470,7 @@ void encode_pass_tx_search_hbd(
             yCountNonZeroCoeffsTemp,
             0,
             0,
-            COMPONENT_LUMA,
-            asm_type);
+            COMPONENT_LUMA);
 
         tuFullDistortion[0][DIST_CALC_RESIDUAL] += context_ptr->three_quad_energy;
         tuFullDistortion[0][DIST_CALC_PREDICTION] += context_ptr->three_quad_energy;
@@ -4164,8 +4160,7 @@ void cu_full_distortion_fast_tu_mode_r(
                 countNonZeroCoeffsAll[0],
                 countNonZeroCoeffsAll[1],
                 countNonZeroCoeffsAll[2],
-                component_type,
-                asm_type);
+                component_type);
 #if ATB_SUPPORT
             TxSize    txSize = context_ptr->blk_geom->txsize_uv[tx_depth][txb_itr];
 #else
@@ -4200,8 +4195,7 @@ void cu_full_distortion_fast_tu_mode_r(
                 countNonZeroCoeffsAll[0],
                 countNonZeroCoeffsAll[1],
                 countNonZeroCoeffsAll[2],
-                component_type,
-                asm_type);
+                component_type);
 
             TxSize    txSize = context_ptr->blk_geom->txsize_uv[txb_itr];
             chromaShift = (MAX_TX_SCALE - av1_get_tx_scale(txSize)) * 2;

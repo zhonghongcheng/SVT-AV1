@@ -4091,9 +4091,7 @@ void Av1UnPackReferenceBlock(
         eightBitBuffer,
         eightBitStride << sub_pred,
         pu_width,
-        pu_height >> sub_pred,
-        sub_pred,
-        asm_type
+        pu_height >> sub_pred
     );
 }
 #endif
@@ -7395,9 +7393,7 @@ void UnPackReferenceLumaBlock(
         dst->buffer_y,
         dst->stride_y << sub_pred,
         pu_width,
-        pu_height >> sub_pred,
-        sub_pred,
-        asm_type
+        pu_height >> sub_pred
     );
 }
 

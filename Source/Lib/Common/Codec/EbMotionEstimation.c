@@ -5927,7 +5927,7 @@ static void open_loop_me_half_pel_search_sblock(
     PictureParentControlSet *picture_control_set_ptr, MeContext *context_ptr,
     uint32_t list_index, uint32_t ref_pic_index, int16_t x_search_area_origin,
     int16_t y_search_area_origin, uint32_t search_area_width,
-    uint32_t search_area_height, EbAsm asm_type) {
+    uint32_t search_area_height) {
 
     half_pel_refinement_sb(
         //sequence_control_set_ptr,
@@ -5974,7 +5974,7 @@ static void open_loop_me_half_pel_search_sblock(
     PictureParentControlSet *picture_control_set_ptr, MeContext *context_ptr,
     uint32_t list_index, uint32_t ref_pic_index, int16_t x_search_area_origin,
     int16_t y_search_area_origin, uint32_t search_area_width,
-    uint32_t search_area_height, EbAsm asm_type) {
+    uint32_t search_area_height) {
     uint32_t search_index_x, search_index_y;
 
     for (search_index_y = 0; search_index_y < search_area_height;
@@ -7164,7 +7164,7 @@ void HalfPelSearch_LCU(
     int16_t y_search_area_origin,  // input parameter, search area origin in the
                                    // vertical direction, used to point to
                                    // reference samples
-    EbAsm asm_type, EbBool disable8x8CuInMeFlag, EbBool enableHalfPel32x32,
+    EbBool disable8x8CuInMeFlag, EbBool enableHalfPel32x32,
     EbBool enableHalfPel16x16, EbBool enableHalfPel8x8) {
     uint32_t idx;
     uint32_t pu_index;
@@ -15706,8 +15706,7 @@ EbErrorType motion_estimate_lcu(
                                 x_search_area_origin,
                                 y_search_area_origin,
                                 search_area_width,
-                                search_area_height,
-                                asm_type);
+                                search_area_height);
                         }
 #if DECOUPLE_ALTREF_ME
                         if (context_ptr->quarter_pel_mode ==
@@ -15987,7 +15986,6 @@ EbErrorType motion_estimate_lcu(
                                         ->pos_j_buffer[listIndex][ref_pic_index][0]),
                                     x_search_area_origin,
                                     y_search_area_origin,
-                                    asm_type,
                                     picture_control_set_ptr->cu8x8_mode ==
                                     CU_8x8_MODE_1,
                                     enableHalfPel32x32,

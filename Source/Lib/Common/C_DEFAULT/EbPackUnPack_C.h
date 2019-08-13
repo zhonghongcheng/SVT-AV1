@@ -49,14 +49,6 @@ extern "C" {
         uint32_t  width,
         uint32_t  height);
 
-    void un_pack8_bit_data(
-        uint16_t *in16_bit_buffer,
-        uint32_t  in_stride,
-        uint8_t  *out8_bit_buffer,
-        uint32_t  out8_stride,
-        uint32_t  width,
-        uint32_t  height);
-
 #ifdef __cplusplus
 }
 #endif

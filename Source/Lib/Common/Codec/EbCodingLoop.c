@@ -4723,8 +4723,7 @@ EB_EXTERN void av1_encode_pass(
                                         eobs[context_ptr->txb_itr][0],
                                         0,
                                         0,
-                                        COMPONENT_LUMA,
-                                        asm_type);
+                                        COMPONENT_LUMA);
 #if ATB_SUPPORT
                                 TxSize  txSize = blk_geom->txsize[cu_ptr->tx_depth][context_ptr->txb_itr];
 #else

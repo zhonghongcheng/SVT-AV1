@@ -74,6 +74,10 @@ extern "C" {
     void transform_encode_helper(int16_t *src, const uint32_t src_stride, int16_t *dst, const uint32_t dst_stride, int16_t *intermediate, uint32_t addshift, uint8_t choice);
     RTCD_EXTERN void(*transform_encode)(int16_t *src, const uint32_t src_stride, int16_t *dst, const uint32_t dst_stride, int16_t *intermediate, uint32_t addshift, uint8_t choice);
 
+    void un_pack8_bit_data_c(uint16_t *in16_bit_buffer, uint32_t  in_stride, uint8_t  *out8_bit_buffer, uint32_t  out8_stride, uint32_t  width, uint32_t  height);
+    void eb_enc_un_pack8_bit_data_avx2_intrin(uint16_t *in16_bit_buffer, uint32_t  in_stride, uint8_t  *out8_bit_buffer, uint32_t  out8_stride, uint32_t  width, uint32_t  height);
+    RTCD_EXTERN void(*unpack_8bit_safe_sub)(uint16_t *in16_bit_buffer, uint32_t  in_stride, uint8_t  *out8_bit_buffer, uint32_t  out8_stride, uint32_t  width, uint32_t  height);
+
     void pfreq_n4_transform_helper(int16_t *src, const uint32_t src_stride, int16_t *dst, const uint32_t dst_stride, int16_t *intermediate, uint32_t addshift, uint8_t choice);
     void pfreq_n4_transform_avx2_helper(int16_t *src, const uint32_t src_stride, int16_t *dst, const uint32_t dst_stride, int16_t *intermediate, uint32_t addshift, uint8_t choice);
     RTCD_EXTERN void(*pfreq_n4_transform)(int16_t *src, const uint32_t src_stride, int16_t *dst, const uint32_t dst_stride, int16_t *intermediate, uint32_t addshift, uint8_t choice);
@@ -2557,6 +2561,9 @@ extern "C" {
 
         inv_transform_encode = inv_transform_encode_helper;
         transform_encode = transform_encode_helper;
+
+        unpack_8bit_safe_sub = un_pack8_bit_data_c;
+        if (flags & HAS_AVX2) unpack_8bit_safe_sub = eb_enc_un_pack8_bit_data_avx2_intrin;
 
         pfreq_n4_transform = pfreq_n4_transform_helper;
         if (flags & HAS_AVX2) pfreq_n4_transform = pfreq_n4_transform_avx2_helper;

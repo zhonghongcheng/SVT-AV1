@@ -530,9 +530,7 @@ void estimate_uni_pred_interpolation_avc_lumaRef10Bit(
             dst->buffer_y + dst_luma_index,
             dst->stride_y << sub_pred,
             pu_width,
-            pu_height >> sub_pred,
-            sub_pred,
-            asm_type
+            pu_height >> sub_pred
         );
     }
     //chroma

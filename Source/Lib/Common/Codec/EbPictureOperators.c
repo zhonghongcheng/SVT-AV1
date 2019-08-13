@@ -346,8 +346,7 @@ EbErrorType picture_full_distortion32_bits(
     uint32_t                   y_count_non_zero_coeffs,
     uint32_t                   cb_count_non_zero_coeffs,
     uint32_t                   cr_count_non_zero_coeffs,
-    COMPONENT_TYPE            component_type,
-    EbAsm                   asm_type)
+    COMPONENT_TYPE            component_type)
 {
     EbErrorType return_error = EB_ErrorNone;
 
@@ -479,15 +478,10 @@ void extract8_bitdata_safe_sub(
     uint8_t       *out8_bit_buffer,
     uint32_t       out8_stride,
     uint32_t       width,
-    uint32_t       height,
-    EbBool      sub_pred,
-    EbAsm       asm_type
+    uint32_t       height
 )
 {
-    /* sub_pred not implemented */
-    (void)sub_pred;
-
-    unpack8_bit_safe_sub_func_ptr_array_16_bit[asm_type](
+    unpack_8bit_safe_sub(
         in16_bit_buffer,
         in_stride,
         out8_bit_buffer,
