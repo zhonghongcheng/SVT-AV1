@@ -67,6 +67,12 @@ EbErrorType motion_compensation_prediction_context_ctor(
     return EB_ErrorNone;
 }
 #endif
+
+void uni_pred_luma_if(EbByte ref_pic, uint32_t src_stride, EbByte dst, uint32_t dst_stride, uint32_t pu_width, uint32_t pu_height, int16_t *first_pass_if_dst, uint8_t choice);
+void bi_pred_luma_if(EbByte ref_pic, uint32_t src_stride, int16_t *dst, uint32_t pu_width, uint32_t pu_height, int16_t *first_pass_if_dst, uint8_t choice);
+void uni_pred_chroma_if(EbByte ref_pic, uint32_t src_stride, EbByte dst, uint32_t dst_stride, uint32_t pu_width, uint32_t pu_height, int16_t *first_pass_if_dst, uint32_t frac_pos_x, uint32_t frac_pos_y, uint8_t choice);
+void bi_pred_chroma_if(EbByte ref_pic, uint32_t src_stride, int16_t *dst, uint32_t pu_width, uint32_t pu_height, int16_t *first_pass_if_dst, uint32_t frac_pos_x, uint32_t frac_pos_y, uint8_t choice);
+
 void encode_uni_pred_interpolation(
     EbPictureBufferDesc     *ref_pic,                   //input parameter, please refer to the detailed explanation above.
     uint32_t                 pos_x,                     //input parameter, please refer to the detailed explanation above.

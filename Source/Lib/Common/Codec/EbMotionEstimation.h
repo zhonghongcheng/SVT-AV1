@@ -1588,8 +1588,8 @@ void interpolate_search_region_AVC_chroma(
         uint32_t search_area_height,
         uint32_t search_area_width,
 #endif
-        uint32_t integer_mv,           // input parameter, integer MV
-        EbAsm asm_type);
+        uint32_t integer_mv            // input parameter, integer MV
+        );
 
 #endif
 

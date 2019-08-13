@@ -5367,7 +5367,7 @@ void half_pel_refinement_sb(
      uint32_t search_area_height,
      uint32_t search_area_width,
 #endif
-    uint32_t inetger_mv, EbAsm asm_type) {
+    uint32_t inetger_mv) {
     uint32_t idx;
     uint32_t pu_index;
     uint32_t block_index_shift_x;
@@ -5966,8 +5966,7 @@ static void open_loop_me_half_pel_search_sblock(
         y_search_area_origin,
         search_area_height,
         search_area_width,
-        0,
-        asm_type);
+        0);
 }
 #else
 static void open_loop_me_half_pel_search_sblock(
@@ -6022,8 +6021,7 @@ static void open_loop_me_half_pel_search_sblock(
                 &(context_ptr->pos_j_buffer[list_index][ref_pic_index][0]),
                 x_search_area_origin,
                 y_search_area_origin,
-                inetger_mv,
-                asm_type);
+                inetger_mv);
         }
     }
 }
@@ -6620,7 +6618,7 @@ static void PU_HalfPelRefinement(
     int16_t y_search_area_origin,  // input parameter, search area origin in the
                                    // vertical direction, used to point to
                                    // reference samples
-    EbAsm asm_type, uint32_t *pBestSad, uint32_t *pBestMV,
+    uint32_t *pBestSad, uint32_t *pBestMV,
     uint8_t *psubPelDirection) {
     EncodeContext *encode_context_ptr =
         sequence_control_set_ptr->encode_context_ptr;
@@ -7191,7 +7189,6 @@ void HalfPelSearch_LCU(
                              64,
                              x_search_area_origin,
                              y_search_area_origin,
-                             asm_type,
                              context_ptr->p_best_sad64x64,
                              context_ptr->p_best_mv64x64,
                              &context_ptr->psub_pel_direction64x64);
@@ -7225,7 +7222,6 @@ void HalfPelSearch_LCU(
                 32,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad32x32[pu_index],
                 &context_ptr->p_best_mv32x32[pu_index],
                 &context_ptr->psub_pel_direction32x32[pu_index]);
@@ -7262,7 +7258,6 @@ void HalfPelSearch_LCU(
                 16,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad16x16[idx],
                 &context_ptr->p_best_mv16x16[idx],
                 &context_ptr->psub_pel_direction16x16[idx]);
@@ -7304,7 +7299,6 @@ void HalfPelSearch_LCU(
                     8,
                     x_search_area_origin,
                     y_search_area_origin,
-                    asm_type,
                     &context_ptr->p_best_sad8x8[idx],
                     &context_ptr->p_best_mv8x8[idx],
                     &context_ptr->psub_pel_direction8x8[idx]);
@@ -7341,7 +7335,6 @@ void HalfPelSearch_LCU(
                 32,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad64x32[pu_index],
                 &context_ptr->p_best_mv64x32[pu_index],
                 &context_ptr->psub_pel_direction64x32[pu_index]);
@@ -7378,7 +7371,6 @@ void HalfPelSearch_LCU(
                 16,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad32x16[idx],
                 &context_ptr->p_best_mv32x16[idx],
                 &context_ptr->psub_pel_direction32x16[idx]);
@@ -7415,7 +7407,6 @@ void HalfPelSearch_LCU(
                 8,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad16x8[idx],
                 &context_ptr->p_best_mv16x8[idx],
                 &context_ptr->psub_pel_direction16x8[idx]);
@@ -7450,7 +7441,6 @@ void HalfPelSearch_LCU(
                 64,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad32x64[pu_index],
                 &context_ptr->p_best_mv32x64[pu_index],
                 &context_ptr->psub_pel_direction32x64[pu_index]);
@@ -7487,7 +7477,6 @@ void HalfPelSearch_LCU(
                 32,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad16x32[idx],
                 &context_ptr->p_best_mv16x32[idx],
                 &context_ptr->psub_pel_direction16x32[idx]);
@@ -7524,7 +7513,6 @@ void HalfPelSearch_LCU(
                 16,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad8x16[idx],
                 &context_ptr->p_best_mv8x16[idx],
                 &context_ptr->psub_pel_direction8x16[idx]);
@@ -7561,7 +7549,6 @@ void HalfPelSearch_LCU(
                 8,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad32x8[idx],
                 &context_ptr->p_best_mv32x8[idx],
                 &context_ptr->psub_pel_direction32x8[idx]);
@@ -7596,7 +7583,6 @@ void HalfPelSearch_LCU(
                 32,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad8x32[idx],
                 &context_ptr->p_best_mv8x32[idx],
                 &context_ptr->psub_pel_direction8x32[idx]);
@@ -7631,7 +7617,6 @@ void HalfPelSearch_LCU(
                 16,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad64x16[idx],
                 &context_ptr->p_best_mv64x16[idx],
                 &context_ptr->psub_pel_direction64x16[idx]);
@@ -7666,7 +7651,6 @@ void HalfPelSearch_LCU(
                 64,
                 x_search_area_origin,
                 y_search_area_origin,
-                asm_type,
                 &context_ptr->p_best_sad16x64[idx],
                 &context_ptr->p_best_mv16x64[idx],
                 &context_ptr->psub_pel_direction16x64[idx]);

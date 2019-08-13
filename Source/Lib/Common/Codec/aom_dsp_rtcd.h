@@ -64,6 +64,10 @@ extern "C" {
     void bi_pred_chroma_if_helper(EbByte ref_pic, uint32_t src_stride, int16_t *dst, uint32_t pu_width, uint32_t pu_height, int16_t *first_pass_if_dst, uint32_t frac_pos_x, uint32_t frac_pos_y, uint8_t choice);
     RTCD_EXTERN void(*bi_pred_chroma_if)(EbByte ref_pic, uint32_t src_stride, int16_t *dst, uint32_t pu_width, uint32_t pu_height, int16_t *first_pass_if_dst, uint32_t frac_pos_x, uint32_t frac_pos_y, uint8_t choice);
 
+    void full_distortion_kernel_cbf_zero32_bits_c(int32_t *coeff, uint32_t coeff_stride, int32_t *recon_coeff, uint32_t recon_coeff_stride, uint64_t distortion_result[DIST_CALC_TOTAL], uint32_t area_width, uint32_t area_height);
+    void full_distortion_kernel_cbf_zero32_bits_avx2(int32_t *coeff, uint32_t coeff_stride, int32_t *recon_coeff, uint32_t recon_coeff_stride, uint64_t distortion_result[DIST_CALC_TOTAL], uint32_t area_width, uint32_t area_height);
+    RTCD_EXTERN void(*full_distortion_kernel_cbf_zero32_bits)(int32_t *coeff, uint32_t coeff_stride, int32_t *recon_coeff, uint32_t recon_coeff_stride, uint64_t distortion_result[DIST_CALC_TOTAL], uint32_t area_width, uint32_t area_height);
+
     void inv_transform_encode_helper(int16_t *src, uint32_t src_stride, int16_t *dst, uint32_t dst_stride, int16_t *intermediate, uint32_t addshift, uint8_t choice);
     RTCD_EXTERN void(*inv_transform_encode)(int16_t *src, uint32_t src_stride, int16_t *dst, uint32_t dst_stride, int16_t *intermediate, uint32_t addshift, uint8_t choice);
 
@@ -2541,6 +2545,9 @@ extern "C" {
         //to use C: flags=0
 
         picture_addition_kernel_t = picture_addition_kernel_helper;
+
+        full_distortion_kernel_cbf_zero32_bits = full_distortion_kernel_cbf_zero32_bits_c;
+        if (flags & HAS_AVX2) full_distortion_kernel_cbf_zero32_bits = full_distortion_kernel_cbf_zero32_bits_avx2;
 
         uni_pred_luma_if = uni_pred_luma_if_helper;
         uni_pred_chroma_if = uni_pred_chroma_if_helper;

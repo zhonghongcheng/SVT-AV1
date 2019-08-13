@@ -98,15 +98,6 @@ extern "C" {
         uint32_t  height,
         int32_t   bd);
 
-    void full_distortion_kernel_cbf_zero32_bits_avx2(
-        int32_t  *coeff,
-        uint32_t  coeff_stride,
-        int32_t  *recon_coeff,
-        uint32_t  recon_coeff_stride,
-        uint64_t  distortion_result[DIST_CALC_TOTAL],
-        uint32_t  area_width,
-        uint32_t  area_height);
-
     void full_distortion_kernel32_bits_avx2(
         int32_t  *coeff,
         uint32_t  coeff_stride,
