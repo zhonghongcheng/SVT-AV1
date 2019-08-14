@@ -6057,8 +6057,7 @@ static void open_loop_me_fullpel_search_sblock(
                         context_ptr->interpolated_full_stride[listIndex][0],
 #endif
                 (int32_t)xSearchIndex + x_search_area_origin,
-                (int32_t)ySearchIndex + y_search_area_origin,
-                asm_type);
+                (int32_t)ySearchIndex + y_search_area_origin);
         }
 
         for (xSearchIndex = searchAreaWidthMult8;

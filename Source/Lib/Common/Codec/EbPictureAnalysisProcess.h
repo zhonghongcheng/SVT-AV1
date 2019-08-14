@@ -35,25 +35,6 @@ extern EbErrorType picture_analysis_context_ctor(
 
 extern void* picture_analysis_kernel(void *input_ptr);
 
-void noise_extract_luma_strong(
-    EbPictureBufferDesc *input_picture_ptr,
-    EbPictureBufferDesc *denoised_picture_ptr,
-    uint32_t               sb_origin_y,
-    uint32_t               sb_origin_x);
-
-typedef void(*EbStrongLumaFilterType)(
-    EbPictureBufferDesc *input_picture_ptr,
-    EbPictureBufferDesc *denoised_picture_ptr,
-    uint32_t               sb_origin_y,
-    uint32_t               sb_origin_x);
-
-static EbStrongLumaFilterType FUNC_TABLE strong_luma_filter_func_ptr_array[ASM_TYPE_TOTAL] =
-{
-    // NON_AVX2
-    noise_extract_luma_strong,
-    // AVX2
-    noise_extract_luma_strong_avx2_intrin,
-};
 void noise_extract_chroma_strong(
     EbPictureBufferDesc *input_picture_ptr,
     EbPictureBufferDesc *denoised_picture_ptr,

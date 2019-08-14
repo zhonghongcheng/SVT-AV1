@@ -107,6 +107,10 @@ extern "C" {
     void get_eight_horizontal_search_point_results_32x32_64x64_pu_avx2_intrin(uint16_t  *p_sad16x16, uint32_t  *p_best_sad32x32, uint32_t  *p_best_sad64x64, uint32_t  *p_best_mv32x32, uint32_t  *p_best_mv64x64, uint32_t   mv);
     RTCD_EXTERN void(*get_eight_horizontal_search_point_results_32x32_64x64)(uint16_t  *p_sad16x16, uint32_t  *p_best_sad32x32, uint32_t  *p_best_sad64x64, uint32_t  *p_best_mv32x32, uint32_t  *p_best_mv64x64, uint32_t   mv);
 
+    void noise_extract_luma_strong_c(EbPictureBufferDesc *input_picture_ptr, EbPictureBufferDesc *denoised_picture_ptr, uint32_t sb_origin_y, uint32_t sb_origin_x);
+    void noise_extract_luma_strong_avx2_intrin(EbPictureBufferDesc *input_picture_ptr, EbPictureBufferDesc *denoised_picture_ptr, uint32_t sb_origin_y, uint32_t sb_origin_x);
+    RTCD_EXTERN void(*strong_luma_filter)(EbPictureBufferDesc *input_picture_ptr, EbPictureBufferDesc *denoised_picture_ptr, uint32_t sb_origin_y, uint32_t sb_origin_x);
+
     void pfreq_n4_transform_helper(int16_t *src, const uint32_t src_stride, int16_t *dst, const uint32_t dst_stride, int16_t *intermediate, uint32_t addshift, uint8_t choice);
     void pfreq_n4_transform_avx2_helper(int16_t *src, const uint32_t src_stride, int16_t *dst, const uint32_t dst_stride, int16_t *intermediate, uint32_t addshift, uint8_t choice);
     RTCD_EXTERN void(*pfreq_n4_transform)(int16_t *src, const uint32_t src_stride, int16_t *dst, const uint32_t dst_stride, int16_t *intermediate, uint32_t addshift, uint8_t choice);
@@ -2615,6 +2619,9 @@ extern "C" {
 
         get_eight_horizontal_search_point_results_32x32_64x64 = get_eight_horizontal_search_point_results_32x32_64x64_pu_sse41_intrin;
         if (flags & HAS_AVX2) get_eight_horizontal_search_point_results_32x32_64x64 = get_eight_horizontal_search_point_results_32x32_64x64_pu_avx2_intrin;
+
+        strong_luma_filter = noise_extract_luma_strong_c;
+        if (flags & HAS_AVX2) strong_luma_filter = noise_extract_luma_strong_avx2_intrin;
 
         pfreq_n4_transform = pfreq_n4_transform_helper;
         if (flags & HAS_AVX2) pfreq_n4_transform = pfreq_n4_transform_avx2_helper;

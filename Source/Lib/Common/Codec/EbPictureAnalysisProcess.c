@@ -1350,7 +1350,7 @@ uint8_t  getFilteredTypes(uint8_t  *ptr,
 * noise_extract_luma_strong
 *  strong filter Luma.
 *******************************************/
-void noise_extract_luma_strong(
+void noise_extract_luma_strong_c(
     EbPictureBufferDesc       *input_picture_ptr,
     EbPictureBufferDesc       *denoised_picture_ptr,
     uint32_t                       sb_origin_y
@@ -3159,7 +3159,7 @@ EbErrorType DenoiseInputPicture(
             sb_origin_y = (lcuCodingOrder / picture_width_in_sb) * sequence_control_set_ptr->sb_sz;
 
             if (sb_origin_x == 0)
-                strong_luma_filter_func_ptr_array[asm_type](
+                strong_luma_filter(
                     input_picture_ptr,
                     denoised_picture_ptr,
                     sb_origin_y,
@@ -3167,7 +3167,7 @@ EbErrorType DenoiseInputPicture(
 
             if (sb_origin_x + BLOCK_SIZE_64 > input_picture_ptr->width)
             {
-                noise_extract_luma_strong(
+                noise_extract_luma_strong_c(
                     input_picture_ptr,
                     denoised_picture_ptr,
                     sb_origin_y,
