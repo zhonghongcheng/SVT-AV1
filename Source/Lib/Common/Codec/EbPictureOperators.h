@@ -78,8 +78,7 @@ extern "C" {
         uint16_t *out16_bit_buffer,
         uint32_t  out_stride,
         uint32_t  width,
-        uint32_t  height,
-        EbAsm     asm_type);
+        uint32_t  height);
 
     void conv2b_to_c_pack_lcu(
         const uint8_t *inn_bit_buffer,
@@ -88,8 +87,7 @@ extern "C" {
         uint32_t       out_stride,
         uint8_t       *local_cache,
         uint32_t       width,
-        uint32_t       height,
-        EbAsm          asm_type);
+        uint32_t       height);
 
     void pack2d_src(
         uint8_t  *in8_bit_buffer,
@@ -110,8 +108,7 @@ extern "C" {
         uint8_t  *outn_bit_buffer,
         uint32_t  outn_stride,
         uint32_t  width,
-        uint32_t  height,
-        EbAsm     asm_type);
+        uint32_t  height);
 
     void extract_8bit_data(
         uint16_t *in16_bit_buffer,

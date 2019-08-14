@@ -444,13 +444,14 @@ void extract_8bit_data(
     uint32_t       width,
     uint32_t       height,
     EbAsm          asm_type){
-    unpack8_bit_func_ptr_array_16_bit[((width & 3) == 0) && ((height & 1) == 0)][asm_type](
+    unpack_8bit(
         in16_bit_buffer,
         in_stride,
         out8_bit_buffer,
         out8_stride,
         width,
-        height);
+        height,
+        ((width & 3) == 0) && ((height & 1) == 0));
 }
 void unpack_l0l1_avg(
     uint16_t *ref16_l0,
@@ -522,11 +523,10 @@ void un_pack2d(
     uint8_t       *outn_bit_buffer,
     uint32_t       outn_stride,
     uint32_t       width,
-    uint32_t       height,
-    EbAsm       asm_type
+    uint32_t       height
 )
 {
-    un_pack2d_func_ptr_array_16_bit[((width & 3) == 0) && ((height & 1) == 0)][asm_type](
+    unpack2d_array_16bit(
         in16_bit_buffer,
         in_stride,
         out8_bit_buffer,
@@ -534,7 +534,8 @@ void un_pack2d(
         out8_stride,
         outn_stride,
         width,
-        height);
+        height,
+        ((width & 3) == 0) && ((height & 1) == 0));
 }
 
 void pack2d_src(
@@ -549,7 +550,7 @@ void pack2d_src(
     EbAsm     asm_type
 )
 {
-    pack2d_func_ptr_array_16_bit_src[((width & 3) == 0) && ((height & 1) == 0)][asm_type](
+    pack2d_16_bit_src(
         in8_bit_buffer,
         in8_stride,
         inn_bit_buffer,
@@ -557,7 +558,8 @@ void pack2d_src(
         inn_stride,
         out_stride,
         width,
-        height);
+        height,
+        ((width & 3) == 0) && ((height & 1) == 0));
 }
 
 void compressed_pack_lcu(
@@ -568,11 +570,10 @@ void compressed_pack_lcu(
     uint16_t    *out16_bit_buffer,
     uint32_t     out_stride,
     uint32_t     width,
-    uint32_t     height,
-    EbAsm     asm_type
+    uint32_t     height
 )
 {
-    compressed_pack_func_ptr_array[(width == 64 || width == 32) ? asm_type : ASM_NON_AVX2](
+    compressed_packmsb(
         in8_bit_buffer,
         in8_stride,
         inn_bit_buffer,
@@ -590,10 +591,9 @@ void conv2b_to_c_pack_lcu(
     uint32_t     out_stride,
     uint8_t    *local_cache,
     uint32_t     width,
-    uint32_t     height,
-    EbAsm     asm_type)
+    uint32_t     height)
 {
-    convert_unpack_c_pack_func_ptr_array[(width == 64 || width == 32) ? asm_type : ASM_NON_AVX2](
+    c_pack(
         inn_bit_buffer,
         inn_stride,
         in_compn_bit_buffer,
@@ -906,6 +906,100 @@ void picture_addition_kernel_helper(uint8_t  *pred_ptr,
         picture_addition_kernel64x64_sse2_intrin(pred_ptr, pred_stride, residual_ptr, residual_stride, recon_ptr, recon_stride, width, height);break;
     default:
         break;
+    }
+
+}
+
+void unpack_8bit_helper_c(
+    uint16_t *in16_bit_buffer,
+    uint32_t  in_stride,
+    uint8_t  *out8_bit_buffer,
+    uint32_t  out8_stride,
+    uint32_t  width,
+    uint32_t  height,
+    uint8_t   choice) {
+
+    if (choice == 1) {
+        un_pack8_bit_data_c(in16_bit_buffer, in_stride, out8_bit_buffer, out8_stride, width, height);
+    }
+    else {
+        un_pack8_bit_data_c(in16_bit_buffer, in_stride, out8_bit_buffer, out8_stride, width, height);
+    }
+}
+
+void unpack_8bit_helper_avx2(
+    uint16_t *in16_bit_buffer,
+    uint32_t  in_stride,
+    uint8_t  *out8_bit_buffer,
+    uint32_t  out8_stride,
+    uint32_t  width,
+    uint32_t  height,
+    uint8_t   choice) {
+
+    if (choice == 1) {
+        un_pack8_bit_data_c(in16_bit_buffer, in_stride, out8_bit_buffer, out8_stride, width, height);
+    }
+    else {
+        eb_enc_un_pack8_bit_data_avx2_intrin(in16_bit_buffer, in_stride, out8_bit_buffer, out8_stride, width, height);
+    }
+
+}
+
+void unpack2d_array_16bit_helper(
+    uint16_t *in16_bit_buffer,
+    uint32_t  in_stride,
+    uint8_t  *out8_bit_buffer,
+    uint8_t  *outn_bit_buffer,
+    uint32_t  out8_stride,
+    uint32_t  outn_stride,
+    uint32_t  width,
+    uint32_t  height,
+    uint8_t   choice) {
+    if (choice) {
+        eb_enc_msb_un_pack2d_sse2_intrin(in16_bit_buffer, in_stride, out8_bit_buffer, outn_bit_buffer, out8_stride, outn_stride, width, height);
+    }
+    else {
+        eb_enc_msb_un_pack2_d(in16_bit_buffer, in_stride, out8_bit_buffer, outn_bit_buffer, out8_stride, outn_stride, width, height);
+    }
+
+}
+
+void pack2d_16_bit_src_helper(
+    uint8_t     *in8_bit_buffer,
+    uint32_t     in8_stride,
+    uint8_t     *inn_bit_buffer,
+    uint16_t    *out16_bit_buffer,
+    uint32_t     inn_stride,
+    uint32_t     out_stride,
+    uint32_t     width,
+    uint32_t     height,
+    uint8_t     choice) {
+
+    if (choice) {
+        eb_enc_msb_pack2d_sse2_intrin(in8_bit_buffer, in8_stride, inn_bit_buffer, out16_bit_buffer, inn_stride, out_stride, width, height);
+    }
+    else {
+        eb_enc_msb_pack2_d(in8_bit_buffer, in8_stride, inn_bit_buffer, out16_bit_buffer, inn_stride, out_stride, width, height);
+    }
+
+}
+
+void pack2d_16_bit_src_avx2_helper(
+    uint8_t     *in8_bit_buffer,
+    uint32_t     in8_stride,
+    uint8_t     *inn_bit_buffer,
+    uint16_t    *out16_bit_buffer,
+    uint32_t     inn_stride,
+    uint32_t     out_stride,
+    uint32_t     width,
+    uint32_t     height,
+    uint8_t     choice) {
+
+    if (choice) {
+        eb_enc_msb_pack2d_avx2_intrin_al(in8_bit_buffer, in8_stride, inn_bit_buffer, out16_bit_buffer, inn_stride, out_stride, width, height);
+    }
+    else {
+        eb_enc_msb_pack2_d(in8_bit_buffer, in8_stride, inn_bit_buffer, out16_bit_buffer, inn_stride, out_stride, width, height);
     }
 
 }

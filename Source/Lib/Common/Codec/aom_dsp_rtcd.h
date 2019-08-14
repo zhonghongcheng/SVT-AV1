@@ -111,6 +111,33 @@ extern "C" {
     void noise_extract_luma_strong_avx2_intrin(EbPictureBufferDesc *input_picture_ptr, EbPictureBufferDesc *denoised_picture_ptr, uint32_t sb_origin_y, uint32_t sb_origin_x);
     RTCD_EXTERN void(*strong_luma_filter)(EbPictureBufferDesc *input_picture_ptr, EbPictureBufferDesc *denoised_picture_ptr, uint32_t sb_origin_y, uint32_t sb_origin_x);
 
+    void noise_extract_chroma_strong_c(EbPictureBufferDesc *input_picture_ptr, EbPictureBufferDesc *denoised_picture_ptr, uint32_t sb_origin_y, uint32_t sb_origin_x);
+    void noise_extract_chroma_strong_avx2_intrin(EbPictureBufferDesc *input_picture_ptr, EbPictureBufferDesc *denoised_picture_ptr, uint32_t sb_origin_y, uint32_t sb_origin_x);
+    RTCD_EXTERN void(*noise_extract_chroma_strong)(EbPictureBufferDesc *input_picture_ptr, EbPictureBufferDesc *denoised_picture_ptr, uint32_t sb_origin_y, uint32_t sb_origin_x);
+
+    void noise_extract_chroma_weak_c(EbPictureBufferDesc *input_picture_ptr, EbPictureBufferDesc *denoised_picture_ptr, uint32_t sb_origin_y, uint32_t sb_origin_x);
+    void noise_extract_chroma_weak_avx2_intrin(EbPictureBufferDesc *input_picture_ptr, EbPictureBufferDesc *denoised_picture_ptr, uint32_t sb_origin_y, uint32_t sb_origin_x);
+    RTCD_EXTERN void(*noise_extract_chroma_weak)(EbPictureBufferDesc *input_picture_ptr, EbPictureBufferDesc *denoised_picture_ptr, uint32_t sb_origin_y, uint32_t sb_origin_x);
+
+    void unpack_8bit_helper_c(uint16_t *in16_bit_buffer, uint32_t  in_stride, uint8_t  *out8_bit_buffer, uint32_t  out8_stride, uint32_t  width, uint32_t  height, uint8_t     choice);
+    void unpack_8bit_helper_avx2(uint16_t *in16_bit_buffer, uint32_t  in_stride, uint8_t  *out8_bit_buffer, uint32_t  out8_stride, uint32_t  width, uint32_t  height, uint8_t     choice);
+    RTCD_EXTERN void(*unpack_8bit)(uint16_t *in16_bit_buffer, uint32_t  in_stride, uint8_t  *out8_bit_buffer, uint32_t  out8_stride, uint32_t  width, uint32_t  height, uint8_t     choice);
+
+    void unpack2d_array_16bit_helper(uint16_t *in16_bit_buffer, uint32_t  in_stride, uint8_t  *out8_bit_buffer, uint8_t  *outn_bit_buffer, uint32_t  out8_stride, uint32_t  outn_stride, uint32_t  width, uint32_t  height, uint8_t   choice);
+    RTCD_EXTERN void(*unpack2d_array_16bit)(uint16_t *in16_bit_buffer, uint32_t  in_stride, uint8_t  *out8_bit_buffer, uint8_t  *outn_bit_buffer, uint32_t  out8_stride, uint32_t  outn_stride, uint32_t  width, uint32_t  height, uint8_t   choice);
+
+    void pack2d_16_bit_src_helper(uint8_t     *in8_bit_buffer, uint32_t     in8_stride, uint8_t     *inn_bit_buffer, uint16_t    *out16_bit_buffer, uint32_t     inn_stride, uint32_t     out_stride, uint32_t     width, uint32_t     height, uint8_t     choice);
+    void pack2d_16_bit_src_avx2_helper(uint8_t     *in8_bit_buffer, uint32_t     in8_stride, uint8_t     *inn_bit_buffer, uint16_t    *out16_bit_buffer, uint32_t     inn_stride, uint32_t     out_stride, uint32_t     width, uint32_t     height, uint8_t     choice);
+    RTCD_EXTERN void(*pack2d_16_bit_src)(uint8_t     *in8_bit_buffer, uint32_t     in8_stride, uint8_t     *inn_bit_buffer, uint16_t    *out16_bit_buffer, uint32_t     inn_stride, uint32_t     out_stride, uint32_t     width, uint32_t     height, uint8_t     choice);
+
+    void compressed_packmsb_c(uint8_t  *in8_bit_buffer,uint32_t  in8_stride,uint8_t  *inn_bit_buffer,uint16_t *out16_bit_buffer,uint32_t  inn_stride,uint32_t  out_stride,uint32_t  width,uint32_t  height);
+    void compressed_packmsb_avx2_intrin(uint8_t  *in8_bit_buffer,uint32_t  in8_stride,uint8_t  *inn_bit_buffer,uint16_t *out16_bit_buffer,uint32_t  inn_stride,uint32_t  out_stride,uint32_t  width,uint32_t  height);
+    RTCD_EXTERN void(*compressed_packmsb)(uint8_t  *in8_bit_buffer, uint32_t  in8_stride, uint8_t  *inn_bit_buffer, uint16_t *out16_bit_buffer, uint32_t  inn_stride, uint32_t  out_stride, uint32_t  width, uint32_t  height);
+
+    void c_pack_c(const uint8_t *inn_bit_buffer, uint32_t       inn_stride, uint8_t       *in_compn_bit_buffer, uint32_t       out_stride, uint8_t       *local_cache, uint32_t       width, uint32_t       height);
+    void c_pack_avx2_intrin(const uint8_t *inn_bit_buffer, uint32_t       inn_stride, uint8_t       *in_compn_bit_buffer, uint32_t       out_stride, uint8_t       *local_cache, uint32_t       width, uint32_t       height);
+    RTCD_EXTERN void(*c_pack)(const uint8_t *inn_bit_buffer, uint32_t       inn_stride, uint8_t       *in_compn_bit_buffer, uint32_t       out_stride, uint8_t       *local_cache, uint32_t       width, uint32_t       height);
+
     void pfreq_n4_transform_helper(int16_t *src, const uint32_t src_stride, int16_t *dst, const uint32_t dst_stride, int16_t *intermediate, uint32_t addshift, uint8_t choice);
     void pfreq_n4_transform_avx2_helper(int16_t *src, const uint32_t src_stride, int16_t *dst, const uint32_t dst_stride, int16_t *intermediate, uint32_t addshift, uint8_t choice);
     RTCD_EXTERN void(*pfreq_n4_transform)(int16_t *src, const uint32_t src_stride, int16_t *dst, const uint32_t dst_stride, int16_t *intermediate, uint32_t addshift, uint8_t choice);
@@ -2622,6 +2649,23 @@ extern "C" {
 
         strong_luma_filter = noise_extract_luma_strong_c;
         if (flags & HAS_AVX2) strong_luma_filter = noise_extract_luma_strong_avx2_intrin;
+
+        noise_extract_chroma_strong = noise_extract_chroma_strong_c;
+        if (flags & HAS_AVX2) noise_extract_chroma_strong = noise_extract_chroma_strong_avx2_intrin;
+
+        noise_extract_chroma_weak = noise_extract_chroma_weak_c;
+        if (flags & HAS_AVX2) noise_extract_chroma_weak = noise_extract_chroma_weak_avx2_intrin;
+
+        unpack_8bit = unpack_8bit_helper_c;
+        if (flags & HAS_AVX2) unpack_8bit = unpack_8bit_helper_avx2;
+
+        unpack2d_array_16bit = unpack2d_array_16bit_helper;
+
+        pack2d_16_bit_src = pack2d_16_bit_src_helper;
+        if (flags & HAS_AVX2) pack2d_16_bit_src = pack2d_16_bit_src_avx2_helper;
+
+        c_pack = c_pack_c;
+        if (flags & HAS_AVX2) c_pack = c_pack_avx2_intrin;
 
         pfreq_n4_transform = pfreq_n4_transform_helper;
         if (flags & HAS_AVX2) pfreq_n4_transform = pfreq_n4_transform_avx2_helper;

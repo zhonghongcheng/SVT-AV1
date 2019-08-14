@@ -31,8 +31,7 @@ void un_pack2d(
     uint8_t       *outn_bit_buffer,
     uint32_t       outn_stride,
     uint32_t       width,
-    uint32_t       height,
-    EbAsm       asm_type);
+    uint32_t       height);
 
 void pack2d_src(
     uint8_t     *in8_bit_buffer,
@@ -1686,8 +1685,7 @@ static void unpack_2d_pic(uint8_t *packed[3],
         outputPicturePtr->buffer_bit_inc_y + lumaBufferOffset,
         outputPicturePtr->stride_bit_inc_y,
         luma_width,
-        luma_height,
-        asm_type);
+        luma_height);
 
     un_pack2d(
         (uint16_t*)(packed[1]),
@@ -1697,8 +1695,7 @@ static void unpack_2d_pic(uint8_t *packed[3],
         outputPicturePtr->buffer_bit_inc_cb + chromaBufferOffset,
         outputPicturePtr->stride_bit_inc_cb,
         chroma_width,
-        chroma_height,
-        asm_type);
+        chroma_height);
 
     un_pack2d(
         (uint16_t*)(packed[2]),
@@ -1708,8 +1705,7 @@ static void unpack_2d_pic(uint8_t *packed[3],
         outputPicturePtr->buffer_bit_inc_cr + chromaBufferOffset,
         outputPicturePtr->stride_bit_inc_cr,
         chroma_width,
-        chroma_height,
-        asm_type);
+        chroma_height);
 }
 
 int32_t aom_denoise_and_model_run(struct aom_denoise_and_model_t *ctx,

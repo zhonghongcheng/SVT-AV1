@@ -3259,8 +3259,7 @@ EB_EXTERN void av1_encode_pass(
                 (uint16_t *)context_ptr->input_sample16bit_buffer->buffer_y,
                 context_ptr->input_sample16bit_buffer->stride_y,
                 sb_width,
-                sb_height,
-                asm_type);
+                sb_height);
 
             compressed_pack_lcu(
                 inputPicture->buffer_cb + input_cb_offset,
@@ -3270,8 +3269,7 @@ EB_EXTERN void av1_encode_pass(
                 (uint16_t *)context_ptr->input_sample16bit_buffer->buffer_cb,
                 context_ptr->input_sample16bit_buffer->stride_cb,
                 sb_width >> 1,
-                sb_height >> 1,
-                asm_type);
+                sb_height >> 1);
 
             compressed_pack_lcu(
                 inputPicture->buffer_cr + input_cr_offset,
@@ -3281,8 +3279,7 @@ EB_EXTERN void av1_encode_pass(
                 (uint16_t *)context_ptr->input_sample16bit_buffer->buffer_cr,
                 context_ptr->input_sample16bit_buffer->stride_cr,
                 sb_width >> 1,
-                sb_height >> 1,
-                asm_type);
+                sb_height >> 1);
         }
         else {
             const uint32_t input_luma_offset = ((sb_origin_y + inputPicture->origin_y)         * inputPicture->stride_y) + (sb_origin_x + inputPicture->origin_x);

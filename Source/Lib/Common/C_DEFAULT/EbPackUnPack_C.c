@@ -41,7 +41,7 @@ void eb_enc_msb_pack2_d(
 * pack 8 and 2 bit 2D data into 10 bit data
 2bit data storage : 4 2bit-pixels in one byte
 ************************************************/
-void compressed_packmsb(
+void compressed_packmsb_c(
     uint8_t     *in8_bit_buffer,
     uint32_t     in8_stride,
     uint8_t     *inn_bit_buffer,

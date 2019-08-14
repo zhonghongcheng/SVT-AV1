@@ -6030,7 +6030,7 @@ static void open_loop_me_fullpel_search_sblock(
     uint32_t ref_pic_index,
 #endif
     int16_t x_search_area_origin, int16_t y_search_area_origin,
-    uint32_t search_area_width, uint32_t search_area_height, EbAsm asm_type) {
+    uint32_t search_area_width, uint32_t search_area_height) {
     uint32_t xSearchIndex, ySearchIndex;
 #if NSQ_ME_OPT
     uint32_t searchAreaWidthRest8 = search_area_width & 7;
@@ -15500,8 +15500,7 @@ EbErrorType motion_estimate_lcu(
                                                            x_search_area_origin,
                                                            y_search_area_origin,
                                                            search_area_width,
-                                                           search_area_height,
-                                                           asm_type);
+                                                           search_area_height);
 #if IMPROVED_SUBPEL_SEARCH
                         context_ptr->full_quarter_pel_refinement = 0;
 #if DECOUPLE_ALTREF_ME

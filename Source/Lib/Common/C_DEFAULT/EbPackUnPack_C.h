@@ -20,16 +20,6 @@ extern "C" {
         uint32_t  width,
         uint32_t  height);
 
-    void compressed_packmsb(
-        uint8_t  *in8_bit_buffer,
-        uint32_t  in8_stride,
-        uint8_t  *inn_bit_buffer,
-        uint16_t *out16_bit_buffer,
-        uint32_t  inn_stride,
-        uint32_t  out_stride,
-        uint32_t  width,
-        uint32_t  height);
-
     void c_pack_c(
         const uint8_t *inn_bit_buffer,
         uint32_t       inn_stride,
