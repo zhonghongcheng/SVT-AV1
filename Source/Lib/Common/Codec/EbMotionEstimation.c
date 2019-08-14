@@ -2979,7 +2979,7 @@ static void open_loop_me_get_eight_search_point_results_block(
                                  // point to reference samples
     int32_t xSearchIndex,  // input parameter, search region position in the
                            // horizontal direction, used to derive xMV
-    int32_t ySearchIndex,  // input parameter, search region position in the
+    int32_t ySearchIndex   // input parameter, search region position in the
                            // vertical direction, used to derive yMV
     ) {
     // uint32_t reflumaStride = refPicPtr->stride_y; // NADER
@@ -3107,9 +3107,9 @@ static void open_loop_me_get_search_point_results_block(
                                  // point to reference samples
     int32_t xSearchIndex,  // input parameter, search region position in the
                            // horizontal direction, used to derive xMV
-    int32_t ySearchIndex,  // input parameter, search region position in the
+    int32_t ySearchIndex   // input parameter, search region position in the
                            // vertical direction, used to derive yMV
-    EbAsm asm_type) {
+    ) {
     const EbBool sub_sad = (context_ptr->me_search_method == SUB_SAD_SEARCH);
     uint8_t *src_ptr = context_ptr->sb_src_ptr;
 
@@ -3174,9 +3174,6 @@ static void open_loop_me_get_search_point_results_block(
     uint32_t *p_sad8x8 = context_ptr->p_sad8x8;
     uint32_t *p_best_mv64x16 = context_ptr->p_best_mv64x16;
     uint32_t *p_best_mv16x64 = context_ptr->p_best_mv16x64;
-
-    // TODO: blockIndex searchPositionIndex could be removed  + Connect asm_type
-    (void)asm_type;
 
     const uint32_t src_stride = context_ptr->sb_src_stride;
     srcNext16x16Offset = src_stride << 4;
@@ -3816,7 +3813,7 @@ static void GetEightHorizontalSearchPointResultsAll85PUs(
     uint32_t searchRegionIndex,
     int32_t xSearchIndex,  // input parameter, search region position in the
                            // horizontal direction, used to derive xMV
-    int32_t ySearchIndex,  // input parameter, search region position in the
+    int32_t ySearchIndex   // input parameter, search region position in the
                            // vertical direction, used to derive yMV
     ) {
     const EbBool sub_sad = (context_ptr->me_search_method == SUB_SAD_SEARCH);
