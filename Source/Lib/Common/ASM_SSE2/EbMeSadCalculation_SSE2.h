@@ -24,14 +24,6 @@ extern "C" {
         uint32_t *p_sad16x16,
         EbBool    sub_sad);
 
-    void sad_calculation_32x32_64x64_sse2_intrin(
-        uint32_t *p_sad16x16,
-        uint32_t *p_best_sad32x32,
-        uint32_t *p_best_sad64x64,
-        uint32_t *p_best_mv32x32,
-        uint32_t *p_best_mv64x64,
-        uint32_t  mv);
-
 #ifdef __cplusplus
 }
 #endif

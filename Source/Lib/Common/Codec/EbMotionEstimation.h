@@ -1543,7 +1543,7 @@ void interpolate_search_region_AVC_chroma(
     and check if there is improvment, if yes keep
     the best SAD+MV
     *******************************************/
-    extern void sad_calculation_32x32_64x64(
+    extern void sad_calculation_32x32_64x64_c(
         uint32_t  *p_sad16x16,
         uint32_t  *p_best_sad32x32,
         uint32_t  *p_best_sad64x64,

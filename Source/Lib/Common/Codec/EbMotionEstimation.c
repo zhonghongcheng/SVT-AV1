@@ -50,31 +50,6 @@ int32_t OisPointTh[3][MAX_TEMPORAL_LAYERS][OIS_TH_COUNT] = {
      {-400, -300, -200, 0},
      {-400, -300, -200, 0}}};
 
-#if NSQ_ME_OPT
-void ext_all_sad_calculation_8x8_16x16_c(
-    uint8_t *src, uint32_t src_stride, uint8_t *ref, uint32_t ref_stride,
-    uint32_t mv, uint32_t *p_best_sad8x8, uint32_t *p_best_sad16x16,
-    uint32_t *p_best_mv8x8, uint32_t *p_best_mv16x16,
-    uint32_t p_eight_sad16x16[16][8], uint32_t p_eight_sad8x8[64][8]);
-
-void ext_eigth_sad_calculation_nsq_c(
-    uint32_t p_sad8x8[64][8], uint32_t p_sad16x16[16][8],
-    uint32_t p_sad32x32[4][8], uint32_t *p_best_sad64x32,
-    uint32_t *p_best_mv64x32, uint32_t *p_best_sad32x16,
-    uint32_t *p_best_mv32x16, uint32_t *p_best_sad16x8, uint32_t *p_best_mv16x8,
-    uint32_t *p_best_sad32x64, uint32_t *p_best_mv32x64,
-    uint32_t *p_best_sad16x32, uint32_t *p_best_mv16x32,
-    uint32_t *p_best_sad8x16, uint32_t *p_best_mv8x16, uint32_t *p_best_sad32x8,
-    uint32_t *p_best_mv32x8, uint32_t *p_best_sad8x32, uint32_t *p_best_mv8x32,
-    uint32_t *p_best_sad64x16, uint32_t *p_best_mv64x16,
-    uint32_t *p_best_sad16x64, uint32_t *p_best_mv16x64, uint32_t mv);
-
-void ext_eight_sad_calculation_32x32_64x64_c(
-    uint32_t p_sad16x16[16][8], uint32_t *p_best_sad32x32,
-    uint32_t *p_best_sad64x64, uint32_t *p_best_mv32x32,
-    uint32_t *p_best_mv64x64, uint32_t mv, uint32_t p_sad32x32[4][8]);
-#endif
-
 static void quarter_pel_refinement_sb(
     MeContext *context_ptr,  //[IN/OUT]  ME context Ptr, used to get/update
                              //ME results
@@ -159,50 +134,6 @@ uint32_t compute8x8_sad_kernel(
 
     return sadBlock8x8;
 }
-
-/***************************************
- * Function Tables
- ***************************************/
-static EbExtSadCalculation32x32and64x64Type
-    ExtSadCalculation_32x32_64x64_funcPtrArray[ASM_TYPE_TOTAL] = {
-        // NON_AVX2
-        ext_sad_calculation_32x32_64x64,
-        // AVX2
-        ext_sad_calculation_32x32_64x64_sse4_intrin};
-
-static EbSadCalculation32x32and64x64Type
-    SadCalculation_32x32_64x64_funcPtrArray[ASM_TYPE_TOTAL] = {
-        // NON_AVX2
-        sad_calculation_32x32_64x64_sse2_intrin,
-        // AVX2
-        sad_calculation_32x32_64x64_sse2_intrin,
-};
-
-#if NSQ_ME_OPT
-static EB_EXT_ALL_SAD_CALCULATION_8x8_16x16_TYPE
-    Ext_ext_all_sad_calculation_8x8_16x16_funcPtrArray[ASM_TYPE_TOTAL] = {
-        // NON_AVX2
-        ext_all_sad_calculation_8x8_16x16_c,
-        // AVX2
-        ext_all_sad_calculation_8x8_16x16_avx2,
-};
-
-static EbEightSadCalculationNsqType
-    Ext_eigth_sad_calculation_nsq_funcPtrArray[ASM_TYPE_TOTAL] = {
-        // NON_AVX2
-        ext_eigth_sad_calculation_nsq_c,
-        // AVX2
-        ext_eigth_sad_calculation_nsq_avx2,
-};
-
-static EbExtEightSadCalculation32x3264x64Type
-    Ext_ext_eight_sad_calculation_32x32_64x64_funcPtrArray[ASM_TYPE_TOTAL] = {
-        // NON_AVX2
-        ext_eight_sad_calculation_32x32_64x64_c,
-        // AVX2
-        ext_eight_sad_calculation_32x32_64x64_avx2,
-};
-#endif
 
 /*******************************************
 Calcualte SAD for 16x16 and its 8x8 sublcoks
@@ -290,7 +221,7 @@ Calcualte SAD for 32x32,64x64 from 16x16
 and check if there is improvment, if yes keep
 the best SAD+MV
 *******************************************/
-void ext_sad_calculation_32x32_64x64(uint32_t *p_sad16x16,
+void ext_sad_calculation_32x32_64x64_c(uint32_t *p_sad16x16,
                                      uint32_t *p_best_sad32x32,
                                      uint32_t *p_best_sad64x64,
                                      uint32_t *p_best_mv32x32,
@@ -659,7 +590,7 @@ Calcualte SAD for 32x32,64x64 from 16x16
 and check if there is improvment, if yes keep
 the best SAD+MV
 *******************************************/
-void sad_calculation_32x32_64x64(uint32_t *p_sad16x16,
+void sad_calculation_32x32_64x64_c(uint32_t *p_sad16x16,
                                  uint32_t *p_best_sad32x32,
                                  uint32_t *p_best_sad64x64,
                                  uint32_t *p_best_mv32x32,
@@ -3075,7 +3006,7 @@ static void open_loop_me_get_eight_search_point_results_block(
     uint16_t currMV2 = (((uint16_t)xSearchIndex << 2));
     uint32_t currMV = currMV1 | currMV2;
 
-    Ext_ext_all_sad_calculation_8x8_16x16_funcPtrArray[asm_type](
+    ext_all_sad_calculation_8x8_16x16(
         context_ptr->sb_src_ptr,
         context_ptr->sb_src_stride,
         refPtr,
@@ -3088,7 +3019,7 @@ static void open_loop_me_get_eight_search_point_results_block(
         context_ptr->p_eight_sad16x16,
         context_ptr->p_eight_sad8x8);
 
-    Ext_ext_eight_sad_calculation_32x32_64x64_funcPtrArray[asm_type](
+    ext_eight_sad_calculation_32x32_64x64(
         context_ptr->p_eight_sad16x16,
         context_ptr->p_best_sad32x32,
         context_ptr->p_best_sad64x64,
@@ -3097,7 +3028,7 @@ static void open_loop_me_get_eight_search_point_results_block(
         currMV,
         context_ptr->p_eight_sad32x32);
 
-    Ext_eigth_sad_calculation_nsq_funcPtrArray[asm_type](
+    ext_eigth_sad_calculation(
         context_ptr->p_eight_sad8x8,
         context_ptr->p_eight_sad16x16,
         context_ptr->p_eight_sad32x32,
@@ -3514,13 +3445,13 @@ static void open_loop_me_get_search_point_results_block(
         &p_sad8x8[60],
         sub_sad);
 
-    ExtSadCalculation_32x32_64x64_funcPtrArray[asm_type](p_sad16x16,
-                                                         p_best_sad32x32,
-                                                         p_best_sad64x64,
-                                                         p_best_mv32x32,
-                                                         p_best_mv64x64,
-                                                         currMV,
-                                                         &p_sad32x32[0]);
+    ext_sad_calculation_32x32_64x64(p_sad16x16,
+                                    p_best_sad32x32,
+                                    p_best_sad64x64,
+                                    p_best_mv32x32,
+                                    p_best_mv64x64,
+                                    currMV,
+                                    &p_sad32x32[0]);
 
     ext_sad_calculation(p_sad8x8,
                         p_sad16x16,
@@ -3866,12 +3797,12 @@ static void GetSearchPointResults(
         &p_sad16x16[15],
         sub_sad);
 
-    SadCalculation_32x32_64x64_funcPtrArray[asm_type](p_sad16x16,
-                                                      p_best_sad32x32,
-                                                      p_best_sad64x64,
-                                                      p_best_mv32x32,
-                                                      p_best_mv64x64,
-                                                      currMV);
+    sad_calculation_32x32_64x64(p_sad16x16,
+                                p_best_sad32x32,
+                                p_best_sad64x64,
+                                p_best_mv32x32,
+                                p_best_mv64x64,
+                                currMV);
 }
 
 /*******************************************
@@ -3948,8 +3879,8 @@ static void GetEightHorizontalSearchPointResultsAll85PUs(
     //---- 16x16_0
     blockIndex = 0;
     searchPositionIndex = searchPositionTLIndex;
-    get_eight_horizontal_search_point_results_8x8_16x16_func_ptr_array
-        [asm_type](src_ptr + blockIndex,
+    get_eight_horizontal_search_point_results_8x8_16x16(
+                   src_ptr + blockIndex,
                    context_ptr->sb_src_stride,
                    refPtr + searchPositionIndex,
                    reflumaStride,
@@ -3963,8 +3894,8 @@ static void GetEightHorizontalSearchPointResultsAll85PUs(
     //---- 16x16_1
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionTLIndex + 16;
-    get_eight_horizontal_search_point_results_8x8_16x16_func_ptr_array
-        [asm_type](src_ptr + blockIndex,
+    get_eight_horizontal_search_point_results_8x8_16x16(
+                   src_ptr + blockIndex,
                    context_ptr->sb_src_stride,
                    refPtr + searchPositionIndex,
                    reflumaStride,
@@ -3978,8 +3909,8 @@ static void GetEightHorizontalSearchPointResultsAll85PUs(
     //---- 16x16_4
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    get_eight_horizontal_search_point_results_8x8_16x16_func_ptr_array
-        [asm_type](src_ptr + blockIndex,
+    get_eight_horizontal_search_point_results_8x8_16x16(
+                   src_ptr + blockIndex,
                    context_ptr->sb_src_stride,
                    refPtr + searchPositionIndex,
                    reflumaStride,
@@ -3993,8 +3924,8 @@ static void GetEightHorizontalSearchPointResultsAll85PUs(
     //---- 16x16_5
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    get_eight_horizontal_search_point_results_8x8_16x16_func_ptr_array
-        [asm_type](src_ptr + blockIndex,
+    get_eight_horizontal_search_point_results_8x8_16x16(
+                   src_ptr + blockIndex,
                    context_ptr->sb_src_stride,
                    refPtr + searchPositionIndex,
                    reflumaStride,
@@ -4009,8 +3940,8 @@ static void GetEightHorizontalSearchPointResultsAll85PUs(
     //---- 16x16_2
     blockIndex = srcNext16x16Offset;
     searchPositionIndex = searchPositionTLIndex + refNext16x16Offset;
-    get_eight_horizontal_search_point_results_8x8_16x16_func_ptr_array
-        [asm_type](src_ptr + blockIndex,
+    get_eight_horizontal_search_point_results_8x8_16x16(
+                   src_ptr + blockIndex,
                    context_ptr->sb_src_stride,
                    refPtr + searchPositionIndex,
                    reflumaStride,
@@ -4024,8 +3955,8 @@ static void GetEightHorizontalSearchPointResultsAll85PUs(
     //---- 16x16_3
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    get_eight_horizontal_search_point_results_8x8_16x16_func_ptr_array
-        [asm_type](src_ptr + blockIndex,
+    get_eight_horizontal_search_point_results_8x8_16x16(
+                   src_ptr + blockIndex,
                    context_ptr->sb_src_stride,
                    refPtr + searchPositionIndex,
                    reflumaStride,
@@ -4039,8 +3970,8 @@ static void GetEightHorizontalSearchPointResultsAll85PUs(
     //---- 16x16_6
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    get_eight_horizontal_search_point_results_8x8_16x16_func_ptr_array
-        [asm_type](src_ptr + blockIndex,
+    get_eight_horizontal_search_point_results_8x8_16x16(
+                   src_ptr + blockIndex,
                    context_ptr->sb_src_stride,
                    refPtr + searchPositionIndex,
                    reflumaStride,
@@ -4054,8 +3985,8 @@ static void GetEightHorizontalSearchPointResultsAll85PUs(
     //---- 16x16_7
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    get_eight_horizontal_search_point_results_8x8_16x16_func_ptr_array
-        [asm_type](src_ptr + blockIndex,
+    get_eight_horizontal_search_point_results_8x8_16x16(
+                   src_ptr + blockIndex,
                    context_ptr->sb_src_stride,
                    refPtr + searchPositionIndex,
                    reflumaStride,
@@ -4070,8 +4001,8 @@ static void GetEightHorizontalSearchPointResultsAll85PUs(
     //---- 16x16_8
     blockIndex = (srcNext16x16Offset << 1);
     searchPositionIndex = searchPositionTLIndex + (refNext16x16Offset << 1);
-    get_eight_horizontal_search_point_results_8x8_16x16_func_ptr_array
-        [asm_type](src_ptr + blockIndex,
+    get_eight_horizontal_search_point_results_8x8_16x16(
+                   src_ptr + blockIndex,
                    context_ptr->sb_src_stride,
                    refPtr + searchPositionIndex,
                    reflumaStride,
@@ -4085,8 +4016,8 @@ static void GetEightHorizontalSearchPointResultsAll85PUs(
     //---- 16x16_9
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    get_eight_horizontal_search_point_results_8x8_16x16_func_ptr_array
-        [asm_type](src_ptr + blockIndex,
+    get_eight_horizontal_search_point_results_8x8_16x16(
+                   src_ptr + blockIndex,
                    context_ptr->sb_src_stride,
                    refPtr + searchPositionIndex,
                    reflumaStride,
@@ -4100,8 +4031,8 @@ static void GetEightHorizontalSearchPointResultsAll85PUs(
     //---- 16x16_12
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    get_eight_horizontal_search_point_results_8x8_16x16_func_ptr_array
-        [asm_type](src_ptr + blockIndex,
+    get_eight_horizontal_search_point_results_8x8_16x16(
+                   src_ptr + blockIndex,
                    context_ptr->sb_src_stride,
                    refPtr + searchPositionIndex,
                    reflumaStride,
@@ -4115,8 +4046,8 @@ static void GetEightHorizontalSearchPointResultsAll85PUs(
     //---- 16x1_13
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    get_eight_horizontal_search_point_results_8x8_16x16_func_ptr_array
-        [asm_type](src_ptr + blockIndex,
+    get_eight_horizontal_search_point_results_8x8_16x16(
+                   src_ptr + blockIndex,
                    context_ptr->sb_src_stride,
                    refPtr + searchPositionIndex,
                    reflumaStride,
@@ -4131,8 +4062,8 @@ static void GetEightHorizontalSearchPointResultsAll85PUs(
     //---- 16x16_10
     blockIndex = (srcNext16x16Offset * 3);
     searchPositionIndex = searchPositionTLIndex + (refNext16x16Offset * 3);
-    get_eight_horizontal_search_point_results_8x8_16x16_func_ptr_array
-        [asm_type](src_ptr + blockIndex,
+    get_eight_horizontal_search_point_results_8x8_16x16(
+                   src_ptr + blockIndex,
                    context_ptr->sb_src_stride,
                    refPtr + searchPositionIndex,
                    reflumaStride,
@@ -4146,8 +4077,8 @@ static void GetEightHorizontalSearchPointResultsAll85PUs(
     //---- 16x16_11
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    get_eight_horizontal_search_point_results_8x8_16x16_func_ptr_array
-        [asm_type](src_ptr + blockIndex,
+    get_eight_horizontal_search_point_results_8x8_16x16(
+                   src_ptr + blockIndex,
                    context_ptr->sb_src_stride,
                    refPtr + searchPositionIndex,
                    reflumaStride,
@@ -4161,8 +4092,8 @@ static void GetEightHorizontalSearchPointResultsAll85PUs(
     //---- 16x16_14
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    get_eight_horizontal_search_point_results_8x8_16x16_func_ptr_array
-        [asm_type](src_ptr + blockIndex,
+    get_eight_horizontal_search_point_results_8x8_16x16(
+                   src_ptr + blockIndex,
                    context_ptr->sb_src_stride,
                    refPtr + searchPositionIndex,
                    reflumaStride,
@@ -4176,8 +4107,8 @@ static void GetEightHorizontalSearchPointResultsAll85PUs(
     //---- 16x16_15
     blockIndex = blockIndex + 16;
     searchPositionIndex = searchPositionIndex + 16;
-    get_eight_horizontal_search_point_results_8x8_16x16_func_ptr_array
-        [asm_type](src_ptr + blockIndex,
+    get_eight_horizontal_search_point_results_8x8_16x16(
+                   src_ptr + blockIndex,
                    context_ptr->sb_src_stride,
                    refPtr + searchPositionIndex,
                    reflumaStride,
@@ -4189,8 +4120,8 @@ static void GetEightHorizontalSearchPointResultsAll85PUs(
                    &p_sad16x16[15 * 8],
                    sub_sad);
     // 32x32 and 64x64
-    get_eight_horizontal_search_point_results_32x32_64x64_func_ptr_array
-        [asm_type](p_sad16x16,
+    get_eight_horizontal_search_point_results_32x32_64x64(
+                   p_sad16x16,
                    p_best_sad32x32,
                    p_best_sad64x64,
                    p_best_mv32x32,

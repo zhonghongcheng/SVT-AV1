@@ -13349,8 +13349,6 @@ EB_EXTERN EbErrorType in_loop_motion_estimation_sblock(
     EbPictureBufferDesc  *refPicPtr;
     EbReferenceObject    *referenceObject;
 
-    EbAsm                  asm_type = sequence_control_set_ptr->encode_context_ptr->asm_type;
-
     uint32_t                  number_of_sb_quad = sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 4 : 1;
     context_ptr->sb_size = sequence_control_set_ptr->seq_header.sb_size;
     context_ptr->sb_side = sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64;
