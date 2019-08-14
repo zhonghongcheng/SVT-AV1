@@ -2981,7 +2981,7 @@ static void open_loop_me_get_eight_search_point_results_block(
                            // horizontal direction, used to derive xMV
     int32_t ySearchIndex,  // input parameter, search region position in the
                            // vertical direction, used to derive yMV
-    EbAsm asm_type) {
+    ) {
     // uint32_t reflumaStride = refPicPtr->stride_y; // NADER
     // uint8_t  *refPtr = refPicPtr->buffer_y; // NADER
 #if MRP_ME
@@ -3818,7 +3818,7 @@ static void GetEightHorizontalSearchPointResultsAll85PUs(
                            // horizontal direction, used to derive xMV
     int32_t ySearchIndex,  // input parameter, search region position in the
                            // vertical direction, used to derive yMV
-    EbAsm asm_type) {
+    ) {
     const EbBool sub_sad = (context_ptr->me_search_method == SUB_SAD_SEARCH);
     uint8_t *src_ptr = context_ptr->sb_src_ptr;
 #if MRP_ME
@@ -4164,8 +4164,7 @@ static void FullPelSearch_LCU(MeContext *context_ptr, uint32_t listIndex,
                         context_ptr->interpolated_full_stride[listIndex][0],
 #endif
                 (int32_t)xSearchIndex + x_search_area_origin,
-                (int32_t)ySearchIndex + y_search_area_origin,
-                asm_type);
+                (int32_t)ySearchIndex + y_search_area_origin);
         }
 
         for (xSearchIndex = searchAreaWidthMult8;
@@ -6089,8 +6088,7 @@ static void open_loop_me_fullpel_search_sblock(
                         context_ptr->interpolated_full_stride[listIndex][0],
 #endif
                 (int32_t)xSearchIndex + x_search_area_origin,
-                (int32_t)ySearchIndex + y_search_area_origin,
-                asm_type);
+                (int32_t)ySearchIndex + y_search_area_origin);
         }
     }
 }
