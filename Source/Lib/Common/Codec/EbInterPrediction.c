@@ -2785,7 +2785,6 @@ void search_compound_diff_wedge(
         pred_desc.origin_x = pred_desc.origin_y = 0;
         pred_desc.stride_y = bwidth;
 
-        SequenceControlSet* sequence_control_set_ptr = ((SequenceControlSet*)(picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr));
         EbPictureBufferDesc  *ref_pic_list0;
         EbPictureBufferDesc  *ref_pic_list1 = NULL;
         Mv mv_0;
@@ -3090,7 +3089,6 @@ void search_compound_avg_dist(
         pred_desc.stride_y = bwidth;
         pred_desc.buffer_y = context_ptr->pred0;
 
-        SequenceControlSet* sequence_control_set_ptr = ((SequenceControlSet*)(picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr));
         EbPictureBufferDesc  *ref_pic_list0;
         EbPictureBufferDesc  *ref_pic_list1 = NULL;
         Mv mv_0;

@@ -1752,15 +1752,14 @@ void ProductMdFastPuPrediction(
     uint32_t                             modeType,
     ModeDecisionCandidate             *const candidate_ptr,
     uint32_t                             fastLoopCandidateIndex,
-    uint32_t                             bestFirstFastCostSearchCandidateIndex,
-    EbAsm                                asm_type)
+    uint32_t                             bestFirstFastCostSearchCandidateIndex)
 {
     UNUSED(candidate_ptr);
     UNUSED(fastLoopCandidateIndex);
     UNUSED(bestFirstFastCostSearchCandidateIndex);
     context_ptr->pu_itr = 0;
     // Prediction
-    context_ptr->skip_interpolation_search = picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? 0 : 1;
+    context_ptr->skip_interpolation_search = picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level < IT_SEARCH_FAST_LOOP_UV_BLIND;
 
 #if FAST_LOOP_OPT
     if (context_ptr->md_staging_mode  && context_ptr->md_stage == MD_STAGE_0)
@@ -1795,8 +1794,7 @@ void fast_loop_core(
     CodingUnit                          *cu_ptr,
     uint32_t                             cuOriginIndex,
     uint32_t                             cuChromaOriginIndex,
-    EbBool                               use_ssd,
-    EbAsm                                asm_type )
+    EbBool                               use_ssd)
 {
     uint32_t lumaFastDistortion;
     uint32_t chromaFastDistortion;
@@ -1858,8 +1856,8 @@ void fast_loop_core(
         candidate_ptr->type,
         candidate_ptr,
         0xFFFF,//NOT_USED
-        0xFFFF,//NOT_USED
-        asm_type);
+        0xFFFF //NOT_USED
+        );
 #endif
 
     // Distortion
@@ -2110,8 +2108,7 @@ void perform_fast_loop(
                         cu_ptr,
                         cuOriginIndex,
                         cuChromaOriginIndex,
-                        use_ssd,
-                        asm_type
+                        use_ssd
                     );
 
 #else
@@ -2123,8 +2120,7 @@ void perform_fast_loop(
                 candidate_ptr->type,
                 candidate_ptr,
                 fastLoopCandidateIndex,
-                bestFirstFastCostSearchCandidateIndex,
-                asm_type);
+                bestFirstFastCostSearchCandidateIndex);
 
             // Distortion
             // Y
@@ -2776,8 +2772,7 @@ void md_stage_1(
                     cu_ptr,
                     cuOriginIndex,
                     cuChromaOriginIndex,
-                    use_ssd,
-                    asm_type);
+                    use_ssd);
 
          #if 0//MDLEVELS
             if (tmp_cost != *(candidateBuffer->fast_cost_ptr))
@@ -3189,8 +3184,7 @@ void predictive_me_sub_pel_search(
     int16_t                      *best_mvx,
     int16_t                      *best_mvy,
     uint32_t                     *best_distortion,
-    uint8_t                       search_pattern,
-    EbAsm                         asm_type)
+    uint8_t                       search_pattern)
 {
 
     uint32_t  distortion;
@@ -3300,8 +3294,7 @@ void predictive_me_search(
     ModeDecisionContext          *context_ptr,
     EbPictureBufferDesc          *input_picture_ptr,
     uint32_t                      inputOriginIndex,
-    uint32_t                      cuOriginIndex,
-    EbAsm                         asm_type) {
+    uint32_t                      cuOriginIndex) {
 
     const SequenceControlSet *sequence_control_set_ptr = (SequenceControlSet*)picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr;
 
@@ -3526,8 +3519,7 @@ void predictive_me_search(
                             &best_search_mvx,
                             &best_search_mvy,
                             &best_search_distortion,
-                            search_pattern,
-                            asm_type);
+                            search_pattern);
 
                         if (context_ptr->predictive_me_level == 3) {
                             if (best_search_mvx % 8 != 0 || best_search_mvy % 8 != 0) {
@@ -3558,8 +3550,7 @@ void predictive_me_search(
                                     &best_search_mvx,
                                     &best_search_mvy,
                                     &best_search_distortion,
-                                    search_pattern,
-                                    asm_type);
+                                    search_pattern);
                             }
                         }
 
@@ -3584,8 +3575,7 @@ void predictive_me_search(
                             &best_search_mvx,
                             &best_search_mvy,
                             &best_search_distortion,
-                            search_pattern,
-                            asm_type);
+                            search_pattern);
 
                         if (context_ptr->predictive_me_level == 3) {
                             if (best_search_mvx % 4 != 0 || best_search_mvy % 4 != 0) {
@@ -3617,8 +3607,7 @@ void predictive_me_search(
                                     &best_search_mvx,
                                     &best_search_mvy,
                                     &best_search_distortion,
-                                    search_pattern,
-                                    asm_type);
+                                    search_pattern);
                             }
                         }
                     }
@@ -6832,8 +6821,8 @@ void AV1PerformFullLoop(
                     candidate_ptr->type,
                     candidate_ptr,
                     0xFFFF,//NOT_USED
-                    0xFFFF,//NOT_USED
-                    asm_type);
+                    0xFFFF //NOT_USED
+                    );
             }
         }
 #endif
@@ -9039,8 +9028,7 @@ void md_encode_block(
                 context_ptr,
                 input_picture_ptr,
                 inputOriginIndex,
-                cuOriginIndex,
-                asm_type);
+                cuOriginIndex);
 #endif
 #if MD_CLASS
         generate_md_stage_0_cand(
