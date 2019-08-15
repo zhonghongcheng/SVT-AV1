@@ -1989,8 +1989,7 @@ void perform_fast_loop(
     uint32_t                             candidate_buffer_start_index,
     uint32_t                             maxBuffers,
     EbBool                               scratch_buffer_pesent_flag,
-    EbBool                               use_ssd,
-    EbAsm                                asm_type) {
+    EbBool                               use_ssd) {
     int32_t  fastLoopCandidateIndex;
     uint64_t lumaFastDistortion;
 #if !REFACTOR_FAST_LOOP
@@ -2737,8 +2736,7 @@ void md_stage_1(
     CodingUnit                        *cu_ptr,
     uint32_t                           cuOriginIndex,
     uint32_t                           cuChromaOriginIndex,
-    EbBool                             use_ssd,
-    EbAsm                              asm_type)
+    EbBool                             use_ssd)
 {
     for (uint32_t cand_idx = 0; cand_idx < num_of_candidates; ++cand_idx)
     {
@@ -9223,8 +9221,7 @@ void md_encode_block(
                     buffer_start_idx,                            // full candidate buffer start index
                     buffer_count_for_curr_class,                // full candidate buffer length
                     context_ptr->fast_cand_count[cand_class_it] > context_ptr->fast1_cand_count[cand_class_it],  //is there need to max the temp buffer
-                    0,
-                    asm_type);
+                    0);
 
                 //Sort:  fast1_cand_count[cand_class_it]
                 memset(context_ptr->cand_buff_indices[cand_class_it], 0xFFFFFFFF, MAX_NFL_BUFF * sizeof(uint32_t));
@@ -9302,8 +9299,7 @@ void md_encode_block(
                     cu_ptr,
                     cuOriginIndex,
                     cuChromaOriginIndex,
-                    0,
-                    asm_type);
+                    0);
 
                 //sort the new set of candidates
                 sort_stage1_fast_candidates(
