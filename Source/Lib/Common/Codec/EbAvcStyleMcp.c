@@ -510,8 +510,7 @@ void estimate_uni_pred_interpolation_avc_lumaRef10Bit(
     uint32_t                 component_mask,
     EbByte                  temp_buf,
     EbBool                   sub_pred,
-    EbBool                   sub_pred_chroma,
-    EbAsm                    asm_type)
+    EbBool                   sub_pred_chroma)
 {
     uint32_t   chroma_pu_width = pu_width >> 1;
     uint32_t   chroma_pu_height = pu_height >> 1;
@@ -575,8 +574,7 @@ void estimate_uni_pred_interpolation_avc_chroma_ref10_bit(
     uint32_t                 dst_chroma_index,          //input parameter, please refer to the detailed explanation above.
     uint32_t                 component_mask,
     EbByte                  temp_buf,
-    EbBool                   sub_pred,
-    EbAsm                    asm_type)
+    EbBool                   sub_pred)
 {
     uint32_t   chroma_pu_width = pu_width >> 1;
     uint32_t   chroma_pu_height = pu_height >> 1;

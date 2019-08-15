@@ -3060,8 +3060,7 @@ void perform_simple_picture_analysis_for_overlay(PictureParentControlSet     *pi
     PicturePreProcessingOperations(
         picture_control_set_ptr,
         sequence_control_set_ptr,
-        sb_total_count,
-        sequence_control_set_ptr->encode_context_ptr->asm_type);
+        sb_total_count);
 #else
     PicturePreProcessingOperations(
         picture_control_set_ptr,
@@ -3069,8 +3068,7 @@ void perform_simple_picture_analysis_for_overlay(PictureParentControlSet     *pi
         sequence_control_set_ptr,
         quarter_decimated_picture_ptr,
         sixteenth_decimated_picture_ptr,
-        sb_total_count,
-        sequence_control_set_ptr->encode_context_ptr->asm_type);
+        sb_total_count);
 #endif
 
     if (input_picture_ptr->color_format >= EB_YUV422) {

@@ -1705,8 +1705,7 @@ static void unpack_2d_pic(uint8_t *packed[3],
 int32_t aom_denoise_and_model_run(struct aom_denoise_and_model_t *ctx,
     EbPictureBufferDesc *sd,
     aom_film_grain_t *film_grain,
-    int32_t use_highbd,
-    EbAsm asm_type) {
+    int32_t use_highbd) {
     const int32_t block_size = ctx->block_size;
     uint8_t *raw_data[3];
     int32_t chroma_sub_log2[2] = { 1, 1 };  //todo: send chroma subsampling

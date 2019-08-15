@@ -1778,8 +1778,7 @@ void ProductMdFastPuPrediction(
     ProductPredictionFunTable[candidateBuffer->candidate_ptr->use_intrabc ? INTER_MODE : modeType](
         context_ptr,
         picture_control_set_ptr,
-        candidateBuffer,
-        asm_type);
+        candidateBuffer);
 }
 #endif
 
@@ -1850,8 +1849,7 @@ void fast_loop_core(
     ProductPredictionFunTable[candidateBuffer->candidate_ptr->use_intrabc ? INTER_MODE : candidate_ptr->type](
         context_ptr,
         picture_control_set_ptr,
-        candidateBuffer,
-        asm_type);
+        candidateBuffer);
 #else
     ProductMdFastPuPrediction(
         picture_control_set_ptr,
@@ -3257,8 +3255,7 @@ void predictive_me_sub_pel_search(
             ProductPredictionFunTable[INTER_MODE](
                 context_ptr,
                 picture_control_set_ptr,
-                candidateBuffer,
-                asm_type);
+                candidateBuffer);
             context_ptr->skip_interpolation_search = default_skip_interpolation_search;
 
             // Distortion
@@ -4403,8 +4400,7 @@ void check_best_indepedant_cfl(
         ProductPredictionFunTable[candidateBuffer->candidate_ptr->type](
             context_ptr,
             picture_control_set_ptr,
-            candidateBuffer,
-            asm_type);
+            candidateBuffer);
 
         ResidualKernel(
             &(input_picture_ptr->buffer_cb[inputCbOriginIndex]),
@@ -6175,8 +6171,7 @@ void md_stage_2(
                 ProductPredictionFunTable[candidate_ptr->type](
                     context_ptr,
                     picture_control_set_ptr,
-                    candidateBuffer,
-                    asm_type);
+                    candidateBuffer);
             }
         }
 
@@ -6339,8 +6334,7 @@ void md_stage_2(
                     ProductPredictionFunTable[candidate_ptr->type](
                         context_ptr,
                         picture_control_set_ptr,
-                        candidateBuffer,
-                        asm_type);
+                        candidateBuffer);
                 }
             }
 
@@ -6753,8 +6747,7 @@ void AV1PerformFullLoop(
             ProductPredictionFunTable[candidate_ptr->type](
                 context_ptr,
                 picture_control_set_ptr,
-                candidateBuffer,
-                asm_type);
+                candidateBuffer);
             }
         }
 
@@ -6785,8 +6778,7 @@ void AV1PerformFullLoop(
                 ProductPredictionFunTable[candidate_ptr->type](
                     context_ptr,
                     picture_control_set_ptr,
-                    candidateBuffer,
-                    asm_type);
+                    candidateBuffer);
             }
         }
 #endif
@@ -6940,8 +6932,7 @@ void AV1PerformFullLoop(
                     ProductPredictionFunTable[candidate_ptr->type](
                         context_ptr,
                         picture_control_set_ptr,
-                        candidateBuffer,
-                        asm_type);
+                        candidateBuffer);
                 }
             }
 #endif
@@ -8596,8 +8587,7 @@ void search_best_independent_uv_mode(
             ProductPredictionFunTable[candidateBuffer->candidate_ptr->type](
                 context_ptr,
                 picture_control_set_ptr,
-                candidateBuffer,
-                asm_type);
+                candidateBuffer);
 
             ResidualKernel(
                 &(input_picture_ptr->buffer_cb[inputCbOriginIndex]),
@@ -9615,8 +9605,7 @@ void md_encode_block(
                 ProductPredictionFunTable[candidateBuffer->candidate_ptr->type](
                     context_ptr,
                     picture_control_set_ptr,
-                    candidateBuffer,
-                    asm_type);
+                    candidateBuffer);
                 cu_ptr->interp_filters = candidateBuffer->candidate_ptr->interp_filters;
             }
         }

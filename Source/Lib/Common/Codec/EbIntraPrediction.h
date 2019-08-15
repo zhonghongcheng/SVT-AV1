@@ -182,8 +182,7 @@ void highbd_filter_intra_predictor(uint16_t *dst, ptrdiff_t stride,
     extern EbErrorType av1_intra_prediction_cl(
         struct ModeDecisionContext           *context_ptr,
         PictureControlSet                    *picture_control_set_ptr,
-        ModeDecisionCandidateBuffer           *candidate_buffer_ptr,
-        EbAsm                                  asm_type);
+        ModeDecisionCandidateBuffer           *candidate_buffer_ptr);
 
     extern void intra_mode_angular_horizontal_kernel_ssse3_intrin(
         uint32_t            size,

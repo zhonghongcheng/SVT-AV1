@@ -3710,8 +3710,7 @@ EB_EXTERN void av1_encode_pass(
                                         recon_buffer,
                                         context_ptr->cu_origin_x,
                                         context_ptr->cu_origin_y,
-                                        (uint8_t)sequence_control_set_ptr->static_config.encoder_bit_depth,
-                                        asm_type);
+                                        (uint8_t)sequence_control_set_ptr->static_config.encoder_bit_depth);
                                 else
                                 av1_inter_prediction(
                                     picture_control_set_ptr,
@@ -3746,8 +3745,7 @@ EB_EXTERN void av1_encode_pass(
                                     recon_buffer,
                                     context_ptr->cu_origin_x,
                                     context_ptr->cu_origin_y,
-                                    EB_TRUE,
-                                    asm_type);
+                                    EB_TRUE);
                             }
                             else
                             {
@@ -4266,8 +4264,7 @@ EB_EXTERN void av1_encode_pass(
                                 context_ptr->cu_origin_y,
                                 &cu_ptr->prediction_unit_array[0].wm_params,
                                 (uint8_t) sequence_control_set_ptr->static_config.encoder_bit_depth,
-                                EB_TRUE,
-                                asm_type);
+                                EB_TRUE);
 #if TWO_PASS
                             if (cu_ptr->prediction_unit_array->ref_frame_index_l0 >= 0) {
                                 eb_block_on_mutex(refObj0->referenced_area_mutex);
@@ -4388,8 +4385,7 @@ EB_EXTERN void av1_encode_pass(
                                     recon_buffer,
                                     context_ptr->cu_origin_x,
                                     context_ptr->cu_origin_y,
-                                    (uint8_t)sequence_control_set_ptr->static_config.encoder_bit_depth,
-                                    asm_type);
+                                    (uint8_t)sequence_control_set_ptr->static_config.encoder_bit_depth);
                             } else {
 
 #if TWO_PASS
@@ -4523,8 +4519,7 @@ EB_EXTERN void av1_encode_pass(
                                     recon_buffer,
                                     context_ptr->cu_origin_x,
                                     context_ptr->cu_origin_y,
-                                    EB_TRUE,
-                                    asm_type);
+                                    EB_TRUE);
                             }
                         }
                     }

@@ -3407,19 +3407,17 @@ EbErrorType DetectInputPictureNoise(
 
 static int32_t apply_denoise_2d(SequenceControlSet        *scs_ptr,
     PictureParentControlSet   *pcs_ptr,
-    EbPictureBufferDesc *inputPicturePointer,
-    EbAsm asm_type) {
+    EbPictureBufferDesc *inputPicturePointer) {
     if (aom_denoise_and_model_run(pcs_ptr->denoise_and_model, inputPicturePointer,
         &pcs_ptr->film_grain_params,
-        scs_ptr->static_config.encoder_bit_depth > EB_8BIT, asm_type)) {
+        scs_ptr->static_config.encoder_bit_depth > EB_8BIT)) {
     }
     return 0;
 }
 
 EbErrorType denoise_estimate_film_grain(
     SequenceControlSet        *sequence_control_set_ptr,
-    PictureParentControlSet   *picture_control_set_ptr,
-    EbAsm asm_type)
+    PictureParentControlSet   *picture_control_set_ptr)
 {
     EbErrorType return_error = EB_ErrorNone;
 
@@ -3427,7 +3425,7 @@ EbErrorType denoise_estimate_film_grain(
     picture_control_set_ptr->film_grain_params.apply_grain = 0;
 
     if (sequence_control_set_ptr->film_grain_denoise_strength) {
-        if (apply_denoise_2d(sequence_control_set_ptr, picture_control_set_ptr, input_picture_ptr, asm_type) < 0)
+        if (apply_denoise_2d(sequence_control_set_ptr, picture_control_set_ptr, input_picture_ptr) < 0)
             return 1;
     }
 
@@ -4042,8 +4040,7 @@ void SetPictureParametersForStatisticsGathering(
 void PicturePreProcessingOperations(
     PictureParentControlSet       *picture_control_set_ptr,
     SequenceControlSet            *sequence_control_set_ptr,
-    uint32_t                       sb_total_count,
-    EbAsm                          asm_type) {
+    uint32_t                       sb_total_count) {
 #else
 void PicturePreProcessingOperations(
     PictureParentControlSet       *picture_control_set_ptr,
@@ -4051,8 +4048,7 @@ void PicturePreProcessingOperations(
     SequenceControlSet            *sequence_control_set_ptr,
     EbPictureBufferDesc           *quarter_decimated_picture_ptr,
     EbPictureBufferDesc           *sixteenth_decimated_picture_ptr,
-    uint32_t                       sb_total_count,
-    EbAsm                          asm_type) {
+    uint32_t                       sb_total_count) {
 
     UNUSED(quarter_decimated_picture_ptr);
     UNUSED(sixteenth_decimated_picture_ptr);
@@ -4062,8 +4058,7 @@ void PicturePreProcessingOperations(
     if (sequence_control_set_ptr->film_grain_denoise_strength) {
         denoise_estimate_film_grain(
             sequence_control_set_ptr,
-            picture_control_set_ptr,
-            asm_type);
+            picture_control_set_ptr);
     }
     else {
         //Reset the flat noise flag array to False for both RealTime/HighComplexity Modes
@@ -5154,8 +5149,7 @@ void* picture_analysis_kernel(void *input_ptr)
             PicturePreProcessingOperations(
                 picture_control_set_ptr,
                 sequence_control_set_ptr,
-                sb_total_count,
-                asm_type);
+                sb_total_count);
 #else
             PicturePreProcessingOperations(
                 picture_control_set_ptr,
@@ -5163,8 +5157,7 @@ void* picture_analysis_kernel(void *input_ptr)
                 sequence_control_set_ptr,
                 quarter_decimated_picture_ptr,
                 sixteenth_decimated_picture_ptr,
-                sb_total_count,
-                asm_type);
+                sb_total_count);
 #endif
 
             if (input_picture_ptr->color_format >= EB_YUV422) {

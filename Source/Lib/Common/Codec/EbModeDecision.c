@@ -396,8 +396,8 @@ void inter_intra_search(
         &pred_desc, //output
         0,          //output origin_x,
         0,          //output origin_y,
-        0,//do chroma
-        sequence_control_set_ptr->encode_context_ptr->asm_type);
+        0 //do chroma
+        );
 
 
     const int is_wedge_used = is_interintra_wedge_used(context_ptr->blk_geom->bsize);

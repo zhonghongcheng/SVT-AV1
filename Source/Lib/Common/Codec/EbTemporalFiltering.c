@@ -794,8 +794,7 @@ EbErrorType av1_inter_prediction(
     EbPictureBufferDesc                  *prediction_ptr,
     uint16_t                             dst_origin_x,
     uint16_t                             dst_origin_y,
-    EbBool                               perform_chroma,
-    EbAsm                                asm_type);
+    EbBool                               perform_chroma);
 
 uint32_t get_mds_idx(uint32_t  org_x, uint32_t  org_y, int32_t  size, uint32_t use_128x128);
 
@@ -907,8 +906,8 @@ void tf_inter_prediction(
                             &prediction_ptr,
                             local_origin_x,
                             local_origin_y,
-                            1,//perform_chroma,
-                            asm_type);
+                            1 //perform_chroma,
+                            );
 
 
                         uint8_t *pred_Y_ptr = pred[C_Y] + 16 * idx_y*stride_pred[C_Y] + 16 * idx_x;
@@ -962,8 +961,8 @@ void tf_inter_prediction(
                     &prediction_ptr,
                     local_origin_x,
                     local_origin_y,
-                    1,//perform_chroma,
-                    asm_type);
+                    1 //perform_chroma,
+                    );
 
 #else
                 av1_inter_prediction(
@@ -988,8 +987,8 @@ void tf_inter_prediction(
                     &prediction_ptr,
                     local_origin_x,
                     local_origin_y,
-                    1,//perform_chroma,
-                    asm_type);
+                    1 //perform_chroma,
+                    );
 #endif
             }
         }

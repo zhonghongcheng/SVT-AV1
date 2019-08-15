@@ -94,8 +94,7 @@ extern "C" {
         uint32_t                 dst_chroma_index,          //input parameter, please refer to the detailed explanation above.
         uint32_t                 component_mask,
         EbByte                temp_buf,
-        EbBool                sub_pred,
-        EbAsm                 asm_type);
+        EbBool                sub_pred);
 
     void estimate_bi_pred_interpolation_avc_chroma_ref10_bit(
         EbPictureBufferDesc *ref_frame_pic_list0,
@@ -127,8 +126,7 @@ extern "C" {
         uint32_t                 component_mask,
         EbByte                temp_buf,
         EbBool                sub_pred,
-        EbBool                sub_pred_chroma,
-        EbAsm                 asm_type);
+        EbBool                sub_pred_chroma);
 
     void estimate_bi_pred_interpolation_avc_luma_ref10_bit(
         EbPictureBufferDesc *ref_frame_pic_list0,

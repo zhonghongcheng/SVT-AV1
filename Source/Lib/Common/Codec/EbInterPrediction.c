@@ -2860,8 +2860,8 @@ void search_compound_diff_wedge(
             &pred_desc, //output
             0,          //output origin_x,
             0,          //output origin_y,
-            0,//do chroma
-            sequence_control_set_ptr->encode_context_ptr->asm_type);
+            0 //do chroma
+            );
 
         //ref1 prediction
         mv_unit.pred_direction = UNI_PRED_LIST_1;
@@ -2904,8 +2904,8 @@ void search_compound_diff_wedge(
             &pred_desc, //output
             0,          //output origin_x,
             0,          //output origin_y,
-            0,//do chroma
-            sequence_control_set_ptr->encode_context_ptr->asm_type);
+            0 //do chroma
+            );
 #if COMP_AVX
         aom_subtract_block(bheight, bwidth, context_ptr->residual1, bwidth, src_buf, src_pic->stride_y, context_ptr->pred1, bwidth);
         aom_subtract_block(bheight, bwidth, context_ptr->diff10, bwidth, context_ptr->pred1, bwidth, context_ptr->pred0, bwidth);
@@ -3157,8 +3157,8 @@ void search_compound_avg_dist(
             &pred_desc, //output
             0,          //output origin_x,
             0,          //output origin_y,
-            0,//do chroma
-            sequence_control_set_ptr->encode_context_ptr->asm_type);
+            0 //do chroma
+            );
 
         int32_t est_rate;
         int64_t est_dist;
@@ -3361,10 +3361,8 @@ EbErrorType av1_inter_prediction(
     EbPictureBufferDesc                  *prediction_ptr,
     uint16_t                                dst_origin_x,
     uint16_t                                dst_origin_y,
-    EbBool                                  perform_chroma,
-    EbAsm                                   asm_type)
+    EbBool                                  perform_chroma)
 {
-    (void)asm_type;
     EbErrorType  return_error = EB_ErrorNone;
     uint8_t         is_compound = (mv_unit->pred_direction == BI_PRED) ? 1 : 0;
     DECLARE_ALIGNED(32, uint16_t, tmp_dstY[128 * 128]);//move this to context if stack does not hold.
@@ -4078,7 +4076,6 @@ void Av1UnPackReferenceBlock(
     uint8_t                  *eightBitBuffer,
     uint32_t                 eightBitStride,
     EbBool                sub_pred,
-    EbAsm                 asm_type,
     uint8_t                  Tap)
 {
     pu_width += Tap;
@@ -4114,8 +4111,7 @@ EbErrorType AV1InterPrediction10BitMD(
     EbPictureBufferDesc                   *prediction_ptr,
     uint16_t                                 dst_origin_x,
     uint16_t                                 dst_origin_y,
-    EbBool                                  perform_chroma,
-    EbAsm                                    asm_type)
+    EbBool                                  perform_chroma)
 {
     EbErrorType  return_error = EB_ErrorNone;
     InterPredictionContext *context_ptr = (InterPredictionContext*)(md_context_ptr->inter_prediction_context);
@@ -4296,7 +4292,6 @@ EbErrorType AV1InterPrediction10BitMD(
                         local_buffer->buffer_cb,
                         local_buffer->stride_cb,
                         EB_FALSE,
-                        asm_type,
                         8);
 #endif
                     convolve[subpel_x != 0][subpel_y != 0][is_compound](
@@ -4350,7 +4345,6 @@ EbErrorType AV1InterPrediction10BitMD(
                         local_buffer->buffer_cr,
                         local_buffer->stride_cr,
                         EB_FALSE,
-                        asm_type,
                         8);
 #endif
                     convolve[subpel_x != 0][subpel_y != 0][is_compound](
@@ -4413,7 +4407,6 @@ EbErrorType AV1InterPrediction10BitMD(
             context_ptr->mcp_context->local_reference_block8_bitl0->buffer_y,
             context_ptr->mcp_context->local_reference_block8_bitl0->stride_y,
             EB_FALSE,
-            asm_type,
             16);
 #endif
         convolve[subpel_x != 0][subpel_y != 0][is_compound](
@@ -4464,7 +4457,6 @@ EbErrorType AV1InterPrediction10BitMD(
                 context_ptr->mcp_context->local_reference_block8_bitl0->buffer_cb,
                 context_ptr->mcp_context->local_reference_block8_bitl0->stride_cb,
                 EB_FALSE,
-                asm_type,
                 8);
 #endif
             if (use_intrabc && (subpel_x != 0 || subpel_y != 0))
@@ -4528,7 +4520,6 @@ EbErrorType AV1InterPrediction10BitMD(
                 context_ptr->mcp_context->local_reference_block8_bitl0->buffer_cr,
                 context_ptr->mcp_context->local_reference_block8_bitl0->stride_cr,
                 EB_FALSE,
-                asm_type,
                 8);
 #endif
 
@@ -4604,7 +4595,6 @@ EbErrorType AV1InterPrediction10BitMD(
             context_ptr->mcp_context->local_reference_block8_bitl1->buffer_y,
             context_ptr->mcp_context->local_reference_block8_bitl1->stride_y,
             EB_FALSE,
-            asm_type,
             16);
 #endif
         convolve[subpel_x != 0][subpel_y != 0][is_compound](
@@ -4652,7 +4642,6 @@ EbErrorType AV1InterPrediction10BitMD(
                 context_ptr->mcp_context->local_reference_block8_bitl1->buffer_cb,
                 context_ptr->mcp_context->local_reference_block8_bitl1->stride_cb,
                 EB_FALSE,
-                asm_type,
                 8);
 #endif
             convolve[subpel_x != 0][subpel_y != 0][is_compound](
@@ -4697,7 +4686,6 @@ EbErrorType AV1InterPrediction10BitMD(
                 context_ptr->mcp_context->local_reference_block8_bitl1->buffer_cr,
                 context_ptr->mcp_context->local_reference_block8_bitl1->stride_cr,
                 EB_FALSE,
-                asm_type,
                 8);
 #endif
 
@@ -4740,10 +4728,8 @@ EbErrorType av1_inter_prediction_hbd(
     EbPictureBufferDesc                  *prediction_ptr,
     uint16_t                                  dst_origin_x,
     uint16_t                                  dst_origin_y,
-    uint8_t                                   bit_depth,
-    EbAsm                                  asm_type)
+    uint8_t                                   bit_depth)
 {
-    (void)asm_type;
     EbErrorType  return_error = EB_ErrorNone;
     uint8_t         is_compound = (mv_unit->pred_direction == BI_PRED) ? 1 : 0;
     DECLARE_ALIGNED(32, uint16_t, tmp_dstY[128 * 128]);//move this to context if stack does not hold.
@@ -5183,10 +5169,8 @@ EbErrorType warped_motion_prediction(
     uint16_t                                dst_origin_y,
     EbWarpedMotionParams                   *wm_params,
     uint8_t                                 bit_depth,
-    EbBool                                  perform_chroma,
-    EbAsm                                   asm_type)
+    EbBool                                  perform_chroma)
 {
-    (void)asm_type;
 
     EbErrorType  return_error = EB_ErrorNone;
     uint8_t is_compound = (mv_unit->pred_direction == BI_PRED) ? 1 : 0;
@@ -5522,12 +5506,10 @@ EbErrorType warped_motion_prediction_md(
     EbPictureBufferDesc                  *prediction_ptr,
     uint16_t                                dst_origin_x,
     uint16_t                                dst_origin_y,
-    EbWarpedMotionParams                   *wm_params,
-    EbAsm                                   asm_type)
+    EbWarpedMotionParams                   *wm_params)
 {
     EbErrorType  return_error = EB_ErrorNone;
     uint8_t is_compound = (mv_unit->pred_direction == BI_PRED) ? 1 : 0;
-    (void)asm_type;
     assert(!is_compound);
 
     int32_t src_stride;
@@ -5568,7 +5550,6 @@ EbErrorType warped_motion_prediction_md(
         context_ptr->mcp_context->local_reference_block8_bitl0->buffer_y,
         context_ptr->mcp_context->local_reference_block8_bitl0->stride_y,
         EB_FALSE,
-        asm_type,
         16);
 #endif
 
@@ -5622,7 +5603,6 @@ EbErrorType warped_motion_prediction_md(
             context_ptr->mcp_context->local_reference_block8_bitl0->buffer_cb,
             context_ptr->mcp_context->local_reference_block8_bitl0->stride_cb,
             EB_FALSE,
-            asm_type,
             8);
 #endif
         av1_warp_plane(
@@ -5672,7 +5652,6 @@ EbErrorType warped_motion_prediction_md(
             context_ptr->mcp_context->local_reference_block8_bitl0->buffer_cr,
             context_ptr->mcp_context->local_reference_block8_bitl0->stride_cr,
             EB_FALSE,
-            asm_type,
             8);
 #endif
         av1_warp_plane(
@@ -5738,7 +5717,6 @@ EbErrorType warped_motion_prediction_md(
             context_ptr->mcp_context->local_reference_block8_bitl0->buffer_cb,
             context_ptr->mcp_context->local_reference_block8_bitl0->stride_cb,
             EB_FALSE,
-            asm_type,
             8);
 #endif
         convolve[subpel_x != 0][subpel_y != 0][is_compound](
@@ -5783,7 +5761,6 @@ EbErrorType warped_motion_prediction_md(
             context_ptr->mcp_context->local_reference_block8_bitl0->buffer_cr,
             context_ptr->mcp_context->local_reference_block8_bitl0->stride_cr,
             EB_FALSE,
-            asm_type,
             8);
 #endif
         convolve[subpel_x != 0][subpel_y != 0][is_compound](
@@ -6208,7 +6185,6 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
     MvUnit mv_unit,
     EbPictureBufferDesc  *ref_pic_list0,
     EbPictureBufferDesc  *ref_pic_list1,
-    EbAsm asm_type,
     //Macroblock *const xd,
     //const Av1Comp *const cpi,
     //BlockSize bsize,
@@ -6281,8 +6257,7 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
         prediction_ptr,
         md_context_ptr->blk_geom->origin_x,
         md_context_ptr->blk_geom->origin_y,
-        use_uv,
-        asm_type);
+        use_uv);
 
     model_rd_for_sb(
         picture_control_set_ptr,
@@ -6374,8 +6349,7 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
                         prediction_ptr,
                         md_context_ptr->blk_geom->origin_x,
                         md_context_ptr->blk_geom->origin_y,
-                        use_uv,
-                        asm_type);
+                        use_uv);
 
                     model_rd_for_sb(
                         picture_control_set_ptr,
@@ -6463,8 +6437,7 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
                         prediction_ptr,
                         md_context_ptr->blk_geom->origin_x,
                         md_context_ptr->blk_geom->origin_y,
-                        use_uv,
-                        asm_type);
+                        use_uv);
 
                     model_rd_for_sb(
                         picture_control_set_ptr,
@@ -6554,8 +6527,7 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
                         prediction_ptr,
                         md_context_ptr->blk_geom->origin_x,
                         md_context_ptr->blk_geom->origin_y,
-                        use_uv,
-                        asm_type);
+                        use_uv);
 
                     model_rd_for_sb(
                         picture_control_set_ptr,
@@ -6612,7 +6584,6 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
     MvUnit mv_unit,
     EbPictureBufferDesc  *ref_pic_list0,
     EbPictureBufferDesc  *ref_pic_list1,
-    EbAsm asm_type,
     //Macroblock *const xd,
     //const Av1Comp *const cpi,
     //BlockSize bsize,
@@ -6670,8 +6641,7 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
         prediction_ptr,
         md_context_ptr->blk_geom->origin_x,
         md_context_ptr->blk_geom->origin_y,
-        use_uv,
-        asm_type);
+        use_uv);
 
     model_rd_for_sb(
         picture_control_set_ptr,
@@ -6745,8 +6715,7 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
                         prediction_ptr,
                         md_context_ptr->blk_geom->origin_x,
                         md_context_ptr->blk_geom->origin_y,
-                        use_uv,
-                        asm_type);
+                        use_uv);
 
                     model_rd_for_sb(
                         picture_control_set_ptr,
@@ -6819,8 +6788,7 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
                         prediction_ptr,
                         md_context_ptr->blk_geom->origin_x,
                         md_context_ptr->blk_geom->origin_y,
-                        use_uv,
-                        asm_type);
+                        use_uv);
 
                     model_rd_for_sb(
                         picture_control_set_ptr,
@@ -6895,8 +6863,7 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
                         prediction_ptr,
                         md_context_ptr->blk_geom->origin_x,
                         md_context_ptr->blk_geom->origin_y,
-                        use_uv,
-                        asm_type);
+                        use_uv);
 
                     model_rd_for_sb(
                         picture_control_set_ptr,
@@ -6949,8 +6916,7 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
 EbErrorType inter_pu_prediction_av1(
     ModeDecisionContext                  *md_context_ptr,
     PictureControlSet                    *picture_control_set_ptr,
-    ModeDecisionCandidateBuffer          *candidate_buffer_ptr,
-    EbAsm                                   asm_type)
+    ModeDecisionCandidateBuffer          *candidate_buffer_ptr)
 {
     EbErrorType            return_error = EB_ErrorNone;
     EbPictureBufferDesc  *ref_pic_list0;
@@ -7033,11 +6999,11 @@ EbErrorType inter_pu_prediction_av1(
             md_context_ptr->blk_geom->origin_x,
             md_context_ptr->blk_geom->origin_y,
 #if RE_FACTURE_PRED_KERNEL
-            md_context_ptr->chroma_level <= CHROMA_MODE_1 && md_context_ptr->shut_chroma_comp == EB_FALSE,
+            md_context_ptr->chroma_level <= CHROMA_MODE_1 && md_context_ptr->shut_chroma_comp == EB_FALSE
 #else
-            md_context_ptr->chroma_level <= CHROMA_MODE_1,
+            md_context_ptr->chroma_level <= CHROMA_MODE_1
 #endif
-            asm_type);
+            );
         return return_error;
 #else
         if (is16bit) {
@@ -7061,8 +7027,7 @@ EbErrorType inter_pu_prediction_av1(
                 candidate_buffer_ptr->prediction_ptr,
                 md_context_ptr->blk_geom->origin_x,
                 md_context_ptr->blk_geom->origin_y,
-                md_context_ptr->chroma_level <= CHROMA_MODE_1,
-                asm_type);
+                md_context_ptr->chroma_level <= CHROMA_MODE_1);
 
             return return_error;
         }
@@ -7086,8 +7051,7 @@ EbErrorType inter_pu_prediction_av1(
             candidate_buffer_ptr->prediction_ptr,
             md_context_ptr->blk_geom->origin_x,
             md_context_ptr->blk_geom->origin_y,
-                md_context_ptr->chroma_level <= CHROMA_MODE_1,
-            asm_type);
+            md_context_ptr->chroma_level <= CHROMA_MODE_1);
 
         return return_error;
         }
@@ -7158,8 +7122,7 @@ EbErrorType inter_pu_prediction_av1(
                 candidate_buffer_ptr->prediction_ptr,
                 md_context_ptr->blk_geom->origin_x,
                 md_context_ptr->blk_geom->origin_y,
-                &candidate_ptr->wm_params,
-                asm_type);
+                &candidate_ptr->wm_params);
         } else {
             assert(ref_pic_list0 != NULL);
             warped_motion_prediction(
@@ -7175,11 +7138,11 @@ EbErrorType inter_pu_prediction_av1(
                 &candidate_ptr->wm_params,
                 (uint8_t) sequence_control_set_ptr->static_config.encoder_bit_depth,
 #if RE_FACTURE_PRED_KERNEL
-                md_context_ptr->chroma_level <= CHROMA_MODE_1 && md_context_ptr->shut_chroma_comp == EB_FALSE,
+                md_context_ptr->chroma_level <= CHROMA_MODE_1 && md_context_ptr->shut_chroma_comp == EB_FALSE
 #else
-                md_context_ptr->chroma_level <= CHROMA_MODE_1,
+                md_context_ptr->chroma_level <= CHROMA_MODE_1
 #endif
-                asm_type);
+                );
         }
         return return_error;
     }
@@ -7206,7 +7169,6 @@ EbErrorType inter_pu_prediction_av1(
                     mv_unit,
                     ref_pic_list0,
                     ref_pic_list1,
-                    asm_type,
                     &rd,
                     &rs,
                     &skip_txfm_sb,
@@ -7246,11 +7208,11 @@ EbErrorType inter_pu_prediction_av1(
             md_context_ptr->blk_geom->origin_x,
             md_context_ptr->blk_geom->origin_y,
 #if RE_FACTURE_PRED_KERNEL
-            md_context_ptr->chroma_level <= CHROMA_MODE_1 && md_context_ptr->shut_chroma_comp == EB_FALSE,
+            md_context_ptr->chroma_level <= CHROMA_MODE_1 && md_context_ptr->shut_chroma_comp == EB_FALSE
 #else
-        md_context_ptr->chroma_level <= CHROMA_MODE_1,
+        md_context_ptr->chroma_level <= CHROMA_MODE_1
 #endif
-        asm_type);
+        );
 #else
     if (is16bit) {
         candidate_buffer_ptr->candidate_ptr->interp_filters = 0;
@@ -7264,7 +7226,6 @@ EbErrorType inter_pu_prediction_av1(
                     mv_unit,
                     ref_pic_list0,
                     ref_pic_list1,
-                    asm_type,
                     &rd,
                     &rs,
                     &skip_txfm_sb,
@@ -7288,8 +7249,7 @@ EbErrorType inter_pu_prediction_av1(
             candidate_buffer_ptr->prediction_ptr,
             md_context_ptr->blk_geom->origin_x,
             md_context_ptr->blk_geom->origin_y,
-            md_context_ptr->chroma_level <= CHROMA_MODE_1,
-            asm_type);
+            md_context_ptr->chroma_level <= CHROMA_MODE_1);
     } else {
         candidate_buffer_ptr->candidate_ptr->interp_filters = 0;
         if (!md_context_ptr->skip_interpolation_search) {
@@ -7302,7 +7262,6 @@ EbErrorType inter_pu_prediction_av1(
                     mv_unit,
                     ref_pic_list0,
                     ref_pic_list1,
-                    asm_type,
                     &rd,
                     &rs,
                     &skip_txfm_sb,
@@ -7325,8 +7284,7 @@ EbErrorType inter_pu_prediction_av1(
             candidate_buffer_ptr->prediction_ptr,
             md_context_ptr->blk_geom->origin_x,
             md_context_ptr->blk_geom->origin_y,
-            md_context_ptr->chroma_level <= CHROMA_MODE_1,
-            asm_type);
+            md_context_ptr->chroma_level <= CHROMA_MODE_1);
     }
 #endif
     return return_error;

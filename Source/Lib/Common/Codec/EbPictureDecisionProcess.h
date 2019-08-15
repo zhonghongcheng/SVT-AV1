@@ -96,8 +96,7 @@ void PadPictureToMultipleOfMinCuSizeDimensions(
 void PicturePreProcessingOperations(
     PictureParentControlSet       *picture_control_set_ptr,
     SequenceControlSet            *sequence_control_set_ptr,
-    uint32_t                       sb_total_count,
-    EbAsm                          asm_type);
+    uint32_t                       sb_total_count);
 #else
 void PicturePreProcessingOperations(
     PictureParentControlSet       *picture_control_set_ptr,
@@ -105,8 +104,7 @@ void PicturePreProcessingOperations(
     SequenceControlSet            *sequence_control_set_ptr,
     EbPictureBufferDesc           *quarter_decimated_picture_ptr,
     EbPictureBufferDesc           *sixteenth_decimated_picture_ptr,
-    uint32_t                       sb_total_count,
-    EbAsm                          asm_type);
+    uint32_t                       sb_total_count);
 #endif
 
 void PadPictureToMultipleOfLcuDimensions(
