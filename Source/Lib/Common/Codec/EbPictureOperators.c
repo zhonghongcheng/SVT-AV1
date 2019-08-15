@@ -442,8 +442,7 @@ void extract_8bit_data(
     uint8_t       *out8_bit_buffer,
     uint32_t       out8_stride,
     uint32_t       width,
-    uint32_t       height,
-    EbAsm          asm_type){
+    uint32_t       height){
     unpack_8bit(
         in16_bit_buffer,
         in_stride,
@@ -546,8 +545,7 @@ void pack2d_src(
     uint16_t    *out16_bit_buffer,
     uint32_t     out_stride,
     uint32_t     width,
-    uint32_t     height,
-    EbAsm     asm_type
+    uint32_t     height
 )
 {
     pack2d_16_bit_src(

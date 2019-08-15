@@ -97,8 +97,7 @@ extern "C" {
         uint16_t *out16_bit_buffer,
         uint32_t  out_stride,
         uint32_t  width,
-        uint32_t  height,
-        EbAsm     asm_type);
+        uint32_t  height);
 
     void un_pack2d(
         uint16_t *in16_bit_buffer,
@@ -116,8 +115,7 @@ extern "C" {
         uint8_t  *out8_bit_buffer,
         uint32_t  out8_stride,
         uint32_t  width,
-        uint32_t  height,
-        EbAsm     asm_type);
+        uint32_t  height);
 
     void unpack_l0l1_avg(
         uint16_t *ref16_l0,

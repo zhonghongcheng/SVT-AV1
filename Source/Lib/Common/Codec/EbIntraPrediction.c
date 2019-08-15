@@ -578,7 +578,7 @@ void intra_mode_planar(
     }
 }
 /* clang-format on */
-void ebav1_smooth_v_predictor(
+void ebav1_smooth_v_predictor_c(
     const uint32_t   size,                       //input parameter, denotes the size of the current PU
     uint8_t         *ref_samples,                 //input parameter, pointer to the reference samples
     uint8_t         *dst,              //output parameter, pointer to the prediction
@@ -615,7 +615,7 @@ void ebav1_smooth_v_predictor(
     }
     return;
 }
-void ebav1_smooth_h_predictor(
+void ebav1_smooth_h_predictor_c(
     const uint32_t   size,                       //input parameter, denotes the size of the current PU
     uint8_t         *ref_samples,                 //input parameter, pointer to the reference samples
     uint8_t         *dst,              //output parameter, pointer to the prediction

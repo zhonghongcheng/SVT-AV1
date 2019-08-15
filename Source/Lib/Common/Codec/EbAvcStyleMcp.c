@@ -547,8 +547,7 @@ void estimate_uni_pred_interpolation_avc_lumaRef10Bit(
                 dst->buffer_cb + dst_chroma_index,
                 dst->stride_cb << sub_pred,
                 chroma_pu_width,
-                chroma_pu_height >> sub_pred,
-                asm_type
+                chroma_pu_height >> sub_pred
             );
 
             ptr16 = (uint16_t *)ref_frame_pic_list0->buffer_cr + in_pos_x + in_pos_y * ref_frame_pic_list0->stride_cr;
@@ -559,8 +558,7 @@ void estimate_uni_pred_interpolation_avc_lumaRef10Bit(
                 dst->buffer_cr + dst_chroma_index,
                 dst->stride_cr << sub_pred,
                 chroma_pu_width,
-                chroma_pu_height >> sub_pred,
-                asm_type
+                chroma_pu_height >> sub_pred
             );
         }
     }
@@ -596,8 +594,7 @@ void estimate_uni_pred_interpolation_avc_chroma_ref10_bit(
         dst->buffer_cb + dst_chroma_index,
         dst->stride_cb << sub_pred,
         chroma_pu_width,
-        chroma_pu_height >> sub_pred,
-        asm_type
+        chroma_pu_height >> sub_pred
     );
 
     ptr16 = (uint16_t *)ref_frame_pic_list0->buffer_cr + in_pos_x + in_pos_y * ref_frame_pic_list0->stride_cr;
@@ -608,8 +605,7 @@ void estimate_uni_pred_interpolation_avc_chroma_ref10_bit(
         dst->buffer_cr + dst_chroma_index,
         dst->stride_cr << sub_pred,
         chroma_pu_width,
-        chroma_pu_height >> sub_pred,
-        asm_type
+        chroma_pu_height >> sub_pred
     );
 }
 void estimate_bi_pred_interpolation_avc_chroma_ref10_bit(

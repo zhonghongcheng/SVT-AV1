@@ -3132,8 +3132,7 @@ EbErrorType DenoiseInputPicture(
     uint32_t                       sb_total_count,
     EbPictureBufferDesc       *input_picture_ptr,
     EbPictureBufferDesc       *denoised_picture_ptr,
-    uint32_t                         picture_width_in_sb,
-    EbAsm                         asm_type)
+    uint32_t                         picture_width_in_sb)
 {
     EbErrorType return_error = EB_ErrorNone;
 
@@ -3477,8 +3476,7 @@ EbErrorType FullSampleDenoise(
             sb_total_count,
             input_picture_ptr,
             denoised_picture_ptr,
-            picture_width_in_sb,
-            asm_type);
+            picture_width_in_sb);
     }
 
     return return_error;
