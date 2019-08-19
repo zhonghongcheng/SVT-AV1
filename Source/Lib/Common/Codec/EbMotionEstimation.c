@@ -17308,8 +17308,6 @@ uint32_t nxm_sad_kernel_avx2_helper(
         nxm_sad = compute48x_m_sad_avx2_intrin(src, src_stride, ref, ref_stride, height, width); break;
     case 8:
         nxm_sad = compute64x_m_sad_avx2_intrin(src, src_stride, ref, ref_stride, height, width); break;
-    case 16:
-        nxm_sad = compute64x_m_sad_avx2_intrin(src, src_stride, ref, ref_stride, height, width); break;
     default:
         assert(0);
     }

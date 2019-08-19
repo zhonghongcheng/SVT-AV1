@@ -1918,7 +1918,7 @@ void fast_loop_core(
                 prediction_ptr->stride_cb,
                 context_ptr->blk_geom->bheight_uv,
                 context_ptr->blk_geom->bwidth_uv,
-                context_ptr->blk_geom->bwidth >> 3);
+                context_ptr->blk_geom->bwidth_uv >> 3);
 
             chromaFastDistortion += nxm_sad_kernel_sub_sampled(
                 input_picture_ptr->buffer_cr + inputCrOriginIndex,
@@ -1927,7 +1927,7 @@ void fast_loop_core(
                 prediction_ptr->stride_cr,
                 context_ptr->blk_geom->bheight_uv,
                 context_ptr->blk_geom->bwidth_uv,
-                context_ptr->blk_geom->bwidth >> 3);
+                context_ptr->blk_geom->bwidth_uv >> 3);
         }
     }
     else
@@ -2174,7 +2174,7 @@ void perform_fast_loop(
                         prediction_ptr->stride_cb,
                         context_ptr->blk_geom->bheight_uv,
                         context_ptr->blk_geom->bwidth_uv,
-                        context_ptr->blk_geom->bwidth >> 3);
+                        context_ptr->blk_geom->bwidth_uv >> 3);
 
                     chromaFastDistortion += nxm_sad_kernel_sub_sampled(
                         input_picture_ptr->buffer_cr + inputCrOriginIndex,
@@ -2183,7 +2183,7 @@ void perform_fast_loop(
                         prediction_ptr->stride_cr,
                         context_ptr->blk_geom->bheight_uv,
                         context_ptr->blk_geom->bwidth_uv,
-                        context_ptr->blk_geom->bwidth >> 3);
+                        context_ptr->blk_geom->bwidth_uv >> 3);
                 }
             }
             else
