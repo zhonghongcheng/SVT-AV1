@@ -140,9 +140,9 @@ void av1_setup_skip_mode_allowed(PictureParentControlSet  *parent_pcs_ptr) {
     //5 :ALT2
     //6 :ALT
 #if TEMPORAL_MVP
-	parent_pcs_ptr->cur_order_hint = parent_pcs_ptr->picture_number % (1 << (parent_pcs_ptr->sequence_control_set_ptr->seq_header.order_hint_info.order_hint_bits));
-    	for (uint8_t i = 0; i < 7; ++i)
-		parent_pcs_ptr->ref_order_hint[i] = (uint32_t)ref_frame_arr_single[i].poc;
+    parent_pcs_ptr->cur_order_hint = parent_pcs_ptr->picture_number % (uint64_t)(1 << (parent_pcs_ptr->sequence_control_set_ptr->seq_header.order_hint_info.order_hint_bits));
+        for (uint8_t i = 0; i < 7; ++i)
+        parent_pcs_ptr->ref_order_hint[i] = (uint32_t)ref_frame_arr_single[i].poc;
 #endif
     if (/*!order_hint_info->enable_order_hint ||*/ parent_pcs_ptr->slice_type == I_SLICE /*frame_is_intra_only(cm)*/ ||
         parent_pcs_ptr->reference_mode == SINGLE_REFERENCE)
@@ -230,7 +230,7 @@ void av1_setup_skip_mode_allowed(PictureParentControlSet  *parent_pcs_ptr) {
     //5 :ALT2
     //6 :ALT
 #if COMP_MODE && !TEMPORAL_MVP
-	parent_pcs_ptr->cur_order_hint = parent_pcs_ptr->picture_number % (uint64_t)(1 << (parent_pcs_ptr->sequence_control_set_ptr->seq_header.order_hint_info.order_hint_bits));
+    parent_pcs_ptr->cur_order_hint = parent_pcs_ptr->picture_number % (uint64_t)(1 << (parent_pcs_ptr->sequence_control_set_ptr->seq_header.order_hint_info.order_hint_bits));
     for (uint8_t i = 0; i < 7; ++i)
         parent_pcs_ptr->ref_order_hint[i] = (uint32_t)ref_frame_arr_single[i].poc;
 #endif
@@ -1522,7 +1522,7 @@ EbErrorType signal_derivation_multi_processes_oq(
         picture_control_set_ptr->slice_type == I_SLICE )
      picture_control_set_ptr->allow_ref_frame_mvs = 0;
     else
-       picture_control_set_ptr->allow_ref_frame_mvs = sequence_control_set_ptr->temporal_mvp_enabled;  
+       picture_control_set_ptr->allow_ref_frame_mvs = sequence_control_set_ptr->temporal_mvp_enabled;
 #endif
 
     return return_error;

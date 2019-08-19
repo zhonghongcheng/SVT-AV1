@@ -28,6 +28,9 @@
 #include "EbModeDecisionProcess.h"
 #include "av1me.h"
 
+void av1_set_ref_frame(MvReferenceFrame *rf,
+    int8_t ref_frame_type);
+
 #define MAX_MESH_SPEED 5  // Max speed setting for mesh motion method
 static MeshPattern
 good_quality_mesh_patterns[MAX_MESH_SPEED + 1][MAX_MESH_STEP] = {
@@ -2393,14 +2396,14 @@ static void get_mv_projection(MV *output, MV ref, int num, int den) {
 static int motion_field_projection(Av1Common *cm,PictureControlSet       *picture_control_set_ptr,
                                    MvReferenceFrame start_frame, int dir) {
   TPL_MV_REF *tpl_mvs_base = picture_control_set_ptr->tpl_mvs;
-  int ref_offset[REF_FRAMES] = { 0 }; 
+  int ref_offset[REF_FRAMES] = { 0 };
 
   MvReferenceFrame rf[2];
   av1_set_ref_frame(rf, start_frame);
- 
-  uint8_t list_idx0, list_idx1,ref_idx_l0,ref_idx_l1;
+
+  uint8_t list_idx0, ref_idx_l0;
   list_idx0 = get_list_idx(start_frame);
-  ref_idx_l0 = get_ref_frame_idx(start_frame);  
+  ref_idx_l0 = get_ref_frame_idx(start_frame);
   EbReferenceObject *start_frame_buf = (EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[list_idx0][ref_idx_l0]->object_ptr;
 
   if (start_frame_buf == NULL) return 0;
@@ -2408,13 +2411,13 @@ static int motion_field_projection(Av1Common *cm,PictureControlSet       *pictur
   if (start_frame_buf->av1_frame_type == KEY_FRAME ||
       start_frame_buf->av1_frame_type == INTRA_ONLY_FRAME)
     return 0;
-  
+
   const int start_frame_order_hint = start_frame_buf->order_hint;
   const unsigned int *const ref_order_hints = &start_frame_buf->ref_order_hint[0];
   const int cur_order_hint = picture_control_set_ptr->parent_pcs_ptr->cur_order_hint;
   int start_to_current_frame_offset = get_relative_dist(
       &picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header.order_hint_info, start_frame_order_hint, cur_order_hint);
-   
+
   for (MvReferenceFrame rf = LAST_FRAME; rf <= INTER_REFS_PER_FRAME; ++rf) {
     ref_offset[rf] = get_relative_dist(&picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header.order_hint_info,
                                        start_frame_order_hint,
@@ -2423,7 +2426,7 @@ static int motion_field_projection(Av1Common *cm,PictureControlSet       *pictur
 
   if (dir == 2) start_to_current_frame_offset = -start_to_current_frame_offset;
 
-  MV_REF *mv_ref_base = start_frame_buf->mvs; 
+  MV_REF *mv_ref_base = start_frame_buf->mvs;
   const int mvs_rows = (cm->mi_rows + 1) >> 1;
   const int mvs_cols = (cm->mi_cols + 1) >> 1;
 
@@ -2464,13 +2467,13 @@ static int motion_field_projection(Av1Common *cm,PictureControlSet       *pictur
 }
 void av1_setup_motion_field(
     Av1Common               *cm,
-    PictureControlSet       *picture_control_set_ptr) 
+    PictureControlSet       *picture_control_set_ptr)
 {
- 
-    const OrderHintInfo *const order_hint_info = &picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header.order_hint_info; 
+
+    const OrderHintInfo *const order_hint_info = &picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header.order_hint_info;
     memset(picture_control_set_ptr->ref_frame_side, 0, sizeof(picture_control_set_ptr->ref_frame_side));
     if (!order_hint_info->enable_order_hint) return;
-          
+
     TPL_MV_REF *tpl_mvs_base = picture_control_set_ptr->tpl_mvs ;
     int size = ((cm->mi_rows + MAX_MIB_SIZE) >> 1) * (cm->mi_stride >> 1);
     for (int idx = 0; idx < size; ++idx) {
@@ -2481,10 +2484,10 @@ void av1_setup_motion_field(
     const int cur_order_hint = picture_control_set_ptr->parent_pcs_ptr->cur_order_hint;
     const EbReferenceObject *ref_buf[INTER_REFS_PER_FRAME];
     int ref_order_hint[INTER_REFS_PER_FRAME];
-  
+
     for (int ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ref_frame++)
     {
-        const int ref_idx = ref_frame - LAST_FRAME;   
+        const int ref_idx = ref_frame - LAST_FRAME;
         int order_hint = 0;
         uint8_t list_idx0, ref_idx_l0;
         list_idx0 = get_list_idx(ref_frame);
@@ -2505,21 +2508,21 @@ void av1_setup_motion_field(
     int ref_stamp = MFMV_STACK_SIZE - 1;
 
     if (ref_buf[LAST_FRAME - LAST_FRAME] != NULL) {
-    const int alt_of_lst_order_hint = ref_buf[LAST_FRAME - LAST_FRAME]->ref_order_hint[ALTREF_FRAME - LAST_FRAME];    
+    const int alt_of_lst_order_hint = ref_buf[LAST_FRAME - LAST_FRAME]->ref_order_hint[ALTREF_FRAME - LAST_FRAME];
     const int is_lst_overlay        = (alt_of_lst_order_hint == ref_order_hint[GOLDEN_FRAME - LAST_FRAME]);
     if (!is_lst_overlay)
         motion_field_projection(cm, picture_control_set_ptr, LAST_FRAME, 2);
-    
+
     --ref_stamp;
     }
-  
+
     if (get_relative_dist(order_hint_info, ref_order_hint[BWDREF_FRAME - LAST_FRAME], cur_order_hint) > 0) {
         if (motion_field_projection(cm, picture_control_set_ptr, BWDREF_FRAME, 0)) --ref_stamp;
     }
 
     if (get_relative_dist(order_hint_info, ref_order_hint[ALTREF2_FRAME - LAST_FRAME], cur_order_hint) > 0) {
         if (motion_field_projection(cm, picture_control_set_ptr, ALTREF2_FRAME, 0)) --ref_stamp;
-    }       
+    }
 
     if (get_relative_dist(order_hint_info,ref_order_hint[ALTREF_FRAME - LAST_FRAME],cur_order_hint) > 0 && ref_stamp >= 0)
         if (motion_field_projection(cm, picture_control_set_ptr, ALTREF_FRAME, 0)) --ref_stamp;
@@ -2554,8 +2557,8 @@ void* mode_decision_configuration_kernel(void *input_ptr)
         rateControlResultsPtr = (RateControlResults*)rateControlResultsWrapperPtr->object_ptr;
         picture_control_set_ptr = (PictureControlSet*)rateControlResultsPtr->picture_control_set_wrapper_ptr->object_ptr;
         sequence_control_set_ptr = (SequenceControlSet*)picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr;
-#if TEMPORAL_MVP  
-        if (picture_control_set_ptr->parent_pcs_ptr->allow_ref_frame_mvs)       
+#if TEMPORAL_MVP
+        if (picture_control_set_ptr->parent_pcs_ptr->allow_ref_frame_mvs)
             av1_setup_motion_field(picture_control_set_ptr->parent_pcs_ptr->av1_cm, picture_control_set_ptr);
 #endif
 

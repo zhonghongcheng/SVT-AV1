@@ -5417,7 +5417,7 @@ EB_EXTERN void av1_encode_pass(
 
 
 
-#if TEMPORAL_MVP              
+#if TEMPORAL_MVP
                 if (sequence_control_set_ptr->temporal_mvp_enabled && picture_control_set_ptr->slice_type != I_SLICE && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) {
 #if INCOMPLETE_SB_FIX
                     uint32_t mi_stride = picture_control_set_ptr->mi_stride;
@@ -5430,7 +5430,7 @@ EB_EXTERN void av1_encode_pass(
                     ModeInfo *miPtr = *(picture_control_set_ptr->mi_grid_base + offset);
                     const int x_mis = AOMMIN(context_ptr->blk_geom->bwidth, picture_control_set_ptr->parent_pcs_ptr->av1_cm->mi_cols - mi_col);
                     const int y_mis = AOMMIN(context_ptr->blk_geom->bheight, picture_control_set_ptr->parent_pcs_ptr->av1_cm->mi_rows - mi_row);
-                    EbReferenceObject *obj_l0 = (EbReferenceObject*)picture_control_set_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr->object_ptr;                    
+                    EbReferenceObject *obj_l0 = (EbReferenceObject*)picture_control_set_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr->object_ptr;
 
                     av1_copy_frame_mvs(picture_control_set_ptr, picture_control_set_ptr->parent_pcs_ptr->av1_cm , miPtr->mbmi,
                         mi_row, mi_col, x_mis, y_mis, obj_l0);

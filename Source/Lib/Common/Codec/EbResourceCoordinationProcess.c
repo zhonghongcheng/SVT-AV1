@@ -338,7 +338,7 @@ void ResetPcsAv1(
     // Whether to use previous frame's motion vectors for prediction.
 #if ! TEMPORAL_MVP
     picture_control_set_ptr->allow_ref_frame_mvs = 0;
-#endif    
+#endif
     picture_control_set_ptr->switchable_motion_mode = 0;
     // Flag signaling how frame contexts should be updated at the end of
     // a frame decode

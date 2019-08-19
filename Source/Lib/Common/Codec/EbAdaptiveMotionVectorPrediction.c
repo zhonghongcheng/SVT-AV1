@@ -686,12 +686,12 @@ static int add_tpl_ref_mv(const Av1Common *cm, PictureControlSet *picture_contro
                           int mi_row, int mi_col, MvReferenceFrame ref_frame,
                           int blk_row, int blk_col, IntMv *gm_mv_candidates,
                           uint8_t *const refmv_count,
-                          CandidateMv ref_mv_stack[MAX_REF_MV_STACK_SIZE],                        
+                          CandidateMv ref_mv_stack[MAX_REF_MV_STACK_SIZE],
                           int16_t *mode_context) {
   Position mi_pos;
   mi_pos.row = (mi_row & 0x01) ? blk_row : blk_row + 1;
   mi_pos.col = (mi_col & 0x01) ? blk_col : blk_col + 1;
-  
+
   if (!is_inside(&xd->tile, mi_col, mi_row, xd->tile.mi_row_end ,&mi_pos)) return 0;
 
   const TPL_MV_REF *prev_frame_mvs =
@@ -713,9 +713,9 @@ static int add_tpl_ref_mv(const Av1Common *cm, PictureControlSet *picture_contro
       list_idx1 = get_list_idx(rf[1]);
       ref_idx_l1 = get_ref_frame_idx(rf[1]);
   }
- 
-  const uint16_t weight_unit = 1;  
-  const int cur_frame_index = picture_control_set_ptr->parent_pcs_ptr->cur_order_hint;  
+
+  const uint16_t weight_unit = 1;
+  const int cur_frame_index = picture_control_set_ptr->parent_pcs_ptr->cur_order_hint;
   EbReferenceObject *buf_0 = (EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[list_idx0][ref_idx_l0]->object_ptr;
 
   const int frame0_index = buf_0->order_hint;
@@ -742,11 +742,11 @@ static int add_tpl_ref_mv(const Av1Common *cm, PictureControlSet *picture_contro
 
     if (idx == *refmv_count && *refmv_count < MAX_REF_MV_STACK_SIZE) {
       ref_mv_stack[idx].this_mv.as_int = this_refmv.as_int;
-      ref_mv_stack[idx].weight = 2 * weight_unit;     
+      ref_mv_stack[idx].weight = 2 * weight_unit;
       ++(*refmv_count);
     }
   } else {
-    // Process compound inter mode   
+    // Process compound inter mode
     EbReferenceObject *buf_1 = (EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[list_idx1][ref_idx_l1]->object_ptr;
 
     const int frame1_index = buf_1->order_hint;
@@ -776,14 +776,14 @@ static int add_tpl_ref_mv(const Av1Common *cm, PictureControlSet *picture_contro
     if (idx == *refmv_count && *refmv_count < MAX_REF_MV_STACK_SIZE) {
       ref_mv_stack[idx].this_mv.as_int = this_refmv.as_int;
       ref_mv_stack[idx].comp_mv.as_int = comp_refmv.as_int;
-      ref_mv_stack[idx].weight = 2 * weight_unit;    
+      ref_mv_stack[idx].weight = 2 * weight_unit;
       ++(*refmv_count);
     }
   }
 
   return 1;
 }
-    
+
 static int check_sb_border(const int mi_row, const int mi_col,
                            const int row_offset, const int col_offset) {
   const int sb_mi_size = mi_size_wide[BLOCK_64X64];
@@ -798,7 +798,7 @@ static int check_sb_border(const int mi_row, const int mi_col,
 }
 #endif
 void setup_ref_mv_list(
-#if TEMPORAL_MVP  
+#if TEMPORAL_MVP
     PictureControlSet              *picture_control_set_ptr,
 #endif
     const Av1Common *cm, const MacroBlockD *xd, MvReferenceFrame ref_frame,
@@ -898,7 +898,7 @@ void setup_ref_mv_list(
     // the mode context too.
 #if TEMPORAL_MVP
      if (picture_control_set_ptr->parent_pcs_ptr->allow_ref_frame_mvs)
-     {       
+     {
 
         int is_available = 0;
         const int voffset = AOMMAX(mi_size_high[BLOCK_8X8], xd->n4_h);
@@ -1429,8 +1429,8 @@ void generate_av1_mvp_table(
         }
         else
             zeromv[0].as_int = zeromv[1].as_int = 0;
-        setup_ref_mv_list(  
-#if TEMPORAL_MVP        
+        setup_ref_mv_list(
+#if TEMPORAL_MVP
             picture_control_set_ptr,
 #endif
             cm,

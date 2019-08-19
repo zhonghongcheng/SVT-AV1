@@ -992,11 +992,11 @@ EbErrorType picture_control_set_ctor(
     object_ptr->mi_stride = pictureLcuWidth * (BLOCK_SIZE_64 / 4);
 #endif
 
-#if TEMPORAL_MVP      
+#if TEMPORAL_MVP
     if(initDataPtr->tmvp_on)
     {
         //TMVP map is 8x8 based.
-        uint32_t mi_rows = initDataPtr->picture_height >> MI_SIZE_LOG2;        
+        uint32_t mi_rows = initDataPtr->picture_height >> MI_SIZE_LOG2;
         const int mem_size = ((mi_rows + MAX_MIB_SIZE) >> 1) * (object_ptr->mi_stride >> 1);
         EB_MALLOC(TPL_MV_REF*, object_ptr->tpl_mvs, sizeof(TPL_MV_REF)*mem_size, EB_N_PTR);
         memset(object_ptr->tpl_mvs, 0, sizeof(TPL_MV_REF)*mem_size);

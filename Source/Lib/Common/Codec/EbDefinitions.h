@@ -2692,7 +2692,7 @@ object_ptr is a EbPtr to the object being constructed.
 typedef void(*EbDtor)(
     EbPtr object_ptr);
 #if TEMPORAL_MVP
-#define INVALID_MV           0x80008000 
+#define INVALID_MV           0x80008000
 #else
 #define INVALID_MV            0xFFFFFFFF    //ICOPY They changed this to 0x80008000
 #endif

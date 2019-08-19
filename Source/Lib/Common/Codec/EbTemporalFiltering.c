@@ -810,8 +810,7 @@ void tf_inter_prediction(
 #endif
     uint32_t sb_origin_x,
     uint32_t sb_origin_y,
-    int* use_16x16_subblocks,
-    EbAsm asm_type)
+    int* use_16x16_subblocks)
 {
     const InterpFilters interp_filters =
         av1_make_interp_filters(MULTITAP_SHARP, MULTITAP_SHARP);
@@ -1521,8 +1520,7 @@ static EbErrorType produce_temporally_filtered_pic(
 #endif
                         (uint32_t)blk_col*BW,
                         (uint32_t)blk_row*BH,
-                        use_16x16_subblocks,
-                        asm_type);
+                        use_16x16_subblocks);
 #else
                     uni_motion_compensation(context_ptr,
                                         list_input_picture_ptr[frame_index],
