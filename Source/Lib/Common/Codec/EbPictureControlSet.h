@@ -30,6 +30,7 @@
 #include"av1me.h"
 #include "hash_motion.h"
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13945,6 +13946,11 @@ extern "C" {
         EbWarpedMotionParams    ref_global_motion[TOTAL_REFS_PER_FRAME];
         struct MdRateEstimationContext *md_rate_estimation_array;
 #endif
+#if TEMPORAL_MVP
+        int8_t ref_frame_side[REF_FRAMES];
+        TPL_MV_REF  *tpl_mvs;
+#endif
+
     } PictureControlSet;
 
     // To optimize based on the max input size
@@ -14563,6 +14569,9 @@ extern "C" {
 #endif
 #if TBX_SPLIT_CAP
         uint8_t                            enable_skip_atb;
+#endif
+#if TEMPORAL_MVP
+        uint8_t                            tmvp_on;
 #endif
     } PictureControlSetInitData;
 

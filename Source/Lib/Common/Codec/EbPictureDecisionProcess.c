@@ -131,7 +131,19 @@ void av1_setup_skip_mode_allowed(PictureParentControlSet  *parent_pcs_ptr) {
     skip_mode_info->skip_mode_allowed = 0;
     skip_mode_info->ref_frame_idx_0 = INVALID_IDX;
     skip_mode_info->ref_frame_idx_1 = INVALID_IDX;
-
+        //output: idx
+    //0 :LAST
+    //1 :LAST2
+    //2 :LAST3
+    //3 :GOLD
+    //4 :BWD
+    //5 :ALT2
+    //6 :ALT
+#if TEMPORAL_MVP
+	parent_pcs_ptr->cur_order_hint = parent_pcs_ptr->picture_number % (1 << (parent_pcs_ptr->sequence_control_set_ptr->seq_header.order_hint_info.order_hint_bits));
+    	for (uint8_t i = 0; i < 7; ++i)
+		parent_pcs_ptr->ref_order_hint[i] = (uint32_t)ref_frame_arr_single[i].poc;
+#endif
     if (/*!order_hint_info->enable_order_hint ||*/ parent_pcs_ptr->slice_type == I_SLICE /*frame_is_intra_only(cm)*/ ||
         parent_pcs_ptr->reference_mode == SINGLE_REFERENCE)
         return;
@@ -217,8 +229,8 @@ void av1_setup_skip_mode_allowed(PictureParentControlSet  *parent_pcs_ptr) {
     //4 :BWD
     //5 :ALT2
     //6 :ALT
-#if COMP_MODE
-    parent_pcs_ptr->cur_order_hint = parent_pcs_ptr->picture_number % (uint64_t)(1 << (parent_pcs_ptr->sequence_control_set_ptr->seq_header.order_hint_info.order_hint_bits));
+#if COMP_MODE && !TEMPORAL_MVP
+	parent_pcs_ptr->cur_order_hint = parent_pcs_ptr->picture_number % (uint64_t)(1 << (parent_pcs_ptr->sequence_control_set_ptr->seq_header.order_hint_info.order_hint_bits));
     for (uint8_t i = 0; i < 7; ++i)
         parent_pcs_ptr->ref_order_hint[i] = (uint32_t)ref_frame_arr_single[i].poc;
 #endif
@@ -1504,6 +1516,15 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
             picture_control_set_ptr->prune_unipred_at_me = 1;
 #endif
+#if TEMPORAL_MVP
+    //CHKN: Temporal MVP should be disabled for pictures beloning to 4L MiniGop preceeded by 5L miniGOP. in this case the RPS is wrong(known issue). check RPS construction for more info.
+    if ( (sequence_control_set_ptr->static_config.hierarchical_levels == 4 && picture_control_set_ptr->hierarchical_levels == 3) ||
+        picture_control_set_ptr->slice_type == I_SLICE )
+     picture_control_set_ptr->allow_ref_frame_mvs = 0;
+    else
+       picture_control_set_ptr->allow_ref_frame_mvs = sequence_control_set_ptr->temporal_mvp_enabled;  
+#endif
+
     return return_error;
 }
 

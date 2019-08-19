@@ -375,6 +375,10 @@ EbErrorType copy_sequence_control_set(
     dst->extra_frames_to_ref_islice = src->extra_frames_to_ref_islice;
     dst->max_frame_window_to_ref_islice = src->max_frame_window_to_ref_islice;
 #endif
+
+#if TEMPORAL_MVP
+    dst->temporal_mvp_enabled = src->temporal_mvp_enabled;
+#endif
     return EB_ErrorNone;
 }
 

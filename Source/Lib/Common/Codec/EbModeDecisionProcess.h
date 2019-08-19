@@ -25,7 +25,11 @@ extern "C" {
      **************************************/
 #define IBC_CAND 2 //two intra bc candidates
 #if COMP_MODE
+#if TEMPORAL_MVP
+#define MODE_DECISION_CANDIDATE_MAX_COUNT              1300
+#else
 #define MODE_DECISION_CANDIDATE_MAX_COUNT              (1000 +IBC_CAND)//488// (1400 +IBC_CAND)
+#endif
 #else
 #if CHECK_CAND
 #if MRP_DUPLICATION_FIX

@@ -1031,6 +1031,17 @@ void* picture_manager_kernel(void *input_ptr)
                                         EB_ENC_PM_ERROR1);
                                 }
                             }
+
+#if TEMPORAL_MVP
+                            //fill the non used spots to be used in TMVP.
+                            for (refIdx =  entryPictureControlSetPtr->ref_list0_count; refIdx < 4; ++refIdx) 
+                                    ChildPictureControlSetPtr->ref_pic_ptr_array[REF_LIST_0][refIdx] = ChildPictureControlSetPtr->ref_pic_ptr_array[REF_LIST_0][0];
+
+                            if (entryPictureControlSetPtr->ref_list1_count==0) {
+                                for (refIdx = entryPictureControlSetPtr->ref_list1_count; refIdx < 3; ++refIdx)
+                                    ChildPictureControlSetPtr->ref_pic_ptr_array[REF_LIST_1][refIdx] = ChildPictureControlSetPtr->ref_pic_ptr_array[REF_LIST_0][0];
+                            }
+#endif
 #else
                             if (entryPictureControlSetPtr->ref_list0_count) {
                                 referenceQueueIndex = (uint32_t)CIRCULAR_ADD(
@@ -1108,6 +1119,13 @@ void* picture_manager_kernel(void *input_ptr)
                                         EB_ENC_PM_ERROR1);
                                 }
                             }
+#if TEMPORAL_MVP
+                            //fill the non used spots to be used in TMVP.
+                            if (entryPictureControlSetPtr->ref_list1_count) {
+                                for (refIdx = entryPictureControlSetPtr->ref_list1_count; refIdx < 3; ++refIdx)
+                                    ChildPictureControlSetPtr->ref_pic_ptr_array[REF_LIST_1][refIdx] = ChildPictureControlSetPtr->ref_pic_ptr_array[REF_LIST_1][0];
+                            }
+#endif 
 #else
                             if (entryPictureControlSetPtr->ref_list1_count) {
                                 referenceQueueIndex = (uint32_t)CIRCULAR_ADD(

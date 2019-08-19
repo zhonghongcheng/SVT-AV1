@@ -205,6 +205,9 @@ extern "C" {
         * Default is 0. */
         uint8_t                                 down_sampling_method_me_search;
 #endif
+#if TEMPORAL_MVP
+        uint8_t                                 temporal_mvp_enabled; //1:Enabled  0:Disabled
+#endif
 #endif
         uint8_t                                 trans_coeff_shape_array[2][8][4];    // [componantTypeIndex][resolutionIndex][levelIndex][tuSizeIndex]
         EbBlockMeanPrec                         block_mean_calc_prec;

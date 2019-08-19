@@ -158,7 +158,16 @@ extern "C" {
         IntMv comp_mv;
         int32_t weight;
     } CandidateMv;
-
+#if TEMPORAL_MVP
+    typedef struct {
+        IntMv mfmv0;
+        uint8_t ref_frame_offset;
+    } TPL_MV_REF;
+    typedef struct {
+        IntMv mv;
+        MvReferenceFrame ref_frame;
+    } MV_REF;
+#endif
 #if ATB_EC
 #define INTER_TX_SIZE_BUF_LEN 16
 #define TXK_TYPE_BUF_LEN 64

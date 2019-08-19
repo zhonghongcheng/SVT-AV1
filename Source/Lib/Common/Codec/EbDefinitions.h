@@ -34,6 +34,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define TEMPORAL_MVP                    1// Temporal mvp support. aka. MFMV
+
 #define TWO_PASS                        0
 #define INCOMPLETE_SB_ASSERT            0 //add an assert to link incomplete SBs to usage of root-CBF skip decision in MD
 
@@ -2688,8 +2691,11 @@ object_ptr is a EbPtr to the object being constructed.
 */
 typedef void(*EbDtor)(
     EbPtr object_ptr);
-
+#if TEMPORAL_MVP
+#define INVALID_MV           0x80008000 
+#else
 #define INVALID_MV            0xFFFFFFFF    //ICOPY They changed this to 0x80008000
+#endif
 #define BLKSIZE 64
 
 /***************************************
