@@ -965,6 +965,10 @@ void* picture_manager_kernel(void *input_ptr)
                         EB_MEMSET(ChildPictureControlSetPtr->ref_slice_type_array[REF_LIST_0], 0, REF_LIST_MAX_DEPTH * sizeof(EB_SLICE));
                         EB_MEMSET(ChildPictureControlSetPtr->ref_slice_type_array[REF_LIST_1], 0, REF_LIST_MAX_DEPTH * sizeof(EB_SLICE));
 
+#if TWO_PASS
+                        EB_MEMSET(ChildPictureControlSetPtr->ref_pic_referenced_area_avg_array[REF_LIST_0], 0, REF_LIST_MAX_DEPTH * sizeof(uint64_t));
+                        EB_MEMSET(ChildPictureControlSetPtr->ref_pic_referenced_area_avg_array[REF_LIST_1], 0, REF_LIST_MAX_DEPTH * sizeof(uint64_t));
+#endif
 #else
                         EB_MEMSET(ChildPictureControlSetPtr->ref_pic_ptr_array, 0, 2 * sizeof(EbObjectWrapper*));
 
@@ -1016,6 +1020,10 @@ void* picture_manager_kernel(void *input_ptr)
 #else
                                     ChildPictureControlSetPtr->ref_pic_qp_array[REF_LIST_0][refIdx] = ((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->qp;
                                     ChildPictureControlSetPtr->ref_slice_type_array[REF_LIST_0][refIdx] = ((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->slice_type;
+
+#if TWO_PASS
+                                    ChildPictureControlSetPtr->ref_pic_referenced_area_avg_array[REF_LIST_0][refIdx] = ((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->referenced_area_avg;
+#endif
 #endif
                                     // Increment the Reference's liveCount by the number of tiles in the input picture
                                     eb_object_inc_live_count(
@@ -1104,7 +1112,9 @@ void* picture_manager_kernel(void *input_ptr)
 
                                     ChildPictureControlSetPtr->ref_pic_qp_array[REF_LIST_1][refIdx] = (uint8_t)((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->qp;
                                     ChildPictureControlSetPtr->ref_slice_type_array[REF_LIST_1][refIdx] = ((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->slice_type;
-
+#if TWO_PASS
+                                    ChildPictureControlSetPtr->ref_pic_referenced_area_avg_array[REF_LIST_1][refIdx] = ((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->referenced_area_avg;
+#endif
                                     // Increment the Reference's liveCount by the number of tiles in the input picture
                                     eb_object_inc_live_count(
                                         referenceEntryPtr->reference_object_ptr,

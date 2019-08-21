@@ -13739,6 +13739,9 @@ extern "C" {
 
         uint16_t                               ref_pic_qp_array[MAX_NUM_OF_REF_PIC_LIST][REF_LIST_MAX_DEPTH];
         EB_SLICE                              ref_slice_type_array[MAX_NUM_OF_REF_PIC_LIST][REF_LIST_MAX_DEPTH];
+#if TWO_PASS
+        uint64_t                            ref_pic_referenced_area_avg_array[MAX_NUM_OF_REF_PIC_LIST][REF_LIST_MAX_DEPTH];
+#endif
 #else
         EbObjectWrapper                    *ref_pic_ptr_array[MAX_NUM_OF_REF_PIC_LIST];
         uint8_t                               ref_pic_qp_array[MAX_NUM_OF_REF_PIC_LIST];
@@ -14534,6 +14537,7 @@ extern "C" {
 #endif
 #if TWO_PASS
         struct stat_struct_t                   stat_struct;
+        uint64_t                        referenced_area_avg;
 #endif
 
     } PictureParentControlSet;

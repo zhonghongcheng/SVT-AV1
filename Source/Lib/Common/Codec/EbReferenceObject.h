@@ -47,6 +47,7 @@ typedef struct EbReferenceObject
 #if TWO_PASS
     stat_struct_t                   stat_struct;
     EbHandle                        referenced_area_mutex;
+    uint64_t                        referenced_area_avg;
 #endif
 #if TEMPORAL_MVP
     MV_REF *mvs;
