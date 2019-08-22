@@ -3828,7 +3828,7 @@ static void sb_qp_derivation(
                         picture_control_set_ptr->parent_pcs_ptr->rc_me_distortion[me_sb_addr_1] +
                         picture_control_set_ptr->parent_pcs_ptr->rc_me_distortion[me_sb_addr_2] +
                         picture_control_set_ptr->parent_pcs_ptr->rc_me_distortion[me_sb_addr_3] + 2) >> 2;
-                me_distortion >>= 8; 
+                me_distortion >>= 8;
 #endif
             }
             else {
@@ -3898,7 +3898,7 @@ static void sb_qp_derivation(
                     MIN(picture_control_set_ptr->parent_pcs_ptr->picture_qp,((arfgf_low_motion_minq[active_worst_quality] + 2) >> 2)) - 1,
                     MAX(picture_control_set_ptr->parent_pcs_ptr->picture_qp, ((arfgf_high_motion_minq[active_worst_quality] + 2) >> 2)) + 3,
                     ((int16_t)picture_control_set_ptr->parent_pcs_ptr->picture_qp + (int16_t)delta_qp));
-            else 
+            else
                 sb_ptr->qp = CLIP3(
                     0,
                     63,

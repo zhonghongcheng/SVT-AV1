@@ -1699,7 +1699,7 @@ uint64_t mdc_av1_inter_fast_cost(
     }
     else {
         lumaSad = (LUMA_WEIGHT * luma_distortion) << AV1_COST_PRECISION;
-        totalDistortion = lumaSad; 
+        totalDistortion = lumaSad;
         rate = lumaRate;
 
         // Assign fast cost

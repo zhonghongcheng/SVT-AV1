@@ -1147,7 +1147,7 @@ void init_considered_block(
     uint32_t  parent_depth_idx_mds,child_block_idx_1,child_block_idx_2,child_block_idx_3,child_block_idx_4;
     //uint32_t  parent_block_idx;
     SbParams *sb_params = &sequence_control_set_ptr->sb_params_array[sb_index];
-    
+
     uint32_t depth_refinement_mode = AllD;
     depth_refinement_mode = sb_params->is_complete_sb ? Predp1 : AllD;
     /*uint32_t d1_refinement_mode = AllD;
@@ -1182,12 +1182,12 @@ void init_considered_block(
                 blk_geom->sq_size == 8 ? 5 : 1;
         //if the parentSq is inside inject this block
         uint8_t is_blk_allowed = picture_control_set_ptr->slice_type != I_SLICE ? 1 : (blk_geom->sq_size < 128) ? 1 : 0;
-        
+
         if(depth_refinement_mode == AllD)
             split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
         else
             split_flag = context_ptr->local_cu_array[blk_index].early_split_flag;
-        if (sequence_control_set_ptr->sb_geom[sb_index].block_is_inside_md_scan[blk_index] && is_blk_allowed){ 
+        if (sequence_control_set_ptr->sb_geom[sb_index].block_is_inside_md_scan[blk_index] && is_blk_allowed){
             if (blk_geom->shape == PART_N) {
                 switch (depth_refinement_mode) {
                 case Pred:
@@ -3298,7 +3298,7 @@ void* mode_decision_configuration_kernel(void *input_ptr)
                             context_ptr,
                             sb_index);
                     }
-                }  
+                }
             }
         }
 #endif
