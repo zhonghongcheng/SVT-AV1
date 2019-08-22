@@ -49,8 +49,7 @@ void interpolate_search_region_AVC_chroma(
         uint32_t                interpolated_full_stride_ch,
         uint32_t                search_area_width,
         uint32_t                search_area_height,
-        uint32_t                input_bit_depth,
-        EbAsm                   asm_type);
+        uint32_t                input_bit_depth);
 
 #endif
 
@@ -92,8 +91,7 @@ void interpolate_search_region_AVC_chroma(
         PictureParentControlSet   *picture_control_set_ptr,
         uint32_t                       sb_index,
         MotionEstimationContext_t   *context_ptr,
-        EbPictureBufferDesc       *input_ptr,
-        EbAsm                       asm_type);
+        EbPictureBufferDesc       *input_ptr);
 
     int8_t sort_3_elements(uint32_t a, uint32_t b, uint32_t c);
 #define a_b_c  0
@@ -1488,7 +1486,7 @@ void interpolate_search_region_AVC_chroma(
 
     static const uint8_t sub_position_type[16] = { 0, 2, 1, 2, 2, 2, 2, 2, 1, 2, 1, 2, 2, 2, 2, 2 };
 
-    extern uint32_t compute8x4_sad_kernel(
+    extern uint32_t compute8x4_sad_kernel_c(
         uint8_t  *src,                            // input parameter, source samples Ptr
         uint32_t  src_stride,                      // input parameter, source stride
         uint8_t  *ref,                            // input parameter, reference samples Ptr
@@ -1527,7 +1525,7 @@ void interpolate_search_region_AVC_chroma(
     and check if there is improvment, if yes keep
     the best SAD+MV
     *******************************************/
-    extern void sad_calculation_8x8_16x16(
+    extern void sad_calculation_8x8_16x16_c(
         uint8_t   *src,
         uint32_t   src_stride,
         uint8_t   *ref,
@@ -1545,7 +1543,7 @@ void interpolate_search_region_AVC_chroma(
     and check if there is improvment, if yes keep
     the best SAD+MV
     *******************************************/
-    extern void sad_calculation_32x32_64x64(
+    extern void sad_calculation_32x32_64x64_c(
         uint32_t  *p_sad16x16,
         uint32_t  *p_best_sad32x32,
         uint32_t  *p_best_sad64x64,
@@ -1590,8 +1588,8 @@ void interpolate_search_region_AVC_chroma(
         uint32_t search_area_height,
         uint32_t search_area_width,
 #endif
-        uint32_t integer_mv,           // input parameter, integer MV
-        EbAsm asm_type);
+        uint32_t integer_mv            // input parameter, integer MV
+        );
 
 #endif
 

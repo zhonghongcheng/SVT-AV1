@@ -176,6 +176,20 @@ EbErrorType eb_reference_object_ctor(
             pictureBufferDescInitDataPtr,
             pictureBufferDescInitData16BitPtr.bit_depth);
     }
+
+#if TEMPORAL_MVP
+    if(pictureBufferDescInitDataPtr->tmvp_on)
+    {
+        //TMVP map is 8x8 based.
+        uint32_t mi_rows = referenceObject->reference_picture->height >> MI_SIZE_LOG2;
+        uint32_t mi_cols = referenceObject->reference_picture->width >> MI_SIZE_LOG2;
+        const int mem_size = ((mi_rows + 1) >> 1) * ((mi_cols + 1) >> 1);
+        EB_MALLOC(MV_REF*, referenceObject->mvs, sizeof(MV_REF)*mem_size, EB_N_PTR);
+        memset(referenceObject->mvs, 0, sizeof(MV_REF)*mem_size);
+    }
+#endif
+
+
     if (return_error == EB_ErrorInsufficientResources)
         return EB_ErrorInsufficientResources;
 #if !OPT_LOSSLESS_1

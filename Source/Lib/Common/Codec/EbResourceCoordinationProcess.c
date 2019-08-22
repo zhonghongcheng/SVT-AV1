@@ -336,7 +336,9 @@ void ResetPcsAv1(
     picture_control_set_ptr->qm_u = 5;
     picture_control_set_ptr->qm_v = 5;
     // Whether to use previous frame's motion vectors for prediction.
+#if ! TEMPORAL_MVP
     picture_control_set_ptr->allow_ref_frame_mvs = 0;
+#endif
     picture_control_set_ptr->switchable_motion_mode = 0;
     // Flag signaling how frame contexts should be updated at the end of
     // a frame decode
@@ -574,7 +576,7 @@ static void read_stat_from_file(
         (size_t)1,
         sequence_control_set_ptr->static_config.input_stat_file);
     int return_read_error = ferror(sequence_control_set_ptr->static_config.input_stat_file);
-#if 0
+#if 1
     //uint8_t* temp_buffer = &picture_control_set_ptr->stat_struct;
     ////for (int h = 0; h < height; h++) {
     ////    fread(pic_point, sizeof(uint8_t), (size_t)width, fid);
@@ -613,7 +615,7 @@ static void read_stat_from_file(
             referenced_area_avg += (picture_control_set_ptr->stat_struct.referenced_area[sb_addr] / sequence_control_set_ptr->sb_params_array[sb_addr].width / sequence_control_set_ptr->sb_params_array[sb_addr].height);
         }
         referenced_area_avg /= sequence_control_set_ptr->sb_total_count;
-
+        picture_control_set_ptr->referenced_area_avg = referenced_area_avg;
         printf("RELEASED POC:%d\t%d\n",
             picture_control_set_ptr->picture_number,
             (int)referenced_area_avg);

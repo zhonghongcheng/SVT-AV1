@@ -47,6 +47,13 @@ typedef struct EbReferenceObject
 #if TWO_PASS
     stat_struct_t                   stat_struct;
     EbHandle                        referenced_area_mutex;
+    uint64_t                        referenced_area_avg;
+#endif
+#if TEMPORAL_MVP
+    MV_REF *mvs;
+    FrameType av1_frame_type;
+    uint32_t order_hint;
+    uint32_t ref_order_hint[7];
 #endif
 } EbReferenceObject;
 

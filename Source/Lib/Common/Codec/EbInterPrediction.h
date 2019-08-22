@@ -70,8 +70,8 @@ extern "C" {
         EbPictureBufferDesc                  *prediction_ptr,
         uint16_t                                dst_origin_x,
         uint16_t                                dst_origin_y,
-        EbBool                                  perform_chroma,
-        EbAsm                                   asm_type);
+        EbBool                                  perform_chroma);
+
 #if COMP_DIFF
     void search_compound_diff_wedge(
         PictureControlSet                    *picture_control_set_ptr,
@@ -88,8 +88,7 @@ extern "C" {
     EbErrorType inter_pu_prediction_av1(
         struct ModeDecisionContext           *md_context_ptr,
         PictureControlSet                    *picture_control_set_ptr,
-        ModeDecisionCandidateBuffer          *candidate_buffer_ptr,
-        EbAsm                                   asm_type);
+        ModeDecisionCandidateBuffer          *candidate_buffer_ptr);
 
     EbErrorType av1_inter_prediction_hbd(
         PictureControlSet                    *picture_control_set_ptr,
@@ -106,8 +105,7 @@ extern "C" {
         EbPictureBufferDesc                  *prediction_ptr,
         uint16_t                                dst_origin_x,
         uint16_t                                dst_origin_y,
-        uint8_t                                 bit_depth,
-        EbAsm                                   asm_type);
+        uint8_t                                 bit_depth);
 
     EbErrorType choose_mvp_idx_v2(
         ModeDecisionCandidate               *candidate_ptr,
@@ -135,8 +133,7 @@ extern "C" {
         uint16_t                                dst_origin_y,
         EbWarpedMotionParams                   *wm_params,
         uint8_t                                 bit_depth,
-        EbBool                                  perform_chroma,
-        EbAsm                                   asm_type);
+        EbBool                                  perform_chroma);
 
 #ifdef __cplusplus
 }

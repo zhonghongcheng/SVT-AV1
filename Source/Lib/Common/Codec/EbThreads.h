@@ -107,7 +107,9 @@ extern "C" {
     }
 
 #elif defined(__linux__)
+#ifndef __USE_GNU
 #define __USE_GNU
+#endif
 #define _GNU_SOURCE
 #include <sched.h>
 #include <pthread.h>

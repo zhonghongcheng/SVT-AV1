@@ -56,7 +56,13 @@ static void ConfigurePictureEdges(
 
     return;
 }
-
+#if TWO_PASS
+void write_stat_to_file(
+    PictureControlSet     *picture_control_set_ptr,
+    SequenceControlSet    *sequence_control_set_ptr,
+    stat_struct_t          stat_struct,
+    uint64_t               ref_poc);
+#endif
 /************************************************
  * Picture Manager Context Constructor
  ************************************************/
@@ -959,6 +965,10 @@ void* picture_manager_kernel(void *input_ptr)
                         EB_MEMSET(ChildPictureControlSetPtr->ref_slice_type_array[REF_LIST_0], 0, REF_LIST_MAX_DEPTH * sizeof(EB_SLICE));
                         EB_MEMSET(ChildPictureControlSetPtr->ref_slice_type_array[REF_LIST_1], 0, REF_LIST_MAX_DEPTH * sizeof(EB_SLICE));
 
+#if TWO_PASS
+                        EB_MEMSET(ChildPictureControlSetPtr->ref_pic_referenced_area_avg_array[REF_LIST_0], 0, REF_LIST_MAX_DEPTH * sizeof(uint64_t));
+                        EB_MEMSET(ChildPictureControlSetPtr->ref_pic_referenced_area_avg_array[REF_LIST_1], 0, REF_LIST_MAX_DEPTH * sizeof(uint64_t));
+#endif
 #else
                         EB_MEMSET(ChildPictureControlSetPtr->ref_pic_ptr_array, 0, 2 * sizeof(EbObjectWrapper*));
 
@@ -1010,6 +1020,10 @@ void* picture_manager_kernel(void *input_ptr)
 #else
                                     ChildPictureControlSetPtr->ref_pic_qp_array[REF_LIST_0][refIdx] = ((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->qp;
                                     ChildPictureControlSetPtr->ref_slice_type_array[REF_LIST_0][refIdx] = ((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->slice_type;
+
+#if TWO_PASS
+                                    ChildPictureControlSetPtr->ref_pic_referenced_area_avg_array[REF_LIST_0][refIdx] = ((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->referenced_area_avg;
+#endif
 #endif
                                     // Increment the Reference's liveCount by the number of tiles in the input picture
                                     eb_object_inc_live_count(
@@ -1025,6 +1039,17 @@ void* picture_manager_kernel(void *input_ptr)
                                         EB_ENC_PM_ERROR1);
                                 }
                             }
+
+#if TEMPORAL_MVP
+                            //fill the non used spots to be used in TMVP.
+                            for (refIdx =  entryPictureControlSetPtr->ref_list0_count; refIdx < 4; ++refIdx)
+                                    ChildPictureControlSetPtr->ref_pic_ptr_array[REF_LIST_0][refIdx] = ChildPictureControlSetPtr->ref_pic_ptr_array[REF_LIST_0][0];
+
+                            if (entryPictureControlSetPtr->ref_list1_count==0) {
+                                for (refIdx = entryPictureControlSetPtr->ref_list1_count; refIdx < 3; ++refIdx)
+                                    ChildPictureControlSetPtr->ref_pic_ptr_array[REF_LIST_1][refIdx] = ChildPictureControlSetPtr->ref_pic_ptr_array[REF_LIST_0][0];
+                            }
+#endif
 #else
                             if (entryPictureControlSetPtr->ref_list0_count) {
                                 referenceQueueIndex = (uint32_t)CIRCULAR_ADD(
@@ -1087,7 +1112,9 @@ void* picture_manager_kernel(void *input_ptr)
 
                                     ChildPictureControlSetPtr->ref_pic_qp_array[REF_LIST_1][refIdx] = (uint8_t)((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->qp;
                                     ChildPictureControlSetPtr->ref_slice_type_array[REF_LIST_1][refIdx] = ((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->slice_type;
-
+#if TWO_PASS
+                                    ChildPictureControlSetPtr->ref_pic_referenced_area_avg_array[REF_LIST_1][refIdx] = ((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->referenced_area_avg;
+#endif
                                     // Increment the Reference's liveCount by the number of tiles in the input picture
                                     eb_object_inc_live_count(
                                         referenceEntryPtr->reference_object_ptr,
@@ -1102,6 +1129,13 @@ void* picture_manager_kernel(void *input_ptr)
                                         EB_ENC_PM_ERROR1);
                                 }
                             }
+#if TEMPORAL_MVP
+                            //fill the non used spots to be used in TMVP.
+                            if (entryPictureControlSetPtr->ref_list1_count) {
+                                for (refIdx = entryPictureControlSetPtr->ref_list1_count; refIdx < 3; ++refIdx)
+                                    ChildPictureControlSetPtr->ref_pic_ptr_array[REF_LIST_1][refIdx] = ChildPictureControlSetPtr->ref_pic_ptr_array[REF_LIST_1][0];
+                            }
+#endif
 #else
                             if (entryPictureControlSetPtr->ref_list1_count) {
                                 referenceQueueIndex = (uint32_t)CIRCULAR_ADD(
@@ -1199,6 +1233,16 @@ void* picture_manager_kernel(void *input_ptr)
                     (referenceEntryPtr->reference_object_ptr))
                 {
                     // Release the nominal live_count value
+#if TWO_PASS
+                    if (sequence_control_set_ptr->static_config.use_output_stat_file &&
+                        referenceEntryPtr->reference_object_ptr->live_count == 1)
+                        write_stat_to_file(
+                            ChildPictureControlSetPtr,
+                            sequence_control_set_ptr,
+                            ((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->stat_struct,
+                            ((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->ref_poc);
+#endif
+
                     eb_release_object(referenceEntryPtr->reference_object_ptr);
                     referenceEntryPtr->reference_object_ptr = (EbObjectWrapper*)EB_NULL;
                     referenceEntryPtr->reference_available = EB_FALSE;

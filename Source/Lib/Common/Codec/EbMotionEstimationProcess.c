@@ -17,6 +17,8 @@
 #include "EbLambdaRateTables.h"
 #include "EbComputeSAD.h"
 
+#include "aom_dsp_rtcd.h"
+
 #include "emmintrin.h"
 
 #if ALTREF_FILTERING_SUPPORT
@@ -53,8 +55,7 @@ EbErrorType CheckZeroZeroCenter(
     uint32_t                       sb_width,
     uint32_t                       sb_height,
     int16_t                       *x_search_center,
-    int16_t                       *y_search_center,
-    EbAsm                       asm_type);
+    int16_t                       *y_search_center);
 
 /************************************************
  * Set ME/HME Params from Config
@@ -565,8 +566,6 @@ EbErrorType ComputeDecimatedZzSad(
     uint32_t                         yLcuEndIndex) {
     EbErrorType return_error = EB_ErrorNone;
 
-    EbAsm asm_type = sequence_control_set_ptr->encode_context_ptr->asm_type;
-
     PictureParentControlSet    *previous_picture_control_set_wrapper_ptr = ((PictureParentControlSet*)picture_control_set_ptr->previous_picture_control_set_wrapper_ptr->object_ptr);
     EbPictureBufferDesc        *previousInputPictureFull = previous_picture_control_set_wrapper_ptr->enhanced_picture_ptr;
 
@@ -623,14 +622,14 @@ EbErrorType ComputeDecimatedZzSad(
                     context_ptr->me_context_ptr->sixteenth_sb_buffer_stride,
                     4);
 
-                if (asm_type >= ASM_NON_AVX2 && asm_type < ASM_TYPE_TOTAL)
-                    // ZZ SAD between 1/16 current & 1/16 collocated
-                    decimatedLcuCollocatedSad = nxm_sad_kernel_func_ptr_array[asm_type][2](
-                        &(sixteenth_decimated_picture_ptr->buffer_y[blkDisplacementDecimated]),
-                        sixteenth_decimated_picture_ptr->stride_y,
-                        context_ptr->me_context_ptr->sixteenth_sb_buffer,
-                        context_ptr->me_context_ptr->sixteenth_sb_buffer_stride,
-                        16, 16);
+                // ZZ SAD between 1/16 current & 1/16 collocated
+                decimatedLcuCollocatedSad = nxm_sad_kernel(
+                    &(sixteenth_decimated_picture_ptr->buffer_y[blkDisplacementDecimated]),
+                    sixteenth_decimated_picture_ptr->stride_y,
+                    context_ptr->me_context_ptr->sixteenth_sb_buffer,
+                    context_ptr->me_context_ptr->sixteenth_sb_buffer_stride,
+                    16, 16,
+                    2);
 #if !MEMORY_FOOTPRINT_OPT
                 // Background Enhancement Algorithm
                 // Classification is important to:
@@ -740,7 +739,6 @@ void* motion_estimation_kernel(void *input_ptr)
 
     uint32_t                      intra_sad_interval_index;
 
-    EbAsm                      asm_type;
 #if !ENABLE_CDF_UPDATE
     MdRateEstimationContext   *md_rate_estimation_array;
 #endif
@@ -773,7 +771,6 @@ void* motion_estimation_kernel(void *input_ptr)
 
         input_picture_ptr = picture_control_set_ptr->enhanced_picture_ptr;
 
-        asm_type = sequence_control_set_ptr->encode_context_ptr->asm_type;
 #if !ENABLE_CDF_UPDATE
         // Increment the MD Rate Estimation array pointer to point to the right address based on the QP and slice type
         md_rate_estimation_array = (MdRateEstimationContext*)sequence_control_set_ptr->encode_context_ptr->md_rate_estimation_array;
@@ -988,8 +985,7 @@ void* motion_estimation_kernel(void *input_ptr)
                             picture_control_set_ptr,
                             sb_index,
                             context_ptr,
-                            input_picture_ptr,
-                            asm_type);
+                            input_picture_ptr);
                     }
                 }
             }

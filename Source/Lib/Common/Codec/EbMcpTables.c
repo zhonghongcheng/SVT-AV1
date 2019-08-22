@@ -5,364 +5,384 @@
 
 #include "EbMcp.h"
 
-/**************************************************
-* Function pointer Tables
-**************************************************/
+void uni_pred_luma_if_helper(
+    EbByte               ref_pic,
+    uint32_t                src_stride,
+    EbByte               dst,
+    uint32_t                dst_stride,
+    uint32_t                pu_width,
+    uint32_t                pu_height,
+    int16_t               *first_pass_if_dst,
+    uint8_t             choice) {
 
-// Luma
-const InterpolationFilterNew uni_pred_luma_if_function_ptr_array_new[ASM_TYPE_TOTAL][16] = {     //[ASM type][Interpolation position]
-    // NON_AVX2
-    {
-        luma_interpolation_copy_ssse3,                        //A
-        luma_interpolation_filter_posa_ssse3,                    //a
-        luma_interpolation_filter_posb_ssse3,                   //b
-        luma_interpolation_filter_posc_ssse3,                   //c
-        luma_interpolation_filter_posd_ssse3,                   //d
-        luma_interpolation_filter_pose_ssse3,                   //e
-        luma_interpolation_filter_posf_ssse3,                   //f
-        luma_interpolation_filter_posg_ssse3,                   //g
-        luma_interpolation_filter_posh_ssse3,                   //h
-        luma_interpolation_filter_posi_ssse3,                   //i
-        luma_interpolation_filter_posj_ssse3,                   //j
-        luma_interpolation_filter_posk_ssse3,                   //k
-        luma_interpolation_filter_posn_ssse3,                   //n
-        luma_interpolation_filter_posp_ssse3,                   //p
-        luma_interpolation_filter_posq_ssse3,                   //q
-        luma_interpolation_filter_posr_ssse3,                   //r
-    },
-    // AVX2
-    {
-        luma_interpolation_copy_ssse3,                        //A
-        luma_interpolation_filter_posa_ssse3,                    //a
-        luma_interpolation_filter_posb_ssse3,                   //b
-        luma_interpolation_filter_posc_ssse3,                   //c
-        luma_interpolation_filter_posd_ssse3,                   //d
-        luma_interpolation_filter_pose_ssse3,                   //e
-        luma_interpolation_filter_posf_ssse3,                   //f
-        luma_interpolation_filter_posg_ssse3,                   //g
-        luma_interpolation_filter_posh_ssse3,                   //h
-        luma_interpolation_filter_posi_ssse3,                   //i
-        luma_interpolation_filter_posj_ssse3,                   //j
-        luma_interpolation_filter_posk_ssse3,                   //k
-        luma_interpolation_filter_posn_ssse3,                   //n
-        luma_interpolation_filter_posp_ssse3,                   //p
-        luma_interpolation_filter_posq_ssse3,                   //q
-        luma_interpolation_filter_posr_ssse3,                   //r
-    },
-};
+    switch (choice) {
 
-const InterpolationFilterOutRaw bi_pred_luma_if_function_ptr_array_new[ASM_TYPE_TOTAL][16] = {     //[ASM type][Interpolation position]
-        // NON_AVX2
-        {
-            luma_interpolation_copy_out_raw_ssse3,                   //A
-            luma_interpolation_filter_posa_out_raw_ssse3,             //a
-            luma_interpolation_filter_posb_out_raw_ssse3,             //b
-            luma_interpolation_filter_posc_out_raw_ssse3,             //c
-            luma_interpolation_filter_posd_out_raw_ssse3,             //d
-            luma_interpolation_filter_pose_out_raw_ssse3,             //e
-            luma_interpolation_filter_posf_out_raw_ssse3,             //f
-            luma_interpolation_filter_posg_out_raw_ssse3,             //g
-            luma_interpolation_filter_posh_out_raw_ssse3,             //h
-            luma_interpolation_filter_posi_out_raw_ssse3,             //i
-            luma_interpolation_filter_posj_out_raw_ssse3,             //j
-            luma_interpolation_filter_posk_out_raw_ssse3,             //k
-            luma_interpolation_filter_posn_out_raw_ssse3,             //n
-            luma_interpolation_filter_posp_out_raw_ssse3,             //p
-            luma_interpolation_filter_posq_out_raw_ssse3,             //q
-            luma_interpolation_filter_posr_out_raw_ssse3,             //r
-        },
-        // AVX2
-        {
-            luma_interpolation_copy_out_raw_ssse3,                   //A
-            luma_interpolation_filter_posa_out_raw_ssse3,             //a
-            luma_interpolation_filter_posb_out_raw_ssse3,             //b
-            luma_interpolation_filter_posc_out_raw_ssse3,             //c
-            luma_interpolation_filter_posd_out_raw_ssse3,             //d
-            luma_interpolation_filter_pose_out_raw_ssse3,             //e
-            luma_interpolation_filter_posf_out_raw_ssse3,             //f
-            luma_interpolation_filter_posg_out_raw_ssse3,             //g
-            luma_interpolation_filter_posh_out_raw_ssse3,             //h
-            luma_interpolation_filter_posi_out_raw_ssse3,             //i
-            luma_interpolation_filter_posj_out_raw_ssse3,             //j
-            luma_interpolation_filter_posk_out_raw_ssse3,             //k
-            luma_interpolation_filter_posn_out_raw_ssse3,             //n
-            luma_interpolation_filter_posp_out_raw_ssse3,             //p
-            luma_interpolation_filter_posq_out_raw_ssse3,             //q
-            luma_interpolation_filter_posr_out_raw_ssse3,             //r
-        },
-};
+    case 0:
+        luma_interpolation_copy_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst); break;
+    case 1:
+        luma_interpolation_filter_posa_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst); break;
+    case 2:
+        luma_interpolation_filter_posb_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst); break;
+    case 3:
+        luma_interpolation_filter_posc_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst); break;
+    case 4:
+        luma_interpolation_filter_posd_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst); break;
+    case 5:
+        luma_interpolation_filter_pose_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst); break;
+    case 6:
+        luma_interpolation_filter_posf_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst); break;
+    case 7:
+        luma_interpolation_filter_posg_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst); break;
+    case 8:
+        luma_interpolation_filter_posh_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst); break;
+    case 9:
+        luma_interpolation_filter_posi_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst); break;
+    case 10:
+        luma_interpolation_filter_posj_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst); break;
+    case 11:
+        luma_interpolation_filter_posk_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst); break;
+    case 12:
+        luma_interpolation_filter_posn_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst); break;
+    case 13:
+        luma_interpolation_filter_posp_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst); break;
+    case 14:
+        luma_interpolation_filter_posq_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst); break;
+    case 15:
+        luma_interpolation_filter_posr_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst); break;
+    }
+}
 
-// Chroma
-const ChromaFilterNew uni_pred_chroma_if_function_ptr_array_new[ASM_TYPE_TOTAL][64] = {
-    // NON_AVX2
-    {
-        chroma_interpolation_copy_ssse3,                       //B
-        chroma_interpolation_filter_one_d_horizontal_ssse3,         //ab
-        chroma_interpolation_filter_one_d_horizontal_ssse3,       //ac
-        chroma_interpolation_filter_one_d_horizontal_ssse3,       //ad
-        chroma_interpolation_filter_one_d_horizontal_ssse3,       //ae
-        chroma_interpolation_filter_one_d_horizontal_ssse3,       //af
-        chroma_interpolation_filter_one_d_horizontal_ssse3,       //ag
-        chroma_interpolation_filter_one_d_horizontal_ssse3,       //ah
-        chroma_interpolation_filter_one_d_vertical_ssse3,         //ba
-        chroma_interpolation_filter_two_d_ssse3,                 //bb
-        chroma_interpolation_filter_two_d_ssse3,                 //bc
-        chroma_interpolation_filter_two_d_ssse3,                 //bd
-        chroma_interpolation_filter_two_d_ssse3,                 //be
-        chroma_interpolation_filter_two_d_ssse3,                 //bf
-        chroma_interpolation_filter_two_d_ssse3,                 //bg
-        chroma_interpolation_filter_two_d_ssse3,                 //bh
-        chroma_interpolation_filter_one_d_vertical_ssse3,         //ca
-        chroma_interpolation_filter_two_d_ssse3,                 //cb
-        chroma_interpolation_filter_two_d_ssse3,                 //cc
-        chroma_interpolation_filter_two_d_ssse3,                 //cd
-        chroma_interpolation_filter_two_d_ssse3,                 //ce
-        chroma_interpolation_filter_two_d_ssse3,                 //cf
-        chroma_interpolation_filter_two_d_ssse3,                 //cg
-        chroma_interpolation_filter_two_d_ssse3,                 //ch
-        chroma_interpolation_filter_one_d_vertical_ssse3,         //da
-        chroma_interpolation_filter_two_d_ssse3,                 //db
-        chroma_interpolation_filter_two_d_ssse3,                 //dc
-        chroma_interpolation_filter_two_d_ssse3,                 //dd
-        chroma_interpolation_filter_two_d_ssse3,                 //de
-        chroma_interpolation_filter_two_d_ssse3,                 //df
-        chroma_interpolation_filter_two_d_ssse3,                 //dg
-        chroma_interpolation_filter_two_d_ssse3,                 //dh
-        chroma_interpolation_filter_one_d_vertical_ssse3,         //ea
-        chroma_interpolation_filter_two_d_ssse3,                 //eb
-        chroma_interpolation_filter_two_d_ssse3,                 //ec
-        chroma_interpolation_filter_two_d_ssse3,                 //ed
-        chroma_interpolation_filter_two_d_ssse3,                 //ee
-        chroma_interpolation_filter_two_d_ssse3,                 //ef
-        chroma_interpolation_filter_two_d_ssse3,                 //eg
-        chroma_interpolation_filter_two_d_ssse3,                 //eh
-        chroma_interpolation_filter_one_d_vertical_ssse3,         //fa
-        chroma_interpolation_filter_two_d_ssse3,                 //fb
-        chroma_interpolation_filter_two_d_ssse3,                 //fc
-        chroma_interpolation_filter_two_d_ssse3,                 //fd
-        chroma_interpolation_filter_two_d_ssse3,                 //fe
-        chroma_interpolation_filter_two_d_ssse3,                 //ff
-        chroma_interpolation_filter_two_d_ssse3,                 //fg
-        chroma_interpolation_filter_two_d_ssse3,                 //fh
-        chroma_interpolation_filter_one_d_vertical_ssse3,         //ga
-        chroma_interpolation_filter_two_d_ssse3,                 //gb
-        chroma_interpolation_filter_two_d_ssse3,                 //gc
-        chroma_interpolation_filter_two_d_ssse3,                 //gd
-        chroma_interpolation_filter_two_d_ssse3,                 //ge
-        chroma_interpolation_filter_two_d_ssse3,                 //gf
-        chroma_interpolation_filter_two_d_ssse3,                 //gg
-        chroma_interpolation_filter_two_d_ssse3,                 //gh
-        chroma_interpolation_filter_one_d_vertical_ssse3,         //ha
-        chroma_interpolation_filter_two_d_ssse3,                 //hb
-        chroma_interpolation_filter_two_d_ssse3,                 //hc
-        chroma_interpolation_filter_two_d_ssse3,                 //hd
-        chroma_interpolation_filter_two_d_ssse3,                 //he
-        chroma_interpolation_filter_two_d_ssse3,                 //hf
-        chroma_interpolation_filter_two_d_ssse3,                 //hg
-        chroma_interpolation_filter_two_d_ssse3,                 //hh
-    },
-    // AVX2
-    {
-        chroma_interpolation_copy_ssse3,                       //B
-        chroma_interpolation_filter_one_d_horizontal_ssse3,         //ab
-        chroma_interpolation_filter_one_d_horizontal_ssse3,       //ac
-        chroma_interpolation_filter_one_d_horizontal_ssse3,       //ad
-        chroma_interpolation_filter_one_d_horizontal_ssse3,       //ae
-        chroma_interpolation_filter_one_d_horizontal_ssse3,       //af
-        chroma_interpolation_filter_one_d_horizontal_ssse3,       //ag
-        chroma_interpolation_filter_one_d_horizontal_ssse3,       //ah
-        chroma_interpolation_filter_one_d_vertical_ssse3,         //ba
-        chroma_interpolation_filter_two_d_ssse3,                 //bb
-        chroma_interpolation_filter_two_d_ssse3,                 //bc
-        chroma_interpolation_filter_two_d_ssse3,                 //bd
-        chroma_interpolation_filter_two_d_ssse3,                 //be
-        chroma_interpolation_filter_two_d_ssse3,                 //bf
-        chroma_interpolation_filter_two_d_ssse3,                 //bg
-        chroma_interpolation_filter_two_d_ssse3,                 //bh
-        chroma_interpolation_filter_one_d_vertical_ssse3,         //ca
-        chroma_interpolation_filter_two_d_ssse3,                 //cb
-        chroma_interpolation_filter_two_d_ssse3,                 //cc
-        chroma_interpolation_filter_two_d_ssse3,                 //cd
-        chroma_interpolation_filter_two_d_ssse3,                 //ce
-        chroma_interpolation_filter_two_d_ssse3,                 //cf
-        chroma_interpolation_filter_two_d_ssse3,                 //cg
-        chroma_interpolation_filter_two_d_ssse3,                 //ch
-        chroma_interpolation_filter_one_d_vertical_ssse3,         //da
-        chroma_interpolation_filter_two_d_ssse3,                 //db
-        chroma_interpolation_filter_two_d_ssse3,                 //dc
-        chroma_interpolation_filter_two_d_ssse3,                 //dd
-        chroma_interpolation_filter_two_d_ssse3,                 //de
-        chroma_interpolation_filter_two_d_ssse3,                 //df
-        chroma_interpolation_filter_two_d_ssse3,                 //dg
-        chroma_interpolation_filter_two_d_ssse3,                 //dh
-        chroma_interpolation_filter_one_d_vertical_ssse3,         //ea
-        chroma_interpolation_filter_two_d_ssse3,                 //eb
-        chroma_interpolation_filter_two_d_ssse3,                 //ec
-        chroma_interpolation_filter_two_d_ssse3,                 //ed
-        chroma_interpolation_filter_two_d_ssse3,                 //ee
-        chroma_interpolation_filter_two_d_ssse3,                 //ef
-        chroma_interpolation_filter_two_d_ssse3,                 //eg
-        chroma_interpolation_filter_two_d_ssse3,                 //eh
-        chroma_interpolation_filter_one_d_vertical_ssse3,         //fa
-        chroma_interpolation_filter_two_d_ssse3,                 //fb
-        chroma_interpolation_filter_two_d_ssse3,                 //fc
-        chroma_interpolation_filter_two_d_ssse3,                 //fd
-        chroma_interpolation_filter_two_d_ssse3,                 //fe
-        chroma_interpolation_filter_two_d_ssse3,                 //ff
-        chroma_interpolation_filter_two_d_ssse3,                 //fg
-        chroma_interpolation_filter_two_d_ssse3,                 //fh
-        chroma_interpolation_filter_one_d_vertical_ssse3,         //ga
-        chroma_interpolation_filter_two_d_ssse3,                 //gb
-        chroma_interpolation_filter_two_d_ssse3,                 //gc
-        chroma_interpolation_filter_two_d_ssse3,                 //gd
-        chroma_interpolation_filter_two_d_ssse3,                 //ge
-        chroma_interpolation_filter_two_d_ssse3,                 //gf
-        chroma_interpolation_filter_two_d_ssse3,                 //gg
-        chroma_interpolation_filter_two_d_ssse3,                 //gh
-        chroma_interpolation_filter_one_d_vertical_ssse3,         //ha
-        chroma_interpolation_filter_two_d_ssse3,                 //hb
-        chroma_interpolation_filter_two_d_ssse3,                 //hc
-        chroma_interpolation_filter_two_d_ssse3,                 //hd
-        chroma_interpolation_filter_two_d_ssse3,                 //he
-        chroma_interpolation_filter_two_d_ssse3,                 //hf
-        chroma_interpolation_filter_two_d_ssse3,                 //hg
-        chroma_interpolation_filter_two_d_ssse3,                 //hh
-    },
-};
+void bi_pred_luma_if_helper(
+    EbByte               ref_pic,
+    uint32_t                src_stride,
+    int16_t               *dst,
+    uint32_t                pu_width,
+    uint32_t                pu_height,
+    int16_t               *first_pass_if_dst,
+    uint8_t             choice) {
 
-const ChromaFilterOutRaw bi_pred_chroma_if_function_ptr_array_new[ASM_TYPE_TOTAL][64] = {
-    // NON_AVX2
-    {
-        chroma_interpolation_copy_out_raw_ssse3,                 //B
-        chroma_interpolation_filter_one_d_out_raw_horizontal_ssse3, //ab
-        chroma_interpolation_filter_one_d_out_raw_horizontal_ssse3, //ac
-        chroma_interpolation_filter_one_d_out_raw_horizontal_ssse3, //ad
-        chroma_interpolation_filter_one_d_out_raw_horizontal_ssse3, //ae
-        chroma_interpolation_filter_one_d_out_raw_horizontal_ssse3, //af
-        chroma_interpolation_filter_one_d_out_raw_horizontal_ssse3, //ag
-        chroma_interpolation_filter_one_d_out_raw_horizontal_ssse3, //ah
-        chroma_interpolation_filter_one_d_out_raw_vertical_ssse3,   //ba
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //bb
-        chroma_interpolation_filter_two_d_out_raw_ssse3,              //bc
-        chroma_interpolation_filter_two_d_out_raw_ssse3,              //bd
-        chroma_interpolation_filter_two_d_out_raw_ssse3,              //be
-        chroma_interpolation_filter_two_d_out_raw_ssse3,              //bf
-        chroma_interpolation_filter_two_d_out_raw_ssse3,              //bg
-        chroma_interpolation_filter_two_d_out_raw_ssse3,              //bh
-        chroma_interpolation_filter_one_d_out_raw_vertical_ssse3,      //ca
-        chroma_interpolation_filter_two_d_out_raw_ssse3,              //cb
-        chroma_interpolation_filter_two_d_out_raw_ssse3,              //cc
-        chroma_interpolation_filter_two_d_out_raw_ssse3,              //cd
-        chroma_interpolation_filter_two_d_out_raw_ssse3,              //ce
-        chroma_interpolation_filter_two_d_out_raw_ssse3,              //cf
-        chroma_interpolation_filter_two_d_out_raw_ssse3,              //cg
-        chroma_interpolation_filter_two_d_out_raw_ssse3,              //ch
-        chroma_interpolation_filter_one_d_out_raw_vertical_ssse3,    //da
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //db
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //dc
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //dd
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //de
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //df
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //dg
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //dh
-        chroma_interpolation_filter_one_d_out_raw_vertical_ssse3,    //ea
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //eb
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //ec
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //ed
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //ee
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //ef
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //eg
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //eh
-        chroma_interpolation_filter_one_d_out_raw_vertical_ssse3,    //fa
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //fb
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //fc
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //fd
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //fe
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //ff
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //fg
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //fh
-        chroma_interpolation_filter_one_d_out_raw_vertical_ssse3,    //ga
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //gb
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //gc
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //gd
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //ge
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //gf
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //gg
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //gh
-        chroma_interpolation_filter_one_d_out_raw_vertical_ssse3,    //ha
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //hb
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //hc
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //hd
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //he
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //hf
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //hg
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //hh
-    },
-    // AVX2
-    {
-        chroma_interpolation_copy_out_raw_ssse3,                 //B
-        chroma_interpolation_filter_one_d_out_raw_horizontal_ssse3, //ab
-        chroma_interpolation_filter_one_d_out_raw_horizontal_ssse3, //ac
-        chroma_interpolation_filter_one_d_out_raw_horizontal_ssse3, //ad
-        chroma_interpolation_filter_one_d_out_raw_horizontal_ssse3, //ae
-        chroma_interpolation_filter_one_d_out_raw_horizontal_ssse3, //af
-        chroma_interpolation_filter_one_d_out_raw_horizontal_ssse3, //ag
-        chroma_interpolation_filter_one_d_out_raw_horizontal_ssse3, //ah
-        chroma_interpolation_filter_one_d_out_raw_vertical_ssse3,   //ba
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //bb
-        chroma_interpolation_filter_two_d_out_raw_ssse3,              //bc
-        chroma_interpolation_filter_two_d_out_raw_ssse3,              //bd
-        chroma_interpolation_filter_two_d_out_raw_ssse3,              //be
-        chroma_interpolation_filter_two_d_out_raw_ssse3,              //bf
-        chroma_interpolation_filter_two_d_out_raw_ssse3,              //bg
-        chroma_interpolation_filter_two_d_out_raw_ssse3,              //bh
-        chroma_interpolation_filter_one_d_out_raw_vertical_ssse3,      //ca
-        chroma_interpolation_filter_two_d_out_raw_ssse3,              //cb
-        chroma_interpolation_filter_two_d_out_raw_ssse3,              //cc
-        chroma_interpolation_filter_two_d_out_raw_ssse3,              //cd
-        chroma_interpolation_filter_two_d_out_raw_ssse3,              //ce
-        chroma_interpolation_filter_two_d_out_raw_ssse3,              //cf
-        chroma_interpolation_filter_two_d_out_raw_ssse3,              //cg
-        chroma_interpolation_filter_two_d_out_raw_ssse3,              //ch
-        chroma_interpolation_filter_one_d_out_raw_vertical_ssse3,    //da
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //db
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //dc
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //dd
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //de
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //df
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //dg
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //dh
-        chroma_interpolation_filter_one_d_out_raw_vertical_ssse3,    //ea
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //eb
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //ec
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //ed
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //ee
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //ef
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //eg
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //eh
-        chroma_interpolation_filter_one_d_out_raw_vertical_ssse3,    //fa
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //fb
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //fc
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //fd
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //fe
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //ff
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //fg
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //fh
-        chroma_interpolation_filter_one_d_out_raw_vertical_ssse3,    //ga
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //gb
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //gc
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //gd
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //ge
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //gf
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //gg
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //gh
-        chroma_interpolation_filter_one_d_out_raw_vertical_ssse3,    //ha
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //hb
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //hc
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //hd
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //he
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //hf
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //hg
-        chroma_interpolation_filter_two_d_out_raw_ssse3,            //hh
-    },
-};
+    switch (choice) {
+
+    case 0:
+        luma_interpolation_copy_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst); break;
+    case 1:
+        luma_interpolation_filter_posa_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst); break;
+    case 2:
+        luma_interpolation_filter_posb_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst); break;
+    case 3:
+        luma_interpolation_filter_posc_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst); break;
+    case 4:
+        luma_interpolation_filter_posd_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst); break;
+    case 5:
+        luma_interpolation_filter_pose_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst); break;
+    case 6:
+        luma_interpolation_filter_posf_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst); break;
+    case 7:
+        luma_interpolation_filter_posg_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst); break;
+    case 8:
+        luma_interpolation_filter_posh_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst); break;
+    case 9:
+        luma_interpolation_filter_posi_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst); break;
+    case 10:
+        luma_interpolation_filter_posj_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst); break;
+    case 11:
+        luma_interpolation_filter_posk_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst); break;
+    case 12:
+        luma_interpolation_filter_posn_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst); break;
+    case 13:
+        luma_interpolation_filter_posp_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst); break;
+    case 14:
+        luma_interpolation_filter_posq_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst); break;
+    case 15:
+        luma_interpolation_filter_posr_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst); break;
+    }
+}
+
+void uni_pred_chroma_if_helper(
+    EbByte               ref_pic,
+    uint32_t                src_stride,
+    EbByte               dst,
+    uint32_t                dst_stride,
+    uint32_t                pu_width,
+    uint32_t                pu_height,
+    int16_t               *first_pass_if_dst,
+    uint32_t                frac_pos_x,
+    uint32_t                frac_pos_y,
+    uint8_t             choice) {
+
+    switch (choice) {
+
+    case 0:
+        chroma_interpolation_copy_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 1:
+        chroma_interpolation_filter_one_d_horizontal_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 2:
+        chroma_interpolation_filter_one_d_horizontal_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 3:
+        chroma_interpolation_filter_one_d_horizontal_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 4:
+        chroma_interpolation_filter_one_d_horizontal_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 5:
+        chroma_interpolation_filter_one_d_horizontal_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 6:
+        chroma_interpolation_filter_one_d_horizontal_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 7:
+        chroma_interpolation_filter_one_d_horizontal_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 8:
+        chroma_interpolation_filter_one_d_vertical_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 9:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 10:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 11:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 12:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 13:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 14:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 15:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 16:
+        chroma_interpolation_filter_one_d_vertical_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 17:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 18:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 19:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 20:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 21:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 22:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 23:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 24:
+        chroma_interpolation_filter_one_d_vertical_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 25:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 26:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 27:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 28:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 29:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 30:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 31:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 32:
+        chroma_interpolation_filter_one_d_vertical_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 33:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 34:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 35:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 36:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 37:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 38:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 39:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 40:
+        chroma_interpolation_filter_one_d_vertical_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 41:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 42:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 43:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 44:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 45:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 46:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 47:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 48:
+        chroma_interpolation_filter_one_d_vertical_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 49:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 50:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 51:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 52:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 53:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 54:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 55:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 56:
+        chroma_interpolation_filter_one_d_vertical_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 57:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 58:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 59:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 60:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 61:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 62:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 63:
+        chroma_interpolation_filter_two_d_ssse3(ref_pic, src_stride, dst, dst_stride, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    }
+}
+
+void bi_pred_chroma_if_helper(
+    EbByte               ref_pic,
+    uint32_t                src_stride,
+    int16_t               *dst,
+    uint32_t                pu_width,
+    uint32_t                pu_height,
+    int16_t               *first_pass_if_dst,
+    uint32_t                frac_pos_x,
+    uint32_t                frac_pos_y,
+    uint8_t             choice) {
+
+    switch (choice) {
+
+    case 0:
+        chroma_interpolation_copy_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 1:
+        chroma_interpolation_filter_one_d_out_raw_horizontal_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 2:
+        chroma_interpolation_filter_one_d_out_raw_horizontal_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 3:
+        chroma_interpolation_filter_one_d_out_raw_horizontal_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 4:
+        chroma_interpolation_filter_one_d_out_raw_horizontal_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 5:
+        chroma_interpolation_filter_one_d_out_raw_horizontal_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 6:
+        chroma_interpolation_filter_one_d_out_raw_horizontal_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 7:
+        chroma_interpolation_filter_one_d_out_raw_horizontal_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 8:
+        chroma_interpolation_filter_one_d_out_raw_vertical_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 9:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 10:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 11:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 12:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 13:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 14:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 15:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 16:
+        chroma_interpolation_filter_one_d_out_raw_vertical_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 17:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 18:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 19:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 20:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 21:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 22:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 23:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 24:
+        chroma_interpolation_filter_one_d_out_raw_vertical_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 25:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 26:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 27:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 28:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 29:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 30:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 31:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 32:
+        chroma_interpolation_filter_one_d_out_raw_vertical_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 33:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 34:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 35:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 36:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 37:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 38:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 39:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 40:
+        chroma_interpolation_filter_one_d_out_raw_vertical_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 41:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 42:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 43:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 44:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 45:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 46:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 47:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 48:
+        chroma_interpolation_filter_one_d_out_raw_vertical_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 49:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 50:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 51:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 52:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 53:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 54:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 55:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 56:
+        chroma_interpolation_filter_one_d_out_raw_vertical_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 57:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 58:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 59:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 60:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 61:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 62:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    case 63:
+        chroma_interpolation_filter_two_d_out_raw_ssse3(ref_pic, src_stride, dst, pu_width, pu_height, first_pass_if_dst, frac_pos_x, frac_pos_y); break;
+    }
+}

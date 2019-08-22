@@ -1088,6 +1088,9 @@ EB_API EbErrorType eb_init_encoder(EbComponentType *svt_enc_component)
 #if MEMORY_FOOTPRINT_OPT_ME_MV
         inputData.cdf_mode = enc_handle_ptr->sequence_control_set_instance_array[instance_index]->sequence_control_set_ptr->cdf_mode;
 #endif
+#if TEMPORAL_MVP
+        inputData.tmvp_on = enc_handle_ptr->sequence_control_set_instance_array[instance_index]->sequence_control_set_ptr->temporal_mvp_enabled;
+#endif
         return_error = eb_system_resource_ctor(
             &(enc_handle_ptr->picture_control_set_pool_ptr_array[instance_index]),
             enc_handle_ptr->sequence_control_set_instance_array[instance_index]->sequence_control_set_ptr->picture_control_set_pool_init_count_child, //EB_PictureControlSetPoolInitCountChild,
@@ -1149,6 +1152,9 @@ EB_API EbErrorType eb_init_encoder(EbComponentType *svt_enc_component)
         referencePictureBufferDescInitData.right_padding = PAD_VALUE;
         referencePictureBufferDescInitData.top_padding = PAD_VALUE;
         referencePictureBufferDescInitData.bot_padding = PAD_VALUE;
+#if TEMPORAL_MVP
+        referencePictureBufferDescInitData.tmvp_on = enc_handle_ptr->sequence_control_set_instance_array[instance_index]->sequence_control_set_ptr->temporal_mvp_enabled;
+#endif
 #if UNPACK_REF_POST_EP // constructor
         // Hsan: split_mode is set @ eb_reference_object_ctor() as both unpacked reference and packed reference are needed for a 10BIT input; unpacked reference @ MD, and packed reference @ EP
 #else
@@ -2299,6 +2305,11 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
         sequence_control_set_ptr->down_sampling_method_me_search = ME_DECIMATED_DOWNSAMPLED;
 #endif
 #endif
+
+#if TEMPORAL_MVP
+    sequence_control_set_ptr->temporal_mvp_enabled =  (uint8_t)(sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;
+#endif
+
 }
 
 void CopyApiFromApp(
@@ -3276,8 +3287,7 @@ static EbErrorType CopyFrameBuffer(
             input_picture_ptr->buffer_bit_inc_y + lumaBufferOffset,
             input_picture_ptr->stride_bit_inc_y,
             lumaWidth,
-            lumaHeight,
-            config->asm_type);
+            lumaHeight);
 
         un_pack2d(
             (uint16_t*)(inputPtr->cb + chromaOffset),
@@ -3287,8 +3297,7 @@ static EbErrorType CopyFrameBuffer(
             input_picture_ptr->buffer_bit_inc_cb + chromaBufferOffset,
             input_picture_ptr->stride_bit_inc_cb,
             chromaWidth,
-            (lumaHeight >> 1),
-            config->asm_type);
+            (lumaHeight >> 1));
 
         un_pack2d(
             (uint16_t*)(inputPtr->cr + chromaOffset),
@@ -3298,8 +3307,7 @@ static EbErrorType CopyFrameBuffer(
             input_picture_ptr->buffer_bit_inc_cr + chromaBufferOffset,
             input_picture_ptr->stride_bit_inc_cr,
             chromaWidth,
-            (lumaHeight >> 1),
-            config->asm_type);
+            (lumaHeight >> 1));
     }
     return return_error;
 }

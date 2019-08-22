@@ -578,7 +578,6 @@ static void Av1EncodeLoop(
             transformScratchBuffer,
             BIT_INCREMENT_8BIT,
             txb_ptr->transform_type[PLANE_TYPE_Y],
-            asm_type,
             PLANE_TYPE_Y,
 #if PF_N2_SUPPORT
             DEFAULT_SHAPE);
@@ -1000,7 +999,6 @@ static void Av1EncodeLoop(
             transformScratchBuffer,
             BIT_INCREMENT_8BIT,
             txb_ptr->transform_type[PLANE_TYPE_UV],
-            asm_type,
             PLANE_TYPE_UV,
 #if PF_N2_SUPPORT
             DEFAULT_SHAPE);
@@ -1077,7 +1075,6 @@ static void Av1EncodeLoop(
             transformScratchBuffer,
             BIT_INCREMENT_8BIT,
             txb_ptr->transform_type[PLANE_TYPE_UV],
-            asm_type,
             PLANE_TYPE_UV,
 #if PF_N2_SUPPORT
             DEFAULT_SHAPE);
@@ -1321,7 +1318,6 @@ static void Av1EncodeLoop16bit(
                 transformScratchBuffer,
                 BIT_INCREMENT_10BIT,
                 txb_ptr->transform_type[PLANE_TYPE_Y],
-                asm_type,
                 PLANE_TYPE_Y,
 #if PF_N2_SUPPORT
                 DEFAULT_SHAPE);
@@ -1544,7 +1540,6 @@ static void Av1EncodeLoop16bit(
                 transformScratchBuffer,
                 BIT_INCREMENT_10BIT,
                 txb_ptr->transform_type[PLANE_TYPE_UV],
-                asm_type,
                 PLANE_TYPE_UV,
 #if PF_N2_SUPPORT
                 DEFAULT_SHAPE);
@@ -1621,7 +1616,6 @@ static void Av1EncodeLoop16bit(
                 transformScratchBuffer,
                 BIT_INCREMENT_10BIT,
                 txb_ptr->transform_type[PLANE_TYPE_UV],
-                asm_type,
                 PLANE_TYPE_UV,
 #if PF_N2_SUPPORT
                 DEFAULT_SHAPE);
@@ -3074,6 +3068,43 @@ void perform_intra_coding_loop(
 }
 
 #endif
+
+#if TEMPORAL_MVP
+#define REFMVS_LIMIT ((1 << 12) - 1)
+
+void av1_copy_frame_mvs(PictureControlSet       *picture_control_set_ptr,const Av1Common *const cm,
+                        MB_MODE_INFO  mi, int mi_row, int mi_col,
+                        int x_mis, int y_mis, EbReferenceObject *object_ptr) {
+  const int frame_mvs_stride = ROUND_POWER_OF_TWO(cm->mi_cols, 1);
+  MV_REF *frame_mvs = object_ptr->mvs + (mi_row >> 1) * frame_mvs_stride + (mi_col >> 1);
+  x_mis = ROUND_POWER_OF_TWO(x_mis, 1);
+  y_mis = ROUND_POWER_OF_TWO(y_mis, 1);
+  int w, h;
+
+  for (h = 0; h < y_mis; h++) {
+    MV_REF *mv = frame_mvs;
+    for (w = 0; w < x_mis; w++) {
+      mv->ref_frame = NONE_FRAME;
+      mv->mv.as_int = 0;
+
+      for (int idx = 0; idx < 2; ++idx) {
+        MvReferenceFrame ref_frame = mi.ref_frame[idx];
+        if (ref_frame > INTRA_FRAME) {
+          int8_t ref_idx = picture_control_set_ptr->ref_frame_side[ref_frame];
+          if (ref_idx) continue;
+          if ((abs(mi.mv[idx].as_mv.row) > REFMVS_LIMIT) ||
+              (abs(mi.mv[idx].as_mv.col) > REFMVS_LIMIT))
+            continue;
+          mv->ref_frame = ref_frame;
+          mv->mv.as_int = mi.mv[idx].as_int;
+        }
+      }
+      mv++;
+    }
+    frame_mvs += frame_mvs_stride;
+  }
+}
+#endif
 /*******************************************
 * Encode Pass
 *
@@ -3265,8 +3296,7 @@ EB_EXTERN void av1_encode_pass(
                 (uint16_t *)context_ptr->input_sample16bit_buffer->buffer_y,
                 context_ptr->input_sample16bit_buffer->stride_y,
                 sb_width,
-                sb_height,
-                asm_type);
+                sb_height);
 
             compressed_pack_lcu(
                 inputPicture->buffer_cb + input_cb_offset,
@@ -3276,8 +3306,7 @@ EB_EXTERN void av1_encode_pass(
                 (uint16_t *)context_ptr->input_sample16bit_buffer->buffer_cb,
                 context_ptr->input_sample16bit_buffer->stride_cb,
                 sb_width >> 1,
-                sb_height >> 1,
-                asm_type);
+                sb_height >> 1);
 
             compressed_pack_lcu(
                 inputPicture->buffer_cr + input_cr_offset,
@@ -3287,8 +3316,7 @@ EB_EXTERN void av1_encode_pass(
                 (uint16_t *)context_ptr->input_sample16bit_buffer->buffer_cr,
                 context_ptr->input_sample16bit_buffer->stride_cr,
                 sb_width >> 1,
-                sb_height >> 1,
-                asm_type);
+                sb_height >> 1);
         }
         else {
             const uint32_t input_luma_offset = ((sb_origin_y + inputPicture->origin_y)         * inputPicture->stride_y) + (sb_origin_x + inputPicture->origin_x);
@@ -3306,8 +3334,7 @@ EB_EXTERN void av1_encode_pass(
                 (uint16_t *)context_ptr->input_sample16bit_buffer->buffer_y,
                 context_ptr->input_sample16bit_buffer->stride_y,
                 sb_width,
-                sb_height,
-                asm_type);
+                sb_height);
 
             pack2d_src(
                 inputPicture->buffer_cb + input_cb_offset,
@@ -3317,8 +3344,7 @@ EB_EXTERN void av1_encode_pass(
                 (uint16_t *)context_ptr->input_sample16bit_buffer->buffer_cb,
                 context_ptr->input_sample16bit_buffer->stride_cb,
                 sb_width >> 1,
-                sb_height >> 1,
-                asm_type);
+                sb_height >> 1);
 
             pack2d_src(
                 inputPicture->buffer_cr + input_cr_offset,
@@ -3328,8 +3354,7 @@ EB_EXTERN void av1_encode_pass(
                 (uint16_t *)context_ptr->input_sample16bit_buffer->buffer_cr,
                 context_ptr->input_sample16bit_buffer->stride_cr,
                 sb_width >> 1,
-                sb_height >> 1,
-                asm_type);
+                sb_height >> 1);
         }
 
         Store16bitInputSrc(context_ptr, picture_control_set_ptr, sb_origin_x, sb_origin_y, sb_width, sb_height);
@@ -3722,8 +3747,7 @@ EB_EXTERN void av1_encode_pass(
                                         recon_buffer,
                                         context_ptr->cu_origin_x,
                                         context_ptr->cu_origin_y,
-                                        (uint8_t)sequence_control_set_ptr->static_config.encoder_bit_depth,
-                                        asm_type);
+                                        (uint8_t)sequence_control_set_ptr->static_config.encoder_bit_depth);
                                 else
                                 av1_inter_prediction(
                                     picture_control_set_ptr,
@@ -3758,8 +3782,7 @@ EB_EXTERN void av1_encode_pass(
                                     recon_buffer,
                                     context_ptr->cu_origin_x,
                                     context_ptr->cu_origin_y,
-                                    EB_TRUE,
-                                    asm_type);
+                                    EB_TRUE);
                             }
                             else
                             {
@@ -4278,8 +4301,7 @@ EB_EXTERN void av1_encode_pass(
                                 context_ptr->cu_origin_y,
                                 &cu_ptr->prediction_unit_array[0].wm_params,
                                 (uint8_t) sequence_control_set_ptr->static_config.encoder_bit_depth,
-                                EB_TRUE,
-                                asm_type);
+                                EB_TRUE);
 #if TWO_PASS
                             if (cu_ptr->prediction_unit_array->ref_frame_index_l0 >= 0) {
                                 eb_block_on_mutex(refObj0->referenced_area_mutex);
@@ -4400,8 +4422,7 @@ EB_EXTERN void av1_encode_pass(
                                     recon_buffer,
                                     context_ptr->cu_origin_x,
                                     context_ptr->cu_origin_y,
-                                    (uint8_t)sequence_control_set_ptr->static_config.encoder_bit_depth,
-                                    asm_type);
+                                    (uint8_t)sequence_control_set_ptr->static_config.encoder_bit_depth);
                             } else {
 
 #if TWO_PASS
@@ -4535,8 +4556,7 @@ EB_EXTERN void av1_encode_pass(
                                     recon_buffer,
                                     context_ptr->cu_origin_x,
                                     context_ptr->cu_origin_y,
-                                    EB_TRUE,
-                                    asm_type);
+                                    EB_TRUE);
                             }
                         }
                     }
@@ -4729,8 +4749,7 @@ EB_EXTERN void av1_encode_pass(
                                         eobs[context_ptr->txb_itr][0],
                                         0,
                                         0,
-                                        COMPONENT_LUMA,
-                                        asm_type);
+                                        COMPONENT_LUMA);
 #if ATB_SUPPORT
                                 TxSize  txSize = blk_geom->txsize[cu_ptr->tx_depth][context_ptr->txb_itr];
 #else
@@ -5394,6 +5413,31 @@ EB_EXTERN void av1_encode_pass(
 
                     move_cu_data(src_cu, dst_cu);
                 }
+
+
+
+
+#if TEMPORAL_MVP
+                if (sequence_control_set_ptr->temporal_mvp_enabled && picture_control_set_ptr->slice_type != I_SLICE && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) {
+#if INCOMPLETE_SB_FIX
+                    uint32_t mi_stride = picture_control_set_ptr->mi_stride;
+#else
+                    uint32_t mi_stride = picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->picture_width_in_sb*(BLOCK_SIZE_64 >> MI_SIZE_LOG2);
+#endif
+                    int32_t mi_row = context_ptr->cu_origin_y >> MI_SIZE_LOG2;
+                    int32_t mi_col = context_ptr->cu_origin_x >> MI_SIZE_LOG2;
+                    const int32_t offset = mi_row * mi_stride + mi_col;
+                    ModeInfo *miPtr = *(picture_control_set_ptr->mi_grid_base + offset);
+                    const int x_mis = AOMMIN(context_ptr->blk_geom->bwidth, picture_control_set_ptr->parent_pcs_ptr->av1_cm->mi_cols - mi_col);
+                    const int y_mis = AOMMIN(context_ptr->blk_geom->bheight, picture_control_set_ptr->parent_pcs_ptr->av1_cm->mi_rows - mi_row);
+                    EbReferenceObject *obj_l0 = (EbReferenceObject*)picture_control_set_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr->object_ptr;
+
+                    av1_copy_frame_mvs(picture_control_set_ptr, picture_control_set_ptr->parent_pcs_ptr->av1_cm , miPtr->mbmi,
+                        mi_row, mi_col, x_mis, y_mis, obj_l0);
+                }
+#endif
+
+
             }
             blk_it += ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][context_ptr->blk_geom->depth];
         }

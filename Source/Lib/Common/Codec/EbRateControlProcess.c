@@ -3592,6 +3592,12 @@ static int adaptive_qindex_calc(
         if (picture_control_set_ptr->parent_pcs_ptr->kf_zeromotion_pct >= STATIC_KF_GROUP_THRESH)
             active_best_quality /= 3;
 #endif
+#if 0//TWO_PASS
+        if (picture_control_set_ptr->parent_pcs_ptr->qp_scaling_average_complexity <= LOW_QPS_COMP_THRESHOLD &&
+            picture_control_set_ptr->parent_pcs_ptr->filtered_sse < LOW_FILTERED_THRESHOLD && picture_control_set_ptr->parent_pcs_ptr->filtered_sse_uv < LOW_FILTERED_THRESHOLD &&
+            picture_control_set_ptr->parent_pcs_ptr->kf_zeromotion_pct > STATIC_KF_GROUP_THRESH)
+            active_best_quality = active_best_quality*70 /100;
+#endif
         // Allow somewhat lower kf minq with small image formats.
         if ((cm->width * cm->height) <= (352 * 288))
             q_adj_factor -= 0.25;
@@ -3631,8 +3637,9 @@ static int adaptive_qindex_calc(
             referenced_area_max = 30;
             if (picture_control_set_ptr->parent_pcs_ptr->qp_scaling_average_complexity > HIGH_QPS_COMP_THRESHOLD)
                 referenced_area_avg = 0;
-            rc->arf_boost_factor = ((int)referenced_area_avg - (int)rc->kf_referenced_area_avg >= 10 && referenced_area_avg > 24 && rc->kf_referenced_area_avg < 20)? (float_t)1.3 : (float_t)1.0;
-              rc->gfu_boost = (int)(((referenced_area_avg)  * (gf_high - gf_low)) / referenced_area_max) + gf_low;
+            rc->arf_boost_factor = ((int)referenced_area_avg - (int)picture_control_set_ptr->ref_pic_referenced_area_avg_array[0][0] >= 6 && referenced_area_avg > 20 && picture_control_set_ptr->ref_pic_referenced_area_avg_array[0][0] < 24) ? (float_t)1.3 : (float_t)1;
+            rc->gfu_boost = (int)(((referenced_area_avg)  * (gf_high - gf_low)) / referenced_area_max) + gf_low;
+
         }
 #endif
         q = active_worst_quality;
@@ -3650,13 +3657,31 @@ static int adaptive_qindex_calc(
                 const int boost = min_boost - active_best_quality;
 
                 active_best_quality = min_boost - (int)(boost * rc->arf_boost_factor);
+#if TWO_PASS
+                if (sequence_control_set_ptr->static_config.use_input_stat_file) {
+                    if (picture_control_set_ptr->parent_pcs_ptr->sad_me / picture_control_set_ptr->sb_total_count / 256 < 15)
+                        active_best_quality = active_best_quality * 130 / 100;
+                    else if (picture_control_set_ptr->parent_pcs_ptr->sad_me / picture_control_set_ptr->sb_total_count / 256 < 25)
+                        active_best_quality = active_best_quality * 115 / 100;
+                }
+#endif
             }
             else
                 active_best_quality = rc->arf_q;
 #if ADAPTIVE_QP_SCALING
             // active_best_quality is updated with the q index of the reference
             if (rf_level == GF_ARF_LOW)
+#if 0//TWO_PASS
+            {
+                int c1, c2;
+                c1 = 1;
+                c2 = 1;
+
+                active_best_quality = (c1*active_best_quality + c2 * cq_level + (c1 + c2) / 2) / (c1 + c2);
+            }
+#else
                 active_best_quality = (active_best_quality + cq_level + 1) / 2;
+#endif
 #else
             // non Based Ref frames && !P
             if (new_bwdref_update_rule && is_intrl_arf_boost) {
@@ -3692,7 +3717,8 @@ static void sb_qp_derivation(
     RATE_CONTROL               rc;
     picture_control_set_ptr->parent_pcs_ptr->average_qp = 0;
 #if TWO_PASS
-    if (picture_control_set_ptr->temporal_layer_index == 0 && picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH &&
+    if (((sequence_control_set_ptr->static_config.use_input_stat_file && picture_control_set_ptr->temporal_layer_index <= 0) || picture_control_set_ptr->slice_type == 2) &&
+         picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH &&
         !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && !sequence_control_set_ptr->static_config.use_output_stat_file)
 #else
 #if DISABLE_QPM_SC
@@ -3727,7 +3753,9 @@ static void sb_qp_derivation(
         uint64_t referenced_area_avg = 0;
         uint64_t referenced_area_has_non_zero = 0;
         uint64_t referenced_area_max = 64;
-        int max_delta_qp = ((kf_high_motion_minq[active_worst_quality] - kf_low_motion_minq[active_worst_quality] + 2) >> 2) / 2;
+        int max_delta_qp = (picture_control_set_ptr->slice_type == 2) ?
+            ((kf_high_motion_minq[active_worst_quality] - kf_low_motion_minq[active_worst_quality] + 2) >> 2) / 2 :
+            ((arfgf_high_motion_minq[active_worst_quality] - arfgf_low_motion_minq[active_worst_quality] + 2) >> 2) / 2;
         if (sequence_control_set_ptr->static_config.use_input_stat_file /*&& sb_params->is_complete_sb*/) {
             for (sb_addr = 0; sb_addr < sequence_control_set_ptr->sb_total_count; ++sb_addr) {
                 referenced_area_has_non_zero += picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[sb_addr];
@@ -3769,7 +3797,7 @@ static void sb_qp_derivation(
             uint8_t non_moving_index_sb;
             uint16_t variance_sb;
 #if TWO_PASS
-            uint32_t referenced_area_sb;
+            uint32_t referenced_area_sb, me_distortion;
 #endif
             if ( sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128) {
                 uint32_t me_sb_x = (sb_ptr->origin_x / me_sb_size);
@@ -3790,42 +3818,52 @@ static void sb_qp_derivation(
                         picture_control_set_ptr->parent_pcs_ptr->variance[me_sb_addr_3][ME_TIER_ZERO_PU_64x64] + 2) >> 2;
 #if TWO_PASS
                 referenced_area_sb =
-                    (picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[me_sb_addr_0] +
-                        picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[me_sb_addr_1] +
-                        picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[me_sb_addr_2] +
-                        picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[me_sb_addr_3] + 2) >> 2;
-                referenced_area_sb = referenced_area_sb / 64 / 64;
+                    (picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[me_sb_addr_0]/  sequence_control_set_ptr->sb_params_array[me_sb_addr_0].width / sequence_control_set_ptr->sb_params_array[me_sb_addr_0].height +
+                        picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[me_sb_addr_1] / sequence_control_set_ptr->sb_params_array[me_sb_addr_1].width / sequence_control_set_ptr->sb_params_array[me_sb_addr_1].height +
+                        picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[me_sb_addr_2] / sequence_control_set_ptr->sb_params_array[me_sb_addr_2].width / sequence_control_set_ptr->sb_params_array[me_sb_addr_2].height +
+                        picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[me_sb_addr_3] / sequence_control_set_ptr->sb_params_array[me_sb_addr_3].width / sequence_control_set_ptr->sb_params_array[me_sb_addr_3].height + 2) >> 2;
+
+                me_distortion =
+                    (picture_control_set_ptr->parent_pcs_ptr->rc_me_distortion[me_sb_addr_0] +
+                        picture_control_set_ptr->parent_pcs_ptr->rc_me_distortion[me_sb_addr_1] +
+                        picture_control_set_ptr->parent_pcs_ptr->rc_me_distortion[me_sb_addr_2] +
+                        picture_control_set_ptr->parent_pcs_ptr->rc_me_distortion[me_sb_addr_3] + 2) >> 2;
+                me_distortion >>= 8; 
 #endif
             }
             else {
                 non_moving_index_sb = picture_control_set_ptr->parent_pcs_ptr->non_moving_index_array[sb_addr];
                 variance_sb         = picture_control_set_ptr->parent_pcs_ptr->variance[sb_addr][ME_TIER_ZERO_PU_64x64];
 #if TWO_PASS
-                referenced_area_sb = picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[sb_addr] / 64 / 64;// sequence_control_set_ptr->sb_params_array[sb_addr].width / sequence_control_set_ptr->sb_params_array[sb_addr].height;
+                referenced_area_sb = picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[sb_addr] /  sequence_control_set_ptr->sb_params_array[sb_addr].width / sequence_control_set_ptr->sb_params_array[sb_addr].height;
+                me_distortion = picture_control_set_ptr->parent_pcs_ptr->rc_me_distortion[sb_addr]>> 8;
 #endif
             }
 #if TWO_PASS
             if (sequence_control_set_ptr->static_config.use_input_stat_file && referenced_area_has_non_zero) {
                 delta_qp = 0;
-                if (picture_control_set_ptr->slice_type == 2) {
-                    if (referenced_area_sb > 40)
-                        delta_qp = -max_delta_qp;
-                    if (referenced_area_sb > 32)
-                        delta_qp = -(max_delta_qp + 1) / 2;
-                    else if (referenced_area_sb > 16)
-                        delta_qp = 0;
-                    else if (referenced_area_sb > 8)
-                        delta_qp = (max_delta_qp + 1) / 2;
+                if (picture_control_set_ptr->slice_type == 2 ) {
+                    referenced_area_sb = MIN(24, referenced_area_sb);
+                    if(referenced_area_sb >= 16)
+                        delta_qp = -(max_delta_qp * ((int)referenced_area_sb - 16) / (32 - 16));
                     else
-                        delta_qp = max_delta_qp ;
-                }
-                else if(referenced_area_avg != 0 && sb_params->is_complete_sb){
-                    if (referenced_area_sb < 16)
                         delta_qp = max_delta_qp;
-                    else if (referenced_area_sb < 32 && referenced_area_sb < referenced_area_avg )
-                        delta_qp = (max_delta_qp + 1) / 2;
-                    else if (referenced_area_sb  > 60)
-                        delta_qp = -max_delta_qp;
+
+                    if (delta_qp < 0 && variance_sb < IS_COMPLEX_LCU_FLAT_VARIANCE_TH)
+                        delta_qp = 0;
+
+                }
+                else if(picture_control_set_ptr->temporal_layer_index == 0 && (referenced_area_avg != 0)){
+                    if (referenced_area_sb < 8)
+                         delta_qp = max_delta_qp/2;
+                    else if (referenced_area_sb > 30 && me_distortion > 80)
+                        delta_qp = -max_delta_qp/4;
+                }
+                else {
+                    if (referenced_area_sb < 6 && picture_control_set_ptr->temporal_layer_index == 1 )
+                        delta_qp = max_delta_qp;
+/*                    else if (referenced_area_sb < 4 && picture_control_set_ptr->temporal_layer_index == 2)
+                        delta_qp = max_delta_qp*/;
                 }
             }
             else
@@ -3855,10 +3893,15 @@ static void sb_qp_derivation(
                     MIN(picture_control_set_ptr->parent_pcs_ptr->picture_qp, ((kf_low_motion_minq[active_worst_quality] + 2) >> 2)),
                     MAX(picture_control_set_ptr->parent_pcs_ptr->picture_qp, ((kf_high_motion_minq[active_worst_quality] + 2) >> 2))+3,
                     ((int16_t)picture_control_set_ptr->parent_pcs_ptr->picture_qp + (int16_t)delta_qp));
-            else
+            else if (picture_control_set_ptr->temporal_layer_index == 0)
                 sb_ptr->qp = CLIP3(
-                    MIN(picture_control_set_ptr->parent_pcs_ptr->picture_qp,((arfgf_low_motion_minq[active_worst_quality] + 2) >> 2)) - 2,
+                    MIN(picture_control_set_ptr->parent_pcs_ptr->picture_qp,((arfgf_low_motion_minq[active_worst_quality] + 2) >> 2)) - 1,
                     MAX(picture_control_set_ptr->parent_pcs_ptr->picture_qp, ((arfgf_high_motion_minq[active_worst_quality] + 2) >> 2)) + 3,
+                    ((int16_t)picture_control_set_ptr->parent_pcs_ptr->picture_qp + (int16_t)delta_qp));
+            else 
+                sb_ptr->qp = CLIP3(
+                    0,
+                    63,
                     ((int16_t)picture_control_set_ptr->parent_pcs_ptr->picture_qp + (int16_t)delta_qp));
 
 #else
@@ -3946,6 +3989,20 @@ void* rate_control_kernel(void *input_ptr)
                     picture_control_set_ptr,
                     sequence_control_set_ptr);
             }
+#if TWO_PASS
+            // LCU Loop
+            picture_control_set_ptr->parent_pcs_ptr->sad_me = 0;
+            if (picture_control_set_ptr->slice_type != 2) {
+                for (int sb_addr = 0; sb_addr < picture_control_set_ptr->sb_total_count; ++sb_addr) {
+                    picture_control_set_ptr->parent_pcs_ptr->sad_me += picture_control_set_ptr->parent_pcs_ptr->rc_me_distortion[sb_addr];
+                }
+                printf("POC:%d\tCOMP:%d\tREFArea:%d\n",
+                    picture_control_set_ptr->parent_pcs_ptr->picture_number,
+                    picture_control_set_ptr->parent_pcs_ptr->sad_me / picture_control_set_ptr->sb_total_count / 256,
+                    picture_control_set_ptr->parent_pcs_ptr->referenced_area_avg
+                );
+            }
+#endif
             if (sequence_control_set_ptr->static_config.rate_control_mode)
             {
                 picture_control_set_ptr->parent_pcs_ptr->intra_selected_org_qp = 0;

@@ -299,6 +299,9 @@ extern "C" {
 #if DOWN_SAMPLING_FILTERING
         EbBool            down_sampled_filtered;
 #endif
+#if TEMPORAL_MVP
+        uint8_t            tmvp_on;
+#endif
     } EbPictureBufferDescInitData;
 
     /**************************************

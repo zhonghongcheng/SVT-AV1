@@ -33,6 +33,8 @@
 #include "av1me.h"
 #include "EbTemporalFiltering_sse4.h"
 
+#include "aom_dsp_rtcd.h"
+
 #if ALTREF_FILTERING_SUPPORT
 #undef _MM_HINT_T2
 #define _MM_HINT_T2  1
@@ -54,35 +56,6 @@ static const uint32_t subblocks_from32x32_to_16x16[N_16X16_BLOCKS] = { 0, 0, 1, 
 static const uint32_t index_16x16_from_subindexes[4][4] = { {0, 1, 4, 5}, {2, 3, 6, 7}, {8, 9, 12, 13}, {10, 11, 14, 15} };
 
 extern aom_variance_fn_ptr_t mefn_ptr[BlockSizeS_ALL];
-
-typedef void(*TempFilteringType)(const uint8_t *y_src,
-                                 int y_src_stride,
-                                 const uint8_t *y_pre,
-                                 int y_pre_stride,
-                                 const uint8_t *u_src,
-                                 const uint8_t *v_src,
-                                 int uv_src_stride,
-                                 const uint8_t *u_pre,
-                                 const uint8_t *v_pre,
-                                 int uv_pre_stride,
-                                 unsigned int block_width,
-                                 unsigned int block_height,
-                                 int ss_x,
-                                 int ss_y,
-#if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
-                                 int strength_y,
-                                 int strength_uv,
-#else
-                                 int strength,
-#endif
-                                 const int *blk_fw,
-                                 int use_whole_blk,
-                                 uint32_t *y_accum,
-                                 uint16_t *y_count,
-                                 uint32_t *u_accum,
-                                 uint16_t *u_count,
-                                 uint32_t *v_accum,
-                                 uint16_t *v_count);
 
 void apply_filtering_c(const uint8_t *y_src,
                        int y_src_stride,
@@ -112,13 +85,6 @@ void apply_filtering_c(const uint8_t *y_src,
                        uint16_t *u_count,
                        uint32_t *v_accum,
                        uint16_t *v_count);
-
-static TempFilteringType FUNC_TABLE apply_temp_filtering_32x32_func_ptr_array[ASM_TYPE_TOTAL] = {
-        // NON_SIMD
-        apply_filtering_c,
-        // SSE4
-        av1_apply_temporal_filter_sse4_1
-};
 
 // save YUV to file - auxiliary function for debug
 void save_YUV_to_file(char *filename, EbByte buffer_y, EbByte buffer_u, EbByte buffer_v,
@@ -679,8 +645,7 @@ void apply_filtering_block(int block_row,
 #else
                            int altref_strength,
 #endif
-                           const int *blk_fw,
-                           EbAsm asm_type) {
+                           const int *blk_fw) {
     int offset_src_buffer_Y = block_row * (BH>>1) * stride[C_Y] + block_col * (BW>>1);
     int offset_src_buffer_U = block_row * (BH>>2) * stride[C_U] + block_col * (BW>>2);
     int offset_src_buffer_V = block_row * (BH>>2) * stride[C_V] + block_col * (BW>>2);
@@ -720,10 +685,8 @@ void apply_filtering_block(int block_row,
     count_ptr[C_U] = count[C_U] + offset_block_buffer_U;
     count_ptr[C_V] = count[C_V] + offset_block_buffer_V;
 
-    TempFilteringType apply_32x32_temp_filter_fn = apply_temp_filtering_32x32_func_ptr_array[asm_type];
-
     // Apply the temporal filtering strategy
-    apply_32x32_temp_filter_fn(src_ptr[C_Y],
+    apply_32x32_temporal_filtering(src_ptr[C_Y],
                                stride[C_Y],
                                pred_ptr[C_Y],
                                stride_pred[C_Y],
@@ -831,8 +794,7 @@ EbErrorType av1_inter_prediction(
     EbPictureBufferDesc                  *prediction_ptr,
     uint16_t                             dst_origin_x,
     uint16_t                             dst_origin_y,
-    EbBool                               perform_chroma,
-    EbAsm                                asm_type);
+    EbBool                               perform_chroma);
 
 uint32_t get_mds_idx(uint32_t  org_x, uint32_t  org_y, int32_t  size, uint32_t use_128x128);
 
@@ -848,8 +810,7 @@ void tf_inter_prediction(
 #endif
     uint32_t sb_origin_x,
     uint32_t sb_origin_y,
-    int* use_16x16_subblocks,
-    EbAsm asm_type)
+    int* use_16x16_subblocks)
 {
     const InterpFilters interp_filters =
         av1_make_interp_filters(MULTITAP_SHARP, MULTITAP_SHARP);
@@ -944,8 +905,8 @@ void tf_inter_prediction(
                             &prediction_ptr,
                             local_origin_x,
                             local_origin_y,
-                            1,//perform_chroma,
-                            asm_type);
+                            1 //perform_chroma,
+                            );
 
 
                         uint8_t *pred_Y_ptr = pred[C_Y] + 16 * idx_y*stride_pred[C_Y] + 16 * idx_x;
@@ -999,8 +960,8 @@ void tf_inter_prediction(
                     &prediction_ptr,
                     local_origin_x,
                     local_origin_y,
-                    1,//perform_chroma,
-                    asm_type);
+                    1 //perform_chroma,
+                    );
 
 #else
                 av1_inter_prediction(
@@ -1025,8 +986,8 @@ void tf_inter_prediction(
                     &prediction_ptr,
                     local_origin_x,
                     local_origin_y,
-                    1,//perform_chroma,
-                    asm_type);
+                    1 //perform_chroma,
+                    );
 #endif
             }
         }
@@ -1249,8 +1210,8 @@ void uni_motion_compensation(MeContext* context_ptr,
                                          interpolated_full_stride_ch,
                                          search_area_width_ch,
                                          search_area_height_ch,
-                                         8, // bit depth
-                                         0);
+                                         8 // bit depth
+                                         );
 
     // ----- Loop over all sub-blocks -----
 
@@ -1559,8 +1520,7 @@ static EbErrorType produce_temporally_filtered_pic(
 #endif
                         (uint32_t)blk_col*BW,
                         (uint32_t)blk_row*BH,
-                        use_16x16_subblocks,
-                        asm_type);
+                        use_16x16_subblocks);
 #else
                     uni_motion_compensation(context_ptr,
                                         list_input_picture_ptr[frame_index],
@@ -1679,8 +1639,7 @@ static EbErrorType produce_temporally_filtered_pic(
 #else
                                                   altref_strength,
 #endif
-                                                  blk_fw,
-                                                  asm_type);
+                                                  blk_fw);
                         }
                     }
                 }

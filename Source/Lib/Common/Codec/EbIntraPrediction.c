@@ -579,7 +579,7 @@ void intra_mode_planar(
     }
 }
 /* clang-format on */
-void ebav1_smooth_v_predictor(
+void ebav1_smooth_v_predictor_c(
     const uint32_t   size,                       //input parameter, denotes the size of the current PU
     uint8_t         *ref_samples,                 //input parameter, pointer to the reference samples
     uint8_t         *dst,              //output parameter, pointer to the prediction
@@ -616,7 +616,7 @@ void ebav1_smooth_v_predictor(
     }
     return;
 }
-void ebav1_smooth_h_predictor(
+void ebav1_smooth_h_predictor_c(
     const uint32_t   size,                       //input parameter, denotes the size of the current PU
     uint8_t         *ref_samples,                 //input parameter, pointer to the reference samples
     uint8_t         *dst,              //output parameter, pointer to the prediction
@@ -4536,10 +4536,8 @@ is the main function to compute intra prediction for a PU
 EbErrorType av1_intra_prediction_cl(
     ModeDecisionContext                  *md_context_ptr,
     PictureControlSet                    *picture_control_set_ptr,
-    ModeDecisionCandidateBuffer           *candidate_buffer_ptr,
-    EbAsm                                  asm_type)
+    ModeDecisionCandidateBuffer           *candidate_buffer_ptr)
 {
-    (void)asm_type;
     EbErrorType return_error = EB_ErrorNone;
 
     uint32_t modeTypeLeftNeighborIndex = get_neighbor_array_unit_left_index(

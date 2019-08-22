@@ -34,6 +34,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define TEMPORAL_MVP                    1// Temporal mvp support. aka. MFMV
+
 #define TWO_PASS                        0
 #define INCOMPLETE_SB_ASSERT            0 //add an assert to link incomplete SBs to usage of root-CBF skip decision in MD
 
@@ -2693,8 +2696,11 @@ object_ptr is a EbPtr to the object being constructed.
 */
 typedef void(*EbDtor)(
     EbPtr object_ptr);
-
+#if TEMPORAL_MVP
+#define INVALID_MV           0x80008000
+#else
 #define INVALID_MV            0xFFFFFFFF    //ICOPY They changed this to 0x80008000
+#endif
 #define BLKSIZE 64
 
 /***************************************
@@ -4300,8 +4306,8 @@ static const uint16_t search_area_width[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPP
 #endif
     } , {
 #if NEW_M0_SC
-        {960 ,  640,  640,  288,  288,  168,  128,  128,   64,   80,   80,    80,   80 },
-        {960 ,  640,  640,  288,  288,  168,  128,  128,   64,   80,   80,    80,   80 },
+        {480 ,  480,  480,  144,  144,   88,   48,   48,   48,   48,   48,    48,   48 },
+        {480 ,  480,  480,  144,  144,   88,   48,   48,   48,   48,   48,    48,   48 },
         {960 ,  640,  640,  288,  288,  168,  128,  128,   64,   80,   80,    80,   80 },
         {960 ,  640,  640,  288,  288,  168,  128,  128,   64,   80,   80,    80,   80 }
 #else
@@ -4333,8 +4339,8 @@ static const uint16_t search_area_height[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUP
 #endif
     } , {
 #if NEW_M0_SC
-        {960 ,  640,  640,  288,  288,  168,   80,   80,   48,   80,   80,    80,   80 },
-        {960 ,  640,  640,  288,  288,  168,   80,   80,   48,   80,   80,    80,   80 },
+        {480 ,  480,  480,  144,  144,   88,   48,   48,   48,   48,   48,    48,   48 },
+        {480 ,  480,  480,  144,  144,   88,   48,   48,   48,   48,   48,    48,   48 },
         {960 ,  640,  640,  288,  288,  168,   80,   80,   48,   80,   80,    80,   80 },
         {960 ,  640,  640,  288,  288,  168,   80,   80,   48,   80,   80,    80,   80 }
 #else

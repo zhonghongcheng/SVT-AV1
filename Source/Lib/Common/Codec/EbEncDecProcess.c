@@ -1074,8 +1074,7 @@ void PadRefAndSetFlags(
             refPicPtr->buffer_bit_inc_y,
             refPicPtr->stride_bit_inc_y,
             refPic16BitPtr->width  + (refPicPtr->origin_x << 1),
-            refPic16BitPtr->height + (refPicPtr->origin_y << 1),
-            sequence_control_set_ptr->static_config.asm_type);
+            refPic16BitPtr->height + (refPicPtr->origin_y << 1));
 
         un_pack2d(
             (uint16_t*)refPic16BitPtr->buffer_cb,
@@ -1085,8 +1084,7 @@ void PadRefAndSetFlags(
             refPicPtr->buffer_bit_inc_cb,
             refPicPtr->stride_bit_inc_cb,
             (refPic16BitPtr->width + (refPicPtr->origin_x << 1)) >> 1,
-            (refPic16BitPtr->height + (refPicPtr->origin_y << 1)) >> 1,
-            sequence_control_set_ptr->static_config.asm_type);
+            (refPic16BitPtr->height + (refPicPtr->origin_y << 1)) >> 1);
 
         un_pack2d(
             (uint16_t*)refPic16BitPtr->buffer_cr,
@@ -1096,8 +1094,7 @@ void PadRefAndSetFlags(
             refPicPtr->buffer_bit_inc_cr,
             refPicPtr->stride_bit_inc_cr,
             (refPic16BitPtr->width + (refPicPtr->origin_x << 1)) >> 1,
-            (refPic16BitPtr->height + (refPicPtr->origin_y << 1)) >> 1,
-            sequence_control_set_ptr->static_config.asm_type);
+            (refPic16BitPtr->height + (refPicPtr->origin_y << 1)) >> 1);
 #endif
     }
 #if !OPT_LOSSLESS_1
@@ -1120,6 +1117,8 @@ void PadRefAndSetFlags(
     referenceObject->slice_type = picture_control_set_ptr->parent_pcs_ptr->slice_type;
 
 #if TWO_PASS
+   referenceObject->referenced_area_avg = picture_control_set_ptr->parent_pcs_ptr->referenced_area_avg;
+
     memset(&referenceObject->stat_struct, 0, sizeof(stat_struct_t));
 #endif
 }
@@ -1161,6 +1160,13 @@ void CopyStatisticsToRefObject(
 
     Av1Common* cm = picture_control_set_ptr->parent_pcs_ptr->av1_cm;
     ((EbReferenceObject*)picture_control_set_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr->object_ptr)->sg_frame_ep = cm->sg_frame_ep;
+#if TEMPORAL_MVP
+    if (sequence_control_set_ptr->temporal_mvp_enabled) {
+        ((EbReferenceObject*)picture_control_set_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr->object_ptr)->av1_frame_type = picture_control_set_ptr->parent_pcs_ptr->av1_frame_type;
+        ((EbReferenceObject*)picture_control_set_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr->object_ptr)->order_hint = picture_control_set_ptr->parent_pcs_ptr->cur_order_hint;
+        memcpy(((EbReferenceObject*)picture_control_set_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr->object_ptr)->ref_order_hint, picture_control_set_ptr->parent_pcs_ptr->ref_order_hint, 7 * sizeof(uint32_t));
+    }
+#endif
 }
 
 #if !MEMORY_FOOTPRINT_OPT
