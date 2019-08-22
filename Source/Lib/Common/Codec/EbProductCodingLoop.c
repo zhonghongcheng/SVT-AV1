@@ -1151,7 +1151,11 @@ int sq_block_index[TOTAL_SQ_BLOCK_COUNT] = {
     1099,
     1100
 };
+#if BYPASSED_RED_CU_IF_SQ_ONLY
+void init_sq_nsq_block(
+#else
 void init_nsq_block(
+#endif
     SequenceControlSet    *sequence_control_set_ptr,
     ModeDecisionContext   *context_ptr){
     uint32_t blk_idx = 0;
@@ -9751,13 +9755,30 @@ EB_EXTERN EbErrorType mode_decision_sb(
         context_ptr,
         sb_ptr);
 #endif
+
+#if BYPASSED_RED_CU_IF_SQ_ONLY
+#if ADP_BQ
+    EbBool all_cu_init = (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode <= PIC_SQ_DEPTH_MODE || picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE);
+#else
+    EbBool all_cu_init = (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode <= PIC_SQ_DEPTH_MODE);
+#endif
+#endif
+
 #if OPT_LOSSLESS_0
+#if BYPASSED_RED_CU_IF_SQ_ONLY
+    if(all_cu_init) {
+#else
 #if ADP_BQ
     if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode <= PIC_SQ_DEPTH_MODE || picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE) {
 #else
     if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode <= PIC_SQ_DEPTH_MODE) {
 #endif
+#endif
+#if BYPASSED_RED_CU_IF_SQ_ONLY
+        init_sq_nsq_block(
+#else
         init_nsq_block(
+#endif
             sequence_control_set_ptr,
             context_ptr);
     }
@@ -9925,7 +9946,9 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #if RED_CU
         uint8_t redundant_blk_avail = 0;
         uint16_t redundant_blk_mds;
-
+#if BYPASSED_RED_CU_IF_SQ_ONLY
+        if (all_cu_init)
+#endif
         check_redundant_block(blk_geom, context_ptr, &redundant_blk_avail, &redundant_blk_mds);
 
         if (redundant_blk_avail && context_ptr->redundant_blk)

@@ -90,6 +90,7 @@ extern "C" {
 #define SHUT_TX_SIZE_RATE               1 // To fix a bug @ tx size rate estimation
 #define VALGRIND_FIX                    1 // Fixed a valgrind error
 #define ABILITY_TO_SKIP_TX_SEARCH_ATB   1
+#define BYPASSED_RED_CU_IF_SQ_ONLY      1 // As red cu info not initialized if 85 sq only
 #endif
 #define ENABLE_CDF_UPDATE               1 // Added the support for end of frame CDF update.
 
