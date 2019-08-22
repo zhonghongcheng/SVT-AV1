@@ -27,6 +27,7 @@
 #define LIKELY(v) (v)
 #define UNLIKELY(v) (v)
 #endif
+#if !ADD_MDC_FULL_COST
 static PartitionType from_shape_to_part[] =
 {
 PARTITION_NONE,
@@ -40,6 +41,7 @@ PARTITION_HORZ_4,
 PARTITION_VERT_4,
 PARTITION_SPLIT
 };
+#endif
 void quantize_b_helper_c_II(const TranLow *coeff_ptr, intptr_t n_coeffs,
     int32_t skip_block, const int16_t *zbin_ptr,
     const int16_t *round_ptr, const int16_t *quant_ptr,
@@ -4328,6 +4330,9 @@ EbBool merge_1D_inter_block(
 #endif
 void  d1_non_square_block_decision(
     ModeDecisionContext               *context_ptr
+#if ADD_SUPPORT_TO_SKIP_PART_N
+    ,uint32_t                         d1_block_itr
+#endif
 )
 {
     //compute total cost for the whole block partition
@@ -4368,7 +4373,11 @@ void  d1_non_square_block_decision(
 #endif
 #if IMPROVE_1D_INTER_DEPTH_DECISION
     if (merge_block_cnt == context_ptr->blk_geom->totns) merge_block_flag = EB_TRUE;
+#if ADD_SUPPORT_TO_SKIP_PART_N
+    if (d1_block_itr == 0 || (tot_cost < context_ptr->md_local_cu_unit[context_ptr->blk_geom->sqi_mds].cost && merge_block_flag == EB_FALSE))
+#else
     if (context_ptr->blk_geom->shape == PART_N || (tot_cost < context_ptr->md_local_cu_unit[context_ptr->blk_geom->sqi_mds].cost && merge_block_flag == EB_FALSE))
+#endif
 #else
     if (context_ptr->blk_geom->shape == PART_N || tot_cost < context_ptr->md_local_cu_unit[context_ptr->blk_geom->sqi_mds].cost)
 #endif

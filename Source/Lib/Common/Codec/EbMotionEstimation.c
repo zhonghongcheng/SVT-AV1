@@ -733,7 +733,7 @@ void nsq_me_analysis(uint32_t *p_sad64x32, uint32_t *p_sad32x16,
     uint32_t sad[BLK_NUM];  // sad_N, sad_H, sad_V, sad_H4, sad_V4, sad_S;
     uint32_t best_nsq_sad;
     uint8_t nsq_index;
-    /*64x64*/
+        /*64x64*/
     // sad[0] = p_sad64x64;
     sad[1] = p_sad64x32[0] + p_sad64x32[1];
     sad[2] = p_sad32x64[0] + p_sad32x64[1];

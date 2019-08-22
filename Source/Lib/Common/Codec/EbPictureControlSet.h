@@ -13653,6 +13653,10 @@ extern "C" {
         uint8_t           ol_best_nsq_shape8;
 #endif
 #endif
+#if ADD_MDC_REFINEMENT_LOOP
+        uint8_t           consider_block;
+        uint8_t           refined_split_flag;
+#endif
     } EbMdcLeafData;
 
     typedef struct MdcLcuData
@@ -13881,6 +13885,9 @@ extern "C" {
         // AMVP & MV Merge Neighbor Arrays
         NeighborArrayUnit                  *amvp_mv_merge_mv_neighbor_array;
         NeighborArrayUnit                  *amvp_mv_merge_mode_type_neighbor_array;
+#endif
+#if ADD_NEIGHBOR
+        NeighborArrayUnit                  *mdc_luma_dc_sign_level_coeff_neighbor_array[NEIGHBOR_ARRAY_TOTAL_COUNT];
 #endif
         // Entropy Coding Neighbor Arrays
         NeighborArrayUnit                  *mode_type_neighbor_array;

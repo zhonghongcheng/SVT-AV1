@@ -488,7 +488,7 @@ typedef enum MD_STAGE {
 #define PREDICT_NSQ_SHAPE                               0
 #if PREDICT_NSQ_SHAPE
 #define NSQ_MDC_L01                                     1
-#define ADD_MDC_INTRA                                   1
+#define ADD_MDC_INTRA                                   0
 #define DEPTH_RANKING                                   1
 #define NUMBER_OF_DEPTH                                 6
 #define NUMBER_OF_SHAPES                                10
@@ -500,6 +500,10 @@ typedef enum MD_STAGE {
 #define COMBINE_MDC_NSQ_TABLE                           1
 #define NSQ_SUB_LEVEL                                   1
 #define FIX_CRASH                                       1
+#define ADD_SUPPORT_TO_SKIP_PART_N                      1
+#define ADD_MDC_REFINEMENT_LOOP                         1
+#define ADD_MDC_FULL_COST                               1
+#define ADD_NEIGHBOR                                    1
 #endif
 #if COMBINE_MDC_NSQ_TABLE
 #define NSQ_TAB_SIZE                                    8
@@ -507,6 +511,7 @@ typedef enum MD_STAGE {
 #define NSQ_TAB_SIZE                                    6
 #endif
 #define NSQ_EARLY_EXIT                                  0
+#define RED_CU_BUG_FIX                                  1
 #if IMPROVED_SUBPEL_SEARCH
 typedef enum ME_HP_MODE {
     EX_HP_MODE = 0,

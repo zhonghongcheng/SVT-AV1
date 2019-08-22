@@ -12,6 +12,9 @@
 #include "EbRateControlProcess.h"
 #include "EbSequenceControlSet.h"
 #include "EbModeDecision.h"
+#if ADD_MDC_FULL_COST
+#include "EbTransQuantBuffers.h"
+#endif
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -30,6 +33,8 @@ extern "C" {
         uint32_t split_context;
         EbBool   selected_cu;
         EbBool   stop_split;
+        PartitionType part;
+        uint32_t best_d1_blk;
     } MdcpLocalCodingUnit;
 
     typedef struct ModeDecisionConfigurationContext
@@ -93,6 +98,33 @@ extern "C" {
         uint8_t                             adp_level;
 #if PREDICT_NSQ_SHAPE
         uint32_t                            mds_idx;
+#endif
+#if ADD_MDC_FULL_COST
+        MdcpLocalCodingUnit                  *cu_ptr;
+        ModeDecisionCandidateBuffer          *candidate_buffer;
+        uint16_t                             sb_origin_y;
+        uint16_t                             sb_origin_x;
+        uint16_t                             cu_origin_y;
+        uint16_t                             cu_origin_x;
+        uint16_t                             round_origin_x;
+        uint16_t                             round_origin_y;
+        uint8_t                              cu_size_log2;
+        uint64_t                             three_quad_energy;
+        int16_t                              luma_txb_skip_context;
+        int16_t                              luma_dc_sign_context;
+#if ADD_NEIGHBOR
+        NeighborArrayUnit                    *mdc_luma_dc_sign_level_coeff_neighbor_array;
+#endif
+        // Transform and Quantization Buffers
+        EbTransQuantBuffers                  *trans_quant_buffers_ptr;
+        // Trasform Scratch Memory
+        int16_t                              *transform_inner_array_ptr;
+        uint8_t                               spatial_sse_full_loop;
+        EntropyCoder                         *coeff_est_entropy_coder_ptr;
+        uint64_t                             full_lambda;
+        ModeDecisionCandidate                **fast_candidate_ptr_array;
+        ModeDecisionCandidate                *fast_candidate_array;
+        ModeDecisionCandidateBuffer          **candidate_buffer_ptr_array;
 #endif
     } ModeDecisionConfigurationContext;
 

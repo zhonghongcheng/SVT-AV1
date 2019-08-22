@@ -7295,9 +7295,11 @@ void move_cu_data_redund(
     //CHKN    };
 
     dst_cu->leaf_index = src_cu->leaf_index;
+#if !RED_CU_BUG_FIX
     dst_cu->split_flag = src_cu->split_flag;
+#endif
     dst_cu->skip_flag = src_cu->skip_flag;
-#if RED_CU
+#if RED_CU && !RED_CU_BUG_FIX
     dst_cu->mdc_split_flag = src_cu->mdc_split_flag;
 #endif
 
@@ -9795,6 +9797,10 @@ EB_EXTERN EbErrorType mode_decision_sb(
                         MAX_MODE_COST,MAX_MODE_COST,MAX_MODE_COST,MAX_MODE_COST };
     uint8_t skip_remaining_nsq[10] = { 0 };
 #endif
+#if ADD_SUPPORT_TO_SKIP_PART_N
+    uint32_t  d1_block_itr = 0;
+    uint32_t  d1_first_block = 1;
+#endif
     do {
 #if M8_SKIP_BLK
         skip_sub_blocks = 0;
@@ -9822,7 +9828,9 @@ EB_EXTERN EbErrorType mode_decision_sb(
 
         cu_ptr->mds_idx = blk_idx_mds;
         context_ptr->md_cu_arr_nsq[blk_idx_mds].mdc_split_flag = (uint16_t)leafDataPtr->split_flag;
-
+#if ADD_SUPPORT_TO_SKIP_PART_N
+        context_ptr->md_cu_arr_nsq[blk_geom->sqi_mds].split_flag = (uint16_t)leafDataPtr->split_flag;
+#endif
         cu_ptr->split_flag = (uint16_t)leafDataPtr->split_flag; //mdc indicates smallest or non valid CUs with split flag=
         cu_ptr->qp = context_ptr->qp;
         cu_ptr->best_d1_blk = blk_idx_mds;
@@ -9842,14 +9850,26 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #endif
         if (leafDataPtr->tot_d1_blocks != 1)
         {
+#if ADD_SUPPORT_TO_SKIP_PART_N
+            // We need to get the index of the sq_block for each NSQ branch
+            if (d1_first_block) {
+#else
             if (blk_geom->shape == PART_N)
+#endif
                 copy_neighbour_arrays(      //save a clean neigh in [1], encode uses [0], reload the clean in [0] after done last ns block in a partition
                     picture_control_set_ptr,
                     context_ptr,
                     0, 1,
+#if ADD_SUPPORT_TO_SKIP_PART_N
+                    blk_geom->sqi_mds,
+#else
                     blk_idx_mds,
+#endif
                     sb_origin_x,
                     sb_origin_y);
+#if ADD_SUPPORT_TO_SKIP_PART_N
+            }
+#endif
         }
 
 #if MRP_COST_EST
@@ -9892,12 +9912,21 @@ EB_EXTERN EbErrorType mode_decision_sb(
             memcpy(dst_cu->neigh_top_recon[1], src_cu->neigh_top_recon[1], 128);
             memcpy(dst_cu->neigh_top_recon[2], src_cu->neigh_top_recon[2], 128);
             memcpy(&context_ptr->md_ep_pipe_sb[cu_ptr->mds_idx], &context_ptr->md_ep_pipe_sb[redundant_blk_mds], sizeof(MdEncPassCuData));
+#if ADD_SUPPORT_TO_SKIP_PART_N
+            if (d1_block_itr == 0) {
+                uint8_t sq_index = LOG2F(context_ptr->blk_geom->sq_size) - 2;
+                context_ptr->parent_sq_type[sq_index] = src_cu->prediction_mode_flag;
+                context_ptr->parent_sq_has_coeff[sq_index] = src_cu->block_has_coeff;
+                context_ptr->parent_sq_pred_mode[sq_index] = src_cu->pred_mode;
+            }
+#else
             if (context_ptr->blk_geom->shape == PART_N) {
                 uint8_t sq_index = LOG2F(context_ptr->blk_geom->sq_size) - 2;
                 context_ptr->parent_sq_type[sq_index] = src_cu->prediction_mode_flag;
                 context_ptr->parent_sq_has_coeff[sq_index] = src_cu->block_has_coeff;
                 context_ptr->parent_sq_pred_mode[sq_index] = src_cu->pred_mode;
             }
+#endif
         }
         else
 #endif
@@ -9911,7 +9940,11 @@ EB_EXTERN EbErrorType mode_decision_sb(
 
 #if  INCOMPLETE_SB_FIX
 #if MD_EXIT
+#if ADD_SUPPORT_TO_SKIP_PART_N
+        if(blk_geom->quadi > 0 && d1_block_itr == 0){
+#else
         if ( blk_geom->quadi > 0 && blk_geom->shape == PART_N) {
+#endif
 
             uint32_t  blk_mds = context_ptr->blk_geom->sqi_mds;
             uint64_t                    parent_depth_cost = 0, current_depth_cost = 0;
@@ -10020,12 +10053,23 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #if MD_EXIT
         skip_next_nsq = 0;
 #endif
+#if ADD_SUPPORT_TO_SKIP_PART_N
+         if (blk_geom->nsi + 1 == blk_geom->totns) {
+            d1_non_square_block_decision(context_ptr, d1_block_itr);
+            d1_block_itr++;
+        }
+#else
         if (blk_geom->nsi + 1 == blk_geom->totns)
             d1_non_square_block_decision(context_ptr);
+#endif
 
 
 #if MD_EXIT
+#if ADD_SUPPORT_TO_SKIP_PART_N
+        else if (d1_block_itr) {
+#else
         else {
+#endif
             uint64_t tot_cost = 0;
             uint32_t first_blk_idx = context_ptr->cu_ptr->mds_idx - (blk_geom->nsi);//index of first block in this partition
             for (int blk_it = 0; blk_it < blk_geom->nsi + 1; blk_it++)
@@ -10042,7 +10086,7 @@ EB_EXTERN EbErrorType mode_decision_sb(
 
         }
 #endif
-#if NSQ_EARLY_EXIT
+#if NSQ_EARLY_EXIT // Needs to be updated to support the  skipping of PART_N
         md_nsq_cost[blk_geom->shape] = context_ptr->tot_cost;
         if (picture_control_set_ptr->slice_type != I_SLICE) {
             uint64_t skip_th = 90;
@@ -10083,7 +10127,11 @@ EB_EXTERN EbErrorType mode_decision_sb(
                     sb_origin_y);
         }
 
+#if ADD_SUPPORT_TO_SKIP_PART_N
+        d1_blocks_accumlated = d1_first_block  == 1 ? 1 : d1_blocks_accumlated + 1;
+#else
         d1_blocks_accumlated = blk_geom->shape == PART_N ? 1 : d1_blocks_accumlated + 1;
+#endif
 
         if (d1_blocks_accumlated == leafDataPtr->tot_d1_blocks)
         {
@@ -10097,6 +10145,10 @@ EB_EXTERN EbErrorType mode_decision_sb(
                 context_ptr->full_lambda,
                 context_ptr->md_rate_estimation_ptr,
                 picture_control_set_ptr);
+#if ADD_SUPPORT_TO_SKIP_PART_N
+            d1_block_itr = 0;
+            d1_first_block = 1;
+#endif
 #if NSQ_EARLY_EXIT
             // Reset Early skip parameter for next block branch
             for (uint8_t nsq_idx = 0; nsq_idx < 10; nsq_idx++) {
@@ -10117,6 +10169,10 @@ EB_EXTERN EbErrorType mode_decision_sb(
                     sb_origin_y);
             }
         }
+#if ADD_SUPPORT_TO_SKIP_PART_N
+        else if (d1_first_block)
+            d1_first_block = 0;
+#endif
 
 
 #if !M8_SKIP_BLK

@@ -156,6 +156,22 @@ extern "C" {
         const MacroBlockD *xd, int mi_row, int mi_col,
         BlockSize bsize, int mib_size_log2);
 
+#if ADD_MDC_FULL_COST
+    extern INLINE int8_t av1_ref_frame_type(const MvReferenceFrame *const rf);
+static PartitionType from_shape_to_part[] = {
+    PARTITION_NONE,
+    PARTITION_HORZ,
+    PARTITION_VERT,
+    PARTITION_HORZ_A,
+    PARTITION_HORZ_B,
+    PARTITION_VERT_A,
+    PARTITION_VERT_B,
+    PARTITION_HORZ_4,
+    PARTITION_VERT_4,
+    PARTITION_SPLIT
+};
+#endif
+
 #ifdef __cplusplus
 }
 #endif
