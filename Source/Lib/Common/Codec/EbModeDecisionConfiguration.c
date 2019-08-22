@@ -1097,10 +1097,8 @@ void mdc_full_loop(
             context_ptr->transform_inner_array_ptr,
             0,
             candidate_buffer->candidate_ptr->transform_type[txb_itr],
-            asm_type,
             PLANE_TYPE_Y,
             DEFAULT_SHAPE);
-
 
         candidate_buffer->candidate_ptr->quantized_dc[0][txb_itr] = mdc_av1_quantize_inv_quantize(
             picture_control_set_ptr,
@@ -1161,20 +1159,25 @@ void mdc_full_loop(
                     PICTURE_BUFFER_DESC_Y_FLAG,
                     asm_type);
             }
-            tuFullDistortion[0][DIST_CALC_PREDICTION] = spatial_full_distortion_kernel_func_ptr_array[asm_type][Log2f(context_ptr->blk_geom->tx_width[tx_depth][txb_itr]) - 2](
+
+            tuFullDistortion[0][DIST_CALC_PREDICTION] = spatial_full_distortion(
                 input_picture_ptr->buffer_y + input_tu_origin_index,
                 input_picture_ptr->stride_y,
                 candidate_buffer->prediction_ptr->buffer_y + tu_origin_index,
                 candidate_buffer->prediction_ptr->stride_y,
                 cropped_tx_width,
-                cropped_tx_height);
-            tuFullDistortion[0][DIST_CALC_RESIDUAL] = spatial_full_distortion_kernel_func_ptr_array[asm_type][Log2f(context_ptr->blk_geom->tx_width[tx_depth][txb_itr]) - 2](
+                cropped_tx_height,
+                Log2f(context_ptr->blk_geom->tx_width[tx_depth][txb_itr]) - 2);
+
+            tuFullDistortion[0][DIST_CALC_RESIDUAL] = spatial_full_distortion(
                 input_picture_ptr->buffer_y + input_tu_origin_index,
                 input_picture_ptr->stride_y,
                 &(((uint8_t*)candidate_buffer->recon_ptr->buffer_y)[tu_origin_index]),
                 candidate_buffer->recon_ptr->stride_y,
                 cropped_tx_width,
-                cropped_tx_height);
+                cropped_tx_height,
+                Log2f(context_ptr->blk_geom->tx_width[tx_depth][txb_itr]) - 2);
+
             tuFullDistortion[0][DIST_CALC_PREDICTION] <<= 4;
             tuFullDistortion[0][DIST_CALC_RESIDUAL] <<= 4;
         }
@@ -1197,8 +1200,7 @@ void mdc_full_loop(
                 y_count_non_zero_coeffs[txb_itr],
                 0,
                 0,
-                COMPONENT_LUMA,
-                asm_type);
+                COMPONENT_LUMA);
 
             tuFullDistortion[0][DIST_CALC_RESIDUAL] += context_ptr->three_quad_energy;
             tuFullDistortion[0][DIST_CALC_PREDICTION] += context_ptr->three_quad_energy;
@@ -1315,8 +1317,7 @@ EbErrorType mdc_inter_pu_prediction_av1(
          candidate_buffer_ptr->prediction_ptr,
          context_ptr->blk_geom->origin_x,
          context_ptr->blk_geom->origin_y,
-         0, // No chroma.
-         asm_type);
+         0); // No chroma
 
     return return_error;
 }

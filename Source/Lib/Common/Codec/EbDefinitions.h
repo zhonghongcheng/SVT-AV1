@@ -507,7 +507,7 @@ typedef enum MD_STAGE {
 #define ADD_SUPPORT_TO_SKIP_PART_N                      1
 #define ADD_MDC_REFINEMENT_LOOP                         1
 #define ADD_MDC_FULL_COST                               1
-#define ADD_NEIGHBOR                                    1
+#define ADD_NEIGHBOR                                    0
 #endif
 #if COMBINE_MDC_NSQ_TABLE
 #define NSQ_TAB_SIZE                                    8

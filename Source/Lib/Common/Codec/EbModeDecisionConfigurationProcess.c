@@ -1149,7 +1149,8 @@ void init_considered_block(
     SbParams *sb_params = &sequence_control_set_ptr->sb_params_array[sb_index];
     
     uint32_t depth_refinement_mode = AllD;
-    uint32_t d1_refinement_mode = AllD;
+    depth_refinement_mode = sb_params->is_complete_sb ? Predp1 : AllD;
+    /*uint32_t d1_refinement_mode = AllD;
     if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_ALL_DEPTH_MODE) {
         depth_refinement_mode = AllD;
         d1_refinement_mode = D1all;
@@ -1168,7 +1169,7 @@ void init_considered_block(
     else if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode >= PIC_OPEN_LOOP_DEPTH_MODE) {
         depth_refinement_mode = sb_params->is_complete_sb ? Predp1 : AllD;
         d1_refinement_mode = D1sqonly;
-    }
+    }*/
 
     uint32_t tot_d1_blocks,block_1d_idx;
     EbBool split_flag;
