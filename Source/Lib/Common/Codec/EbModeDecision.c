@@ -1166,11 +1166,11 @@ void sort_fast_loop_candidates(
 #endif
 }
 #endif
-#define BIPRED_3x3_REFINMENT_POSITIONS 8
+#define BIPRED_3x3_REFINEMENT_POSITIONS 8
 
-int8_t ALLOW_REFINEMENT_FLAG[BIPRED_3x3_REFINMENT_POSITIONS] = {  1, 0, 1, 0, 1,  0,  1, 0 };
-int8_t BIPRED_3x3_X_POS[BIPRED_3x3_REFINMENT_POSITIONS] = { -1, -1, 0, 1, 1, 1, 0, -1 };
-int8_t BIPRED_3x3_Y_POS[BIPRED_3x3_REFINMENT_POSITIONS] = { 0, 1, 1, 1, 0, -1, -1, -1 };
+int8_t ALLOW_REFINEMENT_FLAG[BIPRED_3x3_REFINEMENT_POSITIONS] = {  1, 0, 1, 0, 1,  0,  1, 0 };
+int8_t BIPRED_3x3_X_POS[BIPRED_3x3_REFINEMENT_POSITIONS] = { -1, -1, 0, 1, 1, 1, 0, -1 };
+int8_t BIPRED_3x3_Y_POS[BIPRED_3x3_REFINEMENT_POSITIONS] = { 0, 1, 1, 1, 0, -1, -1, -1 };
 
 void Unipred3x3CandidatesInjection(
 #if MEMORY_FOOTPRINT_OPT_ME_MV
@@ -1221,7 +1221,7 @@ void Unipred3x3CandidatesInjection(
 
         if (inter_direction == 0) {
 #endif
-    for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINMENT_POSITIONS; ++bipredIndex)
+    for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINEMENT_POSITIONS; ++bipredIndex)
     {
         /**************
         NEWMV L0
@@ -1372,7 +1372,7 @@ void Unipred3x3CandidatesInjection(
         const uint8_t list1_ref_index = me_block_results_ptr->ref_idx_l1;
         if (inter_direction == 1) {
 #endif
-    for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINMENT_POSITIONS; ++bipredIndex)
+    for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINEMENT_POSITIONS; ++bipredIndex)
     {
         if (isCompoundEnabled) {
             /**************
@@ -1596,7 +1596,7 @@ void Bipred3x3CandidatesInjection(
             if (inter_direction == 2) {
 #endif
        // (Best_L0, 8 Best_L1 neighbors)
-                for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINMENT_POSITIONS; ++bipredIndex)
+                for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINEMENT_POSITIONS; ++bipredIndex)
                 {
         if (context_ptr->bipred3x3_injection >= 2){
                         if (ALLOW_REFINEMENT_FLAG[bipredIndex] == 0)
@@ -1760,7 +1760,7 @@ void Bipred3x3CandidatesInjection(
         }
 
         // (8 Best_L0 neighbors, Best_L1) :
-        for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINMENT_POSITIONS; ++bipredIndex)
+        for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINEMENT_POSITIONS; ++bipredIndex)
         {
             if (context_ptr->bipred3x3_injection >= 2){
                 if (ALLOW_REFINEMENT_FLAG[bipredIndex] == 0)
@@ -1953,7 +1953,7 @@ void eighth_pel_unipred_refinement(
         const uint8_t inter_direction = me_block_results_ptr->direction;
         const uint8_t list0_ref_index = me_block_results_ptr->ref_idx_l0;
         if (inter_direction == 0) {
-            for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINMENT_POSITIONS; ++bipredIndex) {
+            for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINEMENT_POSITIONS; ++bipredIndex) {
                 /**************
                 NEWMV L0
                 ************* */
@@ -2023,7 +2023,7 @@ void eighth_pel_unipred_refinement(
         const uint8_t inter_direction = me_block_results_ptr->direction;
         const uint8_t list1_ref_index = me_block_results_ptr->ref_idx_l1;
         if (inter_direction == 1) {
-            for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINMENT_POSITIONS; ++bipredIndex) {
+            for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINEMENT_POSITIONS; ++bipredIndex) {
                 if (isCompoundEnabled) {
                     /**************
                     NEWMV L1
@@ -2120,7 +2120,7 @@ void eighth_pel_bipred_refinement(
 
             if (inter_direction == 2) {
                 // (Best_L0, 8 Best_L1 neighbors)
-                for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINMENT_POSITIONS; ++bipredIndex) {
+                for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINEMENT_POSITIONS; ++bipredIndex) {
                     if (context_ptr->bipred3x3_injection >= 2) {
                         if (ALLOW_REFINEMENT_FLAG[bipredIndex] == 0)
                             continue;
@@ -2190,7 +2190,7 @@ void eighth_pel_bipred_refinement(
                 }
 
                 // (8 Best_L0 neighbors, Best_L1) :
-                for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINMENT_POSITIONS; ++bipredIndex)
+                for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINEMENT_POSITIONS; ++bipredIndex)
                 {
                     if (context_ptr->bipred3x3_injection >= 2) {
                         if (ALLOW_REFINEMENT_FLAG[bipredIndex] == 0)

@@ -519,11 +519,11 @@ typedef enum MD_STAGE {
 #if IMPROVED_SUBPEL_SEARCH
 typedef enum ME_HP_MODE {
     EX_HP_MODE = 0,
-    REFINMENT_HP_MODE = 1
+    REFINEMENT_HP_MODE = 1
 } ME_HP_MODE;
 typedef enum ME_QP_MODE {
     EX_QP_MODE = 0,
-    REFINMENT_QP_MODE = 1
+    REFINEMENT_QP_MODE = 1
 } ME_QP_MODE;
 #endif
 

@@ -531,9 +531,9 @@ static void Av1EncodeLoop(
             context_ptr->blk_geom->tx_height[context_ptr->txb_itr]);
 #endif
 #if ATB_MD
-        uint8_t  tx_search_skip_fag = (picture_control_set_ptr->parent_pcs_ptr->tx_search_level == TX_SEARCH_ENC_DEC && (picture_control_set_ptr->parent_pcs_ptr->atb_mode == 0 || cu_ptr->prediction_mode_flag == INTER_MODE)) ? get_skip_tx_search_flag(
+        uint8_t  tx_search_skip_flag = (picture_control_set_ptr->parent_pcs_ptr->tx_search_level == TX_SEARCH_ENC_DEC && (picture_control_set_ptr->parent_pcs_ptr->atb_mode == 0 || cu_ptr->prediction_mode_flag == INTER_MODE)) ? get_skip_tx_search_flag(
 #else
-        uint8_t  tx_search_skip_fag = picture_control_set_ptr->parent_pcs_ptr->tx_search_level == TX_SEARCH_ENC_DEC ? get_skip_tx_search_flag(
+        uint8_t  tx_search_skip_flag = picture_control_set_ptr->parent_pcs_ptr->tx_search_level == TX_SEARCH_ENC_DEC ? get_skip_tx_search_flag(
 #endif
 #if BYPASS_USELESS_TX_SEARCH
             context_ptr->blk_geom,
@@ -544,7 +544,7 @@ static void Av1EncodeLoop(
             0,
             1) : 1;
 
-        if (!tx_search_skip_fag) {
+        if (!tx_search_skip_flag) {
                 encode_pass_tx_search(
                     picture_control_set_ptr,
                     context_ptr,
@@ -1271,9 +1271,9 @@ static void Av1EncodeLoop16bit(
                 context_ptr->blk_geom->tx_height[context_ptr->txb_itr]);
 #endif
 #if ATB_MD
-            uint8_t  tx_search_skip_fag = (picture_control_set_ptr->parent_pcs_ptr->tx_search_level == TX_SEARCH_ENC_DEC && (picture_control_set_ptr->parent_pcs_ptr->atb_mode == 0 || cu_ptr->prediction_mode_flag == INTER_MODE)) ? get_skip_tx_search_flag(
+            uint8_t  tx_search_skip_flag = (picture_control_set_ptr->parent_pcs_ptr->tx_search_level == TX_SEARCH_ENC_DEC && (picture_control_set_ptr->parent_pcs_ptr->atb_mode == 0 || cu_ptr->prediction_mode_flag == INTER_MODE)) ? get_skip_tx_search_flag(
 #else
-            uint8_t  tx_search_skip_fag = picture_control_set_ptr->parent_pcs_ptr->tx_search_level == TX_SEARCH_ENC_DEC ? get_skip_tx_search_flag(
+            uint8_t  tx_search_skip_flag = picture_control_set_ptr->parent_pcs_ptr->tx_search_level == TX_SEARCH_ENC_DEC ? get_skip_tx_search_flag(
 #endif
 #if BYPASS_USELESS_TX_SEARCH
                 context_ptr->blk_geom,
@@ -1284,7 +1284,7 @@ static void Av1EncodeLoop16bit(
                 0,
                 1) : 1;
 
-            if (!tx_search_skip_fag) {
+            if (!tx_search_skip_flag) {
                     encode_pass_tx_search_hbd(
                         picture_control_set_ptr,
                         context_ptr,

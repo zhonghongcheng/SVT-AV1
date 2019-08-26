@@ -3924,8 +3924,8 @@ void* picture_decision_kernel(void *input_ptr)
 #if IMPROVED_SUBPEL_SEARCH
 #if NEW_M0_SC
                                 if (picture_control_set_ptr->sc_content_detected) {
-                                    picture_control_set_ptr->half_pel_mode = REFINMENT_HP_MODE;
-                                    picture_control_set_ptr->quarter_pel_mode = REFINMENT_QP_MODE;
+                                    picture_control_set_ptr->half_pel_mode = REFINEMENT_HP_MODE;
+                                    picture_control_set_ptr->quarter_pel_mode = REFINEMENT_QP_MODE;
 
                                 }else
 #endif
@@ -3940,12 +3940,12 @@ void* picture_decision_kernel(void *input_ptr)
                                     picture_control_set_ptr->half_pel_mode =
                                         EX_HP_MODE;
                                     picture_control_set_ptr->quarter_pel_mode =
-                                        REFINMENT_QP_MODE;
+                                        REFINEMENT_QP_MODE;
                                 } else {
                                     picture_control_set_ptr->half_pel_mode =
-                                        REFINMENT_HP_MODE;
+                                        REFINEMENT_HP_MODE;
                                     picture_control_set_ptr->quarter_pel_mode =
-                                        REFINMENT_QP_MODE;
+                                        REFINEMENT_QP_MODE;
                                 }
 #endif
 #endif
