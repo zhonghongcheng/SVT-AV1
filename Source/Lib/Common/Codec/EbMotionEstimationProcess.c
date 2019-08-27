@@ -236,7 +236,7 @@ EbErrorType signal_derivation_me_kernel_oq(
             context_ptr->me_context_ptr->use_subpel_flag = 0;
     else
         context_ptr->me_context_ptr->use_subpel_flag = 1;
-    if (MR_MODE) {
+    if (MR_MODE|| MR_SUBPEL) {
         context_ptr->me_context_ptr->half_pel_mode =
             EX_HP_MODE;
         context_ptr->me_context_ptr->quarter_pel_mode =
@@ -427,7 +427,7 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
     context_ptr->me_context_ptr->quarter_pel_mode =
         REFINEMENT_QP_MODE;
 #else
-    if (MR_MODE) {
+    if (MR_MODE || MR_SUBPEL) {
         context_ptr->me_context_ptr->half_pel_mode =
             EX_HP_MODE;
         context_ptr->me_context_ptr->quarter_pel_mode =

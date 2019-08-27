@@ -35,6 +35,30 @@
 extern "C" {
 #endif
 
+    /*FEATURE DIFFERENCES */
+    //MR vs M0//
+#define MR_INTERPOLATION                1
+#define MR_NSQ                          1
+#define MR_CHROMA                       1
+#define MR_SUBPEL                       1
+#define MR_ANGLE_INTRA                  1
+#define MR_TX_WEIGHT                    1
+#define MR_ATB_SKIP                     1
+#define MR_MD_STAGE                     1
+    //M0 vs M1//
+#define M1_NEW_NEAREST                  1
+#define M1_ENHANCED_Nx4                 1
+#define M1_COMBINE_C12                  1
+#define M1_MD_STAGING                   1
+#define M1_NIC                          1
+#define M1_NSQ_TABLE                    1
+#define M1_NSQ_LEVEL                    1
+#define M1_PRUNE_REF_FRAME              1
+#define M1_PRUNE_REF_FRAME_ME           1
+#define M1_TMVP                         1
+
+
+
 #define TEMPORAL_MVP                    1// Temporal mvp support. aka. MFMV
 
 #define TWO_PASS                        0

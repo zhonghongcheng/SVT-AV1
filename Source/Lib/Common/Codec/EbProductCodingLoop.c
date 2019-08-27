@@ -2396,7 +2396,7 @@ void set_md_stage_counts(
 
     // Set # of md_stage_2 candidates
     context_ptr->md_stage_2_count[CAND_CLASS_0] = context_ptr->bypass_stage1[CAND_CLASS_0] ? context_ptr->fast1_cand_count[CAND_CLASS_0] : (picture_control_set_ptr->slice_type == I_SLICE) ? fastCandidateTotalCount : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTRA_NFL : (INTRA_NFL >> 1);
-#if MR_MODE
+#if MR_MODE || MR_MD_STAGE
     context_ptr->md_stage_2_count[CAND_CLASS_1] = context_ptr->bypass_stage1[CAND_CLASS_1] ? context_ptr->fast1_cand_count[CAND_CLASS_1] : (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_NEW_NFL : (INTER_NEW_NFL >> 1);
     context_ptr->md_stage_2_count[CAND_CLASS_2] = context_ptr->bypass_stage1[CAND_CLASS_2] ? context_ptr->fast1_cand_count[CAND_CLASS_2] : (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
 #if AUTO_C1C2
@@ -2458,7 +2458,7 @@ void set_md_stage_counts(
 #endif
 
     // Set # of md_stage_3 candidates
-#if MR_MODE
+#if MR_MODE || MR_MD_STAGE
     context_ptr->md_stage_3_count[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ? context_ptr->md_stage_2_count[CAND_CLASS_0] : (picture_control_set_ptr->slice_type == I_SLICE) ? 10 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 10 : 10;
 #else
     if (context_ptr->nic_level == 1) // to use a lookup table if more changes
@@ -8879,8 +8879,12 @@ void md_encode_block(
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL) ? EB_TRUE : EB_FALSE;
 #if DISABLE_NSQ_TABLE
+ #if M1_NSQ_TABLE
+    is_nsq_table_used = is_nsq_table_used;
+#else
     is_nsq_table_used = (picture_control_set_ptr->enc_mode == ENC_M0 || (picture_control_set_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->sc_content_detected))
         ? EB_FALSE : is_nsq_table_used;
+#endif
 #endif
 #endif
     if (is_nsq_table_used) {

@@ -981,7 +981,7 @@ EbErrorType signal_derivation_multi_processes_oq(
     // NSQ_SEARCH_LEVEL6                              Allow only NSQ Inter-NEAREST/NEAR/GLOBAL if parent SQ has no coeff + reordering nsq_table number and testing only 6 NSQ SHAPE
     // NSQ_SEARCH_FULL                                Allow NSQ Intra-FULL and Inter-FULL
 
-        if (MR_MODE) // NSQ
+        if (MR_MODE || MR_NSQ) // NSQ
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_FULL;
         else if (sc_content_detected)
             if (picture_control_set_ptr->enc_mode == ENC_M0)
@@ -1003,7 +1003,11 @@ EbErrorType signal_derivation_multi_processes_oq(
                     picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
 
         // Non-SC Settings
+#if M1_NSQ_LEVEL
+        else if (0)
+#else
         else if (picture_control_set_ptr->enc_mode <= ENC_M0)
+#endif
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL6;
         else if (picture_control_set_ptr->enc_mode <= ENC_M1)
             picture_control_set_ptr->nsq_search_level = (picture_control_set_ptr->is_used_as_reference_flag) ? NSQ_SEARCH_LEVEL6 : NSQ_SEARCH_LEVEL3;
@@ -1093,7 +1097,7 @@ EbErrorType signal_derivation_multi_processes_oq(
     // 3                                              Chroma blind interpolation search at fast loop
     // 4                                              Interpolation search at fast loop
 
-        if (MR_MODE) // Interpolation
+        if (MR_MODE || MR_INTERPOLATION) // Interpolation
             picture_control_set_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP;
         else if (sc_content_detected)
 #if NEW_M0_SC
@@ -1262,7 +1266,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 
     // Set tx search skip weights (MAX_MODE_COST: no skipping; 0: always skipping)
 #if FIX_TX_SEARCH_FOR_MR_MODE
-    if (MR_MODE) // tx weight
+    if (MR_MODE || MR_TX_WEIGHT ) // tx weight
         picture_control_set_ptr->tx_weight = MAX_MODE_COST;
 #endif
     else{
@@ -1452,7 +1456,7 @@ EbErrorType signal_derivation_multi_processes_oq(
         // Set skip atb                          Settings
         // 0                                     OFF
         // 1                                     ON
-        if (MR_MODE || picture_control_set_ptr->sc_content_detected)
+        if (MR_MODE || MR_ATB_SKIP || picture_control_set_ptr->sc_content_detected)
             picture_control_set_ptr->enable_skip_atb = 0;
         else
             picture_control_set_ptr->enable_skip_atb = 1;
@@ -1505,16 +1509,25 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->adaptive_txb_search_level = 6;
 #endif
 #if PRUNE_REF_FRAME_FRO_REC_PARTITION
+
+#if M1_PRUNE_REF_FRAME
+        picture_control_set_ptr->prune_ref_frame_for_rec_partitions = 1;
+#else
         if (picture_control_set_ptr->sc_content_detected || picture_control_set_ptr->enc_mode == ENC_M0)
             picture_control_set_ptr->prune_ref_frame_for_rec_partitions = 0;
         else
             picture_control_set_ptr->prune_ref_frame_for_rec_partitions = 1;
 #endif
+#endif
 #if PRUNE_REF_FRAME_AT_ME
+#if M1_PRUNE_REF_FRAME_ME
+        picture_control_set_ptr->prune_unipred_at_me = 1;
+#else
         if (picture_control_set_ptr->sc_content_detected || picture_control_set_ptr->enc_mode == ENC_M0 || picture_control_set_ptr->enc_mode >= ENC_M4)
             picture_control_set_ptr->prune_unipred_at_me = 0;
         else
             picture_control_set_ptr->prune_unipred_at_me = 1;
+#endif
 #endif
 #if TEMPORAL_MVP
     //CHKN: Temporal MVP should be disabled for pictures beloning to 4L MiniGop preceeded by 5L miniGOP. in this case the RPS is wrong(known issue). check RPS construction for more info.

@@ -1298,7 +1298,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
                 CHROMA_MODE_3;
     else
 #if CHROMA_SEARCH_MR
-    if (MR_MODE || USE_MR_CHROMA) // chroma
+    if (MR_MODE || USE_MR_CHROMA|| MR_CHROMA) // chroma
         context_ptr->chroma_level = CHROMA_MODE_0;
     else
 #endif
@@ -1389,16 +1389,24 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->global_mv_injection = 0;
 
 #if NEW_NEAREST_NEW_INJECTION
+#if M1_NEW_NEAREST
+        context_ptr->new_nearest_near_comb_injection = 0;
+#else
     if (picture_control_set_ptr->enc_mode == ENC_M0)
         context_ptr->new_nearest_near_comb_injection = 1;
     else
         context_ptr->new_nearest_near_comb_injection = 0;
 #endif
+#endif
 #if ENHANCED_Nx4_4xN_NEW_MV
+#if M1_ENHANCED_Nx4
+    context_ptr->nx4_4xn_parent_mv_injection = 0;
+#else
     if (picture_control_set_ptr->enc_mode == ENC_M0)
         context_ptr->nx4_4xn_parent_mv_injection = 1;
     else
         context_ptr->nx4_4xn_parent_mv_injection = 0;
+#endif
 #endif
 #if M9_NEAR_INJECTION
     // Set NEAR injection
@@ -1493,7 +1501,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // Combine MD Class1&2
     // 0                    OFF
     // 1                    ON
+#if M1_COMBINE_C12
+    context_ptr->combine_class12 =  1;
+#else
     context_ptr->combine_class12 = (picture_control_set_ptr->enc_mode == ENC_M0) ? 0 : 1;
+#endif
 #endif
 
     // Set interpolation filter search blk size
@@ -1558,15 +1570,23 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
 #if FULL_LOOP_SPLIT
     // Derive md_staging_mode
+#if M1_MD_STAGING
+    context_ptr->md_staging_mode = 3;
+#else
     if (picture_control_set_ptr->enc_mode == ENC_M0)
         context_ptr->md_staging_mode = 1;
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->md_staging_mode = 3;
     else
         context_ptr->md_staging_mode = 0; //use fast-loop0->full-loop
+#endif
+#if M1_NIC
+    context_ptr->nic_level = 1;
+#else
 
     // Derive nic level
     context_ptr->nic_level = (picture_control_set_ptr->enc_mode == ENC_M0) ? 0 : 1;
+#endif
 
 #if USE_MDS3_C1C2_REDUCED_NIC
     context_ptr->md_staging_mode = 3;
