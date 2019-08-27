@@ -56,8 +56,35 @@ extern "C" {
 #define M1_PRUNE_REF_FRAME              1
 #define M1_PRUNE_REF_FRAME_ME           1
 #define M1_TMVP                         1
+    //M1 vs M2//
+#define M2_PREDICTIVE_ME_LEVEL          1
+#define M2_REDUNDANT_BLK                1
+#define M2_ALLOW_BIPRED                 1
+#define M2_PIC_DEPTH_MODE               1
+#define M2_NSQ_LEVEL                    1
+#define M2_LOOP_FILTER_MODE             1
+#define M2_TX_SEARCH_REDUCED_SET        1
+#define M2_INTRA_PRED_MODE              1
+#define M2_COMPOUND_MODE                1
+#define M2_REF_COUNT                    1
+#define M2_UNIPRED3x3_INJECTION         1
+#define M2_TRELLIS_QUANT                1
+#define M2_SUBPEL                       1
+#define M2_C12                          1
+#define M2_MD_STAGE_COUNT               1
 
-
+#define M3_C12                          1
+#define M3_MD_STAGE_COUNT               1
+#define M4_C12                          1
+#define M4_MD_STAGE_COUNT               1
+#define M5_C12                          1
+#define M5_MD_STAGE_COUNT               1
+#define M6_C12                          1
+#define M6_MD_STAGE_COUNT               1
+#define M7_C12                          1
+#define M7_MD_STAGE_COUNT               1
+#define M8_C12                          1
+#define M8_MD_STAGE_COUNT               1
 
 #define TEMPORAL_MVP                    1// Temporal mvp support. aka. MFMV
 

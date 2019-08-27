@@ -2394,6 +2394,18 @@ void set_md_stage_counts(
 #endif
     }
 
+#if M2_C12 || M3_C12 || M4_C12 || M5_C12 || M6_C12 || M7_C12 || M8_C12
+    context_ptr->fast1_cand_count[CAND_CLASS_1] = context_ptr->fast1_cand_count[CAND_CLASS_1] / 2;
+    context_ptr->fast1_cand_count[CAND_CLASS_2] = context_ptr->fast1_cand_count[CAND_CLASS_2] / 2;
+#if AUTO_C1C2
+    if (!context_ptr->combine_class12)
+        context_ptr->fast1_cand_count[CAND_CLASS_3] = context_ptr->fast1_cand_count[CAND_CLASS_3] / 2;
+#else
+#if !COMBINE_C1_C2
+    context_ptr->fast1_cand_count[CAND_CLASS_3] = context_ptr->fast1_cand_count[CAND_CLASS_3] / 2;
+#endif
+#endif
+
     // Set # of md_stage_2 candidates
     context_ptr->md_stage_2_count[CAND_CLASS_0] = context_ptr->bypass_stage1[CAND_CLASS_0] ? context_ptr->fast1_cand_count[CAND_CLASS_0] : (picture_control_set_ptr->slice_type == I_SLICE) ? fastCandidateTotalCount : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTRA_NFL : (INTRA_NFL >> 1);
 #if MR_MODE || MR_MD_STAGE
@@ -2521,6 +2533,11 @@ if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_cont
 #endif
 
 #if S3_TEST
+#if M2_MD_STAGE_COUNT || M3_MD_STAGE_COUNT || M4_MD_STAGE_COUNT
+    if (1){
+#elif M5_MD_STAGE_COUNT || M6_MD_STAGE_COUNT || M7_MD_STAGE_COUNT || M8_MD_STAGE_COUNT
+    if (0){
+#endif
     if (picture_control_set_ptr->enc_mode >= ENC_M2 && picture_control_set_ptr->enc_mode <= ENC_M4) {
 
         context_ptr->md_stage_3_count[CAND_CLASS_1] = context_ptr->bypass_stage2[CAND_CLASS_1] ? context_ptr->md_stage_2_count[CAND_CLASS_1] : (picture_control_set_ptr->slice_type == I_SLICE) ?
