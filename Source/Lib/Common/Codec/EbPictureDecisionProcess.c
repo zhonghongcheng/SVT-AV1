@@ -1462,7 +1462,7 @@ EbErrorType signal_derivation_multi_processes_oq(
         // inter intra pred                      Settings
         // 0                                     OFF
         // 1                                     ON
-            picture_control_set_ptr->enable_inter_intra = sequence_control_set_ptr->seq_header.enable_interintra_compound;
+            picture_control_set_ptr->enable_inter_intra = picture_control_set_ptr->slice_type != I_SLICE ? sequence_control_set_ptr->seq_header.enable_interintra_compound : 0;
 
 #endif
 #if COMP_MODE

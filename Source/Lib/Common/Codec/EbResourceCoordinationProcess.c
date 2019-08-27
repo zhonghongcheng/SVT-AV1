@@ -764,6 +764,12 @@ void* resource_coordination_kernel(void *input_ptr)
                 PM_MODE_2 :
                 PM_MODE_1;
 
+
+#if II_COMP
+            sequence_control_set_ptr->seq_header.enable_interintra_compound = (sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;
+           
+          //  sequence_control_set_ptr->seq_header.enable_interintra_compound = 1;
+#endif
 #if COMP_MODE
 
             // Set compound mode      Settings

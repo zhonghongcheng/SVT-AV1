@@ -50,6 +50,14 @@ EbErrorType ProductGenerateMdCandidatesCu(
     EbPtr                           interPredContextPtr,
     PictureControlSet            *picture_control_set_ptr);
 
+#if II_SO
+static INLINE int is_interintra_allowed_bsize(const BLOCK_SIZE bsize) {
+    return (bsize >= BLOCK_8X8) && (bsize <= BLOCK_32X32);
+}
+void precompute_intra_pred_for_inter_intra(
+    PictureControlSet            *picture_control_set_ptr,
+    ModeDecisionContext          *context_ptr);
+#endif
 /*******************************************
 * set Penalize Skip Flag
 *
@@ -2379,7 +2387,11 @@ void set_md_stage_counts(
 #endif
 #endif
 #if II_CLASS
-    context_ptr->fast1_cand_count[CAND_CLASS_4] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : context_ptr->fast_cand_count[CAND_CLASS_4] ;//(picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
+#if II_NIC
+    context_ptr->fast1_cand_count[CAND_CLASS_4] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 14 :6;// INTER_PRED_NFL: (INTER_PRED_NFL >> 1);
+#else
+    context_ptr->fast1_cand_count[CAND_CLASS_4] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : 16;// context_ptr->fast_cand_count[CAND_CLASS_4];//(picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
+#endif
 #endif
     if (picture_control_set_ptr->enc_mode >= ENC_M2) {
         context_ptr->fast1_cand_count[CAND_CLASS_1] = context_ptr->fast1_cand_count[CAND_CLASS_1] / 2;
@@ -2454,7 +2466,11 @@ void set_md_stage_counts(
 
 
 #if II_CLASS
-    context_ptr->md_stage_2_count[CAND_CLASS_4] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : context_ptr->fast_cand_count[CAND_CLASS_4] ;//(picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
+#if II_NIC
+    context_ptr->md_stage_2_count[CAND_CLASS_4] = context_ptr->bypass_stage1[CAND_CLASS_4] ? context_ptr->fast1_cand_count[CAND_CLASS_4] : (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 12: 4;// 14 : 4;
+#else
+    context_ptr->md_stage_2_count[CAND_CLASS_4] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : 16;// context_ptr->fast_cand_count[CAND_CLASS_4];//(picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
+#endif
 #endif
 
     // Set # of md_stage_3 candidates
@@ -2486,7 +2502,11 @@ void set_md_stage_counts(
 #endif
 #endif
 #if II_CLASS
-    context_ptr->md_stage_3_count[CAND_CLASS_4] = context_ptr->fast_cand_count[CAND_CLASS_4] ;//(picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
+#if II_NIC
+    context_ptr->md_stage_3_count[CAND_CLASS_4] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 12 : 4;// 14 : 4;
+#else
+    context_ptr->md_stage_3_count[CAND_CLASS_4] = 16;// context_ptr->fast_cand_count[CAND_CLASS_4];//(picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
+#endif
 #endif
 
 #if AUTO_C1C2
@@ -9034,6 +9054,18 @@ void md_encode_block(
                 inputOriginIndex,
                 cuOriginIndex);
 #endif
+
+
+#if II_SO
+        //for every CU, perform Luma DC/V/H/S intra prediction to be used later in inter-intra search 
+        int allow_ii = is_interintra_allowed_bsize(context_ptr->blk_geom->bsize);
+        if (picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra && allow_ii)        
+            precompute_intra_pred_for_inter_intra(
+                picture_control_set_ptr,
+                context_ptr);        
+#endif
+
+
 #if MD_CLASS
         generate_md_stage_0_cand(
 #else

@@ -26,7 +26,11 @@ extern "C" {
 #define IBC_CAND 2 //two intra bc candidates
 #if COMP_MODE
 #if TEMPORAL_MVP
+#if II_COMP
+#define MODE_DECISION_CANDIDATE_MAX_COUNT              1800
+#else
 #define MODE_DECISION_CANDIDATE_MAX_COUNT              1300
+#endif
 #else
 #define MODE_DECISION_CANDIDATE_MAX_COUNT              (1000 +IBC_CAND)//488// (1400 +IBC_CAND)
 #endif
@@ -433,6 +437,9 @@ extern "C" {
 #endif
 #if NSQ_EARLY_EXIT
     uint64_t tot_cost;
+#endif
+#if II_SO
+    uint8_t                                intrapred_buf[INTERINTRA_MODES][32 * 32]; //MAX block size for inter intra is 32x32
 #endif
   } ModeDecisionContext;
 
