@@ -1721,6 +1721,9 @@ static EbErrorType produce_temporally_filtered_pic(
 // Apply buffer limits and context specific adjustments to arnr filter.
 #if ALTREF_DYNAMIC_WINDOW
 static void adjust_filter_params(EbPictureBufferDesc *input_picture_ptr,
+#if ALT_REF_TUNING
+    PictureParentControlSet *picture_control_set_ptr_central,
+#endif
     uint8_t *altref_strength_y,
     uint8_t *altref_strength_uv) {
 #else
@@ -1781,6 +1784,26 @@ static void adjust_filter_params(EbPictureBufferDesc *input_picture_ptr,
             noiselevel_adj = 0;
         else
             noiselevel_adj = 1;
+
+#if ALT_REF_TUNING
+        if (picture_control_set_ptr_central->temporal_layer_index == 0){
+            printf("POC:%d\tNoiseLevel:%.1f\n",
+                picture_control_set_ptr_central->picture_number,
+                noiselevel);
+            if (noiselevel_adj < 0) {
+                if ((picture_control_set_ptr_central->referenced_area_avg < 20 && picture_control_set_ptr_central->slice_type == 2) ||
+                    (picture_control_set_ptr_central->referenced_area_avg < 30 && picture_control_set_ptr_central->slice_type != 2)) {
+                    noiselevel_adj = CLIP3(-2, 0, noiselevel_adj - 1);
+                }
+                else {
+                    noiselevel_adj = 0;
+                }
+            }
+        }
+        else {
+            noiselevel_adj = 0;
+        }
+#endif
 #if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
         adj_strength_y += noiselevel_adj;
         adj_strength_uv += noiselevel_adj;
@@ -1816,7 +1839,6 @@ static void adjust_filter_params(EbPictureBufferDesc *input_picture_ptr,
 #else
     *altref_strength = (uint8_t)strength;
 #endif
-
 #if DEBUG_TF
     printf("[DEBUG] noise level: %g, strength = %d, adj_strength = %d\n", noiselevel, strength, adj_strength);
 #endif
@@ -1951,12 +1973,51 @@ void init_temporal_filtering(PictureParentControlSet **list_picture_control_set_
 
 #if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
 #if ALTREF_DYNAMIC_WINDOW
+#if ALT_REF_TUNING
+        adjust_filter_params(input_picture_ptr, picture_control_set_ptr_central, &altref_strength_y, &altref_strength_uv);
+#else
         adjust_filter_params(input_picture_ptr, &altref_strength_y, &altref_strength_uv);
+#endif
 #else
         adjust_filter_params(input_picture_ptr, &altref_strength_y,&altref_strength_uv, &altref_nframes);
 #endif
 #else
         adjust_filter_params(input_picture_ptr, &altref_strength, &altref_nframes);
+#endif
+#if ALT_REF_TUNING
+        if (altref_strength_y != picture_control_set_ptr_central->altref_strength_y ||
+            altref_strength_uv != picture_control_set_ptr_central->altref_strength_uv)
+            printf("TF POC: %d\t%d\t%d\tORG: %d\t%d\n",
+                picture_control_set_ptr_central->picture_number,
+                altref_strength_y,
+                altref_strength_uv,
+                picture_control_set_ptr_central->altref_strength_y,
+                picture_control_set_ptr_central->altref_strength_uv);
+        
+        //if ((picture_control_set_ptr_central->referenced_area_avg > 20 && picture_control_set_ptr_central->slice_type == 2) ||
+        //    (picture_control_set_ptr_central->referenced_area_avg > 30 && picture_control_set_ptr_central->slice_type != 2)) {
+        //    //picture_control_set_ptr_central->altref_strength_y = altref_strength_y;
+        //    //picture_control_set_ptr_central->altref_strength_uv = altref_strength_uv;
+        //}
+        //else {
+        //    picture_control_set_ptr_central->altref_strength_y = altref_strength_y;
+        //    picture_control_set_ptr_central->altref_strength_uv = altref_strength_uv;
+        //}
+
+        picture_control_set_ptr_central->altref_strength_y = altref_strength_y;
+        picture_control_set_ptr_central->altref_strength_uv = altref_strength_uv;
+
+        //if (picture_control_set_ptr_central->temporal_layer_index == 0) {
+        //    if (altref_strength_y != picture_control_set_ptr_central->altref_strength_y ||
+        //        altref_strength_uv != picture_control_set_ptr_central->altref_strength_uv) {
+        //        if ((picture_control_set_ptr_central->referenced_area_avg < 20 && picture_control_set_ptr_central->slice_type == 2) ||
+        //            (picture_control_set_ptr_central->referenced_area_avg < 30 && picture_control_set_ptr_central->slice_type != 2)) {
+        //                picture_control_set_ptr_central->altref_strength_y = altref_strength_y;
+        //                picture_control_set_ptr_central->altref_strength_uv = altref_strength_uv;
+        //        }
+        //    }
+        //}
+
 #endif
 
         // Pad chroma reference samples - once only per picture
@@ -2008,6 +2069,8 @@ void init_temporal_filtering(PictureParentControlSet **list_picture_control_set_
 #if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
 #if QPS_TUNING
     uint64_t filtered_sse, filtered_sse_uv;
+
+
 #if ALTREF_DYNAMIC_WINDOW
     produce_temporally_filtered_pic(
 #if TF_KEY
