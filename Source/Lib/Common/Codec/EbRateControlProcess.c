@@ -3500,10 +3500,24 @@ static int adaptive_qindex_calc(
 #if ADAPTIVE_QP_SCALING
     // Since many frames can be processed at the same time, storing/using arf_q in rc param is not sufficient and will create a run to run.
     // So, for each frame, arf_q is updated based on the qp of its references.
+#if TWO_PASS
+    if (sequence_control_set_ptr->static_config.use_input_stat_file) {
+        rc->arf_q = MAX(rc->arf_q, ((picture_control_set_ptr->ref_pic_qp_array[0][0] << 2) + 2));
+        if (picture_control_set_ptr->slice_type == B_SLICE)
+            rc->arf_q = MAX(rc->arf_q, ((picture_control_set_ptr->ref_pic_qp_array[1][0] << 2) + 2));
+    }
+    else {
+        if (picture_control_set_ptr->ref_slice_type_array[0][0] != I_SLICE)
+            rc->arf_q = MAX(rc->arf_q, ((picture_control_set_ptr->ref_pic_qp_array[0][0] << 2) + 2));
+        if ((picture_control_set_ptr->slice_type == B_SLICE) && (picture_control_set_ptr->ref_slice_type_array[1][0] != I_SLICE))
+            rc->arf_q = MAX(rc->arf_q, ((picture_control_set_ptr->ref_pic_qp_array[1][0] << 2) + 2));
+    }
+#else
     if (picture_control_set_ptr->ref_slice_type_array[0][0] != I_SLICE)
         rc->arf_q = MAX(rc->arf_q, ((picture_control_set_ptr->ref_pic_qp_array[0][0] << 2) + 2));
     if ((picture_control_set_ptr->slice_type == B_SLICE) && (picture_control_set_ptr->ref_slice_type_array[1][0] != I_SLICE))
         rc->arf_q = MAX(rc->arf_q, ((picture_control_set_ptr->ref_pic_qp_array[1][0] << 2) + 2));
+#endif
 #endif
 
 #if TWO_PASS
@@ -3592,17 +3606,11 @@ static int adaptive_qindex_calc(
         if (picture_control_set_ptr->parent_pcs_ptr->kf_zeromotion_pct >= STATIC_KF_GROUP_THRESH)
             active_best_quality /= 3;
 #endif
-#if 0//TWO_PASS
-        if (picture_control_set_ptr->parent_pcs_ptr->qp_scaling_average_complexity <= LOW_QPS_COMP_THRESHOLD &&
-            picture_control_set_ptr->parent_pcs_ptr->filtered_sse < LOW_FILTERED_THRESHOLD && picture_control_set_ptr->parent_pcs_ptr->filtered_sse_uv < LOW_FILTERED_THRESHOLD &&
-            picture_control_set_ptr->parent_pcs_ptr->kf_zeromotion_pct > STATIC_KF_GROUP_THRESH)
-            active_best_quality = active_best_quality*70 /100;
-#endif
         // Allow somewhat lower kf minq with small image formats.
         if ((cm->width * cm->height) <= (352 * 288))
             q_adj_factor -= 0.25;
         // Make a further adjustment based on the kf zero motion measure.
-        q_adj_factor += 0.05 - (0.001 * (double)picture_control_set_ptr->parent_pcs_ptr->kf_zeromotion_pct/*(double)cpi->twopass.kf_zeromotion_pct*/);
+        q_adj_factor += 0.05 - (0.001 * (double)picture_control_set_ptr->parent_pcs_ptr->kf_zeromotion_pct);
 
         // Convert the adjustment factor to a qindex delta
         // on active_best_quality.
@@ -3671,17 +3679,7 @@ static int adaptive_qindex_calc(
 #if ADAPTIVE_QP_SCALING
             // active_best_quality is updated with the q index of the reference
             if (rf_level == GF_ARF_LOW)
-#if 0//TWO_PASS
-            {
-                int c1, c2;
-                c1 = 1;
-                c2 = 1;
-
-                active_best_quality = (c1*active_best_quality + c2 * cq_level + (c1 + c2) / 2) / (c1 + c2);
-            }
-#else
                 active_best_quality = (active_best_quality + cq_level + 1) / 2;
-#endif
 #else
             // non Based Ref frames && !P
             if (new_bwdref_update_rule && is_intrl_arf_boost) {
@@ -3996,12 +3994,16 @@ void* rate_control_kernel(void *input_ptr)
                 for (int sb_addr = 0; sb_addr < picture_control_set_ptr->sb_total_count; ++sb_addr) {
                     picture_control_set_ptr->parent_pcs_ptr->sad_me += picture_control_set_ptr->parent_pcs_ptr->rc_me_distortion[sb_addr];
                 }
-                printf("POC:%d\tCOMP:%d\tREFArea:%d\n",
+
+            }
+            if (picture_control_set_ptr->temporal_layer_index == 0)
+                printf("POC:%d\tCOMP:%d\tREFArea:%d\t%d\t%d\t%d\n",
                     picture_control_set_ptr->parent_pcs_ptr->picture_number,
                     picture_control_set_ptr->parent_pcs_ptr->sad_me / picture_control_set_ptr->sb_total_count / 256,
-                    picture_control_set_ptr->parent_pcs_ptr->referenced_area_avg
-                );
-            }
+                    picture_control_set_ptr->parent_pcs_ptr->referenced_area_avg,
+                    picture_control_set_ptr->parent_pcs_ptr->qp_scaling_average_complexity,
+                    picture_control_set_ptr->parent_pcs_ptr->filtered_sse,
+                    picture_control_set_ptr->parent_pcs_ptr->filtered_sse_uv);
 #endif
             if (sequence_control_set_ptr->static_config.rate_control_mode)
             {
