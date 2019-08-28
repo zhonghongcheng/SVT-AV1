@@ -962,6 +962,7 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
             picture_control_set_ptr->pic_depth_mode = PIC_ALL_C_DEPTH_MODE;
 #endif
+#endif
 #if M3_PIC_DEPTH_MODE
 #if NSQ_MDC_L01
         if (picture_control_set_ptr->temporal_layer_index == 0)

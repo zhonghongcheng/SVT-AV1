@@ -2405,6 +2405,7 @@ void set_md_stage_counts(
     context_ptr->fast1_cand_count[CAND_CLASS_3] = context_ptr->fast1_cand_count[CAND_CLASS_3] / 2;
 #endif
 #endif
+#endif
 
     // Set # of md_stage_2 candidates
     context_ptr->md_stage_2_count[CAND_CLASS_0] = context_ptr->bypass_stage1[CAND_CLASS_0] ? context_ptr->fast1_cand_count[CAND_CLASS_0] : (picture_control_set_ptr->slice_type == I_SLICE) ? fastCandidateTotalCount : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTRA_NFL : (INTRA_NFL >> 1);
@@ -2537,8 +2538,9 @@ if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_cont
     if (1){
 #elif M5_MD_STAGE_COUNT || M6_MD_STAGE_COUNT || M7_MD_STAGE_COUNT || M8_MD_STAGE_COUNT
     if (0){
-#endif
+#else
     if (picture_control_set_ptr->enc_mode >= ENC_M2 && picture_control_set_ptr->enc_mode <= ENC_M4) {
+#endif
 
         context_ptr->md_stage_3_count[CAND_CLASS_1] = context_ptr->bypass_stage2[CAND_CLASS_1] ? context_ptr->md_stage_2_count[CAND_CLASS_1] : (picture_control_set_ptr->slice_type == I_SLICE) ?
             0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 2;
