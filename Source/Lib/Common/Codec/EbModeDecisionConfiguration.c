@@ -714,7 +714,7 @@ void   mdc_compute_depth_costs(
 {
     uint64_t       above_non_split_rate = 0;
     uint64_t       above_split_rate = 0;
-
+    UNUSED(sequence_control_set_ptr);
     /*
     ___________
     |     |     |
@@ -727,7 +727,7 @@ void   mdc_compute_depth_costs(
     uint32_t       curr_depth_blk0_mds = curr_depth_mds - 3 * step;
     uint32_t       curr_depth_blk1_mds = curr_depth_mds - 2 * step;
     uint32_t       curr_depth_blk2_mds = curr_depth_mds - 1 * step;
-    uint32_t       curr_depth_blk3_mds = curr_depth_mds;
+   // uint32_t       curr_depth_blk3_mds = curr_depth_mds;
 
     // Rate of not spliting the current depth (Depth != 4) in case the children were omitted by MDC
     uint64_t       curr_non_split_rate_blk0 = 0;
@@ -756,7 +756,7 @@ uint32_t mdc_d2_inter_depth_block_decision(
     uint32_t                                   sb_index) {
 
 
-    uint32_t                last_cu_index, /*d0_idx_mds,*/ d1_idx_mds, d2_idx_mds/*, top_left_idx_mds*/;
+    uint32_t                last_cu_index;
     uint64_t                parent_depth_cost = 0, current_depth_cost = 0;
     SequenceControlSet     *sequence_control_set_ptr = (SequenceControlSet*)picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr;
     EbBool                  last_depth_flag;
@@ -764,8 +764,6 @@ uint32_t mdc_d2_inter_depth_block_decision(
 
     last_depth_flag = context_ptr->local_cu_array[blk_mds].early_split_flag == EB_FALSE ? EB_TRUE : EB_FALSE;
 
-    d1_idx_mds = blk_mds;
-    d2_idx_mds = blk_mds;
     last_cu_index = blk_mds;
     blk_geom = get_blk_geom_mds(blk_mds);
     uint32_t    parent_depth_idx_mds = blk_mds;
@@ -805,6 +803,7 @@ uint64_t  mdc_d1_non_square_block_decision(
     ModeDecisionConfigurationContext         *context_ptr
 )
 {
+    UNUSED(sequence_control_set_ptr);
     //compute total cost for the whole block partition
     uint64_t tot_cost = 0;
     uint32_t first_blk_idx = context_ptr->mds_idx - (context_ptr->blk_geom->totns - 1);//index of first block in this partition
@@ -912,6 +911,11 @@ static INLINE void set_dc_sign(int32_t *cul_level, int32_t dc_val) {
     int16_t                           dc_sign_context,
     PredictionMode                    pred_mode)
 {
+    UNUSED(md_context);
+    UNUSED(asm_type);
+    UNUSED(bit_increment);
+    UNUSED(txb_skip_context);
+    UNUSED(dc_sign_context);
     MacroblockPlane      candidate_plane ;
     const QmVal *qMatrix = picture_control_set_ptr->parent_pcs_ptr->gqmatrix[NUM_QM_LEVELS - 1][0][txsize];
     const QmVal *iqMatrix = picture_control_set_ptr->parent_pcs_ptr->giqmatrix[NUM_QM_LEVELS - 1][0][txsize];
@@ -953,7 +957,7 @@ static INLINE void set_dc_sign(int32_t *cul_level, int32_t dc_val) {
     qparam.tx_size = txsize;
     qparam.qmatrix = qMatrix;
     qparam.iqmatrix = iqMatrix;
-    EbBool is_inter = (pred_mode >= NEARESTMV);
+   // EbBool is_inter = (pred_mode >= NEARESTMV);
 
     av1_quantize_b_facade_II(
         (TranLow*)coeff,
@@ -1007,6 +1011,16 @@ static INLINE void set_dc_sign(int32_t *cul_level, int32_t dc_val) {
     COMPONENT_TYPE                           component_type,
     EbAsm                                    asm_type)
 {
+
+     UNUSED(tu_chroma_origin_index);
+     UNUSED(entropy_coder_ptr);
+     UNUSED(cb_eob);
+     UNUSED(cr_eob);
+     UNUSED(cb_tu_coeff_bits);
+     UNUSED(cr_tu_coeff_bits);
+     UNUSED(txsize_uv);
+     UNUSED(tx_type_uv);
+     UNUSED(asm_type);
     EbErrorType return_error = EB_ErrorNone;
     int32_t *coeff_buffer;
     int16_t  luma_txb_skip_context = context->luma_txb_skip_context;
@@ -1259,10 +1273,12 @@ EbErrorType mdc_inter_pu_prediction_av1(
     ModeDecisionCandidateBuffer          *candidate_buffer_ptr,
     EbAsm                                   asm_type)
 {
+    UNUSED(asm_type);
+    picture_control_set_ptr;
     EbErrorType           return_error = EB_ErrorNone;
     EbPictureBufferDesc  *ref_pic_list0;
     EbPictureBufferDesc  *ref_pic_list1 = NULL;
-    ModeDecisionCandidate *const candidate_ptr = candidate_buffer_ptr->candidate_ptr;
+    //ModeDecisionCandidate *const candidate_ptr = candidate_buffer_ptr->candidate_ptr;
 
     Mv mv_0;
     Mv mv_1;
@@ -1274,7 +1290,7 @@ EbErrorType mdc_inter_pu_prediction_av1(
     mv_unit.pred_direction = candidate_buffer_ptr->candidate_ptr->prediction_direction[0];
     mv_unit.mv[0] = mv_0;
     mv_unit.mv[1] = mv_1;
-    SequenceControlSet* sequence_control_set_ptr = ((SequenceControlSet*)(picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr));
+    //SequenceControlSet* sequence_control_set_ptr = ((SequenceControlSet*)(picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr));
      int8_t ref_idx_l0 = candidate_buffer_ptr->candidate_ptr->ref_frame_index_l0;
      int8_t ref_idx_l1 = candidate_buffer_ptr->candidate_ptr->ref_frame_index_l1;
      // MRP_MD_UNI_DIR_BIPRED
@@ -1318,6 +1334,8 @@ EbErrorType mdc_inter_pu_prediction_av1(
          context_ptr->blk_geom->origin_x,
          context_ptr->blk_geom->origin_y,
          0); // No chroma
+
+
 
     return return_error;
 }
@@ -1888,7 +1906,7 @@ uint64_t mdc_av1_full_cost(
     uint64_t                             *y_coeff_bits,
     uint64_t                              lambda){
 
-    EbErrorType return_error = EB_ErrorNone;
+    //EbErrorType return_error = EB_ErrorNone;
     // Luma and chroma rate
     uint64_t lumaRate = 0;
     uint64_t coeffRate = 0;
@@ -1982,7 +2000,7 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
         const uint32_t       input_origin_index = (context_ptr->cu_origin_y + input_picture_ptr->origin_y) * input_picture_ptr->stride_y + (context_ptr->cu_origin_x + input_picture_ptr->origin_x);
         const uint32_t       cu_origin_index = blk_geom->origin_x + blk_geom->origin_y * SB_STRIDE_Y;
 
-        ModeDecisionCandidate         *candidate_ptr = context_ptr->candidate_buffer->candidate_ptr = &context_ptr->fast_candidate_array[0];
+        context_ptr->candidate_buffer->candidate_ptr = &context_ptr->fast_candidate_array[0];
         EbAsm asm_type = sequence_control_set_ptr->encode_context_ptr->asm_type;
         cu_ptr->best_d1_blk = blk_idx_mds;
 #if ADD_NEIGHBOR
@@ -2164,7 +2182,7 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
             av1_zero(context_ptr->mdc_cu_ptr->av1xd->neighbors_ref_counts); // Hsan: neighbor not generated @ open loop partitioning => assumes always (0,0)
 
 #if ADD_MDC_FULL_COST
-            const uint8_t inter_direction = me_block_results[me_index].direction;
+            //const uint8_t inter_direction = me_block_results[me_index].direction;
             const uint8_t list0_ref_index = me_block_results[me_index].ref_idx_l0;
             const uint8_t list1_ref_index = me_block_results[me_index].ref_idx_l1;
             context_ptr->candidate_buffer->candidate_ptr->use_intrabc = 0;
@@ -2480,7 +2498,7 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
             // Assign ranking # to each block
             for (leaf_idx = start_idx; leaf_idx < end_idx; leaf_idx++) {
                 EbMdcLeafData * current_depth_leaf_data = &mdcResultTbPtr->leaf_data_array[leaf_idx];
-                uint32_t idx_mds = leaf_data_array[leaf_idx].mds_idx;
+                //uint32_t idx_mds = leaf_data_array[leaf_idx].mds_idx;
                 const BlockGeom * bepth_blk_geom = get_blk_geom_mds(leaf_data_array[leaf_idx].mds_idx);
                 current_depth_leaf_data->open_loop_ranking = find_shape_index(bepth_blk_geom->shape, nsq_shape_table);
 #if COMBINE_MDC_NSQ_TABLE
@@ -2510,6 +2528,8 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
                 leaf_data_ptr,
                 blk_geom->sqi_mds,//input is parent square,
                 sb_index);
+            if (last_cu_index)
+                last_cu_index = 0;
 #if ADD_NEIGHBOR
              if (context_ptr->local_cu_array[last_cu_index].early_split_flag == EB_FALSE)
             {
