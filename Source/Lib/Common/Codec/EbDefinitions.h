@@ -73,8 +73,18 @@ extern "C" {
 #define M2_C12                          1
 #define M2_MD_STAGE_COUNT               1
 
-#define M3_C12                          1
+    //M2 vs M3//
 #define M3_MD_STAGE_COUNT               1
+#define M3_BIPRED3x3_INJECTION          1
+#define M3_ME_SEARCH_METHOD             1
+#define M3_PIC_DEPTH_MODE               1
+#define M3_INTERPOLATION_LEVEL          1
+#define M3_REF_COUNT                    1
+#define M3_C12                          1
+#define M3_SB_SIZE                      1
+#define M3_MRP_MODE                     1
+#define M3_DOWN_SAMPLING_FILTERING      1
+
 #define M4_C12                          1
 #define M4_MD_STAGE_COUNT               1
 #define M5_C12                          1

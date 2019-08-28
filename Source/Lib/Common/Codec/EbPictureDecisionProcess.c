@@ -915,9 +915,7 @@ EbErrorType signal_derivation_multi_processes_oq(
                     picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
             else
                 picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
-        else
-
-        if (picture_control_set_ptr->enc_mode <= ENC_M1)
+        else if (picture_control_set_ptr->enc_mode <= ENC_M1)
             picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #if ADP_BQ
@@ -963,6 +961,15 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
         else
             picture_control_set_ptr->pic_depth_mode = PIC_ALL_C_DEPTH_MODE;
+#endif
+#if M3_PIC_DEPTH_MODE
+#if NSQ_MDC_L01
+        if (picture_control_set_ptr->temporal_layer_index == 0)
+            picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
+        else
+            picture_control_set_ptr->pic_depth_mode = PIC_SQ_DEPTH_MODE;
+#else
+        picture_control_set_ptr->pic_depth_mode = PIC_SQ_DEPTH_MODE;
 #endif
 #endif
 
@@ -1139,6 +1146,10 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->interpolation_search_level = IT_SEARCH_OFF;
         else
             picture_control_set_ptr->interpolation_search_level = IT_SEARCH_OFF;
+
+#if M3_INTERPOLATION_LEVEL
+        picture_control_set_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;
+#endif
 
     // Loop filter Level                            Settings
     // 0                                            OFF

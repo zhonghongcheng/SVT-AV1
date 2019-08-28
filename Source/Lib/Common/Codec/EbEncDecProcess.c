@@ -1476,6 +1476,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->bipred3x3_injection = 0;
 
+#if M3_BIPRED3x3_INJECTION
+    context_ptr->bipred3x3_injection = 1;
+#endif
+
 #if PREDICTIVE_ME
     // Level                Settings
     // 0                    Level 0: OFF
