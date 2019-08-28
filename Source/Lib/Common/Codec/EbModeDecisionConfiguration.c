@@ -903,13 +903,13 @@ static INLINE void set_dc_sign(int32_t *cul_level, int32_t dc_val) {
     TxSize                            txsize,
     uint16_t                         *eob,
     EbAsm                             asm_type,
-    uint32_t                         *count_non_zero_coeffs,                              
+    uint32_t                         *count_non_zero_coeffs,
     uint32_t                          component_type,
     uint32_t                          bit_increment,
     TxType                            tx_type,
     ModeDecisionCandidateBuffer      *candidateBuffer,
-    int16_t                           txb_skip_context,    
-    int16_t                           dc_sign_context,     
+    int16_t                           txb_skip_context,
+    int16_t                           dc_sign_context,
     PredictionMode                    pred_mode)
 {
     MacroblockPlane      candidate_plane ;
@@ -943,7 +943,7 @@ static INLINE void set_dc_sign(int32_t *cul_level, int32_t dc_val) {
         candidate_plane.round_QTX = picture_control_set_ptr->parent_pcs_ptr->quantsMd.v_round[qIndex];
         candidate_plane.dequant_QTX = picture_control_set_ptr->parent_pcs_ptr->deqMd.v_dequant_QTX[qIndex];
     }
-    const ScanOrder *const scan_order = &av1_scan_orders[txsize][tx_type];  
+    const ScanOrder *const scan_order = &av1_scan_orders[txsize][tx_type];
 
     const int32_t n_coeffs = av1_get_max_eob(txsize);
 
@@ -1010,7 +1010,7 @@ static INLINE void set_dc_sign(int32_t *cul_level, int32_t dc_val) {
     EbErrorType return_error = EB_ErrorNone;
     int32_t *coeff_buffer;
     int16_t  luma_txb_skip_context = context->luma_txb_skip_context;
-    int16_t  luma_dc_sign_context  = context->luma_dc_sign_context; 
+    int16_t  luma_dc_sign_context  = context->luma_dc_sign_context;
     EbBool reducedTransformSetFlag = picture_control_set_ptr->parent_pcs_ptr->reduced_tx_set_used ? EB_TRUE : EB_FALSE;
     //Estimate the rate of the transform type and coefficient for Luma
     if (component_type == COMPONENT_LUMA || component_type == COMPONENT_ALL) {
@@ -2425,11 +2425,11 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
         //NADER - FORCE DEPTH
         /*SbParams *sb_params = &sequence_control_set_ptr->sb_params_array[sb_index];
         if (sb_params->is_complete_sb) {
-            if (context_ptr->blk_geom->sq_size == 32) 
+            if (context_ptr->blk_geom->sq_size == 32)
                 cu_ptr->early_cost = 0;
         }
         else {
-            if (context_ptr->blk_geom->sq_size == 4) 
+            if (context_ptr->blk_geom->sq_size == 4)
                 cu_ptr->early_cost = 0;
         }*/
         if (blk_geom->nsi + 1 == blk_geom->totns) {
@@ -2521,7 +2521,7 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
                     sb_originy);
             }
 #endif
-           
+
         }
         cuIdx++;
     } while (cuIdx < leaf_count);// End of CU loop

@@ -244,19 +244,19 @@ EbErrorType signal_derivation_me_kernel_oq(
     }
     else if (picture_control_set_ptr->enc_mode <= ENC_M2) {
 #if DISABLE_ENH_SUBPEL_SC
-        context_ptr->me_context_ptr->half_pel_mode = picture_control_set_ptr->sc_content_detected ? REFINMENT_HP_MODE :
+        context_ptr->me_context_ptr->half_pel_mode = picture_control_set_ptr->sc_content_detected ? REFINEMENT_HP_MODE :
 #else
         context_ptr->me_context_ptr->half_pel_mode =
 #endif
             EX_HP_MODE;
         context_ptr->me_context_ptr->quarter_pel_mode =
-            REFINMENT_QP_MODE;
+            REFINEMENT_QP_MODE;
     }
     else {
         context_ptr->me_context_ptr->half_pel_mode =
-            REFINMENT_HP_MODE;
+            REFINEMENT_HP_MODE;
         context_ptr->me_context_ptr->quarter_pel_mode =
-            REFINMENT_QP_MODE;
+            REFINEMENT_QP_MODE;
     }
 #endif
 
@@ -423,9 +423,9 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
 
 #if ALTREF_SHUT_EX_REFINEMENT
     context_ptr->me_context_ptr->half_pel_mode =
-        REFINMENT_HP_MODE;
+        REFINEMENT_HP_MODE;
     context_ptr->me_context_ptr->quarter_pel_mode =
-        REFINMENT_QP_MODE;
+        REFINEMENT_QP_MODE;
 #else
     if (MR_MODE) {
         context_ptr->me_context_ptr->half_pel_mode =
@@ -435,19 +435,19 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
     }
     else if (picture_control_set_ptr->enc_mode <= ENC_M2) {
 #if DISABLE_ENH_SUBPEL_SC
-        context_ptr->me_context_ptr->half_pel_mode = picture_control_set_ptr->sc_content_detected ? REFINMENT_HP_MODE :
+        context_ptr->me_context_ptr->half_pel_mode = picture_control_set_ptr->sc_content_detected ? REFINEMENT_HP_MODE :
 #else
         context_ptr->me_context_ptr->half_pel_mode =
 #endif
             EX_HP_MODE;
         context_ptr->me_context_ptr->quarter_pel_mode =
-            REFINMENT_QP_MODE;
+            REFINEMENT_QP_MODE;
     }
     else {
         context_ptr->me_context_ptr->half_pel_mode =
-            REFINMENT_HP_MODE;
+            REFINEMENT_HP_MODE;
         context_ptr->me_context_ptr->quarter_pel_mode =
-            REFINMENT_QP_MODE;
+            REFINEMENT_QP_MODE;
     }
 #endif
 
@@ -456,7 +456,7 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
     context_ptr->me_context_ptr->half_pel_mode =
         EX_HP_MODE;
     context_ptr->me_context_ptr->quarter_pel_mode =
-        REFINMENT_QP_MODE;
+        REFINEMENT_QP_MODE;
 #endif
 
 #endif

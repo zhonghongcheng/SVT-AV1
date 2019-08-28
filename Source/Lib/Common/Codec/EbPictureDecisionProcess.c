@@ -1462,7 +1462,7 @@ EbErrorType signal_derivation_multi_processes_oq(
         // inter intra pred                      Settings
         // 0                                     OFF
         // 1                                     ON
-            picture_control_set_ptr->enable_inter_intra = sequence_control_set_ptr->seq_header.enable_interintra_compound;
+            picture_control_set_ptr->enable_inter_intra = picture_control_set_ptr->slice_type != I_SLICE ? sequence_control_set_ptr->seq_header.enable_interintra_compound : 0;
 
 #endif
 #if COMP_MODE
@@ -3924,8 +3924,8 @@ void* picture_decision_kernel(void *input_ptr)
 #if IMPROVED_SUBPEL_SEARCH
 #if NEW_M0_SC
                                 if (picture_control_set_ptr->sc_content_detected) {
-                                    picture_control_set_ptr->half_pel_mode = REFINMENT_HP_MODE;
-                                    picture_control_set_ptr->quarter_pel_mode = REFINMENT_QP_MODE;
+                                    picture_control_set_ptr->half_pel_mode = REFINEMENT_HP_MODE;
+                                    picture_control_set_ptr->quarter_pel_mode = REFINEMENT_QP_MODE;
 
                                 }else
 #endif
@@ -3940,12 +3940,12 @@ void* picture_decision_kernel(void *input_ptr)
                                     picture_control_set_ptr->half_pel_mode =
                                         EX_HP_MODE;
                                     picture_control_set_ptr->quarter_pel_mode =
-                                        REFINMENT_QP_MODE;
+                                        REFINEMENT_QP_MODE;
                                 } else {
                                     picture_control_set_ptr->half_pel_mode =
-                                        REFINMENT_HP_MODE;
+                                        REFINEMENT_HP_MODE;
                                     picture_control_set_ptr->quarter_pel_mode =
-                                        REFINMENT_QP_MODE;
+                                        REFINEMENT_QP_MODE;
                                 }
 #endif
 #endif

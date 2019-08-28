@@ -15832,7 +15832,7 @@ EbErrorType motion_estimate_lcu(
 #else
                             if (picture_control_set_ptr->half_pel_mode ==
 #endif
-                                REFINMENT_HP_MODE) {
+                                REFINEMENT_HP_MODE) {
 #endif
                                 InterpolateSearchRegionAVC(
                                     context_ptr,
@@ -15922,7 +15922,7 @@ EbErrorType motion_estimate_lcu(
 #else
                             if (picture_control_set_ptr->quarter_pel_mode ==
 #endif
-                                REFINMENT_QP_MODE) {
+                                REFINEMENT_QP_MODE) {
 #endif
 #if M0_ME_QUARTER_PEL_SEARCH
                                 // Quarter-Pel Refinement [8 search positions]

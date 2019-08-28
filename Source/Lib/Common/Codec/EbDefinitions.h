@@ -103,7 +103,7 @@ extern "C" {
 #define    COMP_FULL                       1 // test compound in full loop
 #define    COMP_AVX                        1 // test compound in full loop
 #endif
-#define II_COMP_FLAG 0
+#define II_COMP_FLAG 1 //*****************************************************************************************************************************************************************
 
 #if II_COMP_FLAG
 #define  II_COMP            1   // Inter-intra compound
@@ -114,6 +114,13 @@ extern "C" {
 #define  II_RATEE           1   // Rate estimation
 #define  II_AVX             1   // AVX
 #define  FIX_RATE_E_WEDGE   0   // Fix bug in wedge search
+#define  II_WARP_FIX        1
+#define  II_PRED_FIX        1
+
+#define  II_NIC            1
+#define  II_IFS            1
+
+#define  II_SO            1 // ii search optimization
 #endif
 
 #define DISABLE_QPM_SC              1
@@ -528,11 +535,11 @@ typedef enum MD_STAGE {
 #if IMPROVED_SUBPEL_SEARCH
 typedef enum ME_HP_MODE {
     EX_HP_MODE = 0,
-    REFINMENT_HP_MODE = 1
+    REFINEMENT_HP_MODE = 1
 } ME_HP_MODE;
 typedef enum ME_QP_MODE {
     EX_QP_MODE = 0,
-    REFINMENT_QP_MODE = 1
+    REFINEMENT_QP_MODE = 1
 } ME_QP_MODE;
 #endif
 
@@ -610,7 +617,11 @@ enum {
 #else
 
 #if MD_CLASS
+#if II_COMP
+#define MAX_NFL                            80
+#else 
 #define MAX_NFL                            65 //full loop all candidates in I slice  300//   MDLEVELS//
+#endif
 #else
 #define MAX_NFL                                   40
 #endif

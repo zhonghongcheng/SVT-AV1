@@ -277,6 +277,30 @@ static int64_t pick_interintra_wedge(
    // mbmi->interintra_wedge_index = wedge_index;
     return rd;
 }
+#if II_SO
+//for every CU, perform DC/V/H/S intra prediction to be used later in inter-intra search 
+void precompute_intra_pred_for_inter_intra(
+    PictureControlSet            *picture_control_set_ptr,
+    ModeDecisionContext          *context_ptr)
+{
+    uint32_t j;
+    EbPictureBufferDesc  pred_desc;
+    pred_desc.origin_x = pred_desc.origin_y = 0;
+    pred_desc.stride_y = context_ptr->blk_geom->bwidth;
+
+    for (j = 0; j < INTERINTRA_MODES; ++j)
+    {
+      
+        INTERINTRA_MODE interintra_mode = (INTERINTRA_MODE)j;
+        pred_desc.buffer_y = context_ptr->intrapred_buf[j];
+        intra_luma_prediction_for_interintra(
+            context_ptr,
+            picture_control_set_ptr,
+            interintra_mode,
+            &pred_desc);      
+    }
+}
+#endif
  void combine_interintra(INTERINTRA_MODE mode,
     int8_t use_wedge_interintra, int wedge_index,
     int wedge_sign, BLOCK_SIZE bsize,
@@ -432,6 +456,8 @@ void inter_intra_search(
                 //rmode = interintra_mode_cost[mbmi->interintra_mode];
                 const int bsize_group = size_group_lookup[context_ptr->blk_geom->bsize];
                 rmode  = candidate_ptr->md_rate_estimation_ptr->inter_intra_mode_fac_bits[bsize_group][interintra_mode];
+#if !II_SO
+                inra_pred_desc.buffer_y = context_ptr->intrapred_buf[j];
 
                 //av1_build_intra_predictors_for_interintra(cm, xd, bsize, 0, orig_dst,
                 //                                          intrapred, bw);
@@ -440,6 +466,8 @@ void inter_intra_search(
                     picture_control_set_ptr,
                     interintra_mode,
                     &inra_pred_desc);
+#endif
+
                 //av1_combine_interintra(xd, bsize, 0, tmp_buf, bw, intrapred, bw);
                 combine_interintra(
                     interintra_mode,//mode,
@@ -450,7 +478,11 @@ void inter_intra_search(
                     context_ptr->blk_geom->bsize,// plane_bsize,
                     ii_pred_buf, bwidth, /*uint8_t *comppred, int compstride,*/
                     tmp_buf, bwidth,  /*const uint8_t *interpred, int interstride,*/
+#if II_SO
+                    context_ptr->intrapred_buf[j], bwidth /*const uint8_t *intrapred,   int intrastride*/);
+#else
                     intrapred, bwidth /*const uint8_t *intrapred,   int intrastride*/);
+#endif
 
                 //model_rd_sb_fn[MODELRD_TYPE_INTERINTRA](
                 //    cpi, bsize, x, xd, 0, 0, mi_row, mi_col, &rate_sum, &dist_sum,
@@ -468,14 +500,31 @@ void inter_intra_search(
                 }
             }
 
+
+#if !  II_SO    
+            intra_luma_prediction_for_interintra(
+                context_ptr,
+                picture_control_set_ptr,
+                best_interintra_mode,
+                &inra_pred_desc);
+#endif
+            
+
             /* best_interintra_rd_wedge =
                  pick_interintra_wedge(cpi, x, bsize, intrapred_, tmp_buf_);*/
+
+            //CHKN need to re-do intra pred using the winner, or have a separate intra serch for wedge
+
             best_interintra_rd_wedge = pick_interintra_wedge(
                 candidate_ptr,
                 picture_control_set_ptr,
                 context_ptr,
                 context_ptr->blk_geom->bsize,
+#if II_SO
+                context_ptr->intrapred_buf[best_interintra_mode],
+#else
                 intrapred,
+#endif
                 tmp_buf,
                 src_buf,
                 src_pic->stride_y,
@@ -1166,11 +1215,11 @@ void sort_fast_loop_candidates(
 #endif
 }
 #endif
-#define BIPRED_3x3_REFINMENT_POSITIONS 8
+#define BIPRED_3x3_REFINEMENT_POSITIONS 8
 
-int8_t ALLOW_REFINEMENT_FLAG[BIPRED_3x3_REFINMENT_POSITIONS] = {  1, 0, 1, 0, 1,  0,  1, 0 };
-int8_t BIPRED_3x3_X_POS[BIPRED_3x3_REFINMENT_POSITIONS] = { -1, -1, 0, 1, 1, 1, 0, -1 };
-int8_t BIPRED_3x3_Y_POS[BIPRED_3x3_REFINMENT_POSITIONS] = { 0, 1, 1, 1, 0, -1, -1, -1 };
+int8_t ALLOW_REFINEMENT_FLAG[BIPRED_3x3_REFINEMENT_POSITIONS] = {  1, 0, 1, 0, 1,  0,  1, 0 };
+int8_t BIPRED_3x3_X_POS[BIPRED_3x3_REFINEMENT_POSITIONS] = { -1, -1, 0, 1, 1, 1, 0, -1 };
+int8_t BIPRED_3x3_Y_POS[BIPRED_3x3_REFINEMENT_POSITIONS] = { 0, 1, 1, 1, 0, -1, -1, -1 };
 
 void Unipred3x3CandidatesInjection(
 #if MEMORY_FOOTPRINT_OPT_ME_MV
@@ -1221,7 +1270,7 @@ void Unipred3x3CandidatesInjection(
 
         if (inter_direction == 0) {
 #endif
-    for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINMENT_POSITIONS; ++bipredIndex)
+    for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINEMENT_POSITIONS; ++bipredIndex)
     {
         /**************
         NEWMV L0
@@ -1262,7 +1311,7 @@ void Unipred3x3CandidatesInjection(
              MvReferenceFrame rf[2];
              rf[0] = to_inject_ref_type;
              rf[1] = -1;
-            uint8_t tot_ii_types =    svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra,context_ptr->blk_geom->bsize, NEWMV, rf) ? II_COUNT : 1;
+            uint8_t tot_ii_types =    1;//svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra,context_ptr->blk_geom->bsize, NEWMV, rf) ? II_COUNT : 1;
             uint8_t ii_type;
             for (ii_type = 0; ii_type < tot_ii_types; ii_type++)
             {
@@ -1372,7 +1421,7 @@ void Unipred3x3CandidatesInjection(
         const uint8_t list1_ref_index = me_block_results_ptr->ref_idx_l1;
         if (inter_direction == 1) {
 #endif
-    for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINMENT_POSITIONS; ++bipredIndex)
+    for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINEMENT_POSITIONS; ++bipredIndex)
     {
         if (isCompoundEnabled) {
             /**************
@@ -1419,7 +1468,7 @@ void Unipred3x3CandidatesInjection(
              MvReferenceFrame rf[2];
              rf[0] = to_inject_ref_type;
              rf[1] = -1;
-            uint8_t tot_ii_types =    svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra,context_ptr->blk_geom->bsize, NEWMV, rf) ? II_COUNT : 1;
+            uint8_t tot_ii_types =    1;//svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra,context_ptr->blk_geom->bsize, NEWMV, rf) ? II_COUNT : 1;
             uint8_t ii_type;
             for (ii_type = 0; ii_type < tot_ii_types; ii_type++)
             {
@@ -1596,7 +1645,7 @@ void Bipred3x3CandidatesInjection(
             if (inter_direction == 2) {
 #endif
        // (Best_L0, 8 Best_L1 neighbors)
-                for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINMENT_POSITIONS; ++bipredIndex)
+                for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINEMENT_POSITIONS; ++bipredIndex)
                 {
         if (context_ptr->bipred3x3_injection >= 2){
                         if (ALLOW_REFINEMENT_FLAG[bipredIndex] == 0)
@@ -1760,7 +1809,7 @@ void Bipred3x3CandidatesInjection(
         }
 
         // (8 Best_L0 neighbors, Best_L1) :
-        for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINMENT_POSITIONS; ++bipredIndex)
+        for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINEMENT_POSITIONS; ++bipredIndex)
         {
             if (context_ptr->bipred3x3_injection >= 2){
                 if (ALLOW_REFINEMENT_FLAG[bipredIndex] == 0)
@@ -1953,7 +2002,7 @@ void eighth_pel_unipred_refinement(
         const uint8_t inter_direction = me_block_results_ptr->direction;
         const uint8_t list0_ref_index = me_block_results_ptr->ref_idx_l0;
         if (inter_direction == 0) {
-            for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINMENT_POSITIONS; ++bipredIndex) {
+            for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINEMENT_POSITIONS; ++bipredIndex) {
                 /**************
                 NEWMV L0
                 ************* */
@@ -2023,7 +2072,7 @@ void eighth_pel_unipred_refinement(
         const uint8_t inter_direction = me_block_results_ptr->direction;
         const uint8_t list1_ref_index = me_block_results_ptr->ref_idx_l1;
         if (inter_direction == 1) {
-            for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINMENT_POSITIONS; ++bipredIndex) {
+            for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINEMENT_POSITIONS; ++bipredIndex) {
                 if (isCompoundEnabled) {
                     /**************
                     NEWMV L1
@@ -2120,7 +2169,7 @@ void eighth_pel_bipred_refinement(
 
             if (inter_direction == 2) {
        // (Best_L0, 8 Best_L1 neighbors)
-                for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINMENT_POSITIONS; ++bipredIndex) {
+                for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINEMENT_POSITIONS; ++bipredIndex) {
                     if (context_ptr->bipred3x3_injection >= 2) {
                         if (ALLOW_REFINEMENT_FLAG[bipredIndex] == 0)
                             continue;
@@ -2190,7 +2239,7 @@ void eighth_pel_bipred_refinement(
         }
 
         // (8 Best_L0 neighbors, Best_L1) :
-        for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINMENT_POSITIONS; ++bipredIndex)
+                for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINEMENT_POSITIONS; ++bipredIndex)
         {
                     if (context_ptr->bipred3x3_injection >= 2) {
                 if (ALLOW_REFINEMENT_FLAG[bipredIndex] == 0)
@@ -6751,6 +6800,9 @@ void  inject_intra_bc_candidates(
         candidateArray[*cand_cnt].ref_mv_index = 0;
         candidateArray[*cand_cnt].pred_mv_weight = 0;
         candidateArray[*cand_cnt].interp_filters = av1_broadcast_interp_filter(BILINEAR);
+#if II_COMP
+        candidateArray[*cand_cnt].is_interintra_used = 0;
+#endif
 #if CHECK_CAND
         INCRMENT_CAND_TOTAL_COUNT( (*cand_cnt) );
 #else

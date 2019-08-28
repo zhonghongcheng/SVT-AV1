@@ -2560,60 +2560,60 @@ static int8_t estimate_wedge_sign(
   return (tl + br > 0);
 }
 
-//// Choose the best wedge index the specified sign
-//#if II_COMP
-//int64_t pick_wedge_fixed_sign(
-//#else
-//static int64_t pick_wedge_fixed_sign(
-//#endif
-//#if FIX_RATE_E_WEDGE || II_COMP
-//    ModeDecisionCandidate        *candidate_ptr,
-//#endif
-//    PictureControlSet                    *picture_control_set_ptr,
-//    ModeDecisionContext                  *context_ptr,
-//    //const AV1_COMP *const cpi,
-//    //const MACROBLOCK *const x,
-//    const BLOCK_SIZE bsize,
-//    const int16_t *const residual1,
-//    const int16_t *const diff10,
-//    const int8_t wedge_sign,
-//    int8_t *const best_wedge_index) {
-//  //const MACROBLOCKD *const xd = &x->e_mbd;
-//
-//  const int bw = block_size_wide[bsize];
-//  const int bh = block_size_high[bsize];
-//  const int N = bw * bh;
-//  assert(N >= 64);
-//  int rate;
-//  int64_t dist;
-//  int64_t rd, best_rd = INT64_MAX;
-//  int8_t wedge_index;
-//  int8_t wedge_types = (1 << get_wedge_bits_lookup(bsize));
-//  const uint8_t *mask;
-//  uint64_t sse;
-//  //const int hbd = 0;// is_cur_buf_hbd(xd);
-//  const int bd_round = 0;//hbd ? (xd->bd - 8) * 2 : 0;
-//  for (wedge_index = 0; wedge_index < wedge_types; ++wedge_index) {
-//    mask = av1_get_contiguous_soft_mask(wedge_index, wedge_sign, bsize);
-//    sse = av1_wedge_sse_from_residuals(residual1, diff10, mask, N);
-//    sse = ROUND_POWER_OF_TWO(sse, bd_round);
-//
-//    model_rd_with_curvfit(picture_control_set_ptr,bsize, /*0,*/ sse, N,    &rate, &dist, context_ptr->full_lambda);
-//   // model_rd_sse_fn[MODELRD_TYPE_MASKED_COMPOUND](cpi, x, bsize, 0, sse, N, &rate, &dist);
-//
-//   // rate += x->wedge_idx_cost[bsize][wedge_index];
-//#if FIX_RATE_E_WEDGE
-//    rate  += candidate_ptr->md_rate_estimation_ptr->wedge_idx_fac_bits[bsize][wedge_index];
-//#endif
-//    rd = RDCOST(/*x->rdmult*/context_ptr->full_lambda, rate, dist);
-//
-//    if (rd < best_rd) {
-//      *best_wedge_index = wedge_index;
-//      best_rd = rd;
-//    }
-//  }
-//  return best_rd ;//- RDCOST(x->rdmult, x->wedge_idx_cost[bsize][*best_wedge_index], 0);
-//}
+// Choose the best wedge index the specified sign
+#if II_COMP
+int64_t pick_wedge_fixed_sign(
+#else
+static int64_t pick_wedge_fixed_sign(
+#endif
+#if FIX_RATE_E_WEDGE || II_COMP
+    ModeDecisionCandidate        *candidate_ptr,
+#endif
+    PictureControlSet                    *picture_control_set_ptr,
+    ModeDecisionContext                  *context_ptr,
+    //const AV1_COMP *const cpi,
+    //const MACROBLOCK *const x,
+    const BLOCK_SIZE bsize,
+    const int16_t *const residual1,
+    const int16_t *const diff10,
+    const int8_t wedge_sign,
+    int8_t *const best_wedge_index) {
+  //const MACROBLOCKD *const xd = &x->e_mbd;
+
+  const int bw = block_size_wide[bsize];
+  const int bh = block_size_high[bsize];
+  const int N = bw * bh;
+  assert(N >= 64);
+  int rate;
+  int64_t dist;
+  int64_t rd, best_rd = INT64_MAX;
+  int8_t wedge_index;
+  int8_t wedge_types = (1 << get_wedge_bits_lookup(bsize));
+  const uint8_t *mask;
+  uint64_t sse;
+  //const int hbd = 0;// is_cur_buf_hbd(xd);
+  const int bd_round = 0;//hbd ? (xd->bd - 8) * 2 : 0;
+  for (wedge_index = 0; wedge_index < wedge_types; ++wedge_index) {
+    mask = av1_get_contiguous_soft_mask(wedge_index, wedge_sign, bsize);
+    sse = av1_wedge_sse_from_residuals(residual1, diff10, mask, N);
+    sse = ROUND_POWER_OF_TWO(sse, bd_round);
+
+    model_rd_with_curvfit(picture_control_set_ptr,bsize, /*0,*/ sse, N,    &rate, &dist, context_ptr->full_lambda);
+   // model_rd_sse_fn[MODELRD_TYPE_MASKED_COMPOUND](cpi, x, bsize, 0, sse, N, &rate, &dist);
+
+   // rate += x->wedge_idx_cost[bsize][wedge_index];
+#if FIX_RATE_E_WEDGE || II_COMP
+    rate  += candidate_ptr->md_rate_estimation_ptr->wedge_idx_fac_bits[bsize][wedge_index];
+#endif
+    rd = RDCOST(/*x->rdmult*/context_ptr->full_lambda, rate, dist);
+
+    if (rd < best_rd) {
+      *best_wedge_index = wedge_index;
+      best_rd = rd;
+    }
+  }
+  return best_rd ;//- RDCOST(x->rdmult, x->wedge_idx_cost[bsize][*best_wedge_index], 0);
+}
 int is_interinter_compound_used(COMPOUND_TYPE type,
     BLOCK_SIZE sb_type);
 static void /*int64_t*/ pick_interinter_wedge(
@@ -2647,7 +2647,7 @@ static void /*int64_t*/ pick_interinter_wedge(
 
   if (picture_control_set_ptr->parent_pcs_ptr->wedge_mode == 2 || picture_control_set_ptr->parent_pcs_ptr->wedge_mode == 3) {
     wedge_sign = estimate_wedge_sign(/*cpi, x, */picture_control_set_ptr,context_ptr, bsize, p0, bw, p1, bw);
-#if FIX_RATE_E_WEDGE || II_COMP
+#if FIX_RATE_E_WEDGE //|| II_COMP
     rd = pick_wedge_fixed_sign(/*cpi, x, */
 #if FIX_RATE_E_WEDGE
         candidate_ptr,
@@ -3907,7 +3907,7 @@ EbErrorType av1_inter_prediction(
 #if II_ED
     if ( is_interintra_used ) {
         int32_t start_plane = 0;
-        int32_t end_plane = blk_geom->has_uv ? MAX_MB_PLANE: 1;
+        int32_t end_plane = perform_chroma && blk_geom->has_uv ? MAX_MB_PLANE: 1;
             // temp buffer for intra pred
             DECLARE_ALIGNED(16, uint8_t, intra_pred[MAX_SB_SQUARE]);
             DECLARE_ALIGNED(16, uint8_t, intra_pred_cb[MAX_SB_SQUARE]);
@@ -3933,19 +3933,32 @@ EbErrorType av1_inter_prediction(
             uint8_t    topNeighArray[64 * 2 + 1];
             uint8_t    leftNeighArray[64 * 2 + 1];
 
+#if II_PRED_FIX
+            uint32_t cu_originx_uv = (pu_origin_x >> 3 << 3) >> 1;
+            uint32_t cu_originy_uv = (pu_origin_y >> 3 << 3) >> 1;
+#else
             uint32_t cu_originx_uv = (dst_origin_x >> 3 << 3) >> 1;
             uint32_t cu_originy_uv = (dst_origin_y >> 3 << 3) >> 1;
-
+#endif
             if (plane == 0) {
                 dst_ptr = prediction_ptr->buffer_y + prediction_ptr->origin_x + dst_origin_x + (prediction_ptr->origin_y + dst_origin_y) * prediction_ptr->stride_y;
                 dst_stride = prediction_ptr->stride_y;
                 intra_stride = inra_pred_desc.stride_y;
+#if II_PRED_FIX
+                if (pu_origin_y != 0)
+                    memcpy(topNeighArray + 1, luma_recon_neighbor_array->top_array + pu_origin_x, blk_geom->bwidth * 2);
+                if (pu_origin_x != 0)
+                    memcpy(leftNeighArray + 1, luma_recon_neighbor_array->left_array + pu_origin_y, blk_geom->bheight * 2);
+                if (pu_origin_y != 0 && pu_origin_x != 0)
+                    topNeighArray[0] = leftNeighArray[0] = luma_recon_neighbor_array->top_left_array[MAX_PICTURE_HEIGHT_SIZE + pu_origin_x - pu_origin_y];
+#else            
                 if (dst_origin_y != 0)
                     memcpy(topNeighArray + 1, luma_recon_neighbor_array->top_array + dst_origin_x,  blk_geom->bwidth * 2);
                 if (dst_origin_x != 0)
                     memcpy(leftNeighArray + 1, luma_recon_neighbor_array->left_array + dst_origin_y, blk_geom->bheight * 2);
                 if (dst_origin_y != 0 && dst_origin_x != 0)
                     topNeighArray[0] = leftNeighArray[0] = luma_recon_neighbor_array->top_left_array[MAX_PICTURE_HEIGHT_SIZE + dst_origin_x - dst_origin_y];
+#endif
             }
 
             else if (plane == 1) {
@@ -4012,8 +4025,13 @@ EbErrorType av1_inter_prediction(
                 dst_origin_x,
                 dst_origin_y,
 #endif
+#if II_PRED_FIX
+                pu_origin_x,
+                pu_origin_y,
+#else
                 dst_origin_x,                  //uint32_t cuOrgX,
                 dst_origin_y,                  //uint32_t cuOrgY
+#endif
                 0,  //uint32_t cuOrgX used only for prediction Ptr
                 0   //uint32_t cuOrgY used only for prediction Ptr
             );
@@ -6241,7 +6259,11 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
         md_context_ptr->luma_recon_neighbor_array,
         md_context_ptr->cb_recon_neighbor_array,
         md_context_ptr->cr_recon_neighbor_array,
+#if II_IFS
+        0, //No inter-intra for IFSearch
+#else
         candidate_buffer_ptr->candidate_ptr->is_interintra_used,
+#endif
         candidate_buffer_ptr->candidate_ptr->interintra_mode,
         candidate_buffer_ptr->candidate_ptr->use_wedge_interintra,
         candidate_buffer_ptr->candidate_ptr->interintra_wedge_index,
@@ -6333,7 +6355,11 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
                         md_context_ptr->luma_recon_neighbor_array,
                         md_context_ptr->cb_recon_neighbor_array,
                         md_context_ptr->cr_recon_neighbor_array,
+#if II_IFS
+                        0, //No inter-intra for IFSearch
+#else
                         candidate_buffer_ptr->candidate_ptr->is_interintra_used,
+#endif
                         candidate_buffer_ptr->candidate_ptr->interintra_mode,
                         candidate_buffer_ptr->candidate_ptr->use_wedge_interintra,
                         candidate_buffer_ptr->candidate_ptr->interintra_wedge_index,
@@ -6421,7 +6447,11 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
                         md_context_ptr->luma_recon_neighbor_array,
                         md_context_ptr->cb_recon_neighbor_array,
                         md_context_ptr->cr_recon_neighbor_array,
+#if II_IFS
+                        0, //No inter-intra for IFSearch
+#else
                         candidate_buffer_ptr->candidate_ptr->is_interintra_used,
+#endif
                         candidate_buffer_ptr->candidate_ptr->interintra_mode,
                         candidate_buffer_ptr->candidate_ptr->use_wedge_interintra,
                         candidate_buffer_ptr->candidate_ptr->interintra_wedge_index,
@@ -6511,7 +6541,11 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
                         md_context_ptr->luma_recon_neighbor_array,
                         md_context_ptr->cb_recon_neighbor_array,
                         md_context_ptr->cr_recon_neighbor_array,
+#if II_IFS
+                        0, //No inter-intra for IFSearch
+#else
                         candidate_buffer_ptr->candidate_ptr->is_interintra_used,
+#endif
                         candidate_buffer_ptr->candidate_ptr->interintra_mode,
                         candidate_buffer_ptr->candidate_ptr->use_wedge_interintra,
                         candidate_buffer_ptr->candidate_ptr->interintra_wedge_index,

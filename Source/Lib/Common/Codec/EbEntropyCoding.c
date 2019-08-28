@@ -6533,6 +6533,14 @@ assert(bsize < BlockSizeS_ALL);
                 if (picture_control_set_ptr->parent_pcs_ptr->reference_mode != COMPOUND_REFERENCE &&
                     sequence_control_set_ptr->seq_header.enable_interintra_compound &&
                     is_interintra_allowed(mbmi)) {
+#if II_WARP_FIX
+                    if (cu_ptr->is_interintra_used)
+                    {
+                        rf[1] = INTRA_FRAME;
+                         mbmi->ref_frame[1] = INTRA_FRAME;
+                    }
+#endif
+
                   const int interintra = cu_ptr->is_interintra_used;//mbmi->ref_frame[1] == INTRA_FRAME;
                   const int bsize_group = size_group_lookup[bsize];
                   aom_write_symbol(ec_writer, cu_ptr->is_interintra_used, frameContext->interintra_cdf[bsize_group], 2);
