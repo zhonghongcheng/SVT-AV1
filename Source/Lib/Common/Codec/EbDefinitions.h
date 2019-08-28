@@ -488,8 +488,16 @@ typedef enum MD_STAGE {
 #define OPT_IFS                                         0 // DISABLE INTERPOLATION SEARCH WHEN ALL MVs (x and y) ARE INTEGER.
 #define IFS_EARLY_EXIT                                  0 // EARLY EXIT FROM INTERPOLATION SEARCH BASED ON THE DISTORTION OF THE REGULAR-FILTER (x and y) ARE INTEGER.
 
-#define OPTIMISED_EX_SUBPEL                                 1
+#define OPTIMISED_EX_SUBPEL                             1
+
+#define M0_TEST                                         0
+#define M1_TEST                                         0
+
+#if M0_TEST || M1_TEST
+#define PREDICT_NSQ_SHAPE                               1
+#else
 #define PREDICT_NSQ_SHAPE                               0
+#endif
 #if PREDICT_NSQ_SHAPE
 #define NSQ_MDC_L01                                     1
 #define ADD_MDC_INTRA                                   0
@@ -508,14 +516,15 @@ typedef enum MD_STAGE {
 #define ADD_MDC_REFINEMENT_LOOP                         1
 #define ADD_MDC_FULL_COST                               1
 #define ADD_NEIGHBOR                                    0
+#define NSQ_EARLY_EXIT                                  0
+#define RED_CU_BUG_FIX                                  1
 #endif
 #if COMBINE_MDC_NSQ_TABLE
 #define NSQ_TAB_SIZE                                    8
 #else
 #define NSQ_TAB_SIZE                                    6
 #endif
-#define NSQ_EARLY_EXIT                                  0
-#define RED_CU_BUG_FIX                                  1
+
 #if IMPROVED_SUBPEL_SEARCH
 typedef enum ME_HP_MODE {
     EX_HP_MODE = 0,

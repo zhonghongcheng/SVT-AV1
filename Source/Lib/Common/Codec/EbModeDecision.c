@@ -2119,7 +2119,7 @@ void eighth_pel_bipred_refinement(
             const uint8_t list1_ref_index = me_block_results_ptr->ref_idx_l1;
 
             if (inter_direction == 2) {
-                // (Best_L0, 8 Best_L1 neighbors)
+       // (Best_L0, 8 Best_L1 neighbors)
                 for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINMENT_POSITIONS; ++bipredIndex) {
                     if (context_ptr->bipred3x3_injection >= 2) {
                         if (ALLOW_REFINEMENT_FLAG[bipredIndex] == 0)
@@ -2132,136 +2132,136 @@ void eighth_pel_bipred_refinement(
                     rf[0] = svt_get_ref_frame_type(me_block_results_ptr->ref0_list, list0_ref_index);
                     rf[1] = svt_get_ref_frame_type(me_block_results_ptr->ref1_list, list1_ref_index);
                     uint8_t to_inject_ref_type = av1_ref_frame_type(rf);
-                    if (context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, to_inject_ref_type) == EB_FALSE) {
-                        candidateArray[canTotalCnt].type = INTER_MODE;
-                        candidateArray[canTotalCnt].distortion_ready = 0;
-                        candidateArray[canTotalCnt].use_intrabc = 0;
-                        candidateArray[canTotalCnt].merge_flag = EB_FALSE;
-                        candidateArray[canTotalCnt].is_new_mv = 1;
-                        candidateArray[canTotalCnt].is_zero_mv = 0;
-                        candidateArray[canTotalCnt].drl_index = 0;
-                        // Set the MV to ME result
-                        candidateArray[canTotalCnt].motion_vector_xl0 = to_inject_mv_x_l0;
-                        candidateArray[canTotalCnt].motion_vector_yl0 = to_inject_mv_y_l0;
-                        candidateArray[canTotalCnt].motion_vector_xl1 = to_inject_mv_x_l1;
-                        candidateArray[canTotalCnt].motion_vector_yl1 = to_inject_mv_y_l1;
-                        // will be needed later by the rate estimation
-                        candidateArray[canTotalCnt].ref_mv_index = 0;
-                        candidateArray[canTotalCnt].pred_mv_weight = 0;
-                        candidateArray[canTotalCnt].inter_mode = NEW_NEWMV;
-                        candidateArray[canTotalCnt].pred_mode = NEW_NEWMV;
-                        candidateArray[canTotalCnt].motion_mode = SIMPLE_TRANSLATION;
-                        candidateArray[canTotalCnt].is_compound = 1;
-                        candidateArray[canTotalCnt].prediction_direction[0] = (EbPredDirection)2;
-                        rf[0] = svt_get_ref_frame_type(me_block_results_ptr->ref0_list, list0_ref_index);
-                        rf[1] = svt_get_ref_frame_type(me_block_results_ptr->ref1_list, list1_ref_index);
-                        candidateArray[canTotalCnt].ref_frame_type = av1_ref_frame_type(rf);
-                        candidateArray[canTotalCnt].ref_frame_index_l0 = list0_ref_index;
-                        candidateArray[canTotalCnt].ref_frame_index_l1 = list1_ref_index;
-                        candidateArray[canTotalCnt].transform_type[PLANE_TYPE_Y] = DCT_DCT;
-                        candidateArray[canTotalCnt].transform_type[PLANE_TYPE_UV] = DCT_DCT;
+        if (context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, to_inject_ref_type) == EB_FALSE) {
+                candidateArray[canTotalCnt].type = INTER_MODE;
+                candidateArray[canTotalCnt].distortion_ready = 0;
+                candidateArray[canTotalCnt].use_intrabc = 0;
+                candidateArray[canTotalCnt].merge_flag = EB_FALSE;
+                candidateArray[canTotalCnt].is_new_mv = 1;
+                candidateArray[canTotalCnt].is_zero_mv = 0;
+            candidateArray[canTotalCnt].drl_index = 0;
+            // Set the MV to ME result
+            candidateArray[canTotalCnt].motion_vector_xl0 = to_inject_mv_x_l0;
+            candidateArray[canTotalCnt].motion_vector_yl0 = to_inject_mv_y_l0;
+            candidateArray[canTotalCnt].motion_vector_xl1 = to_inject_mv_x_l1;
+            candidateArray[canTotalCnt].motion_vector_yl1 = to_inject_mv_y_l1;
+            // will be needed later by the rate estimation
+            candidateArray[canTotalCnt].ref_mv_index = 0;
+            candidateArray[canTotalCnt].pred_mv_weight = 0;
+            candidateArray[canTotalCnt].inter_mode = NEW_NEWMV;
+            candidateArray[canTotalCnt].pred_mode = NEW_NEWMV;
+            candidateArray[canTotalCnt].motion_mode = SIMPLE_TRANSLATION;
+            candidateArray[canTotalCnt].is_compound = 1;
+            candidateArray[canTotalCnt].prediction_direction[0] = (EbPredDirection)2;
+            rf[0] = svt_get_ref_frame_type(me_block_results_ptr->ref0_list, list0_ref_index);
+            rf[1] = svt_get_ref_frame_type(me_block_results_ptr->ref1_list, list1_ref_index);
+            candidateArray[canTotalCnt].ref_frame_type = av1_ref_frame_type(rf);
+            candidateArray[canTotalCnt].ref_frame_index_l0 = list0_ref_index;
+            candidateArray[canTotalCnt].ref_frame_index_l1 = list1_ref_index;
+            candidateArray[canTotalCnt].transform_type[PLANE_TYPE_Y] = DCT_DCT;
+            candidateArray[canTotalCnt].transform_type[PLANE_TYPE_UV] = DCT_DCT;
 
-                        ChooseBestAv1MvPred(
-                            context_ptr,
-                            candidateArray[canTotalCnt].md_rate_estimation_ptr,
-                            context_ptr->cu_ptr,
-                            candidateArray[canTotalCnt].ref_frame_type,
-                            candidateArray[canTotalCnt].is_compound,
-                            candidateArray[canTotalCnt].pred_mode,
-                            candidateArray[canTotalCnt].motion_vector_xl0,
-                            candidateArray[canTotalCnt].motion_vector_yl0,
-                            candidateArray[canTotalCnt].motion_vector_xl1,
-                            candidateArray[canTotalCnt].motion_vector_yl1,
-                            &candidateArray[canTotalCnt].drl_index,
-                            bestPredmv);
+            ChooseBestAv1MvPred(
+                context_ptr,
+                candidateArray[canTotalCnt].md_rate_estimation_ptr,
+                context_ptr->cu_ptr,
+                candidateArray[canTotalCnt].ref_frame_type,
+                candidateArray[canTotalCnt].is_compound,
+                candidateArray[canTotalCnt].pred_mode,
+                candidateArray[canTotalCnt].motion_vector_xl0,
+                candidateArray[canTotalCnt].motion_vector_yl0,
+                candidateArray[canTotalCnt].motion_vector_xl1,
+                candidateArray[canTotalCnt].motion_vector_yl1,
+                &candidateArray[canTotalCnt].drl_index,
+                bestPredmv);
 
-                        candidateArray[canTotalCnt].motion_vector_pred_x[REF_LIST_0] = bestPredmv[0].as_mv.col;
-                        candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_0] = bestPredmv[0].as_mv.row;
-                        candidateArray[canTotalCnt].motion_vector_pred_x[REF_LIST_1] = bestPredmv[1].as_mv.col;
-                        candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_1] = bestPredmv[1].as_mv.row;
-                        INCRMENT_CAND_TOTAL_COUNT(canTotalCnt);
-                        context_ptr->injected_mv_x_bipred_l0_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_x_l0;
-                        context_ptr->injected_mv_y_bipred_l0_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_y_l0;
-                        context_ptr->injected_mv_x_bipred_l1_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_x_l1;
-                        context_ptr->injected_mv_y_bipred_l1_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_y_l1;
-                        context_ptr->injected_ref_type_bipred_array[context_ptr->injected_mv_count_bipred] = to_inject_ref_type;
-                        ++context_ptr->injected_mv_count_bipred;
-                    }
+            candidateArray[canTotalCnt].motion_vector_pred_x[REF_LIST_0] = bestPredmv[0].as_mv.col;
+            candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_0] = bestPredmv[0].as_mv.row;
+            candidateArray[canTotalCnt].motion_vector_pred_x[REF_LIST_1] = bestPredmv[1].as_mv.col;
+            candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_1] = bestPredmv[1].as_mv.row;
+            INCRMENT_CAND_TOTAL_COUNT(canTotalCnt);
+            context_ptr->injected_mv_x_bipred_l0_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_x_l0;
+            context_ptr->injected_mv_y_bipred_l0_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_y_l0;
+            context_ptr->injected_mv_x_bipred_l1_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_x_l1;
+            context_ptr->injected_mv_y_bipred_l1_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_y_l1;
+            context_ptr->injected_ref_type_bipred_array[context_ptr->injected_mv_count_bipred] = to_inject_ref_type;
+            ++context_ptr->injected_mv_count_bipred;
                 }
+        }
 
-                // (8 Best_L0 neighbors, Best_L1) :
-                for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINMENT_POSITIONS; ++bipredIndex)
-                {
+        // (8 Best_L0 neighbors, Best_L1) :
+        for (bipredIndex = 0; bipredIndex < BIPRED_3x3_REFINMENT_POSITIONS; ++bipredIndex)
+        {
                     if (context_ptr->bipred3x3_injection >= 2) {
-                        if (ALLOW_REFINEMENT_FLAG[bipredIndex] == 0)
-                            continue;
-                    }
+                if (ALLOW_REFINEMENT_FLAG[bipredIndex] == 0)
+                    continue;
+            }
                     int16_t to_inject_mv_x_l0 = use_close_loop_me ? ((inloop_me_context->inloop_me_mv[0][0][close_loop_me_index][0] << 1) + BIPRED_3x3_X_POS[bipredIndex]) : ((me_results->me_mv_array[context_ptr->me_block_offset][list0_ref_index].x_mv << 1) + BIPRED_3x3_X_POS[bipredIndex]);
                     int16_t to_inject_mv_y_l0 = use_close_loop_me ? ((inloop_me_context->inloop_me_mv[0][0][close_loop_me_index][1] << 1) + BIPRED_3x3_Y_POS[bipredIndex]) : ((me_results->me_mv_array[context_ptr->me_block_offset][list0_ref_index].y_mv << 1) + BIPRED_3x3_Y_POS[bipredIndex]);
-                    int16_t to_inject_mv_x_l1 = use_close_loop_me ? inloop_me_context->inloop_me_mv[1][0][close_loop_me_index][0] << 1 : me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? (me_block_results_ptr->ref1_list << 2) : (me_block_results_ptr->ref1_list << 1)) + list1_ref_index].x_mv << 1;
-                    int16_t to_inject_mv_y_l1 = use_close_loop_me ? inloop_me_context->inloop_me_mv[1][0][close_loop_me_index][1] << 1 : me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? (me_block_results_ptr->ref1_list << 2) : (me_block_results_ptr->ref1_list << 1)) + list1_ref_index].y_mv << 1;
-                    rf[0] = svt_get_ref_frame_type(me_block_results_ptr->ref0_list, list0_ref_index);
-                    rf[1] = svt_get_ref_frame_type(me_block_results_ptr->ref1_list, list1_ref_index);
-                    uint8_t to_inject_ref_type = av1_ref_frame_type(rf);
-                    if (context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, to_inject_ref_type) == EB_FALSE) {
-                        candidateArray[canTotalCnt].type = INTER_MODE;
-                        candidateArray[canTotalCnt].distortion_ready = 0;
-                        candidateArray[canTotalCnt].use_intrabc = 0;
-                        candidateArray[canTotalCnt].merge_flag = EB_FALSE;
-                        candidateArray[canTotalCnt].is_new_mv = 1;
-                        candidateArray[canTotalCnt].is_zero_mv = 0;
-                        candidateArray[canTotalCnt].drl_index = 0;
-                        // Set the MV to ME result
-                        candidateArray[canTotalCnt].motion_vector_xl0 = to_inject_mv_x_l0;
-                        candidateArray[canTotalCnt].motion_vector_yl0 = to_inject_mv_y_l0;
-                        candidateArray[canTotalCnt].motion_vector_xl1 = to_inject_mv_x_l1;
-                        candidateArray[canTotalCnt].motion_vector_yl1 = to_inject_mv_y_l1;
-                        // will be needed later by the rate estimation
-                        candidateArray[canTotalCnt].ref_mv_index = 0;
-                        candidateArray[canTotalCnt].pred_mv_weight = 0;
-                        candidateArray[canTotalCnt].inter_mode = NEW_NEWMV;
-                        candidateArray[canTotalCnt].pred_mode = NEW_NEWMV;
-                        candidateArray[canTotalCnt].motion_mode = SIMPLE_TRANSLATION;
-                        candidateArray[canTotalCnt].is_compound = 1;
-                        candidateArray[canTotalCnt].prediction_direction[0] = (EbPredDirection)2;
-                        rf[0] = svt_get_ref_frame_type(me_block_results_ptr->ref0_list, list0_ref_index);
-                        rf[1] = svt_get_ref_frame_type(me_block_results_ptr->ref1_list, list1_ref_index);
-                        candidateArray[canTotalCnt].ref_frame_type = av1_ref_frame_type(rf);
-                        candidateArray[canTotalCnt].ref_frame_index_l0 = list0_ref_index;
-                        candidateArray[canTotalCnt].ref_frame_index_l1 = list1_ref_index;
-                        candidateArray[canTotalCnt].transform_type[PLANE_TYPE_Y] = DCT_DCT;
-                        candidateArray[canTotalCnt].transform_type[PLANE_TYPE_UV] = DCT_DCT;
+            int16_t to_inject_mv_x_l1 = use_close_loop_me ? inloop_me_context->inloop_me_mv[1][0][close_loop_me_index][0] << 1 : me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? (me_block_results_ptr->ref1_list << 2) : (me_block_results_ptr->ref1_list << 1)) + list1_ref_index].x_mv << 1;
+            int16_t to_inject_mv_y_l1 = use_close_loop_me ? inloop_me_context->inloop_me_mv[1][0][close_loop_me_index][1] << 1 : me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? (me_block_results_ptr->ref1_list << 2) : (me_block_results_ptr->ref1_list << 1)) + list1_ref_index].y_mv << 1;
+            rf[0] = svt_get_ref_frame_type(me_block_results_ptr->ref0_list, list0_ref_index);
+            rf[1] = svt_get_ref_frame_type(me_block_results_ptr->ref1_list, list1_ref_index);
+            uint8_t to_inject_ref_type = av1_ref_frame_type(rf);
+            if (context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, to_inject_ref_type) == EB_FALSE) {
+                candidateArray[canTotalCnt].type = INTER_MODE;
+                candidateArray[canTotalCnt].distortion_ready = 0;
+                candidateArray[canTotalCnt].use_intrabc = 0;
+                candidateArray[canTotalCnt].merge_flag = EB_FALSE;
+                candidateArray[canTotalCnt].is_new_mv = 1;
+                candidateArray[canTotalCnt].is_zero_mv = 0;
+                candidateArray[canTotalCnt].drl_index = 0;
+                // Set the MV to ME result
+                candidateArray[canTotalCnt].motion_vector_xl0 = to_inject_mv_x_l0;
+                candidateArray[canTotalCnt].motion_vector_yl0 = to_inject_mv_y_l0;
+                candidateArray[canTotalCnt].motion_vector_xl1 = to_inject_mv_x_l1;
+                candidateArray[canTotalCnt].motion_vector_yl1 = to_inject_mv_y_l1;
+                // will be needed later by the rate estimation
+                candidateArray[canTotalCnt].ref_mv_index = 0;
+                candidateArray[canTotalCnt].pred_mv_weight = 0;
+                candidateArray[canTotalCnt].inter_mode = NEW_NEWMV;
+                candidateArray[canTotalCnt].pred_mode = NEW_NEWMV;
+                candidateArray[canTotalCnt].motion_mode = SIMPLE_TRANSLATION;
+                candidateArray[canTotalCnt].is_compound = 1;
+                candidateArray[canTotalCnt].prediction_direction[0] = (EbPredDirection)2;
+                rf[0] = svt_get_ref_frame_type(me_block_results_ptr->ref0_list, list0_ref_index);
+                rf[1] = svt_get_ref_frame_type(me_block_results_ptr->ref1_list, list1_ref_index);
+                candidateArray[canTotalCnt].ref_frame_type = av1_ref_frame_type(rf);
+                candidateArray[canTotalCnt].ref_frame_index_l0 = list0_ref_index;
+                candidateArray[canTotalCnt].ref_frame_index_l1 = list1_ref_index;
+                candidateArray[canTotalCnt].transform_type[PLANE_TYPE_Y] = DCT_DCT;
+                candidateArray[canTotalCnt].transform_type[PLANE_TYPE_UV] = DCT_DCT;
 
-                        ChooseBestAv1MvPred(
-                            context_ptr,
-                            candidateArray[canTotalCnt].md_rate_estimation_ptr,
-                            context_ptr->cu_ptr,
-                            candidateArray[canTotalCnt].ref_frame_type,
-                            candidateArray[canTotalCnt].is_compound,
-                            candidateArray[canTotalCnt].pred_mode,
-                            candidateArray[canTotalCnt].motion_vector_xl0,
-                            candidateArray[canTotalCnt].motion_vector_yl0,
-                            candidateArray[canTotalCnt].motion_vector_xl1,
-                            candidateArray[canTotalCnt].motion_vector_yl1,
-                            &candidateArray[canTotalCnt].drl_index,
-                            bestPredmv);
+                ChooseBestAv1MvPred(
+                    context_ptr,
+                    candidateArray[canTotalCnt].md_rate_estimation_ptr,
+                    context_ptr->cu_ptr,
+                    candidateArray[canTotalCnt].ref_frame_type,
+                    candidateArray[canTotalCnt].is_compound,
+                    candidateArray[canTotalCnt].pred_mode,
+                    candidateArray[canTotalCnt].motion_vector_xl0,
+                    candidateArray[canTotalCnt].motion_vector_yl0,
+                    candidateArray[canTotalCnt].motion_vector_xl1,
+                    candidateArray[canTotalCnt].motion_vector_yl1,
+                    &candidateArray[canTotalCnt].drl_index,
+                    bestPredmv);
 
-                        candidateArray[canTotalCnt].motion_vector_pred_x[REF_LIST_0] = bestPredmv[0].as_mv.col;
-                        candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_0] = bestPredmv[0].as_mv.row;
-                        candidateArray[canTotalCnt].motion_vector_pred_x[REF_LIST_1] = bestPredmv[1].as_mv.col;
-                        candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_1] = bestPredmv[1].as_mv.row;
-                        INCRMENT_CAND_TOTAL_COUNT(canTotalCnt);
-                        context_ptr->injected_mv_x_bipred_l0_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_x_l0;
-                        context_ptr->injected_mv_y_bipred_l0_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_y_l0;
-                        context_ptr->injected_mv_x_bipred_l1_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_x_l1;
-                        context_ptr->injected_mv_y_bipred_l1_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_y_l1;
-                        context_ptr->injected_ref_type_bipred_array[context_ptr->injected_mv_count_bipred] = to_inject_ref_type;
-                        ++context_ptr->injected_mv_count_bipred;
-                    }
+                candidateArray[canTotalCnt].motion_vector_pred_x[REF_LIST_0] = bestPredmv[0].as_mv.col;
+                candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_0] = bestPredmv[0].as_mv.row;
+                candidateArray[canTotalCnt].motion_vector_pred_x[REF_LIST_1] = bestPredmv[1].as_mv.col;
+                candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_1] = bestPredmv[1].as_mv.row;
+                INCRMENT_CAND_TOTAL_COUNT(canTotalCnt);
+                context_ptr->injected_mv_x_bipred_l0_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_x_l0;
+                context_ptr->injected_mv_y_bipred_l0_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_y_l0;
+                context_ptr->injected_mv_x_bipred_l1_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_x_l1;
+                context_ptr->injected_mv_y_bipred_l1_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_y_l1;
+                context_ptr->injected_ref_type_bipred_array[context_ptr->injected_mv_count_bipred] = to_inject_ref_type;
+                ++context_ptr->injected_mv_count_bipred;
                 }
             }
         }
-    }
+            }
+        }
     // update the total number of candidates injected
     (*candidateTotalCnt) = canTotalCnt;
     return;

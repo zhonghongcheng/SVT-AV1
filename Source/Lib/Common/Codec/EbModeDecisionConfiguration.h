@@ -71,6 +71,9 @@ typedef EbErrorType(*EB_MDC_FUNC)(
 #define AllD        0x80
 #if ADD_MDC_REFINEMENT_LOOP
 #define Predm1p1      0x90
+#define Predm1p2      0xA0
+#define Predm1p3      0xB0
+#define Predm2p3      0xC0
 #define D1all    0x01
 #define D1sqonly 0x02
 #define Comp_no_4xn 0xA0
