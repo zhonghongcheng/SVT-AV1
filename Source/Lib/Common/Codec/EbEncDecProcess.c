@@ -266,6 +266,9 @@ static void ResetEncDec(
     // Lambda Assignement
     context_ptr->qp_index = (uint8_t)picture_control_set_ptr->parent_pcs_ptr->base_qindex;
     (*av1_lambda_assignment_function_table[picture_control_set_ptr->parent_pcs_ptr->pred_structure])(
+#if LAMBDA_TUNING
+        picture_control_set_ptr->temporal_layer_index,
+#endif
         &context_ptr->fast_lambda,
         &context_ptr->full_lambda,
         &context_ptr->fast_chroma_lambda,
@@ -334,6 +337,9 @@ static void EncDecConfigureLcu(
 
     context_ptr->qp_index = (uint8_t)picture_control_set_ptr->parent_pcs_ptr->base_qindex;
     (*av1_lambda_assignment_function_table[picture_control_set_ptr->parent_pcs_ptr->pred_structure])(
+#if LAMBDA_TUNING
+        picture_control_set_ptr->temporal_layer_index,
+#endif
         &context_ptr->fast_lambda,
         &context_ptr->full_lambda,
         &context_ptr->fast_chroma_lambda,

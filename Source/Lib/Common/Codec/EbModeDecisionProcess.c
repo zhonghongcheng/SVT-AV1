@@ -309,6 +309,9 @@ const EbLambdaAssignFunc lambda_assignment_function_table[4] = {
 };
 
 void Av1lambdaAssign(
+#if LAMBDA_TUNING
+    uint32_t                    temporal_layer,
+#endif
     uint32_t                    *fast_lambda,
     uint32_t                    *full_lambda,
     uint32_t                    *fast_chroma_lambda,
@@ -336,6 +339,10 @@ void Av1lambdaAssign(
 
     //*full_lambda = 0; //-------------Nader
     //*fast_lambda = 0;
+#if LAMBDA_TUNING
+    uint32_t lambda_factor[6] = {102,105,105,105,110};
+    *full_lambda = (*full_lambda * lambda_factor[temporal_layer]) / 100;
+#endif
     *fast_chroma_lambda = *fast_lambda;
     *full_chroma_lambda = *full_lambda;
 
@@ -374,6 +381,9 @@ void reset_mode_decision(
     context_ptr->chroma_qp = context_ptr->qp;
     context_ptr->qp_index = (uint8_t)picture_control_set_ptr->parent_pcs_ptr->base_qindex;
     (*av1_lambda_assignment_function_table[picture_control_set_ptr->parent_pcs_ptr->pred_structure])(
+#if LAMBDA_TUNING
+        picture_control_set_ptr->temporal_layer_index,
+#endif
         &context_ptr->fast_lambda,
         &context_ptr->full_lambda,
         &context_ptr->fast_chroma_lambda,
@@ -502,6 +512,9 @@ void mode_decision_configure_lcu(
     context_ptr->qp_index = (uint8_t)picture_control_set_ptr->parent_pcs_ptr->base_qindex;
 #endif
     (*av1_lambda_assignment_function_table[picture_control_set_ptr->parent_pcs_ptr->pred_structure])(
+#if LAMBDA_TUNING
+        picture_control_set_ptr->temporal_layer_index,
+#endif
         &context_ptr->fast_lambda,
         &context_ptr->full_lambda,
         &context_ptr->fast_chroma_lambda,

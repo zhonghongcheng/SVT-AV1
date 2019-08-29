@@ -444,6 +444,9 @@ extern "C" {
   } ModeDecisionContext;
 
     typedef void(*EbAv1LambdaAssignFunc)(
+#if LAMBDA_TUNING
+       uint32_t                     temporal_layer,
+#endif
         uint32_t                    *fast_lambda,
         uint32_t                    *full_lambda,
         uint32_t                    *fast_chroma_lambda,

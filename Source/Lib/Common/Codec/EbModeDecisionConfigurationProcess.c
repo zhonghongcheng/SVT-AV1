@@ -3315,6 +3315,9 @@ void* mode_decision_configuration_kernel(void *input_ptr)
         uint32_t lambdaSse;
         uint32_t lambdaSad;
         (*av1_lambda_assignment_function_table[picture_control_set_ptr->parent_pcs_ptr->pred_structure])(
+#if LAMBDA_TUNING
+            picture_control_set_ptr->temporal_layer_index,
+#endif
             &lambdaSad,
             &lambdaSse,
             &lambdaSad,

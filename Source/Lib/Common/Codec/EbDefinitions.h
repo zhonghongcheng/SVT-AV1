@@ -36,6 +36,7 @@ extern "C" {
 #endif
 
 #define TEMPORAL_MVP                    1// Temporal mvp support. aka. MFMV
+#define FIXED_TMVP_HP                   1
 
 #define TWO_PASS                        0
 #define ALT_REF_TUNING                  0
@@ -399,8 +400,8 @@ extern "C" {
 #define AOM_INTERP_EXTEND 4
 #define MRP_DISABLE_ADDED_CAND_M1                        0
 
-#define EIGTH_PEL_MV                                    0
-#define EIGHT_PEL_PREDICTIVE_ME                         0
+#define EIGTH_PEL_MV                                    1
+#define EIGHT_PEL_PREDICTIVE_ME                         1 // NADER
 #define DISABLE_NSQ_TABLE                               1 // On wil disable the nsq_table ordering algrithm for sc content. This is a temporarily adoption that will be disable once we comeup with a better ordreing mecanisme when MRP i ON.
 #define IMPROVED_SUBPEL_SEARCH                          1
 
@@ -532,7 +533,7 @@ typedef enum MD_STAGE {
 #else
 #define NSQ_TAB_SIZE                                    6
 #endif
-
+#define LAMBDA_TUNING                                   0
 #if IMPROVED_SUBPEL_SEARCH
 typedef enum ME_HP_MODE {
     EX_HP_MODE = 0,
