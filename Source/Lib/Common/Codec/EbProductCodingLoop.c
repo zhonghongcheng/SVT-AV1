@@ -3118,6 +3118,9 @@ void construct_best_sorted_arrays(
 #define FULL_PEL_REF_WINDOW_HEIGHT    5
 #define HALF_PEL_REF_WINDOW           3
 #define QUARTER_PEL_REF_WINDOW        3
+#if EIGHT_PEL_PREDICTIVE_ME
+#define EIGHT_PEL_REF_WINDOW          3
+#endif
 
 void predictive_me_full_pel_search(
     PictureControlSet            *picture_control_set_ptr,
@@ -3633,6 +3636,32 @@ void predictive_me_search(
                             }
                         }
                     }
+#if EIGHT_PEL_PREDICTIVE_ME
+                    // Step 5: perform eigh pel search around the best quarter pel position
+                    if (picture_control_set_ptr->parent_pcs_ptr->allow_high_precision_mv) {
+                        uint8_t search_pattern = 0;
+                        predictive_me_sub_pel_search(
+                            picture_control_set_ptr,
+                            context_ptr,
+                            input_picture_ptr,
+                            inputOriginIndex,
+                            cuOriginIndex,
+                            use_ssd,
+                            list_idx,
+                            ref_idx,
+                            best_search_mvx,
+                            best_search_mvy,
+                            -(EIGHT_PEL_REF_WINDOW >> 1),
+                            +(EIGHT_PEL_REF_WINDOW >> 1),
+                            -(EIGHT_PEL_REF_WINDOW >> 1),
+                            +(EIGHT_PEL_REF_WINDOW >> 1),
+                            1,
+                            &best_search_mvx,
+                            &best_search_mvy,
+                            &best_search_distortion,
+                            search_pattern);
+                    }
+#endif 
                     context_ptr->best_spatial_pred_mv[list_idx][ref_idx][0] = best_search_mvx;
                     context_ptr->best_spatial_pred_mv[list_idx][ref_idx][1] = best_search_mvy;
                     context_ptr->valid_refined_mv[list_idx][ref_idx] = 1;

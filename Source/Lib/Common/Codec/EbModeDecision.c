@@ -1977,7 +1977,7 @@ void Bipred3x3CandidatesInjection(
 
     return;
 }
-#if EIGTH_PEL_MV
+#if 0//EIGTH_PEL_MV
 void eighth_pel_unipred_refinement(
     const SequenceControlSet  *sequence_control_set_ptr,
     PictureControlSet         *picture_control_set_ptr,
@@ -5545,7 +5545,7 @@ void  inject_inter_candidates(
             }
         }
 
-#if EIGTH_PEL_MV
+#if 0//EIGTH_PEL_MV
         //----------------------
         // Eighth-pel refinement
         //----------------------
