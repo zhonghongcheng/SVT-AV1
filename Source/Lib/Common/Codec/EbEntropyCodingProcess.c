@@ -531,48 +531,10 @@ void write_stat_to_file(
     uint64_t               ref_poc)
 {
     eb_block_on_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
-    uint32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
-#if 0
-    if (ref_poc % 16 == 0) {
-        uint32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
-        uint64_t referenced_area_avg = 0;
-        for (int sb_addr = 0; sb_addr < sequence_control_set_ptr->sb_total_count; ++sb_addr) {
-            referenced_area_avg += (stat_struct.referenced_area[sb_addr] / sequence_control_set_ptr->sb_params_array[sb_addr].width / sequence_control_set_ptr->sb_params_array[sb_addr].height);
-        }
-        referenced_area_avg /= sequence_control_set_ptr->sb_total_count;
-
-        printf("\nRELEASED POC:%d\t%d\n",
-            picture_control_set_ptr->picture_number,
-            (int)referenced_area_avg);
-
-       // printf("\nRELEASED POC:%d\n",
-        //    ref_poc);
-        for (int sb_index = 0; sb_index < sequence_control_set_ptr->sb_tot_cnt; sb_index++) {
-            if (sb_index % pic_width_in_sb == 0)
-                printf("\n");
-
-            printf("%d\t", stat_struct.referenced_area[sb_index] / 64/64);
-        }
-    }
-#endif
-    ////Sets the File position to the beginning of the file.
-    //rewind(sequence_control_set_ptr->static_config.output_stat_file);
-    //uint64_t frameNum = ref_poc;
-    //while (frameNum > 0) {
-    //    int32_t fseek_return_value = fseek(sequence_control_set_ptr->static_config.output_stat_file, sizeof(stat_struct_t), SEEK_CUR);
-
-    //    if (fseek_return_value != 0) {
-    //        printf("Error in fseeko64  returnVal %i\n", fseek_return_value);
-    //    }
-    //    frameNum = frameNum - 1;
-    //}
     int32_t fseek_return_value = fseek(sequence_control_set_ptr->static_config.output_stat_file, (long)ref_poc * sizeof(stat_struct_t), SEEK_SET);
-
-    if (fseek_return_value != 0) {
+    if (fseek_return_value != 0) 
         printf("Error in fseek  returnVal %i\n", fseek_return_value);
-    }
-
-    int return_write = fwrite(&stat_struct,
+    fwrite(&stat_struct,
         sizeof(stat_struct_t),
         (size_t)1,
         sequence_control_set_ptr->static_config.output_stat_file);
@@ -738,7 +700,7 @@ void* entropy_coding_kernel(void *input_ptr)
                             write_stat_to_file(
                                 picture_control_set_ptr,
                                 sequence_control_set_ptr,
-                                picture_control_set_ptr->parent_pcs_ptr->stat_struct,
+                                *picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr,
                                 picture_control_set_ptr->parent_pcs_ptr->picture_number);
 #endif
                         // Release the List 0 Reference Pictures

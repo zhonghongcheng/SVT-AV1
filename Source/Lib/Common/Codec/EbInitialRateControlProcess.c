@@ -1832,6 +1832,10 @@ void* initial_rate_control_kernel(void *input_ptr)
                                 ((PictureParentControlSet*)(queueEntryPtr->parent_pcs_wrapper_ptr->object_ptr))->reference_picture_wrapper_ptr,
                                 1);
                         }
+#if TWO_PASS
+                        picture_control_set_ptr->stat_struct_first_pass_ptr = &((EbReferenceObject*)picture_control_set_ptr->reference_picture_wrapper_ptr->object_ptr)->stat_struct;
+                        memset(picture_control_set_ptr->stat_struct_first_pass_ptr, 0, sizeof(stat_struct_t));
+#endif
 #else
                         ((PictureParentControlSet*)(queueEntryPtr->parent_pcs_wrapper_ptr->object_ptr))->reference_picture_wrapper_ptr = reference_picture_wrapper_ptr;
 
