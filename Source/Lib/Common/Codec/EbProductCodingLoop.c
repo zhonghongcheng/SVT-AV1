@@ -7488,6 +7488,9 @@ EbBool allowed_ns_cu(
     uint8_t                            temporal_layer,
     uint8_t                            nsq_search_sub_level,
 #endif
+#if COMBINE_MDC_NSQ_TABLE
+    uint8_t                            mdc_depth_level,
+#endif
     EbBool                             is_nsq_table_used,
     uint8_t                            nsq_max_shapes_md,
     ModeDecisionContext                *context_ptr,
@@ -7510,55 +7513,65 @@ EbBool allowed_ns_cu(
 #endif
 #if COMBINE_MDC_NSQ_TABLE
     if (is_nsq_table_used) {
-        if (context_ptr->blk_geom->shape != PART_N) {
-            ret = 0;
-#if NSQ_SUB_LEVEL
-            if (nsq_search_sub_level == NSQ_SEARCH_SUB_LEVEL1) {
-                if (temporal_layer > 3) {
-                    if (context_ptr->blk_geom->bheight > 16 && context_ptr->blk_geom->bwidth > 16) {
-                        for (int i = 0; i < nsq_max_shapes_md; i++) {
-                            if (context_ptr->blk_geom->shape == context_ptr->nsq_table[i])
-                                ret = 1;
-                        }
-                    }
-                }
-                else if (temporal_layer > 0) {
-                    if (context_ptr->blk_geom->bheight > 8 && context_ptr->blk_geom->bwidth > 8) {
-                        for (int i = 0; i < nsq_max_shapes_md; i++) {
-                            if (context_ptr->blk_geom->shape == context_ptr->nsq_table[i])
-                                ret = 1;
-                        }
-                    }
-                }
-                else {
-                    for (int i = 0; i < nsq_max_shapes_md + 1; i++) {
-                        if (context_ptr->blk_geom->shape == context_ptr->nsq_table[i])
-                            ret = 1;
-                    }
-                }
-            }
-            else if (nsq_search_sub_level == NSQ_SEARCH_SUB_LEVEL2) {
-                if (temporal_layer > 3) {
-                    if (context_ptr->blk_geom->bheight > 16 && context_ptr->blk_geom->bwidth > 16) {
-                        for (int i = 0; i < nsq_max_shapes_md; i++) {
-                            if (context_ptr->blk_geom->shape == context_ptr->nsq_table[i])
-                                ret = 1;
-                        }
-                    }
-                }
-                else {
-                    for (int i = 0; i < nsq_max_shapes_md + 1; i++) {
-                        if (context_ptr->blk_geom->shape == context_ptr->nsq_table[i])
-                            ret = 1;
-                    }
-                }
-
-            }
-            else {
-#endif
+        if (mdc_depth_level == 7) {
+            if (context_ptr->blk_geom->shape != PART_N) {
+                ret = 0;
                 for (int i = 0; i < nsq_max_shapes_md; i++) {
                     if (context_ptr->blk_geom->shape == context_ptr->nsq_table[i])
                         ret = 1;
+                }
+            }
+        }else{
+            if (context_ptr->blk_geom->shape != PART_N) {
+                ret = 0;
+#if NSQ_SUB_LEVEL
+                if (nsq_search_sub_level == NSQ_SEARCH_SUB_LEVEL1) {
+                    if (temporal_layer > 3) {
+                        if (context_ptr->blk_geom->bheight > 16 && context_ptr->blk_geom->bwidth > 16) {
+                            for (int i = 0; i < nsq_max_shapes_md; i++) {
+                                if (context_ptr->blk_geom->shape == context_ptr->nsq_table[i])
+                                    ret = 1;
+                            }
+                        }
+                    }
+                    else if (temporal_layer > 0) {
+                        if (context_ptr->blk_geom->bheight > 8 && context_ptr->blk_geom->bwidth > 8) {
+                            for (int i = 0; i < nsq_max_shapes_md; i++) {
+                                if (context_ptr->blk_geom->shape == context_ptr->nsq_table[i])
+                                    ret = 1;
+                            }
+                        }
+                    }
+                    else {
+                        for (int i = 0; i < nsq_max_shapes_md + 1; i++) {
+                            if (context_ptr->blk_geom->shape == context_ptr->nsq_table[i])
+                                ret = 1;
+                        }
+                    }
+                }
+                else if (nsq_search_sub_level == NSQ_SEARCH_SUB_LEVEL2) {
+                    if (temporal_layer > 3) {
+                        if (context_ptr->blk_geom->bheight > 16 && context_ptr->blk_geom->bwidth > 16) {
+                            for (int i = 0; i < nsq_max_shapes_md; i++) {
+                                if (context_ptr->blk_geom->shape == context_ptr->nsq_table[i])
+                                    ret = 1;
+                            }
+                        }
+                    }
+                    else {
+                        for (int i = 0; i < nsq_max_shapes_md + 1; i++) {
+                            if (context_ptr->blk_geom->shape == context_ptr->nsq_table[i])
+                                ret = 1;
+                        }
+                    }
+
+                }
+                else {
+#endif
+                    for (int i = 0; i < nsq_max_shapes_md; i++) {
+                        if (context_ptr->blk_geom->shape == context_ptr->nsq_table[i])
+                            ret = 1;
+                    }
                 }
             }
 #if NSQ_SUB_LEVEL
@@ -8207,45 +8220,48 @@ void  adjust_nsq_rank(
         else
             context_ptr->nsq_table[5] = neighbor_part != PART_N && neighbor_part != PART_S ? neighbor_part : me_part_0;
     }
-    context_ptr->nsq_table[2] = context_ptr->nsq_table[0] != ol_part1 && context_ptr->nsq_table[1] != ol_part1 ? ol_part1
-        : context_ptr->nsq_table[0] != ol_part2 && context_ptr->nsq_table[1] != ol_part2 ? ol_part2
-        : ol_part3 != PART_N ? ol_part3 : context_ptr->nsq_table[2];
-    context_ptr->nsq_table[3] = context_ptr->nsq_table[0] != ol_part1 && context_ptr->nsq_table[1] != ol_part1 && context_ptr->nsq_table[2] != ol_part1 ? ol_part1
-        : context_ptr->nsq_table[0] != ol_part2 && context_ptr->nsq_table[1] != ol_part2 && context_ptr->nsq_table[2] != ol_part2 ? ol_part2
-        : context_ptr->nsq_table[0] != ol_part3 && context_ptr->nsq_table[1] != ol_part3 && context_ptr->nsq_table[2] != ol_part3 ? ol_part3
-        : ol_part4 != PART_N ? ol_part4 : context_ptr->nsq_table[3];
-    context_ptr->nsq_table[4] = context_ptr->nsq_table[0] != ol_part1 && context_ptr->nsq_table[1] != ol_part1 && context_ptr->nsq_table[2] != ol_part1 && context_ptr->nsq_table[3] != ol_part1 ? ol_part1
-        : context_ptr->nsq_table[0] != ol_part2 && context_ptr->nsq_table[1] != ol_part2 && context_ptr->nsq_table[2] != ol_part2 && context_ptr->nsq_table[3] != ol_part2 ? ol_part2
-        : context_ptr->nsq_table[0] != ol_part3 && context_ptr->nsq_table[1] != ol_part3 && context_ptr->nsq_table[2] != ol_part3 && context_ptr->nsq_table[3] != ol_part3 ? ol_part3
-        : context_ptr->nsq_table[0] != ol_part4 && context_ptr->nsq_table[1] != ol_part4 && context_ptr->nsq_table[2] != ol_part4 && context_ptr->nsq_table[3] != ol_part4 ? ol_part4
-        : ol_part5 != PART_N ? ol_part5 : context_ptr->nsq_table[4];
-    context_ptr->nsq_table[5] = context_ptr->nsq_table[0] != ol_part1 && context_ptr->nsq_table[1] != ol_part1 && context_ptr->nsq_table[2] != ol_part1 && context_ptr->nsq_table[3] != ol_part1 && context_ptr->nsq_table[4] != ol_part1 ? ol_part1
-        : context_ptr->nsq_table[0] != ol_part2 && context_ptr->nsq_table[1] != ol_part2 && context_ptr->nsq_table[2] != ol_part2 && context_ptr->nsq_table[3] != ol_part2 && context_ptr->nsq_table[4] != ol_part2 ? ol_part2
-        : context_ptr->nsq_table[0] != ol_part3 && context_ptr->nsq_table[1] != ol_part3 && context_ptr->nsq_table[2] != ol_part3 && context_ptr->nsq_table[3] != ol_part3 && context_ptr->nsq_table[4] != ol_part3 ? ol_part3
-        : context_ptr->nsq_table[0] != ol_part4 && context_ptr->nsq_table[1] != ol_part4 && context_ptr->nsq_table[2] != ol_part4 && context_ptr->nsq_table[3] != ol_part4 && context_ptr->nsq_table[4] != ol_part4 ? ol_part4
-        : context_ptr->nsq_table[0] != ol_part5 && context_ptr->nsq_table[1] != ol_part5 && context_ptr->nsq_table[2] != ol_part5 && context_ptr->nsq_table[3] != ol_part5 && context_ptr->nsq_table[4] != ol_part5 ? ol_part5
-        : ol_part6 != PART_N ? ol_part6 : context_ptr->nsq_table[5];
-    context_ptr->nsq_table[6] = context_ptr->nsq_table[0] != ol_part1 && context_ptr->nsq_table[1] != ol_part1 && context_ptr->nsq_table[2] != ol_part1 && context_ptr->nsq_table[3] != ol_part1 && context_ptr->nsq_table[4] != ol_part1 && context_ptr->nsq_table[5] != ol_part1 ? ol_part1
-        : context_ptr->nsq_table[0] != ol_part2 && context_ptr->nsq_table[1] != ol_part2 && context_ptr->nsq_table[2] != ol_part2 && context_ptr->nsq_table[3] != ol_part2 && context_ptr->nsq_table[4] != ol_part2 && context_ptr->nsq_table[5] != ol_part2 ? ol_part2
-        : context_ptr->nsq_table[0] != ol_part3 && context_ptr->nsq_table[1] != ol_part3 && context_ptr->nsq_table[2] != ol_part3 && context_ptr->nsq_table[3] != ol_part3 && context_ptr->nsq_table[4] != ol_part3 && context_ptr->nsq_table[5] != ol_part3 ? ol_part3
-        : context_ptr->nsq_table[0] != ol_part4 && context_ptr->nsq_table[1] != ol_part4 && context_ptr->nsq_table[2] != ol_part4 && context_ptr->nsq_table[3] != ol_part4 && context_ptr->nsq_table[4] != ol_part4 && context_ptr->nsq_table[5] != ol_part4 ? ol_part4
-        : context_ptr->nsq_table[0] != ol_part5 && context_ptr->nsq_table[1] != ol_part5 && context_ptr->nsq_table[2] != ol_part5 && context_ptr->nsq_table[3] != ol_part5 && context_ptr->nsq_table[4] != ol_part5 && context_ptr->nsq_table[5] != ol_part5 ? ol_part5
-        : context_ptr->nsq_table[0] != ol_part6 && context_ptr->nsq_table[1] != ol_part6 && context_ptr->nsq_table[2] != ol_part6 && context_ptr->nsq_table[3] != ol_part6 && context_ptr->nsq_table[4] != ol_part6 && context_ptr->nsq_table[5] != ol_part6 ? ol_part6
-        : ol_part7;
-    // Replace PART_N by best MDC.
-    for (uint8_t idx = 0; idx < NSQ_TAB_SIZE; idx++) {
-        if (context_ptr->nsq_table[idx] == PART_N) {
-            context_ptr->nsq_table[idx] = ol_part1 != PART_N ? ol_part1 :
-                ol_part2 != PART_N ? ol_part2 :
-                ol_part3 != PART_N ? ol_part3 :
-                ol_part4 != PART_N ? ol_part4 :
-                ol_part5 != PART_N ? ol_part5 :
-                ol_part6 != PART_N ? ol_part6 :
-                ol_part7 != PART_N ? ol_part7 : ol_part8;
-            break;
+
+    if (picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level < 7) {
+        context_ptr->nsq_table[2] = context_ptr->nsq_table[0] != ol_part1 && context_ptr->nsq_table[1] != ol_part1 ? ol_part1
+            : context_ptr->nsq_table[0] != ol_part2 && context_ptr->nsq_table[1] != ol_part2 ? ol_part2
+            : ol_part3 != PART_N ? ol_part3 : context_ptr->nsq_table[2];
+        context_ptr->nsq_table[3] = context_ptr->nsq_table[0] != ol_part1 && context_ptr->nsq_table[1] != ol_part1 && context_ptr->nsq_table[2] != ol_part1 ? ol_part1
+            : context_ptr->nsq_table[0] != ol_part2 && context_ptr->nsq_table[1] != ol_part2 && context_ptr->nsq_table[2] != ol_part2 ? ol_part2
+            : context_ptr->nsq_table[0] != ol_part3 && context_ptr->nsq_table[1] != ol_part3 && context_ptr->nsq_table[2] != ol_part3 ? ol_part3
+            : ol_part4 != PART_N ? ol_part4 : context_ptr->nsq_table[3];
+        context_ptr->nsq_table[4] = context_ptr->nsq_table[0] != ol_part1 && context_ptr->nsq_table[1] != ol_part1 && context_ptr->nsq_table[2] != ol_part1 && context_ptr->nsq_table[3] != ol_part1 ? ol_part1
+            : context_ptr->nsq_table[0] != ol_part2 && context_ptr->nsq_table[1] != ol_part2 && context_ptr->nsq_table[2] != ol_part2 && context_ptr->nsq_table[3] != ol_part2 ? ol_part2
+            : context_ptr->nsq_table[0] != ol_part3 && context_ptr->nsq_table[1] != ol_part3 && context_ptr->nsq_table[2] != ol_part3 && context_ptr->nsq_table[3] != ol_part3 ? ol_part3
+            : context_ptr->nsq_table[0] != ol_part4 && context_ptr->nsq_table[1] != ol_part4 && context_ptr->nsq_table[2] != ol_part4 && context_ptr->nsq_table[3] != ol_part4 ? ol_part4
+            : ol_part5 != PART_N ? ol_part5 : context_ptr->nsq_table[4];
+        context_ptr->nsq_table[5] = context_ptr->nsq_table[0] != ol_part1 && context_ptr->nsq_table[1] != ol_part1 && context_ptr->nsq_table[2] != ol_part1 && context_ptr->nsq_table[3] != ol_part1 && context_ptr->nsq_table[4] != ol_part1 ? ol_part1
+            : context_ptr->nsq_table[0] != ol_part2 && context_ptr->nsq_table[1] != ol_part2 && context_ptr->nsq_table[2] != ol_part2 && context_ptr->nsq_table[3] != ol_part2 && context_ptr->nsq_table[4] != ol_part2 ? ol_part2
+            : context_ptr->nsq_table[0] != ol_part3 && context_ptr->nsq_table[1] != ol_part3 && context_ptr->nsq_table[2] != ol_part3 && context_ptr->nsq_table[3] != ol_part3 && context_ptr->nsq_table[4] != ol_part3 ? ol_part3
+            : context_ptr->nsq_table[0] != ol_part4 && context_ptr->nsq_table[1] != ol_part4 && context_ptr->nsq_table[2] != ol_part4 && context_ptr->nsq_table[3] != ol_part4 && context_ptr->nsq_table[4] != ol_part4 ? ol_part4
+            : context_ptr->nsq_table[0] != ol_part5 && context_ptr->nsq_table[1] != ol_part5 && context_ptr->nsq_table[2] != ol_part5 && context_ptr->nsq_table[3] != ol_part5 && context_ptr->nsq_table[4] != ol_part5 ? ol_part5
+            : ol_part6 != PART_N ? ol_part6 : context_ptr->nsq_table[5];
+        context_ptr->nsq_table[6] = context_ptr->nsq_table[0] != ol_part1 && context_ptr->nsq_table[1] != ol_part1 && context_ptr->nsq_table[2] != ol_part1 && context_ptr->nsq_table[3] != ol_part1 && context_ptr->nsq_table[4] != ol_part1 && context_ptr->nsq_table[5] != ol_part1 ? ol_part1
+            : context_ptr->nsq_table[0] != ol_part2 && context_ptr->nsq_table[1] != ol_part2 && context_ptr->nsq_table[2] != ol_part2 && context_ptr->nsq_table[3] != ol_part2 && context_ptr->nsq_table[4] != ol_part2 && context_ptr->nsq_table[5] != ol_part2 ? ol_part2
+            : context_ptr->nsq_table[0] != ol_part3 && context_ptr->nsq_table[1] != ol_part3 && context_ptr->nsq_table[2] != ol_part3 && context_ptr->nsq_table[3] != ol_part3 && context_ptr->nsq_table[4] != ol_part3 && context_ptr->nsq_table[5] != ol_part3 ? ol_part3
+            : context_ptr->nsq_table[0] != ol_part4 && context_ptr->nsq_table[1] != ol_part4 && context_ptr->nsq_table[2] != ol_part4 && context_ptr->nsq_table[3] != ol_part4 && context_ptr->nsq_table[4] != ol_part4 && context_ptr->nsq_table[5] != ol_part4 ? ol_part4
+            : context_ptr->nsq_table[0] != ol_part5 && context_ptr->nsq_table[1] != ol_part5 && context_ptr->nsq_table[2] != ol_part5 && context_ptr->nsq_table[3] != ol_part5 && context_ptr->nsq_table[4] != ol_part5 && context_ptr->nsq_table[5] != ol_part5 ? ol_part5
+            : context_ptr->nsq_table[0] != ol_part6 && context_ptr->nsq_table[1] != ol_part6 && context_ptr->nsq_table[2] != ol_part6 && context_ptr->nsq_table[3] != ol_part6 && context_ptr->nsq_table[4] != ol_part6 && context_ptr->nsq_table[5] != ol_part6 ? ol_part6
+            : ol_part7;
+
+        // Replace PART_N by best MDC.
+        for (uint8_t idx = 0; idx < NSQ_TAB_SIZE; idx++) {
+            if (context_ptr->nsq_table[idx] == PART_N) {
+                context_ptr->nsq_table[idx] = ol_part1 != PART_N ? ol_part1 :
+                    ol_part2 != PART_N ? ol_part2 :
+                    ol_part3 != PART_N ? ol_part3 :
+                    ol_part4 != PART_N ? ol_part4 :
+                    ol_part5 != PART_N ? ol_part5 :
+                    ol_part6 != PART_N ? ol_part6 :
+                    ol_part7 != PART_N ? ol_part7 : ol_part8;
+                break;
+            }
         }
     }
-
     // Remove duplicate candidates
     for (int pidx = 0; pidx < NSQ_TAB_SIZE; pidx++)
         cnt[context_ptr->nsq_table[pidx]]++;
@@ -8899,12 +8915,22 @@ void md_encode_block(
 #if ADJUST_NSQ_RANK_BASED_ON_NEIGH
     if (is_nsq_table_used) {
         if (context_ptr->blk_geom->shape == PART_N) {
-            adjust_nsq_rank(
-                picture_control_set_ptr,
-                context_ptr,
-                sequence_control_set_ptr,
-                context_ptr->sb_ptr,
-                context_ptr->leaf_partition_neighbor_array);
+            if (picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level < 7) {
+                adjust_nsq_rank(
+                    picture_control_set_ptr,
+                    context_ptr,
+                    sequence_control_set_ptr,
+                    context_ptr->sb_ptr,
+                    context_ptr->leaf_partition_neighbor_array);
+            }
+            else {
+                order_nsq_table(
+                    picture_control_set_ptr,
+                    context_ptr,
+                    sequence_control_set_ptr,
+                    context_ptr->sb_ptr,
+                    context_ptr->leaf_partition_neighbor_array);
+            }
         }
     }
 #endif
@@ -8962,6 +8988,9 @@ void md_encode_block(
 #if NSQ_SUB_LEVEL
         picture_control_set_ptr->temporal_layer_index,
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_sub_level,
+#endif
+#if COMBINE_MDC_NSQ_TABLE
+        picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level,
 #endif
         is_nsq_table_used, picture_control_set_ptr->parent_pcs_ptr->nsq_max_shapes_md, context_ptr, is_complete_sb))
 #endif

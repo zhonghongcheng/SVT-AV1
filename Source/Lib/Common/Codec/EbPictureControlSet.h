@@ -14546,6 +14546,9 @@ extern "C" {
         struct stat_struct_t                   stat_struct;
         uint64_t                        referenced_area_avg;
 #endif
+#if PREDICT_NSQ_SHAPE
+        uint8_t                                mdc_depth_level;
+#endif
 
     } PictureParentControlSet;
 

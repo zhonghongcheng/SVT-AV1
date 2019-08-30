@@ -499,14 +499,7 @@ typedef enum MD_STAGE {
 
 #define OPTIMISED_EX_SUBPEL                             1
 
-#define M0_TEST                                         0
-#define M1_TEST                                         0
-
-#if M0_TEST || M1_TEST
 #define PREDICT_NSQ_SHAPE                               1
-#else
-#define PREDICT_NSQ_SHAPE                               0
-#endif
 #if PREDICT_NSQ_SHAPE
 #define NSQ_MDC_L01                                     1
 #define ADD_MDC_INTRA                                   0

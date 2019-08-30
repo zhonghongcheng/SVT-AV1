@@ -1254,41 +1254,39 @@ void init_considered_block(
     resultsPtr->leaf_count = 0;
     uint32_t  blk_index = 0;
     uint32_t  parent_depth_idx_mds,sparent_depth_idx_mds,child_block_idx_1,child_block_idx_2,child_block_idx_3,child_block_idx_4;
-    //uint32_t  parent_block_idx;
     SbParams *sb_params = &sequence_control_set_ptr->sb_params_array[sb_index];
-
-    uint32_t depth_refinement_mode = AllD;
-#if M0_TEST
-    depth_refinement_mode = sb_params->is_complete_sb ? Predm1p3 : AllD;
-#elif M1_TEST
-    depth_refinement_mode = sb_params->is_complete_sb ? Predm1p2 : AllD;
-#else
-    depth_refinement_mode = sb_params->is_complete_sb && sequence_control_set_ptr->seq_header.sb_size == 128 ? Predm1p2 :
-        sb_params->is_complete_sb && sequence_control_set_ptr->seq_header.sb_size == 64 ? Predp2: AllD;
-#endif
-    /*uint32_t d1_refinement_mode = AllD;
-    if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_ALL_DEPTH_MODE) {
-        depth_refinement_mode = AllD;
-        d1_refinement_mode = D1all;
-    }
-    else  if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_ALL_C_DEPTH_MODE) {
-        depth_refinement_mode = sb_params->is_complete_sb ? Predm1p1 : AllD;
-        d1_refinement_mode = D1all;
-    }
-    else  if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SQ_DEPTH_MODE) {
-        depth_refinement_mode = AllD;
-        d1_refinement_mode = D1sqonly;
-    }
-    else  if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SQ_NON4_DEPTH_MODE) {
-        depth_refinement_mode = Comp_no_4xn;
-    }
-    else if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode >= PIC_OPEN_LOOP_DEPTH_MODE) {
-        depth_refinement_mode = sb_params->is_complete_sb ? Predp1 : AllD;
-        d1_refinement_mode = D1sqonly;
-    }*/
-
     uint32_t tot_d1_blocks,block_1d_idx;
     EbBool split_flag;
+    uint32_t depth_refinement_mode = AllD;
+    switch (picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level) {
+    case 0:
+        depth_refinement_mode = sb_params->is_complete_sb ? Pred : AllD;
+        break;
+    case 1:
+        depth_refinement_mode = sb_params->is_complete_sb ? Predp1 : AllD;
+        break;
+    case 2:
+        depth_refinement_mode = sb_params->is_complete_sb ? Predp2 : AllD;
+        break;
+    case 3:
+        depth_refinement_mode = sb_params->is_complete_sb ? Predp3 : AllD;
+        break;
+    case 4:
+        depth_refinement_mode = sb_params->is_complete_sb ? Predm1p1 : AllD;
+        break;
+    case 5:
+        depth_refinement_mode = sb_params->is_complete_sb ? Predm1p2 : AllD;
+        break;
+    case 6:
+        depth_refinement_mode = sb_params->is_complete_sb ? Predm1p3 : AllD;
+        break;
+    case 7:
+        depth_refinement_mode = AllD;
+        break;
+    default:
+        printf("not supported mdc_depth_level");
+        break;
+    }
 
     while (blk_index < sequence_control_set_ptr->max_block_cnt){
         const BlockGeom * blk_geom = get_blk_geom_mds(blk_index);
@@ -1330,89 +1328,11 @@ void init_considered_block(
                             resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
                             resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
                         }
-                        
-#if 1
                         set_child_to_be_considered(
                             resultsPtr,
                             blk_index,
                             sequence_control_set_ptr->seq_header.sb_size,
                             1);     
-#else
-                        if (blk_geom->sq_size > 4) {
-                            // Set predicted block to be considered
-                            for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                                /*const BlockGeom * blk_geom_1d = get_blk_geom_mds(blk_index + block_1d_idx);
-                                if (blk_geom_1d->shape == PART_H || blk_geom_1d->sq_size == 4) {
-                                    resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                                }*/
-                                resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                                resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_TRUE;
-                            }
-                            //Set first child to be considered
-                            child_block_idx_1 = blk_index + d1_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
-                            const BlockGeom * child1_blk_geom = get_blk_geom_mds(child_block_idx_1);
-                            uint32_t child1_tot_d1_blocks =
-                                child1_blk_geom->sq_size == 128 ? 17 :
-                                child1_blk_geom->sq_size > 8 ? 25 :
-                                child1_blk_geom->sq_size == 8 ? 5 : 1;
-
-                            for (block_1d_idx = 0; block_1d_idx < child1_tot_d1_blocks; block_1d_idx++) {
-                                /*const BlockGeom * blk_geom_1d = get_blk_geom_mds(child_block_idx_1 + block_1d_idx);
-                                if (blk_geom_1d->shape == PART_H || blk_geom_1d->sq_size == 4) {
-                                    resultsPtr->leaf_data_array[child_block_idx_1 + block_1d_idx].consider_block = 1;
-                                }*/
-                                resultsPtr->leaf_data_array[child_block_idx_1 + block_1d_idx].consider_block = 1;
-                                resultsPtr->leaf_data_array[child_block_idx_1 + block_1d_idx].refined_split_flag = EB_FALSE;
-                            }
-                            //Set second child to be considered
-                            child_block_idx_2 = child_block_idx_1 + ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth +1];
-                            const BlockGeom * child2_blk_geom = get_blk_geom_mds(child_block_idx_2);
-                            uint32_t child2_tot_d1_blocks =
-                                child2_blk_geom->sq_size == 128 ? 17 :
-                                child2_blk_geom->sq_size > 8 ? 25 :
-                                child2_blk_geom->sq_size == 8 ? 5 : 1;
-                            for (block_1d_idx = 0; block_1d_idx < child2_tot_d1_blocks; block_1d_idx++) {
-                                /*const BlockGeom * blk_geom_1d = get_blk_geom_mds(child_block_idx_2 + block_1d_idx);
-                                if (blk_geom_1d->shape == PART_H || blk_geom_1d->sq_size == 4) {
-                                    resultsPtr->leaf_data_array[child_block_idx_2 + block_1d_idx].consider_block = 1;
-                                }*/
-                                resultsPtr->leaf_data_array[child_block_idx_2 + block_1d_idx].consider_block = 1;
-                                resultsPtr->leaf_data_array[child_block_idx_2 + block_1d_idx].refined_split_flag = EB_FALSE;
-                            }
-                            //Set third child to be considered
-                            child_block_idx_3 = child_block_idx_2 + ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth +1];
-                            const BlockGeom * child3_blk_geom = get_blk_geom_mds(child_block_idx_3);
-                            uint32_t child3_tot_d1_blocks =
-                                child3_blk_geom->sq_size == 128 ? 17 :
-                                child3_blk_geom->sq_size > 8 ? 25 :
-                                child3_blk_geom->sq_size == 8 ? 5 : 1;
-
-                            for (block_1d_idx = 0; block_1d_idx < child3_tot_d1_blocks; block_1d_idx++) {
-                                /*const BlockGeom * blk_geom_1d = get_blk_geom_mds(child_block_idx_3 + block_1d_idx);
-                                if (blk_geom_1d->shape == PART_H || blk_geom_1d->sq_size == 4) {
-                                    resultsPtr->leaf_data_array[child_block_idx_3 + block_1d_idx].consider_block = 1;
-                                }*/
-                                resultsPtr->leaf_data_array[child_block_idx_3 + block_1d_idx].consider_block = 1;
-                                resultsPtr->leaf_data_array[child_block_idx_3 + block_1d_idx].refined_split_flag = EB_FALSE;
-                            }
-                            //Set forth child to be considered
-                            child_block_idx_4 = child_block_idx_3 + ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth + 1];
-                            const BlockGeom * child4_blk_geom = get_blk_geom_mds(child_block_idx_4);
-                            uint32_t child4_tot_d1_blocks =
-                                child4_blk_geom->sq_size == 128 ? 17 :
-                                child4_blk_geom->sq_size > 8 ? 25 :
-                                child4_blk_geom->sq_size == 8 ? 5 : 1;
-                            for (block_1d_idx = 0; block_1d_idx < child4_tot_d1_blocks; block_1d_idx++) {
-                                /*const BlockGeom * blk_geom_1d = get_blk_geom_mds(child_block_idx_4 + block_1d_idx);
-                                if (blk_geom_1d->shape == PART_H || blk_geom_1d->sq_size == 4) {
-                                    resultsPtr->leaf_data_array[child_block_idx_4 + block_1d_idx].consider_block = 1;
-                                }*/
-                                resultsPtr->leaf_data_array[child_block_idx_4 + block_1d_idx].consider_block = 1;
-                                resultsPtr->leaf_data_array[child_block_idx_4 + block_1d_idx].refined_split_flag = EB_FALSE;
-                            }
-
-                        }
-#endif
                     }
                     break;
                 case Predp2:
@@ -3544,7 +3464,8 @@ void* mode_decision_configuration_kernel(void *input_ptr)
 #endif
 #if ADD_MDC_REFINEMENT_LOOP
         if (picture_control_set_ptr->parent_pcs_ptr->slice_type != I_SLICE) {
-            if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode < PIC_ALL_C_DEPTH_MODE) {
+            if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode < PIC_ALL_C_DEPTH_MODE && 
+            picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level < 7) {
                 // SB Constants
                 uint8_t sb_sz = (uint8_t)sequence_control_set_ptr->sb_size_pix;
                 uint8_t lcuSizeLog2 = (uint8_t)Log2f(sb_sz);
