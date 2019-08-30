@@ -1324,6 +1324,16 @@ EbErrorType mdc_inter_pu_prediction_av1(
          candidate_buffer_ptr->candidate_ptr->use_intrabc,
          candidate_buffer_ptr->candidate_ptr->compound_idx,
          &candidate_buffer_ptr->candidate_ptr->interinter_comp,
+#if II_ED
+        NULL,
+        NULL,//ep_luma_recon_neighbor_array,
+        NULL,//ep_cb_recon_neighbor_array ,
+        NULL,//ep_cr_recon_neighbor_array ,
+        0,//cu_ptr->is_interintra_used,
+        0,//cu_ptr->interintra_mode,
+        0,//cu_ptr->use_wedge_interintra,
+        0,//cu_ptr->interintra_wedge_index,
+#endif
          context_ptr->cu_origin_x,
          context_ptr->cu_origin_y,
          context_ptr->blk_geom->bwidth,
