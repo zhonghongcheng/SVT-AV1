@@ -1469,7 +1469,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             context_ptr->bipred3x3_injection = 1;
         else
             context_ptr->bipred3x3_injection = 0;
+#if M4_BIPRED_3x3
+    else if (0)
+#else
     else if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#endif
         context_ptr->bipred3x3_injection = 1;
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->bipred3x3_injection = 2;
@@ -1491,7 +1495,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
     if (picture_control_set_ptr->slice_type != I_SLICE)
         // Hsan: kept ON for sc_content_detected as ~5% gain for minecraft clip
+#if M2_PREDICTIVE_ME_LEVEL
+        if (0)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
             context_ptr->predictive_me_level = 4;
         else if (picture_control_set_ptr->enc_mode <= ENC_M4)
             context_ptr->predictive_me_level = 2;
