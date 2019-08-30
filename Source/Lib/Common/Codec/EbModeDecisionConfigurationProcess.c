@@ -3464,8 +3464,7 @@ void* mode_decision_configuration_kernel(void *input_ptr)
 #endif
 #if ADD_MDC_REFINEMENT_LOOP
         if (picture_control_set_ptr->parent_pcs_ptr->slice_type != I_SLICE) {
-            if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode < PIC_ALL_C_DEPTH_MODE && 
-            picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level < 7) {
+            if (picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level < 7) {
                 // SB Constants
                 uint8_t sb_sz = (uint8_t)sequence_control_set_ptr->sb_size_pix;
                 uint8_t lcuSizeLog2 = (uint8_t)Log2f(sb_sz);

@@ -525,7 +525,7 @@ typedef enum MD_STAGE {
 #else
 #define NSQ_TAB_SIZE                                    6
 #endif
-#define LAMBDA_TUNING                                   0
+#define LAMBDA_TUNING                                   1
 #if IMPROVED_SUBPEL_SEARCH
 typedef enum ME_HP_MODE {
     EX_HP_MODE = 0,

@@ -358,7 +358,9 @@ const EbAv1LambdaAssignFunc av1_lambda_assignment_function_table[4] = {
 void reset_mode_decision(
     ModeDecisionContext   *context_ptr,
     PictureControlSet     *picture_control_set_ptr,
-    //SequenceControlSet    *sequence_control_set_ptr,
+#if EIGTH_PEL_MV
+    SequenceControlSet    *sequence_control_set_ptr,
+#endif
     uint32_t                   segment_index)
 {
 #if !ENABLE_CDF_UPDATE
@@ -444,7 +446,7 @@ void reset_mode_decision(
 
 #if EIGTH_PEL_MV
     picture_control_set_ptr->parent_pcs_ptr->allow_high_precision_mv = picture_control_set_ptr->enc_mode == ENC_M0 &&
-        (picture_control_set_ptr->parent_pcs_ptr->is_pan || picture_control_set_ptr->parent_pcs_ptr->is_tilt) ? 1 : 0;
+        (sequence_control_set_ptr->input_resolution == 0) ? 1 : 0;
 #endif
 
 #if ENABLE_WARPED_MV

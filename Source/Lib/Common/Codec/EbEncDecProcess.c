@@ -1686,7 +1686,9 @@ void* enc_dec_kernel(void *input_ptr)
             reset_mode_decision( // HT done
                 context_ptr->md_context,
                 picture_control_set_ptr,
-                //sequence_control_set_ptr,
+#if EIGTH_PEL_MV
+                sequence_control_set_ptr,
+#endif
                 segment_index);
 
             // Reset EncDec Coding State
