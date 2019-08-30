@@ -1125,7 +1125,6 @@ void PadRefAndSetFlags(
 #if TWO_PASS
    referenceObject->referenced_area_avg = picture_control_set_ptr->parent_pcs_ptr->referenced_area_avg;
 
-    memset(&referenceObject->stat_struct, 0, sizeof(stat_struct_t));
 #endif
 }
 

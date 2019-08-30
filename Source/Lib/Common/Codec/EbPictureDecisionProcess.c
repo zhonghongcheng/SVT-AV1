@@ -4189,10 +4189,9 @@ void* picture_decision_kernel(void *input_ptr)
 #if TF_KEY
                                 ((picture_control_set_ptr->idr_flag && picture_control_set_ptr->sc_content_detected==0) ||
 #endif
-#if ALT_REF_TUNING
-                                    (picture_control_set_ptr->slice_type != I_SLICE && picture_control_set_ptr->temporal_layer_index <= 1)
-#else
                                     (picture_control_set_ptr->slice_type != I_SLICE && picture_control_set_ptr->temporal_layer_index == 0)
+#if TWO_PASS
+                                   || (sequence_control_set_ptr->static_config.use_input_stat_file && picture_control_set_ptr->temporal_layer_index == 1 && picture_control_set_ptr->sc_content_detected == 0)
 #endif
                                 )) {
                                 int altref_nframes = picture_control_set_ptr->sequence_control_set_ptr->static_config.altref_nframes;
@@ -4383,10 +4382,10 @@ void* picture_decision_kernel(void *input_ptr)
                                     picture_control_set_ptr->temp_filt_seg_acc = 0;
 #if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
 #if DISABLE_ALT_REF_STRENGTH_TUNING
-#if  ALT_REF_TUNING
+#if  TWO_PASS
                                     if (picture_control_set_ptr->temporal_layer_index == 0) {
-                                        picture_control_set_ptr->altref_strength_y = 5;
-                                        picture_control_set_ptr->altref_strength_uv = 5;
+                                        picture_control_set_ptr->altref_strength_y = sequence_control_set_ptr->static_config.altref_strength;
+                                        picture_control_set_ptr->altref_strength_uv = sequence_control_set_ptr->static_config.altref_strength;
                                     }
                                     else {
                                         picture_control_set_ptr->altref_strength_y = 2;

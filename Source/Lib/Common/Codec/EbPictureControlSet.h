@@ -14543,8 +14543,9 @@ extern "C" {
         uint8_t                              prune_unipred_at_me;
 #endif
 #if TWO_PASS
-        struct stat_struct_t                   stat_struct;
-        uint64_t                        referenced_area_avg;
+        stat_struct_t*                      stat_struct_first_pass_ptr;
+        struct stat_struct_t                stat_struct;
+        uint64_t                            referenced_area_avg;
 #endif
 #if PREDICT_NSQ_SHAPE
         uint8_t                                mdc_depth_level;

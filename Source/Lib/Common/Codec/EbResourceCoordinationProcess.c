@@ -571,64 +571,18 @@ static void read_stat_from_file(
     if (fseek_return_value != 0) {
         printf("Error in fseek  returnVal %i\n", fseek_return_value);
     }
-    int return_read = fread(&picture_control_set_ptr->stat_struct,
+    fread(&picture_control_set_ptr->stat_struct,
         sizeof(stat_struct_t),
-        (size_t)1,
+        (size_t) 1,
         sequence_control_set_ptr->static_config.input_stat_file);
-    int return_read_error = ferror(sequence_control_set_ptr->static_config.input_stat_file);
-#if 1
-    //uint8_t* temp_buffer = &picture_control_set_ptr->stat_struct;
-    ////for (int h = 0; h < height; h++) {
-    ////    fread(pic_point, sizeof(uint8_t), (size_t)width, fid);
-    ////    pic_point = pic_point + stride;
-    ////}
 
-    //FILE *temp_file;
-    //FOPEN(temp_file, "F:\\Amir\\AV1\\Code\\VCI-SW_AV1\\anaghdin\\m0-test\\Build\\windows\\test2\\stat_REF2.txt", "r");
-    //struct stat_struct_t                   stat_struct;
-
-    //int return_read = fread(&stat_struct,
-    //    1,
-    //    sizeof(stat_struct_t),
-    //    temp_file);
-//int return_read_error = ferror(sequence_control_set_ptr->static_config.input_stat_file);
-//
-//    for (int i = 0; i < sizeof(stat_struct_t); i++) {
-//        int return_read = fread(temp_buffer,
-//            1,
-//            1,
-//            temp_file);
-//        temp_buffer++;
-//    }
-
-
-   /* if (return_read != sizeof(stat_struct_t) && ferror(sequence_control_set_ptr->static_config.input_stat_file))
-    {
-        int err = errno;
-        fprintf(stderr, "%s\n", explain_errno_fread(err, &picture_control_set_ptr->stat_struct, 1, sizeof(stat_struct_t), sequence_control_set_ptr->static_config.input_stat_file));
-        exit(EXIT_FAILURE);
-    }*/
-    if (picture_control_set_ptr->picture_number % 16 == 0) {
-        uint32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
-        uint64_t referenced_area_avg = 0;
-        for (int sb_addr = 0; sb_addr < sequence_control_set_ptr->sb_total_count; ++sb_addr) {
-            referenced_area_avg += (picture_control_set_ptr->stat_struct.referenced_area[sb_addr] / sequence_control_set_ptr->sb_params_array[sb_addr].width / sequence_control_set_ptr->sb_params_array[sb_addr].height);
-        }
-        referenced_area_avg /= sequence_control_set_ptr->sb_total_count;
-        picture_control_set_ptr->referenced_area_avg = referenced_area_avg;
-        printf("RELEASED POC:%d\t%d\n",
-            picture_control_set_ptr->picture_number,
-            (int)referenced_area_avg);
-        //for (int sb_index = 0; sb_index < sequence_control_set_ptr->sb_total_count; sb_index++) {
-        //    if (sb_index % pic_width_in_sb == 0)
-        //        printf("\n");
-
-        //    printf("%d\t", picture_control_set_ptr->stat_struct.referenced_area[sb_index] / sequence_control_set_ptr->sb_params_array[sb_index].width / sequence_control_set_ptr->sb_params_array[sb_index].height);
-        //}
-    }
-#endif
-
-
+    uint32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
+    uint64_t referenced_area_avg = 0;
+    for (int sb_addr = 0; sb_addr < sequence_control_set_ptr->sb_total_count; ++sb_addr)
+        referenced_area_avg += (picture_control_set_ptr->stat_struct.referenced_area[sb_addr] / sequence_control_set_ptr->sb_params_array[sb_addr].width / sequence_control_set_ptr->sb_params_array[sb_addr].height);
+    
+    referenced_area_avg /= sequence_control_set_ptr->sb_total_count;
+    picture_control_set_ptr->referenced_area_avg = referenced_area_avg;
     eb_release_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
 }
 #endif

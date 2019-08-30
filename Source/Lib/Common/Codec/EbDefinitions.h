@@ -38,8 +38,7 @@ extern "C" {
 #define TEMPORAL_MVP                    1// Temporal mvp support. aka. MFMV
 #define FIXED_TMVP_HP                   1
 
-#define TWO_PASS                        0
-#define ALT_REF_TUNING                  0
+#define TWO_PASS                        1
 #define INCOMPLETE_SB_ASSERT            0 //add an assert to link incomplete SBs to usage of root-CBF skip decision in MD
 
 #define NO_MEMSET                       1
