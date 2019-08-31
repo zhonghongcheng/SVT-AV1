@@ -1480,9 +1480,6 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->bipred3x3_injection = 0;
 
-#if M3_BIPRED3x3_INJECTION
-    context_ptr->bipred3x3_injection = 1;
-#endif
 
 #if PREDICTIVE_ME
     // Level                Settings
@@ -1580,6 +1577,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->redundant_blk = EB_FALSE;
 
+#if M1_REDUNDANT_BLOCK
+    context_ptr->redundant_blk = EB_TRUE;
+#endif
 #if FULL_LOOP_SPLIT
     // Derive md_staging_mode
 #if M1_MD_STAGING

@@ -2536,7 +2536,13 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
     EbErrorType return_error = EB_ErrorNone;
 
     context_ptr->adp_level = picture_control_set_ptr->parent_pcs_ptr->enc_mode;
+#if M1_ADP_LEVEL
+    context_ptr->adp_level = ENC_M1;
+#endif
+#if M2_ADP_LECEL
+    context_ptr->adp_level = ENC_M2;
 
+#endif
 #if CABAC_UP
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         if (picture_control_set_ptr->enc_mode <= ENC_M6)

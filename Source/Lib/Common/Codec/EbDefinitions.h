@@ -45,6 +45,7 @@ extern "C" {
 #define MR_TX_WEIGHT                    0
 #define MR_ATB_SKIP                     0
 #define MR_MD_STAGE                     0
+    
     //M0 vs M1//
 #define M1_NEW_NEAREST                  0
 #define M1_ENHANCED_Nx4                 0
@@ -56,35 +57,36 @@ extern "C" {
 #define M1_PRUNE_REF_FRAME              0
 #define M1_PRUNE_REF_FRAME_ME           0
 #define M1_TMVP                         0
+#define M1_EME                          0
+#define M1_ADP_LEVEL                    0
+#define M1_REDUNDANT_BLOCK              0
+ 
     //M1 vs M2//
-#define M2_PREDICTIVE_ME_LEVEL          0
-#define M2_REDUNDANT_BLK                0
-#define M2_ALLOW_BIPRED                 0
-#define M2_PIC_DEPTH_MODE               0
-#define M2_NSQ_LEVEL                    0
-#define M2_LOOP_FILTER_MODE             0
-#define M2_TX_SEARCH_REDUCED_SET        0
-#define M2_INTRA_PRED_MODE              0
-#define M2_COMPOUND_MODE                0
-#define M2_REF_COUNT                    0
-#define M2_UNIPRED3x3_INJECTION         0
-#define M2_TRELLIS_QUANT                0
-#define M2_SUBPEL                       0
-#define M2_C12                          0
-#define M2_MD_STAGE_COUNT               0
+#define M2_PREDICTIVE_ME_LEVEL         0
+#define M2_TX_REDUCED_SET              0
+#define M2_ATB                         0
+#define M2_ADP_LECEL                   0
+#define M2_EME                         0
+#define M2_PIC_DEPTH_MODE              0
+#define M2_NSQ_LEVEL                   0
+#define M2_COMPOUND_MODE               0
+#define M2_REF_COUNT                   0
+#define M2_MD_STAGE_COUNT              0
+#define M2_MD_STAGING                  0
+#define M2_FAST_CAND_COUNT             0
 
     //M2 vs M3//
-#define M3_MD_STAGE_COUNT               0
-#define M3_BIPRED3x3_INJECTION          0
-#define M3_ME_SEARCH_METHOD             0
+
+
 #define M3_PIC_DEPTH_MODE               0
-#define M3_INTERPOLATION_LEVEL          0
 #define M3_REF_COUNT                    0
-#define M3_C12                          0
-#define M3_SB_SIZE                      0
+
 #define M3_MRP_MODE                     0
 #define M3_DOWN_SAMPLING_FILTERING      0
 // M3 vs M4 //
+#define M4_SB_SIZE                      0
+#define M4_INTERPOLATION_LEVEL          0
+#define M4_ME_SEARCH_METHOD             0
 #define M4_ANGLE_INTRA                  0
 #define M4_BIPRED_3x3                   0
 #define M4_C12                          0

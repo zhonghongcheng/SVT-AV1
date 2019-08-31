@@ -1794,7 +1794,7 @@ EbErrorType prediction_structure_group_ctor(
 
     uint8_t ref_count_used = enc_mode <= ENC_M1 ? MAX_REF_IDX : enc_mode <= ENC_M3 ? 2 : 1;
 
-#if M3_REF_COUNT
+#if M2_REF_COUNT
     ref_count_used = 2;
 #endif
 

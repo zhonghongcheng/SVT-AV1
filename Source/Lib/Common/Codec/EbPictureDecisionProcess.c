@@ -915,6 +915,7 @@ EbErrorType signal_derivation_multi_processes_oq(
                     picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
             else
                 picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
+
         else if (picture_control_set_ptr->enc_mode <= ENC_M1)
             picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
@@ -1148,8 +1149,11 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
             picture_control_set_ptr->interpolation_search_level = IT_SEARCH_OFF;
 
-#if M3_INTERPOLATION_LEVEL
-        picture_control_set_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;
+#if M4_INTERPOLATION_LEVEL
+        if (picture_control_set_ptr->temporal_layer_index == 0)
+            picture_control_set_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;
+        else
+            picture_control_set_ptr->interpolation_search_level = IT_SEARCH_OFF;
 #endif
 
     // Loop filter Level                            Settings
@@ -1206,9 +1210,6 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->loop_filter_mode = 3;
         else
             picture_control_set_ptr->loop_filter_mode = 1;
-#endif
-#if M2_LOOP_FILTER_MODE
-    picture_control_set_ptr->loop_filter_mode = 3;
 #endif
     }
     else
@@ -1340,7 +1341,11 @@ EbErrorType signal_derivation_multi_processes_oq(
 
     if (picture_control_set_ptr->tx_search_level == TX_SEARCH_ENC_DEC)
         picture_control_set_ptr->tx_search_reduced_set = 0;
+#if M2_TX_REDUCED_SET
+    else if (0)
+#else
     else if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
         picture_control_set_ptr->tx_search_reduced_set = 0;
     else if (picture_control_set_ptr->enc_mode <= ENC_M5)
         picture_control_set_ptr->tx_search_reduced_set = 1;
@@ -1472,7 +1477,9 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->atb_mode = 0;
 
 #endif
-
+#if M2_ATB
+        picture_control_set_ptr->atb_mode = 0;
+#endif
 #if COMP_MODE
         // Set Wedge mode      Settings
         // 0                 FULL: Full search
@@ -1528,7 +1535,9 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
             else
                 picture_control_set_ptr->compound_mode = 0;
-
+#if M2_COMPOUND_MODE
+            picture_control_set_ptr->compound_mode = 1;
+#endif
             // set compound_types_to_try
             if (picture_control_set_ptr->compound_mode)
 #if COMP_OPT
