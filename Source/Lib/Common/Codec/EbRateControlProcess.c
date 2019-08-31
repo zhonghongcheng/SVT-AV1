@@ -3657,7 +3657,7 @@ static int adaptive_qindex_calc(
 
                 active_best_quality = min_boost - (int)(boost * rc->arf_boost_factor);
 #if TWO_PASS
-                if (sequence_control_set_ptr->static_config.use_input_stat_file) {
+                if (sequence_control_set_ptr->static_config.use_input_stat_file && !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected) {
                     if (picture_control_set_ptr->parent_pcs_ptr->sad_me / picture_control_set_ptr->sb_total_count / 256 < 15)
                         active_best_quality = active_best_quality * 130 / 100;
                     else if (picture_control_set_ptr->parent_pcs_ptr->sad_me / picture_control_set_ptr->sb_total_count / 256 < 25)
