@@ -39,6 +39,7 @@ extern "C" {
 #define FIXED_TMVP_HP                   1
 
 #define TWO_PASS                        1
+#define TWO_PASS_PART                   0
 #define INCOMPLETE_SB_ASSERT            0 //add an assert to link incomplete SBs to usage of root-CBF skip decision in MD
 
 #define NO_MEMSET                       1
@@ -3983,6 +3984,10 @@ static const uint32_t MD_SCAN_TO_OIS_32x32_SCAN[CU_MAX_COUNT] =
 typedef struct stat_struct_t
 {
     uint32_t                        referenced_area[MAX_NUMBER_OF_TREEBLOCKS_PER_PICTURE];
+#if TWO_PASS_PART
+    int8_t                          first_pass_split_flag[MAX_NUMBER_OF_TREEBLOCKS_PER_PICTURE/16][BLOCK_MAX_COUNT_SB_64];
+    //int8_t                          first_pass_shape[MAX_NUMBER_OF_TREEBLOCKS_PER_PICTURE][BLOCK_MAX_COUNT_SB_128];
+#endif
 } stat_struct_t;
 #endif
 #define SC_MAX_LEVEL 2 // 2 sets of HME/ME settings are used depending on the scene content mode

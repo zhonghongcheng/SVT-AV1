@@ -1297,6 +1297,15 @@ void init_considered_block(
         //if the parentSq is inside inject this block
         uint8_t is_blk_allowed = picture_control_set_ptr->slice_type != I_SLICE ? 1 : (blk_geom->sq_size < 128) ? 1 : 0;
 
+#if TWO_PASS_PART
+        if (sequence_control_set_ptr->static_config.use_input_stat_file && picture_control_set_ptr->picture_number != 56) {
+            context_ptr->local_cu_array[blk_index].early_split_flag = picture_control_set_ptr->parent_pcs_ptr->stat_struct.first_pass_split_flag[sb_index][blk_index];
+            /*if (context_ptr->local_cu_array[blk_index].early_split_flag == -1) {
+                printf(" Error");
+            }*/
+           // PART sahpe = (PART)picture_control_set_ptr->parent_pcs_ptr->stat_struct.first_pass_shape[sb_index][blk_index];
+        }
+#endif
         if(depth_refinement_mode == AllD)
             split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
         else

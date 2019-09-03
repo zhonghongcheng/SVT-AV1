@@ -3432,6 +3432,12 @@ EB_EXTERN void av1_encode_pass(
         const BlockGeom * blk_geom = context_ptr->blk_geom = get_blk_geom_mds(blk_it);
         UNUSED(blk_geom);
 
+#if TWO_PASS_PART
+        if (sequence_control_set_ptr->static_config.use_output_stat_file) {
+            picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_split_flag[tbAddr][blk_it] = -1;
+           // picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_shape[tbAddr][blk_it] = -1;
+        }
+#endif
         sb_ptr->cu_partition_array[blk_it] = context_ptr->md_context->md_cu_arr_nsq[blk_it].part;
 #if  INCOMPLETE_SB_FIX
         if (part != PARTITION_SPLIT && sequence_control_set_ptr->sb_geom[tbAddr].block_is_allowed[blk_it]) {
@@ -3445,6 +3451,12 @@ EB_EXTERN void av1_encode_pass(
             for (int32_t d1_itr = (int32_t)blk_it + offset_d1; d1_itr < (int32_t)blk_it + offset_d1 + num_d1_block; d1_itr++) {
                 const BlockGeom * blk_geom = context_ptr->blk_geom = get_blk_geom_mds(d1_itr);
 
+#if TWO_PASS_PART
+                if (sequence_control_set_ptr->static_config.use_output_stat_file) {
+                    picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_split_flag[tbAddr][d1_itr] = 0;
+                   // picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_shape[tbAddr][blk_it] = blk_geom->shape;
+                }
+#endif
                 // PU Stack variables
                 PredictionUnit        *pu_ptr = (PredictionUnit *)EB_NULL; //  done
                 EbPictureBufferDesc   *residual_buffer = context_ptr->residual_buffer;

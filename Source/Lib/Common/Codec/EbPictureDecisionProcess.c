@@ -1096,10 +1096,8 @@ EbErrorType signal_derivation_multi_processes_oq(
         // 5                                     pred - 1 + 2
         // 6                                     pred - 1 + 3
         // 7                                     All
-        if (MR_MODE || sc_content_detected) // Interpolation
+        if (MR_MODE || sc_content_detected || ENC_M0) 
             picture_control_set_ptr->mdc_depth_level = 7;
-        else if (picture_control_set_ptr->enc_mode == ENC_M0)
-            picture_control_set_ptr->mdc_depth_level = 6;
         else if (picture_control_set_ptr->enc_mode == ENC_M1)
             picture_control_set_ptr->mdc_depth_level = 5;
         else
