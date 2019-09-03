@@ -3434,7 +3434,8 @@ EB_EXTERN void av1_encode_pass(
 
 #if TWO_PASS_PART
         if (sequence_control_set_ptr->static_config.use_output_stat_file) {
-            picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_split_flag[tbAddr][blk_it] = -1;
+            picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_pic_num = picture_control_set_ptr->picture_number;
+            picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_split_flag[tbAddr][blk_it] = 0;
            // picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_shape[tbAddr][blk_it] = -1;
         }
 #endif
@@ -3453,7 +3454,15 @@ EB_EXTERN void av1_encode_pass(
 
 #if TWO_PASS_PART
                 if (sequence_control_set_ptr->static_config.use_output_stat_file) {
-                    picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_split_flag[tbAddr][d1_itr] = 0;
+                    int32_t sq_index, tot_d1_blocks,block_1d_idx;
+                    sq_index = blk_geom->sqi_mds; 
+                    tot_d1_blocks =
+                            blk_geom->sq_size == 128 ? 17 :
+                            blk_geom->sq_size > 8 ? 25 :
+                            blk_geom->sq_size == 8 ? 5 : 1;
+                    for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                        picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_split_flag[tbAddr][sq_index + block_1d_idx] = 1;
+                    }
                    // picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_shape[tbAddr][blk_it] = blk_geom->shape;
                 }
 #endif
@@ -5456,6 +5465,19 @@ EB_EXTERN void av1_encode_pass(
         else
             blk_it += d1_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][context_ptr->blk_geom->depth];
     } // CU Loop
+
+
+ #if TWO_PASS_PART_DEBUG
+    blk_it = 0;
+    if (picture_control_set_ptr->picture_number == 16 && tbAddr == 0) {
+        while (blk_it < sequence_control_set_ptr->max_block_cnt) {
+            if (sequence_control_set_ptr->static_config.use_output_stat_file) {
+                printf("%d\t", picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_split_flag[tbAddr][blk_it]);
+            }
+            blk_it++;
+        }
+    }
+#endif
 #if !MEMORY_FOOTPRINT_OPT
     sb_ptr->tot_final_cu = final_cu_itr;
 #endif

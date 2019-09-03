@@ -980,6 +980,7 @@ typedef enum NsqSearchLevel
     NSQ_SEARCH_LEVEL4,
     NSQ_SEARCH_LEVEL5,
     NSQ_SEARCH_LEVEL6,
+    NSQ_SEARCH_LEVEL7,
     NSQ_SEARCH_FULL
 } NsqSearchLevel;
 
@@ -3986,7 +3987,7 @@ typedef struct stat_struct_t
     uint32_t                        referenced_area[MAX_NUMBER_OF_TREEBLOCKS_PER_PICTURE];
 #if TWO_PASS_PART
     int8_t                          first_pass_split_flag[MAX_NUMBER_OF_TREEBLOCKS_PER_PICTURE/16][BLOCK_MAX_COUNT_SB_64];
-    //int8_t                          first_pass_shape[MAX_NUMBER_OF_TREEBLOCKS_PER_PICTURE][BLOCK_MAX_COUNT_SB_128];
+    int8_t                          first_pass_pic_num;
 #endif
 } stat_struct_t;
 #endif

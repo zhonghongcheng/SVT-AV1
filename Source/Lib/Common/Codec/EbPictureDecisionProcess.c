@@ -963,6 +963,29 @@ EbErrorType signal_derivation_multi_processes_oq(
         picture_control_set_ptr->max_number_of_pus_per_sb = (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE) ? MAX_ME_PU_COUNT : SQUARE_PU_COUNT;
 #endif
 
+#if PREDICT_NSQ_SHAPE
+        // Depth Level                           Settings
+        // 0                                     pred only
+        // 1                                     pred + 1
+        // 2                                     pred + 2
+        // 3                                     pred + 3
+        // 4                                     pred - 1 + 1
+        // 5                                     pred - 1 + 2
+        // 6                                     pred - 1 + 3
+        // 7                                     All
+        if (MR_MODE || sc_content_detected) 
+            picture_control_set_ptr->mdc_depth_level = 7;
+        else if (picture_control_set_ptr->enc_mode == ENC_M0)
+            picture_control_set_ptr->mdc_depth_level = 6;
+        else if (picture_control_set_ptr->enc_mode == ENC_M1)
+            picture_control_set_ptr->mdc_depth_level = 5;
+        else
+            picture_control_set_ptr->mdc_depth_level = 7; // Not tuned yet.
+#if TWO_PASS_PART
+        if(sequence_control_set_ptr->static_config.use_input_stat_file)
+        picture_control_set_ptr->mdc_depth_level = 0;
+#endif
+#endif
 #if ADP_BQ
         // Set nsq_search_level and nsq_max_shapes_md to invalid if ADP
         if (picture_control_set_ptr->pic_depth_mode == PIC_SB_SWITCH_SQ_DEPTH_MODE || picture_control_set_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE) {
@@ -1003,6 +1026,10 @@ EbErrorType signal_derivation_multi_processes_oq(
                     picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
 
         // Non-SC Settings
+ #if PREDICT_NSQ_SHAPE
+        else if(picture_control_set_ptr->mdc_depth_level == 6)
+            picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL7;
+#endif
         else if (picture_control_set_ptr->enc_mode <= ENC_M0)
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL6;
         else if (picture_control_set_ptr->enc_mode <= ENC_M1)
@@ -1051,6 +1078,8 @@ EbErrorType signal_derivation_multi_processes_oq(
         break;
     case NSQ_SEARCH_LEVEL6:
         picture_control_set_ptr->nsq_max_shapes_md = 6;
+    case NSQ_SEARCH_LEVEL7:
+        picture_control_set_ptr->nsq_max_shapes_md = 7;
         break;
     case NSQ_SEARCH_FULL:
         picture_control_set_ptr->nsq_max_shapes_md = 6;
@@ -1086,23 +1115,7 @@ EbErrorType signal_derivation_multi_processes_oq(
         picture_control_set_ptr->nsq_search_sub_level = NO_SUB_LEVEL;
 #endif
 #endif
-#if PREDICT_NSQ_SHAPE
-        // Depth Level                           Settings
-        // 0                                     pred only
-        // 1                                     pred + 1
-        // 2                                     pred + 2
-        // 3                                     pred + 3
-        // 4                                     pred - 1 + 1
-        // 5                                     pred - 1 + 2
-        // 6                                     pred - 1 + 3
-        // 7                                     All
-        if (MR_MODE || sc_content_detected || ENC_M0) 
-            picture_control_set_ptr->mdc_depth_level = 7;
-        else if (picture_control_set_ptr->enc_mode == ENC_M1)
-            picture_control_set_ptr->mdc_depth_level = 5;
-        else
-            picture_control_set_ptr->mdc_depth_level = 7; // Not tuned yet.
-#endif
+
     // Interpolation search Level                     Settings
     // 0                                              OFF
     // 1                                              Interpolation search at inter-depth
