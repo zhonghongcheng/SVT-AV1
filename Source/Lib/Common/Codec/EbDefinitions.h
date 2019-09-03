@@ -35,6 +35,10 @@
 extern "C" {
 #endif
 
+
+#define M0_ENHANCED_Nx4                 0
+#define M0_COMBINE_C12                  0
+#define M0_TMVP                         0
     /*FEATURE DIFFERENCES */
     //MR vs M0//
 #define MR_INTERPOLATION                0

@@ -1399,6 +1399,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
 #endif
 #if ENHANCED_Nx4_4xN_NEW_MV
+#if M0_ENHANCED_Nx4
+    context_ptr->nx4_4xn_parent_mv_injection = 1;
+#else
 #if M1_ENHANCED_Nx4
     context_ptr->nx4_4xn_parent_mv_injection = 0;
 #else
@@ -1406,6 +1409,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->nx4_4xn_parent_mv_injection = 1;
     else
         context_ptr->nx4_4xn_parent_mv_injection = 0;
+#endif
 #endif
 #endif
 #if M9_NEAR_INJECTION
@@ -1510,10 +1514,14 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // Combine MD Class1&2
     // 0                    OFF
     // 1                    ON
+#if M0_COMBINE_C12
+    context_ptr->combine_class12 = 0;
+#else
 #if M1_COMBINE_C12
     context_ptr->combine_class12 =  1;
 #else
     context_ptr->combine_class12 = (picture_control_set_ptr->enc_mode == ENC_M0) ? 0 : 1;
+#endif
 #endif
 #endif
 
