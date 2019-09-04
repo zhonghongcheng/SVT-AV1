@@ -95,6 +95,9 @@ extern "C" {
         EbColorFormat                          color_format;
         uint64_t                               tot_intra_coded_area;
         uint8_t                                intra_coded_area_sb[MAX_NUMBER_OF_TREEBLOCKS_PER_PICTURE];//percentage of intra coded area 0-100%
+#if TWO_PASS_PART
+        int8_t                                 first_pass_split_flag[MAX_NUMBER_OF_TREEBLOCKS_PER_PICTURE][BLOCK_MAX_COUNT_SB_128];
+#endif
         uint8_t                                pmp_masking_level_enc_dec;
         EbBool                                 skip_qpm_flag;
         int16_t                                min_delta_qp_weight;

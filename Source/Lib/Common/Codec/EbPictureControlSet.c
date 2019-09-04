@@ -954,6 +954,10 @@ EbErrorType picture_control_set_ctor(
 
     EB_CREATEMUTEX(EbHandle, object_ptr->cdef_search_mutex, sizeof(EbHandle), EB_MUTEX);
 
+#if TWO_PASS_PART
+    EB_CREATEMUTEX(EbHandle, object_ptr->first_pass_split_mutex, sizeof(EbHandle), EB_MUTEX);
+#endif
+
     //object_ptr->mse_seg[0] = (uint64_t(*)[64])aom_malloc(sizeof(**object_ptr->mse_seg) *  pictureLcuWidth * pictureLcuHeight);
    // object_ptr->mse_seg[1] = (uint64_t(*)[64])aom_malloc(sizeof(**object_ptr->mse_seg) *  pictureLcuWidth * pictureLcuHeight);
 

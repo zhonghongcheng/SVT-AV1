@@ -576,9 +576,9 @@ static void read_stat_from_file(
         (size_t) 1,
         sequence_control_set_ptr->static_config.input_stat_file);
 
-#if TWO_PASS_PART
+#if 0//TWO_PASS_PART
     if (picture_control_set_ptr->stat_struct.first_pass_pic_num != picture_control_set_ptr->picture_number) {
-        printf("pic_num error");
+        printf("\npic_num error");
         printf("%d\t%d\n", picture_control_set_ptr->picture_number, picture_control_set_ptr->stat_struct.first_pass_pic_num);
     }
 #endif

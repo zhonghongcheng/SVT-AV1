@@ -1288,12 +1288,12 @@ void init_considered_block(
         break;
     }
 
-#if TWO_PASS_PART_DEBUG
+#if 0//TWO_PASS_PART_DEBUG
     uint32_t blk_it = 0;
     if (picture_control_set_ptr->picture_number == 16 && sb_index == 0) {
         while (blk_it < sequence_control_set_ptr->max_block_cnt) {
             if (sequence_control_set_ptr->static_config.use_input_stat_file) {
-                printf("%d\t", 1-picture_control_set_ptr->parent_pcs_ptr->stat_struct.first_pass_split_flag[sb_index][blk_it]);
+                printf("%d\t", picture_control_set_ptr->parent_pcs_ptr->stat_struct.first_pass_split_flag[sb_index][blk_it]);
             }
             blk_it++;
         }
@@ -1309,15 +1309,10 @@ void init_considered_block(
         uint8_t is_blk_allowed = picture_control_set_ptr->slice_type != I_SLICE ? 1 : (blk_geom->sq_size < 128) ? 1 : 0;
 
 #if TWO_PASS_PART
-        if (sequence_control_set_ptr->static_config.use_input_stat_file && picture_control_set_ptr->picture_number != 56) {
-            context_ptr->local_cu_array[blk_index].early_split_flag = 1-picture_control_set_ptr->parent_pcs_ptr->stat_struct.first_pass_split_flag[sb_index][blk_index];
-            if (picture_control_set_ptr->parent_pcs_ptr->stat_struct.first_pass_pic_num != picture_control_set_ptr->picture_number) {
-                printf("pic_num error");
+        if (sequence_control_set_ptr->static_config.use_input_stat_file) {
+            if (picture_control_set_ptr->picture_number == picture_control_set_ptr->parent_pcs_ptr->stat_struct.first_pass_pic_num) {
+                context_ptr->local_cu_array[blk_index].early_split_flag = picture_control_set_ptr->parent_pcs_ptr->stat_struct.first_pass_split_flag[sb_index][blk_index];
             }
-            /*if (context_ptr->local_cu_array[blk_index].early_split_flag == -1) {
-                printf(" Error");
-            }*/
-           // PART sahpe = (PART)picture_control_set_ptr->parent_pcs_ptr->stat_struct.first_pass_shape[sb_index][blk_index];
         }
 #endif
         if(depth_refinement_mode == AllD)

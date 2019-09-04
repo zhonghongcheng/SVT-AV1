@@ -1908,6 +1908,16 @@ void* enc_dec_kernel(void *input_ptr)
 
                     if (picture_control_set_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr != NULL)
                         ((EbReferenceObject*)picture_control_set_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr->object_ptr)->intra_coded_area_sb[sb_index] = (uint8_t)((100 * context_ptr->intra_coded_area_sb[sb_index]) / (64 * 64));
+#if TWO_PASS_PART
+                    if (sequence_control_set_ptr->static_config.use_output_stat_file) {
+                        eb_block_on_mutex(picture_control_set_ptr->first_pass_split_mutex);
+
+                        for (uint32_t block_index = 0; block_index < sequence_control_set_ptr->max_block_cnt; block_index++) {
+                            picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_split_flag[sb_index][block_index] = context_ptr->first_pass_split_flag[sb_index][block_index];
+                        }
+                        eb_release_mutex(picture_control_set_ptr->first_pass_split_mutex);
+                    }
+#endif
                 }
                 xLcuStartIndex = (xLcuStartIndex > 0) ? xLcuStartIndex - 1 : 0;
             }

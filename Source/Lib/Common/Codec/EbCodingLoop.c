@@ -3435,8 +3435,7 @@ EB_EXTERN void av1_encode_pass(
 #if TWO_PASS_PART
         if (sequence_control_set_ptr->static_config.use_output_stat_file) {
             picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_pic_num = picture_control_set_ptr->picture_number;
-            picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_split_flag[tbAddr][blk_it] = 0;
-           // picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_shape[tbAddr][blk_it] = -1;
+            context_ptr->first_pass_split_flag[tbAddr][blk_it] = 1;
         }
 #endif
         sb_ptr->cu_partition_array[blk_it] = context_ptr->md_context->md_cu_arr_nsq[blk_it].part;
@@ -3461,9 +3460,8 @@ EB_EXTERN void av1_encode_pass(
                             blk_geom->sq_size > 8 ? 25 :
                             blk_geom->sq_size == 8 ? 5 : 1;
                     for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                        picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_split_flag[tbAddr][sq_index + block_1d_idx] = 1;
+                        context_ptr->first_pass_split_flag[tbAddr][sq_index + block_1d_idx] = 0;
                     }
-                   // picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_shape[tbAddr][blk_it] = blk_geom->shape;
                 }
 #endif
                 // PU Stack variables
@@ -5467,7 +5465,7 @@ EB_EXTERN void av1_encode_pass(
     } // CU Loop
 
 
- #if TWO_PASS_PART_DEBUG
+ #if 0//TWO_PASS_PART_DEBUG
     blk_it = 0;
     if (picture_control_set_ptr->picture_number == 16 && tbAddr == 0) {
         while (blk_it < sequence_control_set_ptr->max_block_cnt) {

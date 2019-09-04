@@ -13767,6 +13767,9 @@ extern "C" {
         EbHandle                              entropy_coding_mutex;
         EbBool                                entropy_coding_in_progress;
         EbBool                                entropy_coding_pic_done;
+#if TWO_PASS_PART
+        EbHandle                              first_pass_split_mutex;
+#endif
         EbHandle                              intra_mutex;
         uint32_t                              intra_coded_area;
         uint32_t                              tot_seg_searched_cdef;
