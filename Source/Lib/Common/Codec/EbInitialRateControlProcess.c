@@ -1833,7 +1833,7 @@ void* initial_rate_control_kernel(void *input_ptr)
                                 1);
                         }
 #if TWO_PASS
-                        picture_control_set_ptr->stat_struct_first_pass_ptr = &((EbReferenceObject*)picture_control_set_ptr->reference_picture_wrapper_ptr->object_ptr)->stat_struct;
+                        picture_control_set_ptr->stat_struct_first_pass_ptr = picture_control_set_ptr->is_used_as_reference_flag ? &((EbReferenceObject*)picture_control_set_ptr->reference_picture_wrapper_ptr->object_ptr)->stat_struct : &picture_control_set_ptr->stat_struct;
                         memset(picture_control_set_ptr->stat_struct_first_pass_ptr, 0, sizeof(stat_struct_t));
 #endif
 #else
