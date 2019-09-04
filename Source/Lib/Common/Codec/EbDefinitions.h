@@ -35,6 +35,7 @@
 extern "C" {
 #endif
 
+#define ENABLE_REDUNDANT_BLK_FOR_M0  1
 #define TEMPORAL_MVP                    1// Temporal mvp support. aka. MFMV
 #define FIXED_TMVP_HP                   1
 

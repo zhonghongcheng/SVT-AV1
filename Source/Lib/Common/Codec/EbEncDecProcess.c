@@ -1556,7 +1556,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             context_ptr->redundant_blk = EB_TRUE;
         else
             context_ptr->redundant_blk = EB_FALSE;
+#if ENABLE_REDUNDANT_BLK_FOR_M0
+    else if (picture_control_set_ptr->enc_mode >= ENC_M0 && picture_control_set_ptr->enc_mode <= ENC_M5)
+#else
     else if (picture_control_set_ptr->enc_mode >= ENC_M1 && picture_control_set_ptr->enc_mode <= ENC_M5)
+#endif
         context_ptr->redundant_blk = EB_TRUE;
     else
         context_ptr->redundant_blk = EB_FALSE;
