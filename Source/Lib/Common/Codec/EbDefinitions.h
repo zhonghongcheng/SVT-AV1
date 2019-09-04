@@ -34,11 +34,16 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+    /****Purple Features OFF***/
+#define M1_MD_STAGING_LEVL              0
+#define M1_PREDICTIVE_ME                0
+#define M1_TX_REDUCED                   0
 /*NEW M1 */
 
-#define M0_ENHANCED_Nx4                 1
-#define M0_COMBINE_C12                  1
-#define M0_TMVP                         1
+#define M0_ENHANCED_Nx4                 0
+#define M0_COMBINE_C12                  0
+#define M0_TMVP                         0
     /*FEATURE DIFFERENCES */
     //MR vs M0//
 #define MR_INTERPOLATION                0

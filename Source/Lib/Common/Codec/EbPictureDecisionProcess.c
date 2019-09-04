@@ -1341,10 +1341,14 @@ EbErrorType signal_derivation_multi_processes_oq(
 
     if (picture_control_set_ptr->tx_search_level == TX_SEARCH_ENC_DEC)
         picture_control_set_ptr->tx_search_reduced_set = 0;
+#if M1_TX_REDUCED
+    else if (1)
+#else
 #if M2_TX_REDUCED_SET
     else if (0)
 #else
     else if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
 #endif
         picture_control_set_ptr->tx_search_reduced_set = 0;
     else if (picture_control_set_ptr->enc_mode <= ENC_M5)

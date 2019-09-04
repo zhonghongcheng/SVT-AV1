@@ -2436,10 +2436,14 @@ void set_md_stage_counts(
 #endif
 
 #endif
+#if M1_MD_STAGING_LEVL
+    if (0) {
+#else
 #if M2_MD_STAGING
     if (1) {
 #else
     if (picture_control_set_ptr->enc_mode >= ENC_M2){
+#endif
 #endif
         context_ptr->md_stage_2_count[CAND_CLASS_1] = context_ptr->bypass_stage1[CAND_CLASS_1] ? context_ptr->fast1_cand_count[CAND_CLASS_1] : (picture_control_set_ptr->slice_type == I_SLICE) ?
              0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 12 : 3;
