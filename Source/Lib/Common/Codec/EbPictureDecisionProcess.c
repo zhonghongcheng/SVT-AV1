@@ -974,13 +974,13 @@ EbErrorType signal_derivation_multi_processes_oq(
         // 6                                     pred - 1 + 3
         // 7                                     All
         if (MR_MODE || sc_content_detected) 
-            picture_control_set_ptr->mdc_depth_level = 7;
+            picture_control_set_ptr->mdc_depth_level = MAX_MDC_LEVEL;
         else if (picture_control_set_ptr->enc_mode == ENC_M0)
-            picture_control_set_ptr->mdc_depth_level = 6;
+            picture_control_set_ptr->mdc_depth_level = 7;
         else if (picture_control_set_ptr->enc_mode == ENC_M1)
-            picture_control_set_ptr->mdc_depth_level = 5;
+            picture_control_set_ptr->mdc_depth_level = 6;
         else
-            picture_control_set_ptr->mdc_depth_level = 7; // Not tuned yet.
+            picture_control_set_ptr->mdc_depth_level = MAX_MDC_LEVEL; // Not tuned yet.
 #if TWO_PASS_PART
         if(sequence_control_set_ptr->static_config.use_input_stat_file)
         picture_control_set_ptr->mdc_depth_level = 0;
@@ -1027,7 +1027,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 
         // Non-SC Settings
  #if PREDICT_NSQ_SHAPE
-        else if(picture_control_set_ptr->mdc_depth_level == 6)
+        else if(picture_control_set_ptr->mdc_depth_level == (MAX_MDC_LEVEL - 1))
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL7;
 #endif
         else if (picture_control_set_ptr->enc_mode <= ENC_M0)
