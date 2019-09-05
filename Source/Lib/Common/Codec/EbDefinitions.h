@@ -35,6 +35,23 @@
 extern "C" {
 #endif
 
+
+
+/*****M2 to M3*****/
+#define M3_unipred_3x3      0
+#define M3_trellis          0
+#define M3_quant_pf         0
+#define M3_qp_hp            0
+#define M3_pic_depth        0
+#define M3_nsq_level        0
+#define M3_loop_filter      0
+#define M3_intra_pred       0
+#define M3_eme              0
+#define M3_adp              0
+
+
+
+
 #define M0_3_CANDIDATE               0
 #define M1_0_CANDIDATE               0
 
