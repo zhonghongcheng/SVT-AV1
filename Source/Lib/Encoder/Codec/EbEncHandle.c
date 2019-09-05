@@ -2307,7 +2307,11 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
 #endif
 
 #if TEMPORAL_MVP
+#if M1_0_CANDIDATE
+    sequence_control_set_ptr->temporal_mvp_enabled = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode <= ENC_M1) ? 1 : 0;
+#else
     sequence_control_set_ptr->temporal_mvp_enabled =  (uint8_t)(sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;
+#endif
 #endif
 
 }

@@ -1400,7 +1400,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->new_nearest_near_comb_injection = 0;
 #endif
 #if ENHANCED_Nx4_4xN_NEW_MV
+#if M1_0_CANDIDATE
+    if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#else
     if (picture_control_set_ptr->enc_mode == ENC_M0)
+#endif
         context_ptr->nx4_4xn_parent_mv_injection = 1;
     else
         context_ptr->nx4_4xn_parent_mv_injection = 0;
@@ -1498,7 +1502,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // Combine MD Class1&2
     // 0                    OFF
     // 1                    ON
+#if M1_0_CANDIDATE
+    context_ptr->combine_class12 = (picture_control_set_ptr->enc_mode <= ENC_M1) ? 0 : 1;
+#else
     context_ptr->combine_class12 = (picture_control_set_ptr->enc_mode == ENC_M0) ? 0 : 1;
+#endif
 #endif
 
     // Set interpolation filter search blk size
@@ -1556,7 +1564,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             context_ptr->redundant_blk = EB_TRUE;
         else
             context_ptr->redundant_blk = EB_FALSE;
-#if ENABLE_REDUNDANT_BLK_FOR_M0
+#if M0_3_CANDIDATE
     else if (picture_control_set_ptr->enc_mode >= ENC_M0 && picture_control_set_ptr->enc_mode <= ENC_M5)
 #else
     else if (picture_control_set_ptr->enc_mode >= ENC_M1 && picture_control_set_ptr->enc_mode <= ENC_M5)
