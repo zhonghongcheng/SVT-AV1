@@ -52,8 +52,8 @@ extern "C" {
 
 
 
-#define M0_3_CANDIDATE               0
-#define M1_0_CANDIDATE               0
+#define M0_3_CANDIDATE               1
+#define M1_0_CANDIDATE               1
 
 #define TEMPORAL_MVP                    1// Temporal mvp support. aka. MFMV
 #define FIXED_TMVP_HP                   1
