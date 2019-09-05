@@ -439,7 +439,7 @@ extern "C" {
     uint64_t tot_cost;
 #endif
 #if II_SO
-    uint8_t                                intrapred_buf[INTERINTRA_MODES][32 * 32]; //MAX block size for inter intra is 32x32
+   DECLARE_ALIGNED(16, uint8_t,                            intrapred_buf[INTERINTRA_MODES][32 * 32]); //MAX block size for inter intra is 32x32
 #endif
   } ModeDecisionContext;
 
