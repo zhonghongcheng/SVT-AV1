@@ -935,7 +935,12 @@ EbErrorType signal_derivation_multi_processes_oq(
             else
                 picture_control_set_ptr->pic_depth_mode = PIC_ALL_C_DEPTH_MODE;
 #endif
+#if M4_pic_depth_mode
+        else if (0)
+
+#else
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#endif
 #if NSQ_MDC_L01
             if (picture_control_set_ptr->temporal_layer_index == 0)
                 picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
@@ -1021,7 +1026,11 @@ EbErrorType signal_derivation_multi_processes_oq(
                     picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL5;
                 else
                     picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL2;
+#if M4_nsq_level
+            else if (0)
+#else
             else if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#endif
                 if (picture_control_set_ptr->temporal_layer_index == 0)
                     picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL5;
                 else
@@ -1142,7 +1151,11 @@ EbErrorType signal_derivation_multi_processes_oq(
             else
                 picture_control_set_ptr->interpolation_search_level = IT_SEARCH_OFF;
 #endif
+#if M4_interpolation_level
+        else if (0)
+#else
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#endif
             picture_control_set_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;
         else if (picture_control_set_ptr->enc_mode <= ENC_M7)
             if (picture_control_set_ptr->temporal_layer_index == 0)
@@ -1194,10 +1207,14 @@ EbErrorType signal_derivation_multi_processes_oq(
     else
 
 #if LOOP_FILTER_FIX
+#if M2_loop_filter
+        if (1)
+#else
 #if M3_loop_filter
         if (0)
 #else
         if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#endif
 #endif
             picture_control_set_ptr->loop_filter_mode = 3;
         else

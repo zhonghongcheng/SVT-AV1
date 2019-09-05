@@ -34,23 +34,36 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
+/*M3 CAND **/
+#define M2_unipred_3x3      0
+#define M2_loop_filter      0
+#define M2_trellis          0
+#define M2_quant_pf         0
 
 /*****M2 to M3*****/
 #define M3_unipred_3x3      0
+#define M3_loop_filter      0
 #define M3_trellis          0
 #define M3_quant_pf         0
 #define M3_qp_hp            0
 #define M3_pic_depth        0
 #define M3_nsq_level        0
-#define M3_loop_filter      0
+
 #define M3_intra_pred       0
 #define M3_eme              0
 #define M3_adp              0
 
-
-
+/*****M3 to M4******/
+#define M4_bipred_3x3          0
+#define M4_angle_intra         0
+#define M4_adp                 0
+#define M4_me_search_method    0
+#define M4_pic_depth_mode      0
+#define M4_nsq_level           0
+#define M4_interpolation_level 0
+#define M4_ref_count           0
+#define M4_eme                 0
+#define M4_sb_size             0
 
 #define M0_3_CANDIDATE               1
 #define M1_0_CANDIDATE               1

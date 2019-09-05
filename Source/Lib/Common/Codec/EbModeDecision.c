@@ -6940,7 +6940,11 @@ void  inject_intra_candidates(
 
 #if ESTIMATE_INTRA
 #if M0_3_CANDIDATE
+#if M4_angle_intra
+    context_ptr->estimate_angle_intra = 0;
+#else
     context_ptr->estimate_angle_intra = ((picture_control_set_ptr->enc_mode > ENC_M3) || (picture_control_set_ptr->enc_mode == ENC_M0)) ? 0 : 1;
+#endif
 #else
     context_ptr->estimate_angle_intra = picture_control_set_ptr->enc_mode <= ENC_M3 && !MR_MODE ? 1 : 0;
 #endif
