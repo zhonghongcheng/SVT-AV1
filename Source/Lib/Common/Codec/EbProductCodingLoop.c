@@ -8908,9 +8908,9 @@ void md_encode_block(
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL) ? EB_TRUE : EB_FALSE;
     is_nsq_table_used = picture_control_set_ptr->parent_pcs_ptr->sc_content_detected ? EB_FALSE : is_nsq_table_used;
-#if DISABLE_NSQ_TABLE_FOR_M0
-    is_nsq_table_used = picture_control_set_ptr->enc_mode == ENC_M0 ? EB_FALSE : is_nsq_table_used;
-#endif
+    if (picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level == MAX_MDC_LEVEL) {
+        is_nsq_table_used = EB_FALSE;
+    }
 #endif
 #endif
     context_ptr->open_loop_block_rank = open_loop_block_rank;
