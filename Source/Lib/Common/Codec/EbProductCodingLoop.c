@@ -8357,6 +8357,9 @@ void  order_nsq_table(
             context_ptr->blk_geom,
             geom_offset_x,
             geom_offset_y);
+    int pidx;
+    for (pidx = 0; pidx < NSQ_TAB_SIZE; pidx++)
+        context_ptr->nsq_table[pidx] = PART_N;
 
 #if MD_INJECTION
     const MeLcuResults *me_results = picture_control_set_ptr->parent_pcs_ptr->me_results[me_sb_addr];
@@ -8486,7 +8489,7 @@ void  order_nsq_table(
     }
 
     // Remove duplicate candidates
-    for (int pidx = 0; pidx < NSQ_TAB_SIZE; pidx++)
+    for (pidx = 0; pidx < NSQ_TAB_SIZE; pidx++)
         cnt[context_ptr->nsq_table[pidx]]++;
     cnt[context_ptr->nsq_table[0]] = 1;
     for (int iter = 0; iter < NSQ_TAB_SIZE - 1; iter++) {

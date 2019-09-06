@@ -2880,6 +2880,9 @@ void forward_all_c_blocks_to_md(
 
                 for (uint32_t idx = 0; idx < tot_d1_blocks; ++idx) {
                     blk_geom = get_blk_geom_mds(blk_index);
+#if FIX_FRW_NUMBER_BLOCKS
+                    resultsPtr->leaf_data_array[resultsPtr->leaf_count].tot_d1_blocks = tot_d1_blocks;      
+#endif
 
                     //if the parentSq is inside inject this block
                     if (sequence_control_set_ptr->sb_geom[sb_index].block_is_inside_md_scan[blk_index]){

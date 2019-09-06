@@ -524,6 +524,7 @@ typedef enum MD_STAGE {
 #define NSQ_EARLY_EXIT                                  0
 #define RED_CU_BUG_FIX                                  1
 #endif
+#define FIX_FRW_NUMBER_BLOCKS                           1
 #if COMBINE_MDC_NSQ_TABLE
 #define NSQ_TAB_SIZE                                    8
 #else
