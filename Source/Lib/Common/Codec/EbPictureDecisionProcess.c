@@ -1207,12 +1207,13 @@ EbErrorType signal_derivation_multi_processes_oq(
     else
 
 #if LOOP_FILTER_FIX
-#if M2_loop_filter
-        if (1)
-#else
-#if M3_loop_filter
+#if M4_loop_filter
         if (0)
 #else
+#if M3_0_CANDIDATE
+        if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#else
+
         if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #endif
 #endif

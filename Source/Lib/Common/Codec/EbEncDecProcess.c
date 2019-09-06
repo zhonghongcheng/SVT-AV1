@@ -1452,15 +1452,17 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             context_ptr->unipred3x3_injection = 2;
         else
             context_ptr->unipred3x3_injection = 0;
-#if M2_unipred_3x3
-    else if (1)
-#else
-#if M3_unipred_3x3
+#if M4_unipred_3x3
     else if (0)
 #else
+#if M3_0_CANDIDATE
+    else if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#else
+
     else if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #endif
 #endif
+
         context_ptr->unipred3x3_injection = 1;
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->unipred3x3_injection = 2;
@@ -1566,12 +1568,13 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->blk_skip_decision = EB_FALSE;
 #endif
     // Derive Trellis Quant Coeff Optimization Flag
-#if M2_trellis
-    if (1)
-#else
-#if M3_trellis
+#if M4_trellis
     if (0)
 #else
+#if M3_0_CANDIDATE
+    if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#else
+
     if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #endif
 #endif
@@ -1586,7 +1589,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         else
             context_ptr->redundant_blk = EB_FALSE;
 #if M0_3_CANDIDATE
-    else if (picture_control_set_ptr->enc_mode >= ENC_M0 && picture_control_set_ptr->enc_mode <= ENC_M5)
+    else if ( picture_control_set_ptr->enc_mode <= ENC_M5)
 #else
     else if (picture_control_set_ptr->enc_mode >= ENC_M1 && picture_control_set_ptr->enc_mode <= ENC_M5)
 #endif

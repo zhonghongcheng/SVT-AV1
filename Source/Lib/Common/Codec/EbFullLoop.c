@@ -1984,16 +1984,17 @@ void av1_quantize_inv_quantize(
     EbBool perform_rdoq = (md_context->trellis_quant_coeff_optimization && component_type == COMPONENT_LUMA && !is_intra_bc);
 #endif
     // Hsan: set to FALSE until adding x86 quantize_fp
-#if ENABLE_QUANT_FP && !M3_quant_pf
-
+#if ENABLE_QUANT_FP && !M4_quant_pf
+#if M3_0_CANDIDATE
+    EbBool perform_quantize_fp = picture_control_set_ptr->enc_mode <= ENC_M3 ? EB_TRUE : EB_FALSE;
+#else
     EbBool perform_quantize_fp = picture_control_set_ptr->enc_mode <= ENC_M2 ? EB_TRUE : EB_FALSE;
+#endif
 #else
     EbBool perform_quantize_fp = EB_FALSE;
 #endif
 
-#if M2_quant_pf
-    perform_quantize_fp = EB_TRUE;
-#endif
+
 
     if (perform_rdoq && perform_quantize_fp && !is_inter)
         av1_quantize_fp_facade(

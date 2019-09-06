@@ -35,16 +35,14 @@
 extern "C" {
 #endif
 /*M3 CAND **/
+
 #define M2_unipred_3x3      0
 #define M2_loop_filter      0
 #define M2_trellis          0
 #define M2_quant_pf         0
 
 /*****M2 to M3*****/
-#define M3_unipred_3x3      0
-#define M3_loop_filter      0
-#define M3_trellis          0
-#define M3_quant_pf         0
+
 #define M3_qp_hp            0
 #define M3_pic_depth        0
 #define M3_nsq_level        0
@@ -64,9 +62,14 @@ extern "C" {
 #define M4_ref_count           0
 #define M4_eme                 0
 #define M4_sb_size             0
+#define M4_unipred_3x3         0
+#define M4_loop_filter         0
+#define M4_trellis             0
+#define M4_quant_pf            0
 
 #define M0_3_CANDIDATE               1
 #define M1_0_CANDIDATE               1
+#define M3_0_CANDIDATE               1
 
 #define TEMPORAL_MVP                    1// Temporal mvp support. aka. MFMV
 #define FIXED_TMVP_HP                   1
