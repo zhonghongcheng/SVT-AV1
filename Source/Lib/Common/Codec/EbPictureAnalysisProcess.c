@@ -5239,6 +5239,11 @@ void* picture_analysis_kernel(void *input_ptr)
 #if HARD_CODE_SC_SETTING
             picture_control_set_ptr->sc_content_detected = EB_TRUE;
 #endif
+
+#if FI_EC
+            sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode == ENC_M0 && picture_control_set_ptr->sc_content_detected == 0) ? 1 : 0;
+#endif
+
             // Hold the 64x64 variance and mean in the reference frame
             uint32_t sb_index;
             for (sb_index = 0; sb_index < picture_control_set_ptr->sb_total_count; ++sb_index) {
