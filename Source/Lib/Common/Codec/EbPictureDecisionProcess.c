@@ -3912,8 +3912,13 @@ void* picture_decision_kernel(void *input_ptr)
                                         picture_control_set_ptr->av1_cm->ref_frame_sign_bias[BWDREF_FRAME] = 1;
                                 }
 
-                                if (picture_control_set_ptr->slice_type == I_SLICE)
+                                if (picture_control_set_ptr->slice_type == I_SLICE){
                                     context_ptr->last_i_picture_sc_detection = picture_control_set_ptr->sc_content_detected;
+#if FI_EC
+                                    sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode == ENC_M0 &&
+                                                    picture_control_set_ptr->sc_content_detected == 0) ? 1 : 0;
+#endif
+                                }
                                 else
                                     picture_control_set_ptr->sc_content_detected = context_ptr->last_i_picture_sc_detection;
 
@@ -3921,7 +3926,7 @@ void* picture_decision_kernel(void *input_ptr)
                                 // ME Kernel Multi-Processes Signal(s) derivation
                                 signal_derivation_multi_processes_oq(
 #if MEMORY_FOOTPRINT_OPT_ME_MV
-                                sequence_control_set_ptr,
+                                    sequence_control_set_ptr,
 #endif
                                     picture_control_set_ptr);
 
