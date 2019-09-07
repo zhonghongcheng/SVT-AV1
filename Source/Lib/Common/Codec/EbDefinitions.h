@@ -35,8 +35,8 @@
 extern "C" {
 #endif
 
-#define M0_3_CANDIDATE               0
-#define M1_0_CANDIDATE               0
+#define M0_3_CANDIDATE               1
+#define M1_0_CANDIDATE               1
 
 #define FI_INTRA  1
 
