@@ -3706,9 +3706,15 @@ static void sb_qp_derivation(
     RATE_CONTROL               rc;
     picture_control_set_ptr->parent_pcs_ptr->average_qp = 0;
 #if TWO_PASS
+#if DISABLE_1PASS_QPS
+    if (((sequence_control_set_ptr->static_config.use_input_stat_file && picture_control_set_ptr->temporal_layer_index <= 0) || picture_control_set_ptr->slice_type == 2) &&
+         picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH &&
+        !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected /*&& !sequence_control_set_ptr->static_config.use_output_stat_file*/)
+#else
     if (((sequence_control_set_ptr->static_config.use_input_stat_file && picture_control_set_ptr->temporal_layer_index <= 0) || picture_control_set_ptr->slice_type == 2) &&
          picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH &&
         !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && !sequence_control_set_ptr->static_config.use_output_stat_file)
+#endif
 #else
 #if DISABLE_QPM_SC
     if (picture_control_set_ptr->slice_type == 2 && picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH && !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
@@ -4033,7 +4039,7 @@ void* rate_control_kernel(void *input_ptr)
                     const double q_val = av1_convert_qindex_to_q(qindex, (AomBitDepth)sequence_control_set_ptr->static_config.encoder_bit_depth);
 #if ADAPTIVE_QP_SCALING
                     // if there are need enough pictures in the LAD/SlidingWindow, the adaptive QP scaling is not used
-#if TWO_PASS
+#if TWO_PASS && !DISABLE_1PASS_QPS
                     if (!sequence_control_set_ptr->static_config.use_output_stat_file && picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH){
 #else
                     if (picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH) {

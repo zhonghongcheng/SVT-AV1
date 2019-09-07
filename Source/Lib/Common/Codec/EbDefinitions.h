@@ -532,6 +532,7 @@ typedef enum MD_STAGE {
 #endif
 #define MAX_MDC_LEVEL                                   8
 #define LAMBDA_TUNING                                   1
+#define DISABLE_1PASS_QPS                               0
 #if IMPROVED_SUBPEL_SEARCH
 typedef enum ME_HP_MODE {
     EX_HP_MODE = 0,
