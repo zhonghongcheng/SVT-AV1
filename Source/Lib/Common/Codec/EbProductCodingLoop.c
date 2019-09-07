@@ -7590,41 +7590,7 @@ EbBool allowed_ns_cu(
         }
     }
 #else
-
-
     if (is_nsq_table_used) {
-#if PREDICT_NSQ_SHAPE
-        ret = 1;
-        if (context_ptr->blk_geom->shape != PART_N) {
-            uint8_t depth = get_depth(context_ptr->blk_geom->sq_size);
-            if (enable_ol_per_depth[depth]) {
-                uint8_t depth_rank = context_ptr->sb_ptr->depth_ranking[depth];
-                uint8_t shape_rank = context_ptr->open_loop_block_rank;
-#if ADP_BQ
-#if P_NSQ_NEW
-               uint8_t depth_rank_th_tab[SB_NSQ_LEVEL_0_DEPTH_MODE] = { 0, 0,0,0,0,0,0 };
-               uint8_t shape_rank_th_tab[SB_NSQ_LEVEL_0_DEPTH_MODE] = { 2,2,2,10,10,10,10};
-#else
-               uint8_t depth_rank_th_tab[SB_NSQ_LEVEL_0_DEPTH_MODE] = { 6, 4,3,2,2,2,2 };
-               uint8_t shape_rank_th_tab[SB_NSQ_LEVEL_0_DEPTH_MODE] = { 10,5,4,3,2,2,2 };
-#endif
-               uint8_t nsq_mode_idx = context_ptr->nsq_mode_idx;
-
-                if (depth_rank >= depth_rank_th_tab[nsq_mode_idx]) {
-                    if (shape_rank >= shape_rank_th_tab[nsq_mode_idx]) {
-                        ret = 0;
-                    }
-                }
-#else
-                if (depth_rank >= depth_rank_th[depth]) {
-                    if (shape_rank >= shape_rank_th[depth]) {
-                        ret = 0;
-                    }
-                }
-#endif
-            }
-        }
-#else
        if (context_ptr->blk_geom->shape != PART_N) {
             ret = 0;
             for (int i = 0; i < nsq_max_shapes_md; i++) {
@@ -7632,7 +7598,6 @@ EbBool allowed_ns_cu(
                     ret = 1;
             }
         }
-#endif
     }
 #endif
 #endif
@@ -8908,9 +8873,10 @@ void md_encode_block(
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL) ? EB_TRUE : EB_FALSE;
     is_nsq_table_used = picture_control_set_ptr->parent_pcs_ptr->sc_content_detected ? EB_FALSE : is_nsq_table_used;
-    if (picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level == MAX_MDC_LEVEL) {
-        is_nsq_table_used = EB_FALSE;
-    }
+#if DISABLE_NSQ_TABLE
+    is_nsq_table_used = (picture_control_set_ptr->enc_mode == ENC_M0 || (picture_control_set_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->sc_content_detected))
+        ? EB_FALSE : is_nsq_table_used;
+#endif
 #endif
 #endif
     context_ptr->open_loop_block_rank = open_loop_block_rank;
