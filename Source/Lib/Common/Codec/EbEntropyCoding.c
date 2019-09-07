@@ -544,7 +544,11 @@ void get_txb_ctx(
     }
 #undef MAX_TX_SIZE_UNIT
 }
-
+#if FI_EC
+static const PredictionMode fimode_to_intradir[FILTER_INTRA_MODES] = {
+  DC_PRED, V_PRED, H_PRED, D157_PRED, DC_PRED
+};
+#endif
 void Av1WriteTxType(
     PictureParentControlSet   *pcs_ptr,
     FRAME_CONTEXT               *frameContext,
@@ -573,9 +577,21 @@ void Av1WriteTxType(
                 av1_num_ext_tx_set[txSetType]);
         }
         else {
+#if FI_EC
+        PredictionMode intra_dir;
+      if (cu_ptr->filter_intra_mode != FILTER_INTRA_MODES)
+        intra_dir =
+            fimode_to_intradir[cu_ptr->filter_intra_mode];
+      else
+        intra_dir = intraDir;
+#endif
             aom_write_symbol(
                 ec_writer, av1_ext_tx_ind[txSetType][txType],
+#if FI_EC
+                frameContext->intra_ext_tx_cdf[eset][squareTxSize][intra_dir],
+#else                
                 frameContext->intra_ext_tx_cdf[eset][squareTxSize][intraDir],
+#endif
                 av1_num_ext_tx_set[txSetType]);
         }
     }
@@ -1559,6 +1575,24 @@ static void EncodeSkipCoeffAv1(
 
     return;
 }
+#if FI_EC
+ int av1_filter_intra_allowed_bsize(
+    uint8_t enable_filter_intra, 
+    BlockSize bs) 
+{ 
+ if (!enable_filter_intra) return 0;
+  return block_size_wide[bs] <= 32 && block_size_high[bs] <= 32;
+}
+int av1_filter_intra_allowed(
+ uint8_t   enable_filter_intra,
+ BlockSize bsize,
+ uint32_t  mode)
+ {
+  return  mode == DC_PRED &&
+       //  mbmi->palette_mode_info.palette_size[0] == 0 &&
+         av1_filter_intra_allowed_bsize(enable_filter_intra,bsize);
+}
+#endif
 /*********************************************************************
 * EncodeIntraLumaModeAv1
 *   Encodes the Intra Luma Mode
@@ -6246,6 +6280,19 @@ assert(bsize < BlockSizeS_ALL);
                     blkOriginX >> MI_SIZE_LOG2,
                     ec_writer);
 
+            
+#if FI_EC
+    if (av1_filter_intra_allowed(sequence_control_set_ptr->seq_header.enable_filter_intra,bsize, intra_luma_mode)) {
+        aom_write_symbol(ec_writer, cu_ptr->filter_intra_mode != FILTER_INTRA_MODES,
+           frameContext->filter_intra_cdfs[bsize], 2);
+        if (cu_ptr->filter_intra_mode != FILTER_INTRA_MODES) {          
+            aom_write_symbol(ec_writer, cu_ptr->filter_intra_mode, frameContext->filter_intra_mode_cdf,
+                FILTER_INTRA_MODES);
+        }
+    }
+#endif
+
+
 #if ATB_EC
             if (picture_control_set_ptr->parent_pcs_ptr->tx_mode == TX_MODE_SELECT) {
                 code_tx_size(
@@ -6398,6 +6445,17 @@ assert(bsize < BlockSizeS_ALL);
                         intra_luma_mode,
                         intra_chroma_mode,
                         blk_geom->bwidth <= 32 && blk_geom->bheight <= 32);
+
+#if FI_EC
+    if (av1_filter_intra_allowed(sequence_control_set_ptr->seq_header.enable_filter_intra,bsize, intra_luma_mode)) {
+        aom_write_symbol(ec_writer, cu_ptr->filter_intra_mode != FILTER_INTRA_MODES,
+           frameContext->filter_intra_cdfs[bsize], 2);
+        if (cu_ptr->filter_intra_mode != FILTER_INTRA_MODES) {           
+            aom_write_symbol(ec_writer, cu_ptr->filter_intra_mode, frameContext->filter_intra_mode_cdf,
+                FILTER_INTRA_MODES);
+        }
+    }
+#endif
             }
             else {
 #if EC_UPDATE

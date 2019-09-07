@@ -97,6 +97,9 @@ extern "C" {
         int32_t                                angle_delta[PLANE_TYPES];
         EbBool                                 is_directional_mode_flag;
         EbBool                                 is_directional_chroma_mode_flag;
+#if FI_MD
+        uint8_t                                filter_intra_mode;
+#endif
 #if !SEARCH_UV_CLEAN_UP
         EbBool                                 use_angle_delta;
 #endif

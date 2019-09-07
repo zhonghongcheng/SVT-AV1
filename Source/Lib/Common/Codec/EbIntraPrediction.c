@@ -3801,6 +3801,13 @@ static void build_intra_predictors(
             above_row[-1] = 128;
         left_col[-1] = above_row[-1];
     }
+#if FI_INTRA
+  if (use_filter_intra) {
+    av1_filter_intra_predictor(dst, dst_stride, tx_size, above_row, left_col,
+                               filter_intra_mode);
+    return;
+  }
+#endif
 
     //    if (use_filter_intra) {
     ////        av1_filter_intra_predictor(dst, dst_stride, tx_size, above_row, left_col,
@@ -4655,7 +4662,11 @@ EbErrorType av1_intra_prediction_cl(
             plane ? 0 : candidate_buffer_ptr->candidate_ptr->angle_delta[PLANE_TYPE_Y],         //int32_t angle_delta,
 #endif
             0,                                                                              //int32_t use_palette,
+#if FI_MD
+            plane ? FILTER_INTRA_MODES : candidate_buffer_ptr->candidate_ptr->filter_intra_mode,                                                             
+#else
             FILTER_INTRA_MODES,                                                             //CHKN FilterIntraMode filter_intra_mode,
+#endif
             topNeighArray + 1,
             leftNeighArray + 1,
             candidate_buffer_ptr->prediction_ptr,                                              //uint8_t *dst,

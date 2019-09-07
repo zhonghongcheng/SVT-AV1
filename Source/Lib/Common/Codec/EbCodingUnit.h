@@ -441,6 +441,9 @@ extern "C" {
         int32_t                                interintra_wedge_index;//inter_intra wedge index
         int32_t                                ii_wedge_sign;//inter_intra wedge sign=-1
 #endif
+#if FI_ED
+       uint8_t                      filter_intra_mode;
+#endif
     } CodingUnit;
 
         typedef struct OisCandidate

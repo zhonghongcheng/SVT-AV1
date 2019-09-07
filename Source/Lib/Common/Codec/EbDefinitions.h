@@ -38,6 +38,17 @@ extern "C" {
 #define M0_3_CANDIDATE               0
 #define M1_0_CANDIDATE               0
 
+#define FI_INTRA  1
+
+#if FI_INTRA
+#define FI_MD     1
+#define FI_AVX    1
+#define FI_ED     1
+#define FI_EC     1
+#define FI_RE     1
+#define FI_CLASS  1
+#define FI_FORCE  0
+#endif
 #define TEMPORAL_MVP                    1// Temporal mvp support. aka. MFMV
 #define FIXED_TMVP_HP                   1
 
@@ -422,6 +433,9 @@ typedef enum CAND_CLASS {
 #if II_CLASS
     CAND_CLASS_4,
 #endif
+#if FI_CLASS
+    CAND_CLASS_5,
+#endif
     CAND_CLASS_TOTAL
 } CAND_CLASS;
 #else
@@ -619,7 +633,11 @@ enum {
 
 #if MD_CLASS
 #if II_COMP
+#if FI_CLASS
+#define MAX_NFL                            85
+#else
 #define MAX_NFL                            80
+#endif
 #else 
 #define MAX_NFL                            65 //full loop all candidates in I slice  300//   MDLEVELS//
 #endif

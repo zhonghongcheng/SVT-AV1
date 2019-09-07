@@ -2573,7 +2573,11 @@ void perform_intra_coding_loop(
                 mode,
                 pu_ptr->angle_delta[PLANE_TYPE_Y],
                 0,
+#if FI_ED
+                cu_ptr->filter_intra_mode,
+#else
                 FILTER_INTRA_MODES,
+#endif
                 topNeighArray + 1,
                 leftNeighArray + 1,
                 recon_buffer,
@@ -3876,6 +3880,9 @@ EB_EXTERN void av1_encode_pass(
                                 }
                             }
                             else {
+
+                                    printf("DEPRICATED PATH???\n");
+
                                 uint8_t    topNeighArray[64 * 2 + 1];
                                 uint8_t    leftNeighArray[64 * 2 + 1];
                                 PredictionMode mode;

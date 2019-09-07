@@ -100,6 +100,10 @@ void av1_estimate_syntax_rate___partial(
     }
 }
 #endif
+#if FI_RE
+int av1_filter_intra_allowed_bsize(  uint8_t enable_filter_intra,  BlockSize bs);
+int av1_filter_intra_allowed(uint8_t   enable_filter_intra, BlockSize bsize, uint32_t  mode);
+#endif
 /*************************************************************
 * av1_estimate_syntax_rate()
 * Estimate the rate for each syntax elements and for
@@ -137,7 +141,13 @@ void av1_estimate_syntax_rate(
     }
 
     av1_get_syntax_rate_from_cdf(md_rate_estimation_array->filter_intra_mode_fac_bits, fc->filter_intra_mode_cdf, NULL);
+#if FI_RE
+    for (i = 0; i < BlockSizeS_ALL; ++i) {
+        if (av1_filter_intra_allowed_bsize(1,i)) 
+            av1_get_syntax_rate_from_cdf(md_rate_estimation_array->filter_intra_fac_bits[i], fc->filter_intra_cdfs[i], NULL);
+    }
 
+#endif
     // NM - To be added when intra filtering is adopted
     /*for (i = 0; i < BlockSizeS_ALL; ++i) {
         if (av1_filter_intra_allowed_bsize(cm, i))

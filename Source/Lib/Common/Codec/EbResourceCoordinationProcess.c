@@ -754,6 +754,11 @@ void* resource_coordination_kernel(void *input_ptr)
 
             }
 #endif
+
+#if FI_EC
+            sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;           
+#endif
+
             // Construct PM Trans Coeff Shaping
             if (context_ptr->sequence_control_set_instance_array[instance_index]->encode_context_ptr->initial_picture) {
                 if (sequence_control_set_ptr->pm_mode == PM_MODE_0)
