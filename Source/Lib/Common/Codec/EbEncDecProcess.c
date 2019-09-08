@@ -1394,7 +1394,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->global_mv_injection = 0;
 
 #if NEW_NEAREST_NEW_INJECTION
+#if NEW_NEAREST_NEW_M1_NREF
+    if (picture_control_set_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
+#else
     if (picture_control_set_ptr->enc_mode == ENC_M0)
+#endif
         context_ptr->new_nearest_near_comb_injection = 1;
     else
         context_ptr->new_nearest_near_comb_injection = 0;
@@ -1575,7 +1579,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
 #if FULL_LOOP_SPLIT
     // Derive md_staging_mode
+#if M1_MDS_NRF
+    if (picture_control_set_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
+#else
     if (picture_control_set_ptr->enc_mode == ENC_M0)
+#endif
         context_ptr->md_staging_mode = 1;
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->md_staging_mode = 3;
