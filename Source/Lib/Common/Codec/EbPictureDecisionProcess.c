@@ -1450,7 +1450,11 @@ EbErrorType signal_derivation_multi_processes_oq(
         // 1                 Fast: perform transform partitioning for sensitive block sizes
         // 2                 Full: perform transform partitioning for all block sizes
 #endif
+#if M2_ATB_NRF
+        if (picture_control_set_ptr->enc_mode <= ENC_M1 && picture_control_set_ptr->is_used_as_reference_flag && sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M1 && sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
+#endif
 #if STRENGHTHEN_MD_STAGE_3
             picture_control_set_ptr->atb_mode = 1;
 #else
@@ -1510,7 +1514,11 @@ EbErrorType signal_derivation_multi_processes_oq(
 #if DISABLE_COMP_SC
 #if FULL_COMPOUND_BDRATE
                 picture_control_set_ptr->compound_mode = picture_control_set_ptr->sc_content_detected ? 0 :
+#if M2_COMP_NREF
+                picture_control_set_ptr->enc_mode <= ENC_M0 || (picture_control_set_ptr->enc_mode <= ENC_M1 && picture_control_set_ptr->is_used_as_reference_flag) ? 2 : 1;
+#else
                 picture_control_set_ptr->enc_mode <= ENC_M1 ? 2 : 1;
+#endif
 #else
                 picture_control_set_ptr->compound_mode = picture_control_set_ptr->sc_content_detected ? 0 : 1;
 #endif
@@ -3915,7 +3923,11 @@ void* picture_decision_kernel(void *input_ptr)
                                 if (picture_control_set_ptr->slice_type == I_SLICE){
                                     context_ptr->last_i_picture_sc_detection = picture_control_set_ptr->sc_content_detected;
 #if FI_EC
+#if FI_INTRA_BASE
+                                    sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M1 &&
+#else
                                     sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode == ENC_M0 &&
+#endif
                                                     picture_control_set_ptr->sc_content_detected == 0) ? 1 : 0;
 #endif
                                 }

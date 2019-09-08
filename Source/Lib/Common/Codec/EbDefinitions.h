@@ -38,12 +38,17 @@ extern "C" {
 #define M0_3_CANDIDATE               1
 #define M1_0_CANDIDATE               1
 
-#define NEW_NEAREST_NEW_M1_NREF      0
-#define FI_INTRA_BASE                0
+// Better BDR-Speed trade-off M0
 #define SKIP_ATB_OFF                 0
 #define NSQ_TABLES_NREF              0
+
+// Better BDR-Speed trade-off M0-M1
+#define M2_COMP_NREF                 0
 #define M1_MDS_NRF                   0
 #define M1_ESTIMATE_INTRA_BASE       0
+#define NEW_NEAREST_NEW_M1_NREF      0
+#define FI_INTRA_BASE                0
+#define M2_ATB_NRF                   0
 
 #define FI_INTRA  1
 
