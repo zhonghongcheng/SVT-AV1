@@ -7516,7 +7516,11 @@ EbErrorType ProductGenerateMdCandidatesCu(
                 leaf_index);
 #endif
 #if FI_MD
-       if(av1_filter_intra_allowed_bsize(sequence_control_set_ptr->seq_header.enable_filter_intra, context_ptr->blk_geom->bsize))       
+#if FI_INTRA_BASE
+       if(av1_filter_intra_allowed_bsize(sequence_control_set_ptr->seq_header.enable_filter_intra, context_ptr->blk_geom->bsize) && picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0)
+#else
+       if (av1_filter_intra_allowed_bsize(sequence_control_set_ptr->seq_header.enable_filter_intra, context_ptr->blk_geom->bsize))
+#endif     
             inject_filter_intra_candidates(
                 picture_control_set_ptr,
                 context_ptr,

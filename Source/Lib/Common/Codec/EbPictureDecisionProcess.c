@@ -3916,9 +3916,6 @@ void* picture_decision_kernel(void *input_ptr)
                                     context_ptr->last_i_picture_sc_detection = picture_control_set_ptr->sc_content_detected;
 #if FI_EC
                                     sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode == ENC_M0 &&
-#if FI_INTRA_BASE
-                                                    picture_control_set_ptr->temporal_layer_index == 0 &&
-#endif
                                                     picture_control_set_ptr->sc_content_detected == 0) ? 1 : 0;
 #endif
                                 }
