@@ -2408,7 +2408,11 @@ void set_md_stage_counts(
     context_ptr->fast1_cand_count[CAND_CLASS_4] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : 16;// context_ptr->fast_cand_count[CAND_CLASS_4];//(picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
 #endif
 #endif
+#if M2_FAST_CAND_COUNT_NRF
+    if (picture_control_set_ptr->enc_mode >= ENC_M2 || (picture_control_set_ptr->enc_mode >= ENC_M1 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)) {
+#else
     if (picture_control_set_ptr->enc_mode >= ENC_M2) {
+#endif
         context_ptr->fast1_cand_count[CAND_CLASS_1] = context_ptr->fast1_cand_count[CAND_CLASS_1] / 2;
         context_ptr->fast1_cand_count[CAND_CLASS_2] = context_ptr->fast1_cand_count[CAND_CLASS_2] / 2;
 #if AUTO_C1C2
