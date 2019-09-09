@@ -6943,7 +6943,7 @@ void  inject_intra_candidates(
 #if ESTIMATE_INTRA
 #if M0_3_CANDIDATE
 #if M1_ESTIMATE_INTRA_BASE
-    context_ptr->estimate_angle_intra = ((picture_control_set_ptr->enc_mode > ENC_M3) || (picture_control_set_ptr->enc_mode <= ENC_M1 && picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0)) ? 0 : 1;
+    context_ptr->estimate_angle_intra = ((picture_control_set_ptr->enc_mode > ENC_M3) || (picture_control_set_ptr->enc_mode <= ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0)) ? 0 : 1;
 #else
     context_ptr->estimate_angle_intra = ((picture_control_set_ptr->enc_mode > ENC_M3) || (picture_control_set_ptr->enc_mode == ENC_M0)) ? 0 : 1;
 #endif
