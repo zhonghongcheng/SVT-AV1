@@ -3935,16 +3935,6 @@ void* picture_decision_kernel(void *input_ptr)
 
                                 if (picture_control_set_ptr->slice_type == I_SLICE){
                                     context_ptr->last_i_picture_sc_detection = picture_control_set_ptr->sc_content_detected;
-#if FI_EC
-#if M2_FI_INTRA_BASE
-                                    sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M2 &&
-#elif FI_INTRA_BASE
-                                    sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M1 &&
-#else
-                                    sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode == ENC_M0 &&
-#endif
-                                                    picture_control_set_ptr->sc_content_detected == 0) ? 1 : 0;
-#endif
                                 }
                                 else
                                     picture_control_set_ptr->sc_content_detected = context_ptr->last_i_picture_sc_detection;
