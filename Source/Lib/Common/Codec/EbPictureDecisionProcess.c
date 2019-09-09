@@ -1041,16 +1041,16 @@ EbErrorType signal_derivation_multi_processes_oq(
         else if (picture_control_set_ptr->enc_mode <= ENC_M0)
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL6;
         else if (picture_control_set_ptr->enc_mode <= ENC_M1)
-#if M2_NSQ_LEVEL_NRF
-            picture_control_set_ptr->nsq_search_level = (picture_control_set_ptr->is_used_as_reference_flag) ? NSQ_SEARCH_LEVEL6 : NSQ_SEARCH_LEVEL2;
-#else
             picture_control_set_ptr->nsq_search_level = (picture_control_set_ptr->is_used_as_reference_flag) ? NSQ_SEARCH_LEVEL6 : NSQ_SEARCH_LEVEL3;
-#endif
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
             if (picture_control_set_ptr->is_used_as_reference_flag)
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL5;
             else
+#if M1_NSQ_LEVEL_NRF
+                picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL3;
+#else
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL2;
+#endif
 #if NSQ_MDC_L01
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
             if (picture_control_set_ptr->temporal_layer_index == 0)
@@ -1341,15 +1341,14 @@ EbErrorType signal_derivation_multi_processes_oq(
 
     if (picture_control_set_ptr->tx_search_level == TX_SEARCH_ENC_DEC)
         picture_control_set_ptr->tx_search_reduced_set = 0;
+#if M2_BAD_SLOPE_COMB
+    else if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#else
     else if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
         picture_control_set_ptr->tx_search_reduced_set = 0;
     else if (picture_control_set_ptr->enc_mode <= ENC_M5)
         picture_control_set_ptr->tx_search_reduced_set = 1;
-    else if (picture_control_set_ptr->enc_mode <= ENC_M5)
-        if (picture_control_set_ptr->is_used_as_reference_flag)
-            picture_control_set_ptr->tx_search_reduced_set = 0;
-        else
-            picture_control_set_ptr->tx_search_reduced_set = 1;
     else
         picture_control_set_ptr->tx_search_reduced_set = 1;
 
@@ -1407,7 +1406,11 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->intra_pred_mode = 3;
         else
             picture_control_set_ptr->intra_pred_mode = 4;
+#if M3_INTRA_PRED_NBASE
+    else if (picture_control_set_ptr->enc_mode <= ENC_M2 && picture_control_set_ptr->temporal_layer_index == 0)
+#else
     else if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#endif
         picture_control_set_ptr->intra_pred_mode = 0;
     else if(picture_control_set_ptr->enc_mode <= ENC_M6)
         if (picture_control_set_ptr->temporal_layer_index == 0)
@@ -1525,7 +1528,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 #if FULL_COMPOUND_BDRATE
                 picture_control_set_ptr->compound_mode = picture_control_set_ptr->sc_content_detected ? 0 :
 #if M2_COMP_NREF
-                picture_control_set_ptr->enc_mode <= ENC_M0 || (picture_control_set_ptr->enc_mode <= ENC_M1 && picture_control_set_ptr->is_used_as_reference_flag) ? 2 : 1;
+                picture_control_set_ptr->enc_mode <= ENC_M0 || (picture_control_set_ptr->enc_mode <= ENC_M2 && picture_control_set_ptr->is_used_as_reference_flag) ? 2 : 1;
 #else
                 picture_control_set_ptr->enc_mode <= ENC_M1 ? 2 : 1;
 #endif
@@ -3933,7 +3936,9 @@ void* picture_decision_kernel(void *input_ptr)
                                 if (picture_control_set_ptr->slice_type == I_SLICE){
                                     context_ptr->last_i_picture_sc_detection = picture_control_set_ptr->sc_content_detected;
 #if FI_EC
-#if FI_INTRA_BASE
+#if M2_FI_INTRA_BASE
+                                    sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M2 &&
+#elif FI_INTRA_BASE
                                     sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M1 &&
 #else
                                     sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode == ENC_M0 &&
