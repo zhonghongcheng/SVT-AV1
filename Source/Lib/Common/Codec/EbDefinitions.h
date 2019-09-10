@@ -124,6 +124,14 @@ extern "C" {
 #define MD_STAGE_MODE_3_TEST_0                  0 // Shut chroma @ md_stage_1 for md_staging_mode_2
 #define MD_STAGE_MODE_3_TEST_1                  0 // Bypass md_stage_1, and perform regular @ md_stage_0
 
+#define ENHANCE_ATB                             1
+#if ENHANCE_ATB
+#define ATB_INTER_SUPPORT                       1 // ATB INTER support
+#define ATB_INTER_1_DEPTH                       0 // ATB INTER Depth 1
+#define ATB_INTER_2_DEPTH                       0 // ATB INTER Depth 2
+#define ATB_RATE_UPGRADE_0                      1
+#define ATB_RATE_UPGRADE_1                      1
+#endif 
 
 #define FIRST_FULL_LOOP_INTERPOLATION_SEARCH   1
 
@@ -651,7 +659,7 @@ enum {
 #endif
 #define BLOCK_MAX_COUNT_SB_128                    4421  // TODO: reduce alloction for 64x64
 #define BLOCK_MAX_COUNT_SB_64                     1101  // TODO: reduce alloction for 64x64
-#if ATB_SUPPORT && !ATB_SUPPORT_1_DEPTH
+#if ATB_INTER_SUPPORT
 #define MAX_TXB_COUNT                             16 // Maximum number of transform blocks per depth
 #else
 #define MAX_TXB_COUNT                             4 // Maximum number of transform blocks.
@@ -733,10 +741,10 @@ enum {
 // Maximum number of tile rows and tile columns
 #define MAX_TILE_ROWS 1024
 #define MAX_TILE_COLS 1024
-#if ATB_SUPPORT_1_DEPTH
-#define MAX_VARTX_DEPTH 1
-#else
+#if ATB_INTER_SUPPORT
 #define MAX_VARTX_DEPTH 2
+#else
+#define MAX_VARTX_DEPTH 1
 #endif
 #define MI_SIZE_64X64 (64 >> MI_SIZE_LOG2)
 #define MI_SIZE_128X128 (128 >> MI_SIZE_LOG2)
@@ -3229,7 +3237,9 @@ void(*ErrorHandler)(
 #define LOG2F_MAX_LCU_SIZE                          6u
 #define LOG2_64_SIZE                                6 // log2(BLOCK_SIZE_64)
 #define MAX_LEVEL_COUNT                             5 // log2(BLOCK_SIZE_64) - log2(MIN_BLOCK_SIZE)
+#if !ATB_INTER_SUPPORT
 #define MAX_TU_DEPTH                                2
+#endif
 #define LOG_MIN_BLOCK_SIZE                             3
 #define MIN_BLOCK_SIZE                                 (1 << LOG_MIN_BLOCK_SIZE)
 #define LOG_MIN_PU_SIZE                             2

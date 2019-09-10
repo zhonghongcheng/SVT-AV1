@@ -644,7 +644,11 @@ int32_t  Av1WriteCoeffsTxb1D(
         // INTER. Chroma follows Luma in transform type
         if (cu_ptr->prediction_mode_flag == INTER_MODE) {
             txType = cu_ptr->transform_unit_array[tu_index].transform_type[PLANE_TYPE_Y] = DCT_DCT;
+#if ATB_INTER_SUPPORT
+            cu_ptr->transform_unit_array[tu_index].transform_type[PLANE_TYPE_UV] = DCT_DCT;
+#else
             cu_ptr->transform_unit_array[0].transform_type[PLANE_TYPE_UV] = DCT_DCT;
+#endif
         }
         else { // INTRA
             txType = cu_ptr->transform_unit_array[tu_index].transform_type[PLANE_TYPE_Y] = DCT_DCT;
@@ -1041,7 +1045,11 @@ static EbErrorType Av1EncodeCoeff1D(
     EbErrorType return_error = EB_ErrorNone;
 
 #if ATB_SUPPORT
+#if ATB_INTER_SUPPORT
+    if (cu_ptr->tx_depth) {
+#else
     if (cu_ptr->prediction_mode_flag == INTRA_MODE && cu_ptr->tx_depth) {
+#endif
         av1_encode_tx_coef_y(
             pcs_ptr,
             context_ptr,
@@ -1245,6 +1253,7 @@ static EbErrorType Av1EncodeCoeff1D(
                 context_ptr->coded_area_sb_uv += blk_geom->tx_width_uv[cu_ptr->tx_depth][txb_itr] * blk_geom->tx_height_uv[cu_ptr->tx_depth][txb_itr];
         }
     }
+
 #else
     const BlockGeom *blk_geom = get_blk_geom_mds(cu_ptr->mds_idx);
     int32_t cul_level_y, cul_level_cb = 0 , cul_level_cr = 0;
@@ -6091,6 +6100,7 @@ void code_tx_size(
         cm->mi_cols);
 
     const MbModeInfo *const mbmi = &xd->mi[0]->mbmi;
+
     xd->above_txfm_context = &txfm_context_array->top_array[txfm_context_above_index];
     xd->left_txfm_context = &txfm_context_array->left_array[txfm_context_left_index];
 

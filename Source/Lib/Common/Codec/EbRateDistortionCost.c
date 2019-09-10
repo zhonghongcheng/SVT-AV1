@@ -2306,9 +2306,15 @@ EbErrorType av1_tu_estimate_coeff_bits(
 }
 
 #if ATB_MD
-#if !SHUT_TX_SIZE_RATE
+#if !SHUT_TX_SIZE_RATE || ATB_RATE_UPGRADE_0
 uint64_t estimate_tx_size_bits(
     PictureControlSet       *pcsPtr,
+#if ATB_RATE_UPGRADE_0
+    ModeDecisionContext     *context_ptr,
+#endif
+#if ATB_RATE_UPGRADE_0 //--------
+    EbBool                   skip_flag,
+#endif
     uint32_t                 cu_origin_x,
     uint32_t                 cu_origin_y,
     CodingUnit               *cu_ptr,
@@ -2318,7 +2324,14 @@ uint64_t estimate_tx_size_bits(
     MdRateEstimationContext  *md_rate_estimation_ptr);
 #endif
 #endif
-
+#if ATB_RATE_UPGRADE_1
+uint64_t get_tx_size_bits(
+    ModeDecisionCandidateBuffer  *candidateBuffer,
+    ModeDecisionContext          *context_ptr,
+    PictureControlSet            *picture_control_set_ptr,
+    EbBool block_has_coeff,
+    EbBool is_inter);
+#endif
 /*********************************************************************************
 * av1_intra_full_cost function is used to estimate the cost of an intra candidate mode
 * for full mode decisoion module.
@@ -2383,12 +2396,26 @@ EbErrorType Av1FullCost(
             chromaRate -= (uint64_t)candidate_buffer_ptr->candidate_ptr->md_rate_estimation_ptr->intra_uv_mode_fac_bits[isCflAllowed][candidate_buffer_ptr->candidate_ptr->intra_luma_mode][UV_DC_PRED];
         }
     }
+#if ATB_RATE_UPGRADE_1
+    uint64_t tx_size_bits = 0;
+    if (picture_control_set_ptr->parent_pcs_ptr->tx_mode == TX_MODE_SELECT)
+        tx_size_bits = get_tx_size_bits(
+            candidate_buffer_ptr,
+            context_ptr,
+            picture_control_set_ptr,
+            candidate_buffer_ptr->candidate_ptr->block_has_coeff,
+            candidate_buffer_ptr->candidate_ptr->type != INTRA_MODE);
+#endif
 
     // Coeff rate
 #if  BLK_SKIP_DECISION
 
     if (context_ptr->blk_skip_decision && candidate_buffer_ptr->candidate_ptr->type != INTRA_MODE) {
+#if ATB_RATE_UPGRADE_1
+        uint64_t non_skip_cost = RDCOST(lambda, (*y_coeff_bits + *cb_coeff_bits + *cr_coeff_bits + tx_size_bits + (uint64_t)candidate_buffer_ptr->candidate_ptr->md_rate_estimation_ptr->skip_fac_bits[cu_ptr->skip_coeff_context][0]), (y_distortion[0] + cb_distortion[0] + cr_distortion[0]));
+#else
         uint64_t non_skip_cost = RDCOST(lambda, (*y_coeff_bits + *cb_coeff_bits + *cr_coeff_bits + (uint64_t)candidate_buffer_ptr->candidate_ptr->md_rate_estimation_ptr->skip_fac_bits[cu_ptr->skip_coeff_context][0]), (y_distortion[0] + cb_distortion[0] + cr_distortion[0]));
+#endif
         uint64_t skip_cost = RDCOST(lambda, ((uint64_t)candidate_buffer_ptr->candidate_ptr->md_rate_estimation_ptr->skip_fac_bits[cu_ptr->skip_coeff_context][1]), (y_distortion[1] + cb_distortion[1] + cr_distortion[1]));
         if ((candidate_buffer_ptr->candidate_ptr->block_has_coeff == 0) || (skip_cost < non_skip_cost)) {
             y_distortion[0] = y_distortion[1];
@@ -2413,11 +2440,26 @@ EbErrorType Av1FullCost(
 
     rate = lumaRate + chromaRate + coeffRate;
 
+#if ATB_RATE_UPGRADE_1
+    if(candidate_buffer_ptr->candidate_ptr->block_has_coeff)
+        rate += tx_size_bits;
+#else
 #if ATB_RATE
-#if !SHUT_TX_SIZE_RATE
+#if !SHUT_TX_SIZE_RATE //|| ATB_RATE_UPGRADE_0
+#if ATB_RATE_UPGRADE_0 //--------
+    //if (/*context_ptr->tx_depth && candidate_buffer_ptr->candidate_ptr->type != INTRA_MODE &&*/ candidate_buffer_ptr->candidate_ptr->block_has_coeff) {
+    if(1) {
+#else
     if (candidate_buffer_ptr->candidate_ptr->block_has_coeff) {
+#endif
         uint64_t tx_size_bits = estimate_tx_size_bits(
             picture_control_set_ptr,
+#if ATB_RATE_UPGRADE_0
+            context_ptr,
+#endif      
+#if ATB_RATE_UPGRADE_0 //--------
+            (candidate_buffer_ptr->candidate_ptr->block_has_coeff) ? 0 : 1,
+#endif
             context_ptr->cu_origin_x,
             context_ptr->cu_origin_y,
             context_ptr->cu_ptr,
@@ -2427,10 +2469,12 @@ EbErrorType Av1FullCost(
             context_ptr->md_rate_estimation_ptr);
 
         rate += tx_size_bits;
+#if 1//!ATB_RATE_UPGRADE_0 //--------
     }
 #endif
 #endif
-
+#endif
+#endif
 #if TWO_PASS
     if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->static_config.use_output_stat_file && candidate_buffer_ptr->candidate_ptr->type != INTRA_MODE) {
         MvReferenceFrame ref_type[2];
@@ -2551,12 +2595,33 @@ EbErrorType  Av1MergeSkipFullCost(
     mergeRate += candidate_buffer_ptr->candidate_ptr->fast_chroma_rate;
 
     mergeRate += coeffRate;
-
+#if ATB_RATE_UPGRADE_1
+    uint64_t tx_size_bits = 0;
+    if (picture_control_set_ptr->parent_pcs_ptr->tx_mode == TX_MODE_SELECT)
+        tx_size_bits = get_tx_size_bits(
+            candidate_buffer_ptr,
+            context_ptr,
+            picture_control_set_ptr,
+            candidate_buffer_ptr->candidate_ptr->block_has_coeff,
+            candidate_buffer_ptr->candidate_ptr->type != INTRA_MODE);
+    mergeRate += tx_size_bits;
+#else
 #if ATB_RATE
-#if !SHUT_TX_SIZE_RATE
+#if !SHUT_TX_SIZE_RATE //|| ATB_RATE_UPGRADE_0
+#if ATB_RATE_UPGRADE_0 //--------
+    //if (/*context_ptr->tx_depth && candidate_buffer_ptr->candidate_ptr->type != INTRA_MODE && */candidate_buffer_ptr->candidate_ptr->block_has_coeff) {
+    if(1) {
+#else
     if (candidate_buffer_ptr->candidate_ptr->block_has_coeff) {
+#endif
         uint64_t tx_size_bits = estimate_tx_size_bits(
             picture_control_set_ptr,
+#if ATB_RATE_UPGRADE_0
+            context_ptr,
+#endif      
+#if ATB_RATE_UPGRADE_0 //--------
+            (candidate_buffer_ptr->candidate_ptr->block_has_coeff) ? 0 : 1,
+#endif
             context_ptr->cu_origin_x,
             context_ptr->cu_origin_y,
             context_ptr->cu_ptr,
@@ -2566,10 +2631,12 @@ EbErrorType  Av1MergeSkipFullCost(
             context_ptr->md_rate_estimation_ptr);
 
         mergeRate += tx_size_bits;
+#if 1//!ATB_RATE_UPGRADE_0 //--------
     }
 #endif
 #endif
-
+#endif
+#endif
     mergeDistortion = (mergeLumaSse + mergeChromaSse);
 
     //merge_cost = mergeDistortion + (((lambda * coeffRate + lambda * mergeLumaRate + lambda_chroma * mergeChromaRate) + MD_OFFSET) >> MD_SHIFT);
