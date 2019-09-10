@@ -70,6 +70,10 @@ extern "C" {
 
 #define TWO_PASS                        1
 #define TWO_PASS_PART                   0
+#if TWO_PASS_PART
+#define TWO_PASS_PART_OPT               1
+#define TWO_PASS_PART_128SUPPORT        1
+#endif
 #define INCOMPLETE_SB_ASSERT            0 //add an assert to link incomplete SBs to usage of root-CBF skip decision in MD
 
 #define NO_MEMSET                       1
@@ -4022,11 +4026,19 @@ static const uint32_t MD_SCAN_TO_OIS_32x32_SCAN[CU_MAX_COUNT] =
     /*84 */3,
 };
 #if TWO_PASS
+#if TWO_PASS_PART_OPT
+#define NUMBER_OF_SPLIT_FLAG  85
+#define NUM_OF_1080P_SB   510
+#endif
 typedef struct stat_struct_t
 {
     uint32_t                        referenced_area[MAX_NUMBER_OF_TREEBLOCKS_PER_PICTURE];
 #if TWO_PASS_PART
+#if TWO_PASS_PART_OPT
+    int8_t                          first_pass_split_flag[NUM_OF_1080P_SB][NUMBER_OF_SPLIT_FLAG];
+#else
     int8_t                          first_pass_split_flag[MAX_NUMBER_OF_TREEBLOCKS_PER_PICTURE/16][BLOCK_MAX_COUNT_SB_64];
+#endif
     int64_t                         first_pass_pic_num;
 #endif
 } stat_struct_t;

@@ -1923,9 +1923,19 @@ void* enc_dec_kernel(void *input_ptr)
 #if TWO_PASS_PART
                     if (sequence_control_set_ptr->static_config.use_output_stat_file) {
                         eb_block_on_mutex(picture_control_set_ptr->first_pass_split_mutex);
-
+#if TWO_PASS_PART_OPT
+                        uint64_t sq_idx = 0;
+                        memset(picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_split_flag[sb_index], 1, sizeof (uint8_t) * NUMBER_OF_SPLIT_FLAG);
+                        for (uint32_t block_index = 0; block_index < sequence_control_set_ptr->max_block_cnt; block_index++) {
+                            const BlockGeom * blk_geom = context_ptr->blk_geom = get_blk_geom_mds(block_index);
+                            if(blk_geom->shape == PART_N && blk_geom->sq_size > 4)
+                                picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_split_flag[sb_index][sq_idx++] = context_ptr->first_pass_split_flag[sb_index][block_index];
+                            /*if (sq_idx > NUMBER_OF_SPLIT_FLAG)
+                                printf("EncDec Error: number of sq_idx > NUMBER_OF_SPLIT_FLAG %d",sq_idx);*/
+#else
                         for (uint32_t block_index = 0; block_index < sequence_control_set_ptr->max_block_cnt; block_index++) {
                             picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_split_flag[sb_index][block_index] = context_ptr->first_pass_split_flag[sb_index][block_index];
+#endif
                         }
                         eb_release_mutex(picture_control_set_ptr->first_pass_split_mutex);
                     }

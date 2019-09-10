@@ -1245,6 +1245,34 @@ void set_child_to_be_considered(
                 depth_step -1);
     }
 }
+#if TWO_PASS_PART_128SUPPORT
+uint32_t map_split_flag_from_1st_pass(
+    SequenceControlSet *sequence_control_set_ptr,
+    ModeDecisionConfigurationContext *context_ptr,
+    uint32_t            sb_index,
+    uint8_t             *quadrant) {
+    uint32_t me_sb_size = sequence_control_set_ptr->sb_sz;
+    uint32_t me_pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / me_sb_size;
+    uint32_t me_pic_height_in_sb = (sequence_control_set_ptr->seq_header.max_frame_height + me_sb_size - 1) / me_sb_size;
+    uint32_t first_pass_sb_addr;
+    if (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128) {
+        uint32_t me_sb_size = sequence_control_set_ptr->sb_sz;
+        uint32_t me_pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / me_sb_size;
+        uint32_t me_pic_height_in_sb = (sequence_control_set_ptr->seq_header.max_frame_height + sequence_control_set_ptr->sb_sz - 1) / me_sb_size;
+        uint32_t me_sb_x = (context_ptr->cu_origin_x / me_sb_size);
+        uint32_t me_sb_y = (context_ptr->cu_origin_y / me_sb_size);
+        first_pass_sb_addr = me_sb_x + me_sb_y * me_pic_width_in_sb;
+        *quadrant = (me_sb_x % 2) + ((me_sb_y % 2) * 2);
+        if (*quadrant > 3)
+            printf("Error");
+    }
+    else {
+        first_pass_sb_addr = sb_index;
+        *quadrant = 0;
+    }
+    return first_pass_sb_addr;
+}
+#endif
 void init_considered_block(
     SequenceControlSet *sequence_control_set_ptr,
     PictureControlSet  *picture_control_set_ptr,
@@ -1302,6 +1330,10 @@ void init_considered_block(
         }
     }
 #endif
+#if TWO_PASS_PART_OPT
+    uint8_t quadrant = 0;
+    uint64_t sq_idx[4] = { 0 };
+#endif
     while (blk_index < sequence_control_set_ptr->max_block_cnt){
         const BlockGeom * blk_geom = get_blk_geom_mds(blk_index);
         tot_d1_blocks =
@@ -1314,7 +1346,40 @@ void init_considered_block(
 #if TWO_PASS_PART
         if (sequence_control_set_ptr->static_config.use_input_stat_file) {
             if (picture_control_set_ptr->picture_number == picture_control_set_ptr->parent_pcs_ptr->stat_struct.first_pass_pic_num) {
+
+#if TWO_PASS_PART_OPT
+#if TWO_PASS_PART_128SUPPORT
+                if (blk_geom->shape == PART_N && blk_geom->sq_size > 4 && blk_geom->sq_size < 128) {
+#else
+                if (blk_geom->shape == PART_N && blk_geom->sq_size > 4) {
+#endif
+#if TWO_PASS_PART_128SUPPORT                 
+                    uint32_t fisrt_pass_sb_index = map_split_flag_from_1st_pass(sequence_control_set_ptr, context_ptr, sb_index, &quadrant);
+                    context_ptr->local_cu_array[blk_index].early_split_flag = picture_control_set_ptr->parent_pcs_ptr->stat_struct.first_pass_split_flag[fisrt_pass_sb_index][sq_idx[quadrant]++];
+#else
+                    context_ptr->local_cu_array[blk_index].early_split_flag = picture_control_set_ptr->parent_pcs_ptr->stat_struct.first_pass_split_flag[sb_index][sq_idx[quadrant]++];
+#endif
+                /*if (sq_idx[quadrant] > NUMBER_OF_SPLIT_FLAG)
+                     printf("Error: number of sq_idx > NUMBER_OF_SPLIT_FLAG not sufficient%d, %d\n",quadrant,sq_idx[quadrant]);
+                }*/
+#if TWO_PASS_PART_128SUPPORT
+                else if (blk_geom->shape != PART_N && blk_geom->sq_size > 4 && blk_geom->sq_size < 128) {
+#else
+                else if (blk_geom->shape != PART_N && blk_geom->sq_size > 4) {
+#endif
+                    context_ptr->local_cu_array[blk_index].early_split_flag = context_ptr->local_cu_array[blk_geom->sqi_mds].early_split_flag;   
+                 }
+#if TWO_PASS_PART_128SUPPORT
+                else if (blk_geom->sq_size == 128) {
+                    context_ptr->local_cu_array[blk_index].early_split_flag = 1;
+                }
+#endif
+                else {
+                    context_ptr->local_cu_array[blk_index].early_split_flag = 0;
+                }
+#else
                 context_ptr->local_cu_array[blk_index].early_split_flag = picture_control_set_ptr->parent_pcs_ptr->stat_struct.first_pass_split_flag[sb_index][blk_index];
+#endif
             }
         }
 #endif

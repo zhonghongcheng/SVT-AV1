@@ -126,6 +126,9 @@ extern "C" {
         ModeDecisionCandidate                *fast_candidate_array;
         ModeDecisionCandidateBuffer          **candidate_buffer_ptr_array;
 #endif
+#if TWO_PASS_PART_128SUPPORT
+        int8_t                               first_pass_split_flag[MAX_NUMBER_OF_TREEBLOCKS_PER_PICTURE][NUMBER_OF_SPLIT_FLAG];
+#endif
     } ModeDecisionConfigurationContext;
 
     /**************************************

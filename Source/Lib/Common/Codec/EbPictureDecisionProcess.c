@@ -991,7 +991,7 @@ EbErrorType signal_derivation_multi_processes_oq(
        /* if(sequence_control_set_ptr->static_config.use_output_stat_file)
             picture_control_set_ptr->mdc_depth_level = MAX_MDC_LEVEL;*/
         if(sequence_control_set_ptr->static_config.use_input_stat_file)
-            picture_control_set_ptr->mdc_depth_level = 5;
+            picture_control_set_ptr->mdc_depth_level = 4;
 #endif
 #endif
 #if ADP_BQ
