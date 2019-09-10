@@ -589,7 +589,7 @@ void Av1WriteTxType(
                 ec_writer, av1_ext_tx_ind[txSetType][txType],
 #if FI_EC
                 frameContext->intra_ext_tx_cdf[eset][squareTxSize][intra_dir],
-#else                
+#else
                 frameContext->intra_ext_tx_cdf[eset][squareTxSize][intraDir],
 #endif
                 av1_num_ext_tx_set[txSetType]);
@@ -1586,9 +1586,9 @@ static void EncodeSkipCoeffAv1(
 }
 #if FI_EC
  int av1_filter_intra_allowed_bsize(
-    uint8_t enable_filter_intra, 
-    BlockSize bs) 
-{ 
+    uint8_t enable_filter_intra,
+    BlockSize bs)
+{
  if (!enable_filter_intra) return 0;
   return block_size_wide[bs] <= 32 && block_size_high[bs] <= 32;
 }
@@ -6290,12 +6290,12 @@ assert(bsize < BlockSizeS_ALL);
                     blkOriginX >> MI_SIZE_LOG2,
                     ec_writer);
 
-            
+
 #if FI_EC
     if (cu_ptr->av1xd->use_intrabc == 0 &&  av1_filter_intra_allowed(sequence_control_set_ptr->seq_header.enable_filter_intra,bsize, intra_luma_mode)) {
         aom_write_symbol(ec_writer, cu_ptr->filter_intra_mode != FILTER_INTRA_MODES,
            frameContext->filter_intra_cdfs[bsize], 2);
-        if (cu_ptr->filter_intra_mode != FILTER_INTRA_MODES) {          
+        if (cu_ptr->filter_intra_mode != FILTER_INTRA_MODES) {
             aom_write_symbol(ec_writer, cu_ptr->filter_intra_mode, frameContext->filter_intra_mode_cdf,
                 FILTER_INTRA_MODES);
         }
@@ -6460,7 +6460,7 @@ assert(bsize < BlockSizeS_ALL);
     if (av1_filter_intra_allowed(sequence_control_set_ptr->seq_header.enable_filter_intra,bsize, intra_luma_mode)) {
         aom_write_symbol(ec_writer, cu_ptr->filter_intra_mode != FILTER_INTRA_MODES,
            frameContext->filter_intra_cdfs[bsize], 2);
-        if (cu_ptr->filter_intra_mode != FILTER_INTRA_MODES) {           
+        if (cu_ptr->filter_intra_mode != FILTER_INTRA_MODES) {
             aom_write_symbol(ec_writer, cu_ptr->filter_intra_mode, frameContext->filter_intra_mode_cdf,
                 FILTER_INTRA_MODES);
         }

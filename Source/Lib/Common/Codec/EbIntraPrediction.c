@@ -4663,7 +4663,7 @@ EbErrorType av1_intra_prediction_cl(
 #endif
             0,                                                                              //int32_t use_palette,
 #if FI_MD
-            plane ? FILTER_INTRA_MODES : candidate_buffer_ptr->candidate_ptr->filter_intra_mode,                                                             
+            plane ? FILTER_INTRA_MODES : candidate_buffer_ptr->candidate_ptr->filter_intra_mode,
 #else
             FILTER_INTRA_MODES,                                                             //CHKN FilterIntraMode filter_intra_mode,
 #endif

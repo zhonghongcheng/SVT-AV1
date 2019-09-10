@@ -143,7 +143,7 @@ void av1_estimate_syntax_rate(
     av1_get_syntax_rate_from_cdf(md_rate_estimation_array->filter_intra_mode_fac_bits, fc->filter_intra_mode_cdf, NULL);
 #if FI_RE
     for (i = 0; i < BlockSizeS_ALL; ++i) {
-        if (av1_filter_intra_allowed_bsize(1,i)) 
+        if (av1_filter_intra_allowed_bsize(1,i))
             av1_get_syntax_rate_from_cdf(md_rate_estimation_array->filter_intra_fac_bits[i], fc->filter_intra_cdfs[i], NULL);
     }
 

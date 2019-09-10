@@ -3497,7 +3497,7 @@ static int adaptive_qindex_calc(
 #if ADAPTIVE_QP_SCALING
     // Since many frames can be processed at the same time, storing/using arf_q in rc param is not sufficient and will create a run to run.
     // So, for each frame, arf_q is updated based on the qp of its references.
-#if TWO_PASS && !DISABLE_1PASS_QPS 
+#if TWO_PASS && !DISABLE_1PASS_QPS
     if (sequence_control_set_ptr->static_config.use_input_stat_file) {
         rc->arf_q = MAX(rc->arf_q, ((picture_control_set_ptr->ref_pic_qp_array[0][0] << 2) + 2));
         if (picture_control_set_ptr->slice_type == B_SLICE)
@@ -3517,12 +3517,16 @@ static int adaptive_qindex_calc(
 #endif
 #endif
 
-#if TWO_PASS && !DISABLE_1PASS_QPS 
+#if TWO_PASS && !DISABLE_1PASS_QPS
     uint64_t referenced_area_avg = picture_control_set_ptr->parent_pcs_ptr->referenced_area_avg;
     uint64_t referenced_area_has_non_zero = 0;
     uint64_t referenced_area_max = 64;
     if (sequence_control_set_ptr->static_config.use_input_stat_file) {
-        for (int sb_addr = 0; sb_addr < sequence_control_set_ptr->sb_total_count; ++sb_addr) 
+#if TWO_PASS_128x128
+        for (int sb_addr = 0; sb_addr < sequence_control_set_ptr->sb_tot_cnt; ++sb_addr)
+#else
+        for (int sb_addr = 0; sb_addr < sequence_control_set_ptr->sb_total_count; ++sb_addr)
+#endif
             referenced_area_has_non_zero += picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[sb_addr];
     }
 #endif
@@ -3583,7 +3587,7 @@ static int adaptive_qindex_calc(
         rc->kf_boost = (((NON_MOVING_SCORE_3 - picture_control_set_ptr->parent_pcs_ptr->non_moving_index_average)  * (kf_high - kf_low)) / NON_MOVING_SCORE_3) + kf_low;
 #endif
 
-#if TWO_PASS && !DISABLE_1PASS_QPS 
+#if TWO_PASS && !DISABLE_1PASS_QPS
         if (sequence_control_set_ptr->static_config.use_input_stat_file && !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && referenced_area_has_non_zero) {
             referenced_area_max =  sequence_control_set_ptr->input_resolution < 2 ? 40 : 30;
             if (referenced_area_avg <= 16)
@@ -3633,7 +3637,7 @@ static int adaptive_qindex_calc(
         rc->arf_boost_factor = 1;
 #endif
 
-#if TWO_PASS && !DISABLE_1PASS_QPS 
+#if TWO_PASS && !DISABLE_1PASS_QPS
         if (sequence_control_set_ptr->static_config.use_input_stat_file && !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && referenced_area_has_non_zero) {
             referenced_area_max = 30;
             if (picture_control_set_ptr->parent_pcs_ptr->qp_scaling_average_complexity > HIGH_QPS_COMP_THRESHOLD)
@@ -3656,7 +3660,7 @@ static int adaptive_qindex_calc(
                 const int boost = min_boost - active_best_quality;
 
                 active_best_quality = min_boost - (int)(boost * rc->arf_boost_factor);
-#if TWO_PASS && !DISABLE_1PASS_QPS 
+#if TWO_PASS && !DISABLE_1PASS_QPS
                 if (sequence_control_set_ptr->static_config.use_input_stat_file && !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected) {
                     if (picture_control_set_ptr->parent_pcs_ptr->sad_me / picture_control_set_ptr->sb_total_count / 256 < 15)
                         active_best_quality = active_best_quality * 130 / 100;
@@ -3705,7 +3709,7 @@ static void sb_qp_derivation(
     uint32_t                  sb_addr;
     RATE_CONTROL               rc;
     picture_control_set_ptr->parent_pcs_ptr->average_qp = 0;
-#if TWO_PASS && !DISABLE_1PASS_QPS 
+#if TWO_PASS && !DISABLE_1PASS_QPS
 #if DISABLE_1PASS_QPS
     if (((sequence_control_set_ptr->static_config.use_input_stat_file && picture_control_set_ptr->temporal_layer_index <= 0) || picture_control_set_ptr->slice_type == 2) &&
          picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH &&
@@ -3739,7 +3743,7 @@ static void sb_qp_derivation(
         uint32_t me_pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / me_sb_size;
         uint32_t me_pic_height_in_sb = (sequence_control_set_ptr->seq_header.max_frame_height + me_sb_size - 1) / me_sb_size;
         int max_qp_scaling_avg_comp = MAX(1,picture_control_set_ptr->parent_pcs_ptr->non_moving_index_min_distance + picture_control_set_ptr->parent_pcs_ptr->non_moving_index_max_distance);
-#if TWO_PASS && !DISABLE_1PASS_QPS 
+#if TWO_PASS && !DISABLE_1PASS_QPS
         int *arfgf_low_motion_minq;
         int *arfgf_high_motion_minq;
         ASSIGN_MINQ_TABLE(bit_depth, arfgf_low_motion_minq);
@@ -3752,7 +3756,11 @@ static void sb_qp_derivation(
             ((kf_high_motion_minq[active_worst_quality] - kf_low_motion_minq[active_worst_quality] + 2) >> 2) / 2 :
             ((arfgf_high_motion_minq[active_worst_quality] - arfgf_low_motion_minq[active_worst_quality] + 2) >> 2) / 2;
         if (sequence_control_set_ptr->static_config.use_input_stat_file) {
+#if TWO_PASS_128x128
+            for (int sb_addr = 0; sb_addr < sequence_control_set_ptr->sb_tot_cnt; ++sb_addr)
+#else
             for (sb_addr = 0; sb_addr < sequence_control_set_ptr->sb_total_count; ++sb_addr)
+#endif
                 referenced_area_has_non_zero += picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[sb_addr];
 
             // Calculate the QP per frames
@@ -3808,12 +3816,14 @@ static void sb_qp_derivation(
                         picture_control_set_ptr->parent_pcs_ptr->variance[me_sb_addr_1][ME_TIER_ZERO_PU_64x64] +
                         picture_control_set_ptr->parent_pcs_ptr->variance[me_sb_addr_2][ME_TIER_ZERO_PU_64x64] +
                         picture_control_set_ptr->parent_pcs_ptr->variance[me_sb_addr_3][ME_TIER_ZERO_PU_64x64] + 2) >> 2;
-#if TWO_PASS && !DISABLE_1PASS_QPS  
+#if TWO_PASS && !DISABLE_1PASS_QPS
+#if !TWO_PASS_128x128
                 referenced_area_sb =
                     (picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[me_sb_addr_0]/  sequence_control_set_ptr->sb_params_array[me_sb_addr_0].width / sequence_control_set_ptr->sb_params_array[me_sb_addr_0].height +
                         picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[me_sb_addr_1] / sequence_control_set_ptr->sb_params_array[me_sb_addr_1].width / sequence_control_set_ptr->sb_params_array[me_sb_addr_1].height +
                         picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[me_sb_addr_2] / sequence_control_set_ptr->sb_params_array[me_sb_addr_2].width / sequence_control_set_ptr->sb_params_array[me_sb_addr_2].height +
                         picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[me_sb_addr_3] / sequence_control_set_ptr->sb_params_array[me_sb_addr_3].width / sequence_control_set_ptr->sb_params_array[me_sb_addr_3].height + 2) >> 2;
+#endif
 
                 me_distortion =
                     (picture_control_set_ptr->parent_pcs_ptr->rc_me_distortion[me_sb_addr_0] +
@@ -3826,12 +3836,18 @@ static void sb_qp_derivation(
             else {
                 non_moving_index_sb = picture_control_set_ptr->parent_pcs_ptr->non_moving_index_array[sb_addr];
                 variance_sb         = picture_control_set_ptr->parent_pcs_ptr->variance[sb_addr][ME_TIER_ZERO_PU_64x64];
-#if TWO_PASS && !DISABLE_1PASS_QPS 
+#if TWO_PASS && !DISABLE_1PASS_QPS
+#if !TWO_PASS_128x128
                 referenced_area_sb = picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[sb_addr] /  sequence_control_set_ptr->sb_params_array[sb_addr].width / sequence_control_set_ptr->sb_params_array[sb_addr].height;
+#endif
                 me_distortion = picture_control_set_ptr->parent_pcs_ptr->rc_me_distortion[sb_addr]>> 8;
 #endif
             }
-#if TWO_PASS && !DISABLE_1PASS_QPS 
+#if TWO_PASS && !DISABLE_1PASS_QPS
+#if TWO_PASS_128x128
+            referenced_area_sb =
+                picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[sb_addr] / sequence_control_set_ptr->sb_geom[sb_addr].width / sequence_control_set_ptr->sb_geom[sb_addr].height;
+#endif
             if (sequence_control_set_ptr->static_config.use_input_stat_file && referenced_area_has_non_zero) {
                 delta_qp = 0;
                 if (picture_control_set_ptr->slice_type == 2 ) {
@@ -3870,7 +3886,7 @@ static void sb_qp_derivation(
                 }
             }
 
-#if  TWO_PASS && !DISABLE_1PASS_QPS 
+#if  TWO_PASS && !DISABLE_1PASS_QPS
             if(picture_control_set_ptr->slice_type == 2)
                 sb_ptr->qp = CLIP3(
                     MIN(picture_control_set_ptr->parent_pcs_ptr->picture_qp, ((kf_low_motion_minq[active_worst_quality] + 2) >> 2)),
@@ -3967,10 +3983,10 @@ void* rate_control_kernel(void *input_ptr)
                     picture_control_set_ptr,
                     sequence_control_set_ptr);
             }
-#if TWO_PASS && !DISABLE_1PASS_QPS 
+#if TWO_PASS && !DISABLE_1PASS_QPS
             // LCU Loop
             picture_control_set_ptr->parent_pcs_ptr->sad_me = 0;
-            if (picture_control_set_ptr->slice_type != 2) 
+            if (picture_control_set_ptr->slice_type != 2)
                 for (int sb_addr = 0; sb_addr < picture_control_set_ptr->sb_total_count; ++sb_addr) {
                     picture_control_set_ptr->parent_pcs_ptr->sad_me += picture_control_set_ptr->parent_pcs_ptr->rc_me_distortion[sb_addr];
                 }
