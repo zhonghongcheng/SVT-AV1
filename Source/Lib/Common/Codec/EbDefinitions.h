@@ -81,7 +81,7 @@ extern "C" {
 #define TWO_PASS_PART                   0
 #if TWO_PASS_PART
 #define TWO_PASS_PART_OPT               1
-#define TWO_PASS_PART_128SUPPORT        1
+#define TWO_PASS_PART_128SUPPORT        0
 #endif
 #define INCOMPLETE_SB_ASSERT            0 //add an assert to link incomplete SBs to usage of root-CBF skip decision in MD
 
@@ -575,7 +575,7 @@ typedef enum MD_STAGE {
 #endif
 #define MAX_MDC_LEVEL                                   8
 #define LAMBDA_TUNING                                   1
-#define DISABLE_1PASS_QPS                               0
+#define DISABLE_1PASS_QPS                               1
 #if IMPROVED_SUBPEL_SEARCH
 typedef enum ME_HP_MODE {
     EX_HP_MODE = 0,
@@ -4036,7 +4036,7 @@ static const uint32_t MD_SCAN_TO_OIS_32x32_SCAN[CU_MAX_COUNT] =
 };
 #if TWO_PASS
 #if TWO_PASS_PART_OPT
-#define NUMBER_OF_SPLIT_FLAG  85
+#define NUMBER_OF_SPLIT_FLAG  (85 * 4) + 1
 #define NUM_OF_1080P_SB   510
 #endif
 typedef struct stat_struct_t
