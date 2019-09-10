@@ -78,6 +78,7 @@ extern "C" {
 #define FIXED_TMVP_HP                   1
 
 #define TWO_PASS                        1
+#define DISABLE_1PASS_QPS               0
 #define TWO_PASS_PART                   0
 #if TWO_PASS_PART
 #define TWO_PASS_PART_OPT               1
@@ -583,7 +584,7 @@ typedef enum MD_STAGE {
 #endif
 #define MAX_MDC_LEVEL                                   8
 #define LAMBDA_TUNING                                   1
-#define DISABLE_1PASS_QPS                               1
+
 #if IMPROVED_SUBPEL_SEARCH
 typedef enum ME_HP_MODE {
     EX_HP_MODE = 0,
