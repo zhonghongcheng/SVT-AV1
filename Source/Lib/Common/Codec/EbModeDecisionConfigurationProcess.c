@@ -1277,39 +1277,49 @@ void init_considered_block(
     SequenceControlSet *sequence_control_set_ptr,
     PictureControlSet  *picture_control_set_ptr,
     ModeDecisionConfigurationContext *context_ptr,
+#if TWO_PASS_PART_128SUPPORT
+    LargestCodingUnit                 *sb_ptr,
+    uint32_t                           sb_originx,
+    uint32_t                           sb_originy,
+#endif
     uint32_t            sb_index) {
     MdcLcuData *resultsPtr = &picture_control_set_ptr->mdc_sb_array[sb_index];
     resultsPtr->leaf_count = 0;
     uint32_t  blk_index = 0;
     uint32_t  parent_depth_idx_mds,sparent_depth_idx_mds,child_block_idx_1,child_block_idx_2,child_block_idx_3,child_block_idx_4;
+#if FIX_MDC_BUG_INCOMPLETE_SB
+    uint8_t  is_complete_sb = sequence_control_set_ptr->sb_geom[sb_index].is_complete_sb;
+#else
     SbParams *sb_params = &sequence_control_set_ptr->sb_params_array[sb_index];
+    uint8_t  is_complete_sb = sb_params->is_complete_sb;
+#endif
     uint32_t tot_d1_blocks,block_1d_idx;
     EbBool split_flag;
     uint32_t depth_refinement_mode = AllD;
     switch (picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level) {
     case 0:
-        depth_refinement_mode = sb_params->is_complete_sb ? Pred : AllD;
+        depth_refinement_mode = is_complete_sb ? Pred : AllD;
         break;
     case 1:
-        depth_refinement_mode = sb_params->is_complete_sb ? Predp1 : AllD;
+        depth_refinement_mode = is_complete_sb ? Predp1 : AllD;
         break;
     case 2:
-        depth_refinement_mode = sb_params->is_complete_sb ? Predp2 : AllD;
+        depth_refinement_mode = is_complete_sb ? Predp2 : AllD;
         break;
     case 3:
-        depth_refinement_mode = sb_params->is_complete_sb ? Predp3 : AllD;
+        depth_refinement_mode = is_complete_sb ? Predp3 : AllD;
         break;
     case 4:
-        depth_refinement_mode = sb_params->is_complete_sb ? Predm1p1 : AllD;
+        depth_refinement_mode = is_complete_sb ? Predm1p1 : AllD;
         break;
     case 5:
-        depth_refinement_mode = sb_params->is_complete_sb ? Predm1p2 : AllD;
+        depth_refinement_mode = is_complete_sb ? Predm1p2 : AllD;
         break;
     case 6:
-        depth_refinement_mode = sb_params->is_complete_sb ? Predm1p3 : AllD;
+        depth_refinement_mode = is_complete_sb ? Predm1p3 : AllD;
         break;
     case 7:
-        depth_refinement_mode = sb_params->is_complete_sb ? Predm2p3 : AllD;
+        depth_refinement_mode = is_complete_sb ? Predm2p3 : AllD;
         break;
     case MAX_MDC_LEVEL:
         depth_refinement_mode = AllD;
@@ -1336,6 +1346,10 @@ void init_considered_block(
 #endif
     while (blk_index < sequence_control_set_ptr->max_block_cnt){
         const BlockGeom * blk_geom = get_blk_geom_mds(blk_index);
+#if TWO_PASS_PART_128SUPPORT
+        context_ptr->cu_origin_x = sb_originx + blk_geom->origin_x;
+        context_ptr->cu_origin_y = sb_originy + blk_geom->origin_y;
+#endif
         tot_d1_blocks =
                 blk_geom->sq_size == 128 ? 17 :
                 blk_geom->sq_size > 8 ? 25 :
@@ -3583,6 +3597,11 @@ void* mode_decision_configuration_kernel(void *input_ptr)
                             sequence_control_set_ptr,
                             picture_control_set_ptr,
                             context_ptr,
+#if TWO_PASS_PART_128SUPPORT
+                            sb_ptr,
+                            sb_ptr->origin_x,
+                            sb_ptr->origin_y,
+#endif
                             sb_index);
                         forward_considered_blocks(
                             sequence_control_set_ptr,

@@ -82,8 +82,10 @@ extern "C" {
 #define TWO_PASS_PART                   0
 #if TWO_PASS_PART
 #define TWO_PASS_PART_OPT               1
-#define TWO_PASS_PART_128SUPPORT        0
+#define TWO_PASS_PART_128SUPPORT        1
+#define FIX_MDC_BUG_INCOMPLETE_SB       1
 #endif
+
 #define INCOMPLETE_SB_ASSERT            0 //add an assert to link incomplete SBs to usage of root-CBF skip decision in MD
 
 #define NO_MEMSET                       1
