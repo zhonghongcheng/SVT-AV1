@@ -3951,7 +3951,7 @@ EbErrorType av1_inter_prediction(
                     memcpy(leftNeighArray + 1, luma_recon_neighbor_array->left_array + pu_origin_y, blk_geom->bheight * 2);
                 if (pu_origin_y != 0 && pu_origin_x != 0)
                     topNeighArray[0] = leftNeighArray[0] = luma_recon_neighbor_array->top_left_array[MAX_PICTURE_HEIGHT_SIZE + pu_origin_x - pu_origin_y];
-#else            
+#else
                 if (dst_origin_y != 0)
                     memcpy(topNeighArray + 1, luma_recon_neighbor_array->top_array + dst_origin_x,  blk_geom->bwidth * 2);
                 if (dst_origin_x != 0)

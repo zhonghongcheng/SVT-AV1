@@ -2407,11 +2407,11 @@ void set_md_stage_counts(
 
     // Set # of md_stage_1 candidates
     context_ptr->fast1_cand_count[CAND_CLASS_0] = (picture_control_set_ptr->slice_type == I_SLICE) ? fastCandidateTotalCount : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTRA_NFL : (INTRA_NFL >> 1);
-  
+
 #if FI_CLASS
     context_ptr->fast1_cand_count[CAND_CLASS_5] = 5;
 #endif
-    
+
     context_ptr->fast1_cand_count[CAND_CLASS_1] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_NEW_NFL : (INTER_NEW_NFL >> 1);
     context_ptr->fast1_cand_count[CAND_CLASS_2] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
 #if AUTO_C1C2
@@ -2455,7 +2455,7 @@ void set_md_stage_counts(
 
     // Set # of md_stage_2 candidates
     context_ptr->md_stage_2_count[CAND_CLASS_0] = context_ptr->bypass_stage1[CAND_CLASS_0] ? context_ptr->fast1_cand_count[CAND_CLASS_0] : (picture_control_set_ptr->slice_type == I_SLICE) ? fastCandidateTotalCount : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTRA_NFL : (INTRA_NFL >> 1);
-#if FI_CLASS   
+#if FI_CLASS
     context_ptr->md_stage_2_count[CAND_CLASS_5] = context_ptr->bypass_stage1[CAND_CLASS_5] ? context_ptr->fast1_cand_count[CAND_CLASS_0] : 5;
 #endif
 
@@ -2539,14 +2539,14 @@ void set_md_stage_counts(
                  10 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ?
                  ((scs->input_resolution >= INPUT_SIZE_1080i_RANGE)? 7 : 10) : 4;
 #endif
-  
-#if FI_CLASS 
+
+#if FI_CLASS
     context_ptr->md_stage_3_count[CAND_CLASS_5] =
         context_ptr->bypass_stage2[CAND_CLASS_5] ? context_ptr->md_stage_2_count[CAND_CLASS_5] :
         (picture_control_set_ptr->temporal_layer_index == 0) ? 5 :
         (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 3 : 2;
-#endif  
-    
+#endif
+
     context_ptr->md_stage_3_count[CAND_CLASS_1] = context_ptr->bypass_stage2[CAND_CLASS_1] ? context_ptr->md_stage_2_count[CAND_CLASS_1] : (picture_control_set_ptr->slice_type == I_SLICE) ?  0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 3 : 1;
     context_ptr->md_stage_3_count[CAND_CLASS_2] = context_ptr->bypass_stage2[CAND_CLASS_2] ? context_ptr->md_stage_2_count[CAND_CLASS_2] : (picture_control_set_ptr->slice_type == I_SLICE) ?  0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 3 : 1;
 
@@ -3728,7 +3728,7 @@ void predictive_me_search(
                             &best_search_distortion,
                             search_pattern);
                     }
-#endif 
+#endif
                     context_ptr->best_spatial_pred_mv[list_idx][ref_idx][0] = best_search_mvx;
                     context_ptr->best_spatial_pred_mv[list_idx][ref_idx][1] = best_search_mvy;
                     context_ptr->valid_refined_mv[list_idx][ref_idx] = 1;
@@ -4741,7 +4741,7 @@ uint8_t get_end_tx_depth(
         bsize == BLOCK_32X16 ||
         bsize == BLOCK_16X8 ||
         bsize == BLOCK_8X16)
-#if ATB_INTER_SUPPORT 
+#if ATB_INTER_SUPPORT
 #if ATB_INTER_1_DEPTH
 #if ATB_INTER_2_DEPTH
         tx_depth = (btype == INTRA_MODE) ? 1 : 2;
@@ -6039,7 +6039,7 @@ void perform_intra_tx_partitioning(
                 picture_control_set_ptr,
 #if ATB_RATE_UPGRADE_0
                 context_ptr,
-#endif      
+#endif
 #if ATB_RATE_UPGRADE_0 //--------
                 (candidateBuffer->candidate_ptr->y_has_coeff) ? 0 : 1,
 #endif
@@ -6159,7 +6159,7 @@ void perform_intra_tx_partitioning(
             if (is_inter)
                 candidateBuffer->candidate_ptr->transform_type_uv = (context_ptr->txb_itr == 0) ? best_tx_type_per_depth[context_ptr->tx_depth][context_ptr->txb_itr] : candidateBuffer->candidate_ptr->transform_type_uv;
 
-            
+
 #else
             // Get the depth 0 best tx type
             candidateBuffer->candidate_ptr->transform_type[context_ptr->txb_itr] = best_tx_type_depth_0;
@@ -9505,12 +9505,12 @@ void md_encode_block(
 
 
 #if II_SO
-        //for every CU, perform Luma DC/V/H/S intra prediction to be used later in inter-intra search 
+        //for every CU, perform Luma DC/V/H/S intra prediction to be used later in inter-intra search
         int allow_ii = is_interintra_allowed_bsize(context_ptr->blk_geom->bsize);
-        if (picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra && allow_ii)        
+        if (picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra && allow_ii)
             precompute_intra_pred_for_inter_intra(
                 picture_control_set_ptr,
-                context_ptr);        
+                context_ptr);
 #endif
 
 

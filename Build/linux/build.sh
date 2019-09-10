@@ -39,8 +39,10 @@ function build {
 function clean {
     rm -R -f debug
     rm -R -f release
+    rm -R -f relwithdebinfo
     rm -R -f ../../Bin/Debug
     rm -R -f ../../Bin/Release
+    rm -R -f ../../Bin/RelWithDebInfo
 }
 
 function ncpu {
@@ -128,6 +130,8 @@ function run {
         build Debug $2
     elif [ "$1" = "release" ]; then
         build Release $2
+    elif [ "$1" = "relwithdebinfo" -o "$1" = "rwdi" ]; then
+        build RelWithDebInfo $2
     elif [ "$1" = "all" ]; then
         build Debug $2
         build Release $2

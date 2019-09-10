@@ -280,7 +280,7 @@ static int64_t pick_interintra_wedge(
     return rd;
 }
 #if II_SO
-//for every CU, perform DC/V/H/S intra prediction to be used later in inter-intra search 
+//for every CU, perform DC/V/H/S intra prediction to be used later in inter-intra search
 void precompute_intra_pred_for_inter_intra(
     PictureControlSet            *picture_control_set_ptr,
     ModeDecisionContext          *context_ptr)
@@ -292,14 +292,14 @@ void precompute_intra_pred_for_inter_intra(
 
     for (j = 0; j < INTERINTRA_MODES; ++j)
     {
-      
+
         INTERINTRA_MODE interintra_mode = (INTERINTRA_MODE)j;
         pred_desc.buffer_y = context_ptr->intrapred_buf[j];
         intra_luma_prediction_for_interintra(
             context_ptr,
             picture_control_set_ptr,
             interintra_mode,
-            &pred_desc);      
+            &pred_desc);
     }
 }
 #endif
@@ -503,14 +503,14 @@ void inter_intra_search(
             }
 
 
-#if !  II_SO    
+#if !  II_SO
             intra_luma_prediction_for_interintra(
                 context_ptr,
                 picture_control_set_ptr,
                 best_interintra_mode,
                 &inra_pred_desc);
 #endif
-            
+
 
             /* best_interintra_rd_wedge =
                  pick_interintra_wedge(cpi, x, bsize, intrapred_, tmp_buf_);*/
@@ -7308,12 +7308,12 @@ void  inject_filter_intra_candidates(
                                                     context_ptr->blk_geom->bheight == 4)    ? EB_TRUE : EB_FALSE;
 #endif
 
-    if (disable_cfl_flag) 
+    if (disable_cfl_flag)
         printf("\nSTOPPPPPPPPP");
 
     for (filter_intra_mode = intra_mode_start; filter_intra_mode < intra_mode_end ; ++filter_intra_mode) {
 
- 
+
             candidateArray[canTotalCnt].type = INTRA_MODE;
             candidateArray[canTotalCnt].intra_luma_mode = DC_PRED;
             candidateArray[canTotalCnt].distortion_ready = 0;
@@ -7521,7 +7521,7 @@ EbErrorType ProductGenerateMdCandidatesCu(
 #endif
 #if FI_MD
        if (picture_control_set_ptr->pic_filter_intra_mode > 0 && av1_filter_intra_allowed_bsize(sequence_control_set_ptr->seq_header.enable_filter_intra, context_ptr->blk_geom->bsize))
-     
+
             inject_filter_intra_candidates(
                 picture_control_set_ptr,
                 context_ptr,
@@ -7855,7 +7855,7 @@ uint8_t product_full_mode_decision(
         pu_ptr->intra_luma_mode = 0x1F;
         if (cu_ptr->prediction_mode_flag == INTRA_MODE)
         {
-#if FI_ED          
+#if FI_ED
             cu_ptr->filter_intra_mode= candidate_ptr->filter_intra_mode;
 #endif
             pu_ptr->intra_luma_mode = candidate_ptr->intra_luma_mode;

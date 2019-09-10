@@ -1367,7 +1367,7 @@ void init_considered_block(
 #else
                 if (blk_geom->shape == PART_N && blk_geom->sq_size > 4) {
 #endif
-#if TWO_PASS_PART_128SUPPORT                 
+#if TWO_PASS_PART_128SUPPORT
                     uint32_t fisrt_pass_sb_index = map_split_flag_from_1st_pass(sequence_control_set_ptr, context_ptr, sb_index, &quadrant);
                     context_ptr->local_cu_array[blk_index].early_split_flag = picture_control_set_ptr->parent_pcs_ptr->stat_struct.first_pass_split_flag[fisrt_pass_sb_index][sq_idx[quadrant]++];
 #else
@@ -1381,7 +1381,7 @@ void init_considered_block(
 #else
                 else if (blk_geom->shape != PART_N && blk_geom->sq_size > 4) {
 #endif
-                    context_ptr->local_cu_array[blk_index].early_split_flag = context_ptr->local_cu_array[blk_geom->sqi_mds].early_split_flag;   
+                    context_ptr->local_cu_array[blk_index].early_split_flag = context_ptr->local_cu_array[blk_geom->sqi_mds].early_split_flag;
                  }
 #if TWO_PASS_PART_128SUPPORT
                 else if (blk_geom->sq_size == 128) {
@@ -1432,7 +1432,7 @@ void init_considered_block(
                             resultsPtr,
                             blk_index,
                             sequence_control_set_ptr->seq_header.sb_size,
-                            1);     
+                            1);
                     }
                     break;
                 case Predp2:
@@ -1449,7 +1449,7 @@ void init_considered_block(
                             resultsPtr,
                             blk_index,
                             sequence_control_set_ptr->seq_header.sb_size,
-                            2);    
+                            2);
                     }
                     break;
                 case Predp3:
@@ -1466,7 +1466,7 @@ void init_considered_block(
                             resultsPtr,
                             blk_index,
                             sequence_control_set_ptr->seq_header.sb_size,
-                            3);    
+                            3);
                     }
                     break;
                 case Predm1p2:
@@ -2841,7 +2841,7 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
 #endif
 
 #if FI_MD
-    //Filter Intra Mode : 0: OFF  1: ON  
+    //Filter Intra Mode : 0: OFF  1: ON
     if (sequence_control_set_ptr->seq_header.enable_filter_intra)
 #if FI_INTRA_BASE
         picture_control_set_ptr->pic_filter_intra_mode = picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0 && picture_control_set_ptr->temporal_layer_index == 0 ? 1 : 0;
@@ -2972,7 +2972,7 @@ void forward_all_c_blocks_to_md(
                 for (uint32_t idx = 0; idx < tot_d1_blocks; ++idx) {
                     blk_geom = get_blk_geom_mds(blk_index);
 #if FIX_FRW_NUMBER_BLOCKS
-                    resultsPtr->leaf_data_array[resultsPtr->leaf_count].tot_d1_blocks = tot_d1_blocks;      
+                    resultsPtr->leaf_data_array[resultsPtr->leaf_count].tot_d1_blocks = tot_d1_blocks;
 #endif
 
                     //if the parentSq is inside inject this block

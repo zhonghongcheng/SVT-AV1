@@ -328,7 +328,7 @@ EB_EXTERN void intra_mode_dc_luma16bit_sse4_1_intrin(
         }
     }
 }
-#if FI_AVX 
+#if FI_AVX
 extern const int8_t av1_filter_intra_taps[FILTER_INTRA_MODES][8][8];
 #define FILTER_INTRA_SCALE_BITS 4
 

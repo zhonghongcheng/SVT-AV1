@@ -196,7 +196,7 @@ int32_t Av1TransformTypeRateEstimation(
             if (ext_tx_set > 0) {
                 PredictionMode intra_dir;
 #if FI_RE
-                if (candidate_buffer_ptr->candidate_ptr->filter_intra_mode != FILTER_INTRA_MODES) 
+                if (candidate_buffer_ptr->candidate_ptr->filter_intra_mode != FILTER_INTRA_MODES)
                     intra_dir = fimode_to_intradir[candidate_buffer_ptr->candidate_ptr->filter_intra_mode];
 #else
                 if (useFilterIntraFlag)
@@ -569,7 +569,7 @@ uint64_t av1_cost_coeffs_txb(
 #endif
             candidate_buffer_ptr,
             candidate_buffer_ptr->candidate_ptr->type == INTER_MODE ? EB_TRUE : EB_FALSE,
-#if !FI_RE  
+#if !FI_RE
             EB_FALSE, // NM - Hardcoded to false for the moment until we support the intra filtering
 #endif
             transform_size,
@@ -804,11 +804,11 @@ uint64_t av1_intra_fast_cost(
         assert((intra_mode - V_PRED) >= 0);
         intraLumaAngModeBitsNum = candidate_ptr->md_rate_estimation_ptr->angle_delta_fac_bits[intra_mode - V_PRED][MAX_ANGLE_DELTA + candidate_ptr->angle_delta[PLANE_TYPE_Y]];
     }
-#if FI_RE   
+#if FI_RE
     if (av1_filter_intra_allowed(picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header.enable_filter_intra, blk_geom->bsize, intra_mode)) {
-       intra_filter_mode_bits_num = candidate_ptr->md_rate_estimation_ptr->filter_intra_fac_bits[blk_geom->bsize][candidate_ptr->filter_intra_mode != FILTER_INTRA_MODES];          
-        if (candidate_ptr->filter_intra_mode != FILTER_INTRA_MODES) {           
-            intra_filter_mode_bits_num += candidate_ptr->md_rate_estimation_ptr->filter_intra_mode_fac_bits[candidate_ptr->filter_intra_mode];           
+       intra_filter_mode_bits_num = candidate_ptr->md_rate_estimation_ptr->filter_intra_fac_bits[blk_geom->bsize][candidate_ptr->filter_intra_mode != FILTER_INTRA_MODES];
+        if (candidate_ptr->filter_intra_mode != FILTER_INTRA_MODES) {
+            intra_filter_mode_bits_num += candidate_ptr->md_rate_estimation_ptr->filter_intra_mode_fac_bits[candidate_ptr->filter_intra_mode];
         }
     }
 #endif
@@ -2456,7 +2456,7 @@ EbErrorType Av1FullCost(
             picture_control_set_ptr,
 #if ATB_RATE_UPGRADE_0
             context_ptr,
-#endif      
+#endif
 #if ATB_RATE_UPGRADE_0 //--------
             (candidate_buffer_ptr->candidate_ptr->block_has_coeff) ? 0 : 1,
 #endif
@@ -2618,7 +2618,7 @@ EbErrorType  Av1MergeSkipFullCost(
             picture_control_set_ptr,
 #if ATB_RATE_UPGRADE_0
             context_ptr,
-#endif      
+#endif
 #if ATB_RATE_UPGRADE_0 //--------
             (candidate_buffer_ptr->candidate_ptr->block_has_coeff) ? 0 : 1,
 #endif

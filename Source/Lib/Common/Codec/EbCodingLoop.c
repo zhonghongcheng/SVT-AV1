@@ -3458,7 +3458,7 @@ EB_EXTERN void av1_encode_pass(
 #if TWO_PASS_PART
                 if (sequence_control_set_ptr->static_config.use_output_stat_file) {
                     int32_t sq_index, tot_d1_blocks,block_1d_idx;
-                    sq_index = blk_geom->sqi_mds; 
+                    sq_index = blk_geom->sqi_mds;
                     tot_d1_blocks =
                             blk_geom->sq_size == 128 ? 17 :
                             blk_geom->sq_size > 8 ? 25 :

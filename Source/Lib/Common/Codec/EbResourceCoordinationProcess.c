@@ -730,19 +730,19 @@ void* resource_coordination_kernel(void *input_ptr)
 
 #if FI_EC
 #if M2_FI_INTRA_BASE
-            sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M2) 
+            sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M2)
 #elif FI_INTRA_BASE
             sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M1)
 #else
-            sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode == ENC_M0) 
+            sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode == ENC_M0)
 #endif
-             ? 1 : 0;           
-           
+             ? 1 : 0;
+
 #endif
 
 #if II_COMP
             sequence_control_set_ptr->seq_header.enable_interintra_compound = (sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;
-           
+
           //  sequence_control_set_ptr->seq_header.enable_interintra_compound = 1;
 #endif
 #if COMP_MODE

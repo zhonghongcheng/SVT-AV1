@@ -135,7 +135,7 @@ extern "C" {
 #define ATB_INTER_2_DEPTH                       0 // ATB INTER Depth 2
 #define ATB_RATE_UPGRADE_0                      1
 #define ATB_RATE_UPGRADE_1                      1
-#endif 
+#endif
 
 #define FIRST_FULL_LOOP_INTERPOLATION_SEARCH   1
 
@@ -681,7 +681,7 @@ enum {
 #else
 #define MAX_NFL                            80
 #endif
-#else 
+#else
 #define MAX_NFL                            65 //full loop all candidates in I slice  300//   MDLEVELS//
 #endif
 #else

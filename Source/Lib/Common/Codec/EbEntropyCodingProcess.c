@@ -532,7 +532,7 @@ void write_stat_to_file(
 {
     eb_block_on_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
     int32_t fseek_return_value = fseek(sequence_control_set_ptr->static_config.output_stat_file, (long)ref_poc * sizeof(stat_struct_t), SEEK_SET);
-    if (fseek_return_value != 0) 
+    if (fseek_return_value != 0)
         printf("Error in fseek  returnVal %i\n", fseek_return_value);
     fwrite(&stat_struct,
         sizeof(stat_struct_t),
