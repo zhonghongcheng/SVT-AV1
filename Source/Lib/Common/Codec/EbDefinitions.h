@@ -558,6 +558,8 @@ typedef enum MD_STAGE {
 
 #define PREDICT_NSQ_SHAPE                               1
 #if PREDICT_NSQ_SHAPE
+#define EXTEND_NSQ_MDC_TO_M3                            0
+#define M3_MDC_LEVEL                                    5
 #define NSQ_MDC_L01                                     1
 #define ADD_MDC_INTRA                                   0
 #define DEPTH_RANKING                                   1
