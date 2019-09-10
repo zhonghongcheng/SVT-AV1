@@ -6282,7 +6282,7 @@ assert(bsize < BlockSizeS_ALL);
 
             
 #if FI_EC
-    if (av1_filter_intra_allowed(sequence_control_set_ptr->seq_header.enable_filter_intra,bsize, intra_luma_mode)) {
+    if (cu_ptr->av1xd->use_intrabc == 0 &&  av1_filter_intra_allowed(sequence_control_set_ptr->seq_header.enable_filter_intra,bsize, intra_luma_mode)) {
         aom_write_symbol(ec_writer, cu_ptr->filter_intra_mode != FILTER_INTRA_MODES,
            frameContext->filter_intra_cdfs[bsize], 2);
         if (cu_ptr->filter_intra_mode != FILTER_INTRA_MODES) {          

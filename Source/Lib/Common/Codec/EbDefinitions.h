@@ -47,12 +47,21 @@ extern "C" {
 // Better BDR-Speed trade-off M0-M1
 #define FI_INTRA_BASE                1
 
+// Better BDR-Speed trade-off M2
+#define M2_FI_INTRA_BASE             1
+#define M2_BAD_SLOPE_COMB            1 // Use M1 Pred ME, use M1 MD Staging, use M1 TX reduced_set, use M1 MD Stage count
+#define M3_INTRA_PRED_NBASE          1
+#define M2_FAST_CAND_COUNT_NRF       0
+#define M2_COMP_NREF                 0
+#define M1_NSQ_LEVEL_NRF             0
+#define M3_SP_NREF                   0
+
+
 // Better BDR-Speed trade-off for M1
 #define M2_PIC_DEPTH_MODE_NRF_M1     0
 #define M2_NSQ_LEVEL_NRF             0
 #define M2_ATB_NRF                   0
-#define M2_COMP_NREF                 0
-#define M2_FAST_CAND_COUNT_NRF       0
+
 
 #define FI_INTRA  1
 

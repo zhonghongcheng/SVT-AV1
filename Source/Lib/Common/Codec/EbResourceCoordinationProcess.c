@@ -724,6 +724,17 @@ void* resource_coordination_kernel(void *input_ptr)
                 PM_MODE_2 :
                 PM_MODE_1;
 
+#if FI_EC
+#if M2_FI_INTRA_BASE
+            sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M2) 
+#elif FI_INTRA_BASE
+            sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M1)
+#else
+            sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode == ENC_M0) 
+#endif
+             ? 1 : 0;           
+           
+#endif
 
 #if II_COMP
             sequence_control_set_ptr->seq_header.enable_interintra_compound = (sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;

@@ -6802,6 +6802,10 @@ void  inject_intra_bc_candidates(
         candidateArray[*cand_cnt].ref_mv_index = 0;
         candidateArray[*cand_cnt].pred_mv_weight = 0;
         candidateArray[*cand_cnt].interp_filters = av1_broadcast_interp_filter(BILINEAR);
+
+#if FI_MD
+        candidateArray[*cand_cnt].filter_intra_mode = FILTER_INTRA_MODES;
+#endif
 #if II_COMP
         candidateArray[*cand_cnt].is_interintra_used = 0;
 #endif
@@ -7516,11 +7520,8 @@ EbErrorType ProductGenerateMdCandidatesCu(
                 leaf_index);
 #endif
 #if FI_MD
-#if FI_INTRA_BASE
-       if(av1_filter_intra_allowed_bsize(sequence_control_set_ptr->seq_header.enable_filter_intra, context_ptr->blk_geom->bsize) && picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0)
-#else
-       if (av1_filter_intra_allowed_bsize(sequence_control_set_ptr->seq_header.enable_filter_intra, context_ptr->blk_geom->bsize))
-#endif     
+       if (picture_control_set_ptr->pic_filter_intra_mode > 0 && av1_filter_intra_allowed_bsize(sequence_control_set_ptr->seq_header.enable_filter_intra, context_ptr->blk_geom->bsize))
+     
             inject_filter_intra_candidates(
                 picture_control_set_ptr,
                 context_ptr,
