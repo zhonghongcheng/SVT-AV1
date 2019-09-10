@@ -1360,8 +1360,8 @@ void init_considered_block(
                     context_ptr->local_cu_array[blk_index].early_split_flag = picture_control_set_ptr->parent_pcs_ptr->stat_struct.first_pass_split_flag[sb_index][sq_idx[quadrant]++];
 #endif
                 /*if (sq_idx[quadrant] > NUMBER_OF_SPLIT_FLAG)
-                     printf("Error: number of sq_idx > NUMBER_OF_SPLIT_FLAG not sufficient%d, %d\n",quadrant,sq_idx[quadrant]);
-                }*/
+                     printf("Error: number of sq_idx > NUMBER_OF_SPLIT_FLAG not sufficient%d, %d\n",quadrant,sq_idx[quadrant]);*/
+                }
 #if TWO_PASS_PART_128SUPPORT
                 else if (blk_geom->shape != PART_N && blk_geom->sq_size > 4 && blk_geom->sq_size < 128) {
 #else
