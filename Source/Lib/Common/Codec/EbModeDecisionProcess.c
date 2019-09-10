@@ -163,6 +163,11 @@ EbErrorType mode_decision_context_ctor(
     EB_MALLOC(uint64_t*, context_ptr->ref_best_cost_sq_table, sizeof(uint64_t) * MAX_REF_TYPE_CAND, EB_N_PTR);
     EB_MALLOC(uint32_t*, context_ptr->ref_best_ref_sq_table, sizeof(uint32_t) * MAX_REF_TYPE_CAND, EB_N_PTR);
 #endif
+#if ATB_RATE_UPGRADE_0 && !ATB_RATE_UPGRADE_1
+    EB_MALLOC(uint8_t*, context_ptr->above_txfm_context, sizeof(uint8_t) * (MAX_SB_SIZE >> MI_SIZE_LOG2), EB_N_PTR);
+    EB_MALLOC(uint8_t*, context_ptr->left_txfm_context, sizeof(uint8_t) * (MAX_SB_SIZE >> MI_SIZE_LOG2), EB_N_PTR);
+#endif
+
     return EB_ErrorNone;
 }
 

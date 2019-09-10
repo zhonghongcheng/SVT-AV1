@@ -337,14 +337,42 @@ void mode_decision_update_neighbor_arrays(
     }
 
 #if ATB_RATE
+#if ATB_RATE_UPGRADE_0
+    uint8_t tx_size = tx_depth_to_tx_size[context_ptr->cu_ptr->tx_depth][context_ptr->blk_geom->bsize];
+    uint8_t bw = tx_size_wide[tx_size];
+    uint8_t bh = tx_size_high[tx_size];
+
     neighbor_array_unit_mode_write(
         context_ptr->txfm_context_array,
+        &bw,
+        origin_x,
+        origin_y,
+        bwdith,
+        bheight,
+        NEIGHBOR_ARRAY_UNIT_TOP_MASK);
+
+    neighbor_array_unit_mode_write(
+        context_ptr->txfm_context_array,
+        &bh,
+        origin_x,
+        origin_y,
+        bwdith,
+        bheight,
+        NEIGHBOR_ARRAY_UNIT_LEFT_MASK);
+#else
+    neighbor_array_unit_mode_write(
+        context_ptr->txfm_context_array,
+#if ATB_RATE_UPGRADE_0
+        &tx_size,
+#else
         &context_ptr->cu_ptr->tx_depth,
+#endif
         origin_x,
         origin_y,
         bwdith,
         bheight,
         NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
+#endif
 #endif
 
     // Update the Inter Pred Type Neighbor Array
@@ -4713,7 +4741,19 @@ uint8_t get_end_tx_depth(
         bsize == BLOCK_32X16 ||
         bsize == BLOCK_16X8 ||
         bsize == BLOCK_8X16)
+#if ATB_INTER_SUPPORT 
+#if ATB_INTER_1_DEPTH
+#if ATB_INTER_2_DEPTH
         tx_depth = (btype == INTRA_MODE) ? 1 : 2;
+#else
+        tx_depth = (btype == INTRA_MODE) ? 1 : 1;
+#endif
+#else
+        tx_depth = (btype == INTRA_MODE) ? 1 : 0;
+#endif
+#else
+        tx_depth = (btype == INTRA_MODE) ? 1 : 1;
+#endif
     else if (bsize == BLOCK_8X8 ||
         bsize == BLOCK_64X16 ||
         bsize == BLOCK_16X64 ||
@@ -4721,7 +4761,15 @@ uint8_t get_end_tx_depth(
         bsize == BLOCK_8X32 ||
         bsize == BLOCK_16X4 ||
         bsize == BLOCK_4X16)
+#if ATB_INTER_SUPPORT
+#if ATB_INTER_1_DEPTH
+        tx_depth = (btype == INTRA_MODE) ? 1 : 1;
+#else
+        tx_depth = (btype == INTRA_MODE) ? 1 : 0;
+#endif
+#else
         tx_depth = 1;
+#endif
 #else
     if (context_ptr->decoupled_fast_loop_search_method != SSD_SEARCH)
         assert(atb_mode != 1 && "atb_mode 1 assumes SSD_SEARCH @ fast loop because of the energy threshold");
@@ -4752,7 +4800,7 @@ uint8_t get_end_tx_depth(
 }
 
 #if ATB_RATE
-#if !SHUT_TX_SIZE_RATE
+#if !SHUT_TX_SIZE_RATE || ATB_RATE_UPGRADE_0
 static INLINE int block_signals_txsize(BlockSize bsize) {
     return bsize > BLOCK_4X4;
 }
@@ -4797,6 +4845,7 @@ static INLINE int max_block_high(const MacroBlockD *xd, BlockSize bsize,
     // Scale the height in the transform block unit.
     return max_blocks_high >> tx_size_high_log2[0];
 }
+
 static INLINE void txfm_partition_update(TXFM_CONTEXT *above_ctx,
     TXFM_CONTEXT *left_ctx,
     TxSize tx_size, TxSize txb_size) {
@@ -4809,6 +4858,7 @@ static INLINE void txfm_partition_update(TXFM_CONTEXT *above_ctx,
     for (i = 0; i < bh; ++i) left_ctx[i] = txh;
     for (i = 0; i < bw; ++i) above_ctx[i] = txw;
 }
+
 static INLINE TxSize get_sqr_tx_size(int tx_dim) {
     switch (tx_dim) {
     case 128:
@@ -4861,7 +4911,7 @@ static INLINE int av1_get_txb_size_index(BlockSize bsize, int blk_row,
 }
 #endif
 
-#if !SHUT_TX_SIZE_RATE
+#if !SHUT_TX_SIZE_RATE || ATB_RATE_UPGRADE_0
 static uint64_t cost_tx_size_vartx(MacroBlockD *xd, const MbModeInfo *mbmi,
     TxSize tx_size, int depth, int blk_row,
     int blk_col, MdRateEstimationContext  *md_rate_estimation_ptr) {
@@ -4872,8 +4922,10 @@ static uint64_t cost_tx_size_vartx(MacroBlockD *xd, const MbModeInfo *mbmi,
     if (blk_row >= max_blocks_high || blk_col >= max_blocks_wide) return bits;
 
     if (depth == MAX_VARTX_DEPTH) {
+
         txfm_partition_update(xd->above_txfm_context + blk_col,
             xd->left_txfm_context + blk_row, tx_size, tx_size);
+
         return bits;
     }
 
@@ -4888,6 +4940,7 @@ static uint64_t cost_tx_size_vartx(MacroBlockD *xd, const MbModeInfo *mbmi,
 
         txfm_partition_update(xd->above_txfm_context + blk_col,
             xd->left_txfm_context + blk_row, tx_size, tx_size);
+
     }
     else {
         const TxSize sub_txs = sub_tx_size_map[tx_size];
@@ -4896,8 +4949,10 @@ static uint64_t cost_tx_size_vartx(MacroBlockD *xd, const MbModeInfo *mbmi,
 
         bits += md_rate_estimation_ptr->txfm_partition_fac_bits[ctx][1];
         if (sub_txs == TX_4X4) {
+
             txfm_partition_update(xd->above_txfm_context + blk_col,
                 xd->left_txfm_context + blk_row, sub_txs, tx_size);
+
             return bits;
         }
 
@@ -5043,6 +5098,19 @@ static uint64_t cost_selected_tx_size(
     const MbModeInfo *const mbmi = &mi->mbmi;
     const BlockSize bsize = mbmi->sb_type;
     uint64_t bits = 0;
+#if ATB_RATE_UPGRADE_1
+    const TxSize tx_size = mbmi->tx_size;
+    const int tx_size_ctx = get_tx_size_context(xd);
+    const int depth = tx_size_to_depth(tx_size, bsize);
+    const int max_depths = bsize_to_max_depth(bsize);
+    const int32_t tx_size_cat = bsize_to_tx_size_cat(bsize);
+
+    assert(depth >= 0 && depth <= max_depths);
+    assert(!is_inter_block(mbmi));
+    assert(IMPLIES(is_rect_tx(tx_size), is_rect_tx_allowed(/*xd,*/ mbmi)));
+
+    bits += md_rate_estimation_ptr->tx_size_fac_bits[tx_size_cat][tx_size_ctx][depth];
+#else
     if (block_signals_txsize(bsize)) {
         const TxSize tx_size = mbmi->tx_size;
         const int tx_size_ctx = get_tx_size_context(xd);
@@ -5058,6 +5126,7 @@ static uint64_t cost_selected_tx_size(
             max_depths + 1);*/
         bits += md_rate_estimation_ptr->tx_size_fac_bits[tx_size_cat][tx_size_ctx][depth];
     }
+#endif
     return bits;
 }
 
@@ -5068,7 +5137,9 @@ static uint64_t tx_size_bits(
     TxMode              tx_mode,
     BlockSize          bsize,
     uint8_t             skip) {
+
     uint64_t bits = 0;
+
     int is_inter_tx = is_inter_block(mbmi) || is_intrabc_block(mbmi);
     //int skip = mbmi->skip;
     //int segment_id = 0;// mbmi->segment_id;
@@ -5094,7 +5165,6 @@ static uint64_t tx_size_bits(
         set_txfm_ctxs(mbmi->tx_size, xd->n8_w, xd->n8_h,
             skip && is_inter_block(mbmi), xd);
     }
-
     return bits;
 }
 
@@ -5152,6 +5222,12 @@ static INLINE void set_mi_row_col(
 
 uint64_t estimate_tx_size_bits(
     PictureControlSet       *pcsPtr,
+#if ATB_RATE_UPGRADE_0
+    ModeDecisionContext     *context_ptr,
+#endif
+#if ATB_RATE_UPGRADE_0 //--------
+    EbBool                   skip_flag,
+#endif
     uint32_t                 cu_origin_x,
     uint32_t                 cu_origin_y,
     CodingUnit               *cu_ptr,
@@ -5192,8 +5268,17 @@ uint64_t estimate_tx_size_bits(
         cm->mi_cols);
 
     MbModeInfo * mbmi = &xd->mi[0]->mbmi;
+
+#if ATB_RATE_UPGRADE_0  && !ATB_RATE_UPGRADE_1
+    memcpy(context_ptr->above_txfm_context, &(txfm_context_array->top_array[txfm_context_above_index]), (blk_geom->bwidth  >> MI_SIZE_LOG2) * sizeof(TXFM_CONTEXT));
+    memcpy(context_ptr->left_txfm_context , &(txfm_context_array->left_array[txfm_context_left_index]), (blk_geom->bheight >> MI_SIZE_LOG2) * sizeof(TXFM_CONTEXT));
+
+    xd->above_txfm_context = context_ptr->above_txfm_context;
+    xd->left_txfm_context = context_ptr->left_txfm_context;
+#else
     xd->above_txfm_context = &txfm_context_array->top_array[txfm_context_above_index];
     xd->left_txfm_context = &txfm_context_array->left_array[txfm_context_left_index];
+#endif
     mbmi->tx_size = blk_geom->txsize[tx_depth][0];
     mbmi->sb_type = blk_geom->bsize;
     uint64_t bits = tx_size_bits(
@@ -5202,19 +5287,89 @@ uint64_t estimate_tx_size_bits(
         mbmi,
         tx_mode,
         bsize,
+#if ATB_RATE_UPGRADE_0 //--------
+        skip_flag);
+#else
         0);
+#endif
 
     return bits;
 }
 #endif
 #endif
+
+
+
+#if ATB_RATE_UPGRADE_1
+uint64_t get_tx_size_bits(
+    ModeDecisionCandidateBuffer  *candidateBuffer,
+    ModeDecisionContext          *context_ptr,
+    PictureControlSet            *picture_control_set_ptr,
+    EbBool block_has_coeff,
+    EbBool is_inter) {
+
+    uint64_t tx_size_bits = 0;
+
+    uint32_t txfm_context_left_index = get_neighbor_array_unit_left_index(
+        context_ptr->txfm_context_array,
+        context_ptr->cu_origin_y);
+    uint32_t txfm_context_above_index = get_neighbor_array_unit_top_index(
+        context_ptr->txfm_context_array,
+        context_ptr->cu_origin_x);
+
+    if (block_has_coeff && block_signals_txsize(context_ptr->blk_geom->bsize)) {
+        if (is_inter) {
+            int ctx = txfm_partition_context(&(context_ptr->txfm_context_array->top_array[txfm_context_above_index]), &(context_ptr->txfm_context_array->left_array[txfm_context_left_index]), context_ptr->blk_geom->bsize, context_ptr->blk_geom->txsize[context_ptr->tx_depth][0]);
+            tx_size_bits = context_ptr->md_rate_estimation_ptr->txfm_partition_fac_bits[ctx][0];
+
+        }
+        else {
+            MacroBlockD *xd = context_ptr->cu_ptr->av1xd;
+            Av1Common  *cm = picture_control_set_ptr->parent_pcs_ptr->av1_cm;
+            TileInfo * tile = &xd->tile;
+            int32_t mi_row = context_ptr->cu_origin_y >> MI_SIZE_LOG2;
+            int32_t mi_col = context_ptr->cu_origin_x >> MI_SIZE_LOG2;
+            BlockSize bsize = context_ptr->blk_geom->bsize;
+            const int32_t bw = mi_size_wide[bsize];
+            const int32_t bh = mi_size_high[bsize];
+            uint32_t mi_stride = picture_control_set_ptr->mi_stride;
+            set_mi_row_col(
+                picture_control_set_ptr,
+                xd,
+                tile,
+                mi_row,
+                bh,
+                mi_col,
+                bw,
+                mi_stride,
+                cm->mi_rows,
+                cm->mi_cols);
+            MbModeInfo * mbmi = &xd->mi[0]->mbmi;
+            xd->above_txfm_context = &context_ptr->txfm_context_array->top_array[txfm_context_above_index];
+            xd->left_txfm_context = &context_ptr->txfm_context_array->left_array[txfm_context_left_index];
+            mbmi->tx_size = context_ptr->blk_geom->txsize[context_ptr->tx_depth][0];
+            mbmi->sb_type = context_ptr->blk_geom->bsize;
+            mbmi->use_intrabc = 0;
+            mbmi->ref_frame[0] = INTRA_FRAME;
+            tx_size_bits = cost_selected_tx_size(xd, context_ptr->md_rate_estimation_ptr);
+
+        }
+    }
+    return tx_size_bits;
+}
+#endif
+#if ATB_INTER_SUPPORT
+uint8_t allowed_tx_set_a[TX_SIZES_ALL][TX_TYPES];
+void tx_partitioning_path(
+#else
 void perform_intra_tx_partitioning(
+#endif
     ModeDecisionCandidateBuffer  *candidateBuffer,
     ModeDecisionContext          *context_ptr,
     PictureControlSet            *picture_control_set_ptr,
 #if ABILITY_TO_SKIP_TX_SEARCH_ATB
     uint32_t                      best_fastLoop_candidate_index,
-#if 0
+#if ATB_INTER_SUPPORT
     uint64_t                      ref_fast_cost,
 #endif
 #endif
@@ -5230,6 +5385,9 @@ void perform_intra_tx_partitioning(
     EbPictureBufferDesc *input_picture_ptr = picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr;
     SequenceControlSet  *sequence_control_set_ptr = (SequenceControlSet*)picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr;
     EbAsm    asm_type = sequence_control_set_ptr->encode_context_ptr->asm_type;
+#if ATB_INTER_SUPPORT
+    int32_t is_inter = (candidateBuffer->candidate_ptr->type == INTER_MODE || candidateBuffer->candidate_ptr->use_intrabc) ? EB_TRUE : EB_FALSE;
+#endif
     uint32_t tu_origin_index;
     uint64_t y_full_cost;
     uint64_t y_tu_coeff_bits;
@@ -5239,17 +5397,25 @@ void perform_intra_tx_partitioning(
     uint8_t  best_tx_depth = 0;
 
     uint64_t best_cost_search = (uint64_t)~0;
-
+#if ATB_INTER_2_DEPTH
+    TxType best_tx_type_per_depth[MAX_VARTX_DEPTH + 1][MAX_TXB_COUNT] = { DCT_DCT };
+#else
     TxType best_tx_type_depth_0 = DCT_DCT; // Track the best tx type @ depth 0 to be used @ the final stage (i.e. avoid redoing the tx type search).
+#endif
+
 #if ABILITY_TO_SKIP_TX_SEARCH_ATB
-#if 1
+#if !ATB_INTER_SUPPORT
     uint8_t  tx_search_skip_flag = picture_control_set_ptr->parent_pcs_ptr->tx_search_level != TX_SEARCH_FULL_LOOP;
 #else
-    uint8_t  tx_search_skip_flag = picture_control_set_ptr->parent_pcs_ptr->tx_search_level == TX_SEARCH_FULL_LOOP ? get_skip_tx_search_flag(
+    uint8_t  tx_search_skip_flag;
+    if(is_inter)
+        tx_search_skip_flag = picture_control_set_ptr->parent_pcs_ptr->tx_search_level == TX_SEARCH_FULL_LOOP ? get_skip_tx_search_flag(
         context_ptr->blk_geom->sq_size,
         ref_fast_cost,
         *candidateBuffer->fast_cost_ptr,
         picture_control_set_ptr->parent_pcs_ptr->tx_weight) : 1;
+    else
+        tx_search_skip_flag = picture_control_set_ptr->parent_pcs_ptr->tx_search_level != TX_SEARCH_FULL_LOOP;
 #endif
     tx_search_skip_flag = (picture_control_set_ptr->parent_pcs_ptr->skip_tx_search && best_fastLoop_candidate_index > NFL_TX_TH) ? 1 : tx_search_skip_flag;
 #endif
@@ -5261,6 +5427,9 @@ void perform_intra_tx_partitioning(
 
     // Reset depth_1 neighbor arrays
     if (end_tx_depth) {
+#if ATB_INTER_SUPPORT
+        if (!is_inter)
+#endif
         copy_neigh_arr(
             picture_control_set_ptr->md_luma_recon_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
             picture_control_set_ptr->md_tx_depth_1_luma_recon_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
@@ -5284,6 +5453,9 @@ void perform_intra_tx_partitioning(
     // Transform Depth Loop
     for (context_ptr->tx_depth = 0; context_ptr->tx_depth <= end_tx_depth; context_ptr->tx_depth++) {
         // Set recon neighbor array to be used @ intra compensation
+#if ATB_INTER_SUPPORT
+        if (!is_inter)
+#endif
         context_ptr->tx_search_luma_recon_neighbor_array =
             (context_ptr->tx_depth) ?
             picture_control_set_ptr->md_tx_depth_1_luma_recon_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX] :
@@ -5306,6 +5478,10 @@ void perform_intra_tx_partitioning(
         candidateBuffer->candidate_ptr->y_has_coeff = 0;
 
         uint16_t txb_count = context_ptr->blk_geom->txb_count[context_ptr->tx_depth];
+
+#if ATB_RATE_UPGRADE_1
+        uint32_t block_has_coeff = EB_FALSE;
+#endif
         for (context_ptr->txb_itr = 0; context_ptr->txb_itr < txb_count; context_ptr->txb_itr++) {
             uint16_t tx_org_x = context_ptr->blk_geom->tx_org_x[context_ptr->tx_depth][context_ptr->txb_itr];
             uint16_t tx_org_y = context_ptr->blk_geom->tx_org_y[context_ptr->tx_depth][context_ptr->txb_itr];
@@ -5345,6 +5521,9 @@ void perform_intra_tx_partitioning(
             uint32_t input_tu_origin_index = (context_ptr->sb_origin_x + tx_org_x + input_picture_ptr->origin_x) + ((context_ptr->sb_origin_y + tx_org_y + input_picture_ptr->origin_y) * input_picture_ptr->stride_y);
 
             // Y Prediction
+#if ATB_INTER_SUPPORT
+            if (!is_inter) {
+#endif
             av1_intra_luma_prediction(
                 context_ptr,
                 picture_control_set_ptr,
@@ -5360,7 +5539,9 @@ void perform_intra_tx_partitioning(
                 candidateBuffer->residual_ptr->stride_y,
                 context_ptr->blk_geom->tx_width[context_ptr->tx_depth][context_ptr->txb_itr],
                 context_ptr->blk_geom->tx_height[context_ptr->tx_depth][context_ptr->txb_itr]);
-
+#if ATB_INTER_SUPPORT
+            }
+#endif
             TxType best_tx_type = DCT_DCT;
 #if ABILITY_TO_SKIP_TX_SEARCH_ATB
             if (!tx_search_skip_flag) {
@@ -5369,9 +5550,53 @@ void perform_intra_tx_partitioning(
             TxType txk_end = TX_TYPES;
             uint64_t best_cost_tx_search = (uint64_t)~0;
 
+#if ATB_INTER_SUPPORT //--
+            int32_t plane = 0;
+            int32_t tx_type;
+            TxSize txSize = context_ptr->blk_geom->txsize[context_ptr->tx_depth][context_ptr->txb_itr];
+            const TxSetType tx_set_type = get_ext_tx_set_type(txSize, is_inter, picture_control_set_ptr->parent_pcs_ptr->reduced_tx_set_used);
+            int32_t allowed_tx_mask[TX_TYPES] = { 0 };  // 1: allow; 0: skip.
+            int32_t allowed_tx_num = 0;
+
+            if (picture_control_set_ptr->parent_pcs_ptr->tx_search_reduced_set == 2)
+                txk_end = 2;
+
+            // Need to have at least one transform type allowed.
+            for (tx_type = txk_start; tx_type < txk_end; ++tx_type) {
+
+                y_tu_coeff_bits = 0;
+                //if (picture_control_set_ptr->parent_pcs_ptr->tx_search_reduced_set == 2)
+                //    tx_type_index = (tx_type_index == 1) ? IDTX : tx_type_index;
+                //tx_type = (TxType)tx_type_index;
+
+                //context_ptr->three_quad_energy = 0;
+                if (tx_type != DCT_DCT) {
+                    if (is_inter) {
+                        TxSize max_tx_size = context_ptr->blk_geom->txsize[0][0];
+                        const TxSetType tx_set_type = get_ext_tx_set_type(max_tx_size, is_inter, picture_control_set_ptr->parent_pcs_ptr->reduced_tx_set_used);
+                        int32_t eset = get_ext_tx_set(max_tx_size, is_inter, picture_control_set_ptr->parent_pcs_ptr->reduced_tx_set_used);
+                        // eset == 0 should correspond to a set with only DCT_DCT and there
+                        // is no need to send the tx_type
+                        if (eset <= 0) continue;
+                        else if (av1_ext_tx_used[tx_set_type][tx_type] == 0) continue;
+                        else if (context_ptr->blk_geom->tx_height[context_ptr->tx_depth][context_ptr->txb_itr] > 32 || context_ptr->blk_geom->tx_width[context_ptr->tx_depth][context_ptr->txb_itr] > 32)  continue;
+                    }
+
+                    int32_t eset = get_ext_tx_set(context_ptr->blk_geom->txsize[context_ptr->tx_depth][context_ptr->txb_itr], is_inter, picture_control_set_ptr->parent_pcs_ptr->tx_search_reduced_set);
+                    // eset == 0 should correspond to a set with only DCT_DCT and there
+                    // is no need to send the tx_type
+                    if (eset <= 0) continue;
+                    else if (av1_ext_tx_used[tx_set_type][tx_type] == 0) continue;
+                    else if (context_ptr->blk_geom->tx_height[context_ptr->tx_depth][context_ptr->txb_itr] > 32 || context_ptr->blk_geom->tx_width[context_ptr->tx_depth][context_ptr->txb_itr] > 32) continue;
+                }
+
+                if (picture_control_set_ptr->parent_pcs_ptr->tx_search_reduced_set)
+                    if (!allowed_tx_set_a[context_ptr->blk_geom->txsize[context_ptr->tx_depth][context_ptr->txb_itr]][tx_type]) continue;
+#else
             const TxSetType tx_set_type = get_ext_tx_set_type(context_ptr->blk_geom->txsize[context_ptr->tx_depth][context_ptr->txb_itr], 0, 0); // assumes INTRA
 
             for (int32_t tx_type = txk_start; tx_type < txk_end; ++tx_type) {
+
                 y_tu_coeff_bits = 0;
 
                 int32_t eset = get_ext_tx_set(context_ptr->blk_geom->txsize[context_ptr->tx_depth][context_ptr->txb_itr], 0, 0); // assumes INTRA
@@ -5380,7 +5605,12 @@ void perform_intra_tx_partitioning(
                 if (eset <= 0) continue;
                 else if (av1_ext_tx_used[tx_set_type][tx_type] == 0) continue;
                 else if (context_ptr->blk_geom->tx_height[context_ptr->tx_depth][context_ptr->txb_itr] > 32 || context_ptr->blk_geom->tx_width[context_ptr->tx_depth][context_ptr->txb_itr] > 32) continue;
-
+#endif
+#if ATB_INTER_SUPPORT // transform_type_uv
+                // For Inter blocks, transform type of chroma follows luma transfrom type
+                if (is_inter)
+                    candidateBuffer->candidate_ptr->transform_type_uv = (context_ptr->txb_itr == 0) ? candidateBuffer->candidate_ptr->transform_type[context_ptr->txb_itr] : candidateBuffer->candidate_ptr->transform_type_uv;
+#endif
                 // Y: T Q iQ
                 av1_estimate_transform(
                     &(((int16_t*)candidateBuffer->residual_ptr->buffer_y)[tu_origin_index]),
@@ -5529,14 +5759,23 @@ void perform_intra_tx_partitioning(
                 }
             }
 
+#if ATB_INTER_2_DEPTH
+            // track best Tx Type per tx_depth/txb_itr
+            best_tx_type_per_depth[context_ptr->tx_depth][context_ptr->txb_itr] = best_tx_type;
+#else
             // Record the best tx type @ depth 0
             best_tx_type_depth_0 = (context_ptr->tx_depth == 0) ? best_tx_type : best_tx_type_depth_0;
+#endif
 #if ABILITY_TO_SKIP_TX_SEARCH_ATB
             }
 #endif
             //  Best Tx Type Pass
             candidateBuffer->candidate_ptr->transform_type[context_ptr->txb_itr] = best_tx_type;
-
+#if ATB_INTER_SUPPORT // transform_type_uv
+            // For Inter blocks, transform type of chroma follows luma transfrom type
+            if (is_inter)
+                candidateBuffer->candidate_ptr->transform_type_uv = (context_ptr->txb_itr == 0) ? candidateBuffer->candidate_ptr->transform_type[context_ptr->txb_itr] : candidateBuffer->candidate_ptr->transform_type_uv;
+#endif
             y_tu_coeff_bits = 0;
 
             // Y: T Q iQ
@@ -5715,9 +5954,12 @@ void perform_intra_tx_partitioning(
             y_full_distortion[DIST_CALC_PREDICTION] += tuFullDistortion[0][DIST_CALC_PREDICTION];
 
             txb_1d_offset += context_ptr->blk_geom->tx_width[context_ptr->tx_depth][context_ptr->txb_itr] * context_ptr->blk_geom->tx_height[context_ptr->tx_depth][context_ptr->txb_itr];
-
             if (context_ptr->tx_depth)
+
             {
+#if ATB_INTER_SUPPORT
+                if (!is_inter)
+#endif
                 tx_search_update_recon_sample_neighbor_array(
                     context_ptr->tx_search_luma_recon_neighbor_array,
                     candidateBuffer->recon_ptr,
@@ -5766,14 +6008,41 @@ void perform_intra_tx_partitioning(
 #endif
 #endif
             }
-} // Transform Loop
+#if ATB_RATE_UPGRADE_1
+            if (y_has_coeff)
+                block_has_coeff = EB_TRUE;
+#endif
+     } // Transform Loop
 
+#if ATB_RATE_UPGRADE_1
+     uint64_t tx_size_bits = 0;
+     if (picture_control_set_ptr->parent_pcs_ptr->tx_mode == TX_MODE_SELECT)
+         tx_size_bits = get_tx_size_bits(
+             candidateBuffer,
+             context_ptr,
+             picture_control_set_ptr,
+             block_has_coeff,
+             is_inter);
+
+     uint64_t cost = RDCOST(context_ptr->full_lambda, ((*y_coeff_bits) + tx_size_bits), y_full_distortion[DIST_CALC_RESIDUAL]);
+#else
 #if ATB_RATE
         uint64_t tx_size_bits = 0;
-#if !SHUT_TX_SIZE_RATE
+#if !SHUT_TX_SIZE_RATE || ATB_RATE_UPGRADE_0
+#if 0//ATB_RATE_UPGRADE_0 //--------
+        if(1)
+        //if (/*context_ptr->tx_depth && is_inter &&*/ candidateBuffer->candidate_ptr->y_has_coeff)
+#else
         if (candidateBuffer->candidate_ptr->y_has_coeff)
+#endif
             tx_size_bits = estimate_tx_size_bits(
                 picture_control_set_ptr,
+#if ATB_RATE_UPGRADE_0
+                context_ptr,
+#endif      
+#if ATB_RATE_UPGRADE_0 //--------
+                (candidateBuffer->candidate_ptr->y_has_coeff) ? 0 : 1,
+#endif
                 context_ptr->cu_origin_x,
                 context_ptr->cu_origin_y,
                 context_ptr->cu_ptr,
@@ -5786,7 +6055,7 @@ void perform_intra_tx_partitioning(
 #else
         uint64_t cost = RDCOST(context_ptr->full_lambda, (*y_coeff_bits), y_full_distortion[DIST_CALC_RESIDUAL]);
 #endif
-
+#endif
         if (cost < best_cost_search) {
             best_cost_search = cost;
             best_tx_depth = context_ptr->tx_depth;
@@ -5804,8 +6073,11 @@ void perform_intra_tx_partitioning(
 
     // ATB Recon
     context_ptr->tx_depth = candidateBuffer->candidate_ptr->tx_depth = best_tx_depth;
-
+#if ATB_INTER_SUPPORT
+    if ((context_ptr->tx_depth == 0 && end_tx_depth >= 1) || (context_ptr->tx_depth == 1 && end_tx_depth == 2)) {
+#else
     if (context_ptr->tx_depth == 0) {
+#endif
         // Set recon neighbor array to be used @ intra compensation
         context_ptr->tx_search_luma_recon_neighbor_array = picture_control_set_ptr->md_luma_recon_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX];
 
@@ -5858,25 +6130,45 @@ void perform_intra_tx_partitioning(
 
             uint32_t input_tu_origin_index = (context_ptr->sb_origin_x + tx_org_x + input_picture_ptr->origin_x) + ((context_ptr->sb_origin_y + tx_org_y + input_picture_ptr->origin_y) * input_picture_ptr->stride_y);
 
-            // Y Prediction
-            av1_intra_luma_prediction(
-                context_ptr,
-                picture_control_set_ptr,
-                candidateBuffer);
+#if ATB_INTER_SUPPORT
+            if (!is_inter) {
+#endif
+                // Y Prediction
+                av1_intra_luma_prediction(
+                    context_ptr,
+                    picture_control_set_ptr,
+                    candidateBuffer);
 
-            // Y Residual
-            ResidualKernel(
-                &(input_picture_ptr->buffer_y[input_tu_origin_index]),
-                input_picture_ptr->stride_y,
-                &(candidateBuffer->prediction_ptr->buffer_y[tu_origin_index]),
-                candidateBuffer->prediction_ptr->stride_y,
-                &(((int16_t*)candidateBuffer->residual_ptr->buffer_y)[tu_origin_index]),
-                candidateBuffer->residual_ptr->stride_y,
-                context_ptr->blk_geom->tx_width[context_ptr->tx_depth][context_ptr->txb_itr],
-                context_ptr->blk_geom->tx_height[context_ptr->tx_depth][context_ptr->txb_itr]);
+                // Y Residual
+                ResidualKernel(
+                    &(input_picture_ptr->buffer_y[input_tu_origin_index]),
+                    input_picture_ptr->stride_y,
+                    &(candidateBuffer->prediction_ptr->buffer_y[tu_origin_index]),
+                    candidateBuffer->prediction_ptr->stride_y,
+                    &(((int16_t*)candidateBuffer->residual_ptr->buffer_y)[tu_origin_index]),
+                    candidateBuffer->residual_ptr->stride_y,
+                    context_ptr->blk_geom->tx_width[context_ptr->tx_depth][context_ptr->txb_itr],
+                    context_ptr->blk_geom->tx_height[context_ptr->tx_depth][context_ptr->txb_itr]);
+#if ATB_INTER_SUPPORT
+            }
+#endif
+#if ATB_INTER_2_DEPTH
+            // Read best_tx_typ from 1st pass
+            candidateBuffer->candidate_ptr->transform_type[context_ptr->txb_itr] = best_tx_type_per_depth[context_ptr->tx_depth][context_ptr->txb_itr];
+            // For Inter blocks, transform type of chroma follows luma transfrom type
+            if (is_inter)
+                candidateBuffer->candidate_ptr->transform_type_uv = (context_ptr->txb_itr == 0) ? best_tx_type_per_depth[context_ptr->tx_depth][context_ptr->txb_itr] : candidateBuffer->candidate_ptr->transform_type_uv;
 
+            
+#else
             // Get the depth 0 best tx type
             candidateBuffer->candidate_ptr->transform_type[context_ptr->txb_itr] = best_tx_type_depth_0;
+#if ATB_INTER_SUPPORT // transform_type_uv
+            // For Inter blocks, transform type of chroma follows luma transfrom type
+            if (is_inter)
+                candidateBuffer->candidate_ptr->transform_type_uv = best_tx_type_depth_0;
+#endif
+#endif
 
             y_tu_coeff_bits = 0;
 
@@ -6404,13 +6696,31 @@ void md_stage_2(
 #else
         if (picture_control_set_ptr->parent_pcs_ptr->atb_mode && end_tx_depth && candidateBuffer->candidate_ptr->type == INTRA_MODE && candidateBuffer->candidate_ptr->use_intrabc == 0) {
 #endif
+#if ATB_INTER_SUPPORT
+            int32_t is_inter = (candidateBuffer->candidate_ptr->type == INTER_MODE || candidateBuffer->candidate_ptr->use_intrabc) ? EB_TRUE : EB_FALSE;
+            //Y Residual: residual for INTRA is computed inside the TU loop
+            if (is_inter)
+                //Y Residual
+                ResidualKernel(
+                    &(input_picture_ptr->buffer_y[inputOriginIndex]),
+                    input_picture_ptr->stride_y,
+                    &(candidateBuffer->prediction_ptr->buffer_y[cuOriginIndex]),
+                    candidateBuffer->prediction_ptr->stride_y/* 64*/,
+                    &(((int16_t*)candidateBuffer->residual_ptr->buffer_y)[cuOriginIndex]),
+                    candidateBuffer->residual_ptr->stride_y,
+                    context_ptr->blk_geom->bwidth,
+                    context_ptr->blk_geom->bheight);
+
+            tx_partitioning_path(
+#else
             perform_intra_tx_partitioning(
+#endif
                 candidateBuffer,
                 context_ptr,
                 picture_control_set_ptr,
 #if ABILITY_TO_SKIP_TX_SEARCH_ATB
                 best_fastLoop_candidate_index,
-#if 0
+#if ATB_INTER_SUPPORT
                 ref_fast_cost,
 #endif
 #endif
@@ -6977,6 +7287,7 @@ void AV1PerformFullLoop(
             candidate_ptr->y_has_coeff = 0;
         }
 #endif
+
 #if ATB_MD
 #if INCOMPLETE_SB_FIX
         uint8_t end_tx_depth = 0;
@@ -7004,21 +7315,44 @@ void AV1PerformFullLoop(
 #if TBX_SPLIT_CAP
         end_tx_depth = picture_control_set_ptr->parent_pcs_ptr->enable_skip_atb && skip_atb ? 0 : end_tx_depth;
 #endif
+
         // Transform partitioning path (INTRA Luma)
 #if APPLY_TX_SEARCH_SHORTCUTS_TO_ATB
         uint8_t  atb_search_skip_fag = get_skip_atb_flag(ref_fast_cost, *candidateBuffer->fast_cost_ptr, picture_control_set_ptr->parent_pcs_ptr->atb_weight);
         atb_search_skip_fag = (picture_control_set_ptr->parent_pcs_ptr->skip_tx_search && best_fastLoop_candidate_index > NFL_TX_TH) ? 1 : atb_search_skip_fag;
         if (picture_control_set_ptr->parent_pcs_ptr->atb_mode && end_tx_depth && candidateBuffer->candidate_ptr->type == INTRA_MODE && candidateBuffer->candidate_ptr->use_intrabc == 0 && atb_search_skip_fag == 0) {
 #else
+#if ATB_INTER_SUPPORT
+        if (picture_control_set_ptr->parent_pcs_ptr->atb_mode && end_tx_depth && candidateBuffer->candidate_ptr->use_intrabc == 0) {
+#else
         if (picture_control_set_ptr->parent_pcs_ptr->atb_mode && end_tx_depth && candidateBuffer->candidate_ptr->type == INTRA_MODE && candidateBuffer->candidate_ptr->use_intrabc == 0) {
 #endif
+#endif
+#if ATB_INTER_SUPPORT
+            int32_t is_inter = (candidateBuffer->candidate_ptr->type == INTER_MODE || candidateBuffer->candidate_ptr->use_intrabc) ? EB_TRUE : EB_FALSE;
+            //Y Residual: residual for INTRA is computed inside the TU loop
+            if (is_inter)
+                //Y Residual
+                ResidualKernel(
+                    &(input_picture_ptr->buffer_y[inputOriginIndex]),
+                    input_picture_ptr->stride_y,
+                    &(candidateBuffer->prediction_ptr->buffer_y[cuOriginIndex]),
+                    candidateBuffer->prediction_ptr->stride_y/* 64*/,
+                    &(((int16_t*)candidateBuffer->residual_ptr->buffer_y)[cuOriginIndex]),
+                    candidateBuffer->residual_ptr->stride_y,
+                    context_ptr->blk_geom->bwidth,
+                    context_ptr->blk_geom->bheight);
+
+            tx_partitioning_path(
+#else
             perform_intra_tx_partitioning(
+#endif
                 candidateBuffer,
                 context_ptr,
                 picture_control_set_ptr,
 #if ABILITY_TO_SKIP_TX_SEARCH_ATB
                 best_fastLoop_candidate_index,
-#if 0
+#if ATB_INTER_SUPPORT
                 ref_fast_cost,
 #endif
 #endif
