@@ -582,12 +582,16 @@ static void read_stat_from_file(
         printf("%d\t%d\n", picture_control_set_ptr->picture_number, picture_control_set_ptr->stat_struct.first_pass_pic_num);
     }
 #endif
-    uint32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
     uint64_t referenced_area_avg = 0;
+#if TWO_PASS_128x128
+    for (int sb_addr = 0; sb_addr < sequence_control_set_ptr->sb_tot_cnt; ++sb_addr)
+        referenced_area_avg += (picture_control_set_ptr->stat_struct.referenced_area[sb_addr] / sequence_control_set_ptr->sb_geom[sb_addr].width / sequence_control_set_ptr->sb_geom[sb_addr].height);
+    referenced_area_avg /= sequence_control_set_ptr->sb_tot_cnt;
+#else
     for (int sb_addr = 0; sb_addr < sequence_control_set_ptr->sb_total_count; ++sb_addr)
         referenced_area_avg += (picture_control_set_ptr->stat_struct.referenced_area[sb_addr] / sequence_control_set_ptr->sb_params_array[sb_addr].width / sequence_control_set_ptr->sb_params_array[sb_addr].height);
-    
     referenced_area_avg /= sequence_control_set_ptr->sb_total_count;
+#endif
     picture_control_set_ptr->referenced_area_avg = referenced_area_avg;
     eb_release_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
 }

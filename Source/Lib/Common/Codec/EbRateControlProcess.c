@@ -3522,7 +3522,11 @@ static int adaptive_qindex_calc(
     uint64_t referenced_area_has_non_zero = 0;
     uint64_t referenced_area_max = 64;
     if (sequence_control_set_ptr->static_config.use_input_stat_file) {
-        for (int sb_addr = 0; sb_addr < sequence_control_set_ptr->sb_total_count; ++sb_addr) 
+#if TWO_PASS_128x128
+        for (int sb_addr = 0; sb_addr < sequence_control_set_ptr->sb_tot_cnt; ++sb_addr)
+#else
+        for (int sb_addr = 0; sb_addr < sequence_control_set_ptr->sb_total_count; ++sb_addr)
+#endif
             referenced_area_has_non_zero += picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[sb_addr];
     }
 #endif
@@ -3752,7 +3756,11 @@ static void sb_qp_derivation(
             ((kf_high_motion_minq[active_worst_quality] - kf_low_motion_minq[active_worst_quality] + 2) >> 2) / 2 :
             ((arfgf_high_motion_minq[active_worst_quality] - arfgf_low_motion_minq[active_worst_quality] + 2) >> 2) / 2;
         if (sequence_control_set_ptr->static_config.use_input_stat_file) {
+#if TWO_PASS_128x128
+            for (int sb_addr = 0; sb_addr < sequence_control_set_ptr->sb_tot_cnt; ++sb_addr)
+#else
             for (sb_addr = 0; sb_addr < sequence_control_set_ptr->sb_total_count; ++sb_addr)
+#endif
                 referenced_area_has_non_zero += picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[sb_addr];
 
             // Calculate the QP per frames
@@ -3809,11 +3817,13 @@ static void sb_qp_derivation(
                         picture_control_set_ptr->parent_pcs_ptr->variance[me_sb_addr_2][ME_TIER_ZERO_PU_64x64] +
                         picture_control_set_ptr->parent_pcs_ptr->variance[me_sb_addr_3][ME_TIER_ZERO_PU_64x64] + 2) >> 2;
 #if TWO_PASS && !DISABLE_1PASS_QPS  
+#if !TWO_PASS_128x128
                 referenced_area_sb =
                     (picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[me_sb_addr_0]/  sequence_control_set_ptr->sb_params_array[me_sb_addr_0].width / sequence_control_set_ptr->sb_params_array[me_sb_addr_0].height +
                         picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[me_sb_addr_1] / sequence_control_set_ptr->sb_params_array[me_sb_addr_1].width / sequence_control_set_ptr->sb_params_array[me_sb_addr_1].height +
                         picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[me_sb_addr_2] / sequence_control_set_ptr->sb_params_array[me_sb_addr_2].width / sequence_control_set_ptr->sb_params_array[me_sb_addr_2].height +
                         picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[me_sb_addr_3] / sequence_control_set_ptr->sb_params_array[me_sb_addr_3].width / sequence_control_set_ptr->sb_params_array[me_sb_addr_3].height + 2) >> 2;
+#endif
 
                 me_distortion =
                     (picture_control_set_ptr->parent_pcs_ptr->rc_me_distortion[me_sb_addr_0] +
@@ -3827,11 +3837,17 @@ static void sb_qp_derivation(
                 non_moving_index_sb = picture_control_set_ptr->parent_pcs_ptr->non_moving_index_array[sb_addr];
                 variance_sb         = picture_control_set_ptr->parent_pcs_ptr->variance[sb_addr][ME_TIER_ZERO_PU_64x64];
 #if TWO_PASS && !DISABLE_1PASS_QPS 
+#if !TWO_PASS_128x128
                 referenced_area_sb = picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[sb_addr] /  sequence_control_set_ptr->sb_params_array[sb_addr].width / sequence_control_set_ptr->sb_params_array[sb_addr].height;
+#endif
                 me_distortion = picture_control_set_ptr->parent_pcs_ptr->rc_me_distortion[sb_addr]>> 8;
 #endif
             }
 #if TWO_PASS && !DISABLE_1PASS_QPS 
+#if TWO_PASS_128x128
+            referenced_area_sb =
+                picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[sb_addr] / sequence_control_set_ptr->sb_geom[sb_addr].width / sequence_control_set_ptr->sb_geom[sb_addr].height;
+#endif
             if (sequence_control_set_ptr->static_config.use_input_stat_file && referenced_area_has_non_zero) {
                 delta_qp = 0;
                 if (picture_control_set_ptr->slice_type == 2 ) {

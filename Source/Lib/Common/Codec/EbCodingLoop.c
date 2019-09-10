@@ -4338,7 +4338,11 @@ EB_EXTERN void av1_encode_pass(
                                         uint16_t origin_y = MAX(0, (int16_t)context_ptr->cu_origin_y + (context_ptr->mv_unit.mv[REF_LIST_0].y >> 3));
                                         uint16_t sb_origin_x = origin_x / context_ptr->sb_sz * context_ptr->sb_sz;
                                         uint16_t sb_origin_y = origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
+#if TWO_PASS_128x128
+                                        uint32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + context_ptr->sb_sz - 1) / context_ptr->sb_sz;
+#else
                                         uint32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
+#endif
                                         uint16_t sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
                                         uint16_t width, height, weight;
                                         weight = 1 << (4 - picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index);
@@ -4461,7 +4465,11 @@ EB_EXTERN void av1_encode_pass(
                                             uint16_t origin_y = MAX(0, (int16_t)context_ptr->cu_origin_y + (context_ptr->mv_unit.mv[REF_LIST_0].y >> 3));
                                             uint16_t sb_origin_x = origin_x / context_ptr->sb_sz * context_ptr->sb_sz;
                                             uint16_t sb_origin_y = origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
+#if TWO_PASS_128x128
+                                            uint32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + context_ptr->sb_sz - 1) / context_ptr->sb_sz;
+#else
                                             uint32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
+#endif
                                             uint16_t sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y/ context_ptr->sb_sz);
                                             uint16_t width, height, weight;
                                             weight = 1<<(4 - picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index);
@@ -4507,7 +4515,11 @@ EB_EXTERN void av1_encode_pass(
                                         uint16_t origin_y = MAX(0, (int16_t)context_ptr->cu_origin_y + (context_ptr->mv_unit.mv[REF_LIST_1].y >> 3));
                                         uint16_t sb_origin_x = origin_x / context_ptr->sb_sz * context_ptr->sb_sz;
                                         uint16_t sb_origin_y = origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
+#if TWO_PASS_128x128
+                                        uint32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + context_ptr->sb_sz - 1) / context_ptr->sb_sz;
+#else
                                         uint32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
+#endif
                                         uint16_t sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
                                         uint16_t width, height, weight;
                                         weight = 1 << (4 - picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index);
