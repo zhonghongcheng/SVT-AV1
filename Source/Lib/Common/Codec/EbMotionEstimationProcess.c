@@ -303,9 +303,15 @@ EbErrorType signal_derivation_me_kernel_oq(
         else
             context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH;
     else
+#if m3_me_search_method
+        context_ptr->me_context_ptr->me_search_method = (picture_control_set_ptr->enc_mode <= ENC_M4) ?
+        FULL_SAD_SEARCH :
+        SUB_SAD_SEARCH;
+#else
         context_ptr->me_context_ptr->me_search_method = (picture_control_set_ptr->enc_mode <= ENC_M3) ?
             FULL_SAD_SEARCH :
             SUB_SAD_SEARCH;
+#endif
 #else
     context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH  ;
 #endif
@@ -501,9 +507,15 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
         else
             context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH;
     else
+#if m3_me_search_method
+        context_ptr->me_context_ptr->me_search_method = (picture_control_set_ptr->enc_mode <= ENC_M4) ?
+        FULL_SAD_SEARCH :
+        SUB_SAD_SEARCH;
+#else
         context_ptr->me_context_ptr->me_search_method = (picture_control_set_ptr->enc_mode <= ENC_M3) ?
             FULL_SAD_SEARCH :
             SUB_SAD_SEARCH;
+#endif
     return return_error;
     };
 #endif

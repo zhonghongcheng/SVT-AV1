@@ -39,11 +39,24 @@ extern "C" {
 #define M1_0_CANDIDATE               1
 #define M3_0_CANDIDATE               1
 
+#define M3_uni_3x3                  0
+#define M3_bi_3x3                   0
+#define M3_trellis                  0
+#define m3_qfp                      0
+#define m3_me_search_method         0
+#define m3_depth                    0
+#define m3_nsq                      0
+#define m3_it_search                0
+#define m3_loop_filter              0
+#define m3_ref_count                0
+#define m3_sb_size                  0
+
 // Better BDR-Speed trade-off M0
 #define SKIP_ATB_OFF                 1
 #define NEW_NEAREST_NEW_M1_NREF      1
 #define M1_ESTIMATE_INTRA_BASE       1
 #define NSQ_TABLES_NREF              1
+
 
 // Better BDR-Speed trade-off M0-M1
 #define FI_INTRA_BASE                1

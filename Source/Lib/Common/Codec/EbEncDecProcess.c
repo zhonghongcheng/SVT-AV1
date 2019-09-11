@@ -1457,12 +1457,20 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         else
             context_ptr->unipred3x3_injection = 0;
 #if M3_0_CANDIDATE
+#if M3_uni_3x3
+    else if (picture_control_set_ptr->enc_mode <= ENC_M4)
+#else
     else if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#endif
 #else
     else if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #endif
         context_ptr->unipred3x3_injection = 1;
+#if M3_uni_3x3
+    else if (picture_control_set_ptr->enc_mode <= ENC_M5)
+#else
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
+#endif
         context_ptr->unipred3x3_injection = 2;
     else
         context_ptr->unipred3x3_injection = 0;
@@ -1483,7 +1491,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->bipred3x3_injection = 2;
     else
         context_ptr->bipred3x3_injection = 0;
-
+#if M3_bi_3x3
+    context_ptr->bipred3x3_injection = 1;
+#endif
 #if PREDICTIVE_ME
     // Level                Settings
     // 0                    Level 0: OFF
@@ -1565,7 +1575,12 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
     // Derive Trellis Quant Coeff Optimization Flag
 #if M3_0_CANDIDATE
+#if M3_trellis
+    if (picture_control_set_ptr->enc_mode <= ENC_M4)
+#else
+
     if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#endif
 #else
     if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #endif
