@@ -1453,7 +1453,7 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
             picture_control_set_ptr->intra_pred_mode = 4;
 #if M3_INTRA_PRED_NBASE
-    else if (picture_control_set_ptr->enc_mode <= ENC_M2 && picture_control_set_ptr->temporal_layer_index == 0)
+    else if ((picture_control_set_ptr->enc_mode <= ENC_M1) || (picture_control_set_ptr->enc_mode <= ENC_M2 && picture_control_set_ptr->temporal_layer_index == 0))
 #else
     else if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #endif
