@@ -245,6 +245,16 @@ void mode_decision_update_neighbor_arrays(
                 context_ptr->blk_geom->tx_height[context_ptr->cu_ptr->tx_depth][txb_itr],
                 NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
 #endif
+#if ATB_FIX_DEPTH_2_PATH
+            neighbor_array_unit_mode_write(
+                picture_control_set_ptr->md_tx_depth_2_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
+                (uint8_t*)&dc_sign_level_coeff,
+                context_ptr->sb_origin_x + context_ptr->blk_geom->tx_org_x[context_ptr->cu_ptr->tx_depth][txb_itr],
+                context_ptr->sb_origin_y + context_ptr->blk_geom->tx_org_y[context_ptr->cu_ptr->tx_depth][txb_itr],
+                context_ptr->blk_geom->tx_width[context_ptr->cu_ptr->tx_depth][txb_itr],
+                context_ptr->blk_geom->tx_height[context_ptr->cu_ptr->tx_depth][txb_itr],
+                NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
+#endif
         }
     }
 
@@ -597,7 +607,16 @@ void copy_neighbour_arrays(
         blk_geom->bheight,
         NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
 #endif
-
+#if ATB_FIX_DEPTH_2_PATH
+    copy_neigh_arr(
+        picture_control_set_ptr->md_tx_depth_2_luma_dc_sign_level_coeff_neighbor_array[src_idx],
+        picture_control_set_ptr->md_tx_depth_2_luma_dc_sign_level_coeff_neighbor_array[dst_idx],
+        blk_org_x,
+        blk_org_y,
+        blk_geom->bwidth,
+        blk_geom->bheight,
+        NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
+#endif
     if (blk_geom->has_uv && context_ptr->chroma_level <= CHROMA_MODE_1) {
         copy_neigh_arr(
             picture_control_set_ptr->md_cb_dc_sign_level_coeff_neighbor_array[src_idx],
@@ -5098,7 +5117,7 @@ static uint64_t cost_selected_tx_size(
     const MbModeInfo *const mbmi = &mi->mbmi;
     const BlockSize bsize = mbmi->sb_type;
     uint64_t bits = 0;
-#if ATB_RATE_UPGRADE_1
+#if ATB_RATE_UPGRADE_1 && !ATB_SB_8x8_PATH
     const TxSize tx_size = mbmi->tx_size;
     const int tx_size_ctx = get_tx_size_context(xd);
     const int depth = tx_size_to_depth(tx_size, bsize);
@@ -5224,8 +5243,7 @@ uint64_t estimate_tx_size_bits(
     PictureControlSet       *pcsPtr,
 #if ATB_RATE_UPGRADE_0
     ModeDecisionContext     *context_ptr,
-#endif
-#if ATB_RATE_UPGRADE_0 //--------
+    ModeDecisionCandidate   *candidate_ptr,
     EbBool                   skip_flag,
 #endif
     uint32_t                 cu_origin_x,
@@ -5269,7 +5287,7 @@ uint64_t estimate_tx_size_bits(
 
     MbModeInfo * mbmi = &xd->mi[0]->mbmi;
 
-#if ATB_RATE_UPGRADE_0  && !ATB_RATE_UPGRADE_1
+#if ATB_RATE_UPGRADE_0
     memcpy(context_ptr->above_txfm_context, &(txfm_context_array->top_array[txfm_context_above_index]), (blk_geom->bwidth  >> MI_SIZE_LOG2) * sizeof(TXFM_CONTEXT));
     memcpy(context_ptr->left_txfm_context , &(txfm_context_array->left_array[txfm_context_left_index]), (blk_geom->bheight >> MI_SIZE_LOG2) * sizeof(TXFM_CONTEXT));
 
@@ -5281,6 +5299,11 @@ uint64_t estimate_tx_size_bits(
 #endif
     mbmi->tx_size = blk_geom->txsize[tx_depth][0];
     mbmi->sb_type = blk_geom->bsize;
+#if ATB_RATE_UPGRADE_0
+    mbmi->use_intrabc = candidate_ptr->use_intrabc;
+    mbmi->ref_frame[0] = candidate_ptr->ref_frame_type;
+    mbmi->tx_depth = tx_depth;
+#endif
     uint64_t bits = tx_size_bits(
         md_rate_estimation_ptr,
         xd,
@@ -5305,6 +5328,7 @@ uint64_t get_tx_size_bits(
     ModeDecisionCandidateBuffer  *candidateBuffer,
     ModeDecisionContext          *context_ptr,
     PictureControlSet            *picture_control_set_ptr,
+    uint8_t tx_depth,
     EbBool block_has_coeff,
     EbBool is_inter) {
 
@@ -5316,14 +5340,76 @@ uint64_t get_tx_size_bits(
     uint32_t txfm_context_above_index = get_neighbor_array_unit_top_index(
         context_ptr->txfm_context_array,
         context_ptr->cu_origin_x);
-
+#if ATB_SB_8x8_PATH
+#if ATB_SB_SKIP_PATH
+    {
+#else
+    if (block_has_coeff) {
+#endif
+#else
     if (block_has_coeff && block_signals_txsize(context_ptr->blk_geom->bsize)) {
+#endif
+#if 1
+        tx_size_bits = estimate_tx_size_bits(
+            picture_control_set_ptr,
+            context_ptr,
+            candidateBuffer->candidate_ptr,
+            block_has_coeff ? 0 : 1,
+            context_ptr->cu_origin_x,
+            context_ptr->cu_origin_y,
+            context_ptr->cu_ptr,
+            context_ptr->blk_geom,
+            context_ptr->txfm_context_array,
+            tx_depth,
+            context_ptr->md_rate_estimation_ptr);
+        //printf("%d\t%d\t%d\t%d\t%d\n", picture_control_set_ptr->picture_number, context_ptr->cu_origin_x, context_ptr->cu_origin_y, is_inter, tx_size_bits);
+#else
         if (is_inter) {
+#if 1
+
+            if (picture_control_set_ptr->picture_number == 16 &&
+                context_ptr->cu_origin_x == 0 &&
+                context_ptr->cu_origin_y == 28 &&
+                is_inter &&
+                context_ptr->blk_geom->bsize == 17)
+                printf("");
+
+
+            tx_size_bits = estimate_tx_size_bits(
+                picture_control_set_ptr,
+                context_ptr,
+                candidateBuffer->candidate_ptr,
+                block_has_coeff ? 0 : 1,
+                context_ptr->cu_origin_x,
+                context_ptr->cu_origin_y,
+                context_ptr->cu_ptr,
+                context_ptr->blk_geom,
+                context_ptr->txfm_context_array,
+                context_ptr->tx_depth,
+                context_ptr->md_rate_estimation_ptr);
+            
+#else
             int ctx = txfm_partition_context(&(context_ptr->txfm_context_array->top_array[txfm_context_above_index]), &(context_ptr->txfm_context_array->left_array[txfm_context_left_index]), context_ptr->blk_geom->bsize, context_ptr->blk_geom->txsize[context_ptr->tx_depth][0]);
             tx_size_bits = context_ptr->md_rate_estimation_ptr->txfm_partition_fac_bits[ctx][0];
-
+#endif
+            printf("%d\t%d\t%d\t%d\t%d\t%d\n", picture_control_set_ptr->picture_number, context_ptr->cu_origin_x, context_ptr->cu_origin_y, is_inter, context_ptr->blk_geom->bsize, tx_size_bits);
         }
         else {
+#if 1
+            tx_size_bits = estimate_tx_size_bits(
+                picture_control_set_ptr,
+                context_ptr,
+                candidateBuffer->candidate_ptr,
+                block_has_coeff ? 0 : 1,
+                context_ptr->cu_origin_x,
+                context_ptr->cu_origin_y,
+                context_ptr->cu_ptr,
+                context_ptr->blk_geom,
+                context_ptr->txfm_context_array,
+                context_ptr->tx_depth,
+                context_ptr->md_rate_estimation_ptr);
+            //printf("%d\t%d\t%d\t%d\t%d\n", picture_control_set_ptr->picture_number, context_ptr->cu_origin_x, context_ptr->cu_origin_y, is_inter, tx_size_bits);
+#else
             MacroBlockD *xd = context_ptr->cu_ptr->av1xd;
             Av1Common  *cm = picture_control_set_ptr->parent_pcs_ptr->av1_cm;
             TileInfo * tile = &xd->tile;
@@ -5352,8 +5438,9 @@ uint64_t get_tx_size_bits(
             mbmi->use_intrabc = 0;
             mbmi->ref_frame[0] = INTRA_FRAME;
             tx_size_bits = cost_selected_tx_size(xd, context_ptr->md_rate_estimation_ptr);
-
+#endif
         }
+#endif
     }
     return tx_size_bits;
 }
@@ -5397,12 +5484,11 @@ void perform_intra_tx_partitioning(
     uint8_t  best_tx_depth = 0;
 
     uint64_t best_cost_search = (uint64_t)~0;
-#if ATB_INTER_2_DEPTH
+#if ATB_FIX_DEPTH_2_PATH
     TxType best_tx_type_per_depth[MAX_VARTX_DEPTH + 1][MAX_TXB_COUNT] = { DCT_DCT };
 #else
     TxType best_tx_type_depth_0 = DCT_DCT; // Track the best tx type @ depth 0 to be used @ the final stage (i.e. avoid redoing the tx type search).
 #endif
-
 #if ABILITY_TO_SKIP_TX_SEARCH_ATB
 #if !ATB_INTER_SUPPORT
     uint8_t  tx_search_skip_flag = picture_control_set_ptr->parent_pcs_ptr->tx_search_level != TX_SEARCH_FULL_LOOP;
@@ -5438,6 +5524,18 @@ void perform_intra_tx_partitioning(
             context_ptr->blk_geom->bwidth,
             context_ptr->blk_geom->bheight,
             NEIGHBOR_ARRAY_UNIT_FULL_MASK);
+#if ATB_FIX_DEPTH_2_PATH
+        if (end_tx_depth == 2)
+            copy_neigh_arr(
+                picture_control_set_ptr->md_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
+                picture_control_set_ptr->md_tx_depth_2_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
+                context_ptr->sb_origin_x + context_ptr->blk_geom->origin_x,
+                context_ptr->sb_origin_y + context_ptr->blk_geom->origin_y,
+                context_ptr->blk_geom->bwidth,
+                context_ptr->blk_geom->bheight,
+                NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
+
+#endif
 #if ATB_DC_CONTEXT_SUPPORT_2
         copy_neigh_arr(
             picture_control_set_ptr->md_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
@@ -5464,7 +5562,13 @@ void perform_intra_tx_partitioning(
 #if ATB_DC_CONTEXT_SUPPORT_2
         // Set luma dc sign level coeff
         context_ptr->tx_search_luma_dc_sign_level_coeff_neighbor_array =
+#if ATB_FIX_DEPTH_2_PATH
+        (context_ptr->tx_depth == 2) ?
+            picture_control_set_ptr->md_tx_depth_2_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX] :
+            (context_ptr->tx_depth == 1) ?
+#else
             (context_ptr->tx_depth) ?
+#endif
             picture_control_set_ptr->md_tx_depth_1_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX] :
             picture_control_set_ptr->md_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX];
 #endif
@@ -5759,7 +5863,7 @@ void perform_intra_tx_partitioning(
                 }
             }
 
-#if ATB_INTER_2_DEPTH
+#if ATB_FIX_DEPTH_2_PATH
             // track best Tx Type per tx_depth/txb_itr
             best_tx_type_per_depth[context_ptr->tx_depth][context_ptr->txb_itr] = best_tx_type;
 #else
@@ -5987,6 +6091,18 @@ void perform_intra_tx_partitioning(
                 if (!y_has_coeff)
                     dc_sign_level_coeff = 0;
 #endif
+#if ATB_FIX_DEPTH_2_PATH
+                if (context_ptr->tx_depth == 2)
+                    neighbor_array_unit_mode_write(
+                        picture_control_set_ptr->md_tx_depth_2_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
+                        (uint8_t*)&dc_sign_level_coeff,
+                        context_ptr->sb_origin_x + context_ptr->blk_geom->tx_org_x[context_ptr->tx_depth][context_ptr->txb_itr],
+                        context_ptr->sb_origin_y + context_ptr->blk_geom->tx_org_y[context_ptr->tx_depth][context_ptr->txb_itr],
+                        context_ptr->blk_geom->tx_width[context_ptr->tx_depth][context_ptr->txb_itr],
+                        context_ptr->blk_geom->tx_height[context_ptr->tx_depth][context_ptr->txb_itr],
+                        NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
+                else
+#endif
 #if DC_SIGN_CONTEXT_EP
                 neighbor_array_unit_mode_write(
                     picture_control_set_ptr->md_tx_depth_1_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
@@ -6006,6 +6122,8 @@ void perform_intra_tx_partitioning(
                     context_ptr->blk_geom->tx_height[context_ptr->cu_ptr->tx_depth][context_ptr->txb_itr],
                     NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
 #endif
+
+
 #endif
             }
 #if ATB_RATE_UPGRADE_1
@@ -6021,6 +6139,7 @@ void perform_intra_tx_partitioning(
              candidateBuffer,
              context_ptr,
              picture_control_set_ptr,
+             context_ptr->tx_depth,
              block_has_coeff,
              is_inter);
 
@@ -6056,6 +6175,7 @@ void perform_intra_tx_partitioning(
         uint64_t cost = RDCOST(context_ptr->full_lambda, (*y_coeff_bits), y_full_distortion[DIST_CALC_RESIDUAL]);
 #endif
 #endif
+
         if (cost < best_cost_search) {
             best_cost_search = cost;
             best_tx_depth = context_ptr->tx_depth;
@@ -6073,6 +6193,7 @@ void perform_intra_tx_partitioning(
 
     // ATB Recon
     context_ptr->tx_depth = candidateBuffer->candidate_ptr->tx_depth = best_tx_depth;
+
 #if ATB_INTER_SUPPORT
     if ((context_ptr->tx_depth == 0 && end_tx_depth >= 1) || (context_ptr->tx_depth == 1 && end_tx_depth == 2)) {
 #else
@@ -6080,6 +6201,29 @@ void perform_intra_tx_partitioning(
 #endif
         // Set recon neighbor array to be used @ intra compensation
         context_ptr->tx_search_luma_recon_neighbor_array = picture_control_set_ptr->md_luma_recon_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX];
+
+
+#if ATB_FIX_DEPTH_2_PATH
+        // Reset depth_1 neighbor arrays
+        if (context_ptr->tx_depth == 1 && end_tx_depth == 2) {
+            copy_neigh_arr(
+                picture_control_set_ptr->md_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
+                picture_control_set_ptr->md_tx_depth_1_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
+                context_ptr->sb_origin_x + context_ptr->blk_geom->origin_x,
+                context_ptr->sb_origin_y + context_ptr->blk_geom->origin_y,
+                context_ptr->blk_geom->bwidth,
+                context_ptr->blk_geom->bheight,
+                NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
+        }
+
+        // Set luma dc sign level coeff
+        context_ptr->tx_search_luma_dc_sign_level_coeff_neighbor_array =
+            (context_ptr->tx_depth == 2) ?
+                picture_control_set_ptr->md_tx_depth_2_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX] :
+                (context_ptr->tx_depth == 1) ?
+                    picture_control_set_ptr->md_tx_depth_1_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX] :
+                    picture_control_set_ptr->md_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX];
+#endif
 
         // Initialize TU Split
         y_full_distortion[DIST_CALC_RESIDUAL] = 0;
@@ -6103,7 +6247,11 @@ void perform_intra_tx_partitioning(
                 sequence_control_set_ptr,
 #endif
                 COMPONENT_LUMA,
+#if ATB_FIX_DEPTH_2_PATH
+                context_ptr->tx_search_luma_dc_sign_level_coeff_neighbor_array,
+#else
                 picture_control_set_ptr->md_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
+#endif
                 context_ptr->sb_origin_x + tx_org_x,
                 context_ptr->sb_origin_y + tx_org_y,
                 context_ptr->blk_geom->bsize,
@@ -6152,7 +6300,7 @@ void perform_intra_tx_partitioning(
 #if ATB_INTER_SUPPORT
             }
 #endif
-#if ATB_INTER_2_DEPTH
+#if ATB_FIX_DEPTH_2_PATH
             // Read best_tx_typ from 1st pass
             candidateBuffer->candidate_ptr->transform_type[context_ptr->txb_itr] = best_tx_type_per_depth[context_ptr->tx_depth][context_ptr->txb_itr];
             // For Inter blocks, transform type of chroma follows luma transfrom type
@@ -6349,6 +6497,32 @@ void perform_intra_tx_partitioning(
             y_full_distortion[DIST_CALC_PREDICTION] += tuFullDistortion[0][DIST_CALC_PREDICTION];
 
             txb_1d_offset += context_ptr->blk_geom->tx_width[context_ptr->tx_depth][context_ptr->txb_itr] * context_ptr->blk_geom->tx_height[context_ptr->tx_depth][context_ptr->txb_itr];
+
+#if ATB_FIX_DEPTH_2_PATH
+            if (context_ptr->tx_depth)
+            {
+                int8_t dc_sign_level_coeff = candidateBuffer->candidate_ptr->quantized_dc[0][context_ptr->txb_itr];
+
+                if (context_ptr->tx_depth == 2)
+                    neighbor_array_unit_mode_write(
+                        picture_control_set_ptr->md_tx_depth_2_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
+                        (uint8_t*)&dc_sign_level_coeff,
+                        context_ptr->sb_origin_x + context_ptr->blk_geom->tx_org_x[context_ptr->tx_depth][context_ptr->txb_itr],
+                        context_ptr->sb_origin_y + context_ptr->blk_geom->tx_org_y[context_ptr->tx_depth][context_ptr->txb_itr],
+                        context_ptr->blk_geom->tx_width[context_ptr->tx_depth][context_ptr->txb_itr],
+                        context_ptr->blk_geom->tx_height[context_ptr->tx_depth][context_ptr->txb_itr],
+                        NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
+                else
+                    neighbor_array_unit_mode_write(
+                        picture_control_set_ptr->md_tx_depth_1_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
+                        (uint8_t*)&dc_sign_level_coeff,
+                        context_ptr->sb_origin_x + context_ptr->blk_geom->tx_org_x[context_ptr->tx_depth][context_ptr->txb_itr],
+                        context_ptr->sb_origin_y + context_ptr->blk_geom->tx_org_y[context_ptr->tx_depth][context_ptr->txb_itr],
+                        context_ptr->blk_geom->tx_width[context_ptr->tx_depth][context_ptr->txb_itr],
+                        context_ptr->blk_geom->tx_height[context_ptr->tx_depth][context_ptr->txb_itr],
+                        NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
+            }
+#endif
         } // Transform Loop
     }
 }

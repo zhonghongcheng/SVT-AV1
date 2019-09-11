@@ -13854,6 +13854,9 @@ extern "C" {
 #if ATB_DC_CONTEXT_SUPPORT_2
         NeighborArrayUnit                  *md_tx_depth_1_luma_dc_sign_level_coeff_neighbor_array[NEIGHBOR_ARRAY_TOTAL_COUNT];
 #endif
+#if ATB_FIX_DEPTH_2_PATH
+        NeighborArrayUnit                  *md_tx_depth_2_luma_dc_sign_level_coeff_neighbor_array[NEIGHBOR_ARRAY_TOTAL_COUNT];
+#endif
         NeighborArrayUnit                  *md_cb_dc_sign_level_coeff_neighbor_array[NEIGHBOR_ARRAY_TOTAL_COUNT];
         NeighborArrayUnit                  *md_cr_dc_sign_level_coeff_neighbor_array[NEIGHBOR_ARRAY_TOTAL_COUNT];
 #if ATB_RATE

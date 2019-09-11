@@ -131,11 +131,15 @@ extern "C" {
 #define ENHANCE_ATB                             1
 #if ENHANCE_ATB
 #define ATB_INTER_SUPPORT                       1 // ATB INTER support
-#define ATB_INTER_1_DEPTH                       0 // ATB INTER Depth 1
+#define ATB_INTER_1_DEPTH                       1 // ATB INTER Depth 1
 #define ATB_INTER_2_DEPTH                       0 // ATB INTER Depth 2
 #define ATB_RATE_UPGRADE_0                      1
 #define ATB_RATE_UPGRADE_1                      1
-#endif
+#define ATB_SB_8x8_PATH                         1
+#define ATB_SB_SKIP_PATH                        1
+#define ATB_FIX_DEPTH_2_PATH                    1
+#define SHUT_ATB_NREF                           1
+#endif 
 
 #define FIRST_FULL_LOOP_INTERPOLATION_SEARCH   1
 

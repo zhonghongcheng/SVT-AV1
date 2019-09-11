@@ -1515,7 +1515,11 @@ EbErrorType signal_derivation_multi_processes_oq(
         if (picture_control_set_ptr->enc_mode <= ENC_M1 && sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
 #endif
 #if STRENGHTHEN_MD_STAGE_3
+#if SHUT_ATB_NREF
+            picture_control_set_ptr->atb_mode = (MR_MODE || picture_control_set_ptr->is_used_as_reference_flag) ? 1 : 0;
+#else
             picture_control_set_ptr->atb_mode = 1;
+#endif
 #else
             if (MR_MODE || USE_MR_CHROMA) // ATB
                 picture_control_set_ptr->atb_mode = 2;

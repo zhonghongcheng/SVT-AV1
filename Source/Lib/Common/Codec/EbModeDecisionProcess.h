@@ -441,7 +441,7 @@ extern "C" {
 #if II_SO
    DECLARE_ALIGNED(16, uint8_t,                            intrapred_buf[INTERINTRA_MODES][32 * 32]); //MAX block size for inter intra is 32x32
 #endif
-#if ATB_RATE_UPGRADE_0  && !ATB_RATE_UPGRADE_1
+#if ATB_RATE_UPGRADE_0
     uint8_t *above_txfm_context;
     uint8_t *left_txfm_context;
 #endif
