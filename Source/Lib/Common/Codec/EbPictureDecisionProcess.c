@@ -1003,7 +1003,7 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->mdc_depth_level = 5;
 #if EXTEND_NSQ_MDC_TO_M3
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
-            picture_control_set_ptr->mdc_depth_level = M3_MDC_LEVEL;
+            picture_control_set_ptr->mdc_depth_level = (sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER) ? (M3_MDC_LEVEL-1) : M3_MDC_LEVEL;
 #endif
         else
             picture_control_set_ptr->mdc_depth_level = MAX_MDC_LEVEL; // Not tuned yet.
