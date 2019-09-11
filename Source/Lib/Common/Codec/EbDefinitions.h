@@ -37,7 +37,7 @@ extern "C" {
 #define TWO_PASSES_TEST              0
 #define M0_3_CANDIDATE               1
 #define M1_0_CANDIDATE               1
-#define M3_0_CANDIDATE               0
+#define M3_0_CANDIDATE               1
 
 // Better BDR-Speed trade-off M0
 #define SKIP_ATB_OFF                 1
@@ -564,10 +564,10 @@ typedef enum MD_STAGE {
 
 #define PREDICT_NSQ_SHAPE                               1
 #if PREDICT_NSQ_SHAPE
-#define NSQ_MDC_L01                                     1
-#define EXTEND_NSQ_MDC_TO_M3                            0
+#define NSQ_MDC_L01                                     0
+#define EXTEND_NSQ_MDC_TO_M3                            1
 #define M3_MDC_LEVEL                                    2
-#define NEW_M3_NSQ_SETTING                              0
+#define NEW_M3_NSQ_SETTING                              1
 #define ADD_MDC_INTRA                                   0
 #define DEPTH_RANKING                                   1
 #define NUMBER_OF_DEPTH                                 6
