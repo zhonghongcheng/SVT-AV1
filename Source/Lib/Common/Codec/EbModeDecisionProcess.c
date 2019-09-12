@@ -163,7 +163,7 @@ EbErrorType mode_decision_context_ctor(
     EB_MALLOC(uint64_t*, context_ptr->ref_best_cost_sq_table, sizeof(uint64_t) * MAX_REF_TYPE_CAND, EB_N_PTR);
     EB_MALLOC(uint32_t*, context_ptr->ref_best_ref_sq_table, sizeof(uint32_t) * MAX_REF_TYPE_CAND, EB_N_PTR);
 #endif
-#if ATB_RATE_UPGRADE_0 && !ATB_RATE_UPGRADE_1
+#if ATB_RATE_UPGRADE_0
     EB_MALLOC(uint8_t*, context_ptr->above_txfm_context, sizeof(uint8_t) * (MAX_SB_SIZE >> MI_SIZE_LOG2), EB_N_PTR);
     EB_MALLOC(uint8_t*, context_ptr->left_txfm_context, sizeof(uint8_t) * (MAX_SB_SIZE >> MI_SIZE_LOG2), EB_N_PTR);
 #endif
@@ -198,6 +198,9 @@ void reset_mode_decision_neighbor_arrays(PictureControlSet *picture_control_set_
         neighbor_array_unit_reset(picture_control_set_ptr->md_luma_dc_sign_level_coeff_neighbor_array[depth]);
 #if ATB_DC_CONTEXT_SUPPORT_2
         neighbor_array_unit_reset(picture_control_set_ptr->md_tx_depth_1_luma_dc_sign_level_coeff_neighbor_array[depth]);
+#endif
+#if ATB_FIX_DEPTH_2_PATH
+        neighbor_array_unit_reset(picture_control_set_ptr->md_tx_depth_2_luma_dc_sign_level_coeff_neighbor_array[depth]);
 #endif
         neighbor_array_unit_reset(picture_control_set_ptr->md_cb_dc_sign_level_coeff_neighbor_array[depth]);
         neighbor_array_unit_reset(picture_control_set_ptr->md_cr_dc_sign_level_coeff_neighbor_array[depth]);

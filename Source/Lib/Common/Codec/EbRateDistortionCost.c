@@ -2311,8 +2311,7 @@ uint64_t estimate_tx_size_bits(
     PictureControlSet       *pcsPtr,
 #if ATB_RATE_UPGRADE_0
     ModeDecisionContext     *context_ptr,
-#endif
-#if ATB_RATE_UPGRADE_0 //--------
+    ModeDecisionCandidate   *candidate_ptr,
     EbBool                   skip_flag,
 #endif
     uint32_t                 cu_origin_x,
@@ -2329,6 +2328,7 @@ uint64_t get_tx_size_bits(
     ModeDecisionCandidateBuffer  *candidateBuffer,
     ModeDecisionContext          *context_ptr,
     PictureControlSet            *picture_control_set_ptr,
+    uint8_t tx_depth,
     EbBool block_has_coeff,
     EbBool is_inter);
 #endif
@@ -2403,6 +2403,7 @@ EbErrorType Av1FullCost(
             candidate_buffer_ptr,
             context_ptr,
             picture_control_set_ptr,
+            candidate_buffer_ptr->candidate_ptr->tx_depth,
             candidate_buffer_ptr->candidate_ptr->block_has_coeff,
             candidate_buffer_ptr->candidate_ptr->type != INTRA_MODE);
 #endif
@@ -2602,6 +2603,7 @@ EbErrorType  Av1MergeSkipFullCost(
             candidate_buffer_ptr,
             context_ptr,
             picture_control_set_ptr,
+            candidate_buffer_ptr->candidate_ptr->tx_depth,
             candidate_buffer_ptr->candidate_ptr->block_has_coeff,
             candidate_buffer_ptr->candidate_ptr->type != INTRA_MODE);
     mergeRate += tx_size_bits;

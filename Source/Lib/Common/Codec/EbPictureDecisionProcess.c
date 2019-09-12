@@ -1003,7 +1003,7 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->mdc_depth_level = 5;
 #if EXTEND_NSQ_MDC_TO_M3
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
-            picture_control_set_ptr->mdc_depth_level = M3_MDC_LEVEL;
+            picture_control_set_ptr->mdc_depth_level = (sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER) ? (M3_MDC_LEVEL-1) : M3_MDC_LEVEL;
 #endif
         else
             picture_control_set_ptr->mdc_depth_level = MAX_MDC_LEVEL; // Not tuned yet.
@@ -1244,7 +1244,11 @@ EbErrorType signal_derivation_multi_processes_oq(
     else
 
 #if LOOP_FILTER_FIX
+#if M3_0_CANDIDATE
+        if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#endif
             picture_control_set_ptr->loop_filter_mode = 3;
         else
         if (picture_control_set_ptr->enc_mode <= ENC_M5)
@@ -1453,7 +1457,7 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
             picture_control_set_ptr->intra_pred_mode = 4;
 #if M3_INTRA_PRED_NBASE
-    else if (picture_control_set_ptr->enc_mode <= ENC_M2 && picture_control_set_ptr->temporal_layer_index == 0)
+    else if ((picture_control_set_ptr->enc_mode <= ENC_M1) || (picture_control_set_ptr->enc_mode <= ENC_M2 && picture_control_set_ptr->temporal_layer_index == 0))
 #else
     else if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #endif
@@ -1515,7 +1519,11 @@ EbErrorType signal_derivation_multi_processes_oq(
         if (picture_control_set_ptr->enc_mode <= ENC_M1 && sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
 #endif
 #if STRENGHTHEN_MD_STAGE_3
+#if SHUT_ATB_NREF
+            picture_control_set_ptr->atb_mode = (MR_MODE || picture_control_set_ptr->is_used_as_reference_flag) ? 1 : 0;
+#else
             picture_control_set_ptr->atb_mode = 1;
+#endif
 #else
             if (MR_MODE || USE_MR_CHROMA) // ATB
                 picture_control_set_ptr->atb_mode = 2;
