@@ -38,18 +38,26 @@ extern "C" {
 #define M0_3_CANDIDATE               1
 #define M1_0_CANDIDATE               1
 #define M3_0_CANDIDATE               1
+/*new M3*/
+#define M3_trellis                  1
+#define m3_it_search                1
+#define m3_ref_count                1
 
+    /* rest of feats */
+#define M3_GRAPH_CANDIDATE           0
 #define M3_uni_3x3                  0
 #define M3_bi_3x3                   0
-#define M3_trellis                  0
-#define m3_qfp                      0
 #define m3_me_search_method         0
-#define m3_depth                    0
 #define m3_nsq                      0
-#define m3_it_search                0
 #define m3_loop_filter              0
-#define m3_ref_count                0
 #define m3_sb_size                  0
+#define m2_predictive_me_level      0
+#define m2_hp_qp                    0
+#define m2_nsq                      0
+#define m2_tx_search_reduced_set    0
+#define m2_intra_pred_l0            0
+#define m2_eme                      0
+#define m2_filter_intra             0
 
 // Better BDR-Speed trade-off M0
 #define SKIP_ATB_OFF                 1

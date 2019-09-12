@@ -938,7 +938,11 @@ EbErrorType signal_derivation_multi_processes_oq(
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
 #endif
 #else
+#if m2_nsq
+        else if (picture_control_set_ptr->enc_mode <= ENC_M4)
+#else
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#endif
 #endif
 #if ADP_BQ
             if (picture_control_set_ptr->slice_type == I_SLICE)
@@ -951,8 +955,8 @@ EbErrorType signal_derivation_multi_processes_oq(
             else
                 picture_control_set_ptr->pic_depth_mode = PIC_ALL_C_DEPTH_MODE;
 #endif
-#if !TWO_PASSES_TEST
-#if m3_depth
+#if !TWO_PASSES_TEST && !m2_nsq
+#if m3_nsq
         else if (picture_control_set_ptr->enc_mode <= ENC_M4)
 #else
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
@@ -1047,13 +1051,15 @@ EbErrorType signal_derivation_multi_processes_oq(
 #if TWO_PASSES_TEST
             else if (picture_control_set_ptr->enc_mode <= ENC_M4)
 #else
+
             else if (picture_control_set_ptr->enc_mode <= ENC_M2)
+
 #endif
                 if (picture_control_set_ptr->is_used_as_reference_flag)
                     picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL5;
                 else
                     picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL2;
-#if !TWO_PASSES_TEST
+#if !TWO_PASSES_TEST 
 #if m3_nsq
             else if (picture_control_set_ptr->enc_mode <= ENC_M4)
 #else
@@ -1083,7 +1089,11 @@ EbErrorType signal_derivation_multi_processes_oq(
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
 #endif
 #else
+#if m2_nsq
+        else if (picture_control_set_ptr->enc_mode <= ENC_M4)
+#else
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#endif
 #endif
 #if NEW_M3_NSQ_SETTING
             if (picture_control_set_ptr->is_used_as_reference_flag)
@@ -1408,7 +1418,11 @@ EbErrorType signal_derivation_multi_processes_oq(
     if (picture_control_set_ptr->tx_search_level == TX_SEARCH_ENC_DEC)
         picture_control_set_ptr->tx_search_reduced_set = 0;
 #if M2_BAD_SLOPE_COMB
+#if m2_tx_search_reduced_set
+    else if (picture_control_set_ptr->enc_mode <= ENC_M4)
+#else
     else if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#endif
 #else
     else if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #endif
@@ -1473,7 +1487,12 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
             picture_control_set_ptr->intra_pred_mode = 4;
 #if M3_INTRA_PRED_NBASE
+#if m2_intra_pred_l0
+    else if ((picture_control_set_ptr->enc_mode <= ENC_M1) || (picture_control_set_ptr->enc_mode <= ENC_M4 && picture_control_set_ptr->temporal_layer_index == 0))
+
+#else
     else if ((picture_control_set_ptr->enc_mode <= ENC_M1) || (picture_control_set_ptr->enc_mode <= ENC_M2 && picture_control_set_ptr->temporal_layer_index == 0))
+#endif
 #else
     else if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #endif

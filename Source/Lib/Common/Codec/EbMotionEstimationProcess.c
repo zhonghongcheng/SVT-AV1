@@ -245,7 +245,11 @@ EbErrorType signal_derivation_me_kernel_oq(
 #if M3_SP_NREF
     else if (picture_control_set_ptr->enc_mode <= ENC_M1 || (picture_control_set_ptr->enc_mode <= ENC_M2 && picture_control_set_ptr->is_used_as_reference_flag)) {
 #else
+#if m2_hp_qp
+    else if (picture_control_set_ptr->enc_mode <= ENC_M4) {
+#else
     else if (picture_control_set_ptr->enc_mode <= ENC_M2) {
+#endif
 #endif
 #if DISABLE_ENH_SUBPEL_SC
         context_ptr->me_context_ptr->half_pel_mode = picture_control_set_ptr->sc_content_detected ? REFINEMENT_HP_MODE :
@@ -446,7 +450,11 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
 #if M3_SP_NREF
     else if (picture_control_set_ptr->enc_mode <= ENC_M1 || (picture_control_set_ptr->enc_mode <= ENC_M2 && picture_control_set_ptr->is_used_as_reference_flag)) {
 #else
+#if m2_hp_qp
+    else if (picture_control_set_ptr->enc_mode <= ENC_M4) {
+#else
     else if (picture_control_set_ptr->enc_mode <= ENC_M2) {
+#endif
 #endif
 #if DISABLE_ENH_SUBPEL_SC
         context_ptr->me_context_ptr->half_pel_mode = picture_control_set_ptr->sc_content_detected ? REFINEMENT_HP_MODE :

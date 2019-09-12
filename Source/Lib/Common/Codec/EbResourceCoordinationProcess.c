@@ -94,6 +94,9 @@ EbErrorType signal_derivation_pre_analysis_oq(
 #if DECOUPLE_ALTREF_ME
     uint8_t  hme_me_level = picture_control_set_ptr->enc_mode;
 #endif
+#if m2_eme
+    hme_me_level = ENC_M2;
+#endif
     // Derive HME Flag
     if (sequence_control_set_ptr->static_config.use_default_me_hme) {
 #if !DECOUPLE_ALTREF_ME
@@ -730,7 +733,11 @@ void* resource_coordination_kernel(void *input_ptr)
 
 #if FI_EC
 #if M2_FI_INTRA_BASE
+#if m2_filter_intra
+            sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M4)
+#else
             sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M2)
+#endif
 #elif FI_INTRA_BASE
             sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M1)
 #else
