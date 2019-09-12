@@ -76,7 +76,7 @@ extern "C" {
 #endif
 #define TEMPORAL_MVP                    1// Temporal mvp support. aka. MFMV
 #define FIXED_TMVP_HP                   1
-
+#define DISABLE_NSQ_FROM_MDC            0
 #define TWO_PASS                        1
 #define TWO_PASS_128x128                0 // Forces the first pass to used 128x128 active except for 360P or SC.
 #define DISABLE_1PASS_QPS               0

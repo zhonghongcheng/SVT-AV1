@@ -1373,8 +1373,8 @@ void init_considered_block(
 #else
                     context_ptr->local_cu_array[blk_index].early_split_flag = picture_control_set_ptr->parent_pcs_ptr->stat_struct.first_pass_split_flag[sb_index][sq_idx[quadrant]++];
 #endif
-                /*if (sq_idx[quadrant] > NUMBER_OF_SPLIT_FLAG)
-                     printf("Error: number of sq_idx > NUMBER_OF_SPLIT_FLAG not sufficient%d, %d\n",quadrant,sq_idx[quadrant]);*/
+                if (sq_idx[quadrant] > NUMBER_OF_SPLIT_FLAG)
+                     printf("Error: EbModeDecisionConfiguration: number of sq_idx > NUMBER_OF_SPLIT_FLAG not sufficient\n");
                 }
 #if TWO_PASS_PART_128SUPPORT
                 else if (blk_geom->shape != PART_N && blk_geom->sq_size > 4 && blk_geom->sq_size < 128) {
@@ -1410,10 +1410,20 @@ void init_considered_block(
                         for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
                             const BlockGeom * blk_geom_1d = get_blk_geom_mds(blk_index + block_1d_idx);
                             // NADER - FORCE SAHPE
-                            /*if (blk_geom_1d->shape == PART_V || blk_geom_1d->sq_size == 4) {
+#if DISABLE_NSQ_FROM_MDC
+                            if (sequence_control_set_ptr->static_config.use_input_stat_file) {
+                                if (blk_geom_1d->shape == PART_N) {
+                                    resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                                    resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                                }
+                            }
+                            else
+                            {
+#endif
                                 resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            }*/
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+#if DISABLE_NSQ_FROM_MDC
+                            }
+#endif
                             resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
                         }
                     }
