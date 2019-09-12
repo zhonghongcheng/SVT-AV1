@@ -2094,7 +2094,11 @@ uint64_t av1_inter_fast_cost(
         rate = lumaRate + chromaRate;
 
 #if TWO_PASS
+#if TWO_PASSES_MATCH
+        if(0){
+#else
         if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->static_config.use_output_stat_file) {
+#endif
             MvReferenceFrame ref_type[2];
             av1_set_ref_frame(ref_type, candidate_ptr->ref_frame_type);
             if (candidate_ptr->is_compound && (ref_type[0] != LAST_FRAME || ref_type[1] != BWDREF_FRAME) ||
@@ -2121,7 +2125,11 @@ uint64_t av1_inter_fast_cost(
             printf("av1_inter_fast_cost: Chroma error");
         rate = lumaRate + chromaRate;
 #if TWO_PASS
+#if TWO_PASSES_MATCH
+        if (0) {
+#else
         if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->static_config.use_output_stat_file) {
+#endif
             MvReferenceFrame ref_type[2];
             av1_set_ref_frame(ref_type, candidate_ptr->ref_frame_type);
             if (candidate_ptr->is_compound && (ref_type[0] != LAST_FRAME || ref_type[1] != BWDREF_FRAME) ||
@@ -2477,7 +2485,11 @@ EbErrorType Av1FullCost(
 #endif
 #endif
 #if TWO_PASS
+#if TWO_PASSES_MATCH
+    if(0){
+#else
     if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->static_config.use_output_stat_file && candidate_buffer_ptr->candidate_ptr->type != INTRA_MODE) {
+#endif
         MvReferenceFrame ref_type[2];
         av1_set_ref_frame(ref_type, candidate_buffer_ptr->candidate_ptr->ref_frame_type);
         if (candidate_buffer_ptr->candidate_ptr->is_compound && (ref_type[0] != LAST_FRAME || ref_type[1] != BWDREF_FRAME) ||
@@ -2674,7 +2686,11 @@ EbErrorType  Av1MergeSkipFullCost(
     skipRate = skipModeRate;
     skip_cost = RDCOST(lambda, skipRate, skipDistortion);
 #if TWO_PASS
+#if TWO_PASSES_MATCH
+    if (0) {
+#else
     if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->static_config.use_output_stat_file) {
+#endif
         MvReferenceFrame ref_type[2];
         av1_set_ref_frame(ref_type, candidate_buffer_ptr->candidate_ptr->ref_frame_type);
         if (candidate_buffer_ptr->candidate_ptr->is_compound && (ref_type[0] != LAST_FRAME || ref_type[1] != BWDREF_FRAME) ||

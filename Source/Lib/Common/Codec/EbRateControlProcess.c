@@ -3498,7 +3498,11 @@ static int adaptive_qindex_calc(
     // Since many frames can be processed at the same time, storing/using arf_q in rc param is not sufficient and will create a run to run.
     // So, for each frame, arf_q is updated based on the qp of its references.
 #if TWO_PASS && !DISABLE_1PASS_QPS
+#if TWO_PASSES_MATCH
+    if (0) {
+#else
     if (sequence_control_set_ptr->static_config.use_input_stat_file) {
+#endif
         rc->arf_q = MAX(rc->arf_q, ((picture_control_set_ptr->ref_pic_qp_array[0][0] << 2) + 2));
         if (picture_control_set_ptr->slice_type == B_SLICE)
             rc->arf_q = MAX(rc->arf_q, ((picture_control_set_ptr->ref_pic_qp_array[1][0] << 2) + 2));
@@ -3521,7 +3525,11 @@ static int adaptive_qindex_calc(
     uint64_t referenced_area_avg = picture_control_set_ptr->parent_pcs_ptr->referenced_area_avg;
     uint64_t referenced_area_has_non_zero = 0;
     uint64_t referenced_area_max = 64;
+#if TWO_PASSES_MATCH
+    if (0) {
+#else
     if (sequence_control_set_ptr->static_config.use_input_stat_file) {
+#endif
 #if TWO_PASS_128x128
         for (int sb_addr = 0; sb_addr < sequence_control_set_ptr->sb_tot_cnt; ++sb_addr)
 #else
@@ -3588,7 +3596,11 @@ static int adaptive_qindex_calc(
 #endif
 
 #if TWO_PASS && !DISABLE_1PASS_QPS
+#if TWO_PASSES_MATCH
+        if (0) {
+#else
         if (sequence_control_set_ptr->static_config.use_input_stat_file && !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && referenced_area_has_non_zero) {
+#endif
             referenced_area_max =  sequence_control_set_ptr->input_resolution < 2 ? 40 : 30;
             if (referenced_area_avg <= 16)
                 referenced_area_avg = 0;
@@ -3638,7 +3650,11 @@ static int adaptive_qindex_calc(
 #endif
 
 #if TWO_PASS && !DISABLE_1PASS_QPS
+#if TWO_PASSES_MATCH
+        if (0) {
+#else
         if (sequence_control_set_ptr->static_config.use_input_stat_file && !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && referenced_area_has_non_zero) {
+#endif
             referenced_area_max = 30;
             if (picture_control_set_ptr->parent_pcs_ptr->qp_scaling_average_complexity > HIGH_QPS_COMP_THRESHOLD)
                 referenced_area_avg = 0;
@@ -3661,7 +3677,11 @@ static int adaptive_qindex_calc(
 
                 active_best_quality = min_boost - (int)(boost * rc->arf_boost_factor);
 #if TWO_PASS && !DISABLE_1PASS_QPS
+#if TWO_PASSES_MATCH
+                if (0) {
+#else
                 if (sequence_control_set_ptr->static_config.use_input_stat_file && !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected) {
+#endif
                     if (picture_control_set_ptr->parent_pcs_ptr->sad_me / picture_control_set_ptr->sb_total_count / 256 < 15)
                         active_best_quality = active_best_quality * 130 / 100;
                     else if (picture_control_set_ptr->parent_pcs_ptr->sad_me / picture_control_set_ptr->sb_total_count / 256 < 25)
@@ -3715,9 +3735,16 @@ static void sb_qp_derivation(
          picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH &&
         !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected /*&& !sequence_control_set_ptr->static_config.use_output_stat_file*/)
 #else
+#if TWO_PASSES_MATCH
+    if (((0 && picture_control_set_ptr->temporal_layer_index <= 0) || picture_control_set_ptr->slice_type == 2) &&
+        picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH &&
+        !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && !0)
+#else
     if (((sequence_control_set_ptr->static_config.use_input_stat_file && picture_control_set_ptr->temporal_layer_index <= 0) || picture_control_set_ptr->slice_type == 2) &&
-         picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH &&
+        picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH &&
         !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && !sequence_control_set_ptr->static_config.use_output_stat_file)
+#endif
+
 #endif
 #else
 #if DISABLE_QPM_SC
@@ -3755,7 +3782,11 @@ static void sb_qp_derivation(
         int max_delta_qp = (picture_control_set_ptr->slice_type == 2) ?
             ((kf_high_motion_minq[active_worst_quality] - kf_low_motion_minq[active_worst_quality] + 2) >> 2) / 2 :
             ((arfgf_high_motion_minq[active_worst_quality] - arfgf_low_motion_minq[active_worst_quality] + 2) >> 2) / 2;
+#if TWO_PASSES_MATCH
+        if (0) {
+#else
         if (sequence_control_set_ptr->static_config.use_input_stat_file) {
+#endif
 #if TWO_PASS_128x128
             for (int sb_addr = 0; sb_addr < sequence_control_set_ptr->sb_tot_cnt; ++sb_addr)
 #else
@@ -3848,7 +3879,11 @@ static void sb_qp_derivation(
             referenced_area_sb =
                 picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[sb_addr] / sequence_control_set_ptr->sb_geom[sb_addr].width / sequence_control_set_ptr->sb_geom[sb_addr].height;
 #endif
+#if TWO_PASSES_MATCH
+            if (0) {
+#else
             if (sequence_control_set_ptr->static_config.use_input_stat_file && referenced_area_has_non_zero) {
+#endif
                 delta_qp = 0;
                 if (picture_control_set_ptr->slice_type == 2 ) {
                     referenced_area_sb = MIN(24, referenced_area_sb);
@@ -4056,7 +4091,11 @@ void* rate_control_kernel(void *input_ptr)
 #if ADAPTIVE_QP_SCALING
                     // if there are need enough pictures in the LAD/SlidingWindow, the adaptive QP scaling is not used
 #if TWO_PASS && !DISABLE_1PASS_QPS
+#if TWO_PASSES_MATCH
+                    if (!0 && picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH) {
+#else
                     if (!sequence_control_set_ptr->static_config.use_output_stat_file && picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH){
+#endif
 #else
                     if (picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH) {
 #endif

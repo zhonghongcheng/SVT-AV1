@@ -1785,7 +1785,7 @@ static void adjust_filter_params(EbPictureBufferDesc *input_picture_ptr,
         else
             noiselevel_adj = 1;
 
-#if TWO_PASS
+#if TWO_PASS && !TWO_PASSES_MATCH
         if (picture_control_set_ptr_central->sequence_control_set_ptr->static_config.use_input_stat_file &&
             picture_control_set_ptr_central->temporal_layer_index == 0 &&  picture_control_set_ptr_central->sc_content_detected == 0){
             if (noiselevel_adj < 0) {

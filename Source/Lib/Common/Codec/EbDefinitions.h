@@ -34,6 +34,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define TWO_PASSES_MATCH              0 // matches 1 pass and 2 pass for the same mode
 #define TWO_PASSES_TEST              0
 #define M0_3_CANDIDATE               1
 #define M1_0_CANDIDATE               1
