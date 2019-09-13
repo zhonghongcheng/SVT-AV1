@@ -1061,10 +1061,16 @@ EbErrorType signal_derivation_multi_processes_oq(
             else if (picture_control_set_ptr->enc_mode <= ENC_M2)
 
 #endif
+#if m2_nsq_search_level_1
+                picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL1;
+#elif m2_nsq_off
+                picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
+#else
                 if (picture_control_set_ptr->is_used_as_reference_flag)
                     picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL5;
                 else
                     picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL2;
+#endif
 #if !TWO_PASSES_TEST 
 #if m3_nsq
             else if (picture_control_set_ptr->enc_mode <= ENC_M4)

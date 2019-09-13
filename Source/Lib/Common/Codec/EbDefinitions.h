@@ -67,6 +67,8 @@ extern "C" {
 #define M4_bi_3x3                   0
 #define m2_mdc_4                    0
 #define m2_mdc_1                    0
+#define m2_nsq_search_level_1       0
+#define m2_nsq_off                  0
 
 
 // Better BDR-Speed trade-off M0
