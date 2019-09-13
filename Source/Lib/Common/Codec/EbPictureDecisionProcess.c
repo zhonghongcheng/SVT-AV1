@@ -956,7 +956,7 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->pic_depth_mode = PIC_ALL_C_DEPTH_MODE;
 #endif
 #if !TWO_PASSES_TEST && !m2_nsq
-#if m3_nsq
+#if m3_depth
         else if (picture_control_set_ptr->enc_mode <= ENC_M4)
 #else
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
@@ -1008,7 +1008,13 @@ EbErrorType signal_derivation_multi_processes_oq(
         else if (picture_control_set_ptr->enc_mode == ENC_M0)
             picture_control_set_ptr->mdc_depth_level = (sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER) ? MAX_MDC_LEVEL : 6;
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#if m2_mdc_4
+            picture_control_set_ptr->mdc_depth_level = 4;
+#elif m2_mdc_1
+            picture_control_set_ptr->mdc_depth_level = 1;
+#else
             picture_control_set_ptr->mdc_depth_level = 5;
+#endif
 #if EXTEND_NSQ_MDC_TO_M3
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
             picture_control_set_ptr->mdc_depth_level = (sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER) ? (M3_MDC_LEVEL-1) : M3_MDC_LEVEL;
@@ -1418,10 +1424,14 @@ EbErrorType signal_derivation_multi_processes_oq(
     if (picture_control_set_ptr->tx_search_level == TX_SEARCH_ENC_DEC)
         picture_control_set_ptr->tx_search_reduced_set = 0;
 #if M2_BAD_SLOPE_COMB
+#if m3_tx_search_reduced_set
+    else if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#else
 #if m2_tx_search_reduced_set
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
 #else
     else if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#endif
 #endif
 #else
     else if (picture_control_set_ptr->enc_mode <= ENC_M1)

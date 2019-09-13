@@ -1498,6 +1498,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if M3_bi_3x3
     context_ptr->bipred3x3_injection = 1;
 #endif
+#if M4_bi_3x3
+    context_ptr->bipred3x3_injection = 0;
+#endif
 #if PREDICTIVE_ME
     // Level                Settings
     // 0                    Level 0: OFF
@@ -1510,18 +1513,24 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     if (picture_control_set_ptr->slice_type != I_SLICE)
         // Hsan: kept ON for sc_content_detected as ~5% gain for minecraft clip
 #if M2_BAD_SLOPE_COMB
+#if m3_predictive_me_level
+        if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#else
 #if m2_predictive_me_level
         if (picture_control_set_ptr->enc_mode <= ENC_M4)
 #else
+
         if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#endif
 #endif
 #else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #endif
             context_ptr->predictive_me_level = 4;
-#if ! m2_predictive_me_level
+#if ! m2_predictive_me_level 
 
         else if (picture_control_set_ptr->enc_mode <= ENC_M4)
+
             context_ptr->predictive_me_level = 2;
 #endif
         else

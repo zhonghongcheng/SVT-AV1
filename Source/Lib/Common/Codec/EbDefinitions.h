@@ -49,6 +49,7 @@ extern "C" {
 #define M3_bi_3x3                   0
 #define m3_me_search_method         0
 #define m3_nsq                      0
+#define m3_depth                    0
 #define m3_loop_filter              0
 #define m3_sb_size                  0
 #define m2_predictive_me_level      0
@@ -58,6 +59,15 @@ extern "C" {
 #define m2_intra_pred_l0            0
 #define m2_eme                      0
 #define m2_filter_intra             0
+
+#define m3_filter_intra             0
+#define m3_predictive_me_level      0
+#define m3_tx_search_reduced_set    0
+#define m4_sb_size                  0
+#define M4_bi_3x3                   0
+#define m2_mdc_4                    0
+#define m2_mdc_1                    0
+
 
 // Better BDR-Speed trade-off M0
 #define SKIP_ATB_OFF                 1
