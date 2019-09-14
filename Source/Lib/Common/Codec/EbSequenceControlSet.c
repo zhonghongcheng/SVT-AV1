@@ -195,6 +195,9 @@ EbErrorType eb_sequence_control_set_ctor(
     sequence_control_set_ptr->seq_header.enable_cdef = 1;
     sequence_control_set_ptr->seq_header.enable_restoration = 1;
 #endif
+#if DISABLE_RESTORATION
+    sequence_control_set_ptr->seq_header.enable_restoration = 0;
+#endif
 
     sequence_control_set_ptr->seq_header.film_grain_params_present = 0;
     sequence_control_set_ptr->film_grain_denoise_strength = 0;

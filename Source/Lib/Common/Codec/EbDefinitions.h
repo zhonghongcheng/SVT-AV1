@@ -34,8 +34,19 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define TWO_PASSES_MATCH              0 // matches 1 pass and 2 pass for the same mode
+#define DEBUG_2PASS_MDC                    0
+#if DEBUG_2PASS_MDC
+#define DISABLE_RED_CU                     1 // P
+#define DISABLE_FILTERED_INTRA             0 
+#define DISABLE_INTRA                      0
+#define DISABLE_TRELLIS                    0  
+#define SHUT_ATB                           0 
+#define DISABLE_RESTORATION                0
+#define DISABLE_CFL                        1 // P
+#define DISABLE_INTRA_4xN_NX4_IN_INTER_PIC 0
+#define TWO_PASSES_MATCH                   1 // matches 1 pass and 2 pass for the same mode
+#define USE_PRED_ONLY_IN_2ND_PASS          1
+#endif
 #define TWO_PASSES_TEST              0
 #define M0_3_CANDIDATE               1
 #define M1_0_CANDIDATE               1

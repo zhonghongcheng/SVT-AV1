@@ -1011,7 +1011,11 @@ EbErrorType signal_derivation_multi_processes_oq(
        /* if(sequence_control_set_ptr->static_config.use_output_stat_file)
             picture_control_set_ptr->mdc_depth_level = MAX_MDC_LEVEL;*/
         if(sequence_control_set_ptr->static_config.use_input_stat_file)
+#if USE_PRED_ONLY_IN_2ND_PASS
+            picture_control_set_ptr->mdc_depth_level = 0;
+#else
             picture_control_set_ptr->mdc_depth_level = 4;
+#endif
 #endif
 #endif
 #if ADP_BQ
@@ -1534,7 +1538,9 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->atb_mode = 0;
 
 #endif
-
+#if SHUT_ATB
+        picture_control_set_ptr->atb_mode = 0;
+#endif
 #if COMP_MODE
         // Set Wedge mode      Settings
         // 0                 FULL: Full search

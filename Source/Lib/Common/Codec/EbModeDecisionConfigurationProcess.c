@@ -1359,7 +1359,7 @@ void init_considered_block(
 
 #if TWO_PASS_PART
         if (sequence_control_set_ptr->static_config.use_input_stat_file) {
-            if (picture_control_set_ptr->picture_number == picture_control_set_ptr->parent_pcs_ptr->stat_struct.first_pass_pic_num) {
+            if (picture_control_set_ptr->parent_pcs_ptr->picture_number == picture_control_set_ptr->parent_pcs_ptr->stat_struct.first_pass_pic_num) {
 
 #if TWO_PASS_PART_OPT
 #if TWO_PASS_PART_128SUPPORT
@@ -1394,6 +1394,20 @@ void init_considered_block(
 #else
                 context_ptr->local_cu_array[blk_index].early_split_flag = picture_control_set_ptr->parent_pcs_ptr->stat_struct.first_pass_split_flag[sb_index][blk_index];
 #endif
+            }
+            else {
+                if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+                    depth_refinement_mode = AllD;
+                else if (picture_control_set_ptr->enc_mode == ENC_M0)
+                    depth_refinement_mode = (sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER) ? AllD : is_complete_sb ? Predm1p3 : AllD;
+                else if (picture_control_set_ptr->enc_mode <= ENC_M2)
+                    depth_refinement_mode = is_complete_sb ? Predm1p2 : AllD; // 5
+#if EXTEND_NSQ_MDC_TO_M3
+                else if (picture_control_set_ptr->enc_mode <= ENC_M3)
+                    picture_control_set_ptr->mdc_depth_level = (sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER) ? (M3_MDC_LEVEL-1) : M3_MDC_LEVEL;
+#endif
+                else
+                    depth_refinement_mode = AllD; // Not tuned yet.
             }
         }
 #endif
@@ -2860,6 +2874,9 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
 #endif
     else
         picture_control_set_ptr->pic_filter_intra_mode = 0;
+#endif
+#if DISABLE_FILTERED_INTRA
+    picture_control_set_ptr->pic_filter_intra_mode = 0;
 #endif
     return return_error;
 }

@@ -8612,6 +8612,16 @@ void  adjust_nsq_rank(
     NeighborArrayUnit            *leaf_partition_neighbor_array) {
     const uint32_t                lcuAddr = sb_ptr->index;
 
+#if DISABLE_RED_CU
+    uint8_t ol_part1 = 0;
+    uint8_t ol_part2 = 0;
+    uint8_t ol_part3 = 0;
+    uint8_t ol_part4 = 0;
+    uint8_t ol_part5 = 0;
+    uint8_t ol_part6 = 0;
+    uint8_t ol_part7 = 0;
+    uint8_t ol_part8 = 0;
+#else
     uint8_t ol_part1 = context_ptr->best_nsq_sahpe1;
     uint8_t ol_part2 = context_ptr->best_nsq_sahpe2;
     uint8_t ol_part3 = context_ptr->best_nsq_sahpe3;
@@ -8620,6 +8630,7 @@ void  adjust_nsq_rank(
     uint8_t ol_part6 = context_ptr->best_nsq_sahpe6;
     uint8_t ol_part7 = context_ptr->best_nsq_sahpe7;
     uint8_t ol_part8 = context_ptr->best_nsq_sahpe8;
+#endif
 
     EbBool isCompoundEnabled = (picture_control_set_ptr->parent_pcs_ptr->reference_mode == SINGLE_REFERENCE) ? 0 : 1;
     uint32_t me_sb_addr;
@@ -10604,8 +10615,11 @@ EB_EXTERN EbErrorType mode_decision_sb(
         if (all_cu_init)
 #endif
         check_redundant_block(blk_geom, context_ptr, &redundant_blk_avail, &redundant_blk_mds);
-
+#if DISABLE_RED_CU
+        if(0)
+#else
         if (redundant_blk_avail && context_ptr->redundant_blk)
+#endif
         {
             // Copy results
             CodingUnit *src_cu = &context_ptr->md_cu_arr_nsq[redundant_blk_mds];
