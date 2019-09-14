@@ -1025,6 +1025,9 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
         else
             picture_control_set_ptr->mdc_depth_level = MAX_MDC_LEVEL; // Not tuned yet.
+#if disable_nsq
+        picture_control_set_ptr->mdc_depth_level = MAX_MDC_LEVEL;
+#endif
 #if TWO_PASS_PART
        /* if(sequence_control_set_ptr->static_config.use_output_stat_file)
             picture_control_set_ptr->mdc_depth_level = MAX_MDC_LEVEL;*/
