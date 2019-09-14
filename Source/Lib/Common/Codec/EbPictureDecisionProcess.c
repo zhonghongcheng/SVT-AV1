@@ -900,28 +900,28 @@ EbErrorType signal_derivation_multi_processes_oq(
     picture_control_set_ptr->tf_enable_hme_level2_flag = tf_enable_hme_level2_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][picture_control_set_ptr->enc_mode];
 #endif
 
-        if (sc_content_detected)
+    if (sc_content_detected)
 #if TWO_PASSES_TEST
-            if (picture_control_set_ptr->enc_mode <= ENC_M4)
+        if (picture_control_set_ptr->enc_mode <= ENC_M4)
 #else
-            if (picture_control_set_ptr->enc_mode <= ENC_M2)
+        if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #endif
-                picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
+            picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
 #if !TWO_PASSES_TEST
-            else if (picture_control_set_ptr->enc_mode <= ENC_M3)
-                if (picture_control_set_ptr->temporal_layer_index == 0)
-                    picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
-                else
-                    picture_control_set_ptr->pic_depth_mode = PIC_SQ_DEPTH_MODE;
+        else if (picture_control_set_ptr->enc_mode <= ENC_M3)
+            if (picture_control_set_ptr->temporal_layer_index == 0)
+                picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
+            else
+                picture_control_set_ptr->pic_depth_mode = PIC_SQ_DEPTH_MODE;
 #endif
-            else if (picture_control_set_ptr->enc_mode <= ENC_M5)
-                if (picture_control_set_ptr->slice_type == I_SLICE)
-                    picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
-                else
-                    picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
+        else if (picture_control_set_ptr->enc_mode <= ENC_M5)
+            if (picture_control_set_ptr->slice_type == I_SLICE)
+                picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
             else
                 picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
         else
+            picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
+    else
 #if M2_PIC_DEPTH_MODE_NRF_M1
         if (picture_control_set_ptr->enc_mode <= ENC_M0 || (picture_control_set_ptr->enc_mode <= ENC_M1 && picture_control_set_ptr->is_used_as_reference_flag))
             picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
@@ -950,10 +950,14 @@ EbErrorType signal_derivation_multi_processes_oq(
             else
                 picture_control_set_ptr->pic_depth_mode = PIC_SB_SWITCH_NSQ_DEPTH_MODE;
 #else
+#if disable_nsq
+            picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
+#else
             if (picture_control_set_ptr->slice_type == I_SLICE)
                 picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
             else
                 picture_control_set_ptr->pic_depth_mode = PIC_ALL_C_DEPTH_MODE;
+#endif
 #endif
 #if !TWO_PASSES_TEST && !m2_nsq
 #if m3_depth
@@ -1063,7 +1067,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
 #if m2_nsq_search_level_1
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL1;
-#elif m2_nsq_off
+#elif disable_nsq
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
 #else
                 if (picture_control_set_ptr->is_used_as_reference_flag)
