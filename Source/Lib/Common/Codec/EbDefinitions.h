@@ -39,9 +39,9 @@ extern "C" {
 #define M1_0_CANDIDATE               1
 #define M3_0_CANDIDATE               1
 /*new M3*/
-#define M3_trellis                  1
-#define m3_it_search                1
-#define m3_ref_count                1
+#define M3_trellis                  0
+#define m3_it_search                0
+#define m3_ref_count                0
 
     /* rest of feats */
 #define M3_GRAPH_CANDIDATE           0
@@ -71,6 +71,8 @@ extern "C" {
 #define disable_nsq                 0
 #define m2_l0_rest_nsq              0
 
+#define m3_nsq_mod                  0
+#define NSQ_MDC_L01_REF             0
 // Better BDR-Speed trade-off M0
 #define SKIP_ATB_OFF                 1
 #define NEW_NEAREST_NEW_M1_NREF      1
