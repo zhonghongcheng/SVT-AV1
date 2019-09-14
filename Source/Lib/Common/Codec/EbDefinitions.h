@@ -69,7 +69,7 @@ extern "C" {
 #define m2_mdc_1                    0
 #define m2_nsq_search_level_1       0
 #define disable_nsq                 0
-
+#define m2_l0_rest_nsq              0
 
 // Better BDR-Speed trade-off M0
 #define SKIP_ATB_OFF                 1
