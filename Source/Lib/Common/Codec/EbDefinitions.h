@@ -37,6 +37,9 @@ extern "C" {
 
 #define TWO_PASSES_MATCH              0 // matches 1 pass and 2 pass for the same mode
 #define TWO_PASSES_TEST              0
+#define PRED_CHANGE                  1 // Change the MRP in 4L
+#define PRED_CHANGE_5L               1 // Change the MRP in 5L Pictures 3, 5 , 7 and 9 use 1 as the reference, 11, 13, 15 and 17 use 9 as the reference
+
 #define M0_3_CANDIDATE               1
 #define M1_0_CANDIDATE               1
 #define M3_0_CANDIDATE               1
