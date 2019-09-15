@@ -88,6 +88,14 @@ EbErrorType mode_decision_context_ctor(
         if (return_error == EB_ErrorInsufficientResources)
             return EB_ErrorInsufficientResources;
     }
+#if TX_TYPE_LOSSLESS
+    EB_MALLOC(ModeDecisionCandidateBuffer*, context_ptr->scratch_candidate_buffer, sizeof(ModeDecisionCandidateBuffer), EB_N_PTR);
+    EB_MALLOC(ModeDecisionCandidate*, context_ptr->scratch_candidate_buffer->candidate_ptr, sizeof(ModeDecisionCandidate), EB_N_PTR);
+    return_error = mode_decision_scratch_candidate_buffer_ctor(context_ptr->scratch_candidate_buffer);
+
+    if (return_error == EB_ErrorInsufficientResources)
+        return EB_ErrorInsufficientResources;
+#endif
 #if !UNPACK_REF_POST_EP
     // Inter Prediction Context
     return_error = inter_prediction_context_ctor(
@@ -167,7 +175,30 @@ EbErrorType mode_decision_context_ctor(
     EB_MALLOC(uint8_t*, context_ptr->above_txfm_context, sizeof(uint8_t) * (MAX_SB_SIZE >> MI_SIZE_LOG2), EB_N_PTR);
     EB_MALLOC(uint8_t*, context_ptr->left_txfm_context, sizeof(uint8_t) * (MAX_SB_SIZE >> MI_SIZE_LOG2), EB_N_PTR);
 #endif
+#if INTERPOLATION_SEARCH_OPT_0
+    EbPictureBufferDescInitData pictureBufferDescInitData;
 
+    pictureBufferDescInitData.max_width = MAX_SB_SIZE;
+    pictureBufferDescInitData.max_height = MAX_SB_SIZE;
+    pictureBufferDescInitData.bit_depth = EB_8BIT;
+    pictureBufferDescInitData.color_format = EB_YUV420;
+    pictureBufferDescInitData.buffer_enable_mask = PICTURE_BUFFER_DESC_LUMA_MASK;
+    pictureBufferDescInitData.left_padding = 0;
+    pictureBufferDescInitData.right_padding = 0;
+    pictureBufferDescInitData.top_padding = 0;
+    pictureBufferDescInitData.bot_padding = 0;
+    pictureBufferDescInitData.split_mode = EB_FALSE;
+
+    // Video Buffers
+
+        return_error = eb_picture_buffer_desc_ctor(
+        (EbPtr*)&(context_ptr->prediction_ptr_0),
+        (EbPtr)&pictureBufferDescInitData);
+
+        return_error = eb_picture_buffer_desc_ctor(
+            (EbPtr*)&(context_ptr->prediction_ptr_1),
+            (EbPtr)&pictureBufferDescInitData);
+#endif
     return EB_ErrorNone;
 }
 

@@ -116,6 +116,9 @@ extern "C" {
         ModeDecisionCandidate       **fast_candidate_ptr_array;
         ModeDecisionCandidate        *fast_candidate_array;
         ModeDecisionCandidateBuffer **candidate_buffer_ptr_array;
+#if TX_TYPE_LOSSLESS
+        ModeDecisionCandidateBuffer  *scratch_candidate_buffer;
+#endif
         MdRateEstimationContext      *md_rate_estimation_ptr;
         InterPredictionContext       *inter_prediction_context;
         MdCodingUnit                  md_local_cu_unit[BLOCK_MAX_COUNT_SB_128];
@@ -137,8 +140,12 @@ extern "C" {
         NeighborArrayUnit            *skip_coeff_neighbor_array;
 #endif
         NeighborArrayUnit            *luma_dc_sign_level_coeff_neighbor_array; // Stored per 4x4. 8 bit: lower 6 bits (COEFF_CONTEXT_BITS), shows if there is at least one Coef. Top 2 bit store the sign of DC as follow: 0->0,1->-1,2-> 1
+#if TX_TYPE_SEARCH_OPT_0
+        NeighborArrayUnit            *full_loop_luma_dc_sign_level_coeff_neighbor_array; // Stored per 4x4. 8 bit: lower 6 bits (COEFF_CONTEXT_BITS), shows if there is at least one Coef. Top 2 bit store the sign of DC as follow: 0->0,1->-1,2-> 1
+#else
 #if ATB_DC_CONTEXT_SUPPORT_2
         NeighborArrayUnit            *tx_search_luma_dc_sign_level_coeff_neighbor_array; // Stored per 4x4. 8 bit: lower 6 bits (COEFF_CONTEXT_BITS), shows if there is at least one Coef. Top 2 bit store the sign of DC as follow: 0->0,1->-1,2-> 1
+#endif
 #endif
         NeighborArrayUnit            *cr_dc_sign_level_coeff_neighbor_array; // Stored per 4x4. 8 bit: lower 6 bits(COEFF_CONTEXT_BITS), shows if there is at least one Coef. Top 2 bit store the sign of DC as follow: 0->0,1->-1,2-> 1
         NeighborArrayUnit            *cb_dc_sign_level_coeff_neighbor_array; // Stored per 4x4. 8 bit: lower 6 bits(COEFF_CONTEXT_BITS), shows if there is at least one Coef. Top 2 bit store the sign of DC as follow: 0->0,1->-1,2-> 1
@@ -243,6 +250,9 @@ extern "C" {
         EbBool                          cu_use_ref_src_flag;
         uint16_t                        qp_index;
         uint64_t                        three_quad_energy;
+#if TX_TYPE_SEARCH_OPT_0
+        uint32_t                        txb_1d_offset;
+#endif
 #if SEARCH_UV_MODE
         EbBool                          uv_search_path;
         UvPredictionMode                best_uv_mode    [UV_PAETH_PRED + 1][(MAX_ANGLE_DELTA << 1) + 1];
@@ -444,6 +454,10 @@ extern "C" {
 #if ATB_RATE_UPGRADE_0
     uint8_t *above_txfm_context;
     uint8_t *left_txfm_context;
+#endif
+#if INTERPOLATION_SEARCH_OPT_0
+    EbPictureBufferDesc *prediction_ptr_0;
+    EbPictureBufferDesc *prediction_ptr_1;
 #endif
   } ModeDecisionContext;
 

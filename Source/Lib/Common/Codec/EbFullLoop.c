@@ -2277,13 +2277,21 @@ void product_full_loop(
     uint64_t   y_tu_coeff_bits;
     uint64_t   tuFullDistortion[3][DIST_CALC_TOTAL];
     context_ptr->three_quad_energy = 0;
+
+#if TX_TYPE_SEARCH_OPT_0
+    uint32_t txb_itr = context_ptr->txb_itr;
+    uint32_t txb_1d_offset = context_ptr->txb_1d_offset;
+#else
     uint32_t  txb_1d_offset = 0;
     uint32_t txb_itr = 0;
+#endif
     assert(asm_type >= 0 && asm_type < ASM_TYPE_TOTAL);
 #if ATB_SUPPORT
     uint8_t  tx_depth = candidateBuffer->candidate_ptr->tx_depth;
+#if !TX_TYPE_SEARCH_OPT_0
     uint16_t txb_count = context_ptr->blk_geom->txb_count[tx_depth];
     for (txb_itr = 0; txb_itr < txb_count; txb_itr++)
+#endif
 #else
     for (txb_itr = 0; txb_itr < context_ptr->blk_geom->txb_count; txb_itr++)
 #endif
@@ -2307,7 +2315,11 @@ void product_full_loop(
             sequence_control_set_ptr,
 #endif
             COMPONENT_LUMA,
+#if TX_TYPE_SEARCH_OPT_0
+            context_ptr->full_loop_luma_dc_sign_level_coeff_neighbor_array,
+#else
             context_ptr->luma_dc_sign_level_coeff_neighbor_array,
+#endif
             context_ptr->sb_origin_x + tx_org_x,
             context_ptr->sb_origin_y + tx_org_y,
             context_ptr->blk_geom->bsize,
@@ -2641,7 +2653,11 @@ void product_full_loop(
         y_full_distortion[DIST_CALC_RESIDUAL] += tuFullDistortion[0][DIST_CALC_RESIDUAL];
         y_full_distortion[DIST_CALC_PREDICTION] += tuFullDistortion[0][DIST_CALC_PREDICTION];
 #if ATB_SUPPORT
+#if TX_TYPE_SEARCH_OPT_0
+        context_ptr->txb_1d_offset += context_ptr->blk_geom->tx_width[tx_depth][txb_itr] * context_ptr->blk_geom->tx_height[tx_depth][txb_itr];
+#else
         txb_1d_offset += context_ptr->blk_geom->tx_width[tx_depth][txb_itr] * context_ptr->blk_geom->tx_height[tx_depth][txb_itr];
+#endif
 #else
         txb_1d_offset += context_ptr->blk_geom->tx_width[txb_itr] * context_ptr->blk_geom->tx_height[txb_itr];
 #endif
@@ -2757,10 +2773,16 @@ void product_full_loop_tx_search(
             if (!allowed_tx_set_a[txSize][tx_type]) continue;
 
         context_ptr->three_quad_energy = 0;
+#if TX_TYPE_SEARCH_OPT_0
+        uint32_t txb_itr = context_ptr->txb_itr;
+#else
         uint32_t txb_itr = 0;
+#endif
 #if ATB_SUPPORT
+#if !TX_TYPE_SEARCH_OPT_0
         uint16_t txb_count = context_ptr->blk_geom->txb_count[tx_depth];
         for (txb_itr = 0; txb_itr < txb_count; txb_itr++)
+#endif
 #else
         for (txb_itr = 0; txb_itr < context_ptr->blk_geom->txb_count; txb_itr++)
 #endif
@@ -3070,11 +3092,19 @@ void product_full_loop_tx_search(
         //if (cpi->sf.tx_type_search.skip_tx_search && !best_eob) break;
     }
 #if ATB_TX_TYPE_SUPPORT_PER_TU
+#if TX_TYPE_SEARCH_OPT_0 //---
+    candidateBuffer->candidate_ptr->transform_type[context_ptr->txb_itr] = best_tx_type;
+
+    // For Inter blocks, transform type of chroma follows luma transfrom type
+    if (is_inter)
+        candidateBuffer->candidate_ptr->transform_type_uv = (context_ptr->txb_itr == 0) ? candidateBuffer->candidate_ptr->transform_type[context_ptr->txb_itr] : candidateBuffer->candidate_ptr->transform_type_uv;
+#else
     // this kernel assumes no atb
     candidateBuffer->candidate_ptr->transform_type[0] = best_tx_type;
     // For Inter blocks, transform type of chroma follows luma transfrom type
     if (is_inter)
         candidateBuffer->candidate_ptr->transform_type_uv = candidateBuffer->candidate_ptr->transform_type[0];
+#endif
 #else
     candidateBuffer->candidate_ptr->transform_type[PLANE_TYPE_Y] = best_tx_type;
     // For Inter blocks, transform type of chroma follows luma transfrom type
