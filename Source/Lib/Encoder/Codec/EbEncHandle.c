@@ -2297,7 +2297,6 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
     if (sequence_control_set_ptr->static_config.use_output_stat_file)
         sequence_control_set_ptr->mrp_mode = 1;
 #endif
-
     //0: ON
     //1: OFF
     sequence_control_set_ptr->cdf_mode = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode <= ENC_M6) ? 0 : 1;

@@ -872,6 +872,96 @@ EbErrorType mode_decision_candidate_buffer_ctor(
     bufferPtr->full_cost_merge_ptr = full_cost_merge_ptr;
     return EB_ErrorNone;
 }
+#if TX_TYPE_LOSSLESS
+EbErrorType mode_decision_scratch_candidate_buffer_ctor(
+    ModeDecisionCandidateBuffer *bufferPtr)
+{
+
+    EbErrorType return_error = EB_ErrorNone;
+
+    EbPictureBufferDescInitData pictureBufferDescInitData;
+    EbPictureBufferDescInitData doubleWidthPictureBufferDescInitData;
+    EbPictureBufferDescInitData ThirtyTwoWidthPictureBufferDescInitData;
+
+    // Init Picture Data
+    pictureBufferDescInitData.max_width = MAX_SB_SIZE;
+    pictureBufferDescInitData.max_height = MAX_SB_SIZE;
+    pictureBufferDescInitData.bit_depth = EB_8BIT;
+    pictureBufferDescInitData.color_format = EB_YUV420;
+    pictureBufferDescInitData.buffer_enable_mask = PICTURE_BUFFER_DESC_FULL_MASK;
+    pictureBufferDescInitData.left_padding = 0;
+    pictureBufferDescInitData.right_padding = 0;
+    pictureBufferDescInitData.top_padding = 0;
+    pictureBufferDescInitData.bot_padding = 0;
+    pictureBufferDescInitData.split_mode = EB_FALSE;
+    doubleWidthPictureBufferDescInitData.max_width = MAX_SB_SIZE;
+    doubleWidthPictureBufferDescInitData.max_height = MAX_SB_SIZE;
+    doubleWidthPictureBufferDescInitData.bit_depth = EB_16BIT;
+    doubleWidthPictureBufferDescInitData.color_format = EB_YUV420;
+    doubleWidthPictureBufferDescInitData.buffer_enable_mask = PICTURE_BUFFER_DESC_FULL_MASK;
+    doubleWidthPictureBufferDescInitData.left_padding = 0;
+    doubleWidthPictureBufferDescInitData.right_padding = 0;
+    doubleWidthPictureBufferDescInitData.top_padding = 0;
+    doubleWidthPictureBufferDescInitData.bot_padding = 0;
+    doubleWidthPictureBufferDescInitData.split_mode = EB_FALSE;
+
+    ThirtyTwoWidthPictureBufferDescInitData.max_width = MAX_SB_SIZE;
+    ThirtyTwoWidthPictureBufferDescInitData.max_height = MAX_SB_SIZE;
+    ThirtyTwoWidthPictureBufferDescInitData.bit_depth = EB_32BIT;
+    ThirtyTwoWidthPictureBufferDescInitData.color_format = EB_YUV420;
+    ThirtyTwoWidthPictureBufferDescInitData.buffer_enable_mask = PICTURE_BUFFER_DESC_FULL_MASK;
+    ThirtyTwoWidthPictureBufferDescInitData.left_padding = 0;
+    ThirtyTwoWidthPictureBufferDescInitData.right_padding = 0;
+    ThirtyTwoWidthPictureBufferDescInitData.top_padding = 0;
+    ThirtyTwoWidthPictureBufferDescInitData.bot_padding = 0;
+    ThirtyTwoWidthPictureBufferDescInitData.split_mode = EB_FALSE;
+
+    // Video Buffers
+    return_error = eb_picture_buffer_desc_ctor(
+        (EbPtr*)&(bufferPtr->prediction_ptr),
+        (EbPtr)&pictureBufferDescInitData);
+
+    // Video Buffers
+    return_error = eb_picture_buffer_desc_ctor(
+        (EbPtr*)&(bufferPtr->prediction_ptr_temp),
+        (EbPtr)&pictureBufferDescInitData);
+
+    if (return_error == EB_ErrorInsufficientResources)
+        return EB_ErrorInsufficientResources;
+    return_error = eb_picture_buffer_desc_ctor(
+        (EbPtr*)&(bufferPtr->cfl_temp_prediction_ptr),
+        (EbPtr)&pictureBufferDescInitData);
+
+    if (return_error == EB_ErrorInsufficientResources)
+        return EB_ErrorInsufficientResources;
+    return_error = eb_picture_buffer_desc_ctor(
+        (EbPtr*)&(bufferPtr->residual_ptr),
+        (EbPtr)&doubleWidthPictureBufferDescInitData);
+
+    if (return_error == EB_ErrorInsufficientResources)
+        return EB_ErrorInsufficientResources;
+    return_error = eb_picture_buffer_desc_ctor(
+        (EbPtr*)&(bufferPtr->residual_quant_coeff_ptr),
+        (EbPtr)&ThirtyTwoWidthPictureBufferDescInitData);
+
+    if (return_error == EB_ErrorInsufficientResources)
+        return EB_ErrorInsufficientResources;
+    return_error = eb_picture_buffer_desc_ctor(
+        (EbPtr*)&(bufferPtr->recon_coeff_ptr),
+        (EbPtr)&ThirtyTwoWidthPictureBufferDescInitData);
+
+    if (return_error == EB_ErrorInsufficientResources)
+        return EB_ErrorInsufficientResources;
+    return_error = eb_picture_buffer_desc_ctor(
+        (EbPtr*)&(bufferPtr->recon_ptr),
+        (EbPtr)&pictureBufferDescInitData);
+
+    if (return_error == EB_ErrorInsufficientResources)
+        return EB_ErrorInsufficientResources;
+
+    return EB_ErrorNone;
+}
+#endif
 #if PRUNE_REF_FRAME_FRO_REC_PARTITION
 uint8_t check_ref_beackout(
     PictureControlSet          *picture_control_set_ptr,

@@ -6556,14 +6556,22 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
                         md_context_ptr->blk_geom->bheight,
                         ref_pic_list0,
                         ref_pic_list1,
+#if INTERPOLATION_SEARCH_OPT_0
+                        candidate_buffer_ptr->candidate_ptr->interp_filters == 65537 ? md_context_ptr->prediction_ptr_0 : md_context_ptr->prediction_ptr_1,
+#else
                         prediction_ptr,
+#endif
                         md_context_ptr->blk_geom->origin_x,
                         md_context_ptr->blk_geom->origin_y,
                         use_uv);
 
                     model_rd_for_sb(
                         picture_control_set_ptr,
+#if INTERPOLATION_SEARCH_OPT_0
+                        candidate_buffer_ptr->candidate_ptr->interp_filters == 65537 ? md_context_ptr->prediction_ptr_0 : md_context_ptr->prediction_ptr_1,
+#else
                         prediction_ptr,
+#endif
                         md_context_ptr,
                         0,
                         num_planes - 1,
@@ -7186,26 +7194,100 @@ EbErrorType inter_pu_prediction_av1(
 #if !PRE_BILINEAR_CLEAN_UP
         candidate_buffer_ptr->candidate_ptr->interp_filters = 0;
 #endif
+
+#if INTERPOLATION_SEARCH_OPT_0
 #if IT_SEARCH_FIX
         if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level == IT_SEARCH_OFF)
             candidate_buffer_ptr->candidate_ptr->interp_filters = 0;
         else
 #endif
-        if (!md_context_ptr->skip_interpolation_search) {
-            if (md_context_ptr->blk_geom->bwidth > capped_size && md_context_ptr->blk_geom->bheight > capped_size)
-                interpolation_filter_search(
-                    picture_control_set_ptr,
-                    candidate_buffer_ptr->prediction_ptr_temp,
-                    md_context_ptr,
-                    candidate_buffer_ptr,
-                    mv_unit,
-                    ref_pic_list0,
-                    ref_pic_list1,
-                    &rd,
-                    &rs,
-                    &skip_txfm_sb,
-                    &skip_sse_sb);
-        }
+            if (!md_context_ptr->skip_interpolation_search) {
+                if (md_context_ptr->blk_geom->bwidth > capped_size && md_context_ptr->blk_geom->bheight > capped_size)
+                    interpolation_filter_search(
+                        picture_control_set_ptr,
+#if INTERPOLATION_SEARCH_OPT_0
+                        candidate_buffer_ptr->prediction_ptr,
+#else
+                        candidate_buffer_ptr->prediction_ptr_temp,
+#endif
+                        md_context_ptr,
+                        candidate_buffer_ptr,
+                        mv_unit,
+                        ref_pic_list0,
+                        ref_pic_list1,
+                        &rd,
+                        &rs,
+                        &skip_txfm_sb,
+                        &skip_sse_sb);
+            }
+        //if(candidate_buffer_ptr->candidate_ptr->interp_filters == 65537)
+
+        //memcpy(candidate_buffer_ptr->prediction_ptr->buffer_y = candidate_buffer_ptr->candidate_ptr->interp_filters == 65537 ? md_context_ptr->prediction_ptr_0->buffer_y : md_context_ptr->prediction_ptr_1->buffer_y;
+
+
+        av1_inter_prediction(
+            picture_control_set_ptr,
+            candidate_buffer_ptr->candidate_ptr->interp_filters,
+            md_context_ptr->cu_ptr,
+            candidate_buffer_ptr->candidate_ptr->ref_frame_type,
+            &mv_unit,
+            candidate_buffer_ptr->candidate_ptr->use_intrabc,
+#if COMP_MODE
+            candidate_buffer_ptr->candidate_ptr->compound_idx,
+#endif
+#if COMP_DIFF
+            &candidate_buffer_ptr->candidate_ptr->interinter_comp,
+#endif
+#if II_ED
+            &md_context_ptr->sb_ptr->tile_info,
+            md_context_ptr->luma_recon_neighbor_array,
+            md_context_ptr->cb_recon_neighbor_array,
+            md_context_ptr->cr_recon_neighbor_array,
+            candidate_ptr->is_interintra_used,
+            candidate_ptr->interintra_mode,
+            candidate_ptr->use_wedge_interintra,
+            candidate_ptr->interintra_wedge_index,
+#endif
+            md_context_ptr->cu_origin_x,
+            md_context_ptr->cu_origin_y,
+            md_context_ptr->blk_geom->bwidth,
+            md_context_ptr->blk_geom->bheight,
+            ref_pic_list0,
+            ref_pic_list1,
+            candidate_buffer_ptr->prediction_ptr,
+            md_context_ptr->blk_geom->origin_x,
+            md_context_ptr->blk_geom->origin_y,
+#if RE_FACTURE_PRED_KERNEL
+            md_context_ptr->chroma_level <= CHROMA_MODE_1 && md_context_ptr->shut_chroma_comp == EB_FALSE
+#else
+            md_context_ptr->chroma_level <= CHROMA_MODE_1
+#endif
+        );
+#else
+#if IT_SEARCH_FIX
+        if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level == IT_SEARCH_OFF)
+            candidate_buffer_ptr->candidate_ptr->interp_filters = 0;
+        else
+#endif
+            if (!md_context_ptr->skip_interpolation_search) {
+                if (md_context_ptr->blk_geom->bwidth > capped_size && md_context_ptr->blk_geom->bheight > capped_size)
+                    interpolation_filter_search(
+                        picture_control_set_ptr,
+#if INTERPOLATION_SEARCH_OPT_0
+                        candidate_buffer_ptr->prediction_ptr,
+#else
+                        candidate_buffer_ptr->prediction_ptr_temp,
+#endif
+                        md_context_ptr,
+                        candidate_buffer_ptr,
+                        mv_unit,
+                        ref_pic_list0,
+                        ref_pic_list1,
+                        &rd,
+                        &rs,
+                        &skip_txfm_sb,
+                        &skip_sse_sb);
+            }
 
         av1_inter_prediction(
             picture_control_set_ptr,
@@ -7245,6 +7327,7 @@ EbErrorType inter_pu_prediction_av1(
         md_context_ptr->chroma_level <= CHROMA_MODE_1
 #endif
         );
+#endif
 #else
     if (is16bit) {
         candidate_buffer_ptr->candidate_ptr->interp_filters = 0;
