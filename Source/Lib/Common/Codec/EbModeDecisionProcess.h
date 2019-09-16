@@ -342,6 +342,9 @@ extern "C" {
 #endif
         uint32_t                       fast_cand_count[CAND_CLASS_TOTAL]; //how many ffast candiates per class
 #endif
+#if COMPOUND_OPT
+        uint64_t                       best_cost_per_class[CAND_CLASS_TOTAL];
+#endif
         uint8_t                         decouple_intra_inter_fast_loop;
         uint8_t                         full_loop_escape;
         uint8_t                         global_mv_injection;

@@ -1840,6 +1840,9 @@ void ProductMdFastPuPrediction(
 }
 #endif
 
+#if INTERPOLATION_SEARCH_OPT 
+extern aom_variance_fn_ptr_t mefn_ptr[BlockSizeS_ALL];
+#endif
 #if REFACTOR_FAST_LOOP
 
 void fast_loop_core(
@@ -1869,6 +1872,16 @@ void fast_loop_core(
         context_ptr->skip_interpolation_search = 1;
     else
         context_ptr->skip_interpolation_search = picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? 0 : 1;
+
+#if INTERPOLATION_SEARCH_OPT 
+
+    const aom_variance_fn_ptr_t *fn_ptr = &mefn_ptr[BLOCK_16X16];
+    const unsigned int var = // use_hbd ?
+        //av1_high_get_sby_perpixel_variance(cpi, &buf, BLOCK_16X16, bd) :
+        av1_get_sby_perpixel_variance(fn_ptr, (input_picture_ptr->buffer_y + inputOriginIndex), input_picture_ptr->stride_y, context_ptr->blk_geom->bsize);
+    if (var > 500)
+        context_ptr->skip_interpolation_search = 1;
+#endif
 #else
     context_ptr->skip_interpolation_search = picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? 0 : 1;
 
@@ -2962,7 +2975,13 @@ void sort_stage0_fast_candidates(
             cand_buff_indices[ordered_start_idx++] = buffer_index;
     }
 
-
+#if COMPOUND_OPT
+    // Derived best cost per class
+    for (uint32_t buffer_index = 0; buffer_index <= ordered_end_idx; buffer_index++) {
+        if (*(buffer_ptr_array[buffer_index]->fast_cost_ptr) < context_ptr->best_cost_per_class[context_ptr->target_class])
+            context_ptr->best_cost_per_class[context_ptr->target_class] = *(buffer_ptr_array[buffer_index]->fast_cost_ptr);
+    }
+#endif
     //uint32_t i, j, index;
 
     //{
@@ -5786,20 +5805,46 @@ void tx_partitioning_path(
     SequenceControlSet  *sequence_control_set_ptr = (SequenceControlSet*)picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr;
     EbAsm    asm_type = sequence_control_set_ptr->encode_context_ptr->asm_type;
     int32_t is_inter = (candidateBuffer->candidate_ptr->type == INTER_MODE || candidateBuffer->candidate_ptr->use_intrabc) ? EB_TRUE : EB_FALSE;
-    uint64_t y_full_cost;
-    uint64_t y_tu_coeff_bits;
-    uint64_t tuFullDistortion[3][DIST_CALC_TOTAL];
+
 
     uint8_t  best_tx_depth = 0;
-
     uint64_t best_cost_search = (uint64_t)~0;
-
+#if !TX_TYPE_LOSSLESS
     TxType best_tx_type_per_depth[MAX_VARTX_DEPTH + 1][MAX_TXB_COUNT] = { DCT_DCT };
+#endif
     uint8_t tx_search_skip_flag;
 
 #if TX_TYPE_LOSSLESS
     // Fill the scratch buffer 
     memcpy(context_ptr->scratch_candidate_buffer->candidate_ptr, candidateBuffer->candidate_ptr, sizeof(ModeDecisionCandidate));
+
+    if (is_inter) {
+
+        uint32_t block_index = context_ptr->blk_geom->origin_x + (context_ptr->blk_geom->origin_y * MAX_SB_SIZE);
+
+        // Copy pred
+        {
+            EbByte src = &(candidateBuffer->prediction_ptr->buffer_y[block_index]);
+            EbByte dst = &(context_ptr->scratch_candidate_buffer->prediction_ptr->buffer_y[block_index]);
+            for (int i = 0; i < context_ptr->blk_geom->bheight; i++) {
+                memcpy(dst, src, context_ptr->blk_geom->bwidth);
+                src += candidateBuffer->prediction_ptr->stride_y;
+                dst += context_ptr->scratch_candidate_buffer->prediction_ptr->stride_y;
+            }
+        }
+
+        // Copy residual
+        {
+            int16_t* src = &(((int16_t*)candidateBuffer->residual_ptr->buffer_y)[block_index]);
+            int16_t* dst = &(((int16_t*)context_ptr->scratch_candidate_buffer->residual_ptr->buffer_y)[block_index]);
+
+            for (int i = 0; i < context_ptr->blk_geom->bheight; i++) {
+                memcpy(dst, src, context_ptr->blk_geom->bwidth << 1);
+                src += candidateBuffer->residual_ptr->stride_y;
+                dst += context_ptr->scratch_candidate_buffer->residual_ptr->stride_y;
+            }
+        }
+    }
 #endif
 
     if (is_inter)
@@ -5830,6 +5875,9 @@ void tx_partitioning_path(
 #else
         ModeDecisionCandidateBuffer *tx_candidate_buffer = candidateBuffer;
 #endif
+
+        tx_candidate_buffer->candidate_ptr->tx_depth = context_ptr->tx_depth;
+
         tx_initialize_neighbor_arrays(
             sequence_control_set_ptr,
             picture_control_set_ptr,
@@ -5883,12 +5931,12 @@ void tx_partitioning_path(
                     tx_candidate_buffer,
                     qp,
                     asm_type);
-
+#if !TX_TYPE_LOSSLESS
                 // track best Tx Type per tx_depth/txb_itr
                 best_tx_type_per_depth[context_ptr->tx_depth][context_ptr->txb_itr] = tx_candidate_buffer->candidate_ptr->transform_type[context_ptr->txb_itr];
+#endif
             }
 
-            tx_candidate_buffer->candidate_ptr->tx_depth = context_ptr->tx_depth;
             product_full_loop(
                 tx_candidate_buffer,
                 context_ptr,
@@ -10455,7 +10503,9 @@ void md_encode_block(
             picture_control_set_ptr,
             context_ptr,
             fastCandidateTotalCount);
-
+#if COMPOUND_OPT
+        EbBool skip_class[CAND_CLASS_TOTAL] = { EB_FALSE };
+#endif
         CAND_CLASS  cand_class_it;
         uint32_t buffer_start_idx = 0;
         uint32_t buffer_count_for_curr_class;
@@ -10477,6 +10527,27 @@ void md_encode_block(
 
             //number of next level candidates could not exceed number of curr level candidates
             context_ptr->fast1_cand_count[cand_class_it] = MIN(context_ptr->fast_cand_count[cand_class_it], context_ptr->fast1_cand_count[cand_class_it]);
+
+
+#if COMPOUND_OPT
+            // Set best_cost_per_class to MAX
+            context_ptr->best_cost_per_class[cand_class_it] = MAX_CU_COST;
+            if (cand_class_it == CAND_CLASS_3 && context_ptr->fast_cand_count[cand_class_it]) {
+
+                if (context_ptr->best_cost_per_class[CAND_CLASS_0] < context_ptr->best_cost_per_class[CAND_CLASS_1] &&
+                    context_ptr->best_cost_per_class[CAND_CLASS_0] < context_ptr->best_cost_per_class[CAND_CLASS_2]) {
+
+                    skip_class[CAND_CLASS_3] = EB_TRUE;
+                    if (skip_class[cand_class_it]) {
+                        context_ptr->fast_cand_count[cand_class_it] = 0;
+                        context_ptr->fast1_cand_count[cand_class_it] = 0;
+                        context_ptr->md_stage_2_count[cand_class_it] = 0;
+                        context_ptr->md_stage_3_count[cand_class_it] = 0;
+
+                    }
+                }
+            }
+#endif
 
             if (context_ptr->fast_cand_count[cand_class_it] > 0 && context_ptr->fast1_cand_count[cand_class_it] > 0) {
 
