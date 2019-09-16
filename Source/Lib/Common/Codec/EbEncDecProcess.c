@@ -1615,6 +1615,35 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 void move_cu_data(
     CodingUnit *src_cu,
     CodingUnit *dst_cu);
+#if TWO_PASS_PART_128SUPPORT
+uint32_t map_128_to_64_sb_addr(
+    SequenceControlSet *sequence_control_set_ptr,
+    uint32_t            sb_index,
+    uint32_t            cu_origin_x,
+    uint32_t            cu_origin_y,
+    uint8_t             *quadrant) {
+    uint32_t me_sb_size = sequence_control_set_ptr->sb_sz;
+    uint32_t me_pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / me_sb_size;
+    uint32_t me_pic_height_in_sb = (sequence_control_set_ptr->seq_header.max_frame_height + me_sb_size - 1) / me_sb_size;
+    uint32_t sb64_addr;
+    if (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128) {
+        uint32_t me_sb_size = sequence_control_set_ptr->sb_sz;
+        uint32_t me_pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / me_sb_size;
+        uint32_t me_pic_height_in_sb = (sequence_control_set_ptr->seq_header.max_frame_height + sequence_control_set_ptr->sb_sz - 1) / me_sb_size;
+        uint32_t me_sb_x = (cu_origin_x / me_sb_size);
+        uint32_t me_sb_y = (cu_origin_y / me_sb_size);
+        sb64_addr = me_sb_x + me_sb_y * me_pic_width_in_sb;
+        *quadrant = (me_sb_x % 2) + ((me_sb_y % 2) * 2);
+        if (*quadrant > 3)
+            printf("Error");
+    }
+    else {
+        sb64_addr = sb_index;
+        *quadrant = 0;
+    }
+    return sb64_addr;
+}
+#endif
 
 #if CABAC_UP
 void av1_estimate_syntax_rate___partial(
@@ -1939,16 +1968,25 @@ void* enc_dec_kernel(void *input_ptr)
                     if (sequence_control_set_ptr->static_config.use_output_stat_file) {
                         eb_block_on_mutex(picture_control_set_ptr->first_pass_split_mutex);
 #if TWO_PASS_PART_OPT
-                        uint32_t sq_idx = 0;
+                        uint8_t quadrant = 0;
+                        uint32_t sq_idx[4] = { 0 };
                         EbBool split_flag;
                         uint32_t blk_index = 0;
                         while (blk_index < sequence_control_set_ptr->max_block_cnt){
                             const BlockGeom * blk_geom = get_blk_geom_mds(blk_index);
+                            uint32_t cu_origin_x = sb_origin_x + blk_geom->origin_x;
+                            uint32_t cu_origin_y = sb_origin_y + blk_geom->origin_y;
+                            uint32_t sb64_index = map_128_to_64_sb_addr(
+                                sequence_control_set_ptr,
+                                sb_index,
+                                cu_origin_x,
+                                cu_origin_y,
+                                &quadrant);
                             //if the parentSq is inside inject this block
                             uint8_t is_blk_allowed = picture_control_set_ptr->slice_type != I_SLICE ? 1 : (blk_geom->sq_size < 128) ? 1 : 0;
-                            if (blk_geom->shape == PART_N && blk_geom->sq_size > 4) {
-                                picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_split_flag[sb_index][sq_idx++] = context_ptr->first_pass_split_flag[sb_index][blk_index];
-                                if (sq_idx > NUMBER_OF_SPLIT_FLAG)
+                            if (blk_geom->shape == PART_N && blk_geom->sq_size > 4 && blk_geom->sq_size < 128) {
+                                picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_split_flag[sb_index][sq_idx[quadrant]++] = context_ptr->first_pass_split_flag[sb_index][blk_index];
+                                if (sq_idx[quadrant] > NUMBER_OF_SPLIT_FLAG)
                                     printf("Error: EbEncDecProcess: number of sq_idx > NUMBER_OF_SPLIT_FLAG not sufficient\n");
                             }
                             split_flag = context_ptr->first_pass_split_flag[sb_index][blk_index];
