@@ -161,10 +161,15 @@ extern "C" {
 //*************************************************//
 // Lossless 
 #define TX_TYPE_SEARCH_OPT_0                     1
-#define TX_TYPE_LOSSLESS                         0
 #define INTERPOLATION_SEARCH_OPT_0               0
+#define COMPOUND_LOSSLESS                        0
 // Lossy
 #define COMPOUND_OPT                             0
+#if COMPOUND_OPT
+#define COMPOUND_OPT_0                           0
+#define COMPOUND_OPT_1                           0
+#endif
+
 #define INTERPOLATION_SEARCH_OPT                 0
 //*************************************************//
 #define FIRST_FULL_LOOP_INTERPOLATION_SEARCH   1

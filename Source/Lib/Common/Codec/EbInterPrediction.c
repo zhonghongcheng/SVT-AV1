@@ -2767,7 +2767,7 @@ void search_compound_diff_wedge(
     ModeDecisionCandidate                *candidate_ptr    )
 {
 
-#if PRE_BILINEAR_CLEAN_UP // compound
+#if PRE_BILINEAR_CLEAN_UP && !COMPOUND_LOSSLESS// compound
 #if BILINEAR_INJECTION
     candidate_ptr->interp_filters = av1_make_interp_filters(BILINEAR, BILINEAR);
 #else
@@ -2825,7 +2825,7 @@ void search_compound_diff_wedge(
         //we call the regular inter prediction path here(no compound)
         av1_inter_prediction(
             picture_control_set_ptr,
-#if PRE_BILINEAR_CLEAN_UP // compound
+#if PRE_BILINEAR_CLEAN_UP && !COMPOUND_LOSSLESS// compound
             candidate_ptr->interp_filters,
 #else
             0,//fixed interpolation filter for compound search
@@ -2869,7 +2869,7 @@ void search_compound_diff_wedge(
         //we call the regular inter prediction path here(no compound)
         av1_inter_prediction(
             picture_control_set_ptr,
-#if PRE_BILINEAR_CLEAN_UP // compound
+#if PRE_BILINEAR_CLEAN_UP && !COMPOUND_LOSSLESS// compound
             candidate_ptr->interp_filters,
 #else
             0,//fixed interpolation filter for compound search

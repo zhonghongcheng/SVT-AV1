@@ -625,16 +625,24 @@ COMPOUND_TYPE to_av1_compound_lut[] = {
     COMPOUND_DIFFWTD,
     COMPOUND_WEDGE
 };
+#if COMPOUND_LOSSLESS
 
+COMPOUND_TYPE to_svt_compound_lut[] = {
+    MD_COMP_AVG,
+    MD_COMP_DIST,
+    MD_COMP_DIFF0,
+    MD_COMP_WEDGE
+};
+#endif
 void determine_compound_mode(
     PictureControlSet            *picture_control_set_ptr,
     ModeDecisionContext          *context_ptr,
     ModeDecisionCandidate        *candidatePtr,
     MD_COMP_TYPE                 cur_type) {
 
-
+#if !COMPOUND_LOSSLESS
     candidatePtr->interinter_comp.type = to_av1_compound_lut[cur_type];
-
+#endif
     if (cur_type == MD_COMP_AVG) {
 
         candidatePtr->comp_group_idx = 0;
@@ -872,7 +880,7 @@ EbErrorType mode_decision_candidate_buffer_ctor(
     bufferPtr->full_cost_merge_ptr = full_cost_merge_ptr;
     return EB_ErrorNone;
 }
-#if TX_TYPE_LOSSLESS
+#if TX_TYPE_SEARCH_OPT_0
 EbErrorType mode_decision_scratch_candidate_buffer_ctor(
     ModeDecisionCandidateBuffer *bufferPtr)
 {
@@ -1873,6 +1881,9 @@ void Bipred3x3CandidatesInjection(
             candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_0] = bestPredmv[0].as_mv.row;
             candidateArray[canTotalCnt].motion_vector_pred_x[REF_LIST_1] = bestPredmv[1].as_mv.col;
             candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_1] = bestPredmv[1].as_mv.row;
+#if COMPOUND_LOSSLESS
+            candidateArray[canTotalCnt].interinter_comp.type = to_av1_compound_lut[cur_type];
+#else
 #if COMP_MODE
             //BIP 3x3
             determine_compound_mode(
@@ -1880,6 +1891,7 @@ void Bipred3x3CandidatesInjection(
                 context_ptr,
                 &candidateArray[canTotalCnt],
                 cur_type);
+#endif
 #endif
 #if CHECK_CAND
             INCRMENT_CAND_TOTAL_COUNT(canTotalCnt);
@@ -2032,6 +2044,9 @@ void Bipred3x3CandidatesInjection(
                 candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_0] = bestPredmv[0].as_mv.row;
                 candidateArray[canTotalCnt].motion_vector_pred_x[REF_LIST_1] = bestPredmv[1].as_mv.col;
                 candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_1] = bestPredmv[1].as_mv.row;
+#if COMPOUND_LOSSLESS
+                candidateArray[canTotalCnt].interinter_comp.type = to_av1_compound_lut[cur_type];
+#else
 #if COMP_MODE
                     //BIP 3x3
                     determine_compound_mode(
@@ -2039,6 +2054,7 @@ void Bipred3x3CandidatesInjection(
                         context_ptr,
                         &candidateArray[canTotalCnt],
                         cur_type);
+#endif
 #endif
 #if CHECK_CAND
                 INCRMENT_CAND_TOTAL_COUNT(canTotalCnt);
@@ -2740,7 +2756,9 @@ void inject_mvp_candidates_II(
                 candidateArray[canIdx].transform_type[PLANE_TYPE_Y] = DCT_DCT;
                 candidateArray[canIdx].transform_type[PLANE_TYPE_UV] = DCT_DCT;
 #endif
-
+#if COMPOUND_LOSSLESS
+                candidateArray[canIdx].interinter_comp.type = to_av1_compound_lut[cur_type];
+#else
 #if COMP_DIFF
                 //NEAREST-NEAREST
                 determine_compound_mode(
@@ -2748,6 +2766,7 @@ void inject_mvp_candidates_II(
                     context_ptr,
                     &candidateArray[canIdx],
                     cur_type);
+#endif
 #endif
                 context_ptr->injected_mv_x_bipred_l0_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_x_l0;
                 context_ptr->injected_mv_y_bipred_l0_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_y_l0;
@@ -2838,6 +2857,9 @@ void inject_mvp_candidates_II(
                     context_ptr->injected_mv_y_bipred_l1_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_y_l1;
                     context_ptr->injected_ref_type_bipred_array[context_ptr->injected_mv_count_bipred] = ref_pair;
                     ++context_ptr->injected_mv_count_bipred;
+#if COMPOUND_LOSSLESS
+                    candidateArray[canIdx].interinter_comp.type = to_av1_compound_lut[cur_type];
+#else
 #if COMP_MODE
                     //NEAR-NEAR
                     determine_compound_mode(
@@ -2845,6 +2867,7 @@ void inject_mvp_candidates_II(
                         context_ptr,
                         &candidateArray[canIdx],
                         cur_type);
+#endif
 #endif
                     INCRMENT_CAND_TOTAL_COUNT(canIdx);
 
@@ -3296,6 +3319,9 @@ void inject_new_nearest_new_comb_candidates(
                     context_ptr->injected_mv_y_bipred_l1_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_y_l1;
                     context_ptr->injected_ref_type_bipred_array[context_ptr->injected_mv_count_bipred] = ref_pair;
                     ++context_ptr->injected_mv_count_bipred;
+#if COMPOUND_LOSSLESS
+                    candidateArray[canIdx].interinter_comp.type = to_av1_compound_lut[cur_type];
+#else
 #if COMP_MODE
                     //NEAREST_NEW
                     determine_compound_mode(
@@ -3303,6 +3329,7 @@ void inject_new_nearest_new_comb_candidates(
                         context_ptr,
                         &candidateArray[canIdx],
                         cur_type);
+#endif
 #endif
                     INCRMENT_CAND_TOTAL_COUNT(canIdx);
 #if COMP_MODE
@@ -3419,6 +3446,9 @@ void inject_new_nearest_new_comb_candidates(
                     context_ptr->injected_mv_y_bipred_l1_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_y_l1;
                     context_ptr->injected_ref_type_bipred_array[context_ptr->injected_mv_count_bipred] = ref_pair;
                     ++context_ptr->injected_mv_count_bipred;
+#if COMPOUND_LOSSLESS
+                    candidateArray[canIdx].interinter_comp.type = to_av1_compound_lut[cur_type];
+#else
 #if COMP_MODE
                     //NEW_NEAREST
                     determine_compound_mode(
@@ -3426,6 +3456,7 @@ void inject_new_nearest_new_comb_candidates(
                         context_ptr,
                         &candidateArray[canIdx],
                         cur_type);
+#endif
 #endif
                         INCRMENT_CAND_TOTAL_COUNT(canIdx);
 
@@ -3528,6 +3559,9 @@ void inject_new_nearest_new_comb_candidates(
                             context_ptr->injected_mv_y_bipred_l1_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_y_l1;
                             context_ptr->injected_ref_type_bipred_array[context_ptr->injected_mv_count_bipred] = ref_pair;
                             ++context_ptr->injected_mv_count_bipred;
+#if COMPOUND_LOSSLESS
+                            candidateArray[canIdx].interinter_comp.type = to_av1_compound_lut[cur_type];
+#else
 #if COMP_MODE
                     //NEW_NEARMV
                     determine_compound_mode(
@@ -3535,6 +3569,7 @@ void inject_new_nearest_new_comb_candidates(
                         context_ptr,
                         &candidateArray[canIdx],
                         cur_type);
+#endif
 #endif
                             INCRMENT_CAND_TOTAL_COUNT(canIdx);
 #if COMP_MODE
@@ -3639,6 +3674,9 @@ void inject_new_nearest_new_comb_candidates(
                        context_ptr->injected_mv_y_bipred_l1_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_y_l1;
                        context_ptr->injected_ref_type_bipred_array[context_ptr->injected_mv_count_bipred] = ref_pair;
                        ++context_ptr->injected_mv_count_bipred;
+#if COMPOUND_LOSSLESS
+                       candidateArray[canIdx].interinter_comp.type = to_av1_compound_lut[cur_type];
+#else
 #if COMP_MODE
                     //NEAR_NEWMV
                     determine_compound_mode(
@@ -3646,6 +3684,7 @@ void inject_new_nearest_new_comb_candidates(
                         context_ptr,
                         &candidateArray[canIdx],
                         cur_type);
+#endif
 #endif
                        INCRMENT_CAND_TOTAL_COUNT(canIdx);
 #if COMP_MODE
@@ -4440,6 +4479,9 @@ void inject_new_candidates(
                         candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_0] = bestPredmv[0].as_mv.row;
                         candidateArray[canTotalCnt].motion_vector_pred_x[REF_LIST_1] = bestPredmv[1].as_mv.col;
                         candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_1] = bestPredmv[1].as_mv.row;
+#if COMPOUND_LOSSLESS
+                        candidateArray[canTotalCnt].interinter_comp.type = to_av1_compound_lut[cur_type];
+#else
 #if COMP_MODE
                             //NEW_NEW
                             determine_compound_mode(
@@ -4447,6 +4489,7 @@ void inject_new_candidates(
                                 context_ptr,
                                 &candidateArray[canTotalCnt],
                                 cur_type);
+#endif
 #endif
 #if CHECK_CAND
                         INCRMENT_CAND_TOTAL_COUNT(canTotalCnt);
@@ -4713,7 +4756,9 @@ void inject_predictive_me_candidates(
                                 candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_0] = bestPredmv[0].as_mv.row;
                                 candidateArray[canTotalCnt].motion_vector_pred_x[REF_LIST_1] = bestPredmv[1].as_mv.col;
                                 candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_1] = bestPredmv[1].as_mv.row;
-
+#if COMPOUND_LOSSLESS
+                                candidateArray[canTotalCnt].interinter_comp.type = to_av1_compound_lut[cur_type];
+#else
 #if COMP_MODE
                                 //MVP REFINE
                                 determine_compound_mode(
@@ -4721,6 +4766,7 @@ void inject_predictive_me_candidates(
                                     context_ptr,
                                     &candidateArray[canTotalCnt],
                                     cur_type);
+#endif
 #endif
                                 INCRMENT_CAND_TOTAL_COUNT(canTotalCnt);
                                 context_ptr->injected_mv_x_bipred_l0_array[context_ptr->injected_mv_count_bipred] = to_inject_mv_x_l0;
@@ -5523,6 +5569,9 @@ void  inject_inter_candidates(
                 candidateArray[canTotalCnt].motion_vector_yl0 = to_inject_mv_y_l0;
                 candidateArray[canTotalCnt].motion_vector_xl1 = to_inject_mv_x_l1;
                 candidateArray[canTotalCnt].motion_vector_yl1 = to_inject_mv_y_l1;
+#if COMPOUND_LOSSLESS
+                candidateArray[canTotalCnt].interinter_comp.type = to_av1_compound_lut[cur_type];
+#else
 #if COMP_MODE
                     //GLOB-GLOB
                     determine_compound_mode(
@@ -5531,7 +5580,7 @@ void  inject_inter_candidates(
                         &candidateArray[canTotalCnt],
                         cur_type);
 #endif
-
+#endif
 #if CHECK_CAND
                 INCRMENT_CAND_TOTAL_COUNT(canTotalCnt);
 #else

@@ -88,7 +88,7 @@ EbErrorType mode_decision_context_ctor(
         if (return_error == EB_ErrorInsufficientResources)
             return EB_ErrorInsufficientResources;
     }
-#if TX_TYPE_LOSSLESS
+#if TX_TYPE_SEARCH_OPT_0
     EB_MALLOC(ModeDecisionCandidateBuffer*, context_ptr->scratch_candidate_buffer, sizeof(ModeDecisionCandidateBuffer), EB_N_PTR);
     EB_MALLOC(ModeDecisionCandidate*, context_ptr->scratch_candidate_buffer->candidate_ptr, sizeof(ModeDecisionCandidate), EB_N_PTR);
     return_error = mode_decision_scratch_candidate_buffer_ctor(context_ptr->scratch_candidate_buffer);
