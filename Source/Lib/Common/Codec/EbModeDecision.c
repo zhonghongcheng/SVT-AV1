@@ -63,14 +63,6 @@ static INLINE int is_interintra_allowed_ref(const MvReferenceFrame rf[2]) {
     return (rf[0] > INTRA_FRAME) && (rf[1] <= INTRA_FRAME);
 }
 
-static INLINE int is_interintra_allowed(const MB_MODE_INFO *mbmi) {
-  return is_interintra_allowed_bsize(mbmi->sb_type) &&
-         is_interintra_allowed_mode(mbmi->mode) &&
-         is_interintra_allowed_ref(mbmi->ref_frame);
-}
-
-
-
 int svt_is_interintra_allowed(
     uint8_t enable_inter_intra,
     BlockSize sb_type,
@@ -7439,14 +7431,11 @@ void  inject_filter_intra_candidates(
 #endif
     (void)sequence_control_set_ptr;
     (void)sb_ptr;
-    uint8_t                     is16bit = (sequence_control_set_ptr->static_config.encoder_bit_depth > EB_8BIT);
     FilterIntraMode             intra_mode_start = FILTER_DC_PRED;
     FilterIntraMode             intra_mode_end   = FILTER_INTRA_MODES;
     FilterIntraMode             filter_intra_mode;
     uint32_t                    canTotalCnt = *candidateTotalCnt;
-    uint8_t                     angleDeltaCounter = 0;
     EbBool                      use_angle_delta = (context_ptr->blk_geom->bsize >= BLOCK_8X8);
-    uint8_t                     angleDeltaCandidateCount = use_angle_delta ? 7 : 1;
     ModeDecisionCandidate    *candidateArray = context_ptr->fast_candidate_array;
 #if DISABLE_CFL
                 EbBool disable_cfl_flag = 1;

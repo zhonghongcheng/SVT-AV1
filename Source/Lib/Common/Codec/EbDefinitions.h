@@ -37,10 +37,10 @@ extern "C" {
 #define DEBUG_2PASS_MDC                    0
 #if DEBUG_2PASS_MDC
 #define DISABLE_RED_CU                     1 // P
-#define DISABLE_FILTERED_INTRA             0 
+#define DISABLE_FILTERED_INTRA             0
 #define DISABLE_INTRA                      0
-#define DISABLE_TRELLIS                    0  
-#define SHUT_ATB                           0 
+#define DISABLE_TRELLIS                    0
+#define SHUT_ATB                           0
 #define DISABLE_RESTORATION                0
 #define DISABLE_CFL                        1 // P
 #define DISABLE_INTRA_4xN_NX4_IN_INTER_PIC 0
@@ -156,10 +156,10 @@ extern "C" {
 #define ATB_SB_SKIP_PATH                        1
 #define ATB_FIX_DEPTH_2_PATH                    1
 #define SHUT_ATB_NREF                           1
-#endif 
+#endif
 
 //*************************************************//
-// Lossless 
+// Lossless
 #define TX_TYPE_SEARCH_OPT_0                     1
 #define INTERPOLATION_SEARCH_OPT_0               0
 #define COMPOUND_LOSSLESS                        0

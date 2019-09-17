@@ -715,19 +715,6 @@ void   mdc_compute_depth_costs(
     uint64_t       above_non_split_rate = 0;
     uint64_t       above_split_rate = 0;
     UNUSED(sequence_control_set_ptr);
-    /*
-    ___________
-    |     |     |
-    |blk0 |blk1 |
-    |-----|-----|
-    |blk2 |blk3 |
-    |_____|_____|
-    */
-    // current depth blocks
-    uint32_t       curr_depth_blk0_mds = curr_depth_mds - 3 * step;
-    uint32_t       curr_depth_blk1_mds = curr_depth_mds - 2 * step;
-    uint32_t       curr_depth_blk2_mds = curr_depth_mds - 1 * step;
-   // uint32_t       curr_depth_blk3_mds = curr_depth_mds;
 
     // Rate of not spliting the current depth (Depth != 4) in case the children were omitted by MDC
     uint64_t       curr_non_split_rate_blk0 = 0;
@@ -735,10 +722,8 @@ void   mdc_compute_depth_costs(
     uint64_t       curr_non_split_rate_blk2 = 0;
     uint64_t       curr_non_split_rate_blk3 = 0;
 
-
     // Compute above depth  cost
     *above_depth_cost = context_ptr->local_cu_array[above_depth_mds].early_cost + above_non_split_rate;
-
 
     // Compute current depth  cost
     *curr_depth_cost =
@@ -906,17 +891,15 @@ static INLINE void set_dc_sign(int32_t *cul_level, int32_t dc_val) {
     uint32_t                          component_type,
     uint32_t                          bit_increment,
     TxType                            tx_type,
-    ModeDecisionCandidateBuffer      *candidateBuffer,
     int16_t                           txb_skip_context,
-    int16_t                           dc_sign_context,
-    PredictionMode                    pred_mode)
+    int16_t                           dc_sign_context)
 {
     UNUSED(md_context);
     UNUSED(asm_type);
     UNUSED(bit_increment);
     UNUSED(txb_skip_context);
     UNUSED(dc_sign_context);
-    MacroblockPlane      candidate_plane ;
+    MacroblockPlane candidate_plane;
     const QmVal *qMatrix = picture_control_set_ptr->parent_pcs_ptr->gqmatrix[NUM_QM_LEVELS - 1][0][txsize];
     const QmVal *iqMatrix = picture_control_set_ptr->parent_pcs_ptr->giqmatrix[NUM_QM_LEVELS - 1][0][txsize];
     uint32_t qIndex = picture_control_set_ptr->parent_pcs_ptr->delta_q_present_flag ? quantizer_to_qindex[qp] : picture_control_set_ptr->parent_pcs_ptr->base_qindex;
@@ -957,7 +940,6 @@ static INLINE void set_dc_sign(int32_t *cul_level, int32_t dc_val) {
     qparam.tx_size = txsize;
     qparam.qmatrix = qMatrix;
     qparam.iqmatrix = iqMatrix;
-   // EbBool is_inter = (pred_mode >= NEARESTMV);
 
     av1_quantize_b_facade_II(
         (TranLow*)coeff,
@@ -1131,7 +1113,6 @@ void mdc_full_loop(
             COMPONENT_LUMA,
             BIT_INCREMENT_8BIT,
             candidate_buffer->candidate_ptr->transform_type[txb_itr],
-            candidate_buffer,
             context_ptr->luma_txb_skip_context,
             context_ptr->luma_dc_sign_context,
             candidate_buffer->candidate_ptr->pred_mode);
@@ -1274,7 +1255,7 @@ EbErrorType mdc_inter_pu_prediction_av1(
     EbAsm                                   asm_type)
 {
     UNUSED(asm_type);
-    picture_control_set_ptr;
+    //picture_control_set_ptr;
     EbErrorType           return_error = EB_ErrorNone;
     EbPictureBufferDesc  *ref_pic_list0;
     EbPictureBufferDesc  *ref_pic_list1 = NULL;
@@ -1344,8 +1325,6 @@ EbErrorType mdc_inter_pu_prediction_av1(
          context_ptr->blk_geom->origin_x,
          context_ptr->blk_geom->origin_y,
          0); // No chroma
-
-
 
     return return_error;
 }

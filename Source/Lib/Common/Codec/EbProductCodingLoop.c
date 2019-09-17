@@ -1840,7 +1840,7 @@ void ProductMdFastPuPrediction(
 }
 #endif
 
-#if INTERPOLATION_SEARCH_OPT 
+#if INTERPOLATION_SEARCH_OPT
 extern aom_variance_fn_ptr_t mefn_ptr[BlockSizeS_ALL];
 #endif
 #if REFACTOR_FAST_LOOP
@@ -1881,7 +1881,7 @@ void fast_loop_core(
     else
         context_ptr->skip_interpolation_search = picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? 0 : 1;
 
-#if INTERPOLATION_SEARCH_OPT 
+#if INTERPOLATION_SEARCH_OPT
 
     const aom_variance_fn_ptr_t *fn_ptr = &mefn_ptr[BLOCK_16X16];
     const unsigned int var = // use_hbd ?
@@ -3009,7 +3009,7 @@ void sort_stage0_fast_candidates(
             }
         }
     }
-    // Keep 
+    // Keep
     context_ptr->best_cost_per_class[context_ptr->target_class] = (*(buffer_ptr_array[sorted_cand_buff_indices[0]]->fast_cost_ptr));
     // is top N compound
 #if COMPOUND_OPT_1
@@ -5449,7 +5449,7 @@ uint64_t get_tx_size_bits(
                 context_ptr->txfm_context_array,
                 context_ptr->tx_depth,
                 context_ptr->md_rate_estimation_ptr);
-            
+
 #else
             int ctx = txfm_partition_context(&(context_ptr->txfm_context_array->top_array[txfm_context_above_index]), &(context_ptr->txfm_context_array->left_array[txfm_context_left_index]), context_ptr->blk_geom->bsize, context_ptr->blk_geom->txsize[context_ptr->tx_depth][0]);
             tx_size_bits = context_ptr->md_rate_estimation_ptr->txfm_partition_fac_bits[ctx][0];
@@ -5854,7 +5854,7 @@ void tx_partitioning_path(
     uint64_t best_cost_search = (uint64_t)~0;
     uint8_t tx_search_skip_flag;
 
-    // Fill the scratch buffer 
+    // Fill the scratch buffer
     memcpy(context_ptr->scratch_candidate_buffer->candidate_ptr, candidateBuffer->candidate_ptr, sizeof(ModeDecisionCandidate));
 
     if (is_inter) {
