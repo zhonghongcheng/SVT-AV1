@@ -941,7 +941,9 @@ EbErrorType signal_derivation_multi_processes_oq(
 #if m2_nsq
         else if (picture_control_set_ptr->enc_mode <= ENC_M4)
 #else
+
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
+
 #endif
 #endif
 #if ADP_BQ
@@ -958,10 +960,18 @@ EbErrorType signal_derivation_multi_processes_oq(
             else
                 picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
 #else
+#if m2_graph
+            if (picture_control_set_ptr->temporal_layer_index == 0)
+
+                picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
+            else
+                picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
+#else
             if (picture_control_set_ptr->slice_type == I_SLICE)
                 picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
             else
                 picture_control_set_ptr->pic_depth_mode = PIC_ALL_C_DEPTH_MODE;
+#endif
 #endif
 #endif
 #if !TWO_PASSES_TEST && !m2_nsq
@@ -1020,7 +1030,11 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->mdc_depth_level = MAX_MDC_LEVEL;
         else if (picture_control_set_ptr->enc_mode == ENC_M0)
             picture_control_set_ptr->mdc_depth_level = (sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER) ? MAX_MDC_LEVEL : 6;
+#if m2_graph
+        else if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#else
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#endif
 #if m2_mdc_4
             picture_control_set_ptr->mdc_depth_level = 4;
 #elif m2_mdc_1
@@ -1117,6 +1131,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 #if m2_nsq
         else if (picture_control_set_ptr->enc_mode <= ENC_M4)
 #else
+
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #endif
 #endif
@@ -1141,6 +1156,13 @@ EbErrorType signal_derivation_multi_processes_oq(
             else
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
 #else
+#if m2_graph
+            if (picture_control_set_ptr->temporal_layer_index == 0)
+
+                picture_control_set_ptr->pic_depth_mode = NSQ_SEARCH_LEVEL1;
+            else
+                picture_control_set_ptr->pic_depth_mode = NSQ_SEARCH_OFF;
+#else
             if (picture_control_set_ptr->is_used_as_reference_flag)
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL5;
             else
@@ -1160,6 +1182,7 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL5;
             else
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
+#endif
 #endif
 #endif
         else
@@ -1464,7 +1487,11 @@ EbErrorType signal_derivation_multi_processes_oq(
 #if m2_tx_search_reduced_set
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
 #else
+#if m2_graph
+    else if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#else
     else if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#endif
 #endif
 #endif
 #else
@@ -1535,7 +1562,11 @@ EbErrorType signal_derivation_multi_processes_oq(
     else if ((picture_control_set_ptr->enc_mode <= ENC_M1) || (picture_control_set_ptr->enc_mode <= ENC_M4 && picture_control_set_ptr->temporal_layer_index == 0))
 
 #else
+#if m2_graph
+    else if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#else
     else if ((picture_control_set_ptr->enc_mode <= ENC_M1) || (picture_control_set_ptr->enc_mode <= ENC_M2 && picture_control_set_ptr->temporal_layer_index == 0))
+#endif
 #endif
 #else
     else if (picture_control_set_ptr->enc_mode <= ENC_M2)

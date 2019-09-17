@@ -248,7 +248,11 @@ EbErrorType signal_derivation_me_kernel_oq(
 #if m2_hp_qp
     else if (picture_control_set_ptr->enc_mode <= ENC_M4) {
 #else
+#if m2_graph
+    else if (picture_control_set_ptr->enc_mode <= ENC_M1) {
+#else
     else if (picture_control_set_ptr->enc_mode <= ENC_M2) {
+#endif
 #endif
 #endif
 #if DISABLE_ENH_SUBPEL_SC
@@ -453,7 +457,11 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
 #if m2_hp_qp
     else if (picture_control_set_ptr->enc_mode <= ENC_M4) {
 #else
+#if m2_graph
+    else if (picture_control_set_ptr->enc_mode <= ENC_M1) {
+#else
     else if (picture_control_set_ptr->enc_mode <= ENC_M2) {
+#endif
 #endif
 #endif
 #if DISABLE_ENH_SUBPEL_SC

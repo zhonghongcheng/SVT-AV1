@@ -42,6 +42,7 @@ extern "C" {
 #define M3_trellis                  0
 #define m3_it_search                0
 #define m3_ref_count                0
+#define m2_graph                    0
 
     /* rest of feats */
 #define M3_GRAPH_CANDIDATE           0
