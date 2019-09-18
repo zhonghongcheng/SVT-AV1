@@ -109,13 +109,42 @@ extern "C" {
 #define NO_MEMSET                       1
 #define NO_LOG2_DOUBLE                  1
 
+
+//*************************************************//
+// Lossless 
+#define TX_TYPE_SEARCH_OPT_0                     1
+#define INTERPOLATION_SEARCH_OPT_0               0
+
+// Lossy
+#define COMPOUND_OPT                             0 // x 
+#if COMPOUND_OPT
+#define COMPOUND_LOSSLESS                        1 
+#define COMPOUND_OPT_0                           0 // x 
+#define COMPOUND_OPT_1                           0 // x 
+#define COMPOUND_OPT_2                           1 // x 
+#endif
+#define INTER_INTER_WEDGE_OPT                    0 // x 
+#define INTER_INTRA_WEDGE_OPT                    0 // x 
+
+#define INTERPOLATION_SEARCH_OPT_1               0 // x 
+#define INTER_DEPTH_SKIP_OPT                     0 // x 
+
+#define FILTERED_INTRA_OPT                       0
+
+#define QUICK_DEBUG                              0
+
+//*************************************************//
+
 #define TFK_ALTREF_DYNAMIC_WINDOW       1 // Applying Dynamic window to key frame temporal filtering
 #define TFK_QPS_TUNING                  1
 #define MD_EXIT                         1
 #define MD_NSQ_EXIT                     1
 //MD_EXIT_THSL -->0 is lossless 100 is maximum. Increase with a step of 10-20.
+#if INTER_DEPTH_SKIP_OPT
+#define MD_EXIT_THSL                   10
+#else
 #define MD_EXIT_THSL                    0
-
+#endif
 #define M0_SC                           1
 #define INC_SB                          0
 #define COMBINE_C1_C2                   0
@@ -157,21 +186,6 @@ extern "C" {
 #define ATB_FIX_DEPTH_2_PATH                    1
 #define SHUT_ATB_NREF                           1
 #endif
-
-//*************************************************//
-// Lossless
-#define TX_TYPE_SEARCH_OPT_0                     1
-#define INTERPOLATION_SEARCH_OPT_0               0
-#define COMPOUND_LOSSLESS                        0
-// Lossy
-#define COMPOUND_OPT                             0
-#if COMPOUND_OPT
-#define COMPOUND_OPT_0                           0
-#define COMPOUND_OPT_1                           0
-#endif
-
-#define INTERPOLATION_SEARCH_OPT                 0
-//*************************************************//
 #define FIRST_FULL_LOOP_INTERPOLATION_SEARCH   1
 
 #endif

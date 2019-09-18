@@ -342,7 +342,7 @@ extern "C" {
 #endif
         uint32_t                       fast_cand_count[CAND_CLASS_TOTAL]; //how many ffast candiates per class
 #endif
-#if COMPOUND_OPT
+#if COMPOUND_OPT || FILTERED_INTRA_OPT
         uint64_t                       best_cost_per_class[CAND_CLASS_TOTAL];
         uint64_t                       is_best_compound[CAND_CLASS_TOTAL];
 #endif
@@ -462,6 +462,11 @@ extern "C" {
 #if INTERPOLATION_SEARCH_OPT_0
     EbPictureBufferDesc *prediction_ptr_0;
     EbPictureBufferDesc *prediction_ptr_1;
+#endif
+#if INTERPOLATION_SEARCH_OPT_1 || INTER_INTER_WEDGE_OPT || INTER_INTRA_WEDGE_OPT
+    unsigned int source_variance; // input block variance
+    unsigned int inter_inter_wedge_variance_th; // input block variance
+    unsigned int inter_intra_wedge_variance_th; // input block variance
 #endif
   } ModeDecisionContext;
 
