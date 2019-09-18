@@ -1114,8 +1114,7 @@ void mdc_full_loop(
             BIT_INCREMENT_8BIT,
             candidate_buffer->candidate_ptr->transform_type[txb_itr],
             context_ptr->luma_txb_skip_context,
-            context_ptr->luma_dc_sign_context,
-            candidate_buffer->candidate_ptr->pred_mode);
+            context_ptr->luma_dc_sign_context);
 
         if (context_ptr->spatial_sse_full_loop) {
             EbPictureBufferDesc          *input_picture_ptr = picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr;
