@@ -1463,6 +1463,25 @@ void Unipred3x3CandidatesInjection(
             candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_0] = bestPredmv[0].as_mv.row;
 #if II_SEARCH
                 candidateArray[canTotalCnt].is_interintra_used = ii_type == 0 ? 0 : 1;
+#if INTER_INTRA_WEDGE_OPT
+                if (ii_type == 1)// smooth
+                {
+                    inter_intra_search(
+                        picture_control_set_ptr,
+                        context_ptr,
+                        &candidateArray[canTotalCnt]);                    
+                                      
+                    candidateArray[canTotalCnt].use_wedge_interintra = 0;
+                }
+
+                if (ii_type == 2) {
+                    candidateArray[canTotalCnt].interintra_mode = candidateArray[canTotalCnt - 1].interintra_mode;
+                    candidateArray[canTotalCnt].interintra_wedge_index = candidateArray[canTotalCnt - 1].interintra_wedge_index;
+                    candidateArray[canTotalCnt].use_wedge_interintra = 1;
+                    candidateArray[canTotalCnt].ii_wedge_sign = 0;
+
+                }
+#else
                 if (ii_type == 1) {
                     inter_intra_search(
                         picture_control_set_ptr,
@@ -1478,6 +1497,7 @@ void Unipred3x3CandidatesInjection(
                     candidateArray[canTotalCnt].interintra_mode = candidateArray[canTotalCnt-1].interintra_mode;
                     candidateArray[canTotalCnt].use_wedge_interintra = 0;
                 }
+#endif
 #endif
 #if CHECK_CAND
             INCRMENT_CAND_TOTAL_COUNT(canTotalCnt);
@@ -1617,6 +1637,25 @@ void Unipred3x3CandidatesInjection(
                 candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_1] = bestPredmv[0].as_mv.row;
 #if II_SEARCH
                 candidateArray[canTotalCnt].is_interintra_used = ii_type == 0 ? 0 : 1;
+#if INTER_INTRA_WEDGE_OPT
+                if (ii_type == 1)// smooth
+                {
+                    inter_intra_search(
+                        picture_control_set_ptr,
+                        context_ptr,
+                        &candidateArray[canTotalCnt]);
+
+                    candidateArray[canTotalCnt].use_wedge_interintra = 0;
+                }
+
+                if (ii_type == 2) {
+                    candidateArray[canTotalCnt].interintra_mode = candidateArray[canTotalCnt - 1].interintra_mode;
+                    candidateArray[canTotalCnt].interintra_wedge_index = candidateArray[canTotalCnt - 1].interintra_wedge_index;
+                    candidateArray[canTotalCnt].use_wedge_interintra = 1;
+                    candidateArray[canTotalCnt].ii_wedge_sign = 0;
+
+                }
+#else
                 if (ii_type == 1) {
                     inter_intra_search(
                         picture_control_set_ptr,
@@ -1632,6 +1671,7 @@ void Unipred3x3CandidatesInjection(
                     candidateArray[canTotalCnt].interintra_mode = candidateArray[canTotalCnt-1].interintra_mode;
                     candidateArray[canTotalCnt].use_wedge_interintra = 0;
                 }
+#endif
 #endif
 #if CHECK_CAND
                 INCRMENT_CAND_TOTAL_COUNT(canTotalCnt);
@@ -1709,7 +1749,10 @@ void Bipred3x3CandidatesInjection(
 #if N0_COMP
     tot_comp_types = picture_control_set_ptr->enc_mode == ENC_M0 ? MD_COMP_AVG : tot_comp_types;
 #endif
-
+#if INTER_INTER_WEDGE_OPT
+    if (context_ptr->source_variance <= context_ptr->inter_inter_wedge_variance_th)
+        tot_comp_types = MIN(tot_comp_types, MD_COMP_DIFF0);
+#endif
 #else
     MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize<= BLOCK_32X32 ) ? compound_types_to_try :
                                   (compound_types_to_try == MD_COMP_WEDGE )? MD_COMP_DIFF0 :
@@ -2502,6 +2545,10 @@ void inject_mvp_candidates_II(
 
 #if II_SEARCH // NEARESTMV
             uint8_t tot_ii_types = svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra,bsize, NEARESTMV, rf) ? II_COUNT : 1;
+#if INTER_INTRA_WEDGE_OPT //--
+            if (context_ptr->source_variance <= context_ptr->inter_intra_wedge_variance_th)
+                tot_ii_types = MIN(tot_ii_types, 2);
+#endif
             uint8_t ii_type;
             for (ii_type = 0; ii_type < tot_ii_types; ii_type++)
             {
@@ -2550,6 +2597,25 @@ void inject_mvp_candidates_II(
             }
 #if II_SEARCH
                 candidateArray[canIdx].is_interintra_used = ii_type == 0 ? 0 : 1;
+#if INTER_INTRA_WEDGE_OPT
+                if (ii_type == 1)// smooth
+                {
+                    inter_intra_search(
+                        picture_control_set_ptr,
+                        context_ptr,
+                        &candidateArray[canIdx]);
+
+                    candidateArray[canIdx].use_wedge_interintra = 0;
+                }
+
+                if (ii_type == 2) {
+                    candidateArray[canIdx].interintra_mode = candidateArray[canIdx - 1].interintra_mode;
+                    candidateArray[canIdx].interintra_wedge_index = candidateArray[canIdx - 1].interintra_wedge_index;
+                    candidateArray[canIdx].use_wedge_interintra = 1;
+                    candidateArray[canIdx].ii_wedge_sign = 0;
+
+                }
+#else
                 if (ii_type == 1) {
                     inter_intra_search(
                         picture_control_set_ptr,
@@ -2565,6 +2631,7 @@ void inject_mvp_candidates_II(
                     candidateArray[canIdx].interintra_mode = candidateArray[canIdx-1].interintra_mode;
                     candidateArray[canIdx].use_wedge_interintra = 0;
                 }
+#endif
 #endif
             INCRMENT_CAND_TOTAL_COUNT(canIdx);
 #if II_SEARCH
@@ -2598,6 +2665,10 @@ void inject_mvp_candidates_II(
             if (inj_mv) {
 #if II_SEARCH // NEARMV
             uint8_t tot_ii_types = svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra,bsize, NEARMV, rf) ? II_COUNT : 1;
+#if INTER_INTRA_WEDGE_OPT //--
+            if (context_ptr->source_variance <= context_ptr->inter_intra_wedge_variance_th)
+                tot_ii_types = MIN(tot_ii_types, 2);
+#endif
             uint8_t ii_type;
             for (ii_type = 0; ii_type < tot_ii_types; ii_type++)
             {
@@ -2646,6 +2717,25 @@ void inject_mvp_candidates_II(
                 }
 #if II_SEARCH
                 candidateArray[canIdx].is_interintra_used = ii_type == 0 ? 0 : 1;
+#if INTER_INTRA_WEDGE_OPT
+                if (ii_type == 1)// smooth
+                {
+                    inter_intra_search(
+                        picture_control_set_ptr,
+                        context_ptr,
+                        &candidateArray[canIdx]);
+
+                    candidateArray[canIdx].use_wedge_interintra = 0;
+                }
+
+                if (ii_type == 2) {
+                    candidateArray[canIdx].interintra_mode = candidateArray[canIdx - 1].interintra_mode;
+                    candidateArray[canIdx].interintra_wedge_index = candidateArray[canIdx - 1].interintra_wedge_index;
+                    candidateArray[canIdx].use_wedge_interintra = 1;
+                    candidateArray[canIdx].ii_wedge_sign = 0;
+
+                }
+#else
                 if (ii_type == 1) {
                     inter_intra_search(
                         picture_control_set_ptr,
@@ -2661,6 +2751,7 @@ void inject_mvp_candidates_II(
                     candidateArray[canIdx].interintra_mode = candidateArray[canIdx-1].interintra_mode;
                     candidateArray[canIdx].use_wedge_interintra = 0;
                 }
+#endif
 #endif
 
                 INCRMENT_CAND_TOTAL_COUNT(canIdx);
@@ -4059,7 +4150,10 @@ void inject_new_candidates(
 #if N0_COMP
     tot_comp_types = picture_control_set_ptr->enc_mode == ENC_M0 ? MD_COMP_AVG : tot_comp_types;
 #endif
-
+#if INTER_INTER_WEDGE_OPT
+    if (context_ptr->source_variance <= context_ptr->inter_inter_wedge_variance_th)
+        tot_comp_types = MIN(tot_comp_types, MD_COMP_DIFF0);
+#endif
 #else
     MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize<= BLOCK_32X32 ) ? compound_types_to_try :
                                   (compound_types_to_try == MD_COMP_WEDGE )? MD_COMP_DIFF0 :
@@ -4109,6 +4203,10 @@ void inject_new_candidates(
              rf[0] = to_inject_ref_type;
              rf[1] = -1;
             uint8_t tot_ii_types =   svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra,bsize, NEWMV, rf) ? II_COUNT : 1;
+#if INTER_INTRA_WEDGE_OPT //--
+            if (context_ptr->source_variance <= context_ptr->inter_intra_wedge_variance_th)
+                tot_ii_types = MIN(tot_ii_types, 2);
+#endif
             uint8_t ii_type;
             for (ii_type = 0; ii_type < tot_ii_types; ii_type++)
             {
@@ -4170,6 +4268,25 @@ void inject_new_candidates(
 
 #if II_SEARCH
                 candidateArray[canTotalCnt].is_interintra_used = ii_type == 0 ? 0 : 1;
+#if INTER_INTRA_WEDGE_OPT
+                if (ii_type == 1)// smooth
+                {
+                    inter_intra_search(
+                        picture_control_set_ptr,
+                        context_ptr,
+                        &candidateArray[canTotalCnt]);
+
+                    candidateArray[canTotalCnt].use_wedge_interintra = 0;
+                }
+
+                if (ii_type == 2) {
+                    candidateArray[canTotalCnt].interintra_mode = candidateArray[canTotalCnt - 1].interintra_mode;
+                    candidateArray[canTotalCnt].interintra_wedge_index = candidateArray[canTotalCnt - 1].interintra_wedge_index;
+                    candidateArray[canTotalCnt].use_wedge_interintra = 1;
+                    candidateArray[canTotalCnt].ii_wedge_sign = 0;
+
+                }
+#else
                 if (ii_type == 1) {
                     inter_intra_search(
                         picture_control_set_ptr,
@@ -4185,6 +4302,7 @@ void inject_new_candidates(
                     candidateArray[canTotalCnt].interintra_mode = candidateArray[canTotalCnt-1].interintra_mode;
                     candidateArray[canTotalCnt].use_wedge_interintra = 0;
                 }
+#endif
 #endif
 
 
@@ -4246,6 +4364,10 @@ void inject_new_candidates(
              rf[0] = to_inject_ref_type;
              rf[1] = -1;
             uint8_t tot_ii_types =    svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra,bsize, NEWMV, rf) ? II_COUNT : 1;
+#if INTER_INTRA_WEDGE_OPT //--
+            if (context_ptr->source_variance <= context_ptr->inter_intra_wedge_variance_th)
+                tot_ii_types = MIN(tot_ii_types, 2);
+#endif
             uint8_t ii_type;
             for (ii_type = 0; ii_type < tot_ii_types; ii_type++)
             {
@@ -4306,6 +4428,25 @@ void inject_new_candidates(
                     candidateArray[canTotalCnt].motion_vector_pred_y[REF_LIST_1] = bestPredmv[0].as_mv.row;
 #if II_SEARCH
                 candidateArray[canTotalCnt].is_interintra_used = ii_type == 0 ? 0 : 1;
+#if INTER_INTRA_WEDGE_OPT
+                if (ii_type == 1)// smooth
+                {
+                    inter_intra_search(
+                        picture_control_set_ptr,
+                        context_ptr,
+                        &candidateArray[canTotalCnt]);
+
+                    candidateArray[canTotalCnt].use_wedge_interintra = 0;
+                }
+
+                if (ii_type == 2) {
+                    candidateArray[canTotalCnt].interintra_mode = candidateArray[canTotalCnt - 1].interintra_mode;
+                    candidateArray[canTotalCnt].interintra_wedge_index = candidateArray[canTotalCnt - 1].interintra_wedge_index;
+                    candidateArray[canTotalCnt].use_wedge_interintra = 1;
+                    candidateArray[canTotalCnt].ii_wedge_sign = 0;
+
+                }
+#else
                 if (ii_type == 1) {
                     inter_intra_search(
                         picture_control_set_ptr,
@@ -4321,6 +4462,7 @@ void inject_new_candidates(
                     candidateArray[canTotalCnt].interintra_mode = candidateArray[canTotalCnt-1].interintra_mode;
                     candidateArray[canTotalCnt].use_wedge_interintra = 0;
                 }
+#endif
 #endif
 
 
@@ -4537,7 +4679,10 @@ void inject_predictive_me_candidates(
 #if 0//N0_COMP
     tot_comp_types = picture_control_set_ptr->enc_mode == ENC_M0 ? MD_COMP_AVG : tot_comp_types;
 #endif
-
+#if INTER_INTER_WEDGE_OPT
+    if (context_ptr->source_variance <= context_ptr->inter_inter_wedge_variance_th)
+        tot_comp_types = MIN(tot_comp_types, MD_COMP_DIFF0);
+#endif
 #endif
 
     uint8_t listIndex;
@@ -4910,7 +5055,10 @@ void  inject_inter_candidates(
 #if N0_COMP
     tot_comp_types = picture_control_set_ptr->enc_mode == ENC_M0 ? MD_COMP_AVG : tot_comp_types;
 #endif
-
+#if INTER_INTER_WEDGE_OPT
+    if (context_ptr->source_variance <= context_ptr->inter_inter_wedge_variance_th)
+        tot_comp_types = MIN(tot_comp_types, MD_COMP_DIFF0);
+#endif
 #else
     MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize<= BLOCK_32X32 ) ? compound_types_to_try :
                                   (compound_types_to_try == MD_COMP_WEDGE )? MD_COMP_DIFF0 :
@@ -5417,6 +5565,10 @@ void  inject_inter_candidates(
              rf[0] = to_inject_ref_type;
              rf[1] = -1;
             uint8_t tot_ii_types = svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra,bsize, GLOBALMV, rf) ? II_COUNT : 1;
+#if INTER_INTRA_WEDGE_OPT //--
+            if (context_ptr->source_variance <= context_ptr->inter_intra_wedge_variance_th)
+                tot_ii_types = MIN(tot_ii_types, 2);
+#endif
             uint8_t ii_type;
             for (ii_type = 0; ii_type < tot_ii_types; ii_type++)
             {
@@ -5458,6 +5610,25 @@ void  inject_inter_candidates(
                 candidateArray[canTotalCnt].motion_vector_yl0 = to_inject_mv_y;
 #if II_SEARCH
                 candidateArray[canTotalCnt].is_interintra_used = ii_type == 0 ? 0 : 1;
+#if INTER_INTRA_WEDGE_OPT
+                if (ii_type == 1)// smooth
+                {
+                    inter_intra_search(
+                        picture_control_set_ptr,
+                        context_ptr,
+                        &candidateArray[canTotalCnt]);
+
+                    candidateArray[canTotalCnt].use_wedge_interintra = 0;
+                }
+
+                if (ii_type == 2) {
+                    candidateArray[canTotalCnt].interintra_mode = candidateArray[canTotalCnt - 1].interintra_mode;
+                    candidateArray[canTotalCnt].interintra_wedge_index = candidateArray[canTotalCnt - 1].interintra_wedge_index;
+                    candidateArray[canTotalCnt].use_wedge_interintra = 1;
+                    candidateArray[canTotalCnt].ii_wedge_sign = 0;
+
+                }
+#else
                 if (ii_type == 1) {
                     inter_intra_search(
                         picture_control_set_ptr,
@@ -5473,6 +5644,7 @@ void  inject_inter_candidates(
                     candidateArray[canTotalCnt].interintra_mode = candidateArray[canTotalCnt-1].interintra_mode;
                     candidateArray[canTotalCnt].use_wedge_interintra = 0;
                 }
+#endif
 #endif
 
 #if CHECK_CAND

@@ -292,6 +292,12 @@ extern "C" {
         uint64_t                       *full_cost_skip_ptr,
         uint64_t                       *full_cost_merge_ptr
     );
+#if TX_TYPE_SEARCH_OPT_0
+    extern EbErrorType mode_decision_scratch_candidate_buffer_ctor(
+        ModeDecisionCandidateBuffer  *scratch_candidate_buffer
+    );
+#endif
+
 #if DECOUPLED_FAST_LOOP || MD_CLASS
         uint32_t product_full_mode_decision(
         struct ModeDecisionContext   *context_ptr,
