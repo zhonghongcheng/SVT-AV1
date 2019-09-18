@@ -1011,8 +1011,6 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
             picture_control_set_ptr->mdc_depth_level = MAX_MDC_LEVEL; // Not tuned yet.
 #if TWO_PASS_PART
-       /* if(sequence_control_set_ptr->static_config.use_output_stat_file)
-            picture_control_set_ptr->mdc_depth_level = MAX_MDC_LEVEL;*/
         if(sequence_control_set_ptr->static_config.use_input_stat_file)
 #if USE_PRED_ONLY_IN_2ND_PASS
             picture_control_set_ptr->mdc_depth_level = 0;

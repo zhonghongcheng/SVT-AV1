@@ -3439,6 +3439,7 @@ EB_EXTERN void av1_encode_pass(
 #if TWO_PASS_PART
         if (sequence_control_set_ptr->static_config.use_output_stat_file) {
             picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_pic_num = picture_control_set_ptr->picture_number;
+            picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_sb_size = sequence_control_set_ptr->seq_header.sb_size;
             context_ptr->first_pass_split_flag[tbAddr][blk_it] = 1;
         }
 #endif
@@ -5487,18 +5488,6 @@ EB_EXTERN void av1_encode_pass(
             blk_it += d1_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][context_ptr->blk_geom->depth];
     } // CU Loop
 
-
- #if 0//TWO_PASS_PART_DEBUG
-    blk_it = 0;
-    if (picture_control_set_ptr->picture_number == 16 && tbAddr == 0) {
-        while (blk_it < sequence_control_set_ptr->max_block_cnt) {
-            if (sequence_control_set_ptr->static_config.use_output_stat_file) {
-                printf("%d\t", picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_split_flag[tbAddr][blk_it]);
-            }
-            blk_it++;
-        }
-    }
-#endif
 #if !MEMORY_FOOTPRINT_OPT
     sb_ptr->tot_final_cu = final_cu_itr;
 #endif

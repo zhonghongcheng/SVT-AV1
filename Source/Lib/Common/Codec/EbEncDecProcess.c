@@ -1967,48 +1967,22 @@ void* enc_dec_kernel(void *input_ptr)
                     // Store the split flag of the square blocks from the first pass
                     if (sequence_control_set_ptr->static_config.use_output_stat_file) {
                         eb_block_on_mutex(picture_control_set_ptr->first_pass_split_mutex);
-#if TWO_PASS_PART_OPT
-                        uint8_t quadrant = 0;
-                        uint32_t sq_idx[4] = { 0 };
+                        uint32_t sq_idx = 0;
                         EbBool split_flag;
                         uint32_t blk_index = 0;
                         while (blk_index < sequence_control_set_ptr->max_block_cnt){
                             const BlockGeom * blk_geom = get_blk_geom_mds(blk_index);
-                            uint32_t cu_origin_x = sb_origin_x + blk_geom->origin_x;
-                            uint32_t cu_origin_y = sb_origin_y + blk_geom->origin_y;
-                            uint32_t sb64_index = map_128_to_64_sb_addr(
-                                sequence_control_set_ptr,
-                                sb_index,
-                                cu_origin_x,
-                                cu_origin_y,
-                                &quadrant);
                             //if the parentSq is inside inject this block
                             uint8_t is_blk_allowed = picture_control_set_ptr->slice_type != I_SLICE ? 1 : (blk_geom->sq_size < 128) ? 1 : 0;
-                            if (blk_geom->shape == PART_N && blk_geom->sq_size > 4 && blk_geom->sq_size < 128) {
-                                picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_split_flag[sb_index][sq_idx[quadrant]++] = context_ptr->first_pass_split_flag[sb_index][blk_index];
-                                if (sq_idx[quadrant] > NUMBER_OF_SPLIT_FLAG)
+
+                            if (blk_geom->shape == PART_N && blk_geom->sq_size > 4) {
+                                picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_split_flag[sb_index][sq_idx++] = context_ptr->first_pass_split_flag[sb_index][blk_index];
+                                if (sq_idx > NUMBER_OF_SPLIT_FLAG)
                                     printf("Error: EbEncDecProcess: number of sq_idx > NUMBER_OF_SPLIT_FLAG not sufficient\n");
                             }
                             split_flag = context_ptr->first_pass_split_flag[sb_index][blk_index];
                             blk_index += split_flag ? d1_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth] : ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
                         }
-#else
-#if TWO_PASS_PART_OPT
-
-                        uint64_t sq_idx = 0;
-                        memset(picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_split_flag[sb_index], 1, sizeof (uint8_t) * NUMBER_OF_SPLIT_FLAG);
-                        for (uint32_t block_index = 0; block_index < sequence_control_set_ptr->max_block_cnt; block_index++) {
-                            const BlockGeom * blk_geom = context_ptr->blk_geom = get_blk_geom_mds(block_index);
-                            if(blk_geom->shape == PART_N && blk_geom->sq_size > 4)
-                                picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_split_flag[sb_index][sq_idx++] = context_ptr->first_pass_split_flag[sb_index][block_index];
-                            /*if (sq_idx > NUMBER_OF_SPLIT_FLAG)
-                                printf("EncDec Error: number of sq_idx > NUMBER_OF_SPLIT_FLAG %d",sq_idx);*/
-#else
-                        for (uint32_t block_index = 0; block_index < sequence_control_set_ptr->max_block_cnt; block_index++) {
-                            picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->first_pass_split_flag[sb_index][block_index] = context_ptr->first_pass_split_flag[sb_index][block_index];
-#endif
-                        }
-#endif
                         eb_release_mutex(picture_control_set_ptr->first_pass_split_mutex);
                     }
 #endif
