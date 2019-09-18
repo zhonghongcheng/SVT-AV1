@@ -116,7 +116,7 @@ extern "C" {
         ModeDecisionCandidate       **fast_candidate_ptr_array;
         ModeDecisionCandidate        *fast_candidate_array;
         ModeDecisionCandidateBuffer **candidate_buffer_ptr_array;
-#if TX_TYPE_LOSSLESS
+#if TX_TYPE_SEARCH_OPT_0
         ModeDecisionCandidateBuffer  *scratch_candidate_buffer;
 #endif
         MdRateEstimationContext      *md_rate_estimation_ptr;
@@ -341,6 +341,10 @@ extern "C" {
         uint32_t                       full_cand_count[CAND_CLASS_TOTAL]; //how many full candiates per class
 #endif
         uint32_t                       fast_cand_count[CAND_CLASS_TOTAL]; //how many ffast candiates per class
+#endif
+#if COMPOUND_OPT
+        uint64_t                       best_cost_per_class[CAND_CLASS_TOTAL];
+        uint64_t                       is_best_compound[CAND_CLASS_TOTAL];
 #endif
         uint8_t                         decouple_intra_inter_fast_loop;
         uint8_t                         full_loop_escape;

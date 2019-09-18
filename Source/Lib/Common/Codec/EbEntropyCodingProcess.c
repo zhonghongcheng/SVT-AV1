@@ -525,7 +525,6 @@ static EbBool UpdateEntropyCodingRows(
  * Write Stat to File
  ******************************************************/
 void write_stat_to_file(
-    PictureControlSet     *picture_control_set_ptr,
     SequenceControlSet    *sequence_control_set_ptr,
     stat_struct_t          stat_struct,
     uint64_t               ref_poc)
@@ -698,7 +697,6 @@ void* entropy_coding_kernel(void *input_ptr)
                         if (sequence_control_set_ptr->static_config.use_output_stat_file &&
                             !picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
                             write_stat_to_file(
-                                picture_control_set_ptr,
                                 sequence_control_set_ptr,
                                 *picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr,
                                 picture_control_set_ptr->parent_pcs_ptr->picture_number);
@@ -709,7 +707,6 @@ void* entropy_coding_kernel(void *input_ptr)
                             if (sequence_control_set_ptr->static_config.use_output_stat_file &&
                                 picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx] != EB_NULL && picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx]->live_count == 1)
                                 write_stat_to_file(
-                                    picture_control_set_ptr,
                                     sequence_control_set_ptr,
                                     ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx]->object_ptr)->stat_struct,
                                     ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx]->object_ptr)->ref_poc);
@@ -733,7 +730,6 @@ void* entropy_coding_kernel(void *input_ptr)
                             if (sequence_control_set_ptr->static_config.use_output_stat_file &&
                                 picture_control_set_ptr->ref_pic_ptr_array[1][ref_idx] != EB_NULL && picture_control_set_ptr->ref_pic_ptr_array[1][ref_idx]->live_count == 1)
                                 write_stat_to_file(
-                                    picture_control_set_ptr,
                                     sequence_control_set_ptr,
                                     ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[1][ref_idx]->object_ptr)->stat_struct,
                                     ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[1][ref_idx]->object_ptr)->ref_poc);
