@@ -91,8 +91,14 @@ EbErrorType signal_derivation_pre_analysis_oq(
     PictureParentControlSet  *picture_control_set_ptr) {
     EbErrorType return_error = EB_ErrorNone;
     uint8_t input_resolution = sequence_control_set_ptr->input_resolution;
+#if TWO_PASS_USE_2NDP_ME_IN_1STP
+#if DECOUPLE_ALTREF_ME
+    uint8_t  hme_me_level = sequence_control_set_ptr->static_config.use_output_stat_file ? picture_control_set_ptr->enc_mode2p : picture_control_set_ptr->enc_mode;
+#endif
+#else
 #if DECOUPLE_ALTREF_ME
     uint8_t  hme_me_level = picture_control_set_ptr->enc_mode;
+#endif
 #endif
     // Derive HME Flag
     if (sequence_control_set_ptr->static_config.use_default_me_hme) {
@@ -883,6 +889,9 @@ void* resource_coordination_kernel(void *input_ptr)
             }
             else
                 picture_control_set_ptr->enc_mode = (EbEncMode)sequence_control_set_ptr->static_config.enc_mode;
+#if TWO_PASS_USE_2NDP_ME_IN_1STP
+            picture_control_set_ptr->enc_mode2p = sequence_control_set_ptr->static_config.use_output_stat_file ? (EbEncMode)sequence_control_set_ptr->static_config.enc_mode2p : picture_control_set_ptr->enc_mode;
+#endif
             aspectRatio = (sequence_control_set_ptr->seq_header.max_frame_width * 10) / sequence_control_set_ptr->seq_header.max_frame_height;
             aspectRatio = (aspectRatio <= ASPECT_RATIO_4_3) ? ASPECT_RATIO_CLASS_0 : (aspectRatio <= ASPECT_RATIO_16_9) ? ASPECT_RATIO_CLASS_1 : ASPECT_RATIO_CLASS_2;
 

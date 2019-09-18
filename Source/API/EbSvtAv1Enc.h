@@ -15,7 +15,7 @@ extern "C" {
 #endif
 #include "stdint.h"
 #include "EbSvtAv1.h"
-
+#define TWO_PASS_USE_2NDP_ME_IN_1STP                1
 #define TILES    1
 #define ALT_REF_OVERLAY_APP                         1
     //***HME***
@@ -41,6 +41,15 @@ typedef struct EbSvtAv1EncConfiguration
      *
      * Default is defined as MAX_ENC_PRESET. */
     uint8_t                  enc_mode;
+
+#if TWO_PASS_USE_2NDP_ME_IN_1STP
+     /* A preset defining the quality vs density tradeoff point that the second pass 
+     * encoding is to be performed at. 0 is the highest quality mode, 3 is the highest
+     * density mode.
+     *
+     * Default is defined as MAX_ENC_PRESET. */
+    uint8_t                  enc_mode2p;
+#endif
 
     // GOP Structure
 

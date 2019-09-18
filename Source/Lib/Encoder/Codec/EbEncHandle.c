@@ -2382,6 +2382,9 @@ void CopyApiFromApp(
     sequence_control_set_ptr->static_config.base_layer_switch_mode = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->base_layer_switch_mode;
     sequence_control_set_ptr->static_config.hierarchical_levels = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->hierarchical_levels;
     sequence_control_set_ptr->static_config.enc_mode = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enc_mode;
+#if TWO_PASS_USE_2NDP_ME_IN_1STP
+    sequence_control_set_ptr->static_config.enc_mode2p = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enc_mode2p;
+#endif
     sequence_control_set_ptr->intra_period_length = sequence_control_set_ptr->static_config.intra_period_length;
     sequence_control_set_ptr->intra_refresh_type = sequence_control_set_ptr->static_config.intra_refresh_type;
     sequence_control_set_ptr->max_temporal_layers = sequence_control_set_ptr->static_config.hierarchical_levels;
@@ -2581,6 +2584,12 @@ static EbErrorType VerifySettings(
         return_error = EB_ErrorBadParameter;
     }
 
+#if TWO_PASS_USE_2NDP_ME_IN_1STP
+    if (config->enc_mode2p > MAX_ENC_PRESET) {
+        SVT_LOG("Error instance %u: EncoderMode2p must be in the range of [0-%d]\n", channelNumber + 1, MAX_ENC_PRESET);
+        return_error = EB_ErrorBadParameter;
+    }
+#endif
     if (config->ext_block_flag > 1) {
         SVT_LOG("Error instance %u: ExtBlockFlag must be [0-1]\n", channelNumber + 1);
         return_error = EB_ErrorBadParameter;
@@ -2915,6 +2924,9 @@ EbErrorType eb_svt_enc_init_parameter(
 #endif
     config_ptr->base_layer_switch_mode = 0;
     config_ptr->enc_mode = MAX_ENC_PRESET;
+#if TWO_PASS_USE_2NDP_ME_IN_1STP
+    config_ptr->enc_mode2p = MAX_ENC_PRESET;
+#endif
     config_ptr->intra_period_length = -2;
     config_ptr->intra_refresh_type = 1;
     config_ptr->hierarchical_levels = 4;

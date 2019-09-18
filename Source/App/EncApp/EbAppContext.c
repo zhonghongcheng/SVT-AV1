@@ -156,6 +156,9 @@ EbErrorType CopyConfigurationParameters(
     callback_data->eb_enc_parameters.intra_refresh_type = config->intra_refresh_type;
     callback_data->eb_enc_parameters.base_layer_switch_mode = config->base_layer_switch_mode;
     callback_data->eb_enc_parameters.enc_mode = (EbBool)config->enc_mode;
+#if TWO_PASS_USE_2NDP_ME_IN_1STP
+    callback_data->eb_enc_parameters.enc_mode2p = (EbBool)config->enc_mode2p;
+#endif
     callback_data->eb_enc_parameters.frame_rate = config->frame_rate;
     callback_data->eb_enc_parameters.frame_rate_denominator = config->frame_rate_denominator;
     callback_data->eb_enc_parameters.frame_rate_numerator = config->frame_rate_numerator;

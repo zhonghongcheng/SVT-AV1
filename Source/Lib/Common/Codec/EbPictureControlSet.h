@@ -14295,6 +14295,9 @@ extern "C" {
 #endif
         // MD
         EbEncMode                             enc_mode;
+#if TWO_PASS_USE_2NDP_ME_IN_1STP
+        uint8_t                               enc_mode2p;
+#endif
         EB_SB_DEPTH_MODE                     *sb_depth_mode_array;
         EbSbComplexityStatus                 *complex_sb_array;
         EbCu8x8Mode                           cu8x8_mode;

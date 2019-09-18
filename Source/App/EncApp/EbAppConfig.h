@@ -73,7 +73,7 @@ extern    uint64_t                  *total_app_memory;          // App Memory ma
 extern    uint32_t                   app_malloc_count;
 
 #define MAX_APP_NUM_PTR                             (0x186A0 << 2)             // Maximum number of pointers to be allocated for the app
-
+#define TWO_PASS_USE_2NDP_ME_IN_1STP                1
 #define EB_APP_MALLOC(type, pointer, n_elements, pointer_class, return_type) \
     pointer = (type)malloc(n_elements); \
     if (pointer == (type)EB_NULL){ \
@@ -217,6 +217,9 @@ typedef struct EbConfig
      *****************************************/
     uint32_t                 base_layer_switch_mode;
     uint8_t                  enc_mode;
+#if TWO_PASS_USE_2NDP_ME_IN_1STP
+    uint8_t                  enc_mode2p;
+#endif
     int32_t                  intra_period;
     uint32_t                 intra_refresh_type;
     uint32_t                 hierarchical_levels;

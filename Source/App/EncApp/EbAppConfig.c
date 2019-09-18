@@ -48,6 +48,9 @@
 #define ENCODER_COLOR_FORMAT            "-color-format"
 #define INPUT_COMPRESSED_TEN_BIT_FORMAT "-compressed-ten-bit-format"
 #define ENCMODE_TOKEN                   "-enc-mode"
+#if TWO_PASS_USE_2NDP_ME_IN_1STP
+#define ENCMODE2P_TOKEN                 "-enc-mode-2p"
+#endif
 #define HIERARCHICAL_LEVELS_TOKEN       "-hierarchical-levels" // no Eval
 #define PRED_STRUCT_TOKEN               "-pred-struct"
 #define INTRA_PERIOD_TOKEN              "-intra-period"
@@ -179,7 +182,9 @@ static void set_output_stat_file(const char *value, EbConfig *cfg)
 };
 static void set_use_input_stat_file(const char *value, EbConfig *cfg) { cfg->use_input_stat_file = (EbBool)strtol(value, NULL, 0); };
 static void set_use_output_stat_file(const char *value, EbConfig *cfg) { cfg->use_output_stat_file = (EbBool)strtol(value, NULL, 0); };
-
+#if TWO_PASS_USE_2NDP_ME_IN_1STP
+static void SetencMode2p                        (const char *value, EbConfig *cfg) {cfg->enc_mode2p = (uint8_t)strtoul(value, NULL, 0);};
+#endif
 #endif
 static void SetCfgSourceWidth                   (const char *value, EbConfig *cfg) {cfg->source_width = strtoul(value, NULL, 0);};
 static void SetInterlacedVideo                  (const char *value, EbConfig *cfg) {cfg->interlaced_video  = (EbBool) strtoul(value, NULL, 0);};
@@ -313,6 +318,9 @@ config_entry_t config_entry[] = {
     { SINGLE_INPUT, BUFFERED_INPUT_TOKEN, "BufferedInput", SetBufferedInput },
     { SINGLE_INPUT, BASE_LAYER_SWITCH_MODE_TOKEN, "BaseLayerSwitchMode", SetBaseLayerSwitchMode },
     { SINGLE_INPUT, ENCMODE_TOKEN, "EncoderMode", SetencMode},
+#if TWO_PASS_USE_2NDP_ME_IN_1STP
+    { SINGLE_INPUT, ENCMODE2P_TOKEN, "EncoderMode2p", SetencMode2p},
+#endif
     { SINGLE_INPUT, INTRA_PERIOD_TOKEN, "IntraPeriod", SetCfgIntraPeriod },
     { SINGLE_INPUT, INTRA_REFRESH_TYPE_TOKEN, "IntraRefreshType", SetCfgIntraRefreshType },
     { SINGLE_INPUT, FRAME_RATE_TOKEN, "FrameRate", SetFrameRate },
@@ -446,6 +454,9 @@ void eb_config_ctor(EbConfig *config_ptr)
 #endif
     config_ptr->base_layer_switch_mode               = 0;
     config_ptr->enc_mode                              = MAX_ENC_PRESET;
+#if TWO_PASS_USE_2NDP_ME_IN_1STP
+    config_ptr->enc_mode2p                            = MAX_ENC_PRESET;
+#endif
     config_ptr->intra_period                          = -2;
     config_ptr->intra_refresh_type                     = 1;
     config_ptr->hierarchical_levels                   = 4;
