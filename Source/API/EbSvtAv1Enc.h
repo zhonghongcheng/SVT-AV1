@@ -15,7 +15,7 @@ extern "C" {
 #endif
 #include "stdint.h"
 #include "EbSvtAv1.h"
-#define TWO_PASS_USE_2NDP_ME_IN_1STP                1
+#define TWO_PASS_USE_2NDP_ME_IN_1STP                0
 #define TILES    1
 #define ALT_REF_OVERLAY_APP                         1
     //***HME***
