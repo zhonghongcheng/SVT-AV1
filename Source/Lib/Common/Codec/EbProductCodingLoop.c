@@ -1840,12 +1840,12 @@ void ProductMdFastPuPrediction(
 }
 #endif
 
-#if INTERPOLATION_SEARCH_OPT_1 || INTER_INTER_WEDGE_OPT || INTER_INTRA_WEDGE_OPT
+#if INTER_INTER_WEDGE_OPT || INTER_INTRA_WEDGE_OPT
 extern aom_variance_fn_ptr_t mefn_ptr[BlockSizeS_ALL];
 unsigned int av1_get_sby_perpixel_variance(const aom_variance_fn_ptr_t *fn_ptr, const uint8_t *src, int stride, BlockSize bs);
 #endif
 #if REFACTOR_FAST_LOOP
-#if COMPOUND_LOSSLESS
+#if COMPOUND_OPT
 void determine_compound_mode(
     PictureControlSet            *picture_control_set_ptr,
     ModeDecisionContext          *context_ptr,
@@ -1881,11 +1881,6 @@ void fast_loop_core(
         context_ptr->skip_interpolation_search = 1;
     else
         context_ptr->skip_interpolation_search = picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? 0 : 1;
-
-#if INTERPOLATION_SEARCH_OPT_1
-    if (context_ptr->source_variance <= 200)
-        context_ptr->skip_interpolation_search = 1;
-#endif
 #else
     context_ptr->skip_interpolation_search = picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? 0 : 1;
 
@@ -1926,7 +1921,7 @@ void fast_loop_core(
 #endif
 
 
-#if COMPOUND_LOSSLESS
+#if COMPOUND_OPT
     if (candidate_ptr->type == INTER_MODE && candidateBuffer->candidate_ptr->is_compound)
         determine_compound_mode(
             picture_control_set_ptr,
@@ -2988,7 +2983,13 @@ void sort_stage0_fast_candidates(
             cand_buff_indices[ordered_start_idx++] = buffer_index;
     }
 
-#if COMPOUND_OPT || FILTERED_INTRA_OPT
+#if COMPOUND_OPT
+#if !GREEN_SET || BLUE_SET
+    for (uint32_t buffer_index = input_buffer_start_idx; buffer_index <= input_buffer_end_idx; buffer_index++) {
+        if (*(buffer_ptr_array[buffer_index]->fast_cost_ptr) < context_ptr->best_cost_per_class[context_ptr->target_class])
+            context_ptr->best_cost_per_class[context_ptr->target_class] = *(buffer_ptr_array[buffer_index]->fast_cost_ptr);
+    }
+#else
     // Sort the current class candidates
     uint32_t sorted_cand_buff_indices[64];
     uint32_t i = 0, j, index;
@@ -3005,11 +3006,11 @@ void sort_stage0_fast_candidates(
             }
         }
     }
+
     // Keep
     context_ptr->best_cost_per_class[context_ptr->target_class] = (*(buffer_ptr_array[sorted_cand_buff_indices[0]]->fast_cost_ptr));
     // is top N compound
-#if COMPOUND_OPT_1|| COMPOUND_OPT_2
-#define TOP_N 1
+    #define TOP_N 1
     context_ptr->is_best_compound[context_ptr->target_class] = EB_FALSE;
     if (context_ptr->target_class == CAND_CLASS_1 || context_ptr->target_class == CAND_CLASS_2) {
         for (i = 0; i < MIN(input_buffer_count, TOP_N); ++i) {
@@ -5505,7 +5506,7 @@ uint64_t get_tx_size_bits(
 #endif
 
 
-#if TX_TYPE_SEARCH_OPT_0
+#if TX_TYPE_SEARCH_OPT
 uint8_t allowed_tx_set_a[TX_SIZES_ALL][TX_TYPES];
 
 void tx_initialize_neighbor_arrays(
@@ -7544,9 +7545,6 @@ void md_stage_2(
                 tx_search_skip_flag = EB_TRUE;
 
             if (!tx_search_skip_flag) {
-#if TX_TYPE_SEARCH_OPT_0
-                for (context_ptr->txb_itr = 0; context_ptr->txb_itr < context_ptr->blk_geom->txb_count[context_ptr->tx_depth]; context_ptr->txb_itr++)
-#endif
                 product_full_loop_tx_search(
                     candidateBuffer,
                     context_ptr,
@@ -7563,7 +7561,7 @@ void md_stage_2(
                 candidate_ptr->y_has_coeff = 0;
             }
 #endif
-#if TX_TYPE_SEARCH_OPT_0
+#if TX_TYPE_SEARCH_OPT
             context_ptr->full_loop_luma_dc_sign_level_coeff_neighbor_array = context_ptr->luma_dc_sign_level_coeff_neighbor_array;
             context_ptr->txb_1d_offset = 0;
             for (context_ptr->txb_itr = 0; context_ptr->txb_itr < context_ptr->blk_geom->txb_count[context_ptr->tx_depth]; context_ptr->txb_itr++)
@@ -8196,9 +8194,6 @@ void AV1PerformFullLoop(
             tx_search_skip_flag = (picture_control_set_ptr->parent_pcs_ptr->skip_tx_search && best_fastLoop_candidate_index > NFL_TX_TH) ? 1 : tx_search_skip_flag;
 #endif
             if (!tx_search_skip_flag) {
-#if TX_TYPE_SEARCH_OPT_0
-                for (context_ptr->txb_itr = 0; context_ptr->txb_itr < context_ptr->blk_geom->txb_count[context_ptr->tx_depth]; context_ptr->txb_itr++)
-#endif
                 product_full_loop_tx_search(
                     candidateBuffer,
                     context_ptr,
@@ -8215,7 +8210,7 @@ void AV1PerformFullLoop(
                 candidate_ptr->y_has_coeff = 0;
             }
 #endif
-#if TX_TYPE_SEARCH_OPT_0
+#if TX_TYPE_SEARCH_OPT
             context_ptr->full_loop_luma_dc_sign_level_coeff_neighbor_array = context_ptr->luma_dc_sign_level_coeff_neighbor_array;
             context_ptr->txb_1d_offset = 0;
             for (context_ptr->txb_itr = 0; context_ptr->txb_itr < context_ptr->blk_geom->txb_count[context_ptr->tx_depth]; context_ptr->txb_itr++)
@@ -8861,9 +8856,6 @@ void inter_depth_tx_search(
         init_candidate_buffer(
             candidate_ptr,
             count_non_zero_coeffs);
-#if TX_TYPE_SEARCH_OPT_0
-        for (context_ptr->txb_itr = 0; context_ptr->txb_itr < context_ptr->blk_geom->txb_count[context_ptr->tx_depth]; context_ptr->txb_itr++)
-#endif
         product_full_loop_tx_search(
             candidateBuffer,
             context_ptr,
@@ -8879,7 +8871,7 @@ void inter_depth_tx_search(
 
         //re-init
         candidate_ptr->y_has_coeff = 0;
-#if TX_TYPE_SEARCH_OPT_0
+#if TX_TYPE_SEARCH_OPT
         context_ptr->full_loop_luma_dc_sign_level_coeff_neighbor_array = context_ptr->luma_dc_sign_level_coeff_neighbor_array;
         context_ptr->txb_1d_offset = 0;
         for (context_ptr->txb_itr = 0; context_ptr->txb_itr < context_ptr->blk_geom->txb_count[context_ptr->tx_depth]; context_ptr->txb_itr++)
@@ -10190,13 +10182,16 @@ void md_encode_block(
 #endif
 
 
-#if INTERPOLATION_SEARCH_OPT_1  || INTER_INTER_WEDGE_OPT || INTER_INTRA_WEDGE_OPT
+#if INTER_INTER_WEDGE_OPT || INTER_INTRA_WEDGE_OPT
         const aom_variance_fn_ptr_t *fn_ptr = &mefn_ptr[context_ptr->blk_geom->bsize];
         context_ptr->source_variance = // use_hbd ?
             //av1_high_get_sby_perpixel_variance(fn_ptr, (input_picture_ptr->buffer_y + inputOriginIndex), input_picture_ptr->stride_y, context_ptr->blk_geom->bsize :
             av1_get_sby_perpixel_variance(fn_ptr, (input_picture_ptr->buffer_y + inputOriginIndex), input_picture_ptr->stride_y, context_ptr->blk_geom->bsize);
-
+#if ORANGE_1_SET
         context_ptr->inter_inter_wedge_variance_th = 200;
+#else
+        context_ptr->inter_inter_wedge_variance_th = 100;
+#endif
         context_ptr->inter_intra_wedge_variance_th = 100;
 #endif
 
@@ -10483,15 +10478,11 @@ void md_encode_block(
 
             //number of next level candidates could not exceed number of curr level candidates
             context_ptr->fast1_cand_count[cand_class_it] = MIN(context_ptr->fast_cand_count[cand_class_it], context_ptr->fast1_cand_count[cand_class_it]);
-#if COMPOUND_OPT || FILTERED_INTRA_OPT
-            context_ptr->best_cost_per_class[cand_class_it] = MAX_CU_COST;
-#endif
-
 #if COMPOUND_OPT
+            context_ptr->best_cost_per_class[cand_class_it] = MAX_CU_COST;
             if (cand_class_it == CAND_CLASS_3 && context_ptr->fast_cand_count[cand_class_it]) {
-
                 EbBool cond_0 = EB_FALSE;
-#if COMPOUND_OPT_0 
+#if GREEN_SET && !BLUE_SET
                 uint64_t class_0_to_class_1_dev = (context_ptr->best_cost_per_class[CAND_CLASS_0] < context_ptr->best_cost_per_class[CAND_CLASS_1] && context_ptr->best_cost_per_class[CAND_CLASS_0]) ?
                     ((context_ptr->best_cost_per_class[CAND_CLASS_1] - context_ptr->best_cost_per_class[CAND_CLASS_0]) * 100) / context_ptr->best_cost_per_class[CAND_CLASS_1] :
                     0 ;
@@ -10503,19 +10494,18 @@ void md_encode_block(
                 #define SKIP_CLASS_TH 15
                 // if best class_0 is 15% better than both best class_1 and  best class_2, then skip class_3
                 cond_0 = (class_0_to_class_1_dev >= SKIP_CLASS_TH && class_0_to_class_2_dev >= SKIP_CLASS_TH);
-#endif
-#if COMPOUND_OPT_2
+#else
                 cond_0 = (context_ptr->best_cost_per_class[CAND_CLASS_0] < context_ptr->best_cost_per_class[CAND_CLASS_1]) && (context_ptr->best_cost_per_class[CAND_CLASS_0] < context_ptr->best_cost_per_class[CAND_CLASS_2]);
 #endif
                 //-----------------------------
                 EbBool cond_1 = EB_FALSE;
-#if COMPOUND_OPT_1 || COMPOUND_OPT_2
+#if GREEN_SET && !BLUE_SET
                 cond_1 = (context_ptr->is_best_compound[CAND_CLASS_1] == EB_FALSE && context_ptr->is_best_compound[CAND_CLASS_2] == EB_FALSE);
 #endif
                 //-----------------------------
 
-#if COMPOUND_OPT_2
-                if (cond_0 && cond_1) {
+#if COMPOUND_OPT
+                if (cond_0 || cond_1) {
 #else
                 if (cond_0 || cond_1) {
 #endif
@@ -10525,23 +10515,6 @@ void md_encode_block(
                     context_ptr->md_stage_3_count[cand_class_it] = 0;
 
                     
-                }
-            }
-#endif
-#if FILTERED_INTRA_OPT
-            if (cand_class_it == CAND_CLASS_5 && context_ptr->fast_cand_count[cand_class_it]) {
-                if(!(context_ptr->best_cost_per_class[CAND_CLASS_0] <= context_ptr->best_cost_per_class[CAND_CLASS_1] &&
-                     context_ptr->best_cost_per_class[CAND_CLASS_0] <= context_ptr->best_cost_per_class[CAND_CLASS_2] &&
-                     context_ptr->best_cost_per_class[CAND_CLASS_0] <= context_ptr->best_cost_per_class[CAND_CLASS_3] &&
-                     context_ptr->best_cost_per_class[CAND_CLASS_0] <= context_ptr->best_cost_per_class[CAND_CLASS_4] )){
-
-
-                    context_ptr->fast_cand_count[cand_class_it] = 0;
-                    context_ptr->fast1_cand_count[cand_class_it] = 0;
-                    context_ptr->md_stage_2_count[cand_class_it] = 0;
-                    context_ptr->md_stage_3_count[cand_class_it] = 0;
-
-
                 }
             }
 #endif
@@ -11371,7 +11344,11 @@ EB_EXTERN EbErrorType mode_decision_sb(
             if (!sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[parent_depth_idx_mds])
                 parent_depth_cost = MAX_MODE_COST;
 #endif
+#if 0//INTER_DEPTH_SKIP_OPT
+            if (parent_depth_cost <= current_depth_cost + (current_depth_cost* (4 - context_ptr->blk_geom->quadi)* context_ptr->md_exit_th / context_ptr->blk_geom->quadi / 100)) {
+#else
             if (parent_depth_cost <= current_depth_cost + (current_depth_cost* (4 - context_ptr->blk_geom->quadi)* MD_EXIT_THSL/ context_ptr->blk_geom->quadi/100)) {
+#endif
                 skip_next_sq = 1;
                 next_non_skip_blk_idx_mds = parent_depth_idx_mds + ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][context_ptr->blk_geom->depth - 1];
             }
@@ -11483,7 +11460,11 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #if NSQ_EARLY_EXIT
             context_ptr->tot_cost = tot_cost;
 #endif
+#if 0//INTER_DEPTH_SKIP_OPT
+            if ((tot_cost + tot_cost * (blk_geom->totns - (blk_geom->nsi + 1))* context_ptr->md_exit_th / (blk_geom->nsi + 1) / 100) > context_ptr->md_local_cu_unit[context_ptr->blk_geom->sqi_mds].cost)
+#else
             if ((tot_cost + tot_cost * (blk_geom->totns - (blk_geom->nsi + 1))* MD_EXIT_THSL/ (blk_geom->nsi + 1) / 100) > context_ptr->md_local_cu_unit[context_ptr->blk_geom->sqi_mds].cost)
+#endif
 #if MD_NSQ_EXIT
                 skip_next_nsq = 1;
 #else

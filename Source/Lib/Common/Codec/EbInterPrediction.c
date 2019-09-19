@@ -2767,7 +2767,7 @@ void search_compound_diff_wedge(
     ModeDecisionCandidate                *candidate_ptr    )
 {
 
-#if PRE_BILINEAR_CLEAN_UP && !COMPOUND_LOSSLESS// compound
+#if PRE_BILINEAR_CLEAN_UP && !COMPOUND_OPT
 #if BILINEAR_INJECTION
     candidate_ptr->interp_filters = av1_make_interp_filters(BILINEAR, BILINEAR);
 #else
@@ -2825,7 +2825,7 @@ void search_compound_diff_wedge(
         //we call the regular inter prediction path here(no compound)
         av1_inter_prediction(
             picture_control_set_ptr,
-#if PRE_BILINEAR_CLEAN_UP && !COMPOUND_LOSSLESS// compound
+#if PRE_BILINEAR_CLEAN_UP && !COMPOUND_OPT
             candidate_ptr->interp_filters,
 #else
             0,//fixed interpolation filter for compound search
@@ -2869,7 +2869,7 @@ void search_compound_diff_wedge(
         //we call the regular inter prediction path here(no compound)
         av1_inter_prediction(
             picture_control_set_ptr,
-#if PRE_BILINEAR_CLEAN_UP && !COMPOUND_LOSSLESS// compound
+#if PRE_BILINEAR_CLEAN_UP && !COMPOUND_OPT
             candidate_ptr->interp_filters,
 #else
             0,//fixed interpolation filter for compound search
@@ -6556,7 +6556,7 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
                         md_context_ptr->blk_geom->bheight,
                         ref_pic_list0,
                         ref_pic_list1,
-#if INTERPOLATION_SEARCH_OPT_0
+#if INTERPOLATION_SEARCH_OPT
                         candidate_buffer_ptr->candidate_ptr->interp_filters == 65537 ? md_context_ptr->prediction_ptr_0 : md_context_ptr->prediction_ptr_1,
 #else
                         prediction_ptr,
@@ -6567,7 +6567,7 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
 
                     model_rd_for_sb(
                         picture_control_set_ptr,
-#if INTERPOLATION_SEARCH_OPT_0
+#if INTERPOLATION_SEARCH_OPT
                         candidate_buffer_ptr->candidate_ptr->interp_filters == 65537 ? md_context_ptr->prediction_ptr_0 : md_context_ptr->prediction_ptr_1,
 #else
                         prediction_ptr,
@@ -7195,7 +7195,7 @@ EbErrorType inter_pu_prediction_av1(
         candidate_buffer_ptr->candidate_ptr->interp_filters = 0;
 #endif
 
-#if INTERPOLATION_SEARCH_OPT_0
+#if INTERPOLATION_SEARCH_OPT
 #if IT_SEARCH_FIX
         if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level == IT_SEARCH_OFF)
             candidate_buffer_ptr->candidate_ptr->interp_filters = 0;
@@ -7205,7 +7205,7 @@ EbErrorType inter_pu_prediction_av1(
                 if (md_context_ptr->blk_geom->bwidth > capped_size && md_context_ptr->blk_geom->bheight > capped_size)
                     interpolation_filter_search(
                         picture_control_set_ptr,
-#if INTERPOLATION_SEARCH_OPT_0
+#if INTERPOLATION_SEARCH_OPT
                         candidate_buffer_ptr->prediction_ptr,
 #else
                         candidate_buffer_ptr->prediction_ptr_temp,
@@ -7273,7 +7273,7 @@ EbErrorType inter_pu_prediction_av1(
                 if (md_context_ptr->blk_geom->bwidth > capped_size && md_context_ptr->blk_geom->bheight > capped_size)
                     interpolation_filter_search(
                         picture_control_set_ptr,
-#if INTERPOLATION_SEARCH_OPT_0
+#if INTERPOLATION_SEARCH_OPT
                         candidate_buffer_ptr->prediction_ptr,
 #else
                         candidate_buffer_ptr->prediction_ptr_temp,

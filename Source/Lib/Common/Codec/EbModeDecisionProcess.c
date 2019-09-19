@@ -88,7 +88,7 @@ EbErrorType mode_decision_context_ctor(
         if (return_error == EB_ErrorInsufficientResources)
             return EB_ErrorInsufficientResources;
     }
-#if TX_TYPE_SEARCH_OPT_0
+#if TX_TYPE_SEARCH_OPT
     EB_MALLOC(ModeDecisionCandidateBuffer*, context_ptr->scratch_candidate_buffer, sizeof(ModeDecisionCandidateBuffer), EB_N_PTR);
     EB_MALLOC(ModeDecisionCandidate*, context_ptr->scratch_candidate_buffer->candidate_ptr, sizeof(ModeDecisionCandidate), EB_N_PTR);
     return_error = mode_decision_scratch_candidate_buffer_ctor(context_ptr->scratch_candidate_buffer);
@@ -175,7 +175,7 @@ EbErrorType mode_decision_context_ctor(
     EB_MALLOC(uint8_t*, context_ptr->above_txfm_context, sizeof(uint8_t) * (MAX_SB_SIZE >> MI_SIZE_LOG2), EB_N_PTR);
     EB_MALLOC(uint8_t*, context_ptr->left_txfm_context, sizeof(uint8_t) * (MAX_SB_SIZE >> MI_SIZE_LOG2), EB_N_PTR);
 #endif
-#if INTERPOLATION_SEARCH_OPT_0
+#if INTERPOLATION_SEARCH_OPT
     EbPictureBufferDescInitData pictureBufferDescInitData;
 
     pictureBufferDescInitData.max_width = MAX_SB_SIZE;

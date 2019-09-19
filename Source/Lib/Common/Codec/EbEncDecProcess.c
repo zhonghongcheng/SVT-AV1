@@ -1609,6 +1609,13 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
 #endif
 
+#if 0//INTER_DEPTH_SKIP_OPT
+    // Derive MD Exit TH
+    if (MR_MODE)
+        context_ptr->md_exit_th = 0;
+    else //if (picture_control_set_ptr->enc_mode == ENC_M0)
+        context_ptr->md_exit_th = 10;
+#endif
     return return_error;
 }
 

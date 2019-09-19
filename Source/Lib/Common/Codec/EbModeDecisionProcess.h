@@ -116,7 +116,7 @@ extern "C" {
         ModeDecisionCandidate       **fast_candidate_ptr_array;
         ModeDecisionCandidate        *fast_candidate_array;
         ModeDecisionCandidateBuffer **candidate_buffer_ptr_array;
-#if TX_TYPE_SEARCH_OPT_0
+#if TX_TYPE_SEARCH_OPT
         ModeDecisionCandidateBuffer  *scratch_candidate_buffer;
 #endif
         MdRateEstimationContext      *md_rate_estimation_ptr;
@@ -140,7 +140,7 @@ extern "C" {
         NeighborArrayUnit            *skip_coeff_neighbor_array;
 #endif
         NeighborArrayUnit            *luma_dc_sign_level_coeff_neighbor_array; // Stored per 4x4. 8 bit: lower 6 bits (COEFF_CONTEXT_BITS), shows if there is at least one Coef. Top 2 bit store the sign of DC as follow: 0->0,1->-1,2-> 1
-#if TX_TYPE_SEARCH_OPT_0
+#if TX_TYPE_SEARCH_OPT
         NeighborArrayUnit            *full_loop_luma_dc_sign_level_coeff_neighbor_array; // Stored per 4x4. 8 bit: lower 6 bits (COEFF_CONTEXT_BITS), shows if there is at least one Coef. Top 2 bit store the sign of DC as follow: 0->0,1->-1,2-> 1
 #else
 #if ATB_DC_CONTEXT_SUPPORT_2
@@ -250,7 +250,7 @@ extern "C" {
         EbBool                          cu_use_ref_src_flag;
         uint16_t                        qp_index;
         uint64_t                        three_quad_energy;
-#if TX_TYPE_SEARCH_OPT_0
+#if TX_TYPE_SEARCH_OPT
         uint32_t                        txb_1d_offset;
 #endif
 #if SEARCH_UV_MODE
@@ -342,7 +342,7 @@ extern "C" {
 #endif
         uint32_t                       fast_cand_count[CAND_CLASS_TOTAL]; //how many ffast candiates per class
 #endif
-#if COMPOUND_OPT || FILTERED_INTRA_OPT
+#if COMPOUND_OPT
         uint64_t                       best_cost_per_class[CAND_CLASS_TOTAL];
         uint64_t                       is_best_compound[CAND_CLASS_TOTAL];
 #endif
@@ -459,14 +459,18 @@ extern "C" {
     uint8_t *above_txfm_context;
     uint8_t *left_txfm_context;
 #endif
-#if INTERPOLATION_SEARCH_OPT_0
+#if INTERPOLATION_SEARCH_OPT
     EbPictureBufferDesc *prediction_ptr_0;
     EbPictureBufferDesc *prediction_ptr_1;
 #endif
-#if INTERPOLATION_SEARCH_OPT_1 || INTER_INTER_WEDGE_OPT || INTER_INTRA_WEDGE_OPT
+#if INTER_INTER_WEDGE_OPT || INTER_INTRA_WEDGE_OPT
     unsigned int source_variance; // input block variance
     unsigned int inter_inter_wedge_variance_th; // input block variance
     unsigned int inter_intra_wedge_variance_th; // input block variance
+#endif
+
+#if INTER_DEPTH_SKIP_OPT
+    uint64_t md_exit_th;
 #endif
   } ModeDecisionContext;
 
