@@ -10505,7 +10505,11 @@ void md_encode_block(
                 //-----------------------------
 
 #if COMPOUND_OPT
+#if GREEN_SET
+                if (cond_0 && cond_1) {
+#else
                 if (cond_0 || cond_1) {
+#endif
 #else
                 if (cond_0 || cond_1) {
 #endif
