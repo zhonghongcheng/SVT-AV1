@@ -115,19 +115,32 @@ extern "C" {
 // Lossless 
 #define TX_TYPE_SEARCH_OPT       1
 #define INTERPOLATION_SEARCH_OPT 0
-// Lossy         
+// Lossy     
+#define ORANGE_SET               0
 #define GREEN_SET                0
+#if ORANGE_SET
+#define BLUE_SET                 1
+#else
 #define BLUE_SET                 0
-#define ORANGE_0_SET             0
-#define ORANGE_1_SET             0
+#endif
 
-#if GREEN_SET || BLUE_SET || ORANGE_0_SET || ORANGE_1_SET
+
+#if GREEN_SET || BLUE_SET 
 #define INTER_INTER_WEDGE_OPT    1
 #define COMPOUND_OPT             1                        
 #define INTER_DEPTH_SKIP_OPT     1
 #endif
 
 #define INTER_INTRA_WEDGE_OPT    0
+
+#define COMPOUND_SKIP            0     
+#if COMPOUND_SKIP
+#define COMPOUND_OPT             1      
+#define UNIPRED_VS_BIPRED        1
+#endif
+
+#define ROUND_MV_STAGE_0         0
+
 //*************************************************//
 
 #define TFK_ALTREF_DYNAMIC_WINDOW       1 // Applying Dynamic window to key frame temporal filtering
@@ -136,10 +149,8 @@ extern "C" {
 #define MD_NSQ_EXIT                     1
 //MD_EXIT_THSL -->0 is lossless 100 is maximum. Increase with a step of 10-20.
 #if INTER_DEPTH_SKIP_OPT
-#if ORANGE_1_SET
+#if ORANGE_SET
 #define MD_EXIT_THSL                   30
-#elif ORANGE_0_SET
-#define MD_EXIT_THSL                   20
 #elif BLUE_SET
 #define MD_EXIT_THSL                   15
 #elif GREEN_SET

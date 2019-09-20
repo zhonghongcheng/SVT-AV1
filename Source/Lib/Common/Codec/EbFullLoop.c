@@ -2279,6 +2279,7 @@ void product_full_loop(
     context_ptr->three_quad_energy = 0;
 
 #if TX_TYPE_SEARCH_OPT
+    uint8_t  tx_depth = context_ptr->tx_depth;
     uint32_t txb_itr = context_ptr->txb_itr;
     uint32_t txb_1d_offset = context_ptr->txb_1d_offset;
 #else
@@ -2287,8 +2288,9 @@ void product_full_loop(
 #endif
     assert(asm_type >= 0 && asm_type < ASM_TYPE_TOTAL);
 #if ATB_SUPPORT
-    uint8_t  tx_depth = candidateBuffer->candidate_ptr->tx_depth;
 #if !TX_TYPE_SEARCH_OPT
+    uint8_t  tx_depth = candidateBuffer->candidate_ptr->tx_depth;
+
     uint16_t txb_count = context_ptr->blk_geom->txb_count[tx_depth];
     for (txb_itr = 0; txb_itr < txb_count; txb_itr++)
 #endif

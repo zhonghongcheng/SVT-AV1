@@ -1920,7 +1920,9 @@ void fast_loop_core(
     context_ptr->shut_chroma_comp = EB_FALSE;
 #endif
 
-
+#if ROUND_MV_STAGE_0
+    context_ptr->shut_interpolation = (context_ptr->md_stage == MD_STAGE_0);
+#endif
 #if COMPOUND_OPT
     if (candidate_ptr->type == INTER_MODE && candidateBuffer->candidate_ptr->is_compound)
         determine_compound_mode(
@@ -2985,15 +2987,35 @@ void sort_stage0_fast_candidates(
 
 #if COMPOUND_OPT
 #if !GREEN_SET || BLUE_SET
-    for (uint32_t buffer_index = input_buffer_start_idx; buffer_index <= input_buffer_end_idx; buffer_index++) {
-        if (*(buffer_ptr_array[buffer_index]->fast_cost_ptr) < context_ptr->best_cost_per_class[context_ptr->target_class])
-            context_ptr->best_cost_per_class[context_ptr->target_class] = *(buffer_ptr_array[buffer_index]->fast_cost_ptr);
+    if(context_ptr->target_class == CAND_CLASS_1 || context_ptr->target_class == CAND_CLASS_2) {
+        for (uint32_t buffer_index = 0; buffer_index <= ordered_end_idx; buffer_index++) {
+
+
+            if (*(buffer_ptr_array[cand_buff_indices[buffer_index]]->fast_cost_ptr) < context_ptr->best_cost_per_class[context_ptr->target_class])
+                context_ptr->best_cost_per_class[context_ptr->target_class] = *(buffer_ptr_array[cand_buff_indices[buffer_index]]->fast_cost_ptr);
+
+#if UNIPRED_VS_BIPRED
+            if (buffer_ptr_array[cand_buff_indices[buffer_index]]->candidate_ptr->is_compound) {
+                context_ptr->is_compound_present[context_ptr->target_class] = EB_TRUE;
+                if (*(buffer_ptr_array[cand_buff_indices[buffer_index]]->fast_cost_ptr) < context_ptr->best_compound_cost_per_class[context_ptr->target_class])
+                    context_ptr->best_compound_cost_per_class[context_ptr->target_class] = *(buffer_ptr_array[cand_buff_indices[buffer_index]]->fast_cost_ptr);
+            }
+            else {
+
+                //if (*(buffer_ptr_array[cand_buff_indices[buffer_index]]->fast_cost_ptr) > context_ptr->worst_unipred_cost_per_class[context_ptr->target_class])
+                //    context_ptr->worst_unipred_cost_per_class[context_ptr->target_class] = *(buffer_ptr_array[cand_buff_indices[buffer_index]]->fast_cost_ptr);
+
+                if (*(buffer_ptr_array[cand_buff_indices[buffer_index]]->fast_cost_ptr) < context_ptr->best_unipred_cost_per_class[context_ptr->target_class])
+                    context_ptr->best_unipred_cost_per_class[context_ptr->target_class] = *(buffer_ptr_array[cand_buff_indices[buffer_index]]->fast_cost_ptr);
+            }
+#endif
+        }
     }
 #else
     // Sort the current class candidates
     uint32_t sorted_cand_buff_indices[64];
     uint32_t i = 0, j, index;
-    for (uint32_t buffer_index = input_buffer_start_idx; buffer_index <= input_buffer_end_idx; buffer_index++, i++) {
+    for (uint32_t buffer_index = input_buffer_start_idx; buffer_index <= input_buffer_start_idx + ordered_end_idx; buffer_index++) {
         sorted_cand_buff_indices[i] = buffer_index;
     }
     for (i = 0; i < input_buffer_count - 1; ++i) {
@@ -3415,6 +3437,9 @@ void predictive_me_sub_pel_search(
             context_ptr->skip_interpolation_search = 1;
 #if RE_FACTURE_PRED_KERNEL
             context_ptr->shut_chroma_comp = EB_TRUE;
+#endif
+#if ROUND_MV_STAGE_0
+            context_ptr->shut_interpolation = EB_FALSE;
 #endif
             ProductPredictionFunTable[INTER_MODE](
                 context_ptr,
@@ -4596,6 +4621,9 @@ void check_best_indepedant_cfl(
 #if RE_FACTURE_PRED_KERNEL
         context_ptr->shut_chroma_comp = EB_FALSE;
 #endif
+#if ROUND_MV_STAGE_0
+        context_ptr->shut_interpolation = EB_FALSE;
+#endif
         ProductPredictionFunTable[candidateBuffer->candidate_ptr->type](
             context_ptr,
             picture_control_set_ptr,
@@ -5631,9 +5659,7 @@ void tx_type_search(
     int32_t tx_type;
     TxSize txSize = context_ptr->blk_geom->txsize[context_ptr->tx_depth][context_ptr->txb_itr];
     int32_t is_inter = (candidateBuffer->candidate_ptr->type == INTER_MODE || candidateBuffer->candidate_ptr->use_intrabc) ? EB_TRUE : EB_FALSE;
-    const TxSetType tx_set_type = get_ext_tx_set_type(txSize, is_inter, picture_control_set_ptr->parent_pcs_ptr->reduced_tx_set_used);
-    int32_t allowed_tx_mask[TX_TYPES] = { 0 };  // 1: allow; 0: skip.
-    int32_t allowed_tx_num = 0;
+    const TxSetType tx_set_type = get_ext_tx_set_type(txSize, is_inter, picture_control_set_ptr->parent_pcs_ptr->tx_search_reduced_set);
 
     uint8_t txb_origin_x = (uint8_t)context_ptr->blk_geom->tx_org_x[context_ptr->tx_depth][context_ptr->txb_itr];
     uint8_t txb_origin_y = (uint8_t)context_ptr->blk_geom->tx_org_y[context_ptr->tx_depth][context_ptr->txb_itr];
@@ -5668,8 +5694,8 @@ void tx_type_search(
         if (tx_type != DCT_DCT) {
             if (is_inter) {
                 TxSize max_tx_size = context_ptr->blk_geom->txsize[0][0];
-                const TxSetType tx_set_type = get_ext_tx_set_type(max_tx_size, is_inter, picture_control_set_ptr->parent_pcs_ptr->reduced_tx_set_used);
-                int32_t eset = get_ext_tx_set(max_tx_size, is_inter, picture_control_set_ptr->parent_pcs_ptr->reduced_tx_set_used);
+                const TxSetType tx_set_type = get_ext_tx_set_type(max_tx_size, is_inter, picture_control_set_ptr->parent_pcs_ptr->tx_search_reduced_set);
+                int32_t eset = get_ext_tx_set(max_tx_size, is_inter, picture_control_set_ptr->parent_pcs_ptr->tx_search_reduced_set);
                 // eset == 0 should correspond to a set with only DCT_DCT and there
                 // is no need to send the tx_type
                 if (eset <= 0) continue;
@@ -7506,6 +7532,9 @@ void md_stage_2(
 #if RE_FACTURE_PRED_KERNEL
                     context_ptr->shut_chroma_comp = EB_FALSE;
 #endif
+#if ROUND_MV_STAGE_0
+                    context_ptr->shut_interpolation = EB_FALSE;
+#endif
                     ProductPredictionFunTable[candidate_ptr->type](
                         context_ptr,
                         picture_control_set_ptr,
@@ -7966,6 +7995,9 @@ void AV1PerformFullLoop(
 #if RE_FACTURE_PRED_KERNEL
                 context_ptr->shut_chroma_comp = EB_FALSE;
 #endif
+#if ROUND_MV_STAGE_0
+                context_ptr->shut_interpolation = EB_FALSE;
+#endif
                 ProductPredictionFunTable[candidate_ptr->type](
                     context_ptr,
                     picture_control_set_ptr,
@@ -8211,6 +8243,7 @@ void AV1PerformFullLoop(
             }
 #endif
 #if TX_TYPE_SEARCH_OPT
+            context_ptr->tx_depth = candidateBuffer->candidate_ptr->tx_depth;
             context_ptr->full_loop_luma_dc_sign_level_coeff_neighbor_array = context_ptr->luma_dc_sign_level_coeff_neighbor_array;
             context_ptr->txb_1d_offset = 0;
             for (context_ptr->txb_itr = 0; context_ptr->txb_itr < context_ptr->blk_geom->txb_count[context_ptr->tx_depth]; context_ptr->txb_itr++)
@@ -9814,6 +9847,9 @@ void search_best_independent_uv_mode(
 #if RE_FACTURE_PRED_KERNEL
             context_ptr->shut_chroma_comp = EB_FALSE;
 #endif
+#if ROUND_MV_STAGE_0
+            context_ptr->shut_interpolation = EB_FALSE;
+#endif
             ProductPredictionFunTable[candidateBuffer->candidate_ptr->type](
                 context_ptr,
                 picture_control_set_ptr,
@@ -10187,7 +10223,7 @@ void md_encode_block(
         context_ptr->source_variance = // use_hbd ?
             //av1_high_get_sby_perpixel_variance(fn_ptr, (input_picture_ptr->buffer_y + inputOriginIndex), input_picture_ptr->stride_y, context_ptr->blk_geom->bsize :
             av1_get_sby_perpixel_variance(fn_ptr, (input_picture_ptr->buffer_y + inputOriginIndex), input_picture_ptr->stride_y, context_ptr->blk_geom->bsize);
-#if ORANGE_1_SET
+#if ORANGE_SET
         context_ptr->inter_inter_wedge_variance_th = 200;
 #else
         context_ptr->inter_inter_wedge_variance_th = 100;
@@ -10480,6 +10516,13 @@ void md_encode_block(
             context_ptr->fast1_cand_count[cand_class_it] = MIN(context_ptr->fast_cand_count[cand_class_it], context_ptr->fast1_cand_count[cand_class_it]);
 #if COMPOUND_OPT
             context_ptr->best_cost_per_class[cand_class_it] = MAX_CU_COST;
+            context_ptr->best_unipred_cost_per_class[cand_class_it] = MAX_CU_COST;
+            context_ptr->best_compound_cost_per_class[cand_class_it] = MAX_CU_COST;
+
+            //context_ptr->worst_unipred_cost_per_class[cand_class_it] = 0;
+
+            context_ptr->is_compound_present[cand_class_it] = EB_FALSE;
+
             if (cand_class_it == CAND_CLASS_3 && context_ptr->fast_cand_count[cand_class_it]) {
                 EbBool cond_0 = EB_FALSE;
 #if GREEN_SET && !BLUE_SET
@@ -10495,7 +10538,15 @@ void md_encode_block(
                 // if best class_0 is 15% better than both best class_1 and  best class_2, then skip class_3
                 cond_0 = (class_0_to_class_1_dev >= SKIP_CLASS_TH && class_0_to_class_2_dev >= SKIP_CLASS_TH);
 #else
+#if UNIPRED_VS_BIPRED
+                //if (( context_ptr->is_compound_present[CAND_CLASS_1] && (context_ptr->worst_unipred_cost_per_class[CAND_CLASS_1] < context_ptr->best_compound_cost_per_class[CAND_CLASS_1])) && 
+                //    ( context_ptr->is_compound_present[CAND_CLASS_2] && (context_ptr->worst_unipred_cost_per_class[CAND_CLASS_2] < context_ptr->best_compound_cost_per_class[CAND_CLASS_2]))  )
+                if (( context_ptr->is_compound_present[CAND_CLASS_1] && (context_ptr->best_unipred_cost_per_class[CAND_CLASS_1] < ((context_ptr->best_compound_cost_per_class[CAND_CLASS_1] * 75) / 100))) && 
+                    ( context_ptr->is_compound_present[CAND_CLASS_2] && (context_ptr->best_unipred_cost_per_class[CAND_CLASS_2] < ((context_ptr->best_compound_cost_per_class[CAND_CLASS_2] * 75) / 100)))  )
+                    cond_0 = EB_TRUE;
+#else
                 cond_0 = (context_ptr->best_cost_per_class[CAND_CLASS_0] < context_ptr->best_cost_per_class[CAND_CLASS_1]) && (context_ptr->best_cost_per_class[CAND_CLASS_0] < context_ptr->best_cost_per_class[CAND_CLASS_2]);
+#endif
 #endif
                 //-----------------------------
                 EbBool cond_1 = EB_FALSE;
@@ -10917,6 +10968,9 @@ void md_encode_block(
                 context_ptr->skip_interpolation_search = 0;
 #if RE_FACTURE_PRED_KERNEL
                 context_ptr->shut_chroma_comp = EB_FALSE;
+#endif
+#if ROUND_MV_STAGE_0
+                context_ptr->shut_interpolation = EB_FALSE;
 #endif
                 ProductPredictionFunTable[candidateBuffer->candidate_ptr->type](
                     context_ptr,
