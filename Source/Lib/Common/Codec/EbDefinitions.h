@@ -116,7 +116,7 @@ extern "C" {
 #define TX_TYPE_SEARCH_OPT       1
 #define INTERPOLATION_SEARCH_OPT 0
 // Lossy         
-#define GREEN_SET                1 // <--- set this to 1 to test GREEN_SET
+#define GREEN_SET                0 // <--- set this to 1 to test GREEN_SET
 #define ORANGE_SET               0 // <--- set this to 1 to test ORANGE_SET
 #if ORANGE_SET
 #define BLUE_SET                 1
