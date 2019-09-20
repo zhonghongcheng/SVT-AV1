@@ -115,32 +115,22 @@ extern "C" {
 // Lossless 
 #define TX_TYPE_SEARCH_OPT       1
 #define INTERPOLATION_SEARCH_OPT 0
-// Lossy     
-#define ORANGE_SET               0
-#define GREEN_SET                0
+// Lossy         
+#define GREEN_SET                1 // <--- set this to 1 to test GREEN_SET
+#define ORANGE_SET               0 // <--- set this to 1 to test ORANGE_SET
 #if ORANGE_SET
 #define BLUE_SET                 1
 #else
-#define BLUE_SET                 0
+#define BLUE_SET                 0 // <--- set this to 1 to test BLUE_SET
 #endif
 
-
-#if GREEN_SET || BLUE_SET 
+#if GREEN_SET || BLUE_SET || ORANGE_SET
 #define INTER_INTER_WEDGE_OPT    1
 #define COMPOUND_OPT             1                        
 #define INTER_DEPTH_SKIP_OPT     1
 #endif
 
 #define INTER_INTRA_WEDGE_OPT    0
-
-#define COMPOUND_SKIP            0     
-#if COMPOUND_SKIP
-#define COMPOUND_OPT             1      
-#define UNIPRED_VS_BIPRED        1
-#endif
-
-#define ROUND_MV_STAGE_0         0
-
 //*************************************************//
 
 #define TFK_ALTREF_DYNAMIC_WINDOW       1 // Applying Dynamic window to key frame temporal filtering

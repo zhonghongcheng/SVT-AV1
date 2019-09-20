@@ -2290,7 +2290,8 @@ void product_full_loop(
 #if ATB_SUPPORT
 #if !TX_TYPE_SEARCH_OPT
     uint8_t  tx_depth = candidateBuffer->candidate_ptr->tx_depth;
-
+#endif
+#if !TX_TYPE_SEARCH_OPT
     uint16_t txb_count = context_ptr->blk_geom->txb_count[tx_depth];
     for (txb_itr = 0; txb_itr < txb_count; txb_itr++)
 #endif

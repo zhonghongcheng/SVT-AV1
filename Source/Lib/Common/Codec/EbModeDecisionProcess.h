@@ -344,11 +344,7 @@ extern "C" {
 #endif
 #if COMPOUND_OPT
         uint64_t                       best_cost_per_class[CAND_CLASS_TOTAL];
-        uint64_t                       worst_unipred_cost_per_class[CAND_CLASS_TOTAL];
-        uint64_t                       best_unipred_cost_per_class[CAND_CLASS_TOTAL];
-        uint64_t                       best_compound_cost_per_class[CAND_CLASS_TOTAL];
         uint64_t                       is_best_compound[CAND_CLASS_TOTAL];
-        uint64_t                       is_compound_present[CAND_CLASS_TOTAL];
 #endif
         uint8_t                         decouple_intra_inter_fast_loop;
         uint8_t                         full_loop_escape;
@@ -439,9 +435,6 @@ extern "C" {
 
 #if RE_FACTURE_PRED_KERNEL
     EbBool shut_chroma_comp;
-#endif
-#if ROUND_MV_STAGE_0
-    EbBool shut_interpolation;
 #endif
 #if ESTIMATE_INTRA
     uint8_t  estimate_angle_intra;

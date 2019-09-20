@@ -6965,17 +6965,10 @@ EbErrorType inter_pu_prediction_av1(
 
     Mv mv_0;
     Mv mv_1;
-#if ROUND_MV_STAGE_0
-    mv_0.x = (md_context_ptr->shut_interpolation) ? (candidate_buffer_ptr->candidate_ptr->motion_vector_xl0 + 4)&~0x07 : candidate_buffer_ptr->candidate_ptr->motion_vector_xl0;
-    mv_0.y = (md_context_ptr->shut_interpolation) ? (candidate_buffer_ptr->candidate_ptr->motion_vector_yl0 + 4)&~0x07 : candidate_buffer_ptr->candidate_ptr->motion_vector_yl0;
-    mv_1.x = (md_context_ptr->shut_interpolation) ? (candidate_buffer_ptr->candidate_ptr->motion_vector_xl1 + 4)&~0x07 : candidate_buffer_ptr->candidate_ptr->motion_vector_xl1;
-    mv_1.y = (md_context_ptr->shut_interpolation) ? (candidate_buffer_ptr->candidate_ptr->motion_vector_yl1 + 4)&~0x07 : candidate_buffer_ptr->candidate_ptr->motion_vector_yl1;
-#else
     mv_0.x = candidate_buffer_ptr->candidate_ptr->motion_vector_xl0;
     mv_0.y = candidate_buffer_ptr->candidate_ptr->motion_vector_yl0;
     mv_1.x = candidate_buffer_ptr->candidate_ptr->motion_vector_xl1;
     mv_1.y = candidate_buffer_ptr->candidate_ptr->motion_vector_yl1;
-#endif
     MvUnit mv_unit;
     mv_unit.pred_direction = candidate_buffer_ptr->candidate_ptr->prediction_direction[md_context_ptr->pu_itr];
     mv_unit.mv[0] = mv_0;
@@ -6988,7 +6981,6 @@ EbErrorType inter_pu_prediction_av1(
     int32_t skip_txfm_sb = 0;
     int32_t rs = 0;
     int64_t rd = INT64_MAX;
-
 
 #if OPT_IFS
     if (mv_unit.pred_direction == 0) {
