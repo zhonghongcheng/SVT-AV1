@@ -344,7 +344,7 @@ extern "C" {
 #endif
 #if COMPOUND_OPT
         uint64_t                       best_cost_per_class[CAND_CLASS_TOTAL];
-        //uint64_t                       worst_unipred_cost_per_class[CAND_CLASS_TOTAL];
+        uint64_t                       worst_unipred_cost_per_class[CAND_CLASS_TOTAL];
         uint64_t                       best_unipred_cost_per_class[CAND_CLASS_TOTAL];
         uint64_t                       best_compound_cost_per_class[CAND_CLASS_TOTAL];
         uint64_t                       is_best_compound[CAND_CLASS_TOTAL];

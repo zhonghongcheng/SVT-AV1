@@ -2986,13 +2986,16 @@ void sort_stage0_fast_candidates(
     }
 
 #if COMPOUND_OPT
-#if !GREEN_SET || BLUE_SET
     if(context_ptr->target_class == CAND_CLASS_1 || context_ptr->target_class == CAND_CLASS_2) {
         for (uint32_t buffer_index = 0; buffer_index <= ordered_end_idx; buffer_index++) {
 
-
-            if (*(buffer_ptr_array[cand_buff_indices[buffer_index]]->fast_cost_ptr) < context_ptr->best_cost_per_class[context_ptr->target_class])
+            uint32_t best_idx = 0;
+            if (*(buffer_ptr_array[cand_buff_indices[buffer_index]]->fast_cost_ptr) < context_ptr->best_cost_per_class[context_ptr->target_class]) {
                 context_ptr->best_cost_per_class[context_ptr->target_class] = *(buffer_ptr_array[cand_buff_indices[buffer_index]]->fast_cost_ptr);
+                best_idx = cand_buff_indices[buffer_index];
+            }
+
+            context_ptr->is_best_compound[context_ptr->target_class] = buffer_ptr_array[best_idx]->candidate_ptr->is_compound;
 
 #if UNIPRED_VS_BIPRED
             if (buffer_ptr_array[cand_buff_indices[buffer_index]]->candidate_ptr->is_compound) {
@@ -3002,8 +3005,8 @@ void sort_stage0_fast_candidates(
             }
             else {
 
-                //if (*(buffer_ptr_array[cand_buff_indices[buffer_index]]->fast_cost_ptr) > context_ptr->worst_unipred_cost_per_class[context_ptr->target_class])
-                //    context_ptr->worst_unipred_cost_per_class[context_ptr->target_class] = *(buffer_ptr_array[cand_buff_indices[buffer_index]]->fast_cost_ptr);
+                if (*(buffer_ptr_array[cand_buff_indices[buffer_index]]->fast_cost_ptr) > context_ptr->worst_unipred_cost_per_class[context_ptr->target_class])
+                    context_ptr->worst_unipred_cost_per_class[context_ptr->target_class] = *(buffer_ptr_array[cand_buff_indices[buffer_index]]->fast_cost_ptr);
 
                 if (*(buffer_ptr_array[cand_buff_indices[buffer_index]]->fast_cost_ptr) < context_ptr->best_unipred_cost_per_class[context_ptr->target_class])
                     context_ptr->best_unipred_cost_per_class[context_ptr->target_class] = *(buffer_ptr_array[cand_buff_indices[buffer_index]]->fast_cost_ptr);
@@ -3011,38 +3014,6 @@ void sort_stage0_fast_candidates(
 #endif
         }
     }
-#else
-    // Sort the current class candidates
-    uint32_t sorted_cand_buff_indices[64];
-    uint32_t i = 0, j, index;
-    for (uint32_t buffer_index = input_buffer_start_idx; buffer_index <= input_buffer_start_idx + ordered_end_idx; buffer_index++) {
-        sorted_cand_buff_indices[i] = buffer_index;
-    }
-    for (i = 0; i < input_buffer_count - 1; ++i) {
-        for (j = i + 1; j < input_buffer_count; ++j) {
-            if (*(buffer_ptr_array[sorted_cand_buff_indices[j]]->fast_cost_ptr) < *(buffer_ptr_array[sorted_cand_buff_indices[i]]->fast_cost_ptr)) {
-                index = sorted_cand_buff_indices[i];
-                sorted_cand_buff_indices[i] = (uint32_t)sorted_cand_buff_indices[j];
-                sorted_cand_buff_indices[j] = (uint32_t)index;
-
-            }
-        }
-    }
-
-    // Keep
-    context_ptr->best_cost_per_class[context_ptr->target_class] = (*(buffer_ptr_array[sorted_cand_buff_indices[0]]->fast_cost_ptr));
-    // is top N compound
-    #define TOP_N 1
-    context_ptr->is_best_compound[context_ptr->target_class] = EB_FALSE;
-    if (context_ptr->target_class == CAND_CLASS_1 || context_ptr->target_class == CAND_CLASS_2) {
-        for (i = 0; i < MIN(input_buffer_count, TOP_N); ++i) {
-            if (buffer_ptr_array[sorted_cand_buff_indices[i]]->candidate_ptr->is_compound) {
-                context_ptr->is_best_compound[context_ptr->target_class] = EB_TRUE;
-                break;
-            }
-        }
-    }
-#endif
 #endif
     //uint32_t i, j, index;
 
@@ -10539,10 +10510,10 @@ void md_encode_block(
                 cond_0 = (class_0_to_class_1_dev >= SKIP_CLASS_TH && class_0_to_class_2_dev >= SKIP_CLASS_TH);
 #else
 #if UNIPRED_VS_BIPRED
-                //if (( context_ptr->is_compound_present[CAND_CLASS_1] && (context_ptr->worst_unipred_cost_per_class[CAND_CLASS_1] < context_ptr->best_compound_cost_per_class[CAND_CLASS_1])) && 
-                //    ( context_ptr->is_compound_present[CAND_CLASS_2] && (context_ptr->worst_unipred_cost_per_class[CAND_CLASS_2] < context_ptr->best_compound_cost_per_class[CAND_CLASS_2]))  )
-                if (( context_ptr->is_compound_present[CAND_CLASS_1] && (context_ptr->best_unipred_cost_per_class[CAND_CLASS_1] < ((context_ptr->best_compound_cost_per_class[CAND_CLASS_1] * 75) / 100))) && 
-                    ( context_ptr->is_compound_present[CAND_CLASS_2] && (context_ptr->best_unipred_cost_per_class[CAND_CLASS_2] < ((context_ptr->best_compound_cost_per_class[CAND_CLASS_2] * 75) / 100)))  )
+                if ((context_ptr->is_compound_present[CAND_CLASS_1] && (context_ptr->worst_unipred_cost_per_class[CAND_CLASS_1] < context_ptr->best_compound_cost_per_class[CAND_CLASS_1])) && 
+                    (context_ptr->is_compound_present[CAND_CLASS_2] && (context_ptr->worst_unipred_cost_per_class[CAND_CLASS_2] < context_ptr->best_compound_cost_per_class[CAND_CLASS_2]))  )
+                //if (( context_ptr->is_compound_present[CAND_CLASS_1] && (context_ptr->best_unipred_cost_per_class[CAND_CLASS_1] < ((context_ptr->best_compound_cost_per_class[CAND_CLASS_1] * 50) / 100))) && 
+                //    ( context_ptr->is_compound_present[CAND_CLASS_2] && (context_ptr->best_unipred_cost_per_class[CAND_CLASS_2] < ((context_ptr->best_compound_cost_per_class[CAND_CLASS_2] * 50) / 100)))  )
                     cond_0 = EB_TRUE;
 #else
                 cond_0 = (context_ptr->best_cost_per_class[CAND_CLASS_0] < context_ptr->best_cost_per_class[CAND_CLASS_1]) && (context_ptr->best_cost_per_class[CAND_CLASS_0] < context_ptr->best_cost_per_class[CAND_CLASS_2]);
