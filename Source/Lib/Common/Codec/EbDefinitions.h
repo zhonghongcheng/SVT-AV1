@@ -95,10 +95,10 @@ extern "C" {
 #define FIXED_TMVP_HP                   1
 #define DISABLE_NSQ_FROM_MDC            0
 #define TWO_PASS                        1
-#define TWO_PASS_128x128                1 // Forces the first pass to used 128x128 active except for 360P or SC.
-#define TWO_PASS_USE_2NDP_ME_IN_1STP    0 // Add a config parameter to the first pass to use the ME settings of the second pass
+#define TWO_PASS_128x128                0 // Forces the first pass to used 128x128 active except for 360P or SC.
+#define TWO_PASS_USE_2NDP_ME_IN_1STP    1 // Add a config parameter to the first pass to use the ME settings of the second pass
 #define DISABLE_1PASS_QPS               0
-#define TWO_PASS_PART                   0
+#define TWO_PASS_PART                   0 // To enable MDC 2 pass
 #if TWO_PASS_PART
 #define TWO_PASS_PART_OPT               1
 #define TWO_PASS_PART_128SUPPORT        1
