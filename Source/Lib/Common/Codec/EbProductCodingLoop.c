@@ -2911,13 +2911,86 @@ void md_stage_1(
         }
     }
 }
-
-void inter_class_decision(
-    //struct ModeDecisionContext   *context_ptr
+#if DIST_BASED_COUNT_1_PRONE
+void inter_class_decision_count_1(
+    PictureControlSet *picture_control_set_ptr,
+    struct ModeDecisionContext   *context_ptr
 )
 {
+    ModeDecisionCandidateBuffer **buffer_ptr_array = context_ptr->candidate_buffer_ptr_array;
 
+#if GREEN_SET
+    uint64_t dist_based_th = 75;
+#elif BLUE_SET
+    uint64_t dist_based_th = 50;
+#elif ORANGE_SET
+    uint64_t dist_based_th = 25;
+#endif
+
+    // Distortion-based NIC proning not applied to INTRA clases: CLASS_0 and CLASS
+    for (CAND_CLASS cand_class_it = CAND_CLASS_1; cand_class_it <= CAND_CLASS_3; cand_class_it++) {
+
+        if (context_ptr->fast_cand_count[cand_class_it] > 0 && context_ptr->fast1_cand_count[cand_class_it] > 0) {
+
+            uint32_t *cand_buff_indices = context_ptr->cand_buff_indices[cand_class_it];
+
+            if (*(buffer_ptr_array[cand_buff_indices[0]]->fast_cost_ptr) < *(buffer_ptr_array[context_ptr->cand_buff_indices[CAND_CLASS_0][0]]->fast_cost_ptr)) {
+
+
+                uint32_t fast1_cand_count = 1;
+                while (fast1_cand_count < context_ptr->fast1_cand_count[cand_class_it] && ((((*(buffer_ptr_array[cand_buff_indices[fast1_cand_count]]->fast_cost_ptr) - *(buffer_ptr_array[cand_buff_indices[0]]->fast_cost_ptr)) * 100) / (*(buffer_ptr_array[cand_buff_indices[0]]->fast_cost_ptr))) < dist_based_th)) {
+                    fast1_cand_count++;
+                }
+                context_ptr->fast1_cand_count[cand_class_it] = fast1_cand_count;
+            }
+        }
+    }
 }
+#endif
+#if DIST_BASED_COUNT_2_PRONE
+void inter_class_decision_count_2(
+    struct ModeDecisionContext   *context_ptr
+)
+{
+    ModeDecisionCandidateBuffer **buffer_ptr_array = context_ptr->candidate_buffer_ptr_array;
+
+    for (CAND_CLASS cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
+        if (context_ptr->bypass_stage1[cand_class_it] == 0 && context_ptr->fast1_cand_count[cand_class_it] > 0 && context_ptr->md_stage_2_count[cand_class_it] > 0) {
+            uint32_t *cand_buff_indices = context_ptr->cand_buff_indices[cand_class_it];
+            uint32_t fast2_cand_count = 1;
+            while (fast2_cand_count < context_ptr->md_stage_2_count[cand_class_it] && ((((*(buffer_ptr_array[cand_buff_indices[fast2_cand_count]]->fast_cost_ptr) - *(buffer_ptr_array[cand_buff_indices[0]]->fast_cost_ptr)) * 100) / (*(buffer_ptr_array[cand_buff_indices[0]]->fast_cost_ptr))) < 100)) {
+                fast2_cand_count++;
+            }
+            context_ptr->md_stage_2_count[cand_class_it] = fast2_cand_count;
+        }
+#if DIST_BASED_COUNT_2_PRONE
+        context_ptr->md_stage_2_total_count += context_ptr->md_stage_2_count[cand_class_it];
+#endif
+    }
+}
+#endif
+#if DIST_BASED_COUNT_3_PRONE
+void inter_class_decision_count_3(
+    struct ModeDecisionContext   *context_ptr
+)
+{
+    ModeDecisionCandidateBuffer **buffer_ptr_array = context_ptr->candidate_buffer_ptr_array;
+
+    for (CAND_CLASS cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
+        if (context_ptr->bypass_stage2[cand_class_it] == EB_FALSE && context_ptr->md_stage_2_count[cand_class_it] > 0 && context_ptr->md_stage_3_count[cand_class_it] > 0) {
+            uint32_t *cand_buff_indices = context_ptr->cand_buff_indices[cand_class_it];
+            uint32_t fast3_cand_count = 1;
+            while (fast3_cand_count < context_ptr->md_stage_3_count[cand_class_it] && ((((*(buffer_ptr_array[cand_buff_indices[fast3_cand_count]]->full_cost_ptr) - *(buffer_ptr_array[cand_buff_indices[0]]->full_cost_ptr)) * 100) / (*(buffer_ptr_array[cand_buff_indices[0]]->full_cost_ptr))) < 20)) {
+                fast3_cand_count++;
+            }
+            context_ptr->md_stage_3_count[cand_class_it] = fast3_cand_count;
+        }
+#if DIST_BASED_COUNT_3_PRONE
+        context_ptr->md_stage_3_total_count += context_ptr->md_stage_3_count[cand_class_it];
+#endif
+    }
+}
+#endif
 #if FULL_LOOP_SPLIT
 void sort_stage2_candidates(
     struct ModeDecisionContext   *context_ptr,
@@ -2975,14 +3048,30 @@ void sort_stage0_fast_candidates(
     uint32_t ordered_end_idx = input_buffer_count - 1;
 
     uint32_t input_buffer_end_idx = input_buffer_start_idx + input_buffer_count - 1;
+#if DIST_BASED_COUNT_1_PRONE
+    uint32_t buffer_index, i, j;
+    uint32_t k=0;
+    for (buffer_index = input_buffer_start_idx; buffer_index <= input_buffer_end_idx; buffer_index++, k++) {
+        cand_buff_indices[k] = buffer_index;
+    }
+    for (i = 0; i < input_buffer_count - 1; ++i) {
+        for (j = i + 1; j < input_buffer_count; ++j) {
+            if (*(buffer_ptr_array[cand_buff_indices[j]]->fast_cost_ptr) < *(buffer_ptr_array[cand_buff_indices[i]]->fast_cost_ptr)) {
+                buffer_index = cand_buff_indices[i];
+                cand_buff_indices[i] = (uint32_t)cand_buff_indices[j];
+                cand_buff_indices[j] = (uint32_t)buffer_index;
 
+            }
+        }
+    }
+#else
     for (uint32_t buffer_index = input_buffer_start_idx; buffer_index <= input_buffer_end_idx; buffer_index++) {
         if (*(buffer_ptr_array[buffer_index]->fast_cost_ptr) == MAX_CU_COST)
             cand_buff_indices[ordered_end_idx--] = buffer_index;
         else
             cand_buff_indices[ordered_start_idx++] = buffer_index;
     }
-
+#endif
 #if COMPOUND_OPT
 #if !GREEN_SET || BLUE_SET
     for (uint32_t buffer_index = input_buffer_start_idx; buffer_index <= input_buffer_end_idx; buffer_index++) {
@@ -10189,7 +10278,7 @@ void md_encode_block(
         context_ptr->source_variance = // use_hbd ?
             //av1_high_get_sby_perpixel_variance(fn_ptr, (input_picture_ptr->buffer_y + inputOriginIndex), input_picture_ptr->stride_y, context_ptr->blk_geom->bsize :
             av1_get_sby_perpixel_variance(fn_ptr, (input_picture_ptr->buffer_y + inputOriginIndex), input_picture_ptr->stride_y, context_ptr->blk_geom->bsize);
-#if ORANGE_SET
+#if ORANGE_SET || BLUE_SET
         context_ptr->inter_inter_wedge_variance_th = 200;
 #else
         context_ptr->inter_inter_wedge_variance_th = 100;
@@ -10589,8 +10678,9 @@ void md_encode_block(
         }
 #endif
         //after completing stage0, we might shorten cand count for some classes.
-        inter_class_decision(/*context_ptr*/);
-
+#if DIST_BASED_COUNT_1_PRONE
+        inter_class_decision_count_1(picture_control_set_ptr, context_ptr);
+#endif
         context_ptr->md_stage = MD_STAGE_1;
 
         for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
@@ -10598,7 +10688,9 @@ void md_encode_block(
             //number of next level candidates could not exceed number of curr level candidates
 #if FULL_LOOP_SPLIT // to do
             context_ptr->md_stage_2_count[cand_class_it] = MIN(context_ptr->fast1_cand_count[cand_class_it], context_ptr->md_stage_2_count[cand_class_it]);
+#if !DIST_BASED_COUNT_2_PRONE
             context_ptr->md_stage_2_total_count += context_ptr->md_stage_2_count[cand_class_it];
+#endif
 #if FAST_LOOP_OPT
             if (context_ptr->bypass_stage1[cand_class_it] == 0 && context_ptr->fast1_cand_count[cand_class_it] > 0 && context_ptr->md_stage_2_count[cand_class_it] > 0) {
 #else
@@ -10642,6 +10734,12 @@ void md_encode_block(
                     context_ptr->cand_buff_indices[cand_class_it]);
             }
         }
+
+
+#if DIST_BASED_COUNT_2_PRONE
+        inter_class_decision_count_2(context_ptr);
+#endif
+
 #if !FULL_LOOP_SPLIT
         assert(context_ptr->full_recon_search_count <= MAX_NFL);
         assert(context_ptr->full_recon_search_count > 0);
@@ -10741,8 +10839,9 @@ void md_encode_block(
 
             //number of next level candidates could not exceed number of curr level candidates
             context_ptr->md_stage_3_count[cand_class_it] = MIN(context_ptr->md_stage_2_count[cand_class_it], context_ptr->md_stage_3_count[cand_class_it]);
+#if !DIST_BASED_COUNT_3_PRONE
             context_ptr->md_stage_3_total_count += context_ptr->md_stage_3_count[cand_class_it];
-
+#endif
             if (context_ptr->bypass_stage2[cand_class_it] == EB_FALSE && context_ptr->md_stage_2_count[cand_class_it] > 0 && context_ptr->md_stage_3_count[cand_class_it] > 0) {
 
 #if !FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
@@ -10808,6 +10907,11 @@ void md_encode_block(
                         context_ptr->cand_buff_indices[cand_class_it]);
             }
         }
+
+#if DIST_BASED_COUNT_3_PRONE
+        inter_class_decision_count_3(context_ptr);
+#endif
+
 #if FULL_LOOP_SPLIT
         assert(context_ptr->md_stage_3_total_count <= MAX_NFL);
         assert(context_ptr->md_stage_3_total_count > 0);
@@ -11350,7 +11454,7 @@ EB_EXTERN EbErrorType mode_decision_sb(
             if (!sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[parent_depth_idx_mds])
                 parent_depth_cost = MAX_MODE_COST;
 #endif
-#if 0//INTER_DEPTH_SKIP_OPT
+#if INTER_DEPTH_SKIP_OPT
             if (parent_depth_cost <= current_depth_cost + (current_depth_cost* (4 - context_ptr->blk_geom->quadi)* context_ptr->md_exit_th / context_ptr->blk_geom->quadi / 100)) {
 #else
             if (parent_depth_cost <= current_depth_cost + (current_depth_cost* (4 - context_ptr->blk_geom->quadi)* MD_EXIT_THSL/ context_ptr->blk_geom->quadi/100)) {
@@ -11466,7 +11570,7 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #if NSQ_EARLY_EXIT
             context_ptr->tot_cost = tot_cost;
 #endif
-#if 0//INTER_DEPTH_SKIP_OPT
+#if INTER_DEPTH_SKIP_OPT
             if ((tot_cost + tot_cost * (blk_geom->totns - (blk_geom->nsi + 1))* context_ptr->md_exit_th / (blk_geom->nsi + 1) / 100) > context_ptr->md_local_cu_unit[context_ptr->blk_geom->sqi_mds].cost)
 #else
             if ((tot_cost + tot_cost * (blk_geom->totns - (blk_geom->nsi + 1))* MD_EXIT_THSL/ (blk_geom->nsi + 1) / 100) > context_ptr->md_local_cu_unit[context_ptr->blk_geom->sqi_mds].cost)

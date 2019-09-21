@@ -1627,7 +1627,9 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
             else
                 picture_control_set_ptr->compound_mode = 0;
-
+#if SHUT_COMPOUND
+            picture_control_set_ptr->compound_mode = 0;
+#endif
             // set compound_types_to_try
             if (picture_control_set_ptr->compound_mode)
 #if COMP_OPT
@@ -1638,6 +1640,9 @@ EbErrorType signal_derivation_multi_processes_oq(
             else
                 picture_control_set_ptr->compound_types_to_try = MD_COMP_AVG;
 #endif
+
+
+
 #if ADAPTIVE_TXB_SEARCH_LEVEL
         if (MR_MODE || picture_control_set_ptr->sc_content_detected)
             picture_control_set_ptr->adaptive_txb_search_level = 0;

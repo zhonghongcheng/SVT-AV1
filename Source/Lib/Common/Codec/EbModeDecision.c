@@ -1751,11 +1751,11 @@ void Bipred3x3CandidatesInjection(
 #endif
 #if INTER_INTER_WEDGE_OPT
     if (context_ptr->source_variance <= context_ptr->inter_inter_wedge_variance_th)
-#if GREEN_SET && !BLUE_SET
         tot_comp_types = MIN(tot_comp_types, MD_COMP_DIFF0);
-#else
-        tot_comp_types = 1;
 #endif
+
+#if PRONE_COMP_BIPRED
+    tot_comp_types = 1;
 #endif
 #else
     MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize<= BLOCK_32X32 ) ? compound_types_to_try :
@@ -2529,7 +2529,13 @@ void inject_mvp_candidates_II(
                                   (compound_types_to_try == MD_COMP_WEDGE )? MD_COMP_DIFF0 :
                                    picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;//MD_COMP_DIST;// MD_COMP_AVG;//
 #endif
-
+#if INTER_INTER_WEDGE_OPT
+    if (context_ptr->source_variance <= context_ptr->inter_inter_wedge_variance_th)
+        tot_comp_types = MIN(tot_comp_types, MD_COMP_DIFF0);
+#endif
+#if PRONE_COMP_NEAREST_NEAR
+    tot_comp_types = 1;
+#endif
     //single ref/list
     if (rf[1] == NONE_FRAME)
     {
@@ -3283,9 +3289,18 @@ void inject_new_nearest_new_comb_candidates(
                                   (compound_types_to_try == MD_COMP_WEDGE )? MD_COMP_DIFF0 :
                                    picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;//MD_COMP_DIST;// MD_COMP_AVG;//
 #endif
-#if NEW_NEAR_FIX
+#if INTER_INTER_WEDGE_OPT
+    if (context_ptr->source_variance <= context_ptr->inter_inter_wedge_variance_th)
+        tot_comp_types = MIN(tot_comp_types, MD_COMP_DIFF0);
+#endif
+#if PRONE_COMP_COMB
+    tot_comp_types = 1;
+#endif
+#if NEW_NEAR_FIX 
     MacroBlockD  *xd = context_ptr->cu_ptr->av1xd;
+#if !SHUT_NEW_NEAR
     uint8_t drli, maxDrlIndex;
+#endif
     IntMv    nearestmv[2], nearmv[2], ref_mv[2];
 #endif
     MvReferenceFrame rf[2];
@@ -3553,6 +3568,7 @@ void inject_new_nearest_new_comb_candidates(
 
                 }
             }
+#if !SHUT_NEW_NEAR
 #if NEW_NEAR_FIX
            //NEW_NEARMV
             if (1) {
@@ -3781,8 +3797,9 @@ void inject_new_nearest_new_comb_candidates(
                }
            }
 #endif
-
+#endif
         }
+
     }
 
     //update tot Candidate count
@@ -4156,11 +4173,7 @@ void inject_new_candidates(
 #endif
 #if INTER_INTER_WEDGE_OPT
     if (context_ptr->source_variance <= context_ptr->inter_inter_wedge_variance_th)
-#if GREEN_SET && !BLUE_SET
         tot_comp_types = MIN(tot_comp_types, MD_COMP_DIFF0);
-#else
-        tot_comp_types = 1;
-#endif
 #endif
 #else
     MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize<= BLOCK_32X32 ) ? compound_types_to_try :
@@ -4169,6 +4182,9 @@ void inject_new_candidates(
 #endif
 #endif
 
+#if PRONE_COMP_NEW
+    tot_comp_types = 1;
+#endif
     for (uint8_t me_candidate_index = 0; me_candidate_index < total_me_cnt; ++me_candidate_index)
     {
         const MeCandidate *me_block_results_ptr = &me_block_results[me_candidate_index];
@@ -4689,14 +4705,12 @@ void inject_predictive_me_candidates(
 #endif
 #if INTER_INTER_WEDGE_OPT
     if (context_ptr->source_variance <= context_ptr->inter_inter_wedge_variance_th)
-#if GREEN_SET && !BLUE_SET
         tot_comp_types = MIN(tot_comp_types, MD_COMP_DIFF0);
-#else
-        tot_comp_types = 1;
 #endif
 #endif
+#if PRONE_COMP_PRED_ME
+    tot_comp_types = 1;
 #endif
-
     uint8_t listIndex;
     uint8_t ref_pic_index;
     listIndex = REF_LIST_0;
@@ -5069,11 +5083,10 @@ void  inject_inter_candidates(
 #endif
 #if INTER_INTER_WEDGE_OPT
     if (context_ptr->source_variance <= context_ptr->inter_inter_wedge_variance_th)
-#if GREEN_SET && !BLUE_SET
         tot_comp_types = MIN(tot_comp_types, MD_COMP_DIFF0);
-#else
-        tot_comp_types = 1;
 #endif
+#if PRONE_COMP_GLOBAL
+    tot_comp_types = 1;
 #endif
 #else
     MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize<= BLOCK_32X32 ) ? compound_types_to_try :

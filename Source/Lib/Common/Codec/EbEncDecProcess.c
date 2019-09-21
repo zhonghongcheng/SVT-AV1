@@ -1609,12 +1609,18 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
 #endif
 
-#if 0//INTER_DEPTH_SKIP_OPT
+#if INTER_DEPTH_SKIP_OPT
     // Derive MD Exit TH
     if (MR_MODE)
         context_ptr->md_exit_th = 0;
     else //if (picture_control_set_ptr->enc_mode == ENC_M0)
+#if ORANGE_SET
+        context_ptr->md_exit_th = 30;
+#elif BLUE_SET
+        context_ptr->md_exit_th = 15;
+#else
         context_ptr->md_exit_th = 10;
+#endif
 #endif
     return return_error;
 }
