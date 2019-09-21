@@ -117,20 +117,27 @@ extern "C" {
 #define INTERPOLATION_SEARCH_OPT 0
 // Lossy         
 #define GREEN_SET                0 // <--- set this to 1 to test GREEN_SET
-#define ORANGE_SET               0 // <--- set this to 1 to test ORANGE_SET
-#if ORANGE_SET
-#define BLUE_SET                 1
-#else
 #define BLUE_SET                 0 // <--- set this to 1 to test BLUE_SET
-#endif
+#define ORANGE_SET               0 // <--- set this to 1 to test ORANGE_SET
 
 #if GREEN_SET || BLUE_SET || ORANGE_SET
-#define INTER_INTER_WEDGE_OPT    1
-#define COMPOUND_OPT             1                        
-#define INTER_DEPTH_SKIP_OPT     1
+#define INTER_INTER_WEDGE_OPT     1                  
+#define INTER_DEPTH_SKIP_OPT      1
+#define SHUT_NEW_NEAR             1
+#define DIST_BASED_COUNT_1_PRONE  1
 #endif
 
-#define INTER_INTRA_WEDGE_OPT    0
+#define COMPOUND_OPT              0  
+#define DIST_BASED_COUNT_2_PRONE  0
+#define DIST_BASED_COUNT_3_PRONE  0
+#define INTER_INTRA_WEDGE_OPT     0
+#define PRONE_COMP_BIPRED         0
+#define PRONE_COMP_NEW            0
+#define PRONE_COMP_PRED_ME        0
+#define PRONE_COMP_NEAREST_NEAR   0
+#define PRONE_COMP_GLOBAL         0
+#define PRONE_COMP_COMB           0
+#define SHUT_COMPOUND             0
 //*************************************************//
 
 #define TFK_ALTREF_DYNAMIC_WINDOW       1 // Applying Dynamic window to key frame temporal filtering
@@ -138,17 +145,7 @@ extern "C" {
 #define MD_EXIT                         1
 #define MD_NSQ_EXIT                     1
 //MD_EXIT_THSL -->0 is lossless 100 is maximum. Increase with a step of 10-20.
-#if INTER_DEPTH_SKIP_OPT
-#if ORANGE_SET
-#define MD_EXIT_THSL                   30
-#elif BLUE_SET
-#define MD_EXIT_THSL                   15
-#elif GREEN_SET
-#define MD_EXIT_THSL                   10
-#else
-#define MD_EXIT_THSL                    0
-#endif
-#else
+#if !INTER_DEPTH_SKIP_OPT
 #define MD_EXIT_THSL                    0
 #endif
 #define M0_SC                           1
