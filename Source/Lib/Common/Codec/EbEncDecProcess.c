@@ -1615,15 +1615,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->md_exit_th = 0;
     else //if (picture_control_set_ptr->enc_mode == ENC_M0)
 #if ORANGE_SET
-        context_ptr->md_exit_th = 30;
+        context_ptr->md_exit_th = 20;
 #elif BLUE_SET
         context_ptr->md_exit_th = 15;
 #else
-#if GREEN_BACKUP_1 || GREEN_BACKUP_2
-        context_ptr->md_exit_th = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 10 : 15;
-#else
         context_ptr->md_exit_th = 10;
-#endif
 #endif
 #endif
     return return_error;
