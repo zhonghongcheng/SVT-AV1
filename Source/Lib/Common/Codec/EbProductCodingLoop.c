@@ -2920,7 +2920,11 @@ void inter_class_decision_count_1(
     ModeDecisionCandidateBuffer **buffer_ptr_array = context_ptr->candidate_buffer_ptr_array;
 
 #if GREEN_SET
+#if GREEN_BACKUP_1
+    uint64_t dist_based_th = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 75 : 50;
+#else
     uint64_t dist_based_th = 75;
+#endif
 #elif BLUE_SET
     uint64_t dist_based_th = 50;
 #elif ORANGE_SET
