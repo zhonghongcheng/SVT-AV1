@@ -1364,7 +1364,7 @@ void init_considered_block(
                 int32_t first_pass_sb_size = picture_control_set_ptr->parent_pcs_ptr->stat_struct.first_pass_sb_size;
                 int32_t current_sb_size = sequence_control_set_ptr->seq_header.sb_size;
                 uint8_t baypass_b128 = first_pass_sb_size == current_sb_size ? 1:
-                    (first_pass_sb_size == 64 && current_sb_size == 128 && blk_geom->sq_size < 128) ? 1 : 0;
+                    (first_pass_sb_size == BLOCK_64X64 && current_sb_size == BLOCK_128X128 && blk_geom->sq_size < 128) ? 1 : 0;
                 if (blk_geom->shape == PART_N && blk_geom->sq_size > 4 && baypass_b128) {
 #else
                 if (blk_geom->shape == PART_N && blk_geom->sq_size > 4) {
