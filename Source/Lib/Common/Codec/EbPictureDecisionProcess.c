@@ -1547,7 +1547,11 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
 #if STRENGHTHEN_MD_STAGE_3
 #if SHUT_ATB_NREF
+#if GREEN_BACKUP_2 || BLUE_SET || ORANGE_SET
+            picture_control_set_ptr->atb_mode = (MR_MODE || picture_control_set_ptr->temporal_layer_index == 0) ? 1 : 0;
+#else
             picture_control_set_ptr->atb_mode = (MR_MODE || picture_control_set_ptr->is_used_as_reference_flag) ? 1 : 0;
+#endif
 #else
             picture_control_set_ptr->atb_mode = 1;
 #endif

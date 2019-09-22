@@ -116,14 +116,24 @@ extern "C" {
 #define TX_TYPE_SEARCH_OPT       1
 #define INTERPOLATION_SEARCH_OPT 0
 // Lossy         
+#define GREEN_BACKUP_0           0
+#define GREEN_BACKUP_1           0
+#define GREEN_BACKUP_2           0
+
+#if GREEN_BACKUP_0 || GREEN_BACKUP_1 || GREEN_BACKUP_2
+#define GREEN_SET                1
+#else
 #define GREEN_SET                0 // <--- set this to 1 to test GREEN_SET
+#endif
 #define BLUE_SET                 0 // <--- set this to 1 to test BLUE_SET
 #define ORANGE_SET               0 // <--- set this to 1 to test ORANGE_SET
 
 #if GREEN_SET || BLUE_SET || ORANGE_SET
 #define INTER_INTER_WEDGE_OPT     1                  
 #define INTER_DEPTH_SKIP_OPT      1
+#if !GREEN_BACKUP_0 && !GREEN_BACKUP_1 && !GREEN_BACKUP_2
 #define SHUT_NEW_NEAR             1
+#endif
 #define DIST_BASED_COUNT_1_PRONE  1
 #endif
 

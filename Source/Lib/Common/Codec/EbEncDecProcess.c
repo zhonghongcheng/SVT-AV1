@@ -1615,7 +1615,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->md_exit_th = 0;
     else //if (picture_control_set_ptr->enc_mode == ENC_M0)
 #if ORANGE_SET
-        context_ptr->md_exit_th = 30;
+        context_ptr->md_exit_th = 20;
 #elif BLUE_SET
         context_ptr->md_exit_th = 15;
 #else
