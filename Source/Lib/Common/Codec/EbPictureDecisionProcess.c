@@ -1611,6 +1611,12 @@ EbErrorType signal_derivation_multi_processes_oq(
             // 1                 ON: compond mode search: 4 modes
             // 2                 ON: full
             if (sequence_control_set_ptr->compound_mode)
+#if M0_SC_CANDIDATE
+                if (picture_control_set_ptr->sc_content_detected)
+                    picture_control_set_ptr->compound_mode = (picture_control_set_ptr->enc_mode <= ENC_M0) ? 2 : 0;
+                else
+                    picture_control_set_ptr->enc_mode <= ENC_M1 ? 2 : 1;
+#else
 #if DISABLE_COMP_SC
 #if FULL_COMPOUND_BDRATE
                 picture_control_set_ptr->compound_mode = picture_control_set_ptr->sc_content_detected ? 0 :
@@ -1627,6 +1633,7 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->compound_mode =  2;
 #else
                 picture_control_set_ptr->compound_mode =  1;
+#endif
 #endif
 #endif
             else
