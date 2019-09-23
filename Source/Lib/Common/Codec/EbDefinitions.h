@@ -50,6 +50,8 @@ extern "C" {
 #define TWO_PASSES_TEST              0
 #define PRED_CHANGE                  1 // Change the MRP in 4L
 #define PRED_CHANGE_5L               1 // Change the MRP in 5L Pictures 3, 5 , 7 and 9 use 1 as the reference, 11, 13, 15 and 17 use 9 as the reference
+#define PRED_CHANGE_MOD              1 // Turn the feature off for M2 and M3
+
 
 #define M0_3_CANDIDATE               1
 #define M1_0_CANDIDATE               1
