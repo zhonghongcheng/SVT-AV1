@@ -186,7 +186,11 @@ EbErrorType signal_derivation_me_kernel_oq(
             context_ptr->me_context_ptr);
         if (picture_control_set_ptr->sc_content_detected)
 #if NEW_M0_SC
+#if M0_SC_CANDIDATE
+            context_ptr->me_context_ptr->fractional_search_method = (enc_mode == ENC_M0)? FULL_SAD_SEARCH: SUB_SAD_SEARCH;
+#else
             context_ptr->me_context_ptr->fractional_search_method = SUB_SAD_SEARCH;
+#endif
 #else
             if (enc_mode <= ENC_M1)
                 context_ptr->me_context_ptr->fractional_search_method = SSD_SEARCH ;
@@ -407,6 +411,11 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
         sequence_control_set_ptr->input_resolution);
 
     if (picture_control_set_ptr->sc_content_detected)
+#if M0_SC_CANDIDATE
+        if (picture_control_set_ptr->enc_mode == ENC_M0)
+            context_ptr->me_context_ptr->fractional_search_method = FULL_SAD_SEARCH;
+        else
+#endif
         if (enc_mode <= ENC_M5)
             context_ptr->me_context_ptr->fractional_search_method = SSD_SEARCH;
         else
