@@ -2069,13 +2069,20 @@ void  Av1GenerateRpsInfo(
 #endif
             }
             else if (pictureIndex == 2) {
-#if PRED_CHANGE
+#if PRED_CHANGE_MOD
+                // { 1, 3, 2, 5},     // GOP Index 3 - Ref List 0
+#elif PRED_CHANGE
                 // { 1, 2, 3, 5},     // GOP Index 3 - Ref List 0
 #else
                 //{ 1, 3, 5, 7},         //    GOP Index 3 - Ref List 0
 #endif
                 //{ -1,  -5, 0,  0 }     //     GOP Index 3 - Ref List 1
-#if PRED_CHANGE
+#if PRED_CHANGE_MOD
+                av1Rps->ref_dpb_index[LAST] = lay2_1_idx;
+                av1Rps->ref_dpb_index[LAST2] = base1_idx;
+                av1Rps->ref_dpb_index[LAST3] = lay3_idx;
+                av1Rps->ref_dpb_index[GOLD] = lay2_0_idx;
+#elif PRED_CHANGE
                 av1Rps->ref_dpb_index[LAST] = lay2_1_idx;
                 av1Rps->ref_dpb_index[LAST2] = lay3_idx;
                 av1Rps->ref_dpb_index[LAST3] = base1_idx;
@@ -2783,7 +2790,14 @@ void  Av1GenerateRpsInfo(
             else
 #endif
             if (pictureIndex == 0) {
-#if PRED_CHANGE_5L
+#if PRED_CHANGE_MOD
+                //{ 1, 9, 8, 17},  // GOP Index 1 - Ref List 0
+                //{ -1, -3, -7, 0 }   // GOP Index 1 - Ref List 1
+                av1Rps->ref_dpb_index[LAST] = base1_idx;
+                av1Rps->ref_dpb_index[LAST2] = lay1_0_idx;
+                av1Rps->ref_dpb_index[LAST3] = lay4_idx;
+                av1Rps->ref_dpb_index[GOLD] = base0_idx;
+#elif PRED_CHANGE_5L
                 //{ 1, 8, 9, 17},  // GOP Index 1 - Ref List 0
                 //{ -1, -3, -7, 0 }   // GOP Index 1 - Ref List 1
                 av1Rps->ref_dpb_index[LAST] = base1_idx;
@@ -2814,7 +2828,14 @@ void  Av1GenerateRpsInfo(
 #endif
             }
             else if (pictureIndex == 2) {
-#if PRED_CHANGE_5L
+#if PRED_CHANGE_MOD
+                //{ 1, 3, 2, 11},  // GOP Index 3 - Ref List 0
+               //{ -1, -5, -13, 0 }   // GOP Index 3 - Ref List 1
+                av1Rps->ref_dpb_index[LAST] = lay3_idx;
+                av1Rps->ref_dpb_index[LAST2] = base1_idx;
+                av1Rps->ref_dpb_index[LAST3] = lay4_idx;
+                av1Rps->ref_dpb_index[GOLD] = lay1_0_idx;
+#elif PRED_CHANGE_5L
                 //{ 1, 2, 3, 11},  // GOP Index 3 - Ref List 0
                //{ -1, -5, -13, 0 }   // GOP Index 3 - Ref List 1
                 av1Rps->ref_dpb_index[LAST] = lay3_idx;
@@ -2845,7 +2866,14 @@ void  Av1GenerateRpsInfo(
 #endif
             }
             else if (pictureIndex == 4) {
-#if PRED_CHANGE_5L
+#if PRED_CHANGE_MOD
+                //{ 1, 5, 4, 13},  // GOP Index 5 - Ref List 0
+               //{ -1, -3, -11, 0 }   // GOP Index 5 - Ref List 1
+                av1Rps->ref_dpb_index[LAST] = lay2_1_idx;
+                av1Rps->ref_dpb_index[LAST2] = base1_idx;
+                av1Rps->ref_dpb_index[LAST3] = lay4_idx;
+                av1Rps->ref_dpb_index[GOLD] = lay1_0_idx;
+#elif PRED_CHANGE_5L
                 //{ 1, 4, 5, 13},  // GOP Index 5 - Ref List 0
                //{ -1, -3, -11, 0 }   // GOP Index 5 - Ref List 1
                 av1Rps->ref_dpb_index[LAST] = lay2_1_idx;
@@ -2876,7 +2904,14 @@ void  Av1GenerateRpsInfo(
 #endif
             }
             else if (pictureIndex == 6) {
-#if PRED_CHANGE_5L
+#if PRED_CHANGE_MOD
+                //{ 1, 3, 6, 7},  // GOP Index 7 - Ref List 0
+               //{ -1, -9, 0, 0 }   // GOP Index 7 - Ref List 1
+               av1Rps->ref_dpb_index[LAST] = lay3_idx;
+               av1Rps->ref_dpb_index[LAST2] = lay2_1_idx;
+               av1Rps->ref_dpb_index[LAST3] = lay4_idx;
+               av1Rps->ref_dpb_index[GOLD] = base1_idx;
+#elif PRED_CHANGE_5L
                 //{ 1, 3, 6, 7},  // GOP Index 7 - Ref List 0
                //{ -1, -9, 0, 0 }   // GOP Index 7 - Ref List 1
                 av1Rps->ref_dpb_index[LAST] = lay3_idx;
@@ -2907,7 +2942,14 @@ void  Av1GenerateRpsInfo(
 #endif
             }
             else if (pictureIndex == 8) {
-#if PRED_CHANGE_5L
+#if PRED_CHANGE_MOD
+                //{ 1, 9, 8, 17},  // GOP Index 9 - Ref List 0
+                //{ -1, -3, -7, 0 }   // GOP Index 9 - Ref List 1
+                av1Rps->ref_dpb_index[LAST] = lay1_1_idx;
+                av1Rps->ref_dpb_index[LAST2] = base1_idx;
+                av1Rps->ref_dpb_index[LAST3] = lay4_idx;
+                av1Rps->ref_dpb_index[GOLD] = lay1_0_idx;
+#elif PRED_CHANGE_5L
                 //{ 1, 8, 9, 17},  // GOP Index 9 - Ref List 0
                 //{ -1, -3, -7, 0 }   // GOP Index 9 - Ref List 1
                 av1Rps->ref_dpb_index[LAST] = lay1_1_idx;
@@ -2938,7 +2980,14 @@ void  Av1GenerateRpsInfo(
 #endif
             }
             else if (pictureIndex == 10) {
-#if PRED_CHANGE_5L
+#if PRED_CHANGE_MOD
+                //{ 1, 3, 2, 11},  // GOP Index 11 - Ref List 0
+                //{ -1, -5, 0, 0 }   // GOP Index 11 - Ref List 1
+                av1Rps->ref_dpb_index[LAST] = lay3_idx;
+                av1Rps->ref_dpb_index[LAST2] = lay1_1_idx;
+                av1Rps->ref_dpb_index[LAST3] = lay4_idx;
+                av1Rps->ref_dpb_index[GOLD] = base1_idx;
+#elif PRED_CHANGE_5L
                 //{ 1, 2, 3, 11},  // GOP Index 11 - Ref List 0
                 //{ -1, -5, 0, 0 }   // GOP Index 11 - Ref List 1
                 av1Rps->ref_dpb_index[LAST] = lay3_idx;
@@ -2969,7 +3018,14 @@ void  Av1GenerateRpsInfo(
 #endif
             }
             else if (pictureIndex == 12) {
-#if PRED_CHANGE_5L
+#if PRED_CHANGE_MOD
+                //{ 1, 5, 4, 13},  // GOP Index 13 - Ref List 0
+                //{ -1, -3, 0, 0 }   // GOP Index 13 - Ref List 1
+                av1Rps->ref_dpb_index[LAST] = lay2_1_idx;
+                av1Rps->ref_dpb_index[LAST2] = lay1_1_idx;
+                av1Rps->ref_dpb_index[LAST3] = lay4_idx;
+                av1Rps->ref_dpb_index[GOLD] = base1_idx;
+#elif PRED_CHANGE_5L
                 //{ 1, 4, 5, 13},  // GOP Index 13 - Ref List 0
                 //{ -1, -3, 0, 0 }   // GOP Index 13 - Ref List 1
                 av1Rps->ref_dpb_index[LAST] = lay2_1_idx;
@@ -3000,7 +3056,14 @@ void  Av1GenerateRpsInfo(
 #endif
             }
             else if (pictureIndex == 14) {
-#if PRED_CHANGE_5L
+#if PRED_CHANGE_MOD
+                //{ 1, 3, 6, 7},  // GOP Index 15 - Ref List 0
+                //{ -1, 0, 0, 0 }   // GOP Index 15 - Ref List 1
+                av1Rps->ref_dpb_index[LAST] = lay3_idx;
+                av1Rps->ref_dpb_index[LAST2] = lay2_1_idx;
+                av1Rps->ref_dpb_index[LAST3] = lay4_idx;
+                av1Rps->ref_dpb_index[GOLD] = lay1_1_idx;
+#elif PRED_CHANGE_5L
                 //{ 1, 3, 6, 7},  // GOP Index 15 - Ref List 0
                 //{ -1, 0, 0, 0 }   // GOP Index 15 - Ref List 1
                 av1Rps->ref_dpb_index[LAST] = lay3_idx;
