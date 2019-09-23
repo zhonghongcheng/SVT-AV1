@@ -119,7 +119,7 @@ extern "C" {
 // Lossy         
 #define GREEN_BACKUP_0           0
 #define GREEN_BACKUP_1           0
-#define GREEN_BACKUP_2           0
+#define GREEN_BACKUP_2           1
 
 #if GREEN_BACKUP_0 || GREEN_BACKUP_1 || GREEN_BACKUP_2
 #define GREEN_SET                1
@@ -136,7 +136,7 @@ extern "C" {
 #define SHUT_NEW_NEAR             1
 #endif
 #define DIST_BASED_COUNT_1_PRONE  1
-#define GREEN_BUG_FIX             0
+#define NON_ATB_PATH_BUG_FIX      0
 #endif
 
 #define COMPOUND_OPT              0  

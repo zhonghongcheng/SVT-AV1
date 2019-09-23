@@ -2808,7 +2808,7 @@ void product_full_loop_tx_search(
                 sequence_control_set_ptr,
 #endif
                 COMPONENT_LUMA,
-#if GREEN_BUG_FIX
+#if NON_ATB_PATH_BUG_FIX
                 context_ptr->luma_dc_sign_level_coeff_neighbor_array,
 #else
                 picture_control_set_ptr->ep_luma_dc_sign_level_coeff_neighbor_array,

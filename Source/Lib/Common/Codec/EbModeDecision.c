@@ -1712,7 +1712,7 @@ void Bipred3x3CandidatesInjection(
     tot_comp_types = picture_control_set_ptr->enc_mode == ENC_M0 ? MD_COMP_AVG : tot_comp_types;
 #endif
 #if INTER_INTER_WEDGE_OPT
-    if (context_ptr->source_variance <= context_ptr->inter_inter_wedge_variance_th)
+    if (context_ptr->source_variance < context_ptr->inter_inter_wedge_variance_th)
         tot_comp_types = MIN(tot_comp_types, MD_COMP_DIFF0);
 #endif
 
@@ -2492,7 +2492,7 @@ void inject_mvp_candidates_II(
                                    picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;//MD_COMP_DIST;// MD_COMP_AVG;//
 #endif
 #if INTER_INTER_WEDGE_OPT
-    if (context_ptr->source_variance <= context_ptr->inter_inter_wedge_variance_th)
+    if (context_ptr->source_variance < context_ptr->inter_inter_wedge_variance_th)
         tot_comp_types = MIN(tot_comp_types, MD_COMP_DIFF0);
 #endif
 #if PRONE_COMP_NEAREST_NEAR
@@ -3207,7 +3207,7 @@ void inject_new_nearest_new_comb_candidates(
                                    picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;//MD_COMP_DIST;// MD_COMP_AVG;//
 #endif
 #if INTER_INTER_WEDGE_OPT
-    if (context_ptr->source_variance <= context_ptr->inter_inter_wedge_variance_th)
+    if (context_ptr->source_variance < context_ptr->inter_inter_wedge_variance_th)
         tot_comp_types = MIN(tot_comp_types, MD_COMP_DIFF0);
 #endif
 #if PRONE_COMP_COMB
@@ -4089,7 +4089,7 @@ void inject_new_candidates(
     tot_comp_types = picture_control_set_ptr->enc_mode == ENC_M0 ? MD_COMP_AVG : tot_comp_types;
 #endif
 #if INTER_INTER_WEDGE_OPT
-    if (context_ptr->source_variance <= context_ptr->inter_inter_wedge_variance_th)
+    if (context_ptr->source_variance < context_ptr->inter_inter_wedge_variance_th)
         tot_comp_types = MIN(tot_comp_types, MD_COMP_DIFF0);
 #endif
 #else
@@ -4578,7 +4578,7 @@ void inject_predictive_me_candidates(
     tot_comp_types = picture_control_set_ptr->enc_mode == ENC_M0 ? MD_COMP_AVG : tot_comp_types;
 #endif
 #if INTER_INTER_WEDGE_OPT
-    if (context_ptr->source_variance <= context_ptr->inter_inter_wedge_variance_th)
+    if (context_ptr->source_variance < context_ptr->inter_inter_wedge_variance_th)
         tot_comp_types = MIN(tot_comp_types, MD_COMP_DIFF0);
 #endif
 #endif
@@ -4956,7 +4956,7 @@ void  inject_inter_candidates(
     tot_comp_types = picture_control_set_ptr->enc_mode == ENC_M0 ? MD_COMP_AVG : tot_comp_types;
 #endif
 #if INTER_INTER_WEDGE_OPT
-    if (context_ptr->source_variance <= context_ptr->inter_inter_wedge_variance_th)
+    if (context_ptr->source_variance < context_ptr->inter_inter_wedge_variance_th)
         tot_comp_types = MIN(tot_comp_types, MD_COMP_DIFF0);
 #endif
 #if PRONE_COMP_GLOBAL

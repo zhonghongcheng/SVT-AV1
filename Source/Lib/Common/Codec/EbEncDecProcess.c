@@ -1618,9 +1618,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->inter_inter_wedge_variance_th = 0;
     else //if (picture_control_set_ptr->enc_mode == ENC_M0)
 #if ORANGE_SET || BLUE_SET
-    context_ptr->inter_inter_wedge_variance_th = 200;
+        context_ptr->inter_inter_wedge_variance_th = 200;
 #else
-    context_ptr->inter_inter_wedge_variance_th = 100;
+        context_ptr->inter_inter_wedge_variance_th = 100;
 #endif
 #endif
 
