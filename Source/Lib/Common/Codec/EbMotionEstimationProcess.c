@@ -326,7 +326,11 @@ EbErrorType signal_derivation_me_kernel_oq(
         else
             context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH;
     else
+#if m3_ibc_graph
+        context_ptr->me_context_ptr->me_search_method = (enc_mode <= ENC_M2) ?
+#else
         context_ptr->me_context_ptr->me_search_method = (enc_mode <= ENC_M3) ?
+#endif
             FULL_SAD_SEARCH :
             SUB_SAD_SEARCH;
 #else
@@ -547,7 +551,11 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
         else
             context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH;
     else
+#if m3_ibc_graph
+        context_ptr->me_context_ptr->me_search_method = (enc_mode <= ENC_M2) ?
+#else
         context_ptr->me_context_ptr->me_search_method = (enc_mode <= ENC_M3) ?
+#endif
             FULL_SAD_SEARCH :
             SUB_SAD_SEARCH;
     return return_error;

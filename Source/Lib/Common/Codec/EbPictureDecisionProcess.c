@@ -992,7 +992,7 @@ EbErrorType signal_derivation_multi_processes_oq(
             else
                 picture_control_set_ptr->pic_depth_mode = PIC_ALL_C_DEPTH_MODE;
 #endif
-#if !TWO_PASSES_TEST
+#if !TWO_PASSES_TEST && ! m3_ibc_graph
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
 #if NSQ_MDC_L01
             if (picture_control_set_ptr->temporal_layer_index == 0)
@@ -1246,6 +1246,7 @@ EbErrorType signal_derivation_multi_processes_oq(
             else
                 picture_control_set_ptr->interpolation_search_level = IT_SEARCH_OFF;
 #endif
+
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
             picture_control_set_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;
         else if (picture_control_set_ptr->enc_mode <= ENC_M7)
@@ -1298,7 +1299,7 @@ EbErrorType signal_derivation_multi_processes_oq(
     else
 
 #if LOOP_FILTER_FIX
-#if M3_0_CANDIDATE
+#if M3_0_CANDIDATE && ! m3_ibc_graph
         if (picture_control_set_ptr->enc_mode <= ENC_M3)
 #else
         if (picture_control_set_ptr->enc_mode <= ENC_M2)
