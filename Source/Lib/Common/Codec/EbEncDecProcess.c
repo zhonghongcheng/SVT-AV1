@@ -1495,7 +1495,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
     if (picture_control_set_ptr->slice_type != I_SLICE)
         // Hsan: kept ON for sc_content_detected as ~5% gain for minecraft clip
-#if M2_BAD_SLOPE_COMB
+#if M2_BAD_SLOPE_COMB && !m2_ibc_graph
         if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)

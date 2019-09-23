@@ -105,6 +105,14 @@ void* set_me_hme_params_oq(
 #else
     uint8_t  hmeMeLevel =  picture_control_set_ptr->enc_mode; // OMK to be revised after new presets
 #endif
+
+#if m2_ibc_graph
+    hmeMeLevel = (picture_control_set_ptr->enc_mode == ENC_M2) ? ENC_M3 : hmeMeLevel;
+#endif
+
+#if m3_ibc_graph
+    hmeMeLevel = (picture_control_set_ptr->enc_mode == ENC_M3) ? ENC_M4 : hmeMeLevel;
+#endif
     // HME/ME default settings
     me_context_ptr->number_hme_search_region_in_width = 2;
     me_context_ptr->number_hme_search_region_in_height = 2;
@@ -172,6 +180,7 @@ EbErrorType signal_derivation_me_kernel_oq(
 #else
     uint8_t  enc_mode = picture_control_set_ptr->enc_mode;
 #endif
+
     // Set ME/HME search regions
     if (sequence_control_set_ptr->static_config.use_default_me_hme)
         set_me_hme_params_oq(
@@ -256,6 +265,8 @@ EbErrorType signal_derivation_me_kernel_oq(
     }
 #if M3_SP_NREF
     else if (enc_mode <= ENC_M1 || (enc_mode <= ENC_M2 && picture_control_set_ptr->is_used_as_reference_flag)) {
+#elif m2_ibc_graph
+    else if (enc_mode <= ENC_M1) {
 #else
     else if (enc_mode <= ENC_M2) {
 #endif
@@ -340,6 +351,13 @@ void* tf_set_me_hme_params_oq(
 #else
     uint8_t  hmeMeLevel = picture_control_set_ptr->enc_mode; // OMK to be revised after new presets
 #endif
+#if m2_ibc_graph
+    hmeMeLevel = (picture_control_set_ptr->enc_mode == ENC_M2) ? ENC_M3 : hmeMeLevel;
+#endif
+
+#if m3_ibc_graph
+    hmeMeLevel = (picture_control_set_ptr->enc_mode == ENC_M3) ? ENC_M4 : hmeMeLevel;
+#endif
 #if M0_SETTINGS
     hmeMeLevel = 0;
 #endif
@@ -403,6 +421,7 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
 #else
     uint8_t  enc_mode = picture_control_set_ptr->enc_mode;
 #endif
+
     // Set ME/HME search regions
     tf_set_me_hme_params_oq(
         context_ptr->me_context_ptr,
@@ -464,6 +483,8 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
     }
 #if M3_SP_NREF
     else if (enc_mode <= ENC_M1 || (enc_mode <= ENC_M2 && picture_control_set_ptr->is_used_as_reference_flag)) {
+#elif m2_ibc_graph
+    else if (enc_mode <= ENC_M1) {
 #else
     else if (enc_mode <= ENC_M2) {
 #endif

@@ -885,6 +885,13 @@ EbErrorType signal_derivation_multi_processes_oq(
 
 #if TWO_PASS_USE_2NDP_ME_IN_1STP
     uint8_t enc_mode = sequence_control_set_ptr->static_config.use_output_stat_file ? picture_control_set_ptr->enc_mode2p : picture_control_set_ptr->enc_mode;
+#if m2_ibc_graph
+    enc_mode = (picture_control_set_ptr->enc_mode == ENC_M2) ? ENC_M3 : enc_mode;
+#endif
+
+#if m3_ibc_graph
+    enc_mode = (picture_control_set_ptr->enc_mode == ENC_M3) ? ENC_M4 : enc_mode;
+#endif
 #if M0_HME_ME_TUNING
     picture_control_set_ptr->enable_hme_flag = enable_hme_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][enc_mode];
 #endif
@@ -963,6 +970,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 #else
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
 #endif
+
 #else
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #endif
@@ -971,7 +979,14 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
             else
                 picture_control_set_ptr->pic_depth_mode = PIC_SB_SWITCH_NSQ_DEPTH_MODE;
+#elif     m2_ibc_graph
+            if (picture_control_set_ptr->temporal_layer_index == 0)
+
+                picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
+            else
+                picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
 #else
+
             if (picture_control_set_ptr->slice_type == I_SLICE)
                 picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
             else
@@ -1024,7 +1039,11 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->mdc_depth_level = MAX_MDC_LEVEL;
         else if (picture_control_set_ptr->enc_mode == ENC_M0)
             picture_control_set_ptr->mdc_depth_level = (sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER) ? MAX_MDC_LEVEL : 6;
+#if m2_ibc_graph
+        else if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#else
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#endif
             picture_control_set_ptr->mdc_depth_level = 5;
 #if EXTEND_NSQ_MDC_TO_M3
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
@@ -1102,7 +1121,9 @@ EbErrorType signal_derivation_multi_processes_oq(
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
 #endif
 #else
+
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
+
 #endif
 #if NEW_M3_NSQ_SETTING
             if (picture_control_set_ptr->is_used_as_reference_flag)
@@ -1113,8 +1134,14 @@ EbErrorType signal_derivation_multi_processes_oq(
 #else
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL1;
 #endif
+#elif m2_ibc_graph
+            if (picture_control_set_ptr->temporal_layer_index == 0)
 
+                picture_control_set_ptr->pic_depth_mode = NSQ_SEARCH_LEVEL1;
+            else
+                picture_control_set_ptr->pic_depth_mode = NSQ_SEARCH_OFF;
 #else
+
             if (picture_control_set_ptr->is_used_as_reference_flag)
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL5;
             else
@@ -1418,7 +1445,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 
     if (picture_control_set_ptr->tx_search_level == TX_SEARCH_ENC_DEC)
         picture_control_set_ptr->tx_search_reduced_set = 0;
-#if M2_BAD_SLOPE_COMB
+#if M2_BAD_SLOPE_COMB && ! m2_ibc_graph
     else if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #else
     else if (picture_control_set_ptr->enc_mode <= ENC_M1)
@@ -1484,7 +1511,11 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
             picture_control_set_ptr->intra_pred_mode = 4;
 #if M3_INTRA_PRED_NBASE
+#if m2_ibc_graph
+    else if (picture_control_set_ptr->enc_mode <= ENC_M1) 
+#else
     else if ((picture_control_set_ptr->enc_mode <= ENC_M1) || (picture_control_set_ptr->enc_mode <= ENC_M2 && picture_control_set_ptr->temporal_layer_index == 0))
+#endif
 #else
     else if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #endif

@@ -55,6 +55,8 @@ extern "C" {
 #define M1_0_CANDIDATE               1
 #define M3_0_CANDIDATE               1
 #define M0_SC_CANDIDATE              0
+#define m2_ibc_graph                 0
+#define m3_ibc_graph                 0
 
 // Better BDR-Speed trade-off M0
 #define SKIP_ATB_OFF                 1
