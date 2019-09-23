@@ -135,6 +135,7 @@ extern "C" {
 #define SHUT_NEW_NEAR             1
 #endif
 #define DIST_BASED_COUNT_1_PRONE  1
+#define GREEN_BUG_FIX             0
 #endif
 
 #define COMPOUND_OPT              0  

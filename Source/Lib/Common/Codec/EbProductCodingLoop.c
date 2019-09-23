@@ -1840,7 +1840,7 @@ void ProductMdFastPuPrediction(
 }
 #endif
 
-#if INTER_INTER_WEDGE_OPT || INTER_INTRA_WEDGE_OPT
+#if INTER_INTER_WEDGE_OPT
 extern aom_variance_fn_ptr_t mefn_ptr[BlockSizeS_ALL];
 unsigned int av1_get_sby_perpixel_variance(const aom_variance_fn_ptr_t *fn_ptr, const uint8_t *src, int stride, BlockSize bs);
 #endif
@@ -2919,14 +2919,6 @@ void inter_class_decision_count_1(
 {
     ModeDecisionCandidateBuffer **buffer_ptr_array = context_ptr->candidate_buffer_ptr_array;
 
-#if GREEN_SET
-    uint64_t dist_based_th = 75;
-#elif BLUE_SET
-    uint64_t dist_based_th = 50;
-#elif ORANGE_SET
-    uint64_t dist_based_th = 25;
-#endif
-
     // Distortion-based NIC proning not applied to INTRA clases: CLASS_0 and CLASS
     for (CAND_CLASS cand_class_it = CAND_CLASS_1; cand_class_it <= CAND_CLASS_3; cand_class_it++) {
 
@@ -2938,7 +2930,7 @@ void inter_class_decision_count_1(
 
 
                 uint32_t fast1_cand_count = 1;
-                while (fast1_cand_count < context_ptr->fast1_cand_count[cand_class_it] && ((((*(buffer_ptr_array[cand_buff_indices[fast1_cand_count]]->fast_cost_ptr) - *(buffer_ptr_array[cand_buff_indices[0]]->fast_cost_ptr)) * 100) / (*(buffer_ptr_array[cand_buff_indices[0]]->fast_cost_ptr))) < dist_based_th)) {
+                while (fast1_cand_count < context_ptr->fast1_cand_count[cand_class_it] && ((((*(buffer_ptr_array[cand_buff_indices[fast1_cand_count]]->fast_cost_ptr) - *(buffer_ptr_array[cand_buff_indices[0]]->fast_cost_ptr)) * 100) / (*(buffer_ptr_array[cand_buff_indices[0]]->fast_cost_ptr))) < context_ptr->dist_base_md_stage_0_count_th)) {
                     fast1_cand_count++;
                 }
                 context_ptr->fast1_cand_count[cand_class_it] = fast1_cand_count;
@@ -10273,17 +10265,11 @@ void md_encode_block(
 #endif
 
 
-#if INTER_INTER_WEDGE_OPT || INTER_INTRA_WEDGE_OPT
+#if INTER_INTER_WEDGE_OPT
         const aom_variance_fn_ptr_t *fn_ptr = &mefn_ptr[context_ptr->blk_geom->bsize];
         context_ptr->source_variance = // use_hbd ?
             //av1_high_get_sby_perpixel_variance(fn_ptr, (input_picture_ptr->buffer_y + inputOriginIndex), input_picture_ptr->stride_y, context_ptr->blk_geom->bsize :
             av1_get_sby_perpixel_variance(fn_ptr, (input_picture_ptr->buffer_y + inputOriginIndex), input_picture_ptr->stride_y, context_ptr->blk_geom->bsize);
-#if ORANGE_SET || BLUE_SET
-        context_ptr->inter_inter_wedge_variance_th = 200;
-#else
-        context_ptr->inter_inter_wedge_variance_th = 100;
-#endif
-        context_ptr->inter_intra_wedge_variance_th = 100;
 #endif
 
         ProductCodingLoopInitFastLoop(

@@ -1608,6 +1608,17 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     context_ptr->nic_level = 1;
 #endif
 #endif
+#if INTER_INTER_WEDGE_OPT
+    // Derive INTER/INTER WEDGE variance TH
+    if (MR_MODE)
+        context_ptr->inter_inter_wedge_variance_th = 0;
+    else //if (picture_control_set_ptr->enc_mode == ENC_M0)
+#if ORANGE_SET || BLUE_SET
+    context_ptr->inter_inter_wedge_variance_th = 200;
+#else
+    context_ptr->inter_inter_wedge_variance_th = 100;
+#endif
+#endif
 
 #if INTER_DEPTH_SKIP_OPT
     // Derive MD Exit TH
@@ -1620,6 +1631,20 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->md_exit_th = 15;
 #else
         context_ptr->md_exit_th = 10;
+#endif
+#endif
+
+#if DIST_BASED_COUNT_1_PRONE
+    // Derive distortion-based md_stage_0_count proning
+    if (MR_MODE)
+        context_ptr->dist_base_md_stage_0_count_th = (uint64_t) ~0;
+    else //if (picture_control_set_ptr->enc_mode == ENC_M0)
+#if ORANGE_SET
+        context_ptr->dist_base_md_stage_0_count_th = 25;
+#elif BLUE_SET
+        context_ptr->dist_base_md_stage_0_count_th = 50;
+#else
+        context_ptr->dist_base_md_stage_0_count_th = 75;
 #endif
 #endif
     return return_error;

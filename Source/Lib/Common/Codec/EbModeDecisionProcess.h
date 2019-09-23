@@ -463,14 +463,16 @@ extern "C" {
     EbPictureBufferDesc *prediction_ptr_0;
     EbPictureBufferDesc *prediction_ptr_1;
 #endif
-#if INTER_INTER_WEDGE_OPT || INTER_INTRA_WEDGE_OPT
+#if INTER_INTER_WEDGE_OPT
     unsigned int source_variance; // input block variance
     unsigned int inter_inter_wedge_variance_th; // input block variance
-    unsigned int inter_intra_wedge_variance_th; // input block variance
 #endif
 
 #if INTER_DEPTH_SKIP_OPT
     uint64_t md_exit_th;
+#endif
+#if DIST_BASED_COUNT_1_PRONE
+    uint64_t dist_base_md_stage_0_count_th;
 #endif
   } ModeDecisionContext;
 
