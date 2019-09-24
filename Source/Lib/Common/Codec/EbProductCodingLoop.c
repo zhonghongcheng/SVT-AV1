@@ -33,6 +33,52 @@
 #include "EbCodingLoop.h"
 #include "aom_dsp_rtcd.h"
 
+#if DISTORTION_WEIGHTING
+#define   LUMA_DISTORION_WEIGHT     9/8
+#define   CHROMA_DISTORION_WEIGHT   6/8
+
+
+void weight_distortion(
+    uint64_t                 *y_distortion,
+    uint64_t                 *cb_distortion,
+    uint64_t                 *cr_distortion)
+{
+        double y_dist_w = (double)*y_distortion;
+        y_dist_w = y_dist_w * LUMA_DISTORION_WEIGHT;
+        *y_distortion = (uint64_t)y_dist_w;
+
+        double cb_dist_w = (double)*cb_distortion;
+        cb_dist_w = cb_dist_w * CHROMA_DISTORION_WEIGHT;
+        *cb_distortion = (uint64_t)cb_dist_w;
+
+        double cr_dist_w = (double)*cr_distortion;
+        cr_dist_w = cr_dist_w * CHROMA_DISTORION_WEIGHT;
+        *cr_distortion = (uint64_t)cr_dist_w;
+
+};
+
+void weight_distortion_32(
+    uint32_t                 *y_distortion,
+    uint32_t                 *cb_distortion,
+    uint32_t                 *cr_distortion)
+{
+        double y_dist_w = (double)*y_distortion;
+        y_dist_w = y_dist_w * LUMA_DISTORION_WEIGHT;
+        *y_distortion = (uint32_t)y_dist_w;
+
+        double cb_dist_w = (double)*cb_distortion;
+        cb_dist_w = cb_dist_w * CHROMA_DISTORION_WEIGHT;
+        *cb_distortion = (uint32_t)cb_dist_w;
+
+        double cr_dist_w = (double)*cr_distortion;
+        cr_dist_w = cr_dist_w * CHROMA_DISTORION_WEIGHT;
+        *cr_distortion = (uint32_t)cr_dist_w;
+
+};
+
+
+
+#endif
 #define TH_NFL_BIAS             7
 #if MD_CLASS
 EbErrorType generate_md_stage_0_cand(
@@ -2014,6 +2060,13 @@ void fast_loop_core(
                 context_ptr->blk_geom->bwidth_uv,
                 context_ptr->blk_geom->bwidth_uv >> 3);
         }
+#if DISTORTION_WEIGHTING // Fast loop
+        uint32_t temp = 0 ;
+            weight_distortion_32(
+                &(lumaFastDistortion),
+                &(chromaFastDistortion),
+                &(temp));
+#endif
     }
     else
         chromaFastDistortion = 0;
@@ -7705,6 +7758,10 @@ void md_stage_2(
         // FullLoop and TU search
         uint16_t cb_qp = context_ptr->qp;
         uint16_t cr_qp = context_ptr->qp;
+#if DISTORTION_WEIGHTING
+        context_ptr->weight_inter_depth_luma = 0;
+
+#endif
 #if FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
 #if PRE_BILINEAR_CLEAN_UP
 #if FI_CLASS
@@ -7745,8 +7802,23 @@ void md_stage_2(
                     1,
 #endif
                     asm_type);
-            }
 
+#if DISTORTION_WEIGHTING // Full loop Stage2
+                weight_distortion(
+                    &(y_full_distortion[0]),
+                    &(cbFullDistortion[0]),
+                    &(crFullDistortion[0]));
+                weight_distortion(
+                    &(y_full_distortion[1]),
+                    &(cbFullDistortion[1]),
+                    &(crFullDistortion[1]));
+#endif
+            }
+#if DISTORTION_WEIGHTING
+            else
+                context_ptr->weight_inter_depth_luma = 1;
+
+#endif
 #if SEARCH_UV_MODE
             // Check independant chroma vs. cfl
             if (context_ptr->blk_geom->has_uv && context_ptr->chroma_level == CHROMA_MODE_0) {
@@ -8343,6 +8415,10 @@ void AV1PerformFullLoop(
         uint16_t cb_qp = context_ptr->qp;
         uint16_t cr_qp = context_ptr->qp;
 
+#if DISTORTION_WEIGHTING
+        context_ptr->weight_inter_depth_luma = 0;
+
+#endif
         if (context_ptr->blk_geom->has_uv && context_ptr->chroma_level <= CHROMA_MODE_1) {
             full_loop_r(
                 sb_ptr,
@@ -8372,7 +8448,33 @@ void AV1PerformFullLoop(
                 1,
 #endif
                 asm_type);
+            /*
+
+
+            _________
+            |___|___|
+            |___|_x_|
+            ---------
+
+
+
+            */
+#if DISTORTION_WEIGHTING // Full loop Stage3
+            weight_distortion(
+                &(y_full_distortion[0]),
+                &(cbFullDistortion[0]),
+                &(crFullDistortion[0]));
+            weight_distortion(
+                &(y_full_distortion[1]),
+                &(cbFullDistortion[1]),
+                &(crFullDistortion[1]));
+#endif
         }
+#if DISTORTION_WEIGHTING
+        else
+        context_ptr->weight_inter_depth_luma = 1;
+
+#endif
 
  #if SEARCH_UV_MODE
         // Check independant chroma vs. cfl
@@ -9013,6 +9115,17 @@ void inter_depth_tx_search(
 #endif
                 asm_type);
 
+#if DISTORTION_WEIGHTING // tx
+            weight_distortion(
+                &(y_full_distortion[0]),
+                &(cbFullDistortion[0]),
+                &(crFullDistortion[0]));
+            weight_distortion(
+                &(y_full_distortion[1]),
+                &(cbFullDistortion[1]),
+                &(crFullDistortion[1]));
+            printf("\n\n\n NOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
+#endif
             candidate_ptr->block_has_coeff = (candidate_ptr->y_has_coeff | candidate_ptr->u_has_coeff | candidate_ptr->v_has_coeff) ? EB_TRUE : EB_FALSE;
         }
 
@@ -10595,7 +10708,7 @@ void md_encode_block(
                     context_ptr->md_stage_2_count[cand_class_it] = 0;
                     context_ptr->md_stage_3_count[cand_class_it] = 0;
 
-                    
+
                 }
             }
 #endif

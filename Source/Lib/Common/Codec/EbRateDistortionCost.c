@@ -2446,6 +2446,23 @@ EbErrorType Av1FullCost(
     luma_sse = y_distortion[0];
     chromaSse = cb_distortion[0] + cr_distortion[0];
     totalDistortion = luma_sse + chromaSse;
+#if DISTORTION_WEIGHTING
+    uint64_t totalDistortion_id;
+    if (context_ptr->weight_inter_depth_luma) {
+        uint64_t temp = 0 ;
+        int64_t luma_sse_w = luma_sse;
+        int64_t chromaSse_w = chromaSse;
+        weight_distortion(
+                &luma_sse_w,
+                &chromaSse_w,
+                &temp);
+
+        totalDistortion_id = luma_sse_w+ chromaSse_w;
+
+    }
+    else
+        totalDistortion_id = totalDistortion;
+#endif
 
     rate = lumaRate + chromaRate + coeffRate;
 
@@ -2496,11 +2513,17 @@ EbErrorType Av1FullCost(
             !candidate_buffer_ptr->candidate_ptr->is_compound && (ref_type[0] != LAST_FRAME && ref_type[0] != BWDREF_FRAME)) {
             rate += rate * 20 / 100;
             totalDistortion += totalDistortion * 20 / 100;
+#if DISTORTION_WEIGHTING
+            totalDistortion_id += totalDistortion_id * 20 / 100;
+#endif
         }
     }
 #endif
 
     // Assign full cost
+#if DISTORTION_WEIGHTING
+    *(candidate_buffer_ptr->full_cost_ptr_id) = RDCOST(lambda, rate, totalDistortion_id);
+#endif
     *(candidate_buffer_ptr->full_cost_ptr) = RDCOST(lambda, rate, totalDistortion);
 
     candidate_buffer_ptr->full_lambda_rate = *candidate_buffer_ptr->full_cost_ptr - totalDistortion;
@@ -2654,7 +2677,25 @@ EbErrorType  Av1MergeSkipFullCost(
     mergeDistortion = (mergeLumaSse + mergeChromaSse);
 
     //merge_cost = mergeDistortion + (((lambda * coeffRate + lambda * mergeLumaRate + lambda_chroma * mergeChromaRate) + MD_OFFSET) >> MD_SHIFT);
+#if DISTORTION_WEIGHTING
+    uint64_t mergeDistortion_id;
+    if (context_ptr->weight_inter_depth_luma) {
+        uint64_t temp = 0 ;
+        uint64_t luma_sse_w = mergeLumaSse;
+        uint64_t chromaSse_w = mergeChromaSse;
+        weight_distortion(
+                &luma_sse_w,
+                &chromaSse_w,
+                &temp);
 
+        mergeDistortion_id = luma_sse_w+ chromaSse_w;
+
+    }
+    else
+        mergeDistortion_id = mergeDistortion;
+
+    uint64_t merge_cost_id = RDCOST(lambda, mergeRate, mergeDistortion_id);
+#endif
     merge_cost = RDCOST(lambda, mergeRate, mergeDistortion);
     // mergeLumaCost = mergeLumaSse    + (((lambda * lumaCoeffRate + lambda * mergeLumaRate) + MD_OFFSET) >> MD_SHIFT);
 
@@ -2684,6 +2725,25 @@ EbErrorType  Av1MergeSkipFullCost(
 
     skipDistortion = skipLumaSse + skipChromaSse;
     skipRate = skipModeRate;
+#if DISTORTION_WEIGHTING
+    uint64_t skipDistortion_id;
+    if (context_ptr->weight_inter_depth_luma) {
+        uint64_t temp = 0 ;
+        uint64_t luma_sse_w = skipLumaSse;
+        uint64_t chromaSse_w = skipChromaSse;
+        weight_distortion(
+                &luma_sse_w,
+                &chromaSse_w,
+                &temp);
+
+        skipDistortion_id = luma_sse_w+ chromaSse_w;
+
+    }
+    else
+        skipDistortion_id = skipDistortion;
+
+    uint64_t skip_cost_id = RDCOST(lambda, skipRate, skipDistortion_id);
+#endif
     skip_cost = RDCOST(lambda, skipRate, skipDistortion);
 #if TWO_PASS
 #if TWO_PASSES_MATCH
@@ -2697,10 +2757,18 @@ EbErrorType  Av1MergeSkipFullCost(
             !candidate_buffer_ptr->candidate_ptr->is_compound && (ref_type[0] != LAST_FRAME && ref_type[0] != BWDREF_FRAME)) {
             skip_cost += skip_cost * 20 / 100;
             merge_cost += merge_cost * 20 / 100;
+#if DISTORTION_WEIGHTING
+            skip_cost_id += skip_cost_id * 20 / 100;
+            merge_cost_id += merge_cost_id * 20 / 100;
+#endif
         }
     }
 #endif
     // Assigne full cost
+#if DISTORTION_WEIGHTING
+
+    *candidate_buffer_ptr->full_cost_ptr_id = (skip_cost_id <= merge_cost_id) ? skip_cost_id : merge_cost_id;
+#endif
     *candidate_buffer_ptr->full_cost_ptr = (skip_cost <= merge_cost) ? skip_cost : merge_cost;
 
     uint64_t tempDistortion;

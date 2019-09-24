@@ -59,6 +59,9 @@ EbErrorType mode_decision_context_ctor(
 #if MD_CLASS
      EB_MALLOC(uint64_t*, context_ptr->fast_cost_array, sizeof(uint64_t) * MAX_NFL_BUFF, EB_N_PTR);
      EB_MALLOC(uint64_t*, context_ptr->full_cost_array, sizeof(uint64_t) * MAX_NFL_BUFF, EB_N_PTR);
+#if DISTORTION_WEIGHTING
+     EB_MALLOC(uint64_t*, context_ptr->full_cost_array_id, sizeof(uint64_t) * MAX_NFL_BUFF, EB_N_PTR);
+#endif
      EB_MALLOC(uint64_t*, context_ptr->full_cost_skip_ptr, sizeof(uint64_t) * MAX_NFL_BUFF, EB_N_PTR);
      EB_MALLOC(uint64_t*, context_ptr->full_cost_merge_ptr, sizeof(uint64_t) * MAX_NFL_BUFF, EB_N_PTR);
      // Candidate Buffers
@@ -82,6 +85,9 @@ EbErrorType mode_decision_context_ctor(
             &(context_ptr->candidate_buffer_ptr_array[bufferIndex]),
             &(context_ptr->fast_cost_array[bufferIndex]),
             &(context_ptr->full_cost_array[bufferIndex]),
+#if DISTORTION_WEIGHTING
+            &(context_ptr->full_cost_array_id[bufferIndex]),
+#endif
             &(context_ptr->full_cost_skip_ptr[bufferIndex]),
             &(context_ptr->full_cost_merge_ptr[bufferIndex])
         );

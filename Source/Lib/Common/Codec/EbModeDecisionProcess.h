@@ -169,6 +169,10 @@ extern "C" {
 
         uint64_t                       *fast_cost_array;
         uint64_t                       *full_cost_array;
+#if DISTORTION_WEIGHTING
+        uint64_t                       *full_cost_array_id;
+
+#endif
         uint64_t                       *full_cost_skip_ptr;
         uint64_t                       *full_cost_merge_ptr;
         // Lambda
@@ -473,6 +477,9 @@ extern "C" {
 #endif
 #if DIST_BASED_COUNT_1_PRONE
     uint64_t dist_base_md_stage_0_count_th;
+#endif
+#if DISTORTION_WEIGHTING
+    uint8_t     weight_inter_depth_luma ;
 #endif
   } ModeDecisionContext;
 

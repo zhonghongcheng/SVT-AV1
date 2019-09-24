@@ -271,6 +271,9 @@ extern "C" {
         // Costs
         uint64_t                               *fast_cost_ptr;
         uint64_t                               *full_cost_ptr;
+#if DISTORTION_WEIGHTING
+        uint64_t                               *full_cost_ptr_id;
+#endif
         uint64_t                               *full_cost_skip_ptr;
         uint64_t                               *full_cost_merge_ptr;
         //
@@ -289,6 +292,9 @@ extern "C" {
         ModeDecisionCandidateBuffer **buffer_dbl_ptr,
         uint64_t                       *fast_cost_ptr,
         uint64_t                       *full_cost_ptr,
+#if DISTORTION_WEIGHTING
+        uint64_t                       *full_cost_ptr_id,
+#endif
         uint64_t                       *full_cost_skip_ptr,
         uint64_t                       *full_cost_merge_ptr
     );

@@ -43,7 +43,7 @@ typedef struct EbSvtAv1EncConfiguration
     uint8_t                  enc_mode;
 
 #if TWO_PASS_USE_2NDP_ME_IN_1STP
-     /* A preset defining the quality vs density tradeoff point that the second pass 
+     /* A preset defining the quality vs density tradeoff point that the second pass
      * encoding is to be performed at. 0 is the highest quality mode, 3 is the highest
      * density mode.
      *

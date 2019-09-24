@@ -1568,7 +1568,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->blk_skip_decision = EB_FALSE;
 #endif
     // Derive Trellis Quant Coeff Optimization Flag
-#if M3_0_CANDIDATE 
+#if M3_0_CANDIDATE
     if (picture_control_set_ptr->enc_mode <= ENC_M3)
 #else
     if (picture_control_set_ptr->enc_mode <= ENC_M2)

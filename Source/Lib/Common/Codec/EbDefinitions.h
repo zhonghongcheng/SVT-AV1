@@ -52,6 +52,11 @@ extern "C" {
 #define PRED_CHANGE_5L               1 // Change the MRP in 5L Pictures 3, 5 , 7 and 9 use 1 as the reference, 11, 13, 15 and 17 use 9 as the reference
 #define PRED_CHANGE_MOD              1 // Turn the feature off for M2 and M3
 
+#define W_611                        0 // Distortion weighting + Chroma QP Offset
+#if W_611
+#define DISTORTION_WEIGHTING         1  // Distortion weighting
+#define QP_OFF_6                     1  // Chroma QP Offset
+#endif
 
 #define M0_3_CANDIDATE               1
 #define M1_0_CANDIDATE               1
@@ -119,10 +124,10 @@ extern "C" {
 
 //*************************************************//
 #define QPS_QPM_OFF              0
-// Lossless 
+// Lossless
 #define TX_TYPE_SEARCH_OPT       1
 #define INTERPOLATION_SEARCH_OPT 0
-// Lossy         
+// Lossy
 #define GREEN_BACKUP_0           0
 #define GREEN_BACKUP_1           0
 #define GREEN_BACKUP_2           1
@@ -136,7 +141,7 @@ extern "C" {
 #define ORANGE_SET               0 // <--- set this to 1 to test ORANGE_SET
 
 #if GREEN_SET || BLUE_SET || ORANGE_SET
-#define INTER_INTER_WEDGE_OPT     1                  
+#define INTER_INTER_WEDGE_OPT     1
 #define INTER_DEPTH_SKIP_OPT      1
 #if !GREEN_BACKUP_0 && !GREEN_BACKUP_1 && !GREEN_BACKUP_2
 #define SHUT_NEW_NEAR             1
@@ -145,7 +150,7 @@ extern "C" {
 #define NON_ATB_PATH_BUG_FIX      1
 #endif
 
-#define COMPOUND_OPT              0  
+#define COMPOUND_OPT              0
 #define DIST_BASED_COUNT_2_PRONE  0
 #define DIST_BASED_COUNT_3_PRONE  0
 #define INTER_INTRA_WEDGE_OPT     0
