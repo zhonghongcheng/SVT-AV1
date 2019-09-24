@@ -118,6 +118,7 @@ extern "C" {
 
 
 //*************************************************//
+#define QPS_QPM_OFF              0
 // Lossless 
 #define TX_TYPE_SEARCH_OPT       1
 #define INTERPOLATION_SEARCH_OPT 0
@@ -141,7 +142,7 @@ extern "C" {
 #define SHUT_NEW_NEAR             1
 #endif
 #define DIST_BASED_COUNT_1_PRONE  1
-#define NON_ATB_PATH_BUG_FIX      0
+#define NON_ATB_PATH_BUG_FIX      1
 #endif
 
 #define COMPOUND_OPT              0  

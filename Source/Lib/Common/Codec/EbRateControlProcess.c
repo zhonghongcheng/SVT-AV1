@@ -3327,8 +3327,11 @@ enum {
 #define MAX_QPS_COMP_I         60
 #define MAX_QPS_COMP_NONI     200
 #endif
-
+#if QPS_QPM_OFF
+#define QPS_SW_THRESH          100
+#else
 #define QPS_SW_THRESH          8
+#endif
 #endif
 
 #define ASSIGN_MINQ_TABLE(bit_depth, name)                   \
