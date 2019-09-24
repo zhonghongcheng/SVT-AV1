@@ -999,6 +999,13 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
             else
                 picture_control_set_ptr->pic_depth_mode = PIC_SQ_DEPTH_MODE;
+#elif  m3_nsq_l1
+            if (picture_control_set_ptr->temporal_layer_index == 0)
+
+                picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
+            else
+                picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
+
 #else
             picture_control_set_ptr->pic_depth_mode = PIC_SQ_DEPTH_MODE;
 #endif
@@ -1159,7 +1166,15 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
 #endif
         else
+#if m3_nsq_l1
+            if (picture_control_set_ptr->temporal_layer_index == 0)
+
+                picture_control_set_ptr->pic_depth_mode = NSQ_SEARCH_LEVEL1;
+            else
+                picture_control_set_ptr->pic_depth_mode = NSQ_SEARCH_OFF;
+#else
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
+#endif
 
 #if MEMORY_FOOTPRINT_OPT_ME_MV
     if (picture_control_set_ptr->nsq_search_level > NSQ_SEARCH_OFF)
