@@ -34,6 +34,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#define WARP_UPDATE                   1 // WARP on for MR, M0 ref frame.
 #define DEBUG_2PASS_MDC                    0
 #if DEBUG_2PASS_MDC
 #define DISABLE_RED_CU                     1 // P
