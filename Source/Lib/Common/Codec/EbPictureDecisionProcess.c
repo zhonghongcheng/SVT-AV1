@@ -1507,7 +1507,11 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
     else {
     if (sc_content_detected)
+#if M1_SC_CANDIDATE
+        if (picture_control_set_ptr->enc_mode <= ENC_M0)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
             picture_control_set_ptr->intra_pred_mode = 0;
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
             if (picture_control_set_ptr->temporal_layer_index == 0)

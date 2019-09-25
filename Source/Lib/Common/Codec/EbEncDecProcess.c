@@ -1601,7 +1601,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
 #if FULL_LOOP_SPLIT
     // Derive md_staging_mode
+#if M1_SC_CANDIDATE
+    if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#else
     if (picture_control_set_ptr->enc_mode == ENC_M0)
+#endif
         context_ptr->md_staging_mode = 1;
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->md_staging_mode = 3;
