@@ -64,6 +64,7 @@ extern "C" {
 #define M3_0_CANDIDATE               1
 #define M0_SC_CANDIDATE              0
 #define M1_SC_CANDIDATE              0
+#define M2_SC_CANDIDATE              0
 #define m2_ibc_graph                 0
 #define m3_ibc_graph                 0
 #define m3_nsq_l1                    0

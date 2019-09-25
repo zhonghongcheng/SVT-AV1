@@ -265,7 +265,7 @@ EbErrorType signal_derivation_me_kernel_oq(
     }
 #if M3_SP_NREF
     else if (enc_mode <= ENC_M1 || (enc_mode <= ENC_M2 && picture_control_set_ptr->is_used_as_reference_flag)) {
-#elif m2_ibc_graph
+#elif m2_ibc_graph || M2_SC_CANDIDATE
     else if (enc_mode <= ENC_M1) {
 #else
     else if (enc_mode <= ENC_M2) {
@@ -487,7 +487,7 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
     }
 #if M3_SP_NREF
     else if (enc_mode <= ENC_M1 || (enc_mode <= ENC_M2 && picture_control_set_ptr->is_used_as_reference_flag)) {
-#elif m2_ibc_graph
+#elif m2_ibc_graph || M2_SC_CANDIDATE
     else if (enc_mode <= ENC_M1) {
 #else
     else if (enc_mode <= ENC_M2) {

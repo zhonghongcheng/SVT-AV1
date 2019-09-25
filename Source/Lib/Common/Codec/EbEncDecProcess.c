@@ -1405,7 +1405,12 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
 #if ENHANCED_Nx4_4xN_NEW_MV
 #if M1_0_CANDIDATE
+
+#if M2_SC_CANDIDATE
+    if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#else
     if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
 #else
     if (picture_control_set_ptr->enc_mode == ENC_M0)
 #endif
@@ -1450,7 +1455,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 1                    ON FULL
     // 2                    Reduced set
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if M2_SC_CANDIDATE
+        if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#endif
             context_ptr->unipred3x3_injection = 1;
         else if (picture_control_set_ptr->enc_mode <= ENC_M4)
             context_ptr->unipred3x3_injection = 2;
@@ -1499,7 +1508,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
     if (picture_control_set_ptr->slice_type != I_SLICE)
         // Hsan: kept ON for sc_content_detected as ~5% gain for minecraft clip
-#if M2_BAD_SLOPE_COMB && !m2_ibc_graph
+#if M2_BAD_SLOPE_COMB && !m2_ibc_graph && !M2_SC_CANDIDATE
         if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
