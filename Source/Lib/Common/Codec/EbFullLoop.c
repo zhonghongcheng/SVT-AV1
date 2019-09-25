@@ -1979,7 +1979,11 @@ void av1_quantize_inv_quantize(
 
 #if FULL_LOOP_SPLIT
     // Hsan: no RDOQ @ MD_STAGE_2 for md_staging_mode = 2 and higher
+#if RDOQ_CHROMA
+    EbBool perform_rdoq = ((is_encode_pass || md_context->md_stage == MD_STAGE_3 || md_context->md_staging_mode <= 1) && md_context->trellis_quant_coeff_optimization && !is_intra_bc);
+#else
     EbBool perform_rdoq = ((is_encode_pass || md_context->md_stage == MD_STAGE_3 || md_context->md_staging_mode <= 1) && md_context->trellis_quant_coeff_optimization && component_type == COMPONENT_LUMA && !is_intra_bc);
+#endif
 #else
     EbBool perform_rdoq = (md_context->trellis_quant_coeff_optimization && component_type == COMPONENT_LUMA && !is_intra_bc);
 #endif
@@ -3761,9 +3765,15 @@ void full_loop_r(
                 candidateBuffer->candidate_ptr->transform_type[PLANE_TYPE_UV],
 #endif
                 candidateBuffer,
+#if RDOQ_CHROMA              
+                context_ptr->cb_txb_skip_context,
+                context_ptr->cb_dc_sign_context,
+                candidateBuffer->candidate_ptr->pred_mode >= NEARESTMV,
+#else
                 0,
                 0,
                 0,
+#endif
 #if RDOQ_INTRA
                 candidateBuffer->candidate_ptr->use_intrabc,
 #endif
@@ -3904,9 +3914,15 @@ void full_loop_r(
                 candidateBuffer->candidate_ptr->transform_type[PLANE_TYPE_UV],
 #endif
                 candidateBuffer,
+#if RDOQ_CHROMA              
+                context_ptr->cr_txb_skip_context,
+                context_ptr->cr_dc_sign_context,
+                candidateBuffer->candidate_ptr->pred_mode >= NEARESTMV,
+#else
                 0,
                 0,
                 0,
+#endif
 #if RDOQ_INTRA
                 candidateBuffer->candidate_ptr->use_intrabc,
 #endif

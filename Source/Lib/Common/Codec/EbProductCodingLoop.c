@@ -9958,6 +9958,10 @@ void search_best_independent_uv_mode(
             candidateBuffer->candidate_ptr->intra_chroma_mode = uv_mode;
             candidateBuffer->candidate_ptr->is_directional_chroma_mode_flag = (uint8_t)av1_is_directional_mode((PredictionMode)uv_mode);
             candidateBuffer->candidate_ptr->angle_delta[PLANE_TYPE_UV] = uv_angle_delta;
+#if RDOQ_CHROMA
+            candidateBuffer->candidate_ptr->pred_mode = DC_PRED;
+#endif
+
 #if ATB_SUPPORT
             candidateBuffer->candidate_ptr->tx_depth = 0;
 #endif

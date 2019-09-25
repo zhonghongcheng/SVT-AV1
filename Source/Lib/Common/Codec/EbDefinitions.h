@@ -127,6 +127,7 @@ extern "C" {
 
 //*************************************************//
 #define QPS_QPM_OFF              0
+#define RDOQ_CHROMA              0
 // Lossless
 #define TX_TYPE_SEARCH_OPT       1
 #define INTERPOLATION_SEARCH_OPT 0
