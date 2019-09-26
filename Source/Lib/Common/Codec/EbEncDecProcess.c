@@ -1404,18 +1404,23 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->new_nearest_near_comb_injection = 0;
 #endif
 #if ENHANCED_Nx4_4xN_NEW_MV
-#if M1_0_CANDIDATE
+
 
 #if M2_SC_CANDIDATE
-    if (picture_control_set_ptr->enc_mode <= ENC_M2)
-#else
-    if (picture_control_set_ptr->enc_mode <= ENC_M1)
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        if (picture_control_set_ptr->enc_mode <= ENC_M2)
+            context_ptr->nx4_4xn_parent_mv_injection = 1;
+        else
+            context_ptr->nx4_4xn_parent_mv_injection = 0;
+    else
 #endif
+#if M1_0_CANDIDATE
+       if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #else
-    if (picture_control_set_ptr->enc_mode == ENC_M0)
+       if (picture_control_set_ptr->enc_mode == ENC_M0)
 #endif
         context_ptr->nx4_4xn_parent_mv_injection = 1;
-    else
+       else
         context_ptr->nx4_4xn_parent_mv_injection = 0;
 #endif
 #if M9_NEAR_INJECTION
@@ -1508,7 +1513,19 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
     if (picture_control_set_ptr->slice_type != I_SLICE)
         // Hsan: kept ON for sc_content_detected as ~5% gain for minecraft clip
-#if M2_BAD_SLOPE_COMB && !m2_ibc_graph && !M2_SC_CANDIDATE
+#if M2_SC_CANDIDATE
+        if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+            if (picture_control_set_ptr->enc_mode <= ENC_M1)
+                context_ptr->predictive_me_level = 4;
+            else if (picture_control_set_ptr->enc_mode <= ENC_M4)
+                context_ptr->predictive_me_level = 2;
+            else
+                context_ptr->predictive_me_level = 0;
+;
+        else
+#endif
+#if M2_BAD_SLOPE_COMB && !m2_ibc_graph 
+
         if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
@@ -1611,7 +1628,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if FULL_LOOP_SPLIT
     // Derive md_staging_mode
 #if M1_SC_CANDIDATE
-    if (picture_control_set_ptr->enc_mode <= ENC_M1)
+    if ((picture_control_set_ptr->enc_mode == ENC_M0) ||(picture_control_set_ptr->enc_mode <= ENC_M1 &&  picture_control_set_ptr->parent_pcs_ptr->sc_content_detected))
 #else
     if (picture_control_set_ptr->enc_mode == ENC_M0)
 #endif
