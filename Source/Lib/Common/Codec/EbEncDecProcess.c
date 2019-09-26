@@ -1521,7 +1521,6 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
                 context_ptr->predictive_me_level = 2;
             else
                 context_ptr->predictive_me_level = 0;
-;
         else
 #endif
 #if M2_BAD_SLOPE_COMB && !m2_ibc_graph 
