@@ -535,7 +535,7 @@ extern "C" {
 #define MRP_DISABLE_ADDED_CAND_M1                        0
 
 #define EIGTH_PEL_MV                                    1
-#define EIGHT_PEL_PREDICTIVE_ME                         1 // NADER
+#define EIGHT_PEL_PREDICTIVE_ME                         1 // Add eight pel as part of the predictive me.
 #define DISABLE_NSQ_TABLE                               1 // On wil disable the nsq_table ordering algrithm for sc content. This is a temporarily adoption that will be disable once we comeup with a better ordreing mecanisme when MRP i ON.
 #define IMPROVED_SUBPEL_SEARCH                          1
 
