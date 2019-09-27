@@ -2859,6 +2859,9 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
             picture_control_set_ptr->update_cdf = 0;
     else
         picture_control_set_ptr->update_cdf = (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M5) ? 1 : 0;
+#if DISABLE_CABAC_UP
+    picture_control_set_ptr->update_cdf = 0;
+#endif
 
 #if MEMORY_FOOTPRINT_OPT_ME_MV
     if(picture_control_set_ptr->update_cdf)

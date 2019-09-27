@@ -50,15 +50,32 @@ extern "C" {
         SsMeContext                        *context_ptr);          // input parameter, ME Context Ptr, used to store decimated/interpolated LCU/SR
 
     extern EbErrorType mode_decision_sb(
+#if MPMD_SB
+        uint8_t                           is_last_md_pass,
+#endif
         SequenceControlSet                *sequence_control_set_ptr,
         PictureControlSet                 *picture_control_set_ptr,
         const MdcLcuData * const           mdcResultTbPtr,
+#if MPMD_SB
+        MdcLcuData *                       mpmd_sb,
+#endif
         LargestCodingUnit                 *sb_ptr,
         uint16_t                             sb_origin_x,
         uint16_t                             sb_origin_y,
         uint32_t                             lcuAddr,
         SsMeContext                       *ss_mecontext,
         ModeDecisionContext               *context_ptr);
+
+#if MPMD_SB
+    extern void copy_neighbour_arrays(
+        PictureControlSet                *picture_control_set_ptr,
+        ModeDecisionContext               *context_ptr,
+        uint32_t                            src_idx,
+        uint32_t                            dst_idx,
+        uint32_t                            blk_mds,
+        uint32_t                            sb_org_x,
+        uint32_t                            sb_org_y);
+#endif
 
     extern EbErrorType ModeDecisionRefinementLcu(
         SequenceControlSet                *sequence_control_set_ptr,

@@ -60,7 +60,11 @@ extern "C" {
 
 // BDP OFF
 #define MD_NEIGHBOR_ARRAY_INDEX                0
+#if MPMD_SB
+#define NEIGHBOR_ARRAY_TOTAL_COUNT             5
+#else
 #define NEIGHBOR_ARRAY_TOTAL_COUNT             4
+#endif
 #define AOM_QM_BITS                            5
 #define QM_TOTAL_SIZE                          3344
 
@@ -13792,6 +13796,9 @@ extern "C" {
 
         // Mode Decision Config
         MdcLcuData                         *mdc_sb_array;
+#if MPMD_SB
+        MdcLcuData                         *mpmd_sb_array;
+#endif
 
         // Error Resilience
         EbBool                                constrained_intra_flag;

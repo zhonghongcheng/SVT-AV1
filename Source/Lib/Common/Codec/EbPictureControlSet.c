@@ -298,6 +298,9 @@ EbErrorType picture_control_set_ctor(
 #endif
     // Mode Decision Control config
     EB_MALLOC(MdcLcuData*, object_ptr->mdc_sb_array, object_ptr->sb_total_count * sizeof(MdcLcuData), EB_N_PTR);
+#if MPMD_SB
+    EB_MALLOC(MdcLcuData*, object_ptr->mpmd_sb_array, object_ptr->sb_total_count * sizeof(MdcLcuData), EB_N_PTR);
+#endif
     object_ptr->qp_array_stride = (uint16_t)((initDataPtr->picture_width + MIN_BLOCK_SIZE - 1) / MIN_BLOCK_SIZE);
     object_ptr->qp_array_size = ((initDataPtr->picture_width + MIN_BLOCK_SIZE - 1) / MIN_BLOCK_SIZE) *
         ((initDataPtr->picture_height + MIN_BLOCK_SIZE - 1) / MIN_BLOCK_SIZE);

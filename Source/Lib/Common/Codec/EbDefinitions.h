@@ -34,6 +34,18 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#define MPMD_SB                            0
+#define MPMD_SB_REF                        0
+#define DEBUG_MPMD_MD                      0
+#if DEBUG_MPMD_MD
+#define DISABLE_CABAC_UP                   0
+#define DISABLE_RED_CU                     1 //P
+#define DISABLE_CFL                        1 //P
+#define DISABLE_INTRA_IF                   0
+#define ONE_ECDEC_PROCESS                  0
+#define ONE_SEG_PROCESS                    0
+#endif
+#define FIX_MDC_BUG_INCOMPLETE_SB          1
 #define DEBUG_2PASS_MDC                    0
 #if DEBUG_2PASS_MDC
 #define DISABLE_RED_CU                     1 // P
@@ -85,8 +97,11 @@ extern "C" {
 #define M2_NSQ_LEVEL_NRF             0
 #define M2_ATB_NRF                   0
 
-
+#if DISABLE_INTRA_IF
+#define FI_INTRA  0
+#else
 #define FI_INTRA  1
+#endif
 
 #if FI_INTRA
 #define FI_MD     1

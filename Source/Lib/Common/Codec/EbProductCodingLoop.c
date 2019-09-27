@@ -11133,9 +11133,15 @@ void md_encode_block(
 }
 
 EB_EXTERN EbErrorType mode_decision_sb(
+#if MPMD_SB
+    uint8_t                           is_last_md_pass,
+#endif
     SequenceControlSet                *sequence_control_set_ptr,
     PictureControlSet                 *picture_control_set_ptr,
     const MdcLcuData * const           mdcResultTbPtr,
+#if MPMD_SB
+    MdcLcuData *                       mpmd_sb,
+#endif
     LargestCodingUnit                 *sb_ptr,
     uint16_t                             sb_origin_x,
     uint16_t                             sb_origin_y,
@@ -11156,7 +11162,7 @@ EB_EXTERN EbErrorType mode_decision_sb(
     const uint32_t                         sb_height = MIN(BLOCK_SIZE_64, (uint32_t)(sequence_control_set_ptr->seq_header.max_frame_height - sb_origin_y));
 #endif
     uint32_t                               leaf_count = mdcResultTbPtr->leaf_count;
-    const EbMdcLeafData *const           leaf_data_array = mdcResultTbPtr->leaf_data_array;
+    const EbMdcLeafData *const             leaf_data_array = mdcResultTbPtr->leaf_data_array;
 #if !OPT_LOSSLESS_0
     UNUSED(sb_height);
     UNUSED(asm_type);

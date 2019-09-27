@@ -23,6 +23,9 @@
 #include "EbSvtAv1ErrorCodes.h"
 #include "EbUtility.h"
 #include "grainSynthesis.h"
+#if MPMD_SB
+#include "EbModeDecisionConfiguration.h"
+#endif
 
 void av1_cdef_search(
     EncDecContext                *context_ptr,
@@ -1690,7 +1693,1137 @@ uint32_t map_128_to_64_sb_addr(
     return sb64_addr;
 }
 #endif
+#if MPMD_SB
+void reset_local_cu_cost(ModeDecisionContext * context_ptr) {
+    for (uint64_t cu_idx = 0; cu_idx < BLOCK_MAX_COUNT_SB_128; cu_idx++) {
+        context_ptr->md_local_cu_unit[cu_idx].cost = MAX_MODE_COST;
+        //context_ptr->md_cu_arr_nsq[cu_idx]. =
+    }
+}
+void reset_ep_pipe_sb(ModeDecisionContext * context_ptr) {
+    for (uint64_t cu_idx = 0; cu_idx < BLOCK_MAX_COUNT_SB_128; cu_idx++) {
+        context_ptr->md_ep_pipe_sb[cu_idx].skip_cost = MAX_MODE_COST;
+        context_ptr->md_ep_pipe_sb[cu_idx].merge_cost = MAX_MODE_COST;
+        context_ptr->md_ep_pipe_sb[cu_idx].chroma_distortion = 0;
+        context_ptr->md_ep_pipe_sb[cu_idx].y_full_distortion[0] = 0;
+        context_ptr->md_ep_pipe_sb[cu_idx].y_full_distortion[1] = 0;
+        context_ptr->md_ep_pipe_sb[cu_idx].y_coeff_bits = 0;
+        context_ptr->md_ep_pipe_sb[cu_idx].y_has_coeff = 0;
+        context_ptr->md_ep_pipe_sb[cu_idx].fast_luma_rate = 0;
+        context_ptr->md_ep_pipe_sb[cu_idx].y_count_non_zero_coeffs[0] = 0;
+        context_ptr->md_ep_pipe_sb[cu_idx].y_count_non_zero_coeffs[1] = 0;
+        context_ptr->md_ep_pipe_sb[cu_idx].y_count_non_zero_coeffs[2] = 0;
+        context_ptr->md_ep_pipe_sb[cu_idx].y_count_non_zero_coeffs[3] = 0;
+    }
+}
+void mpmd_set_child_to_be_considered(
+    MdcLcuData *cu_ptr,
+    uint32_t    blk_index,
+    int32_t     sb_size,
+    int8_t      depth_step) {
+    uint32_t child_block_idx_1, child_block_idx_2, child_block_idx_3, child_block_idx_4;
+    uint32_t tot_d1_blocks, block_1d_idx;
+    const BlockGeom * blk_geom = get_blk_geom_mds(blk_index);
+    tot_d1_blocks =
+        blk_geom->sq_size == 128 ? 17 :
+        blk_geom->sq_size > 8 ? 25 :
+        blk_geom->sq_size == 8 ? 5 : 1;
+    if (blk_geom->sq_size > 4) {
+        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+            /*const BlockGeom * blk_geom_1d = get_blk_geom_mds(blk_index + block_1d_idx);
+            if (blk_geom_1d->shape == PART_H || blk_geom_1d->sq_size == 4) {
+                resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+            }*/
+            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_TRUE;
+        }
+        //Set first child to be considered
+        child_block_idx_1 = blk_index + d1_depth_offset[sb_size == BLOCK_128X128][blk_geom->depth];
+        const BlockGeom * child1_blk_geom = get_blk_geom_mds(child_block_idx_1);
+        uint32_t child1_tot_d1_blocks =
+            child1_blk_geom->sq_size == 128 ? 17 :
+            child1_blk_geom->sq_size > 8 ? 25 :
+            child1_blk_geom->sq_size == 8 ? 5 : 1;
 
+        for (block_1d_idx = 0; block_1d_idx < child1_tot_d1_blocks; block_1d_idx++) {
+            /*const BlockGeom * blk_geom_1d = get_blk_geom_mds(child_block_idx_1 + block_1d_idx);
+            if (blk_geom_1d->shape == PART_H || blk_geom_1d->sq_size == 4) {
+                resultsPtr->leaf_data_array[child_block_idx_1 + block_1d_idx].consider_block = 1;
+            }*/
+            cu_ptr->leaf_data_array[child_block_idx_1 + block_1d_idx].consider_block = 1;
+            cu_ptr->leaf_data_array[child_block_idx_1 + block_1d_idx].refined_split_flag = EB_FALSE;
+        }
+        if (depth_step > 1)
+            mpmd_set_child_to_be_considered(
+                cu_ptr,
+                child_block_idx_1,
+                sb_size,
+                depth_step -1);
+        //Set second child to be considered
+        child_block_idx_2 = child_block_idx_1 + ns_depth_offset[sb_size == BLOCK_128X128][blk_geom->depth + 1];
+        const BlockGeom * child2_blk_geom = get_blk_geom_mds(child_block_idx_2);
+        uint32_t child2_tot_d1_blocks =
+            child2_blk_geom->sq_size == 128 ? 17 :
+            child2_blk_geom->sq_size > 8 ? 25 :
+            child2_blk_geom->sq_size == 8 ? 5 : 1;
+        for (block_1d_idx = 0; block_1d_idx < child2_tot_d1_blocks; block_1d_idx++) {
+            /*const BlockGeom * blk_geom_1d = get_blk_geom_mds(child_block_idx_2 + block_1d_idx);
+            if (blk_geom_1d->shape == PART_H || blk_geom_1d->sq_size == 4) {
+                resultsPtr->leaf_data_array[child_block_idx_2 + block_1d_idx].consider_block = 1;
+            }*/
+            cu_ptr->leaf_data_array[child_block_idx_2 + block_1d_idx].consider_block = 1;
+            cu_ptr->leaf_data_array[child_block_idx_2 + block_1d_idx].refined_split_flag = EB_FALSE;
+        }
+        if (depth_step > 1)
+            mpmd_set_child_to_be_considered(
+                cu_ptr,
+                child_block_idx_2,
+                sb_size,
+                depth_step -1);
+        //Set third child to be considered
+        child_block_idx_3 = child_block_idx_2 + ns_depth_offset[sb_size == BLOCK_128X128][blk_geom->depth + 1];
+        const BlockGeom * child3_blk_geom = get_blk_geom_mds(child_block_idx_3);
+        uint32_t child3_tot_d1_blocks =
+            child3_blk_geom->sq_size == 128 ? 17 :
+            child3_blk_geom->sq_size > 8 ? 25 :
+            child3_blk_geom->sq_size == 8 ? 5 : 1;
+
+        for (block_1d_idx = 0; block_1d_idx < child3_tot_d1_blocks; block_1d_idx++) {
+            /*const BlockGeom * blk_geom_1d = get_blk_geom_mds(child_block_idx_3 + block_1d_idx);
+            if (blk_geom_1d->shape == PART_H || blk_geom_1d->sq_size == 4) {
+                resultsPtr->leaf_data_array[child_block_idx_3 + block_1d_idx].consider_block = 1;
+            }*/
+            cu_ptr->leaf_data_array[child_block_idx_3 + block_1d_idx].consider_block = 1;
+            cu_ptr->leaf_data_array[child_block_idx_3 + block_1d_idx].refined_split_flag = EB_FALSE;
+        }
+        if (depth_step > 1)
+            mpmd_set_child_to_be_considered(
+                cu_ptr,
+                child_block_idx_3,
+                sb_size,
+                depth_step -1);
+        //Set forth child to be considered
+        child_block_idx_4 = child_block_idx_3 + ns_depth_offset[sb_size == BLOCK_128X128][blk_geom->depth + 1];
+        const BlockGeom * child4_blk_geom = get_blk_geom_mds(child_block_idx_4);
+        uint32_t child4_tot_d1_blocks =
+            child4_blk_geom->sq_size == 128 ? 17 :
+            child4_blk_geom->sq_size > 8 ? 25 :
+            child4_blk_geom->sq_size == 8 ? 5 : 1;
+        for (block_1d_idx = 0; block_1d_idx < child4_tot_d1_blocks; block_1d_idx++) {
+            /*const BlockGeom * blk_geom_1d = get_blk_geom_mds(child_block_idx_4 + block_1d_idx);
+            if (blk_geom_1d->shape == PART_H || blk_geom_1d->sq_size == 4) {
+                resultsPtr->leaf_data_array[child_block_idx_4 + block_1d_idx].consider_block = 1;
+            }*/
+            cu_ptr->leaf_data_array[child_block_idx_4 + block_1d_idx].consider_block = 1;
+            cu_ptr->leaf_data_array[child_block_idx_4 + block_1d_idx].refined_split_flag = EB_FALSE;
+        }
+        if (depth_step > 1)
+            mpmd_set_child_to_be_considered(
+                cu_ptr,
+                child_block_idx_4,
+                sb_size,
+                depth_step -1);
+    }
+}
+void mpmd_init_considered_block(
+    SequenceControlSet  *sequence_control_set_ptr,
+    PictureControlSet   *picture_control_set_ptr,
+    ModeDecisionContext *context_ptr,
+    uint32_t            sb_index,
+    uint8_t             mpmd_depth_level) {
+    MdcLcuData *cu_ptr = &picture_control_set_ptr->mpmd_sb_array[sb_index];
+    cu_ptr->leaf_count = 0;
+    uint32_t  blk_index = 0;
+    uint32_t  parent_depth_idx_mds,sparent_depth_idx_mds,child_block_idx_1,child_block_idx_2,child_block_idx_3,child_block_idx_4;
+    uint8_t  is_complete_sb = sequence_control_set_ptr->sb_geom[sb_index].is_complete_sb;
+
+    uint32_t tot_d1_blocks,block_1d_idx;
+    EbBool split_flag;
+    uint32_t depth_refinement_mode = AllD;
+    switch (mpmd_depth_level) {
+    case 0:
+        depth_refinement_mode = is_complete_sb ? Pred : AllD;
+        break;
+    case 1:
+        depth_refinement_mode = is_complete_sb ? Predp1 : AllD;
+        break;
+    case 2:
+        depth_refinement_mode = is_complete_sb ? Predp2 : AllD;
+        break;
+    case 3:
+        depth_refinement_mode = is_complete_sb ? Predp3 : AllD;
+        break;
+    case 4:
+        depth_refinement_mode = is_complete_sb ? Predm1p1 : AllD;
+        break;
+    case 5:
+        depth_refinement_mode = is_complete_sb ? Predm1p2 : AllD;
+        break;
+    case 6:
+        depth_refinement_mode = is_complete_sb ? Predm1p3 : AllD;
+        break;
+    case 7:
+        depth_refinement_mode = is_complete_sb ? Predm2p3 : AllD;
+        break;
+    case MAX_MDC_LEVEL:
+        depth_refinement_mode = AllD;
+        break;
+    default:
+        printf("not supported mdc_depth_level");
+        break;
+    }
+
+    while (blk_index < sequence_control_set_ptr->max_block_cnt){
+        const BlockGeom * blk_geom = get_blk_geom_mds(blk_index);
+        tot_d1_blocks =
+                blk_geom->sq_size == 128 ? 17 :
+                blk_geom->sq_size > 8 ? 25 :
+                blk_geom->sq_size == 8 ? 5 : 1;
+        //if the parentSq is inside inject this block
+        uint8_t is_blk_allowed = picture_control_set_ptr->slice_type != I_SLICE ? 1 : (blk_geom->sq_size < 128) ? 1 : 0;
+
+        if(depth_refinement_mode == AllD)
+            split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
+        else
+            split_flag = context_ptr->md_cu_arr_nsq[blk_index].split_flag;
+        if (sequence_control_set_ptr->sb_geom[sb_index].block_is_inside_md_scan[blk_index] && is_blk_allowed){
+            if (blk_geom->shape == PART_N) {
+                switch (depth_refinement_mode) {
+                case Pred:
+                    // Set predicted block to be considered
+                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                            const BlockGeom * blk_geom_1d = get_blk_geom_mds(blk_index + block_1d_idx);
+                            // NADER - FORCE SHAPE
+#if DISABLE_NSQ_FROM_MDC
+                            if (1){//sequence_control_set_ptr->static_config.use_input_stat_file) {
+                                if (blk_geom_1d->shape == PART_N) {
+                                    resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                                    resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                                }
+                            }
+                            else
+                            {
+#endif
+                                cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+#if DISABLE_NSQ_FROM_MDC
+                            }
+#endif
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
+                        }
+                    }
+                    break;
+                case Predp1:
+                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE){
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                            /*const BlockGeom * blk_geom_1d = get_blk_geom_mds(blk_index + block_1d_idx);
+                            if (blk_geom_1d->shape == PART_H || blk_geom_1d->sq_size == 4) {
+                                resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            }*/
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
+                        }
+                        mpmd_set_child_to_be_considered(
+                            cu_ptr,
+                            blk_index,
+                            sequence_control_set_ptr->seq_header.sb_size,
+                            1);
+                    }
+                    break;
+                case Predp2:
+                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE){
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                            /*const BlockGeom * blk_geom_1d = get_blk_geom_mds(blk_index + block_1d_idx);
+                            if (blk_geom_1d->shape == PART_H || blk_geom_1d->sq_size == 4) {
+                                resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            }*/
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
+                        }
+                        mpmd_set_child_to_be_considered(
+                            cu_ptr,
+                            blk_index,
+                            sequence_control_set_ptr->seq_header.sb_size,
+                            2);
+                    }
+                    break;
+                case Predp3:
+                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE){
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                            /*const BlockGeom * blk_geom_1d = get_blk_geom_mds(blk_index + block_1d_idx);
+                            if (blk_geom_1d->shape == PART_H || blk_geom_1d->sq_size == 4) {
+                                resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            }*/
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
+                        }
+                        mpmd_set_child_to_be_considered(
+                            cu_ptr,
+                            blk_index,
+                            sequence_control_set_ptr->seq_header.sb_size,
+                            3);
+                    }
+                    break;
+                case Predm1p2:
+                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
+                        }
+                        if (blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && blk_geom->sq_size > 4) {
+                            //Set parent to be considered
+                            parent_depth_idx_mds = (blk_geom->sqi_mds - (blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
+                            const BlockGeom * parent_blk_geom = get_blk_geom_mds(parent_depth_idx_mds);
+                            uint32_t parent_tot_d1_blocks =
+                                parent_blk_geom->sq_size == 128 ? 17 :
+                                parent_blk_geom->sq_size > 8 ? 25 :
+                                parent_blk_geom->sq_size == 8 ? 5 : 1;
+                            for (block_1d_idx = 0; block_1d_idx < parent_tot_d1_blocks; block_1d_idx++) {
+                                cu_ptr->leaf_data_array[parent_depth_idx_mds + block_1d_idx].consider_block = 1;
+                            }
+                        }
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                            /*const BlockGeom * blk_geom_1d = get_blk_geom_mds(blk_index + block_1d_idx);
+                            if (blk_geom_1d->shape == PART_H || blk_geom_1d->sq_size == 4) {
+                                resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            }*/
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
+                        }
+                        mpmd_set_child_to_be_considered(
+                            cu_ptr,
+                            blk_index,
+                            sequence_control_set_ptr->seq_header.sb_size,
+                            2);
+                    }
+                    break;
+                case Predm1p3:
+                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
+                        }
+                        if (blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && blk_geom->sq_size > 4) {
+                            //Set parent to be considered
+                            parent_depth_idx_mds = (blk_geom->sqi_mds - (blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
+                            const BlockGeom * parent_blk_geom = get_blk_geom_mds(parent_depth_idx_mds);
+                            uint32_t parent_tot_d1_blocks =
+                                parent_blk_geom->sq_size == 128 ? 17 :
+                                parent_blk_geom->sq_size > 8 ? 25 :
+                                parent_blk_geom->sq_size == 8 ? 5 : 1;
+                            for (block_1d_idx = 0; block_1d_idx < parent_tot_d1_blocks; block_1d_idx++) {
+                                cu_ptr->leaf_data_array[parent_depth_idx_mds + block_1d_idx].consider_block = 1;
+                            }
+                        }
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                            /*const BlockGeom * blk_geom_1d = get_blk_geom_mds(blk_index + block_1d_idx);
+                            if (blk_geom_1d->shape == PART_H || blk_geom_1d->sq_size == 4) {
+                                resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            }*/
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
+                        }
+                        mpmd_set_child_to_be_considered(
+                            cu_ptr,
+                            blk_index,
+                            sequence_control_set_ptr->seq_header.sb_size,
+                            3);
+                    }
+                    break;
+                case Predm2p3:
+                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
+                        }
+                        if (blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && blk_geom->sq_size > 4) {
+                            //Set parent to be considered
+                            parent_depth_idx_mds = (blk_geom->sqi_mds - (blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
+                            const BlockGeom * parent_blk_geom = get_blk_geom_mds(parent_depth_idx_mds);
+                            uint32_t parent_tot_d1_blocks =
+                                parent_blk_geom->sq_size == 128 ? 17 :
+                                parent_blk_geom->sq_size > 8 ? 25 :
+                                parent_blk_geom->sq_size == 8 ? 5 : 1;
+                            for (block_1d_idx = 0; block_1d_idx < parent_tot_d1_blocks; block_1d_idx++) {
+                                cu_ptr->leaf_data_array[parent_depth_idx_mds + block_1d_idx].consider_block = 1;
+                            }
+
+                            if (parent_blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && parent_blk_geom->sq_size > 4) {
+                                //Set parent to be considered
+                                sparent_depth_idx_mds = (parent_blk_geom->sqi_mds - (parent_blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][parent_blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][parent_blk_geom->depth];
+                                const BlockGeom * sparent_blk_geom = get_blk_geom_mds(sparent_depth_idx_mds);
+                                uint32_t sparent_tot_d1_blocks =
+                                    parent_blk_geom->sq_size == 128 ? 17 :
+                                    parent_blk_geom->sq_size > 8 ? 25 :
+                                    parent_blk_geom->sq_size == 8 ? 5 : 1;
+                                for (block_1d_idx = 0; block_1d_idx < sparent_tot_d1_blocks; block_1d_idx++) {
+                                    cu_ptr->leaf_data_array[sparent_depth_idx_mds + block_1d_idx].consider_block = 1;
+                                }
+                            }
+                        }
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
+                        }
+                        mpmd_set_child_to_be_considered(
+                            cu_ptr,
+                            blk_index,
+                            sequence_control_set_ptr->seq_header.sb_size,
+                            3);
+                    }
+                    break;
+                case Predm1:
+                    // Set predicted block to be considered
+                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
+                        }
+                        if (blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && blk_geom->sq_size > 4) {
+                            //Set parent to be considered
+                            parent_depth_idx_mds = (blk_geom->sqi_mds - (blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
+                            const BlockGeom * parent_blk_geom = get_blk_geom_mds(parent_depth_idx_mds);
+                            uint32_t parent_tot_d1_blocks =
+                                parent_blk_geom->sq_size == 128 ? 17 :
+                                parent_blk_geom->sq_size > 8 ? 25 :
+                                parent_blk_geom->sq_size == 8 ? 5 : 1;
+                            for (block_1d_idx = 0; block_1d_idx < parent_tot_d1_blocks; block_1d_idx++) {
+                                cu_ptr->leaf_data_array[parent_depth_idx_mds + block_1d_idx].consider_block = 1;
+                            }
+                        }
+                    }
+                    break;
+                case Predm1p1:
+                    // Set predicted block to be considered
+                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
+                        }
+                        if (blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && blk_geom->sq_size > 4) {
+                            //Set parent to be considered
+                            parent_depth_idx_mds = (blk_geom->sqi_mds - (blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
+                            const BlockGeom * parent_blk_geom = get_blk_geom_mds(parent_depth_idx_mds);
+                            uint32_t parent_tot_d1_blocks =
+                                parent_blk_geom->sq_size == 128 ? 17 :
+                                parent_blk_geom->sq_size > 8 ? 25 :
+                                parent_blk_geom->sq_size == 8 ? 5 : 1;
+                            for (block_1d_idx = 0; block_1d_idx < parent_tot_d1_blocks; block_1d_idx++) {
+                                cu_ptr->leaf_data_array[parent_depth_idx_mds + block_1d_idx].consider_block = 1;
+                            }
+                        }
+
+                        if (blk_geom->sq_size > 4) {
+                            // Set predicted block to be considered
+                            for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                                /*const BlockGeom * blk_geom_1d = get_blk_geom_mds(blk_index + block_1d_idx);
+                                if (blk_geom_1d->shape == PART_H || blk_geom_1d->sq_size == 4) {
+                                    resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                                }*/
+                                cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                                cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_TRUE;
+                            }
+                            //Set first child to be considered
+                            child_block_idx_1 = blk_index + d1_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
+                            const BlockGeom * child1_blk_geom = get_blk_geom_mds(child_block_idx_1);
+                            uint32_t child1_tot_d1_blocks =
+                                child1_blk_geom->sq_size == 128 ? 17 :
+                                child1_blk_geom->sq_size > 8 ? 25 :
+                                child1_blk_geom->sq_size == 8 ? 5 : 1;
+
+                            for (block_1d_idx = 0; block_1d_idx < child1_tot_d1_blocks; block_1d_idx++) {
+                                /*const BlockGeom * blk_geom_1d = get_blk_geom_mds(child_block_idx_1 + block_1d_idx);
+                                if (blk_geom_1d->shape == PART_H || blk_geom_1d->sq_size == 4) {
+                                    resultsPtr->leaf_data_array[child_block_idx_1 + block_1d_idx].consider_block = 1;
+                                }*/
+                                cu_ptr->leaf_data_array[child_block_idx_1 + block_1d_idx].consider_block = 1;
+                                cu_ptr->leaf_data_array[child_block_idx_1 + block_1d_idx].refined_split_flag = EB_FALSE;
+                            }
+                            //Set second child to be considered
+                            child_block_idx_2 = child_block_idx_1 + ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth +1];
+                            const BlockGeom * child2_blk_geom = get_blk_geom_mds(child_block_idx_2);
+                            uint32_t child2_tot_d1_blocks =
+                                child2_blk_geom->sq_size == 128 ? 17 :
+                                child2_blk_geom->sq_size > 8 ? 25 :
+                                child2_blk_geom->sq_size == 8 ? 5 : 1;
+                            for (block_1d_idx = 0; block_1d_idx < child2_tot_d1_blocks; block_1d_idx++) {
+                                /*const BlockGeom * blk_geom_1d = get_blk_geom_mds(child_block_idx_2 + block_1d_idx);
+                                if (blk_geom_1d->shape == PART_H || blk_geom_1d->sq_size == 4) {
+                                    resultsPtr->leaf_data_array[child_block_idx_2 + block_1d_idx].consider_block = 1;
+                                }*/
+                                cu_ptr->leaf_data_array[child_block_idx_2 + block_1d_idx].consider_block = 1;
+                                cu_ptr->leaf_data_array[child_block_idx_2 + block_1d_idx].refined_split_flag = EB_FALSE;
+                            }
+                            //Set third child to be considered
+                            child_block_idx_3 = child_block_idx_2 + ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth +1];
+                            const BlockGeom * child3_blk_geom = get_blk_geom_mds(child_block_idx_3);
+                            uint32_t child3_tot_d1_blocks =
+                                child3_blk_geom->sq_size == 128 ? 17 :
+                                child3_blk_geom->sq_size > 8 ? 25 :
+                                child3_blk_geom->sq_size == 8 ? 5 : 1;
+
+                            for (block_1d_idx = 0; block_1d_idx < child3_tot_d1_blocks; block_1d_idx++) {
+                                /*const BlockGeom * blk_geom_1d = get_blk_geom_mds(child_block_idx_3 + block_1d_idx);
+                                if (blk_geom_1d->shape == PART_H || blk_geom_1d->sq_size == 4) {
+                                    resultsPtr->leaf_data_array[child_block_idx_3 + block_1d_idx].consider_block = 1;
+                                }*/
+                                cu_ptr->leaf_data_array[child_block_idx_3 + block_1d_idx].consider_block = 1;
+                                cu_ptr->leaf_data_array[child_block_idx_3 + block_1d_idx].refined_split_flag = EB_FALSE;
+                            }
+                            //Set forth child to be considered
+                            child_block_idx_4 = child_block_idx_3 + ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth + 1];
+                            const BlockGeom * child4_blk_geom = get_blk_geom_mds(child_block_idx_4);
+                            uint32_t child4_tot_d1_blocks =
+                                child4_blk_geom->sq_size == 128 ? 17 :
+                                child4_blk_geom->sq_size > 8 ? 25 :
+                                child4_blk_geom->sq_size == 8 ? 5 : 1;
+                            for (block_1d_idx = 0; block_1d_idx < child4_tot_d1_blocks; block_1d_idx++) {
+                                /*const BlockGeom * blk_geom_1d = get_blk_geom_mds(child_block_idx_4 + block_1d_idx);
+                                if (blk_geom_1d->shape == PART_H || blk_geom_1d->sq_size == 4) {
+                                    resultsPtr->leaf_data_array[child_block_idx_4 + block_1d_idx].consider_block = 1;
+                                }*/
+                                cu_ptr->leaf_data_array[child_block_idx_4 + block_1d_idx].consider_block = 1;
+                                cu_ptr->leaf_data_array[child_block_idx_4 + block_1d_idx].refined_split_flag = EB_FALSE;
+                            }
+                        }
+                    }
+                    break;
+                case AllD:
+                    // Set all block to be considered
+                    for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                        cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                        cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
+                    }
+                    break;
+                default:
+                    printf("Error! invalid mdc_refinement_mode\n");
+                    break;
+                }
+            }
+        }
+        blk_index += split_flag ? d1_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth] : ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
+    }
+}
+void check_for_errors(
+    uint64_t max_block_cnt,
+    MdcLcuData* src_mdc,
+    MdcLcuData* dst_mdc,
+    ModeDecisionContext *context_ptr) {
+    
+    printf("stage N-1: %d,stage N: %d\n", dst_mdc->leaf_count, src_mdc->leaf_count);
+
+    if (dst_mdc->leaf_count < src_mdc->leaf_count) printf("error leaf_count\n");
+ 
+}
+void init_cu_arr_nsq(
+    uint64_t max_block_cnt,
+    ModeDecisionContext *context_ptr,
+    uint32_t sb_index) {
+    
+    uint32_t blk_index = 0;
+    while (blk_index < max_block_cnt){
+        const BlockGeom * blk_geom = get_blk_geom_mds(blk_index);
+        context_ptr->md_cu_arr_nsq[blk_index].interintra_mode = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
+        context_ptr->md_cu_arr_nsq[blk_index].interintra_mode = 0;
+        context_ptr->md_cu_arr_nsq[blk_index].is_interintra_used = 0;
+        context_ptr->md_cu_arr_nsq[blk_index].use_wedge_interintra =0;
+        context_ptr->md_cu_arr_nsq[blk_index].interintra_wedge_index =0;//inter_intra wedge index
+        context_ptr->md_cu_arr_nsq[blk_index].ii_wedge_sign = 0;
+        
+//        TransformUnit             transform_unit_array[TRANSFORM_UNIT_MAX_COUNT]; // 2-bytes * 21 = 42-bytes
+//        PredictionUnit            prediction_unit_array[MAX_NUM_OF_PU_PER_CU];    // 35-bytes * 4 = 140 bytes
+//#if COMP_MODE
+//        INTERINTER_COMPOUND_DATA               interinter_comp;
+//        uint8_t                                compound_idx;
+//        uint8_t                                comp_group_idx;
+//#endif
+        context_ptr->md_cu_arr_nsq[blk_index].skip_flag_context = 0;
+        context_ptr->md_cu_arr_nsq[blk_index].prediction_mode_flag=0;
+        context_ptr->md_cu_arr_nsq[blk_index].block_has_coeff=0;
+        context_ptr->md_cu_arr_nsq[blk_index].split_flag_context=0;
+
+        context_ptr->md_cu_arr_nsq[blk_index].qp = 0;
+        context_ptr->md_cu_arr_nsq[blk_index].ref_qp = 0;
+        context_ptr->md_cu_arr_nsq[blk_index].delta_qp = 0; 
+        context_ptr->md_cu_arr_nsq[blk_index].org_delta_qp = 0;
+
+        // Coded Tree
+        context_ptr->md_cu_arr_nsq[blk_index].leaf_index=0;
+        context_ptr->md_cu_arr_nsq[blk_index].split_flag = 0;
+        context_ptr->md_cu_arr_nsq[blk_index].skip_flag = 0;
+        context_ptr->md_cu_arr_nsq[blk_index].mdc_split_flag = 0;
+
+        //MacroBlockD                *av1xd;
+        // uint8_t ref_mv_count[MODE_CTX_REF_FRAMES];
+        for (int i = 0; i < MODE_CTX_REF_FRAMES; i++) {
+            context_ptr->md_cu_arr_nsq[blk_index].inter_mode_ctx[i];
+            context_ptr->md_cu_arr_nsq[blk_index].ref_mvs[i][0];
+            context_ptr->md_cu_arr_nsq[blk_index].ref_mvs[i][1];
+        }
+        context_ptr->md_cu_arr_nsq[blk_index].drl_index = 0;
+        context_ptr->md_cu_arr_nsq[blk_index].pred_mode = 0;
+        context_ptr->md_cu_arr_nsq[blk_index].predmv[0].as_int = 0;
+        context_ptr->md_cu_arr_nsq[blk_index].predmv[1].as_int = 0;
+        context_ptr->md_cu_arr_nsq[blk_index].skip_coeff_context = 0;
+        context_ptr->md_cu_arr_nsq[blk_index].reference_mode_context = 0;
+        context_ptr->md_cu_arr_nsq[blk_index].compoud_reference_type_context = 0;
+        for (int i = 0; i < 3; i++) {
+            memset(context_ptr->md_cu_arr_nsq[blk_index].quantized_dc[i], 0, sizeof(int32_t) * MAX_TXB_COUNT);
+        }
+
+        context_ptr->md_cu_arr_nsq[blk_index].is_inter_ctx = 0;
+        context_ptr->md_cu_arr_nsq[blk_index].interp_filters = 0;
+        context_ptr->md_cu_arr_nsq[blk_index].part = 0;
+        context_ptr->md_cu_arr_nsq[blk_index].shape = 0;
+        context_ptr->md_cu_arr_nsq[blk_index].mds_idx = 0;     //equivalent of leaf_index in the nscu context. we will keep both for now and use the right one on a case by case basis.
+        //uint8_t                    *neigh_left_recon[3];  //only for MD
+        //uint8_t                    *neigh_top_recon[3];
+        context_ptr->md_cu_arr_nsq[blk_index].best_d1_blk = 0;
+        context_ptr->md_cu_arr_nsq[blk_index].tx_depth = 0;
+
+        blk_index++;
+    }
+}
+void copy_split_flag(
+    uint64_t max_block_cnt,
+    MdcLcuData* src_mdc,
+    MdcLcuData* dst_mdc,
+    ModeDecisionContext *context_ptr) {
+    dst_mdc->leaf_count = src_mdc->leaf_count;
+    EbMdcLeafData *src = src_mdc->leaf_data_array;
+    EbMdcLeafData *dst = dst_mdc->leaf_data_array;
+    uint64_t blk_index = 0;
+    while (blk_index < max_block_cnt){
+        uint32_t mds_idx = context_ptr->md_cu_arr_nsq[blk_index].mds_idx;
+        src[src[blk_index].mds_idx].split_flag = context_ptr->md_cu_arr_nsq[mds_idx].split_flag;
+        blk_index++;
+    }
+}
+void copy_mdc_array_data(
+    uint64_t max_block_cnt,
+    MdcLcuData* src_mdc,
+    MdcLcuData* dst_mdc) {
+    dst_mdc->leaf_count = src_mdc->leaf_count;
+    EbMdcLeafData *src = src_mdc->leaf_data_array;
+    EbMdcLeafData *dst = dst_mdc->leaf_data_array;
+    uint64_t blk_index = 0;
+    while (blk_index < max_block_cnt){
+        dst[blk_index].mds_idx = src[blk_index].mds_idx;
+        dst[blk_index].split_flag = src[blk_index].split_flag;
+        dst[blk_index].early_split_flag = src[blk_index].early_split_flag;
+        dst[blk_index].tot_d1_blocks = src[blk_index].tot_d1_blocks;
+        dst[blk_index].leaf_index = src[blk_index].leaf_index;
+        dst[blk_index].consider_block = src[blk_index].consider_block;
+        dst[blk_index].ol_best_nsq_shape1 = src[blk_index].ol_best_nsq_shape1;
+        dst[blk_index].ol_best_nsq_shape2 = src[blk_index].ol_best_nsq_shape2;
+        dst[blk_index].ol_best_nsq_shape3 = src[blk_index].ol_best_nsq_shape3;
+        dst[blk_index].ol_best_nsq_shape4 = src[blk_index].ol_best_nsq_shape4;
+        dst[blk_index].ol_best_nsq_shape5 = src[blk_index].ol_best_nsq_shape5;
+        dst[blk_index].ol_best_nsq_shape6 = src[blk_index].ol_best_nsq_shape6;
+        dst[blk_index].ol_best_nsq_shape7 = src[blk_index].ol_best_nsq_shape7;
+        dst[blk_index].ol_best_nsq_shape8 = src[blk_index].ol_best_nsq_shape8;
+        dst[blk_index].open_loop_ranking = src[blk_index].open_loop_ranking;
+        dst[blk_index].refined_split_flag = src[blk_index].refined_split_flag;
+        blk_index++;
+    }
+}
+void mpmd_init_split_flags(
+    SequenceControlSet  *sequence_control_set_ptr,
+    PictureControlSet   *picture_control_set_ptr,
+    uint32_t            sb_index) {
+    MdcLcuData *cu_ptr = &picture_control_set_ptr->mpmd_sb_array[sb_index];
+    MdcLcuData *mdc_cu_ptr = &picture_control_set_ptr->mdc_sb_array[sb_index];
+    uint32_t  blk_index = 0;
+    copy_mdc_array_data(sequence_control_set_ptr->max_block_cnt,mdc_cu_ptr,cu_ptr);
+    while (blk_index < sequence_control_set_ptr->max_block_cnt) {
+        const BlockGeom * blk_geom = get_blk_geom_mds(blk_index);
+        cu_ptr->leaf_data_array[blk_index].consider_block = 0;
+        cu_ptr->leaf_data_array[blk_index].split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
+        cu_ptr->leaf_data_array[blk_index].refined_split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
+        blk_index++;
+    }
+}
+void mpmd_forward_considered_blocks(
+    SequenceControlSet *sequence_control_set_ptr,
+    PictureControlSet *picture_control_set_ptr,
+    ModeDecisionContext *context_ptr,
+    uint32_t sb_index) {
+    MdcLcuData *cu_ptr = &picture_control_set_ptr->mpmd_sb_array[sb_index];
+    cu_ptr->leaf_count = 0;
+    uint32_t  blk_index = 0;
+    uint32_t d1_blocks_accumlated,tot_d1_blocks,d1_block_idx;
+    EbBool split_flag;
+    while (blk_index < sequence_control_set_ptr->max_block_cnt)
+    {
+        const BlockGeom * blk_geom = get_blk_geom_mds(blk_index);
+        split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
+        //if the parent sq is inside inject this block
+        uint8_t is_blk_allowed = picture_control_set_ptr->slice_type != I_SLICE ? 1 : (blk_geom->sq_size < 128) ? 1 : 0;
+        //init consider block flag
+        if (sequence_control_set_ptr->sb_geom[sb_index].block_is_inside_md_scan[blk_index] && is_blk_allowed)
+        {
+            tot_d1_blocks =  blk_geom->sq_size == 128 ? 17 :
+                blk_geom->sq_size > 8 ? 25 :
+                blk_geom->sq_size == 8 ? 5 : 1;
+            d1_blocks_accumlated = 0;
+            for (d1_block_idx = 0; d1_block_idx < tot_d1_blocks; d1_block_idx++) {
+                d1_blocks_accumlated += cu_ptr->leaf_data_array[blk_index + d1_block_idx].consider_block ? 1 : 0;
+            }
+
+            for (uint32_t idx = 0; idx < tot_d1_blocks; ++idx) {
+                if (cu_ptr->leaf_data_array[blk_index].consider_block) {
+                    cu_ptr->leaf_data_array[cu_ptr->leaf_count].tot_d1_blocks = d1_blocks_accumlated;
+                    cu_ptr->leaf_data_array[cu_ptr->leaf_count].leaf_index = 0;//valid only for square 85 world. will be removed.
+                    cu_ptr->leaf_data_array[cu_ptr->leaf_count].mds_idx = blk_index;
+                    split_flag = cu_ptr->leaf_data_array[blk_index].refined_split_flag;
+                    cu_ptr->leaf_data_array[cu_ptr->leaf_count++].split_flag = split_flag;
+                }
+                blk_index++;
+            }
+        }
+        blk_index += split_flag ? d1_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth] - tot_d1_blocks : ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth] - tot_d1_blocks;
+        //blk_index += (d1_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth] - tot_d1_blocks);
+    }
+}
+/******************************************************
+* Set mode decision settings
+******************************************************/
+EbErrorType mpmd_settings(
+    SequenceControlSet    *sequence_control_set_ptr,
+    PictureControlSet     *picture_control_set_ptr,
+    uint8_t                enc_mode,
+    ModeDecisionContext   *context_ptr) {
+    EbErrorType return_error = EB_ErrorNone;
+
+    // NFL Level MD       Settings
+    // 0                  MAX_NFL 40
+    // 1                  30
+    // 2                  12
+    // 3                  10
+    // 4                  8
+    // 5                  6
+    // 6                  4
+    // 7                  3
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        if (enc_mode <= ENC_M5)
+            if (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
+                context_ptr->nfl_level = (sequence_control_set_ptr->input_resolution <= INPUT_SIZE_576p_RANGE_OR_LOWER) ? 0 : 1;
+            else
+                context_ptr->nfl_level = 2;
+        else
+            if (picture_control_set_ptr->parent_pcs_ptr->slice_type == I_SLICE)
+                context_ptr->nfl_level = 5;
+            else if (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
+                context_ptr->nfl_level = 6;
+            else
+                context_ptr->nfl_level = 7;
+    else
+    if (enc_mode <= ENC_M5)
+        if (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
+            context_ptr->nfl_level = (sequence_control_set_ptr->input_resolution <= INPUT_SIZE_576p_RANGE_OR_LOWER) ? 0 : 1;
+        else
+            context_ptr->nfl_level = 2;
+    else if(enc_mode <= ENC_M5)
+        if (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
+            context_ptr->nfl_level = 2;
+        else
+            context_ptr->nfl_level = 4;
+    else if (enc_mode <= ENC_M6)
+        if (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
+            context_ptr->nfl_level = 4;
+        else
+            context_ptr->nfl_level = 5;
+    else
+        if (picture_control_set_ptr->parent_pcs_ptr->slice_type == I_SLICE)
+            context_ptr->nfl_level = 5;
+        else if (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
+            context_ptr->nfl_level = 6;
+        else
+            context_ptr->nfl_level = 7;
+
+    // Set Chroma Mode
+    // Level                Settings
+    // CHROMA_MODE_0  0     Full chroma search @ MD
+    // CHROMA_MODE_1  1     Fast chroma search @ MD
+    // CHROMA_MODE_2  2     Chroma blind @ MD + CFL @ EP
+    // CHROMA_MODE_3  3     Chroma blind @ MD + no CFL @ EP
+#if SEARCH_UV_MODE
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        if (enc_mode <= ENC_M6)
+            context_ptr->chroma_level = CHROMA_MODE_1;
+        else
+            if (picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0)
+                context_ptr->chroma_level = CHROMA_MODE_1;
+            else
+                context_ptr->chroma_level = (sequence_control_set_ptr->encoder_bit_depth == EB_8BIT) ?
+                CHROMA_MODE_2 :
+                CHROMA_MODE_3;
+    else
+#if CHROMA_SEARCH_MR
+    if (MR_MODE || USE_MR_CHROMA) // chroma
+        context_ptr->chroma_level = CHROMA_MODE_0;
+    else
+#endif
+#if SEARCH_UV_BASE
+    if (enc_mode <= ENC_M5 && picture_control_set_ptr->temporal_layer_index == 0)
+#else
+    if (enc_mode == ENC_M0)
+#endif
+        context_ptr->chroma_level = CHROMA_MODE_0;
+    else
+#endif
+    if (enc_mode <= ENC_M5)
+        context_ptr->chroma_level = CHROMA_MODE_1;
+    else
+        context_ptr->chroma_level = (sequence_control_set_ptr->encoder_bit_depth == EB_8BIT) ?
+            CHROMA_MODE_2 :
+            CHROMA_MODE_3 ;
+
+    // Set fast loop method
+    // 1 fast loop: SSD_SEARCH not supported
+    // Level                Settings
+    //  0                   Collapsed fast loop
+    //  1                   Decoupled fast loops ( intra/inter)
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        if (enc_mode <= ENC_M5)
+            context_ptr->decouple_intra_inter_fast_loop = 0;
+        else
+            context_ptr->decouple_intra_inter_fast_loop = 1;
+    else
+    context_ptr->decouple_intra_inter_fast_loop = 0;
+
+    // Set the search method when decoupled fast loop is used
+    // Hsan: FULL_SAD_SEARCH not supported
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        if (enc_mode <= ENC_M5)
+            context_ptr->decoupled_fast_loop_search_method = SSD_SEARCH;
+        else
+            context_ptr->decoupled_fast_loop_search_method = FULL_SAD_SEARCH;
+    else if (enc_mode <= ENC_M4)
+            context_ptr->decoupled_fast_loop_search_method = SSD_SEARCH;
+        else
+            context_ptr->decoupled_fast_loop_search_method = FULL_SAD_SEARCH;
+
+    // Set the full loop escape level
+    // Level                Settings
+    // 0                    Off
+    // 1                    On but only INTRA
+    // 2                    On both INTRA and INTER
+#if M9_FULL_LOOP_ESCAPE
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        if (enc_mode <= ENC_M5)
+            context_ptr->full_loop_escape = 0;
+        else
+            context_ptr->full_loop_escape = 2;
+    else if (enc_mode <= ENC_M6)
+        context_ptr->full_loop_escape = 0;
+    else
+        context_ptr->full_loop_escape = 2;
+#else
+    if (enc_mode <= ENC_M7)
+        context_ptr->full_loop_escape = 0;
+    else
+        context_ptr->full_loop_escape = 1;
+#endif
+
+    // Set global MV injection
+    // Level                Settings
+    // 0                    Injection off (Hsan: but not derivation as used by MV ref derivation)
+    // 1                    On
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        if (enc_mode <= ENC_M5)
+            context_ptr->global_mv_injection = 1;
+        else
+            context_ptr->global_mv_injection = 0;
+    else if (enc_mode <= ENC_M7)
+        context_ptr->global_mv_injection = 1;
+    else
+        context_ptr->global_mv_injection = 0;
+
+#if NEW_NEAREST_NEW_INJECTION
+#if NEW_NEAREST_NEW_M1_NREF
+    if (enc_mode <= ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
+#else
+    if (enc_mode == ENC_M0)
+#endif
+        context_ptr->new_nearest_near_comb_injection = 1;
+    else
+        context_ptr->new_nearest_near_comb_injection = 0;
+#endif
+#if ENHANCED_Nx4_4xN_NEW_MV
+#if M1_0_CANDIDATE
+    if (enc_mode <= ENC_M1)
+#else
+    if (enc_mode == ENC_M0)
+#endif
+        context_ptr->nx4_4xn_parent_mv_injection = 1;
+    else
+        context_ptr->nx4_4xn_parent_mv_injection = 0;
+#endif
+#if M9_NEAR_INJECTION
+    // Set NEAR injection
+    // Level                Settings
+    // 0                    Off
+    // 1                    On
+    if (enc_mode <= ENC_M8)
+        context_ptr->near_mv_injection = 1;
+    else
+        //context_ptr->near_mv_injection = 0;
+        context_ptr->near_mv_injection =
+        (picture_control_set_ptr->temporal_layer_index == 0) ?
+            1 :
+            0;
+#endif
+
+    // Set warped motion injection
+    // Level                Settings
+    // 0                    OFF
+    // 1                    On
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if NEW_M0_SC
+            context_ptr->warped_motion_injection = 0;
+#else
+        if (enc_mode <= ENC_M1)
+            context_ptr->warped_motion_injection = 1;
+        else
+            context_ptr->warped_motion_injection = 0;
+#endif
+    else
+    context_ptr->warped_motion_injection = 1;
+
+    // Set unipred3x3 injection
+    // Level                Settings
+    // 0                    OFF
+    // 1                    ON FULL
+    // 2                    Reduced set
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        if (enc_mode <= ENC_M2)
+            context_ptr->unipred3x3_injection = 1;
+        else if (enc_mode <= ENC_M4)
+            context_ptr->unipred3x3_injection = 2;
+        else
+            context_ptr->unipred3x3_injection = 0;
+#if M3_0_CANDIDATE && ! m3_ibc_graph
+    else if (enc_mode <= ENC_M3)
+#else
+    else if (enc_mode <= ENC_M2)
+#endif
+        context_ptr->unipred3x3_injection = 1;
+    else if (enc_mode <= ENC_M4)
+        context_ptr->unipred3x3_injection = 2;
+    else
+        context_ptr->unipred3x3_injection = 0;
+
+    // Set bipred3x3 injection
+    // Level                Settings
+    // 0                    OFF
+    // 1                    ON FULL
+    // 2                    Reduced set
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        if (enc_mode <= ENC_M4)
+            context_ptr->bipred3x3_injection = 1;
+        else
+            context_ptr->bipred3x3_injection = 0;
+#if m3_ibc_graph
+    else if (enc_mode <= ENC_M2)
+#else
+    else if (enc_mode <= ENC_M3)
+#endif
+        context_ptr->bipred3x3_injection = 1;
+    else if (enc_mode <= ENC_M4)
+        context_ptr->bipred3x3_injection = 2;
+    else
+        context_ptr->bipred3x3_injection = 0;
+
+#if PREDICTIVE_ME
+    // Level                Settings
+    // 0                    Level 0: OFF
+    // 1                    Level 1: 7x5 full-pel search + sub-pel refinement off
+    // 2                    Level 2: 7x5 full-pel search +  (H + V) sub-pel refinement only = 4 half-pel + 4 quarter-pel = 8 positions + pred_me_distortion to pa_me_distortion deviation on
+    // 3                    Level 3: 7x5 full-pel search +  (H + V + D only ~ the best) sub-pel refinement = up to 6 half-pel + up to 6  quarter-pel = up to 12 positions + pred_me_distortion to pa_me_distortion deviation on
+    // 4                    Level 4: 7x5 full-pel search +  (H + V + D) sub-pel refinement = 8 half-pel + 8 quarter-pel = 16 positions + pred_me_distortion to pa_me_distortion deviation on
+    // 5                    Level 5: 7x5 full-pel search +  (H + V + D) sub-pel refinement = 8 half-pel + 8 quarter-pel = 16 positions + pred_me_distortion to pa_me_distortion deviation off
+
+    if (picture_control_set_ptr->slice_type != I_SLICE)
+        // Hsan: kept ON for sc_content_detected as ~5% gain for minecraft clip
+#if M2_BAD_SLOPE_COMB && !m2_ibc_graph
+        if (enc_mode <= ENC_M2)
+#else
+        if (enc_mode <= ENC_M1)
+#endif
+            context_ptr->predictive_me_level = 4;
+        else if (enc_mode <= ENC_M4)
+            context_ptr->predictive_me_level = 2;
+        else
+            context_ptr->predictive_me_level = 0;
+    else
+        context_ptr->predictive_me_level = 0;
+#endif
+
+#if AUTO_C1C2
+    // Combine MD Class1&2
+    // 0                    OFF
+    // 1                    ON
+#if M1_0_CANDIDATE
+    context_ptr->combine_class12 = (enc_mode <= ENC_M1) ? 0 : 1;
+#else
+    context_ptr->combine_class12 = (enc_mode == ENC_M0) ? 0 : 1;
+#endif
+#endif
+
+    // Set interpolation filter search blk size
+    // Level                Settings
+    // 0                    ON for 8x8 and above
+    // 1                    ON for 16x16 and above
+    // 2                    ON for 32x32 and above
+    if (enc_mode <= ENC_M4)
+        context_ptr->interpolation_filter_search_blk_size = 0;
+    else
+        context_ptr->interpolation_filter_search_blk_size = 1;
+
+#if PF_N2_SUPPORT
+    // Set PF MD
+    context_ptr->pf_md_mode = PF_OFF;
+#endif
+
+#if SPATIAL_SSE
+    // Derive Spatial SSE Flag
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        if (enc_mode <= ENC_M4)
+            context_ptr->spatial_sse_full_loop = EB_TRUE;
+        else
+            context_ptr->spatial_sse_full_loop = EB_FALSE;
+    else if (enc_mode <= ENC_M4)
+        context_ptr->spatial_sse_full_loop = EB_TRUE;
+    else
+        context_ptr->spatial_sse_full_loop = EB_FALSE;
+
+#endif
+
+#if M9_INTER_SRC_SRC_FAST_LOOP
+    // Derive Spatial SSE Flag
+    if (enc_mode <= ENC_M8)
+        context_ptr->inter_fast_loop_src_src = 0;
+    else
+        context_ptr->inter_fast_loop_src_src = 1;
+#endif
+
+#if BLK_SKIP_DECISION
+    if (context_ptr->chroma_level <= CHROMA_MODE_1)
+        context_ptr->blk_skip_decision = EB_TRUE;
+    else
+        context_ptr->blk_skip_decision = EB_FALSE;
+#endif
+    // Derive Trellis Quant Coeff Optimization Flag
+#if M3_0_CANDIDATE 
+    if (enc_mode <= ENC_M3)
+#else
+    if (enc_mode <= ENC_M2)
+#endif
+        context_ptr->trellis_quant_coeff_optimization = EB_TRUE;
+    else
+        context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
+#if DISABLE_TRELLIS
+    context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
+#endif
+
+    // Derive redundant block
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if M0_SC_CANDIDATE
+        context_ptr->redundant_blk = EB_TRUE;
+#else
+        if (enc_mode >= ENC_M1)
+            context_ptr->redundant_blk = EB_TRUE;
+        else
+            context_ptr->redundant_blk = EB_FALSE;
+#endif
+#if M0_3_CANDIDATE
+    else if (enc_mode >= ENC_M0 && enc_mode <= ENC_M5)
+#else
+    else if (enc_mode >= ENC_M1 && enc_mode <= ENC_M5)
+#endif
+        context_ptr->redundant_blk = EB_TRUE;
+    else
+        context_ptr->redundant_blk = EB_FALSE;
+
+#if FULL_LOOP_SPLIT
+    // Derive md_staging_mode
+    if (enc_mode == ENC_M0)
+        context_ptr->md_staging_mode = 1;
+    else if (enc_mode <= ENC_M4)
+        context_ptr->md_staging_mode = 3;
+    else
+        context_ptr->md_staging_mode = 0; //use fast-loop0->full-loop
+
+    // Derive nic level
+    context_ptr->nic_level = (enc_mode == ENC_M0) ? 0 : 1;
+
+#if USE_MDS3_C1C2_REDUCED_NIC
+    context_ptr->md_staging_mode = 3;
+    context_ptr->nic_level = 1;
+#endif
+#endif
+#if INTER_INTER_WEDGE_OPT
+    // Derive INTER/INTER WEDGE variance TH
+    if (MR_MODE)
+        context_ptr->inter_inter_wedge_variance_th = 0;
+    else //if (enc_mode == ENC_M0)
+#if ORANGE_SET || BLUE_SET
+        context_ptr->inter_inter_wedge_variance_th = 200;
+#else
+        context_ptr->inter_inter_wedge_variance_th = 100;
+#endif
+#endif
+
+#if INTER_DEPTH_SKIP_OPT
+    // Derive MD Exit TH
+    if (MR_MODE)
+        context_ptr->md_exit_th = 0;
+    else //if (enc_mode == ENC_M0)
+#if ORANGE_SET
+        context_ptr->md_exit_th = 20;
+#elif BLUE_SET
+        context_ptr->md_exit_th = 15;
+#else
+        context_ptr->md_exit_th = 10;
+#endif
+#endif
+
+#if DIST_BASED_COUNT_1_PRONE
+    // Derive distortion-based md_stage_0_count proning
+    if (MR_MODE)
+        context_ptr->dist_base_md_stage_0_count_th = (uint64_t) ~0;
+    else //if (enc_mode == ENC_M0)
+#if ORANGE_SET
+        context_ptr->dist_base_md_stage_0_count_th = 25;
+#elif BLUE_SET
+        context_ptr->dist_base_md_stage_0_count_th = 50;
+#else
+        context_ptr->dist_base_md_stage_0_count_th = 75;
+#endif
+#endif
+    return return_error;
+}
+uint8_t md_mode_settings_offset[13] = { 0,0,0,0,0,0,0,0,0,0,0,0,0 };
+EbErrorType mpmd_pass_settings(
+    SequenceControlSet    *sequence_control_set_ptr,
+    PictureControlSet     *picture_control_set_ptr,
+    uint8_t                is_last_md_pass,
+    ModeDecisionContext   *context_ptr) {
+    EbErrorType return_error = EB_ErrorNone;
+    uint8_t enc_mode = picture_control_set_ptr->enc_mode;
+    uint8_t md_mode = enc_mode;
+    if (!is_last_md_pass) {
+        md_mode = md_mode + md_mode_settings_offset[enc_mode];
+    }
+    mpmd_settings(
+        sequence_control_set_ptr,
+        picture_control_set_ptr,
+        md_mode,
+        context_ptr);
+    return return_error;
+}
+#endif
 #if CABAC_UP
 void av1_estimate_syntax_rate___partial(
     MdRateEstimationContext        *md_rate_estimation_array,
@@ -1728,6 +2861,9 @@ void* enc_dec_kernel(void *input_ptr)
     uint32_t                                 lcuRowIndexCount;
     uint32_t                                 picture_width_in_sb;
     MdcLcuData                              *mdcPtr;
+#if MPMD_SB
+    MdcLcuData                              *mpmd_sb;
+#endif
 
     // Variables
     EbBool                                   is16bit;
@@ -1823,6 +2959,9 @@ void* enc_dec_kernel(void *input_ptr)
                     lcuRowIndexStart = (x_lcu_index == picture_width_in_sb - 1 && lcuRowIndexCount == 0) ? y_lcu_index : lcuRowIndexStart;
                     lcuRowIndexCount = (x_lcu_index == picture_width_in_sb - 1) ? lcuRowIndexCount + 1 : lcuRowIndexCount;
                     mdcPtr = &picture_control_set_ptr->mdc_sb_array[sb_index];
+#if MPMD_SB
+                    mpmd_sb = &picture_control_set_ptr->mpmd_sb_array[sb_index];
+#endif
                     context_ptr->sb_index = sb_index;
                     context_ptr->md_context->cu_use_ref_src_flag = (picture_control_set_ptr->parent_pcs_ptr->use_src_ref) && (picture_control_set_ptr->parent_pcs_ptr->edge_results_ptr[sb_index].edge_block_num == EB_FALSE || picture_control_set_ptr->parent_pcs_ptr->sb_flat_noise_array[sb_index]) ? EB_TRUE : EB_FALSE;
 
@@ -1960,10 +3099,110 @@ void* enc_dec_kernel(void *input_ptr)
                             context_ptr->ss_mecontext);
                     }
 
+#if MPMD_SB
+                    uint8_t mpmd_pass_num = 1;
+                    uint8_t mpmd_pass_idx;
+                    uint8_t  is_complete_sb = sequence_control_set_ptr->sb_geom[sb_index].is_complete_sb;
+                    if (picture_control_set_ptr->slice_type != I_SLICE && is_complete_sb) {
+                        for (mpmd_pass_idx = 0; mpmd_pass_idx < mpmd_pass_num; ++mpmd_pass_idx) {
+                            uint8_t mpmd_depth_level = 0;           
+                            init_cu_arr_nsq(
+                                sequence_control_set_ptr->max_block_cnt,
+                                context_ptr->md_context,
+                                sb_index);
+#if MPMD_SB_REF
+                            mpmd_pass_settings(
+                                sequence_control_set_ptr,
+                                picture_control_set_ptr,
+                                0, //is_last_md_pass,
+                                context_ptr->md_context);
+                            mpmd_init_split_flags(
+                                sequence_control_set_ptr,
+                                picture_control_set_ptr,
+                                sb_index);
+#endif
+                            // Save a clean copy of the neighbor arrays 
+                            copy_neighbour_arrays(
+                                picture_control_set_ptr,
+                                context_ptr->md_context,
+                                MD_NEIGHBOR_ARRAY_INDEX, 4,
+                                0,
+                                sb_origin_x,
+                                sb_origin_y);
+                            // Init local cu and ep_pipe
+                            reset_local_cu_cost(context_ptr->md_context);
+                            reset_ep_pipe_sb(context_ptr->md_context);
+
+                            // mode decision for sb
+                            mode_decision_sb(
+                                0,//is_last_adp_stage
+                                sequence_control_set_ptr,
+                                picture_control_set_ptr,
+                                mdcPtr,
+#if MPMD_SB
+                                mpmd_sb,
+#endif
+                                sb_ptr,
+                                sb_origin_x,
+                                sb_origin_y,
+                                sb_index,
+                                context_ptr->ss_mecontext,
+                                context_ptr->md_context);
+                            // Restore the clean copy of the neighbor arrays for next md pass
+                            copy_neighbour_arrays(
+                                picture_control_set_ptr,
+                                context_ptr->md_context,
+                                4, MD_NEIGHBOR_ARRAY_INDEX,
+                                0,
+                                sb_origin_x,
+                                sb_origin_y);
+#if MPMD_SB_REF
+                            // Mark blocks to be concidered in next md pass
+                            mpmd_init_considered_block(
+                                sequence_control_set_ptr,
+                                picture_control_set_ptr,
+                                context_ptr->md_context,
+                                sb_index,
+                                mpmd_depth_level);
+                            // Set split flags and block indexes to be tested in next md pass
+                            mpmd_forward_considered_blocks(
+                                sequence_control_set_ptr,
+                                picture_control_set_ptr,
+                                context_ptr->md_context,
+                                sb_index);
+                            //check_for_errors(sequence_control_set_ptr->max_block_cnt,mpmd_sb, mdcPtr,context_ptr->md_context);
+                            //Update mdc array for next stage
+                            copy_mdc_array_data(sequence_control_set_ptr->max_block_cnt, mpmd_sb, mdcPtr);
+#endif
+
+                        }
+                        // Reset for final pass
+                        reset_local_cu_cost(context_ptr->md_context);
+                        reset_ep_pipe_sb(context_ptr->md_context);
+                        init_cu_arr_nsq(
+                                sequence_control_set_ptr->max_block_cnt,
+                                context_ptr->md_context,
+                                sb_index);
+#if MPMD_SB_REF
+                        mpmd_pass_settings(
+                                sequence_control_set_ptr,
+                                picture_control_set_ptr,
+                                1, //is_last_md_pass,
+                                context_ptr->md_context);
+#endif
+                    }
+#endif
+                    // Final mode decision pass
                     mode_decision_sb(
+#if MPMD_SB
+                        1,
+#endif
                         sequence_control_set_ptr,
                         picture_control_set_ptr,
                         mdcPtr,
+#if MPMD_SB
+                        mpmd_sb,
+#endif
                         sb_ptr,
                         sb_origin_x,
                         sb_origin_y,
