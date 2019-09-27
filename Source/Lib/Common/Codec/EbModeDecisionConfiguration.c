@@ -1302,6 +1302,13 @@ EbErrorType mdc_inter_pu_prediction_av1(
          candidate_buffer_ptr->candidate_ptr->ref_frame_type,
          &mv_unit,
          candidate_buffer_ptr->candidate_ptr->use_intrabc,
+#if OBMC_SUP 
+          SIMPLE_TRANSLATION,
+#endif
+#if OBMC_WSRC
+         0,
+         0,
+#endif
          candidate_buffer_ptr->candidate_ptr->compound_idx,
          &candidate_buffer_ptr->candidate_ptr->interinter_comp,
 #if II_ED

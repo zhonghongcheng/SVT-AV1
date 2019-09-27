@@ -3784,6 +3784,13 @@ EB_EXTERN void av1_encode_pass(
                                     cu_ptr->prediction_unit_array->ref_frame_type,
                                     &context_ptr->mv_unit,
                                     1,// use_intrabc,
+#if OBMC_SUP 
+                                     SIMPLE_TRANSLATION,
+#endif
+#if OBMC_WSRC
+                                    0,
+                                    0,
+#endif
 #if COMP_MODE
                                     1,//compound_idx,
 #endif
@@ -4568,6 +4575,13 @@ EB_EXTERN void av1_encode_pass(
                                     cu_ptr->prediction_unit_array->ref_frame_type,
                                     &context_ptr->mv_unit,
                                     0,//use_intrabc,
+#if OBMC_SUP 
+                                    cu_ptr->prediction_unit_array->motion_mode,
+#endif
+#if OBMC_WSRC
+                                    0,//use_precomputed_obmc,
+                                    0,
+#endif
 #if COMP_MODE
                                     cu_ptr->compound_idx,
 #endif

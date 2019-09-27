@@ -127,3 +127,288 @@ AOM_VAR_NO_LOOP_SSE2(8, 4, 5, 128);
 AOM_VAR_NO_LOOP_SSE2(8, 8, 6, 128);
 AOM_VAR_NO_LOOP_SSE2(8, 16, 7, 128);
 AOM_VAR_NO_LOOP_SSE2(8, 32, 8, 256);
+
+
+
+#if OBMC_MOTION_REFINE // TEMPPPP
+
+    static INLINE const int16_t *av1_get_interp_filter_subpel_kernel(
+        const InterpFilterParams filter_params, const int32_t subpel) {
+        return filter_params.filter_ptr + filter_params.taps * subpel;
+    }
+    DECLARE_ALIGNED(256, static const InterpKernel,
+                av1_bilinear_filters[SUBPEL_SHIFTS]) = {
+  { 0, 0, 0, 128, 0, 0, 0, 0 },  { 0, 0, 0, 120, 8, 0, 0, 0 },
+  { 0, 0, 0, 112, 16, 0, 0, 0 }, { 0, 0, 0, 104, 24, 0, 0, 0 },
+  { 0, 0, 0, 96, 32, 0, 0, 0 },  { 0, 0, 0, 88, 40, 0, 0, 0 },
+  { 0, 0, 0, 80, 48, 0, 0, 0 },  { 0, 0, 0, 72, 56, 0, 0, 0 },
+  { 0, 0, 0, 64, 64, 0, 0, 0 },  { 0, 0, 0, 56, 72, 0, 0, 0 },
+  { 0, 0, 0, 48, 80, 0, 0, 0 },  { 0, 0, 0, 40, 88, 0, 0, 0 },
+  { 0, 0, 0, 32, 96, 0, 0, 0 },  { 0, 0, 0, 24, 104, 0, 0, 0 },
+  { 0, 0, 0, 16, 112, 0, 0, 0 }, { 0, 0, 0, 8, 120, 0, 0, 0 }
+};
+
+    DECLARE_ALIGNED(256, static const InterpKernel,
+                av1_sub_pel_filters_4[SUBPEL_SHIFTS]) = {
+  { 0, 0, 0, 128, 0, 0, 0, 0 },     { 0, 0, -4, 126, 8, -2, 0, 0 },
+  { 0, 0, -8, 122, 18, -4, 0, 0 },  { 0, 0, -10, 116, 28, -6, 0, 0 },
+  { 0, 0, -12, 110, 38, -8, 0, 0 }, { 0, 0, -12, 102, 48, -10, 0, 0 },
+  { 0, 0, -14, 94, 58, -10, 0, 0 }, { 0, 0, -12, 84, 66, -10, 0, 0 },
+  { 0, 0, -12, 76, 76, -12, 0, 0 }, { 0, 0, -10, 66, 84, -12, 0, 0 },
+  { 0, 0, -10, 58, 94, -14, 0, 0 }, { 0, 0, -10, 48, 102, -12, 0, 0 },
+  { 0, 0, -8, 38, 110, -12, 0, 0 }, { 0, 0, -6, 28, 116, -10, 0, 0 },
+  { 0, 0, -4, 18, 122, -8, 0, 0 },  { 0, 0, -2, 8, 126, -4, 0, 0 }
+};
+DECLARE_ALIGNED(256, static const InterpKernel,
+                av1_sub_pel_filters_4smooth[SUBPEL_SHIFTS]) = {
+  { 0, 0, 0, 128, 0, 0, 0, 0 },   { 0, 0, 30, 62, 34, 2, 0, 0 },
+  { 0, 0, 26, 62, 36, 4, 0, 0 },  { 0, 0, 22, 62, 40, 4, 0, 0 },
+  { 0, 0, 20, 60, 42, 6, 0, 0 },  { 0, 0, 18, 58, 44, 8, 0, 0 },
+  { 0, 0, 16, 56, 46, 10, 0, 0 }, { 0, 0, 14, 54, 48, 12, 0, 0 },
+  { 0, 0, 12, 52, 52, 12, 0, 0 }, { 0, 0, 12, 48, 54, 14, 0, 0 },
+  { 0, 0, 10, 46, 56, 16, 0, 0 }, { 0, 0, 8, 44, 58, 18, 0, 0 },
+  { 0, 0, 6, 42, 60, 20, 0, 0 },  { 0, 0, 4, 40, 62, 22, 0, 0 },
+  { 0, 0, 4, 36, 62, 26, 0, 0 },  { 0, 0, 2, 34, 62, 30, 0, 0 }
+};
+DECLARE_ALIGNED(256, static const InterpKernel,
+                av1_sub_pel_filters_8[SUBPEL_SHIFTS]) = {
+  { 0, 0, 0, 128, 0, 0, 0, 0 },      { 0, 2, -6, 126, 8, -2, 0, 0 },
+  { 0, 2, -10, 122, 18, -4, 0, 0 },  { 0, 2, -12, 116, 28, -8, 2, 0 },
+  { 0, 2, -14, 110, 38, -10, 2, 0 }, { 0, 2, -14, 102, 48, -12, 2, 0 },
+  { 0, 2, -16, 94, 58, -12, 2, 0 },  { 0, 2, -14, 84, 66, -12, 2, 0 },
+  { 0, 2, -14, 76, 76, -14, 2, 0 },  { 0, 2, -12, 66, 84, -14, 2, 0 },
+  { 0, 2, -12, 58, 94, -16, 2, 0 },  { 0, 2, -12, 48, 102, -14, 2, 0 },
+  { 0, 2, -10, 38, 110, -14, 2, 0 }, { 0, 2, -8, 28, 116, -12, 2, 0 },
+  { 0, 0, -4, 18, 122, -10, 2, 0 },  { 0, 0, -2, 8, 126, -6, 2, 0 }
+};
+
+DECLARE_ALIGNED(256, static const InterpKernel,
+                av1_sub_pel_filters_8sharp[SUBPEL_SHIFTS]) = {
+  { 0, 0, 0, 128, 0, 0, 0, 0 },         { -2, 2, -6, 126, 8, -2, 2, 0 },
+  { -2, 6, -12, 124, 16, -6, 4, -2 },   { -2, 8, -18, 120, 26, -10, 6, -2 },
+  { -4, 10, -22, 116, 38, -14, 6, -2 }, { -4, 10, -22, 108, 48, -18, 8, -2 },
+  { -4, 10, -24, 100, 60, -20, 8, -2 }, { -4, 10, -24, 90, 70, -22, 10, -2 },
+  { -4, 12, -24, 80, 80, -24, 12, -4 }, { -2, 10, -22, 70, 90, -24, 10, -4 },
+  { -2, 8, -20, 60, 100, -24, 10, -4 }, { -2, 8, -18, 48, 108, -22, 10, -4 },
+  { -2, 6, -14, 38, 116, -22, 10, -4 }, { -2, 6, -10, 26, 120, -18, 8, -2 },
+  { -2, 4, -6, 16, 124, -12, 6, -2 },   { 0, 2, -2, 8, 126, -6, 2, -2 }
+};
+
+DECLARE_ALIGNED(256, static const InterpKernel,
+                av1_sub_pel_filters_8smooth[SUBPEL_SHIFTS]) = {
+  { 0, 0, 0, 128, 0, 0, 0, 0 },     { 0, 2, 28, 62, 34, 2, 0, 0 },
+  { 0, 0, 26, 62, 36, 4, 0, 0 },    { 0, 0, 22, 62, 40, 4, 0, 0 },
+  { 0, 0, 20, 60, 42, 6, 0, 0 },    { 0, 0, 18, 58, 44, 8, 0, 0 },
+  { 0, 0, 16, 56, 46, 10, 0, 0 },   { 0, -2, 16, 54, 48, 12, 0, 0 },
+  { 0, -2, 14, 52, 52, 14, -2, 0 }, { 0, 0, 12, 48, 54, 16, -2, 0 },
+  { 0, 0, 10, 46, 56, 16, 0, 0 },   { 0, 0, 8, 44, 58, 18, 0, 0 },
+  { 0, 0, 6, 42, 60, 20, 0, 0 },    { 0, 0, 4, 40, 62, 22, 0, 0 },
+  { 0, 0, 4, 36, 62, 26, 0, 0 },    { 0, 0, 2, 34, 62, 28, 2, 0 }
+};
+  // For w<=4, MULTITAP_SHARP is the same as EIGHTTAP_REGULAR
+static const InterpFilterParams av1_interp_4tap[SWITCHABLE_FILTERS + 1] = {
+  { (const int16_t *)av1_sub_pel_filters_4, SUBPEL_TAPS, SUBPEL_SHIFTS,
+    EIGHTTAP_REGULAR },
+  { (const int16_t *)av1_sub_pel_filters_4smooth, SUBPEL_TAPS, SUBPEL_SHIFTS,
+    EIGHTTAP_SMOOTH },
+  { (const int16_t *)av1_sub_pel_filters_4, SUBPEL_TAPS, SUBPEL_SHIFTS,
+    EIGHTTAP_REGULAR },
+  { (const int16_t *)av1_bilinear_filters, SUBPEL_TAPS, SUBPEL_SHIFTS,
+    BILINEAR },
+}; 
+static const InterpFilterParams
+    av1_interp_filter_params_list[SWITCHABLE_FILTERS + 1] = {
+      { (const int16_t *)av1_sub_pel_filters_8, SUBPEL_TAPS, SUBPEL_SHIFTS,
+        EIGHTTAP_REGULAR },
+      { (const int16_t *)av1_sub_pel_filters_8smooth, SUBPEL_TAPS,
+        SUBPEL_SHIFTS, EIGHTTAP_SMOOTH },
+      { (const int16_t *)av1_sub_pel_filters_8sharp, SUBPEL_TAPS, SUBPEL_SHIFTS,
+        MULTITAP_SHARP },
+      { (const int16_t *)av1_bilinear_filters, SUBPEL_TAPS, SUBPEL_SHIFTS,
+        BILINEAR }
+    };
+static INLINE const InterpFilterParams *get_4tap_interp_filter_params(
+    const InterpFilter interp_filter) {
+  return &av1_interp_4tap[interp_filter];
+} 
+static INLINE const InterpFilterParams *av1_get_filter(int subpel_search) {
+  assert(subpel_search >= USE_2_TAPS);
+
+  switch (subpel_search) {
+    case USE_2_TAPS: return get_4tap_interp_filter_params(BILINEAR);
+    case USE_4_TAPS: return get_4tap_interp_filter_params(EIGHTTAP_REGULAR);
+    case USE_8_TAPS: return &av1_interp_filter_params_list[EIGHTTAP_REGULAR];
+    default: assert(0); return NULL;
+  }
+}
+
+
+void aom_upsampled_pred_sse2(MACROBLOCKD *xd, const struct AV1Common *const cm,
+                             int mi_row, int mi_col, const MV *const mv,
+                             uint8_t *comp_pred, int width, int height,
+                             int subpel_x_q3, int subpel_y_q3,
+                             const uint8_t *ref, int ref_stride,
+                             int subpel_search) {
+  //// expect xd == NULL only in tests
+  //if (xd != NULL) {
+  //  const MB_MODE_INFO *mi = xd->mi[0];
+  //  const int ref_num = 0;
+  //  const int is_intrabc = is_intrabc_block(mi);
+  //  const struct scale_factors *const sf =
+  //      is_intrabc ? &cm->sf_identity : xd->block_ref_scale_factors[ref_num];
+  //  const int is_scaled = av1_is_scaled(sf);
+
+  //  if (is_scaled) {
+  //    // Note: This is mostly a copy from the >=8X8 case in
+  //    // build_inter_predictors() function, with some small tweaks.
+
+  //    // Some assumptions.
+  //    const int plane = 0;
+
+  //    // Get pre-requisites.
+  //    const struct macroblockd_plane *const pd = &xd->plane[plane];
+  //    const int ssx = pd->subsampling_x;
+  //    const int ssy = pd->subsampling_y;
+  //    assert(ssx == 0 && ssy == 0);
+  //    const struct buf_2d *const dst_buf = &pd->dst;
+  //    const struct buf_2d *const pre_buf =
+  //        is_intrabc ? dst_buf : &pd->pre[ref_num];
+  //    const int mi_x = mi_col * MI_SIZE;
+  //    const int mi_y = mi_row * MI_SIZE;
+
+  //    // Calculate subpel_x/y and x/y_step.
+  //    const int row_start = 0;  // Because ss_y is 0.
+  //    const int col_start = 0;  // Because ss_x is 0.
+  //    const int pre_x = (mi_x + MI_SIZE * col_start) >> ssx;
+  //    const int pre_y = (mi_y + MI_SIZE * row_start) >> ssy;
+  //    int orig_pos_y = pre_y << SUBPEL_BITS;
+  //    orig_pos_y += mv->row * (1 << (1 - ssy));
+  //    int orig_pos_x = pre_x << SUBPEL_BITS;
+  //    orig_pos_x += mv->col * (1 << (1 - ssx));
+  //    int pos_y = sf->scale_value_y(orig_pos_y, sf);
+  //    int pos_x = sf->scale_value_x(orig_pos_x, sf);
+  //    pos_x += SCALE_EXTRA_OFF;
+  //    pos_y += SCALE_EXTRA_OFF;
+
+  //    const int top = -AOM_LEFT_TOP_MARGIN_SCALED(ssy);
+  //    const int left = -AOM_LEFT_TOP_MARGIN_SCALED(ssx);
+  //    const int bottom = (pre_buf->height + AOM_INTERP_EXTEND)
+  //                       << SCALE_SUBPEL_BITS;
+  //    const int right = (pre_buf->width + AOM_INTERP_EXTEND)
+  //                      << SCALE_SUBPEL_BITS;
+  //    pos_y = clamp(pos_y, top, bottom);
+  //    pos_x = clamp(pos_x, left, right);
+
+  //    const uint8_t *const pre =
+  //        pre_buf->buf0 + (pos_y >> SCALE_SUBPEL_BITS) * pre_buf->stride +
+  //        (pos_x >> SCALE_SUBPEL_BITS);
+
+  //    const SubpelParams subpel_params = { sf->x_step_q4, sf->y_step_q4,
+  //                                         pos_x & SCALE_SUBPEL_MASK,
+  //                                         pos_y & SCALE_SUBPEL_MASK };
+
+  //    // Get warp types.
+  //    const WarpedMotionParams *const wm =
+  //        &xd->global_motion[mi->ref_frame[ref_num]];
+  //    const int is_global = is_global_mv_block(mi, wm->wmtype);
+  //    WarpTypesAllowed warp_types;
+  //    warp_types.global_warp_allowed = is_global;
+  //    warp_types.local_warp_allowed = mi->motion_mode == WARPED_CAUSAL;
+
+  //    // Get convolve parameters.
+  //    ConvolveParams conv_params = get_conv_params(0, plane, xd->bd);
+  //    const int_interpfilters filters =
+  //        av1_broadcast_interp_filter(EIGHTTAP_REGULAR);
+
+  //    // Get the inter predictor.
+  //    const int build_for_obmc = 0;
+  //    av1_make_inter_predictor(pre, pre_buf->stride, comp_pred, width,
+  //                             &subpel_params, sf, width, height, &conv_params,
+  //                             filters, &warp_types, mi_x >> pd->subsampling_x,
+  //                             mi_y >> pd->subsampling_y, plane, ref_num, mi,
+  //                             build_for_obmc, xd, cm->allow_warped_motion);
+
+  //    return;
+  //  }
+  //}
+
+  const InterpFilterParams *filter = av1_get_filter(subpel_search);
+  // (TODO:yunqing) 2-tap case uses 4-tap functions since there is no SIMD for
+  // 2-tap yet.
+  int filter_taps = (subpel_search <= USE_4_TAPS) ? 4 : SUBPEL_TAPS;
+
+  if (!subpel_x_q3 && !subpel_y_q3) {
+    if (width >= 16) {
+      int i;
+      assert(!(width & 15));
+      /*Read 16 pixels one row at a time.*/
+      for (i = 0; i < height; i++) {
+        int j;
+        for (j = 0; j < width; j += 16) {
+          xx_storeu_128(comp_pred, xx_loadu_128(ref));
+          comp_pred += 16;
+          ref += 16;
+        }
+        ref += ref_stride - width;
+      }
+    } else if (width >= 8) {
+      int i;
+      assert(!(width & 7));
+      assert(!(height & 1));
+      /*Read 8 pixels two rows at a time.*/
+      for (i = 0; i < height; i += 2) {
+        __m128i s0 = xx_loadl_64(ref + 0 * ref_stride);
+        __m128i s1 = xx_loadl_64(ref + 1 * ref_stride);
+        xx_storeu_128(comp_pred, _mm_unpacklo_epi64(s0, s1));
+        comp_pred += 16;
+        ref += 2 * ref_stride;
+      }
+    } else {
+      int i;
+      assert(!(width & 3));
+      assert(!(height & 3));
+      /*Read 4 pixels four rows at a time.*/
+      for (i = 0; i < height; i++) {
+        const __m128i row0 = xx_loadl_64(ref + 0 * ref_stride);
+        const __m128i row1 = xx_loadl_64(ref + 1 * ref_stride);
+        const __m128i row2 = xx_loadl_64(ref + 2 * ref_stride);
+        const __m128i row3 = xx_loadl_64(ref + 3 * ref_stride);
+        const __m128i reg = _mm_unpacklo_epi64(_mm_unpacklo_epi32(row0, row1),
+                                               _mm_unpacklo_epi32(row2, row3));
+        xx_storeu_128(comp_pred, reg);
+        comp_pred += 16;
+        ref += 4 * ref_stride;
+      }
+    }
+  } else if (!subpel_y_q3) {
+    const int16_t *const kernel =
+        av1_get_interp_filter_subpel_kernel(*filter, subpel_x_q3 << 1);
+    aom_convolve8_horiz(ref, ref_stride, comp_pred, width, kernel, 16, NULL, -1,
+                        width, height);
+  } else if (!subpel_x_q3) {
+    const int16_t *const kernel =
+        av1_get_interp_filter_subpel_kernel(*filter, subpel_y_q3 << 1);
+    aom_convolve8_vert(ref, ref_stride, comp_pred, width, NULL, -1, kernel, 16,
+                       width, height);
+  } else {
+    DECLARE_ALIGNED(16, uint8_t,
+                    temp[((MAX_SB_SIZE * 2 + 16) + 16) * MAX_SB_SIZE]);
+    const int16_t *const kernel_x =
+        av1_get_interp_filter_subpel_kernel(*filter, subpel_x_q3 << 1);
+    const int16_t *const kernel_y =
+        av1_get_interp_filter_subpel_kernel(*filter, subpel_y_q3 << 1);
+    const uint8_t *ref_start = ref - ref_stride * ((filter_taps >> 1) - 1);
+    uint8_t *temp_start_horiz = (subpel_search <= USE_4_TAPS)
+                                    ? temp + (filter_taps >> 1) * MAX_SB_SIZE
+                                    : temp;
+    uint8_t *temp_start_vert = temp + MAX_SB_SIZE * ((filter->taps >> 1) - 1);
+    int intermediate_height =
+        (((height - 1) * 8 + subpel_y_q3) >> 3) + filter_taps;
+    assert(intermediate_height <= (MAX_SB_SIZE * 2 + 16) + 16);
+    aom_convolve8_horiz(ref_start, ref_stride, temp_start_horiz, MAX_SB_SIZE,
+                        kernel_x, 16, NULL, -1, width, intermediate_height);
+    aom_convolve8_vert(temp_start_vert, MAX_SB_SIZE, comp_pred, width, NULL, -1,
+                       kernel_y, 16, width, height);
+  }
+}
+#endif

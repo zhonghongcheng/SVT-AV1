@@ -34,6 +34,19 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
+
+#define OMBC_FLAG            1
+#if OMBC_FLAG
+#define OBMC_SUP             1
+#define OBMC_CLASS           1
+#define OBMC_WSRC            1
+#define OBMC_MOTION_REFINE   1
+#endif
+#define RESET_BUG_FIX   1
+
+
 #define MPMD_SB                            0
 #define MPMD_SB_REF                        0
 #define DEBUG_MPMD_MD                      0
@@ -588,6 +601,9 @@ typedef enum CAND_CLASS {
 #if FI_CLASS
     CAND_CLASS_5,
 #endif
+#if OBMC_CLASS
+    CAND_CLASS_6,
+#endif
     CAND_CLASS_TOTAL
 } CAND_CLASS;
 #else
@@ -789,7 +805,11 @@ enum {
 #if MD_CLASS
 #if II_COMP
 #if FI_CLASS
+#if OBMC_CLASS
+#define MAX_NFL                            110
+#else
 #define MAX_NFL                            85
+#endif
 #else
 #define MAX_NFL                            80
 #endif
@@ -1124,7 +1144,16 @@ typedef enum ATTRIBUTE_PACKED
     SWITCHABLE = SWITCHABLE_FILTERS + 1, /* the last switchable one */
     EXTRA_FILTERS = INTERP_FILTERS_ALL - SWITCHABLE_FILTERS,
 }InterpFilter;
+#if OBMC_MOTION_REFINE
+#define AV1_COMMON Av1Common
 
+enum {
+  USE_2_TAPS_ORIG = 0,  // This is used in temporal filtering.
+  USE_2_TAPS,
+  USE_4_TAPS,
+  USE_8_TAPS,
+} UENUM1BYTE(SUBPEL_SEARCH_TYPE);
+#endif
 typedef struct InterpFilterParams
 {
     const int16_t *filter_ptr;

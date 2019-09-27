@@ -768,6 +768,13 @@ EbErrorType av1_inter_prediction(
     uint8_t                              ref_frame_type,
     MvUnit                               *mv_unit,
     uint8_t                              use_intrabc,
+#if OBMC_SUP 
+    MotionMode                             motion_mode,
+#endif
+#if OBMC_WSRC
+    uint8_t  use_precomputed_obmc,
+    struct ModeDecisionContext * md_context,
+#endif
 #if COMP_MODE
     uint8_t                              compound_idx,
 #endif
@@ -880,6 +887,13 @@ void tf_inter_prediction(
                             0,//ref_frame_type,
                             &mv_unit,
                             0,//use_intrabc,
+#if OBMC_SUP 
+                            SIMPLE_TRANSLATION,
+#endif
+#if OBMC_WSRC
+                            0,
+                            0,
+#endif
 #if COMP_MODE
                             1,//compound_idx not used
 #endif
@@ -935,6 +949,13 @@ void tf_inter_prediction(
                     0,//ref_frame_type,
                     &mv_unit,
                     0,//use_intrabc,
+#if OBMC_SUP 
+                    SIMPLE_TRANSLATION,
+#endif
+#if OBMC_WSRC
+                    0,
+                    0,
+#endif
 #if COMP_MODE
                     1,//compound_idx not used
 #endif

@@ -181,7 +181,11 @@ extern "C" {
         UvPredictionMode uv_mode;
         uint8_t use_intrabc;
         // Only for INTER blocks
+#if OBMC_SUP
+        uint32_t interp_filters;
+#else
         //InterpFilters interp_filters;
+#endif
         MvReferenceFrame ref_frame[2];
         IntMv mv[2];
         PartitionType partition;
@@ -318,6 +322,9 @@ extern "C" {
         TXFM_CONTEXT left_txfm_context_buffer[MAX_MIB_SIZE];
         struct macroblockd_plane plane[MAX_MB_PLANE];
 #endif
+#if OBMC_SUP
+        BLOCK_SIZE sb_type;
+#endif
     } MacroBlockD;
 
     typedef struct Macroblock
@@ -355,6 +362,11 @@ extern "C" {
         uint8_t  is_exhaustive_allowed;
         CRC_CALCULATOR crc_calculator1;
         CRC_CALCULATOR crc_calculator2;
+#if OBMC_MOTION_REFINE
+       // int32_t *wsrc_buf;
+       // int32_t *mask_buf;        
+        unsigned int pred_sse[REF_FRAMES];
+#endif
     } IntraBcContext;
 
     typedef struct CodingUnit

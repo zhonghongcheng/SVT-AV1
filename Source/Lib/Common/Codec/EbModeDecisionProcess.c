@@ -489,6 +489,10 @@ void reset_mode_decision(
 #endif
     }
 
+#if RESET_BUG_FIX
+    if (segment_index == 0) {
+#endif
+
 #if EIGTH_PEL_MV
     picture_control_set_ptr->parent_pcs_ptr->allow_high_precision_mv = picture_control_set_ptr->enc_mode == ENC_M0 &&
         (sequence_control_set_ptr->input_resolution == 0) ? 1 : 0;
@@ -521,6 +525,34 @@ void reset_mode_decision(
         && !picture_control_set_ptr->parent_pcs_ptr->error_resilient_mode;
     picture_control_set_ptr->parent_pcs_ptr->switchable_motion_mode = picture_control_set_ptr->parent_pcs_ptr->allow_warped_motion;
 
+#if OBMC_SUP 
+    // OBMC Level                                   Settings
+    // 0                                            OFF
+    // 1                                            OBMC @(MVP, PME and ME) + 16 NICs
+    // 2                                            OBMC @(MVP, PME and ME) + Opt NICs
+    // 3                                            OBMC @(MVP, PME ) + Opt NICs
+    // 4                                            OBMC @(MVP, PME ) + Opt2 NICs
+    if (picture_control_set_ptr->parent_pcs_ptr->enc_mode == ENC_M0 )
+        picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode =
+            picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0 && picture_control_set_ptr->slice_type != I_SLICE ? 2 : 0;
+    else
+        picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = 0;
+
+#if MR_MODE
+    picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode =
+        picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0 && picture_control_set_ptr->slice_type != I_SLICE ? 1 : 0;
+#endif
+    picture_control_set_ptr->parent_pcs_ptr->switchable_motion_mode =
+        picture_control_set_ptr->parent_pcs_ptr->switchable_motion_mode || picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode;
+
+
+
+       
+#endif
+
+#if RESET_BUG_FIX
+    }
+#endif
     return;
 }
 

@@ -1628,6 +1628,9 @@ void update_av1_mi_map(
 
                 miPtr[miX + miY * mi_stride].mbmi.partition = from_shape_to_part[blk_geom->shape];// cu_ptr->part;
             }
+#if OBMC_SUP
+            miPtr[miX + miY * mi_stride].mbmi.interp_filters = cu_ptr->interp_filters;
+#endif
 #if COMP_EC
             miPtr[miX + miY * mi_stride].mbmi.comp_group_idx = cu_ptr->comp_group_idx;
             miPtr[miX + miY * mi_stride].mbmi.compound_idx = cu_ptr->compound_idx;
@@ -1720,6 +1723,9 @@ void update_mi_map(
 
                 miPtr[miX + miY * mi_stride].mbmi.partition = from_shape_to_part[blk_geom->shape];// cu_ptr->part;
             }
+#if OBMC_SUP
+            miPtr[miX + miY * mi_stride].mbmi.interp_filters = cu_ptr->interp_filters;
+#endif
 #if COMP_EC
             miPtr[miX + miY * mi_stride].mbmi.comp_group_idx = cu_ptr->comp_group_idx;
             miPtr[miX + miY * mi_stride].mbmi.compound_idx   = cu_ptr->compound_idx;
