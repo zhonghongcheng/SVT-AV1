@@ -863,11 +863,12 @@ EbErrorType mode_decision_candidate_buffer_ctor(
 
     if (return_error == EB_ErrorInsufficientResources)
         return EB_ErrorInsufficientResources;
+#if !COST_CLEAN_UP
     //Distortion
     bufferPtr->residual_luma_sad = 0;
 
     bufferPtr->full_lambda_rate = 0;
-
+#endif
     // Costs
     bufferPtr->fast_cost_ptr = fast_cost_ptr;
     bufferPtr->full_cost_ptr = full_cost_ptr;
@@ -7981,10 +7982,10 @@ uint8_t product_full_mode_decision(
     context_ptr->md_local_cu_unit[cu_ptr->mds_idx].cost = *(buffer_ptr_array[lowestCostIndex]->full_cost_ptr);
 #endif
     context_ptr->md_local_cu_unit[cu_ptr->mds_idx].cost = (context_ptr->md_local_cu_unit[cu_ptr->mds_idx].cost - buffer_ptr_array[lowestCostIndex]->candidate_ptr->chroma_distortion) + buffer_ptr_array[lowestCostIndex]->candidate_ptr->chroma_distortion_inter_depth;
-
+#if !COST_CLEAN_UP
     if (candidate_ptr->type == INTRA_MODE)
         context_ptr->md_local_cu_unit[cu_ptr->mds_idx].cost_luma = buffer_ptr_array[lowestCostIndex]->full_cost_luma;
-
+#endif
     context_ptr->md_ep_pipe_sb[cu_ptr->mds_idx].merge_cost = *buffer_ptr_array[lowestCostIndex]->full_cost_merge_ptr;
     context_ptr->md_ep_pipe_sb[cu_ptr->mds_idx].skip_cost = *buffer_ptr_array[lowestCostIndex]->full_cost_skip_ptr;
 
