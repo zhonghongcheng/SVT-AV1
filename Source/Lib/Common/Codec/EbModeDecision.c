@@ -768,6 +768,9 @@ EbErrorType mode_decision_candidate_buffer_ctor(
     ModeDecisionCandidateBuffer **buffer_dbl_ptr,
     uint64_t                       *fast_cost_ptr,
     uint64_t                       *full_cost_ptr,
+#if DISTORTION_WEIGHTING
+    uint64_t                       *full_cost_ptr_id,
+#endif
     uint64_t                       *full_cost_skip_ptr,
     uint64_t                       *full_cost_merge_ptr)
 {
@@ -860,14 +863,19 @@ EbErrorType mode_decision_candidate_buffer_ctor(
 
     if (return_error == EB_ErrorInsufficientResources)
         return EB_ErrorInsufficientResources;
+#if !COST_CLEAN_UP
     //Distortion
     bufferPtr->residual_luma_sad = 0;
 
     bufferPtr->full_lambda_rate = 0;
-
+#endif
     // Costs
     bufferPtr->fast_cost_ptr = fast_cost_ptr;
     bufferPtr->full_cost_ptr = full_cost_ptr;
+#if DISTORTION_WEIGHTING
+
+    bufferPtr->full_cost_ptr_id = full_cost_ptr_id;
+#endif
     bufferPtr->full_cost_skip_ptr = full_cost_skip_ptr;
     bufferPtr->full_cost_merge_ptr = full_cost_merge_ptr;
     return EB_ErrorNone;
@@ -2086,7 +2094,7 @@ void Bipred3x3CandidatesInjection(
 
     return;
 }
-#if 0//EIGTH_PEL_MV
+#if EIGTH_PEL_MV && !EIGHT_PEL_PREDICTIVE_ME
 void eighth_pel_unipred_refinement(
     const SequenceControlSet  *sequence_control_set_ptr,
     PictureControlSet         *picture_control_set_ptr,
@@ -3213,7 +3221,7 @@ void inject_new_nearest_new_comb_candidates(
 #if PRONE_COMP_COMB
     tot_comp_types = 1;
 #endif
-#if NEW_NEAR_FIX 
+#if NEW_NEAR_FIX
     MacroBlockD  *xd = context_ptr->cu_ptr->av1xd;
 #if !SHUT_NEW_NEAR
     uint8_t drli, maxDrlIndex;
@@ -5731,7 +5739,7 @@ void  inject_inter_candidates(
             }
         }
 
-#if 0//EIGTH_PEL_MV
+#if EIGTH_PEL_MV && !EIGHT_PEL_PREDICTIVE_ME
         //----------------------
         // Eighth-pel refinement
         //----------------------
@@ -7968,13 +7976,16 @@ uint8_t product_full_mode_decision(
     }
 
     candidate_ptr = buffer_ptr_array[lowestCostIndex]->candidate_ptr;
-
+#if DISTORTION_WEIGHTING
+    context_ptr->md_local_cu_unit[cu_ptr->mds_idx].cost = *(buffer_ptr_array[lowestCostIndex]->full_cost_ptr_id);
+#else
     context_ptr->md_local_cu_unit[cu_ptr->mds_idx].cost = *(buffer_ptr_array[lowestCostIndex]->full_cost_ptr);
+#endif
     context_ptr->md_local_cu_unit[cu_ptr->mds_idx].cost = (context_ptr->md_local_cu_unit[cu_ptr->mds_idx].cost - buffer_ptr_array[lowestCostIndex]->candidate_ptr->chroma_distortion) + buffer_ptr_array[lowestCostIndex]->candidate_ptr->chroma_distortion_inter_depth;
-
+#if !COST_CLEAN_UP
     if (candidate_ptr->type == INTRA_MODE)
         context_ptr->md_local_cu_unit[cu_ptr->mds_idx].cost_luma = buffer_ptr_array[lowestCostIndex]->full_cost_luma;
-
+#endif
     context_ptr->md_ep_pipe_sb[cu_ptr->mds_idx].merge_cost = *buffer_ptr_array[lowestCostIndex]->full_cost_merge_ptr;
     context_ptr->md_ep_pipe_sb[cu_ptr->mds_idx].skip_cost = *buffer_ptr_array[lowestCostIndex]->full_cost_skip_ptr;
 

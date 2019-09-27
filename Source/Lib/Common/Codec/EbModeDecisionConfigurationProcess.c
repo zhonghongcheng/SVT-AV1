@@ -425,10 +425,18 @@ void av1_set_quantizer(
 
     picture_control_set_ptr->base_qindex = (uint16_t)AOMMAX(picture_control_set_ptr->delta_q_present_flag, q);
     picture_control_set_ptr->y_dc_delta_q = 0;
+
+#if QP_OFF_6
+    picture_control_set_ptr->u_dc_delta_q = 6;
+    picture_control_set_ptr->u_ac_delta_q = 6;
+    picture_control_set_ptr->v_dc_delta_q = 6;
+    picture_control_set_ptr->v_ac_delta_q = 6;
+#else
     picture_control_set_ptr->u_dc_delta_q = 0;
     picture_control_set_ptr->u_ac_delta_q = 0;
     picture_control_set_ptr->v_dc_delta_q = 0;
     picture_control_set_ptr->v_ac_delta_q = 0;
+#endif
     picture_control_set_ptr->qm_y = aom_get_qmlevel(picture_control_set_ptr->base_qindex, picture_control_set_ptr->min_qmlevel, picture_control_set_ptr->max_qmlevel);
     picture_control_set_ptr->qm_u = aom_get_qmlevel(picture_control_set_ptr->base_qindex + picture_control_set_ptr->u_ac_delta_q,
         picture_control_set_ptr->min_qmlevel, picture_control_set_ptr->max_qmlevel);
@@ -759,6 +767,10 @@ EbErrorType mode_decision_configuration_context_ctor(
     EB_MALLOC(ModeDecisionCandidateBuffer*, context_ptr->candidate_buffer, sizeof(ModeDecisionCandidateBuffer), EB_N_PTR);
     uint64_t fast_cost_array = MAX_MODE_COST;
     uint64_t full_cost_array = MAX_MODE_COST;
+#if DISTORTION_WEIGHTING
+
+    uint64_t full_cost_array_id = MAX_MODE_COST;
+#endif
     uint64_t full_cost_skip_ptr = MAX_MODE_COST;
     uint64_t full_cost_merge_ptr = MAX_MODE_COST;
 #define MDC_MODE_DECISION_CANDIDATE_MAX_COUNT 1
@@ -776,6 +788,9 @@ EbErrorType mode_decision_configuration_context_ctor(
             &context_ptr->candidate_buffer,
             &fast_cost_array,
             &full_cost_array,
+#if DISTORTION_WEIGHTING
+            &(full_cost_array_id),
+#endif
             &full_cost_skip_ptr,
             &full_cost_merge_ptr);
         if (return_error == EB_ErrorInsufficientResources)

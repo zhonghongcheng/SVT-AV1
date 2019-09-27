@@ -1507,7 +1507,11 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
     else {
     if (sc_content_detected)
+#if M1_SC_CANDIDATE
+        if (picture_control_set_ptr->enc_mode <= ENC_M0)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
             picture_control_set_ptr->intra_pred_mode = 0;
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
             if (picture_control_set_ptr->temporal_layer_index == 0)
@@ -1528,7 +1532,7 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->intra_pred_mode = 4;
 #if M3_INTRA_PRED_NBASE
 #if m2_ibc_graph
-    else if (picture_control_set_ptr->enc_mode <= ENC_M1) 
+    else if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #else
     else if ((picture_control_set_ptr->enc_mode <= ENC_M1) || (picture_control_set_ptr->enc_mode <= ENC_M2 && picture_control_set_ptr->temporal_layer_index == 0))
 #endif
@@ -1662,7 +1666,7 @@ EbErrorType signal_derivation_multi_processes_oq(
                 if (picture_control_set_ptr->sc_content_detected)
                     picture_control_set_ptr->compound_mode = (picture_control_set_ptr->enc_mode <= ENC_M0) ? 2 : 0;
                 else
-                    picture_control_set_ptr->enc_mode <= ENC_M1 ? 2 : 1;
+                    picture_control_set_ptr->compound_mode = picture_control_set_ptr->enc_mode <= ENC_M1 ? 2 : 1;
 #else
 #if DISABLE_COMP_SC
 #if FULL_COMPOUND_BDRATE

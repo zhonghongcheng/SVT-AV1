@@ -100,7 +100,9 @@ extern "C" {
         PartitionContextType           left_neighbor_partition;
         PartitionContextType           above_neighbor_partition;
         uint64_t                    cost;
+#if !COST_CLEAN_UP
         uint64_t                    cost_luma;
+#endif
         CandidateMv ed_ref_mv_stack[MODE_CTX_REF_FRAMES][MAX_REF_MV_STACK_SIZE];//to be used in MD and EncDec
 #if RED_CU
         uint8_t                     avail_blk_flag ;   //tells whether this CU is tested in MD and have a valid cu data
@@ -169,6 +171,10 @@ extern "C" {
 
         uint64_t                       *fast_cost_array;
         uint64_t                       *full_cost_array;
+#if DISTORTION_WEIGHTING
+        uint64_t                       *full_cost_array_id;
+
+#endif
         uint64_t                       *full_cost_skip_ptr;
         uint64_t                       *full_cost_merge_ptr;
         // Lambda
@@ -473,6 +479,9 @@ extern "C" {
 #endif
 #if DIST_BASED_COUNT_1_PRONE
     uint64_t dist_base_md_stage_0_count_th;
+#endif
+#if DISTORTION_WEIGHTING
+    uint8_t     weight_inter_depth_luma ;
 #endif
   } ModeDecisionContext;
 

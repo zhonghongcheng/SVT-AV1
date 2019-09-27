@@ -604,46 +604,55 @@ void av1_convolve_y_sr_avx2(const uint8_t *src, int32_t src_stride,
                 __m128i s_128[4];
                 __m256i ss_256[4];
 
-                assert(w == 16);
+                assert(!(w % 16));
 
-                s_128[0] =
-                    _mm_loadu_si128((__m128i *)(src_ptr + 0 * src_stride));
-                s_128[1] =
-                    _mm_loadu_si128((__m128i *)(src_ptr + 1 * src_stride));
-                s_128[2] =
-                    _mm_loadu_si128((__m128i *)(src_ptr + 2 * src_stride));
-
-                // Load lines a and b. Line a to lower 128, line b to upper 128
-                const __m256i src01 = _mm256_setr_m128i(s_128[0], s_128[1]);
-                const __m256i src12 = _mm256_setr_m128i(s_128[1], s_128[2]);
-
-                ss_256[0] = _mm256_unpacklo_epi8(src01, src12);
-                ss_256[2] = _mm256_unpackhi_epi8(src01, src12);
-
-                i = h;
+                j = 0;
                 do {
-                    src_ptr += 2 * src_stride;
-                    s_128[3] =
-                        _mm_loadu_si128((__m128i *)(src_ptr + 1 * src_stride));
-                    const __m256i src23 = _mm256_setr_m128i(s_128[2], s_128[3]);
-                    s_128[2] =
-                        _mm_loadu_si128((__m128i *)(src_ptr + 2 * src_stride));
-                    const __m256i src34 = _mm256_setr_m128i(s_128[3], s_128[2]);
-                    ss_256[1] = _mm256_unpacklo_epi8(src23, src34);
-                    ss_256[3] = _mm256_unpackhi_epi8(src23, src34);
+                    const uint8_t *s = src_ptr + j;
+                    uint8_t *d = dst + j;
 
-                    const __m256i res0 = convolve_4tap_avx2(ss_256, coeffs_256);
-                    const __m256i res1 =
-                        convolve_4tap_avx2(ss_256 + 2, coeffs_256);
-                    const __m256i r0 = convolve_y_round_avx2(res0);
-                    const __m256i r1 = convolve_y_round_avx2(res1);
-                    convolve_store_16x2_avx2(r0, r1, dst, dst_stride);
+                    s_128[0] = _mm_loadu_si128((__m128i *)(s + 0 * src_stride));
+                    s_128[1] = _mm_loadu_si128((__m128i *)(s + 1 * src_stride));
+                    s_128[2] = _mm_loadu_si128((__m128i *)(s + 2 * src_stride));
 
-                    ss_256[0] = ss_256[1];
-                    ss_256[2] = ss_256[3];
-                    dst += 2 * dst_stride;
-                    i -= 2;
-                } while (i);
+                    // Load lines a and b. Line a to lower 128, line b to upper
+                    // 128
+                    const __m256i src01 = _mm256_setr_m128i(s_128[0], s_128[1]);
+                    const __m256i src12 = _mm256_setr_m128i(s_128[1], s_128[2]);
+
+                    ss_256[0] = _mm256_unpacklo_epi8(src01, src12);
+                    ss_256[2] = _mm256_unpackhi_epi8(src01, src12);
+
+                    i = h;
+                    do {
+                        s += 2 * src_stride;
+                        s_128[3] =
+                            _mm_loadu_si128((__m128i *)(s + 1 * src_stride));
+                        const __m256i src23 =
+                            _mm256_setr_m128i(s_128[2], s_128[3]);
+                        s_128[2] =
+                            _mm_loadu_si128((__m128i *)(s + 2 * src_stride));
+                        const __m256i src34 =
+                            _mm256_setr_m128i(s_128[3], s_128[2]);
+                        ss_256[1] = _mm256_unpacklo_epi8(src23, src34);
+                        ss_256[3] = _mm256_unpackhi_epi8(src23, src34);
+
+                        const __m256i res0 =
+                            convolve_4tap_avx2(ss_256, coeffs_256);
+                        const __m256i res1 =
+                            convolve_4tap_avx2(ss_256 + 2, coeffs_256);
+                        const __m256i r0 = convolve_y_round_avx2(res0);
+                        const __m256i r1 = convolve_y_round_avx2(res1);
+                        convolve_store_16x2_avx2(r0, r1, d, dst_stride);
+
+                        ss_256[0] = ss_256[1];
+                        ss_256[2] = ss_256[3];
+                        d += 2 * dst_stride;
+                        i -= 2;
+                    } while (i);
+
+                    j += 16;
+                } while (j < w);
             }
         }
     }

@@ -46,6 +46,7 @@ extern "C" {
 #define ONE_SEG_PROCESS                    0
 #endif
 #define FIX_MDC_BUG_INCOMPLETE_SB          1
+#define WARP_UPDATE                        1 // WARP on for MR, M0 ref frame.
 #define DEBUG_2PASS_MDC                    0
 #if DEBUG_2PASS_MDC
 #define DISABLE_RED_CU                     1 // P
@@ -64,11 +65,21 @@ extern "C" {
 #define PRED_CHANGE_5L               1 // Change the MRP in 5L Pictures 3, 5 , 7 and 9 use 1 as the reference, 11, 13, 15 and 17 use 9 as the reference
 #define PRED_CHANGE_MOD              1 // Turn the feature off for M2 and M3
 
+#define W_611                        0 // Distortion weighting + Chroma QP Offset
+#if W_611
+#define DISTORTION_WEIGHTING         1  // Distortion weighting
+#define QP_OFF_6                     1  // Chroma QP Offset
+#endif
 
 #define M0_3_CANDIDATE               1
 #define M1_0_CANDIDATE               1
 #define M3_0_CANDIDATE               1
 #define M0_SC_CANDIDATE              0
+#define M1_SC_CANDIDATE              0
+#define M2_SC_CANDIDATE              0
+#define M3_SC_CANDIDATE              0
+#define M4_SC_CANDIDATE              0
+#define M4_SC_CANDIDATE_1            0
 #define m2_ibc_graph                 0
 #define m3_ibc_graph                 0
 #define m3_nsq_l1                    0
@@ -134,10 +145,25 @@ extern "C" {
 
 //*************************************************//
 #define QPS_QPM_OFF              0
-// Lossless 
+#define RDOQ_CHROMA              1
+
+#define COST_WEIGHTHING_0        0
+#define COST_WEIGHTHING_1        0
+#define COST_CLEAN_UP            0
+
+#if COST_WEIGHTHING_0 || COST_WEIGHTHING_1
+#define   LUMA_DIST_WEIGHT     9/8 // 12/8
+#define   CHROMA_DIST_WEIGHT   6/8 //  8/8
+
+#define   LUMA_COEF_WEIGHT     18/8 // 12/8
+#define   CHROMA_COEF_WEIGHT   12/8 //  8/8
+
+#endif
+
+// Lossless
 #define TX_TYPE_SEARCH_OPT       1
 #define INTERPOLATION_SEARCH_OPT 0
-// Lossy         
+// Lossy
 #define GREEN_BACKUP_0           0
 #define GREEN_BACKUP_1           0
 #define GREEN_BACKUP_2           1
@@ -151,7 +177,7 @@ extern "C" {
 #define ORANGE_SET               0 // <--- set this to 1 to test ORANGE_SET
 
 #if GREEN_SET || BLUE_SET || ORANGE_SET
-#define INTER_INTER_WEDGE_OPT     1                  
+#define INTER_INTER_WEDGE_OPT     1
 #define INTER_DEPTH_SKIP_OPT      1
 #if !GREEN_BACKUP_0 && !GREEN_BACKUP_1 && !GREEN_BACKUP_2
 #define SHUT_NEW_NEAR             1
@@ -160,7 +186,7 @@ extern "C" {
 #define NON_ATB_PATH_BUG_FIX      1
 #endif
 
-#define COMPOUND_OPT              0  
+#define COMPOUND_OPT              0
 #define DIST_BASED_COUNT_2_PRONE  0
 #define DIST_BASED_COUNT_3_PRONE  0
 #define INTER_INTRA_WEDGE_OPT     0
@@ -541,7 +567,7 @@ extern "C" {
 #define MRP_DISABLE_ADDED_CAND_M1                        0
 
 #define EIGTH_PEL_MV                                    1
-#define EIGHT_PEL_PREDICTIVE_ME                         1 // NADER
+#define EIGHT_PEL_PREDICTIVE_ME                         1 // Add eight pel as part of the predictive me.
 #define DISABLE_NSQ_TABLE                               1 // On wil disable the nsq_table ordering algrithm for sc content. This is a temporarily adoption that will be disable once we comeup with a better ordreing mecanisme when MRP i ON.
 #define IMPROVED_SUBPEL_SEARCH                          1
 
