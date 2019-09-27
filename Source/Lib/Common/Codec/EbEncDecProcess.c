@@ -1413,6 +1413,15 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         else
             context_ptr->nx4_4xn_parent_mv_injection = 0;
     else
+
+#elif M3_SC_CANDIDATE
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        if (picture_control_set_ptr->enc_mode <= ENC_M3)
+            context_ptr->nx4_4xn_parent_mv_injection = 1;
+        else
+            context_ptr->nx4_4xn_parent_mv_injection = 0;
+    else
+
 #endif
 #if M1_0_CANDIDATE
        if (picture_control_set_ptr->enc_mode <= ENC_M1)
@@ -1466,7 +1475,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #endif
             context_ptr->unipred3x3_injection = 1;
+#if M4_SC_CANDIDATE_1
+        else if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#else
         else if (picture_control_set_ptr->enc_mode <= ENC_M4)
+#endif
             context_ptr->unipred3x3_injection = 2;
         else
             context_ptr->unipred3x3_injection = 0;
@@ -1593,14 +1606,22 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->blk_skip_decision = EB_FALSE;
 #endif
     // Derive Trellis Quant Coeff Optimization Flag
-#if M3_0_CANDIDATE
-    if (picture_control_set_ptr->enc_mode <= ENC_M3)
-#else
-    if (picture_control_set_ptr->enc_mode <= ENC_M2)
-#endif
-        context_ptr->trellis_quant_coeff_optimization = EB_TRUE;
+#if M3_SC_CANDIDATE
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        if (picture_control_set_ptr->enc_mode <= ENC_M2)
+            context_ptr->trellis_quant_coeff_optimization = EB_TRUE;
+        else
+            context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
     else
-        context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
+#endif
+#if M3_0_CANDIDATE
+        if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#else
+        if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#endif
+            context_ptr->trellis_quant_coeff_optimization = EB_TRUE;
+        else
+            context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
 #if DISABLE_TRELLIS
     context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
 #endif

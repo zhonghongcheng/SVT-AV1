@@ -2317,6 +2317,14 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
     // Set down-sampling method     Settings
     // 0                            0: filtering
     // 1                            1: decimation
+#if M4_SC_CANDIDATE || M4_SC_CANDIDATE_1
+    if (sequence_control_set_ptr->static_config.screen_content_mode == 1)
+        if (sequence_control_set_ptr->static_config.enc_mode <= ENC_M4)
+            sequence_control_set_ptr->down_sampling_method_me_search = ME_FILTERED_DOWNSAMPLED;
+        else
+            sequence_control_set_ptr->down_sampling_method_me_search = ME_DECIMATED_DOWNSAMPLED;
+    else
+#endif
 #if m3_ibc_graph
     if (sequence_control_set_ptr->static_config.enc_mode <= ENC_M2)
 #else
