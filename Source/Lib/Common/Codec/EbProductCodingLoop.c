@@ -7881,19 +7881,6 @@ void md_stage_2(
         candidate_ptr->block_has_coeff = (candidate_ptr->y_has_coeff | candidate_ptr->u_has_coeff | candidate_ptr->v_has_coeff) ? EB_TRUE : EB_FALSE;
 
         //ALL PLANE
-#if COST_WEIGHTHING_0
-        y_coeff_bits  = y_coeff_bits  * LUMA_COEF_WEIGHT;
-        cb_coeff_bits = cb_coeff_bits * CHROMA_COEF_WEIGHT;
-        cr_coeff_bits = cr_coeff_bits * CHROMA_COEF_WEIGHT;
-
-        y_full_distortion[0] = y_full_distortion[0] * LUMA_DIST_WEIGHT;
-        cbFullDistortion[0] = cbFullDistortion[0] * CHROMA_DIST_WEIGHT;
-        crFullDistortion[0] = crFullDistortion[0] * CHROMA_DIST_WEIGHT;
-
-        y_full_distortion[1] = y_full_distortion[1] * LUMA_DIST_WEIGHT;
-        cbFullDistortion[1] = cbFullDistortion[1] * CHROMA_DIST_WEIGHT;
-        crFullDistortion[1] = crFullDistortion[1] * CHROMA_DIST_WEIGHT;
-#endif
         Av1ProductFullCostFuncTable[candidate_ptr->type](
             picture_control_set_ptr,
             context_ptr,
@@ -8550,19 +8537,6 @@ void AV1PerformFullLoop(
         candidate_ptr->block_has_coeff = (candidate_ptr->y_has_coeff | candidate_ptr->u_has_coeff | candidate_ptr->v_has_coeff) ? EB_TRUE : EB_FALSE;
 
         //ALL PLANE
-#if COST_WEIGHTHING_0
-        y_coeff_bits = y_coeff_bits * LUMA_COEF_WEIGHT;
-        cb_coeff_bits = cb_coeff_bits * CHROMA_COEF_WEIGHT;
-        cr_coeff_bits = cr_coeff_bits * CHROMA_COEF_WEIGHT;
-
-        y_full_distortion[0] = y_full_distortion[0] * LUMA_DIST_WEIGHT;
-        cbFullDistortion[0] = cbFullDistortion[0] * CHROMA_DIST_WEIGHT;
-        crFullDistortion[0] = crFullDistortion[0] * CHROMA_DIST_WEIGHT;
-
-        y_full_distortion[1] = y_full_distortion[1] * LUMA_DIST_WEIGHT;
-        cbFullDistortion[1] = cbFullDistortion[1] * CHROMA_DIST_WEIGHT;
-        crFullDistortion[1] = crFullDistortion[1] * CHROMA_DIST_WEIGHT;
-#endif
         Av1ProductFullCostFuncTable[candidate_ptr->type](
             picture_control_set_ptr,
             context_ptr,
@@ -9195,19 +9169,6 @@ void inter_depth_tx_search(
             candidate_ptr->block_has_coeff = (candidate_ptr->y_has_coeff | candidate_ptr->u_has_coeff | candidate_ptr->v_has_coeff) ? EB_TRUE : EB_FALSE;
         }
 
-#if COST_WEIGHTHING_0
-        y_coeff_bits = y_coeff_bits * LUMA_COEF_WEIGHT;
-        cb_coeff_bits = cb_coeff_bits * CHROMA_COEF_WEIGHT;
-        cr_coeff_bits = cr_coeff_bits * CHROMA_COEF_WEIGHT;
-
-        y_full_distortion[0] = y_full_distortion[0] * LUMA_DIST_WEIGHT;
-        cbFullDistortion[0] = cbFullDistortion[0] * CHROMA_DIST_WEIGHT;
-        crFullDistortion[0] = crFullDistortion[0] * CHROMA_DIST_WEIGHT;
-
-        y_full_distortion[1] = y_full_distortion[1] * LUMA_DIST_WEIGHT;
-        cbFullDistortion[1] = cbFullDistortion[1] * CHROMA_DIST_WEIGHT;
-        crFullDistortion[1] = crFullDistortion[1] * CHROMA_DIST_WEIGHT;
-#endif
         Av1ProductFullCostFuncTable[candidate_ptr->type](
             picture_control_set_ptr,
             context_ptr,

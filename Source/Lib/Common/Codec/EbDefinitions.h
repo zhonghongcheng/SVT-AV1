@@ -161,17 +161,18 @@ extern "C" {
 #define RDOQ_CHROMA              1
 
 #define COST_WEIGHTHING_0        0
-#define COST_WEIGHTHING_1        0
-#define COST_CLEAN_UP            0
-
-#if COST_WEIGHTHING_0 || COST_WEIGHTHING_1
-#define   LUMA_DIST_WEIGHT     9/8 // 12/8
-#define   CHROMA_DIST_WEIGHT   6/8 //  8/8
-
-#define   LUMA_COEF_WEIGHT     18/8 // 12/8
-#define   CHROMA_COEF_WEIGHT   12/8 //  8/8
-
+#if COST_WEIGHTHING_0
+#define   L_W 3/2 // 9/8 // 3/2
+#define   C_W   1 // 6/8 //   1
 #endif
+#define COST_WEIGHTHING_1_FAST_LOOP        0
+#define COST_WEIGHTHING_1_FULL_LOOP        0
+#if COST_WEIGHTHING_1_FULL_LOOP
+#define   L_W   1
+#define   C_W 2/3
+#endif
+
+#define COST_CLEAN_UP  0
 
 // Lossless
 #define TX_TYPE_SEARCH_OPT       1
