@@ -36,7 +36,7 @@ extern "C" {
 #endif
 
 
-
+#define QPS_TOWARD_LUMA      0
 #define OMBC_FLAG            1
 #if OMBC_FLAG
 #define OBMC_SUP             1
