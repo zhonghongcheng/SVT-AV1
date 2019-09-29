@@ -4249,6 +4249,8 @@ static void single_motion_search(
     x->errorperbit = context_ptr->full_lambda >> RD_EPB_SHIFT;
     x->errorperbit += (x->errorperbit == 0);
 
+#define INT_MAX       2147483647    // maximum (signed) int value
+
 #if 0
     const int num_planes =  3;// av1_num_planes(cm);
 #endif
