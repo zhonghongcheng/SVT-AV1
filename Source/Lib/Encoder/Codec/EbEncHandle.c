@@ -2536,7 +2536,11 @@ void CopyApiFromApp(
         sequence_control_set_ptr->static_config.look_ahead_distance = cap_look_ahead_distance(&sequence_control_set_ptr->static_config);
 
 #if ALTREF_FILTERING_SUPPORT
+#if ALT_REFS
+    sequence_control_set_ptr->static_config.enable_altrefs = 0;
+#else
     sequence_control_set_ptr->static_config.enable_altrefs = pComponentParameterStructure->enable_altrefs;
+#endif
     sequence_control_set_ptr->static_config.altref_strength = pComponentParameterStructure->altref_strength;
     sequence_control_set_ptr->static_config.altref_nframes = pComponentParameterStructure->altref_nframes;
 #endif

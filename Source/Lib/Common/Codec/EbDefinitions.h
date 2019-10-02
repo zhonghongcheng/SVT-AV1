@@ -34,6 +34,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#define ALIGN_MASTER    1
+#if ALIGN_MASTER
+#define ALT_REFS        1
+#define COMPOUND        1
+#define SHUT_ATB        1
+#define MD_STAGING      1
+#endif
 #define WARP_UPDATE                   1 // WARP on for MR, M0 ref frame.
 #define DEBUG_2PASS_MDC                    0
 #if DEBUG_2PASS_MDC
@@ -58,8 +65,11 @@ extern "C" {
 #define DISTORTION_WEIGHTING         1  // Distortion weighting
 #define QP_OFF_6                     1  // Chroma QP Offset
 #endif
-
+#if ALIGN_MASTER
+#define M0_3_CANDIDATE               0
+#else
 #define M0_3_CANDIDATE               1
+#endif
 #define M1_0_CANDIDATE               1
 #define M3_0_CANDIDATE               1
 #define M0_SC_CANDIDATE              0
@@ -91,9 +101,11 @@ extern "C" {
 #define M2_NSQ_LEVEL_NRF             0
 #define M2_ATB_NRF                   0
 
-
+#if ALIGN_MASTER
+#define FI_INTRA  0
+#else
 #define FI_INTRA  1
-
+#endif
 #if FI_INTRA
 #define FI_MD     1
 #define FI_AVX    1
@@ -530,8 +542,11 @@ extern "C" {
 #endif
 #define AOM_INTERP_EXTEND 4
 #define MRP_DISABLE_ADDED_CAND_M1                        0
-
+#if ALIGN_MASTER
+#define EIGTH_PEL_MV                                    0
+#else
 #define EIGTH_PEL_MV                                    1
+#endif
 #define EIGHT_PEL_PREDICTIVE_ME                         1 // NADER
 #define DISABLE_NSQ_TABLE                               1 // On wil disable the nsq_table ordering algrithm for sc content. This is a temporarily adoption that will be disable once we comeup with a better ordreing mecanisme when MRP i ON.
 #define IMPROVED_SUBPEL_SEARCH                          1
