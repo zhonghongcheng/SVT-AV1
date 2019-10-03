@@ -8883,6 +8883,9 @@ uint8_t shape_rank_th[NUMBER_OF_DEPTH] = {10,10,10,10,10,10}; // Range 0-10;  0:
 *   performs CL (LCU)
 *******************************************/
 EbBool allowed_ns_cu(
+#if MPMD_SB_1PART_IN_FP
+    uint8_t                           is_final_pass,
+#endif
 #if NSQ_EARLY_EXIT
     uint8_t                           skip_remaining_nsq[10],
 #endif
@@ -8898,6 +8901,7 @@ EbBool allowed_ns_cu(
     ModeDecisionContext                *context_ptr,
     uint8_t                            is_complete_sb){
     EbBool  ret = 1;
+#if !MPMD_SB_1PART_IN_FP
 #if NSQ_FIX
     UNUSED(is_complete_sb);
 #else
@@ -8907,11 +8911,15 @@ EbBool allowed_ns_cu(
             ret = 0;
     }
 #endif
+#endif
 #if NSQ_EARLY_EXIT
     if (skip_remaining_nsq[context_ptr->blk_geom->shape]) {
         ret = 0;
         return ret;
     }
+#endif
+#if MPMD_SB_1PART_IN_FP
+    if (is_final_pass && is_complete_sb) return 1;
 #endif
 #if COMBINE_MDC_NSQ_TABLE
     if (is_nsq_table_used) {
@@ -10267,6 +10275,9 @@ void md_encode_block(
 #if TBX_SPLIT_CAP
     uint8_t                          skip_atb,
 #endif
+#if MPMD_SB_1PART_IN_FP
+    uint8_t                          is_final_pass,
+#endif
     ModeDecisionCandidateBuffer    *bestCandidateBuffers[5])
 {
     ModeDecisionCandidateBuffer         **candidateBufferPtrArrayBase = context_ptr->candidate_buffer_ptr_array;
@@ -10401,6 +10412,9 @@ void md_encode_block(
     if (allowed_ns_cu(is_nsq_table_used, nsq_max_shapes_md, context_ptr, is_complete_sb))
 #else
     if (allowed_ns_cu(
+#if MPMD_SB_1PART_IN_FP
+    is_final_pass,
+#endif
 #if NSQ_EARLY_EXIT
        skip_remaining_nsq,
 #endif
@@ -10411,7 +10425,11 @@ void md_encode_block(
 #if COMBINE_MDC_NSQ_TABLE
         picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level,
 #endif
+#if MPMD_LOWER_NSQ_LEVEL_IN_FP
+        is_nsq_table_used, context_ptr->nsq_max_shapes_md, context_ptr, is_complete_sb))
+#else
         is_nsq_table_used, picture_control_set_ptr->parent_pcs_ptr->nsq_max_shapes_md, context_ptr, is_complete_sb))
+#endif
 #endif
     {
 #if !PF_N2_SUPPORT
@@ -11651,6 +11669,9 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #endif
 #if TBX_SPLIT_CAP
                 skip_atb,
+#endif
+#if MPMD_SB_1PART_IN_FP
+                    is_last_md_pass,
 #endif
                     bestCandidateBuffers);
 

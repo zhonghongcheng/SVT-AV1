@@ -1766,6 +1766,19 @@ void reset_ep_pipe_sb(ModeDecisionContext * context_ptr) {
         context_ptr->md_ep_pipe_sb[cu_idx].y_count_non_zero_coeffs[3] = 0;
     }
 }
+
+static PART from_part_to_shape[] = {
+    PART_N,  //PARTITION_NONE,
+    PART_H,  //PARTITION_HORZ,
+    PART_V,  //PARTITION_VERT,
+    PART_S,  //PARTITION_SPLIT
+    PART_HA, //PARTITION_HORZ_A,
+    PART_HB, //PARTITION_HORZ_B,
+    PART_VA, //PARTITION_VERT_A,
+    PART_VB, //PARTITION_VERT_B,
+    PART_H4, //PARTITION_HORZ_4,
+    PART_V4  //PARTITION_VERT_4
+};
 void mpmd_set_child_to_be_considered(
     MdcLcuData *cu_ptr,
     uint32_t    blk_index,
@@ -1880,7 +1893,8 @@ void mpmd_init_considered_block(
     PictureControlSet   *picture_control_set_ptr,
     ModeDecisionContext *context_ptr,
     uint32_t            sb_index,
-    uint8_t             mpmd_depth_level) {
+    uint8_t             mpmd_depth_level,
+    uint8_t             mpmd_1d_level) {
     MdcLcuData *cu_ptr = &picture_control_set_ptr->mpmd_sb_array[sb_index];
     cu_ptr->leaf_count = 0;
     uint32_t  blk_index = 0;
@@ -1944,20 +1958,15 @@ void mpmd_init_considered_block(
                     if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
                         for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
                             const BlockGeom * blk_geom_1d = get_blk_geom_mds(blk_index + block_1d_idx);
-                            // NADER - FORCE SHAPE
-#if DISABLE_NSQ_FROM_MDC
-                            if (1){//sequence_control_set_ptr->static_config.use_input_stat_file) {
-                                if (blk_geom_1d->shape == PART_N) {
-                                    resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                                    resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+#if MPMD_SB_1PART_IN_FP
+                            if (mpmd_1d_level == 0) {
+                                if (blk_geom_1d->shape == from_part_to_shape[context_ptr->md_cu_arr_nsq[blk_geom_1d->sqi_mds].part]) {
+                                    cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
                                 }
-                            }
-                            else
-                            {
-#endif
+                            }else
                                 cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-#if DISABLE_NSQ_FROM_MDC
-                            }
+#else
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
 #endif
                             cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
                         }
@@ -2445,6 +2454,10 @@ EbErrorType mpmd_settings(
     ModeDecisionContext   *context_ptr) {
     EbErrorType return_error = EB_ErrorNone;
 
+#if MPMD_LOWER_NSQ_LEVEL_IN_FP
+    // [0-6] with 0 is the fastest and 6 is the slowest.
+    context_ptr->nsq_max_shapes_md = picture_control_set_ptr->parent_pcs_ptr->nsq_max_shapes_md;
+#endif
     // NFL Level MD       Settings
     // 0                  MAX_NFL 40
     // 1                  30
@@ -3153,9 +3166,85 @@ void* enc_dec_kernel(void *input_ptr)
                     uint8_t mpmd_pass_num = 1;
                     uint8_t mpmd_pass_idx;
                     uint8_t  is_complete_sb = sequence_control_set_ptr->sb_geom[sb_index].is_complete_sb;
-                    if (picture_control_set_ptr->slice_type != I_SLICE && is_complete_sb) {
-                        for (mpmd_pass_idx = 0; mpmd_pass_idx < mpmd_pass_num; ++mpmd_pass_idx) {
-                            uint8_t mpmd_depth_level = 0;           
+                        if (picture_control_set_ptr->slice_type != I_SLICE && is_complete_sb) {
+                            for (mpmd_pass_idx = 0; mpmd_pass_idx < mpmd_pass_num; ++mpmd_pass_idx) {
+                                uint8_t mpmd_depth_level = 0; // 1 SQ PART only
+                                uint8_t mpmd_1d_level = 0; // 1 NSQ PART only
+
+                                init_cu_arr_nsq(
+                                    sequence_control_set_ptr->max_block_cnt,
+                                    context_ptr->md_context,
+                                    sb_index);
+#if MPMD_SB_REF
+                                mpmd_pass_settings(
+                                    sequence_control_set_ptr,
+                                    picture_control_set_ptr,
+                                    0, //is_last_md_pass,
+                                    context_ptr->md_context);
+                                mpmd_init_split_flags(
+                                    sequence_control_set_ptr,
+                                    picture_control_set_ptr,
+                                    sb_index);
+#endif
+                                // Save a clean copy of the neighbor arrays 
+                                copy_neighbour_arrays(
+                                    picture_control_set_ptr,
+                                    context_ptr->md_context,
+                                    MD_NEIGHBOR_ARRAY_INDEX, 4,
+                                    0,
+                                    sb_origin_x,
+                                    sb_origin_y);
+                                // Init local cu and ep_pipe
+                                reset_local_cu_cost(context_ptr->md_context);
+                                reset_ep_pipe_sb(context_ptr->md_context);
+
+                                // mode decision for sb
+                                mode_decision_sb(
+                                    0,//is_last_adp_stage
+                                    sequence_control_set_ptr,
+                                    picture_control_set_ptr,
+                                    mdcPtr,
+#if MPMD_SB
+                                    mpmd_sb,
+#endif
+                                    sb_ptr,
+                                    sb_origin_x,
+                                    sb_origin_y,
+                                    sb_index,
+                                    context_ptr->ss_mecontext,
+                                    context_ptr->md_context);
+                                // Restore the clean copy of the neighbor arrays for next md pass
+                                copy_neighbour_arrays(
+                                    picture_control_set_ptr,
+                                    context_ptr->md_context,
+                                    4, MD_NEIGHBOR_ARRAY_INDEX,
+                                    0,
+                                    sb_origin_x,
+                                    sb_origin_y);
+#if MPMD_SB_REF
+                                // Mark blocks to be concidered in next md pass
+                                mpmd_init_considered_block(
+                                    sequence_control_set_ptr,
+                                    picture_control_set_ptr,
+                                    context_ptr->md_context,
+                                    sb_index,
+                                    mpmd_depth_level,
+                                    mpmd_1d_level);
+                                // Set split flags and block indexes to be tested in next md pass
+                                mpmd_forward_considered_blocks(
+                                    sequence_control_set_ptr,
+                                    picture_control_set_ptr,
+                                    context_ptr->md_context,
+                                    sb_index);
+                                //check_for_errors(sequence_control_set_ptr->max_block_cnt,mpmd_sb, mdcPtr,context_ptr->md_context);
+                                //Update mdc array for next stage
+                                copy_mdc_array_data(sequence_control_set_ptr->max_block_cnt, mpmd_sb, mdcPtr);
+#endif
+
+                            }
+                            // Reset for final pass
+                            reset_local_cu_cost(context_ptr->md_context);
+                            reset_ep_pipe_sb(context_ptr->md_context);
                             init_cu_arr_nsq(
                                 sequence_control_set_ptr->max_block_cnt,
                                 context_ptr->md_context,
@@ -3164,83 +3253,10 @@ void* enc_dec_kernel(void *input_ptr)
                             mpmd_pass_settings(
                                 sequence_control_set_ptr,
                                 picture_control_set_ptr,
-                                0, //is_last_md_pass,
-                                context_ptr->md_context);
-                            mpmd_init_split_flags(
-                                sequence_control_set_ptr,
-                                picture_control_set_ptr,
-                                sb_index);
-#endif
-                            // Save a clean copy of the neighbor arrays 
-                            copy_neighbour_arrays(
-                                picture_control_set_ptr,
-                                context_ptr->md_context,
-                                MD_NEIGHBOR_ARRAY_INDEX, 4,
-                                0,
-                                sb_origin_x,
-                                sb_origin_y);
-                            // Init local cu and ep_pipe
-                            reset_local_cu_cost(context_ptr->md_context);
-                            reset_ep_pipe_sb(context_ptr->md_context);
-
-                            // mode decision for sb
-                            mode_decision_sb(
-                                0,//is_last_adp_stage
-                                sequence_control_set_ptr,
-                                picture_control_set_ptr,
-                                mdcPtr,
-#if MPMD_SB
-                                mpmd_sb,
-#endif
-                                sb_ptr,
-                                sb_origin_x,
-                                sb_origin_y,
-                                sb_index,
-                                context_ptr->ss_mecontext,
-                                context_ptr->md_context);
-                            // Restore the clean copy of the neighbor arrays for next md pass
-                            copy_neighbour_arrays(
-                                picture_control_set_ptr,
-                                context_ptr->md_context,
-                                4, MD_NEIGHBOR_ARRAY_INDEX,
-                                0,
-                                sb_origin_x,
-                                sb_origin_y);
-#if MPMD_SB_REF
-                            // Mark blocks to be concidered in next md pass
-                            mpmd_init_considered_block(
-                                sequence_control_set_ptr,
-                                picture_control_set_ptr,
-                                context_ptr->md_context,
-                                sb_index,
-                                mpmd_depth_level);
-                            // Set split flags and block indexes to be tested in next md pass
-                            mpmd_forward_considered_blocks(
-                                sequence_control_set_ptr,
-                                picture_control_set_ptr,
-                                context_ptr->md_context,
-                                sb_index);
-                            //check_for_errors(sequence_control_set_ptr->max_block_cnt,mpmd_sb, mdcPtr,context_ptr->md_context);
-                            //Update mdc array for next stage
-                            copy_mdc_array_data(sequence_control_set_ptr->max_block_cnt, mpmd_sb, mdcPtr);
-#endif
-
-                        }
-                        // Reset for final pass
-                        reset_local_cu_cost(context_ptr->md_context);
-                        reset_ep_pipe_sb(context_ptr->md_context);
-                        init_cu_arr_nsq(
-                                sequence_control_set_ptr->max_block_cnt,
-                                context_ptr->md_context,
-                                sb_index);
-#if MPMD_SB_REF
-                        mpmd_pass_settings(
-                                sequence_control_set_ptr,
-                                picture_control_set_ptr,
                                 1, //is_last_md_pass,
                                 context_ptr->md_context);
 #endif
-                    }
+                        }
 #endif
                     // Final mode decision pass
                     mode_decision_sb(

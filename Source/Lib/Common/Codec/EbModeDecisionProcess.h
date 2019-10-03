@@ -483,6 +483,9 @@ extern "C" {
 #if DISTORTION_WEIGHTING
     uint8_t     weight_inter_depth_luma ;
 #endif
+#if MPMD_LOWER_NSQ_LEVEL_IN_FP
+    uint8_t nsq_max_shapes_md;
+#endif
   } ModeDecisionContext;
 
     typedef void(*EbAv1LambdaAssignFunc)(

@@ -36,6 +36,8 @@ extern "C" {
 #endif
 #define MPMD_SB                            0
 #define MPMD_SB_REF                        0
+#define MPMD_SB_1PART_IN_FP                0
+#define MPMD_LOWER_NSQ_LEVEL_IN_FP         0
 #define DEBUG_MPMD_MD                      0
 #if DEBUG_MPMD_MD
 #define DISABLE_CABAC_UP                   0
