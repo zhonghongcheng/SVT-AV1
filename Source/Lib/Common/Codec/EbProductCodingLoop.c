@@ -2456,6 +2456,10 @@ void set_md_stage_counts(
 #if II_CLASS
             context_ptr->bypass_stage1[CAND_CLASS_4] = EB_FALSE;
 #endif
+
+#if OBMC_CLASS
+            context_ptr->bypass_stage1[CAND_CLASS_6] = EB_FALSE;
+#endif
         }
 
     else
@@ -2493,6 +2497,9 @@ void set_md_stage_counts(
 #if II_CLASS
             context_ptr->bypass_stage2[CAND_CLASS_4] = EB_TRUE;
 #endif
+#if OBMC_CLASS
+            context_ptr->bypass_stage2[CAND_CLASS_6] = EB_TRUE;
+#endif
         }
     }
     else
@@ -2529,6 +2536,17 @@ void set_md_stage_counts(
     context_ptr->fast1_cand_count[CAND_CLASS_4] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : 16;// context_ptr->fast_cand_count[CAND_CLASS_4];//(picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
 #endif
 #endif
+
+#if OBMC_CLASS
+    if (picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode == 1)
+        context_ptr->fast1_cand_count[CAND_CLASS_6] = 16 ;
+    else if (picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode <= 3)
+        context_ptr->fast1_cand_count[CAND_CLASS_6] =  (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 12 : 4;
+    else
+        context_ptr->fast1_cand_count[CAND_CLASS_6] =   (picture_control_set_ptr->temporal_layer_index == 0 ) ? 12 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 8: 4;
+#endif
+
+
 #if M2_FAST_CAND_COUNT_NRF
     if (picture_control_set_ptr->enc_mode >= ENC_M3 || (picture_control_set_ptr->enc_mode >= ENC_M2 && !picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)) {
 #else
@@ -2621,6 +2639,10 @@ void set_md_stage_counts(
 #endif
 #endif
 
+#if OBMC_CLASS
+    context_ptr->md_stage_2_count[CAND_CLASS_6] = context_ptr->bypass_stage1[CAND_CLASS_6] ? context_ptr->fast1_cand_count[CAND_CLASS_6] : (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : 16;
+#endif
+
     // Set # of md_stage_3 candidates
 #if MR_MODE
     context_ptr->md_stage_3_count[CAND_CLASS_0] = context_ptr->bypass_stage2[CAND_CLASS_0] ? context_ptr->md_stage_2_count[CAND_CLASS_0] : (picture_control_set_ptr->slice_type == I_SLICE) ? 10 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 10 : 10;
@@ -2663,6 +2685,15 @@ void set_md_stage_counts(
 #else
     context_ptr->md_stage_3_count[CAND_CLASS_4] = 16;// context_ptr->fast_cand_count[CAND_CLASS_4];//(picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
 #endif
+#endif
+
+#if OBMC_CLASS    
+    if (picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode == 1)
+        context_ptr->md_stage_3_count[CAND_CLASS_6] = 16 ;
+    else if (picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode <= 3)
+        context_ptr->md_stage_3_count[CAND_CLASS_6] =  (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 12 : 4;
+    else
+        context_ptr->md_stage_3_count[CAND_CLASS_6] =   (picture_control_set_ptr->temporal_layer_index == 0 ) ? 12 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 8: 4;
 #endif
 
 #if AUTO_C1C2
@@ -7850,19 +7881,6 @@ void md_stage_2(
         candidate_ptr->block_has_coeff = (candidate_ptr->y_has_coeff | candidate_ptr->u_has_coeff | candidate_ptr->v_has_coeff) ? EB_TRUE : EB_FALSE;
 
         //ALL PLANE
-#if COST_WEIGHTHING_0
-        y_coeff_bits  = y_coeff_bits  * LUMA_COEF_WEIGHT;
-        cb_coeff_bits = cb_coeff_bits * CHROMA_COEF_WEIGHT;
-        cr_coeff_bits = cr_coeff_bits * CHROMA_COEF_WEIGHT;
-
-        y_full_distortion[0] = y_full_distortion[0] * LUMA_DIST_WEIGHT;
-        cbFullDistortion[0] = cbFullDistortion[0] * CHROMA_DIST_WEIGHT;
-        crFullDistortion[0] = crFullDistortion[0] * CHROMA_DIST_WEIGHT;
-
-        y_full_distortion[1] = y_full_distortion[1] * LUMA_DIST_WEIGHT;
-        cbFullDistortion[1] = cbFullDistortion[1] * CHROMA_DIST_WEIGHT;
-        crFullDistortion[1] = crFullDistortion[1] * CHROMA_DIST_WEIGHT;
-#endif
         Av1ProductFullCostFuncTable[candidate_ptr->type](
             picture_control_set_ptr,
             context_ptr,
@@ -8519,19 +8537,6 @@ void AV1PerformFullLoop(
         candidate_ptr->block_has_coeff = (candidate_ptr->y_has_coeff | candidate_ptr->u_has_coeff | candidate_ptr->v_has_coeff) ? EB_TRUE : EB_FALSE;
 
         //ALL PLANE
-#if COST_WEIGHTHING_0
-        y_coeff_bits = y_coeff_bits * LUMA_COEF_WEIGHT;
-        cb_coeff_bits = cb_coeff_bits * CHROMA_COEF_WEIGHT;
-        cr_coeff_bits = cr_coeff_bits * CHROMA_COEF_WEIGHT;
-
-        y_full_distortion[0] = y_full_distortion[0] * LUMA_DIST_WEIGHT;
-        cbFullDistortion[0] = cbFullDistortion[0] * CHROMA_DIST_WEIGHT;
-        crFullDistortion[0] = crFullDistortion[0] * CHROMA_DIST_WEIGHT;
-
-        y_full_distortion[1] = y_full_distortion[1] * LUMA_DIST_WEIGHT;
-        cbFullDistortion[1] = cbFullDistortion[1] * CHROMA_DIST_WEIGHT;
-        crFullDistortion[1] = crFullDistortion[1] * CHROMA_DIST_WEIGHT;
-#endif
         Av1ProductFullCostFuncTable[candidate_ptr->type](
             picture_control_set_ptr,
             context_ptr,
@@ -8583,6 +8588,9 @@ void move_cu_data(
     CodingUnit *src_cu,
     CodingUnit *dst_cu)
 {
+#if OBMC_SUP
+    dst_cu->interp_filters = src_cu->interp_filters;
+#endif
 #if COMP_MODE
     dst_cu->interinter_comp.type        = src_cu->interinter_comp.type;
     dst_cu->interinter_comp.mask_type   = src_cu->interinter_comp.mask_type;
@@ -8718,6 +8726,11 @@ void move_cu_data(
 void move_cu_data_redund(
     CodingUnit *src_cu,
     CodingUnit *dst_cu){
+
+#if OBMC_SUP
+    dst_cu->interp_filters = src_cu->interp_filters;
+#endif
+
 #if COMP_MODE
     dst_cu->interinter_comp.type = src_cu->interinter_comp.type;
     dst_cu->interinter_comp.mask_type = src_cu->interinter_comp.mask_type;
@@ -9164,19 +9177,6 @@ void inter_depth_tx_search(
             candidate_ptr->block_has_coeff = (candidate_ptr->y_has_coeff | candidate_ptr->u_has_coeff | candidate_ptr->v_has_coeff) ? EB_TRUE : EB_FALSE;
         }
 
-#if COST_WEIGHTHING_0
-        y_coeff_bits = y_coeff_bits * LUMA_COEF_WEIGHT;
-        cb_coeff_bits = cb_coeff_bits * CHROMA_COEF_WEIGHT;
-        cr_coeff_bits = cr_coeff_bits * CHROMA_COEF_WEIGHT;
-
-        y_full_distortion[0] = y_full_distortion[0] * LUMA_DIST_WEIGHT;
-        cbFullDistortion[0] = cbFullDistortion[0] * CHROMA_DIST_WEIGHT;
-        crFullDistortion[0] = crFullDistortion[0] * CHROMA_DIST_WEIGHT;
-
-        y_full_distortion[1] = y_full_distortion[1] * LUMA_DIST_WEIGHT;
-        cbFullDistortion[1] = cbFullDistortion[1] * CHROMA_DIST_WEIGHT;
-        crFullDistortion[1] = crFullDistortion[1] * CHROMA_DIST_WEIGHT;
-#endif
         Av1ProductFullCostFuncTable[candidate_ptr->type](
             picture_control_set_ptr,
             context_ptr,
@@ -11476,6 +11476,10 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #if RED_CU
         context_ptr->md_ep_pipe_sb[blk_idx_mds].merge_cost = 0;
         context_ptr->md_ep_pipe_sb[blk_idx_mds].skip_cost = 0;
+#endif
+
+#if OBMC_WSRC
+        cu_ptr->av1xd->sb_type = blk_geom->bsize;
 #endif
 
         cu_ptr->mds_idx = blk_idx_mds;

@@ -719,6 +719,11 @@ uint64_t av1_intra_fast_cost(
     UNUSED(md_pass);
 #endif
 
+#if COST_WEIGHTHING_0 || COST_WEIGHTHING_1_FAST_LOOP// fast_loop_intra
+    luma_distortion = luma_distortion * L_W;
+    chroma_distortion = chroma_distortion * C_W;
+#endif
+
     if (av1_allow_intrabc(picture_control_set_ptr->parent_pcs_ptr->av1_cm) && candidate_ptr->use_intrabc) {
         uint64_t lumaSad = (LUMA_WEIGHT * luma_distortion) << AV1_COST_PRECISION;
         uint64_t chromaSad = chroma_distortion << AV1_COST_PRECISION;
@@ -749,9 +754,12 @@ uint64_t av1_intra_fast_cost(
 
         rate = mvRate + candidate_ptr->md_rate_estimation_ptr->intrabc_fac_bits[candidate_ptr->use_intrabc];
 
+
         candidate_ptr->fast_luma_rate = rate;
         candidate_ptr->fast_chroma_rate = 0;
-
+#if 0//COST_WEIGHTHING_0 // fast_loop_intra
+        rate = rate * L_W;
+#endif
         lumaSad = (LUMA_WEIGHT * luma_distortion) << AV1_COST_PRECISION;
         chromaSad = chroma_distortion << AV1_COST_PRECISION;
         totalDistortion = lumaSad + chromaSad;
@@ -862,11 +870,20 @@ uint64_t av1_intra_fast_cost(
     if (av1_allow_intrabc(picture_control_set_ptr->parent_pcs_ptr->av1_cm))
         lumaRate += candidate_ptr->md_rate_estimation_ptr->intrabc_fac_bits[candidate_ptr->use_intrabc];
 
+
     chromaRate = (uint32_t)(intraChromaModeBitsNum + intraChromaAngModeBitsNum);
 
     // Keep the Fast Luma and Chroma rate for future use
     candidate_ptr->fast_luma_rate = lumaRate;
     candidate_ptr->fast_chroma_rate = chromaRate;
+#if 0//COST_WEIGHTHING_0 // fast_loop_intra
+    lumaRate = lumaRate * L_W;
+    chromaRate = chromaRate * C_W;
+#endif
+#if COST_WEIGHTHING_1_FAST_LOOP// fast_loop_intra
+    chromaRate = chromaRate * C_W;
+#endif
+
     if (use_ssd) {
         int32_t current_q_index = MAX(0, MIN(QINDEX_RANGE - 1, picture_control_set_ptr->parent_pcs_ptr->base_qindex));
         Dequants *const dequants = &picture_control_set_ptr->parent_pcs_ptr->deq;
@@ -879,7 +896,11 @@ uint64_t av1_intra_fast_cost(
             luma_distortion,
             &rate,
             &lumaSad);
+#if 0//COST_WEIGHTHING_0 // fast_loop_intra
+        lumaRate += (rate * L_W);
+#else
         lumaRate += rate;
+#endif
         totalDistortion = lumaSad;
 
         rate = 0;
@@ -889,7 +910,11 @@ uint64_t av1_intra_fast_cost(
             chroma_distortion,
             &chromaRate,
             &chromaSad);
+#if COST_WEIGHTHING_0 || COST_WEIGHTHING_1_FAST_LOOP// fast_loop_intra
+        chromaRate += (rate * C_W);
+#else
         chromaRate += rate;
+#endif
         totalDistortion += chromaSad;
 
         rate = lumaRate + chromaRate;
@@ -1769,6 +1794,12 @@ uint64_t av1_inter_fast_cost(
     UNUSED(miCol);
     UNUSED(miRow);
 
+
+#if COST_WEIGHTHING_0 || COST_WEIGHTHING_1_FAST_LOOP// fast_loop_inter
+    luma_distortion = luma_distortion * L_W;
+    chroma_distortion = chroma_distortion * C_W;
+#endif
+
     // Luma rate
     uint32_t           lumaRate = 0;
     uint32_t           chromaRate = 0;
@@ -2017,8 +2048,12 @@ uint64_t av1_inter_fast_cost(
         switch (last_motion_mode_allowed) {
         case SIMPLE_TRANSLATION: break;
         case OBMC_CAUSAL:
+#if OBMC_SUP
+            interModeBitsNum += candidate_ptr->md_rate_estimation_ptr->motion_mode_fac_bits1[bsize][motion_mode_rd==OBMC_CAUSAL];
+#else
             assert(motion_mode_rd == SIMPLE_TRANSLATION); // TODO: remove when OBMC added
             interModeBitsNum += candidate_ptr->md_rate_estimation_ptr->motion_mode_fac_bits1[bsize][motion_mode_rd];
+#endif
             break;
         default:
             interModeBitsNum += candidate_ptr->md_rate_estimation_ptr->motion_mode_fac_bits[bsize][motion_mode_rd];
@@ -2058,14 +2093,19 @@ uint64_t av1_inter_fast_cost(
     //            interp_filter[dir] = interpolation_filter
     //    }
     uint32_t isInterRate = candidate_ptr->md_rate_estimation_ptr->intra_inter_fac_bits[cu_ptr->is_inter_ctx][1];
+
     lumaRate = (uint32_t)(referencePictureBitsNum + skipModeRate + interModeBitsNum + mvRate + isInterRate);
+
 
     //chromaRate = intraChromaModeBitsNum + intraChromaAngModeBitsNum;
 
     // Keep the Fast Luma and Chroma rate for future use
     candidate_ptr->fast_luma_rate = lumaRate;
     candidate_ptr->fast_chroma_rate = chromaRate;
-
+#if 0//COST_WEIGHTHING_0 // fast_loop_inter
+    lumaRate = lumaRate * L_W;
+    chromaRate = chromaRate * C_W;
+#endif
     if (use_ssd) {
         int32_t current_q_index = MAX(0, MIN(QINDEX_RANGE - 1, picture_control_set_ptr->parent_pcs_ptr->base_qindex));
         Dequants *const dequants = &picture_control_set_ptr->parent_pcs_ptr->deq;
@@ -2078,7 +2118,11 @@ uint64_t av1_inter_fast_cost(
             luma_distortion,
             &rate,
             &lumaSad);
+#if COST_WEIGHTHING_0 || COST_WEIGHTHING_1_FAST_LOOP// fast_loop_inter
+        lumaRate += (rate * L_W);
+#else
         lumaRate += rate;
+#endif
         totalDistortion = lumaSad;
 
         rate = 0;
@@ -2088,7 +2132,11 @@ uint64_t av1_inter_fast_cost(
             chroma_distortion,
             &chromaRate,
             &chromaSad);
+#if COST_WEIGHTHING_0 || COST_WEIGHTHING_1_FAST_LOOP// fast_loop_inter
+        chromaRate += (rate * C_W);
+#else
         chromaRate += rate;
+#endif
         totalDistortion += chromaSad;
 
         rate = lumaRate + chromaRate;
@@ -2141,7 +2189,11 @@ uint64_t av1_inter_fast_cost(
 #endif
         // Assign fast cost
         if (candidate_ptr->merge_flag) {
+#if COST_WEIGHTHING_0 || COST_WEIGHTHING_1_FAST_LOOP// fast_loop_inter
+            uint64_t skipModeRate = (candidate_ptr->md_rate_estimation_ptr->skip_mode_fac_bits[skipModeCtx][1] * L_W);
+#else
             uint64_t skipModeRate = candidate_ptr->md_rate_estimation_ptr->skip_mode_fac_bits[skipModeCtx][1];
+#endif
             if (skipModeRate < rate)
                 return(RDCOST(lambda, skipModeRate, totalDistortion));
         }
@@ -2404,6 +2456,25 @@ EbErrorType Av1FullCost(
             chromaRate -= (uint64_t)candidate_buffer_ptr->candidate_ptr->md_rate_estimation_ptr->intra_uv_mode_fac_bits[isCflAllowed][candidate_buffer_ptr->candidate_ptr->intra_luma_mode][UV_DC_PRED];
         }
     }
+
+#if COST_WEIGHTHING_1_FULL_LOOP || COST_WEIGHTHING_0
+    y_distortion[0] = y_distortion[0] * L_W;
+    y_distortion[1] = y_distortion[1] * L_W;
+
+    cb_distortion[0] = cb_distortion[0] * C_W;
+    cb_distortion[1] = cb_distortion[1] * C_W;
+
+    cr_distortion[0] = cr_distortion[0] * C_W;
+    cr_distortion[1] = cr_distortion[1] * C_W;
+
+    *y_coeff_bits  = *y_coeff_bits  * L_W;
+    *cb_coeff_bits = *cb_coeff_bits * C_W;
+    *cr_coeff_bits = *cr_coeff_bits * C_W;
+
+    lumaRate = lumaRate * L_W;
+    chromaRate = chromaRate * C_W;
+#endif
+
 #if ATB_RATE_UPGRADE_1
     uint64_t tx_size_bits = 0;
     if (picture_control_set_ptr->parent_pcs_ptr->tx_mode == TX_MODE_SELECT)
@@ -2415,17 +2486,29 @@ EbErrorType Av1FullCost(
             candidate_buffer_ptr->candidate_ptr->block_has_coeff,
             candidate_buffer_ptr->candidate_ptr->type != INTRA_MODE);
 #endif
-
+#if COST_WEIGHTHING_0 || COST_WEIGHTHING_1_FULL_LOOP
+    tx_size_bits = tx_size_bits * L_W;
+    uint64_t skip_fac_bits_non_skip = (uint64_t)(candidate_buffer_ptr->candidate_ptr->md_rate_estimation_ptr->skip_fac_bits[cu_ptr->skip_coeff_context][0] * L_W);
+    uint64_t skip_fac_bits_skip = (uint64_t)(candidate_buffer_ptr->candidate_ptr->md_rate_estimation_ptr->skip_fac_bits[cu_ptr->skip_coeff_context][1] * L_W);
+#endif
     // Coeff rate
 #if  BLK_SKIP_DECISION
 
     if (context_ptr->blk_skip_decision && candidate_buffer_ptr->candidate_ptr->type != INTRA_MODE) {
 #if ATB_RATE_UPGRADE_1
+#if COST_CLEAN_UP
+        uint64_t non_skip_cost = RDCOST(lambda, (*y_coeff_bits + *cb_coeff_bits + *cr_coeff_bits + tx_size_bits + skip_fac_bits_non_skip), (y_distortion[0] + cb_distortion[0] + cr_distortion[0]));
+#else
         uint64_t non_skip_cost = RDCOST(lambda, (*y_coeff_bits + *cb_coeff_bits + *cr_coeff_bits + tx_size_bits + (uint64_t)candidate_buffer_ptr->candidate_ptr->md_rate_estimation_ptr->skip_fac_bits[cu_ptr->skip_coeff_context][0]), (y_distortion[0] + cb_distortion[0] + cr_distortion[0]));
+#endif
 #else
         uint64_t non_skip_cost = RDCOST(lambda, (*y_coeff_bits + *cb_coeff_bits + *cr_coeff_bits + (uint64_t)candidate_buffer_ptr->candidate_ptr->md_rate_estimation_ptr->skip_fac_bits[cu_ptr->skip_coeff_context][0]), (y_distortion[0] + cb_distortion[0] + cr_distortion[0]));
 #endif
+#if COST_CLEAN_UP
+        uint64_t skip_cost = RDCOST(lambda, skip_fac_bits_skip, (y_distortion[1] + cb_distortion[1] + cr_distortion[1]));
+#else
         uint64_t skip_cost = RDCOST(lambda, ((uint64_t)candidate_buffer_ptr->candidate_ptr->md_rate_estimation_ptr->skip_fac_bits[cu_ptr->skip_coeff_context][1]), (y_distortion[1] + cb_distortion[1] + cr_distortion[1]));
+#endif
         if ((candidate_buffer_ptr->candidate_ptr->block_has_coeff == 0) || (skip_cost < non_skip_cost)) {
             y_distortion[0] = y_distortion[1];
             cb_distortion[0] = cb_distortion[1];
@@ -2433,13 +2516,25 @@ EbErrorType Av1FullCost(
             candidate_buffer_ptr->candidate_ptr->block_has_coeff = 0;
         }
         if (candidate_buffer_ptr->candidate_ptr->block_has_coeff)
+#if COST_CLEAN_UP
+            coeffRate = (*y_coeff_bits + *cb_coeff_bits + *cr_coeff_bits + skip_fac_bits_non_skip);
+#else
             coeffRate = (*y_coeff_bits + *cb_coeff_bits + *cr_coeff_bits + (uint64_t)candidate_buffer_ptr->candidate_ptr->md_rate_estimation_ptr->skip_fac_bits[cu_ptr->skip_coeff_context][0]);
+#endif
         else
-            coeffRate = MIN((uint64_t)candidate_buffer_ptr->candidate_ptr->md_rate_estimation_ptr->skip_fac_bits[cu_ptr->skip_coeff_context][1],
-            (*y_coeff_bits + *cb_coeff_bits + *cr_coeff_bits + (uint64_t)candidate_buffer_ptr->candidate_ptr->md_rate_estimation_ptr->skip_fac_bits[cu_ptr->skip_coeff_context][0]));
+#if COST_CLEAN_UP
+            coeffRate = MIN(skip_fac_bits_skip,
+            (*y_coeff_bits + *cb_coeff_bits + *cr_coeff_bits + skip_fac_bits_non_skip));
     }
     else
-        coeffRate = (*y_coeff_bits + *cb_coeff_bits + *cr_coeff_bits + (uint64_t)candidate_buffer_ptr->candidate_ptr->md_rate_estimation_ptr->skip_fac_bits[cu_ptr->skip_coeff_context][0]);
+        coeffRate = (*y_coeff_bits + *cb_coeff_bits + *cr_coeff_bits + skip_fac_bits_non_skip);
+#else
+            coeffRate = MIN((uint64_t)candidate_buffer_ptr->candidate_ptr->md_rate_estimation_ptr->skip_fac_bits[cu_ptr->skip_coeff_context][1],
+                (*y_coeff_bits + *cb_coeff_bits + *cr_coeff_bits + (uint64_t)candidate_buffer_ptr->candidate_ptr->md_rate_estimation_ptr->skip_fac_bits[cu_ptr->skip_coeff_context][0]));
+    }
+    else
+                coeffRate = (*y_coeff_bits + *cb_coeff_bits + *cr_coeff_bits + (uint64_t)candidate_buffer_ptr->candidate_ptr->md_rate_estimation_ptr->skip_fac_bits[cu_ptr->skip_coeff_context][0]);
+#endif
 #else
     coeffRate = (*y_coeff_bits + *cb_coeff_bits + *cr_coeff_bits);
 #endif
@@ -2591,8 +2686,27 @@ EbErrorType  Av1MergeSkipFullCost(
 
     uint64_t skipModeRate = candidate_buffer_ptr->candidate_ptr->md_rate_estimation_ptr->skip_mode_fac_bits[skipModeCtx][1];
 
+#if COST_WEIGHTHING_0 || COST_WEIGHTHING_1_FULL_LOOP
+    y_distortion[0] = y_distortion[0] * L_W;
+    y_distortion[1] = y_distortion[1] * L_W;
+
+    cb_distortion[0] = cb_distortion[0] * C_W;
+    cb_distortion[1] = cb_distortion[1] * C_W;
+
+    cr_distortion[0] = cr_distortion[0] * C_W;
+    cr_distortion[1] = cr_distortion[1] * C_W;
+
+    *y_coeff_bits = *y_coeff_bits  * L_W;
+    *cb_coeff_bits = *cb_coeff_bits * C_W;
+    *cr_coeff_bits = *cr_coeff_bits * C_W;
+
+    candidate_buffer_ptr->candidate_ptr->fast_luma_rate  = candidate_buffer_ptr->candidate_ptr->fast_luma_rate * L_W;
+    candidate_buffer_ptr->candidate_ptr->fast_chroma_rate =candidate_buffer_ptr->candidate_ptr->fast_chroma_rate * C_W;
+#endif
+
     // Coeff rate
     coeffRate = (*y_coeff_bits + *cb_coeff_bits + *cr_coeff_bits);
+
 
     // Compute Merge Cost
     mergeLumaSse = y_distortion[0] << AV1_COST_PRECISION;
@@ -2641,7 +2755,11 @@ EbErrorType  Av1MergeSkipFullCost(
             candidate_buffer_ptr->candidate_ptr->tx_depth,
             candidate_buffer_ptr->candidate_ptr->block_has_coeff,
             candidate_buffer_ptr->candidate_ptr->type != INTRA_MODE);
+#if COST_WEIGHTHING_0 || COST_WEIGHTHING_1_FULL_LOOP
+    tx_size_bits = tx_size_bits * L_W;
+#endif
     mergeRate += tx_size_bits;
+
 #else
 #if ATB_RATE
 #if !SHUT_TX_SIZE_RATE //|| ATB_RATE_UPGRADE_0

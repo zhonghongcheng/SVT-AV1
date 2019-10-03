@@ -3604,7 +3604,12 @@ static int adaptive_qindex_calc(
 #else
         if (sequence_control_set_ptr->static_config.use_input_stat_file && !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && referenced_area_has_non_zero) {
 #endif
+
+#if QPS_TOWARD_LUMA
+            referenced_area_max = 45;
+#else
             referenced_area_max =  sequence_control_set_ptr->input_resolution < 2 ? 40 : 30;
+#endif
             if (referenced_area_avg <= 16)
                 referenced_area_avg = 0;
             // Calculate the QP per frames
@@ -3658,10 +3663,19 @@ static int adaptive_qindex_calc(
 #else
         if (sequence_control_set_ptr->static_config.use_input_stat_file && !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && referenced_area_has_non_zero) {
 #endif
+#if QPS_TOWARD_LUMA
+            referenced_area_max = sequence_control_set_ptr->input_resolution < 2 ? 30 :
+                ((int)referenced_area_avg - (int)picture_control_set_ptr->ref_pic_referenced_area_avg_array[0][0] >= 10) ? 30 : 40;
+#else
             referenced_area_max = 30;
+#endif
             if (picture_control_set_ptr->parent_pcs_ptr->qp_scaling_average_complexity > HIGH_QPS_COMP_THRESHOLD)
                 referenced_area_avg = 0;
+#if QPS_TOWARD_LUMA
+            rc->arf_boost_factor = ((int)referenced_area_avg - (int)picture_control_set_ptr->ref_pic_referenced_area_avg_array[0][0] >= 10 && referenced_area_avg > 20 && picture_control_set_ptr->ref_pic_referenced_area_avg_array[0][0] <= 20) ? (float_t)1.3 : (float_t)1;
+#else
             rc->arf_boost_factor = ((int)referenced_area_avg - (int)picture_control_set_ptr->ref_pic_referenced_area_avg_array[0][0] >= 6 && referenced_area_avg > 20 && picture_control_set_ptr->ref_pic_referenced_area_avg_array[0][0] < 24) ? (float_t)1.3 : (float_t)1;
+#endif
             rc->gfu_boost = (int)(((referenced_area_avg)  * (gf_high - gf_low)) / referenced_area_max) + gf_low;
         }
 #endif

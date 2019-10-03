@@ -34,6 +34,19 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
+#define QPS_TOWARD_LUMA      0
+#define OMBC_FLAG            1
+#if OMBC_FLAG
+#define OBMC_SUP             1
+#define OBMC_CLASS           1
+#define OBMC_WSRC            1
+#define OBMC_MOTION_REFINE   1
+#endif
+#define RESET_BUG_FIX   1
+
+
 #define MPMD_SB                            0
 #define MPMD_SB_REF                        0
 #define MPMD_SB_1PART_IN_FP                0
@@ -150,17 +163,18 @@ extern "C" {
 #define RDOQ_CHROMA              1
 
 #define COST_WEIGHTHING_0        0
-#define COST_WEIGHTHING_1        0
-#define COST_CLEAN_UP            0
-
-#if COST_WEIGHTHING_0 || COST_WEIGHTHING_1
-#define   LUMA_DIST_WEIGHT     9/8 // 12/8
-#define   CHROMA_DIST_WEIGHT   6/8 //  8/8
-
-#define   LUMA_COEF_WEIGHT     18/8 // 12/8
-#define   CHROMA_COEF_WEIGHT   12/8 //  8/8
-
+#if COST_WEIGHTHING_0
+#define   L_W 3/2 // 9/8 // 3/2
+#define   C_W   1 // 6/8 //   1
 #endif
+#define COST_WEIGHTHING_1_FAST_LOOP        0
+#define COST_WEIGHTHING_1_FULL_LOOP        0
+#if COST_WEIGHTHING_1_FULL_LOOP
+#define   L_W   1
+#define   C_W 2/3
+#endif
+
+#define COST_CLEAN_UP  0
 
 // Lossless
 #define TX_TYPE_SEARCH_OPT       1
@@ -590,6 +604,9 @@ typedef enum CAND_CLASS {
 #if FI_CLASS
     CAND_CLASS_5,
 #endif
+#if OBMC_CLASS
+    CAND_CLASS_6,
+#endif
     CAND_CLASS_TOTAL
 } CAND_CLASS;
 #else
@@ -791,7 +808,11 @@ enum {
 #if MD_CLASS
 #if II_COMP
 #if FI_CLASS
+#if OBMC_CLASS
+#define MAX_NFL                            110
+#else
 #define MAX_NFL                            85
+#endif
 #else
 #define MAX_NFL                            80
 #endif
@@ -1126,7 +1147,16 @@ typedef enum ATTRIBUTE_PACKED
     SWITCHABLE = SWITCHABLE_FILTERS + 1, /* the last switchable one */
     EXTRA_FILTERS = INTERP_FILTERS_ALL - SWITCHABLE_FILTERS,
 }InterpFilter;
+#if OBMC_MOTION_REFINE
+#define AV1_COMMON Av1Common
 
+enum {
+  USE_2_TAPS_ORIG = 0,  // This is used in temporal filtering.
+  USE_2_TAPS,
+  USE_4_TAPS,
+  USE_8_TAPS,
+} UENUM1BYTE(SUBPEL_SEARCH_TYPE);
+#endif
 typedef struct InterpFilterParams
 {
     const int16_t *filter_ptr;

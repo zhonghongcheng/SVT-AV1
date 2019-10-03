@@ -3768,9 +3768,14 @@ void* mode_decision_configuration_kernel(void *input_ptr)
                 }
             }
 
+#if !OBMC_MOTION_REFINE
             av1_init3smotion_compensation(&picture_control_set_ptr->ss_cfg, picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr->stride_y);
+#endif
         }
 
+#if OBMC_MOTION_REFINE
+        av1_init3smotion_compensation(&picture_control_set_ptr->ss_cfg, picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr->stride_y);
+#endif
         // Derive MD parameters
         SetMdSettings( // HT Done
             sequence_control_set_ptr,

@@ -1849,6 +1849,52 @@ static INLINE int is_global_mv_block(
             && is_motion_variation_allowed_bsize(bsize);
 }
 
+#if OBMC_SUP
+MotionMode obmc_motion_mode_allowed(
+    const PictureControlSet       *picture_control_set_ptr,
+    const CodingUnit              *cu_ptr,
+    const BlockSize                 bsize,
+    MvReferenceFrame                rf0,
+    MvReferenceFrame                rf1,
+    PredictionMode                  mode)
+{
+
+    if(!picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode)
+        return SIMPLE_TRANSLATION;
+
+
+    if (!picture_control_set_ptr->parent_pcs_ptr->switchable_motion_mode)
+        return SIMPLE_TRANSLATION;
+
+    if (picture_control_set_ptr->parent_pcs_ptr->cur_frame_force_integer_mv == 0) {
+        const TransformationType gm_type =
+            picture_control_set_ptr->parent_pcs_ptr->global_motion[rf0].wmtype;
+        if (is_global_mv_block(mode, bsize, gm_type))
+            return SIMPLE_TRANSLATION;
+    }
+
+    if (is_motion_variation_allowed_bsize(bsize) &&
+        is_inter_mode(mode) &&
+        rf1 != INTRA_FRAME &&
+        !(rf1 > INTRA_FRAME)) // is_motion_variation_allowed_compound
+    {
+        if (!has_overlappable_candidates(cu_ptr)) // check_num_overlappable_neighbors
+            return SIMPLE_TRANSLATION;
+
+        //CHKN if (cu_ptr->prediction_unit_array[0].num_proj_ref >= 1 &&
+        //CHKN     (picture_control_set_ptr->parent_pcs_ptr->allow_warped_motion)) // TODO(JS): when scale is added, put: && !av1_is_scaled(&(xd->block_refs[0]->sf))
+        //CHKN {
+        //CHKN     if (picture_control_set_ptr->parent_pcs_ptr->cur_frame_force_integer_mv)
+        //CHKN         return OBMC_CAUSAL;
+        //CHKN     return WARPED_CAUSAL;
+        //CHKN }
+        return OBMC_CAUSAL;
+    }
+    else
+        return SIMPLE_TRANSLATION;
+}
+#endif
+
 MotionMode motion_mode_allowed(
     const PictureControlSet       *picture_control_set_ptr,
     const CodingUnit              *cu_ptr,
@@ -1910,7 +1956,11 @@ static void write_motion_mode(
     case OBMC_CAUSAL:
         aom_write_symbol(
             ec_writer,
+#if OBMC_SUP
+            motion_mode == OBMC_CAUSAL,
+#else
             SIMPLE_TRANSLATION, // motion_mode == OBMC_CAUSAL, TODO: support OBMC
+#endif
             frame_context->obmc_cdf[bsize],
             2);
         break;

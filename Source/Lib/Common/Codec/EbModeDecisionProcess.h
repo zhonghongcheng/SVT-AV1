@@ -486,6 +486,13 @@ extern "C" {
 #if MPMD_LOWER_NSQ_LEVEL_IN_FP
     uint8_t nsq_max_shapes_md;
 #endif
+#if OBMC_WSRC
+    DECLARE_ALIGNED(16, uint8_t, obmc_buff_0[2 * MAX_MB_PLANE * MAX_SB_SQUARE]);
+    DECLARE_ALIGNED(16, uint8_t, obmc_buff_1[2 * MAX_MB_PLANE * MAX_SB_SQUARE]);
+    DECLARE_ALIGNED(16, int32_t, wsrc_buf[MAX_SB_SQUARE]);
+    DECLARE_ALIGNED(16, int32_t, mask_buf[MAX_SB_SQUARE]);  
+#endif
+
   } ModeDecisionContext;
 
     typedef void(*EbAv1LambdaAssignFunc)(

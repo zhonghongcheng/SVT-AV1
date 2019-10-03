@@ -44,6 +44,13 @@ extern "C" {
         uint8_t                                 ref_frame_type,
         MvUnit                               *mv_unit,
         uint8_t                                  use_intrabc,
+#if OBMC_SUP 
+        MotionMode                             motion_mode,
+#endif
+#if OBMC_WSRC
+        uint8_t  use_precomputed_obmc,
+        struct ModeDecisionContext * md_context,
+#endif
 #if COMP_MODE
         uint8_t                                compound_idx,
 #endif
