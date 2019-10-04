@@ -36,6 +36,7 @@ extern "C" {
 #endif
 
 
+#define FIX_R2R_CABAC_UPDATE   1
 #define QPS_TOWARD_LUMA      0
 #define OMBC_FLAG            1
 #if OMBC_FLAG

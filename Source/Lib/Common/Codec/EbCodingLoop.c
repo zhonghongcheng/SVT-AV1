@@ -2636,6 +2636,10 @@ void perform_intra_coding_loop(
             candidateBuffer->candidate_ptr->type = cu_ptr->prediction_mode_flag;
             candidateBuffer->candidate_ptr->pred_mode = cu_ptr->pred_mode;
 
+#if FIX_R2R_CABAC_UPDATE
+            candidateBuffer->candidate_ptr->filter_intra_mode = cu_ptr->filter_intra_mode;
+#endif
+
             const uint32_t coeff1dOffset = context_ptr->coded_area_sb;
 
             av1_tu_estimate_coeff_bits(
@@ -2954,7 +2958,9 @@ void perform_intra_coding_loop(
 #endif
             candidateBuffer->candidate_ptr->type = cu_ptr->prediction_mode_flag;
             candidateBuffer->candidate_ptr->pred_mode = cu_ptr->pred_mode;
-
+#if FIX_R2R_CABAC_UPDATE
+            candidateBuffer->candidate_ptr->filter_intra_mode = cu_ptr->filter_intra_mode; 
+#endif
             const uint32_t coeff1dOffset = context_ptr->coded_area_sb;
 
             av1_tu_estimate_coeff_bits(
@@ -4022,7 +4028,9 @@ EB_EXTERN void av1_encode_pass(
 #endif
                                     candidateBuffer->candidate_ptr->type = cu_ptr->prediction_mode_flag;
                                     candidateBuffer->candidate_ptr->pred_mode = cu_ptr->pred_mode;
-
+#if FIX_R2R_CABAC_UPDATE
+                                    candidateBuffer->candidate_ptr->filter_intra_mode = cu_ptr->filter_intra_mode; 
+#endif
                                     const uint32_t coeff1dOffset = context_ptr->coded_area_sb;
 
                                     av1_tu_estimate_coeff_bits(
@@ -4940,7 +4948,9 @@ EB_EXTERN void av1_encode_pass(
 #endif
                                     candidateBuffer->candidate_ptr->type = cu_ptr->prediction_mode_flag;
                                     candidateBuffer->candidate_ptr->pred_mode = cu_ptr->pred_mode;
-
+#if FIX_R2R_CABAC_UPDATE
+                                    candidateBuffer->candidate_ptr->filter_intra_mode = cu_ptr->filter_intra_mode; 
+#endif
                                     const uint32_t coeff1dOffset = context_ptr->coded_area_sb;
 
                                     //CHKN add updating eobs[] after CBF decision
@@ -5207,7 +5217,9 @@ EB_EXTERN void av1_encode_pass(
 #endif
                                 candidateBuffer->candidate_ptr->type = cu_ptr->prediction_mode_flag;
                                 candidateBuffer->candidate_ptr->pred_mode = cu_ptr->pred_mode;
-
+#if FIX_R2R_CABAC_UPDATE
+                                candidateBuffer->candidate_ptr->filter_intra_mode = cu_ptr->filter_intra_mode; 
+#endif
                                 const uint32_t coeff1dOffset = context_ptr->coded_area_sb;
 
                                 av1_tu_estimate_coeff_bits(
