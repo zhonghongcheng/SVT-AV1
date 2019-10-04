@@ -35,6 +35,8 @@
 extern "C" {
 #endif
 
+#define CDEF_MR_MODE     1 // Use full CDEF for MR mode
+#define UPDATE_CDEF      1 // Update bit cost estimation for CDEF
 
 #define QPS_TOWARD_LUMA      0
 #define OMBC_FLAG            1

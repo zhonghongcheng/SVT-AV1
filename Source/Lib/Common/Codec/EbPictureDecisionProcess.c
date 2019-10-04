@@ -1346,7 +1346,13 @@ EbErrorType signal_derivation_multi_processes_oq(
     sequence_control_set_ptr = (SequenceControlSet*)picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr;
 #endif
     if (sequence_control_set_ptr->seq_header.enable_cdef && picture_control_set_ptr->allow_intrabc == 0) {
+#if CDEF_MR_MODE
+        if (MR_MODE) {
+            picture_control_set_ptr->cdef_filter_mode = 5;
+        }else if (sc_content_detected)
+#else
         if (sc_content_detected)
+#endif
             if (picture_control_set_ptr->enc_mode <= ENC_M5)
                 picture_control_set_ptr->cdef_filter_mode = 4;
             else

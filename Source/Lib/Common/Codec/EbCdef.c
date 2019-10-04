@@ -18,6 +18,9 @@
 #include "EbCodingUnit.h"
 #include "EbEncDecProcess.h"
 #include "aom_dsp_rtcd.h"
+#if UPDATE_CDEF
+#include "EbRateDistortionCost.h"
+#endif
 
  void copy_sb16_16(uint16_t *dst, int32_t dstride, const uint16_t *src,
     int32_t src_voffset, int32_t src_hoffset, int32_t sstride,
@@ -1377,13 +1380,38 @@ void finish_cdef_search(
     int32_t i;
     int32_t nb_strengths;
     int32_t nb_strength_bits;
+#if !UPDATE_CDEF
     int32_t quantizer;
+#endif
+#if UPDATE_CDEF
+    uint64_t lambda;
+#else
     double lambda;
+#endif
     const int32_t num_planes = 3;
-
+#if UPDATE_CDEF
+    uint16_t qp_index = (uint8_t)picture_control_set_ptr->parent_pcs_ptr->base_qindex;
+    uint32_t fast_lambda;
+    uint32_t full_lambda;
+    uint32_t fast_chroma_lambda;
+    uint32_t full_chroma_lambda;
+    (*av1_lambda_assignment_function_table[picture_control_set_ptr->parent_pcs_ptr->pred_structure])(
+#if LAMBDA_TUNING
+        picture_control_set_ptr->temporal_layer_index,
+#endif
+        &fast_lambda,
+        &full_lambda,
+        &fast_chroma_lambda,
+        &full_chroma_lambda,
+        (uint8_t)picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr->bit_depth,
+        qp_index);
+    lambda = (full_lambda * 120) / 100;
+#else
     quantizer =
         av1_ac_quant_Q3(pPcs->base_qindex, 0, (AomBitDepth)sequence_control_set_ptr->static_config.encoder_bit_depth) >> (sequence_control_set_ptr->static_config.encoder_bit_depth - 8);
     lambda = .12 * quantizer * quantizer / 256.;
+
+#endif
 
     mse[0] = (uint64_t(*)[64])malloc(sizeof(**mse) * nvfb * nhfb);
     mse[1] = (uint64_t(*)[64])malloc(sizeof(**mse) * nvfb * nhfb);
@@ -1429,9 +1457,18 @@ void finish_cdef_search(
         else
             tot_mse = joint_strength_search(best_lev0, nb_strengths, mse[0], sb_count, fast, start_gi, end_gi);
         /* Count superblock signalling cost. */
+#if UPDATE_CDEF
+        const int total_bits = sb_count * i + nb_strengths * CDEF_STRENGTH_BITS *
+                                              (num_planes > 1 ? 2 : 1);
+        const int rate_cost = av1_cost_literal(total_bits);
+        const uint64_t dist = tot_mse * 16;
+        tot_mse = RDCOST(lambda, rate_cost, dist);
+#else
         tot_mse += (uint64_t)(sb_count * lambda * i);
+
         /* Count header signalling cost. */
         tot_mse += (uint64_t)(nb_strengths * lambda * CDEF_STRENGTH_BITS);
+#endif
         if (tot_mse < best_tot_mse) {
             best_tot_mse = tot_mse;
             nb_strength_bits = i;
@@ -1573,8 +1610,14 @@ void av1_cdef_search(
     int32_t i;
     int32_t nb_strengths;
     int32_t nb_strength_bits;
+#if !UPDATE_CDEF
     int32_t quantizer;
+#endif
+#if UPDATE_CDEF
+    uint64_t lambda;
+#else
     double lambda;
+#endif
     const int32_t num_planes = 3;// av1_num_planes(cm);
     const int32_t total_strengths = fast ? REDUCED_TOTAL_STRENGTHS : TOTAL_STRENGTHS;
     DECLARE_ALIGNED(32, uint16_t, inbuf[CDEF_INBUF_SIZE]);
@@ -1587,12 +1630,29 @@ void av1_cdef_search(
     int32_t mid_gi = pPcs->cdf_ref_frame_strenght;
     int32_t start_gi = pPcs->use_ref_frame_cdef_strength && pPcs->cdef_filter_mode == 1 ? (AOMMAX(0, mid_gi - gi_step)) : 0;
     int32_t end_gi = pPcs->use_ref_frame_cdef_strength ? AOMMIN(total_strengths, mid_gi + gi_step) : pPcs->cdef_filter_mode == 1 ? 8 : total_strengths;
-
+#if UPDATE_CDEF
+    uint16_t qp_index = (uint8_t)picture_control_set_ptr->parent_pcs_ptr->base_qindex;
+    uint32_t fast_lambda;
+    uint32_t full_lambda;
+    uint32_t fast_chroma_lambda;
+    uint32_t full_chroma_lambda;
+    (*av1_lambda_assignment_function_table[picture_control_set_ptr->parent_pcs_ptr->pred_structure])(
+#if LAMBDA_TUNING
+        picture_control_set_ptr->temporal_layer_index,
+#endif
+        &fast_lambda,
+        &full_lambda,
+        &fast_chroma_lambda,
+        &full_chroma_lambda,
+        (uint8_t)picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr->bit_depth,
+        qp_index);
+    lambda = (full_lambda * 120) / 100;
+#else
     quantizer =
         //CHKN av1_ac_quant_Q3(cm->base_qindex, 0, cm->bit_depth) >> (cm->bit_depth - 8);
         av1_ac_quant_Q3(pPcs->base_qindex, 0, (AomBitDepth)sequence_control_set_ptr->static_config.encoder_bit_depth) >> (sequence_control_set_ptr->static_config.encoder_bit_depth - 8);
     lambda = .12 * quantizer * quantizer / 256.;
-
+#endif
     //av1_setup_dst_planes(xd->plane, cm->seq_params.sb_size, frame, 0, 0, 0,    num_planes);
 
     mse[0] = (uint64_t(*)[64])aom_malloc(sizeof(**mse) * nvfb * nhfb);
@@ -1762,10 +1822,18 @@ void av1_cdef_search(
             tot_mse = joint_strength_search_dual(best_lev0, best_lev1, nb_strengths, mse, sb_count, fast, start_gi, end_gi);
         else
             tot_mse = joint_strength_search(best_lev0, nb_strengths, mse[0], sb_count, fast, start_gi, end_gi);
+#if UPDATE_CDEF
+        const int total_bits = sb_count * i + nb_strengths * CDEF_STRENGTH_BITS *
+                                              (num_planes > 1 ? 2 : 1);
+        const int rate_cost = av1_cost_literal(total_bits);
+        const uint64_t dist = tot_mse * 16;
+        tot_mse = RDCOST(lambda, rate_cost, dist);
+#else
         /* Count superblock signalling cost. */
         tot_mse += (uint64_t)(sb_count * lambda * i);
         /* Count header signalling cost. */
         tot_mse += (uint64_t)(nb_strengths * lambda * CDEF_STRENGTH_BITS);
+#endif
         if (tot_mse < best_tot_mse) {
             best_tot_mse = tot_mse;
             nb_strength_bits = i;
@@ -1909,8 +1977,14 @@ void av1_cdef_search16bit(
     int32_t i;
     int32_t nb_strengths;
     int32_t nb_strength_bits;
+#if !UPDATE_CDEF
     int32_t quantizer;
+#endif
+#if UPDATE_CDEF
+    uint64_t lambda;
+#else
     double lambda;
+#endif
     const int32_t num_planes = 3;// av1_num_planes(cm);
     const int32_t total_strengths = fast ? REDUCED_TOTAL_STRENGTHS : TOTAL_STRENGTHS;
     DECLARE_ALIGNED(32, uint16_t, inbuf[CDEF_INBUF_SIZE]);
@@ -1923,12 +1997,29 @@ void av1_cdef_search16bit(
     int32_t mid_gi = pPcs->cdf_ref_frame_strenght;
     int32_t start_gi = pPcs->use_ref_frame_cdef_strength && pPcs->cdef_filter_mode == 1 ? (AOMMAX(0, mid_gi - gi_step)) : 0;
     int32_t end_gi = pPcs->use_ref_frame_cdef_strength ? AOMMIN(total_strengths, mid_gi + gi_step) : pPcs->cdef_filter_mode == 1 ? 8 : total_strengths;
-
+#if UPDATE_CDEF
+    uint16_t qp_index = (uint8_t)picture_control_set_ptr->parent_pcs_ptr->base_qindex;
+    uint32_t fast_lambda;
+    uint32_t full_lambda;
+    uint32_t fast_chroma_lambda;
+    uint32_t full_chroma_lambda;
+    (*av1_lambda_assignment_function_table[picture_control_set_ptr->parent_pcs_ptr->pred_structure])(
+#if LAMBDA_TUNING
+        picture_control_set_ptr->temporal_layer_index,
+#endif
+        &fast_lambda,
+        &full_lambda,
+        &fast_chroma_lambda,
+        &full_chroma_lambda,
+        (uint8_t)picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr->bit_depth,
+        qp_index);
+    lambda = (full_lambda * 120) / 100;
+#else
     quantizer =
         //CHKN av1_ac_quant_Q3(cm->base_qindex, 0, cm->bit_depth) >> (cm->bit_depth - 8);
         av1_ac_quant_Q3(pPcs->base_qindex, 0, (AomBitDepth)sequence_control_set_ptr->static_config.encoder_bit_depth) >> (sequence_control_set_ptr->static_config.encoder_bit_depth - 8);
     lambda = .12 * quantizer * quantizer / 256.;
-
+#endif
     //av1_setup_dst_planes(xd->plane, cm->seq_params.sb_size, frame, 0, 0, 0,    num_planes);
 
     mse[0] = (uint64_t(*)[64])aom_malloc(sizeof(**mse) * nvfb * nhfb);
@@ -2098,10 +2189,18 @@ void av1_cdef_search16bit(
             tot_mse = joint_strength_search_dual(best_lev0, best_lev1, nb_strengths, mse, sb_count, fast, start_gi, end_gi);
         else
             tot_mse = joint_strength_search(best_lev0, nb_strengths, mse[0], sb_count, fast, start_gi, end_gi);
+#if UPDATE_CDEF
+        const int total_bits = sb_count * i + nb_strengths * CDEF_STRENGTH_BITS *
+                                              (num_planes > 1 ? 2 : 1);
+        const int rate_cost = av1_cost_literal(total_bits);
+        const uint64_t dist = tot_mse * 16;
+        tot_mse = RDCOST(lambda, rate_cost, dist);
+#else
         /* Count superblock signalling cost. */
         tot_mse += (uint64_t)(sb_count * lambda * i);
         /* Count header signalling cost. */
         tot_mse += (uint64_t)(nb_strengths * lambda * CDEF_STRENGTH_BITS);
+#endif
         if (tot_mse < best_tot_mse) {
             best_tot_mse = tot_mse;
             nb_strength_bits = i;
