@@ -137,6 +137,12 @@ extern "C" {
 #if  BLK_SKIP_DECISION
         uint8_t                                md_skip_blk;
 #endif
+#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+        uint8_t tx_search_level;
+        uint64_t tx_weight;
+        uint8_t tx_search_reduced_set;
+        uint8_t skip_tx_search;
+#endif
     } EncDecContext;
 
     /**************************************

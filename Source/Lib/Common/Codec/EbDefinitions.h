@@ -51,11 +51,15 @@ extern "C" {
 
 
 #define MPMD_SB                            0
-#define MPMD_SB_REF                        0
+#if MPMD_SB
+#define MPMD_SB_REF                        1
 #define MPMD_SB_1PART_IN_FP                0
-#define MPMD_LOWER_NSQ_LEVEL_IN_FP         0
+#define MPMD_LOWER_NSQ_LEVEL_IN_FP         1
+#define ADD_FLAG_FOR_SKIP_NEW_MV_FEATURE   1
+#endif
 #define DEBUG_MPMD_MD                      0
 #if DEBUG_MPMD_MD
+#define DISABLE_SQ_DEPENDENT_FEATURE       1
 #define DISABLE_CABAC_UP                   0
 #define DISABLE_RED_CU                     1 //P
 #define DISABLE_CFL                        1 //P
@@ -63,6 +67,8 @@ extern "C" {
 #define ONE_ECDEC_PROCESS                  0
 #define ONE_SEG_PROCESS                    0
 #endif
+#define MOVE_IF_LEVELS_SIGNAL_UNDER_CTX    1 // Move Intep-filter search feature settings under context_ptr
+#define MOVE_TX_LEVELS_SIGNAL_UNDER_CTX    1 // Move TX_search feature settings under context_ptr
 #define FIX_MDC_BUG_INCOMPLETE_SB          1
 #define WARP_UPDATE                        1 // WARP on for MR, M0 ref frame.
 #define DEBUG_2PASS_MDC                    0
@@ -401,7 +407,7 @@ extern "C" {
 #define MOD_M0                            0 // Sub-SAD for @ HME and ME, 12 NFL, frequency see
 #define HARD_CODE_SC_SETTING              0
 #define MR_MODE                           0
-#define SHUT_FILTERING                    0 // CDEF RESTORATION DLF
+#define SHUT_FILTERING                    1 // CDEF RESTORATION DLF
 
 #define M8_SKIP_BLK                       1
 #define M8_OIS                            1

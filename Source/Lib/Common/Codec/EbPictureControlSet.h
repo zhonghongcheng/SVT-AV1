@@ -14477,16 +14477,21 @@ extern "C" {
         int32_t                               cdef_frame_strength;
         int32_t                               cdf_ref_frame_strenght;
         int32_t                               use_ref_frame_cdef_strength;
+#if !MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
         uint8_t                               tx_search_level;
         uint64_t                              tx_weight;
         uint8_t                               tx_search_reduced_set;
         uint8_t                               skip_tx_search;
+#endif
+#if !MOVE_IF_LEVELS_SIGNAL_UNDER_CTX
         uint8_t                               interpolation_search_level;
+#endif
         uint8_t                               nsq_search_level;
 #if NSQ_SUB_LEVEL
         uint8_t                               nsq_search_sub_level;
 #endif
         uint8_t                               nsq_max_shapes_md; // max number of shapes to be tested in MD
+
         uint8_t                              sc_content_detected;
         uint8_t                              ibc_mode;
 #if APPLY_TX_SEARCH_SHORTCUTS_TO_ATB

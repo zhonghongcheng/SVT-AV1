@@ -76,7 +76,10 @@ const int8_t  encMaxDeltaQpTab[4][MAX_TEMPORAL_LAYERS] = {
     { 4, 5, 5, 5, 5, 5 },
     { 4, 5, 5, 5, 5, 5 }
 };
-
+#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+#define FC_SKIP_TX_SR_TH025                     125 // Fast cost skip tx search threshold.
+#define FC_SKIP_TX_SR_TH010                     110 // Fast cost skip tx search threshold.
+#endif
 /******************************************************
  * Enc Dec Context Constructor
  ******************************************************/
@@ -1238,9 +1241,123 @@ Output  : EncDec Kernel signal(s)
 EbErrorType signal_derivation_enc_dec_kernel_oq(
     SequenceControlSet    *sequence_control_set_ptr,
     PictureControlSet     *picture_control_set_ptr,
+#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+    EncDecContext         *ep_context_ptr,
+#endif
     ModeDecisionContext   *context_ptr) {
     EbErrorType return_error = EB_ErrorNone;
+#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+    // Tx_search Level                                Settings
+    // 0                                              OFF
+    // 1                                              Tx search at encdec
+    // 2                                              Tx search at inter-depth
+    // 3                                              Tx search at full loop
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        if (picture_control_set_ptr->enc_mode <= ENC_M6)
+            context_ptr->tx_search_level = TX_SEARCH_FULL_LOOP;
+        else
+            if (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
+                context_ptr->tx_search_level = TX_SEARCH_FULL_LOOP;
+            else
+                context_ptr->tx_search_level = TX_SEARCH_ENC_DEC;
+    else if (picture_control_set_ptr->enc_mode <= ENC_M4)
+        context_ptr->tx_search_level = TX_SEARCH_FULL_LOOP;
+    else if (picture_control_set_ptr->enc_mode <= ENC_M7) {
+        if (picture_control_set_ptr->temporal_layer_index == 0)
+            context_ptr->tx_search_level = TX_SEARCH_FULL_LOOP;
+        else
+            context_ptr->tx_search_level = TX_SEARCH_ENC_DEC;
+    }
+    else
+        context_ptr->tx_search_level = TX_SEARCH_ENC_DEC;
+    
+    // Set tx search skip weights (MAX_MODE_COST: no skipping; 0: always skipping)
+#if FIX_TX_SEARCH_FOR_MR_MODE
+    if (MR_MODE) // tx weight
+        context_ptr->tx_weight = MAX_MODE_COST;
+#endif
+    else{
+        if (context_ptr->tx_search_level == TX_SEARCH_ENC_DEC)
+            context_ptr->tx_weight = MAX_MODE_COST;
+        else if (!MR_MODE && picture_control_set_ptr->enc_mode <= ENC_M5)
+            context_ptr->tx_weight = FC_SKIP_TX_SR_TH025;
+        else if (!MR_MODE){
+            if (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
+                context_ptr->tx_weight = FC_SKIP_TX_SR_TH025;
+            else
+                context_ptr->tx_weight = FC_SKIP_TX_SR_TH010;
+        }
+    }
 
+    // Set tx search reduced set falg (0: full tx set; 1: reduced tx set; 1: two tx))
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if SC_M8_TX_REDUCED_SET_
+            picture_control_set_ptr->tx_search_reduced_set = 2;
+#else
+        if (picture_control_set_ptr->enc_mode <= ENC_M5)
+            context_ptr->tx_search_reduced_set = 0;
+        else if (picture_control_set_ptr->enc_mode <= ENC_M6)
+            if (context_ptr->tx_search_level == TX_SEARCH_ENC_DEC)
+                context_ptr->tx_search_reduced_set = 0;
+            else
+                context_ptr->tx_search_reduced_set = 1;
+        else if (picture_control_set_ptr->enc_mode <= ENC_M7)
+            context_ptr->tx_search_reduced_set = 1;
+        else
+            context_ptr->tx_search_reduced_set = 2;
+#endif
+    else
+
+    if (context_ptr->tx_search_level == TX_SEARCH_ENC_DEC)
+        context_ptr->tx_search_reduced_set = 0;
+#if M2_BAD_SLOPE_COMB && ! m2_ibc_graph
+    else if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#else
+    else if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
+        context_ptr->tx_search_reduced_set = 0;
+    else if (picture_control_set_ptr->enc_mode <= ENC_M5)
+        context_ptr->tx_search_reduced_set = 1;
+    else
+        context_ptr->tx_search_reduced_set = 1;
+
+    // Set skip tx search based on NFL falg (0: Skip OFF ; 1: skip ON)
+    context_ptr->skip_tx_search = 0;
+    ep_context_ptr->tx_search_level = context_ptr->tx_search_level;
+    ep_context_ptr->skip_tx_search = context_ptr->skip_tx_search;
+    ep_context_ptr->tx_search_reduced_set = context_ptr->tx_search_reduced_set;
+    ep_context_ptr->tx_weight = context_ptr->tx_weight;
+#endif
+#if MOVE_IF_LEVELS_SIGNAL_UNDER_CTX
+    // Interpolation search Level                     Settings
+    // 0                                              OFF
+    // 1                                              Interpolation search at inter-depth
+    // 2                                              Interpolation search at full loop
+    // 3                                              Chroma blind interpolation search at fast loop
+    // 4                                              Interpolation search at fast loop
+
+        if (MR_MODE) // Interpolation
+            context_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP;
+        else if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if NEW_M0_SC
+            context_ptr->interpolation_search_level = IT_SEARCH_OFF;
+#else
+            if (enc_mode <= ENC_M1)
+                context_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;
+            else
+                context_ptr->interpolation_search_level = IT_SEARCH_OFF;
+#endif
+
+        else if (picture_control_set_ptr->enc_mode <= ENC_M3)
+            context_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;
+        else if (picture_control_set_ptr->enc_mode <= ENC_M7)
+            if (picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0)
+                context_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;
+            else
+                context_ptr->interpolation_search_level = IT_SEARCH_OFF;
+        else
+            context_ptr->interpolation_search_level = IT_SEARCH_OFF;
+#endif
     // NFL Level MD       Settings
     // 0                  MAX_NFL 40
     // 1                  30
@@ -2451,9 +2568,120 @@ EbErrorType mpmd_settings(
     SequenceControlSet    *sequence_control_set_ptr,
     PictureControlSet     *picture_control_set_ptr,
     uint8_t                enc_mode,
+    uint8_t                is_last_md_pass,
     ModeDecisionContext   *context_ptr) {
     EbErrorType return_error = EB_ErrorNone;
+#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+    // Tx_search Level                                Settings
+    // 0                                              OFF
+    // 1                                              Tx search at encdec
+    // 2                                              Tx search at inter-depth
+    // 3                                              Tx search at full loop
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        if (enc_mode <= ENC_M6)
+            context_ptr->tx_search_level = TX_SEARCH_FULL_LOOP;
+        else
+            if (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
+                context_ptr->tx_search_level = TX_SEARCH_FULL_LOOP;
+            else
+                context_ptr->tx_search_level = TX_SEARCH_ENC_DEC;
+    else if (enc_mode <= ENC_M4)
+        context_ptr->tx_search_level = TX_SEARCH_FULL_LOOP;
+    else if (enc_mode <= ENC_M7) {
+        if (picture_control_set_ptr->temporal_layer_index == 0)
+            context_ptr->tx_search_level = TX_SEARCH_FULL_LOOP;
+        else
+            context_ptr->tx_search_level = TX_SEARCH_ENC_DEC;
+    }
+    else
+        context_ptr->tx_search_level = TX_SEARCH_ENC_DEC;
 
+    // Set tx search skip weights (MAX_MODE_COST: no skipping; 0: always skipping)
+#if FIX_TX_SEARCH_FOR_MR_MODE
+    if (MR_MODE) // tx weight
+        context_ptr->tx_weight = MAX_MODE_COST;
+#endif
+    else{
+        if (context_ptr->tx_search_level == TX_SEARCH_ENC_DEC)
+            context_ptr->tx_weight = MAX_MODE_COST;
+        else if (!MR_MODE && enc_mode <= ENC_M5)
+            context_ptr->tx_weight = FC_SKIP_TX_SR_TH025;
+        else if (!MR_MODE){
+            if (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
+                context_ptr->tx_weight = FC_SKIP_TX_SR_TH025;
+            else
+                context_ptr->tx_weight = FC_SKIP_TX_SR_TH010;
+        }
+    }
+
+    // Set tx search reduced set falg (0: full tx set; 1: reduced tx set; 1: two tx))
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if SC_M8_TX_REDUCED_SET_
+            picture_control_set_ptr->tx_search_reduced_set = 2;
+#else
+        if (enc_mode <= ENC_M5)
+            context_ptr->tx_search_reduced_set = 0;
+        else if (enc_mode <= ENC_M6)
+            if (context_ptr->tx_search_level == TX_SEARCH_ENC_DEC)
+                context_ptr->tx_search_reduced_set = 0;
+            else
+                context_ptr->tx_search_reduced_set = 1;
+        else if (enc_mode <= ENC_M7)
+            context_ptr->tx_search_reduced_set = 1;
+        else
+            context_ptr->tx_search_reduced_set = 2;
+#endif
+    else
+
+    if (context_ptr->tx_search_level == TX_SEARCH_ENC_DEC)
+        context_ptr->tx_search_reduced_set = 0;
+#if M2_BAD_SLOPE_COMB && ! m2_ibc_graph
+    else if (enc_mode <= ENC_M2)
+#else
+    else if (enc_mode <= ENC_M1)
+#endif
+        context_ptr->tx_search_reduced_set = 0;
+    else if (enc_mode <= ENC_M5)
+        context_ptr->tx_search_reduced_set = 1;
+    else
+        context_ptr->tx_search_reduced_set = 1;
+
+    // Set skip tx search based on NFL falg (0: Skip OFF ; 1: skip ON)
+    context_ptr->skip_tx_search = 0;
+#endif
+#if MOVE_IF_LEVELS_SIGNAL_UNDER_CTX
+    // Interpolation search Level                     Settings
+    // 0                                              OFF
+    // 1                                              Interpolation search at inter-depth
+    // 2                                              Interpolation search at full loop
+    // 3                                              Chroma blind interpolation search at fast loop
+    // 4                                              Interpolation search at fast loop
+
+        if (MR_MODE) // Interpolation
+            context_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP;
+        else if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if NEW_M0_SC
+            context_ptr->interpolation_search_level = IT_SEARCH_OFF;
+#else
+            if (enc_mode <= ENC_M1)
+                context_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;
+            else
+                context_ptr->interpolation_search_level = IT_SEARCH_OFF;
+#endif
+
+        else if (enc_mode <= ENC_M3)
+            context_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;
+        else if (enc_mode <= ENC_M7)
+            if (picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0)
+                context_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;
+            else
+                context_ptr->interpolation_search_level = IT_SEARCH_OFF;
+        else
+            context_ptr->interpolation_search_level = IT_SEARCH_OFF;
+#endif
+#if ADD_FLAG_FOR_SKIP_NEW_MV_FEATURE
+    context_ptr->skip_newmv_basedon_parent_sq_has_coeff = 1;
+#endif
 #if MPMD_LOWER_NSQ_LEVEL_IN_FP
     // [0-6] with 0 is the fastest and 6 is the slowest.
     context_ptr->nsq_max_shapes_md = picture_control_set_ptr->parent_pcs_ptr->nsq_max_shapes_md;
@@ -2865,6 +3093,23 @@ EbErrorType mpmd_settings(
         context_ptr->dist_base_md_stage_0_count_th = 75;
 #endif
 #endif
+/*
+    if (!is_last_md_pass) {
+        context_ptr->skip_newmv_basedon_parent_sq_has_coeff = 1;
+        context_ptr->nsq_max_shapes_md = 2;
+        context_ptr->tx_search_reduced_set = 2;
+        context_ptr->tx_search_level = TX_SEARCH_OFF;
+        context_ptr->tx_weight = FC_SKIP_TX_SR_TH025;
+        context_ptr->interpolation_search_level = IT_SEARCH_OFF;
+    }
+    else {
+        context_ptr->skip_newmv_basedon_parent_sq_has_coeff = 0;
+        context_ptr->nsq_max_shapes_md = 8;
+        context_ptr->tx_search_level = TX_SEARCH_FULL_LOOP;
+        context_ptr->tx_weight = MAX_MODE_COST;
+        context_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;
+    }
+ */
     return return_error;
 }
 uint8_t md_mode_settings_offset[13] = { 0,0,0,0,0,0,0,0,0,0,0,0,0 };
@@ -2883,6 +3128,7 @@ EbErrorType mpmd_pass_settings(
         sequence_control_set_ptr,
         picture_control_set_ptr,
         md_mode,
+        is_last_md_pass,
         context_ptr);
     return return_error;
 }
@@ -2963,6 +3209,9 @@ void* enc_dec_kernel(void *input_ptr)
         signal_derivation_enc_dec_kernel_oq(
             sequence_control_set_ptr,
             picture_control_set_ptr,
+#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+            context_ptr,
+#endif
             context_ptr->md_context);
 
         // SB Constants

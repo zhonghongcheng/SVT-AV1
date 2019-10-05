@@ -7373,7 +7373,11 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
     int64_t *const skip_sse_sb) {
     const Av1Common *cm = picture_control_set_ptr->parent_pcs_ptr->av1_cm;//&cpi->common;
     EbBool use_uv = (md_context_ptr->blk_geom->has_uv && md_context_ptr->chroma_level <= CHROMA_MODE_1 &&
+#if MOVE_IF_LEVELS_SIGNAL_UNDER_CTX
+        md_context_ptr->interpolation_search_level != IT_SEARCH_FAST_LOOP_UV_BLIND) ? EB_TRUE : EB_FALSE;
+#else
         picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level != IT_SEARCH_FAST_LOOP_UV_BLIND) ? EB_TRUE : EB_FALSE;
+#endif
     const int32_t num_planes = use_uv ? MAX_MB_PLANE : 1;
 
     int32_t i;
@@ -7468,8 +7472,11 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
             const int32_t filter_set_size = DUAL_FILTER_SET_SIZE;
             int32_t best_in_temp = 0;
             uint32_t best_filters = 0;// mbmi->interp_filters;
-
+#if MOVE_IF_LEVELS_SIGNAL_UNDER_CTX
+            if (md_context_ptr->interpolation_search_level &&
+#else
             if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level &&
+#endif
                 picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header.enable_dual_filter) {
                 int32_t tmp_skip_sb = 0;
                 int64_t tmp_skip_sse = INT64_MAX;
@@ -8458,7 +8465,11 @@ EbErrorType inter_pu_prediction_av1(
         );
 #else
 #if IT_SEARCH_FIX
+#if MOVE_IF_LEVELS_SIGNAL_UNDER_CTX
+        if (md_context_ptr->interpolation_search_level == IT_SEARCH_OFF)
+#else
         if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level == IT_SEARCH_OFF)
+#endif
             candidate_buffer_ptr->candidate_ptr->interp_filters = 0;
         else
 #endif

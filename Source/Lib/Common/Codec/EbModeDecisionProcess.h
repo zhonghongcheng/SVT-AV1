@@ -492,7 +492,18 @@ extern "C" {
     DECLARE_ALIGNED(16, int32_t, wsrc_buf[MAX_SB_SQUARE]);
     DECLARE_ALIGNED(16, int32_t, mask_buf[MAX_SB_SQUARE]);  
 #endif
-
+#if ADD_FLAG_FOR_SKIP_NEW_MV_FEATURE
+    uint8_t skip_newmv_basedon_parent_sq_has_coeff;
+#endif
+#if MOVE_IF_LEVELS_SIGNAL_UNDER_CTX
+    uint8_t interpolation_search_level;
+#endif
+#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+    uint8_t tx_search_level;
+    uint64_t tx_weight;
+    uint8_t tx_search_reduced_set;
+    uint8_t skip_tx_search;
+#endif
   } ModeDecisionContext;
 
     typedef void(*EbAv1LambdaAssignFunc)(

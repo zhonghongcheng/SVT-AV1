@@ -189,7 +189,11 @@ void mode_decision_update_neighbor_arrays(
     uint8_t                    ref_frame_type = (uint8_t)context_ptr->cu_ptr->prediction_unit_array[0].ref_frame_type;
 
 #if OPT_LOSSLESS_0
+#if MOVE_IF_LEVELS_SIGNAL_UNDER_CTX
+    if (context_ptr->interpolation_search_level != IT_SEARCH_OFF)
+#else
     if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level != IT_SEARCH_OFF)
+#endif
 #endif
     neighbor_array_unit_mode_write32(
         context_ptr->interpolation_type_neighbor_array,
@@ -1926,7 +1930,11 @@ void fast_loop_core(
     if ((context_ptr->md_staging_mode  && context_ptr->md_stage == MD_STAGE_0) || (context_ptr->md_staging_mode >= 3 && (context_ptr->md_stage == MD_STAGE_0 || context_ptr->md_stage == MD_STAGE_1 || context_ptr->md_stage == MD_STAGE_2)))
         context_ptr->skip_interpolation_search = 1;
     else
+#if MOVE_IF_LEVELS_SIGNAL_UNDER_CTX
+        context_ptr->skip_interpolation_search = context_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? 0 : 1;
+#else
         context_ptr->skip_interpolation_search = picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? 0 : 1;
+#endif
 #else
     context_ptr->skip_interpolation_search = picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? 0 : 1;
 
@@ -5818,8 +5826,11 @@ void tx_type_search(
         context_ptr->blk_geom->txsize[context_ptr->tx_depth][context_ptr->txb_itr],
         &context_ptr->luma_txb_skip_context,
         &context_ptr->luma_dc_sign_context);
-
+#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+    if (context_ptr->tx_search_reduced_set == 2)
+#else
     if (picture_control_set_ptr->parent_pcs_ptr->tx_search_reduced_set == 2)
+#endif
         txk_end = 2;
 
     TxType best_tx_type = DCT_DCT;
@@ -5841,16 +5852,22 @@ void tx_type_search(
                 else if (av1_ext_tx_used[tx_set_type][tx_type] == 0) continue;
                 else if (context_ptr->blk_geom->tx_height[context_ptr->tx_depth][context_ptr->txb_itr] > 32 || context_ptr->blk_geom->tx_width[context_ptr->tx_depth][context_ptr->txb_itr] > 32)  continue;
             }
-
+#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+            int32_t eset = get_ext_tx_set(context_ptr->blk_geom->txsize[context_ptr->tx_depth][context_ptr->txb_itr], is_inter, context_ptr->tx_search_reduced_set);
+#else
             int32_t eset = get_ext_tx_set(context_ptr->blk_geom->txsize[context_ptr->tx_depth][context_ptr->txb_itr], is_inter, picture_control_set_ptr->parent_pcs_ptr->tx_search_reduced_set);
+#endif
             // eset == 0 should correspond to a set with only DCT_DCT and there
             // is no need to send the tx_type
             if (eset <= 0) continue;
             else if (av1_ext_tx_used[tx_set_type][tx_type] == 0) continue;
             else if (context_ptr->blk_geom->tx_height[context_ptr->tx_depth][context_ptr->txb_itr] > 32 || context_ptr->blk_geom->tx_width[context_ptr->tx_depth][context_ptr->txb_itr] > 32) continue;
         }
-
+#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+        if (context_ptr->tx_search_reduced_set)
+#else
         if (picture_control_set_ptr->parent_pcs_ptr->tx_search_reduced_set)
+#endif
             if (!allowed_tx_set_a[context_ptr->blk_geom->txsize[context_ptr->tx_depth][context_ptr->txb_itr]][tx_type]) continue;
 
         // For Inter blocks, transform type of chroma follows luma transfrom type
@@ -6047,7 +6064,17 @@ void tx_partitioning_path(
         }
     }
 
+#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+    if (is_inter)
+        tx_search_skip_flag = context_ptr->tx_search_level == TX_SEARCH_FULL_LOOP ? get_skip_tx_search_flag(
+            context_ptr->blk_geom->sq_size,
+            ref_fast_cost,
+            *candidateBuffer->fast_cost_ptr,
+            context_ptr->tx_weight) : 1;
+    else
+        tx_search_skip_flag = context_ptr->tx_search_level != TX_SEARCH_FULL_LOOP;
 
+#else
     if (is_inter)
         tx_search_skip_flag = picture_control_set_ptr->parent_pcs_ptr->tx_search_level == TX_SEARCH_FULL_LOOP ? get_skip_tx_search_flag(
             context_ptr->blk_geom->sq_size,
@@ -6056,7 +6083,7 @@ void tx_partitioning_path(
             picture_control_set_ptr->parent_pcs_ptr->tx_weight) : 1;
     else
         tx_search_skip_flag = picture_control_set_ptr->parent_pcs_ptr->tx_search_level != TX_SEARCH_FULL_LOOP;
-
+#endif
     if (context_ptr->md_stage == MD_STAGE_2)
         tx_search_skip_flag = EB_TRUE;
 
@@ -7664,7 +7691,11 @@ void md_stage_2(
         }
         else {
             // Transform partitioning free patch (except the 128x128 case)
+#if MOVE_IF_LEVELS_SIGNAL_UNDER_CTX
+            if (context_ptr->interpolation_search_level == IT_SEARCH_FULL_LOOP) {
+#else
             if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level == IT_SEARCH_FULL_LOOP) {
+#endif
                 context_ptr->skip_interpolation_search = 0;
                 context_ptr->skip_interpolation_search = (best_fastLoop_candidate_index > NFL_IT_TH) ? 1 : context_ptr->skip_interpolation_search;
                 if (candidate_ptr->type != INTRA_MODE) {
@@ -7690,7 +7721,11 @@ void md_stage_2(
                 context_ptr->blk_geom->bheight);
 
             // Transform partitioning free path
+#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+            uint8_t  tx_search_skip_flag = context_ptr->tx_search_level == TX_SEARCH_FULL_LOOP ? get_skip_tx_search_flag(
+#else
             uint8_t  tx_search_skip_flag = picture_control_set_ptr->parent_pcs_ptr->tx_search_level == TX_SEARCH_FULL_LOOP ? get_skip_tx_search_flag(
+#endif
 #if BYPASS_USELESS_TX_SEARCH
                 context_ptr->blk_geom,
 #else
@@ -7698,10 +7733,16 @@ void md_stage_2(
 #endif
                 ref_fast_cost,
                 *candidateBuffer->fast_cost_ptr,
+#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+                context_ptr->tx_weight) : 1;
+
+            tx_search_skip_flag = (context_ptr->skip_tx_search && best_fastLoop_candidate_index > NFL_TX_TH) ? 1 : tx_search_skip_flag;
+
+#else
                 picture_control_set_ptr->parent_pcs_ptr->tx_weight) : 1;
 
             tx_search_skip_flag = (picture_control_set_ptr->parent_pcs_ptr->skip_tx_search && best_fastLoop_candidate_index > NFL_TX_TH) ? 1 : tx_search_skip_flag;
-
+#endif
 #if FI_CLASS
             if (context_ptr->target_class == CAND_CLASS_0 || context_ptr->target_class == CAND_CLASS_5 || context_ptr->md_staging_mode >= 2)
 #else
@@ -8145,9 +8186,17 @@ void AV1PerformFullLoop(
 #if FIRST_FULL_LOOP_INTERPOLATION_SEARCH
         if (candidate_ptr->type != INTRA_MODE) {
 #if IT_SEARCH_FIX
+#if MOVE_IF_LEVELS_SIGNAL_UNDER_CTX
+            if (context_ptr->interpolation_search_level > IT_SEARCH_OFF )
+#else
             if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level > IT_SEARCH_OFF )
 #endif
+#endif
+#if MOVE_IF_LEVELS_SIGNAL_UNDER_CTX
+            if (context_ptr->interpolation_search_level == IT_SEARCH_FULL_LOOP || context_ptr->md_staging_mode >= 3) {
+#else
             if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level == IT_SEARCH_FULL_LOOP || context_ptr->md_staging_mode >= 3) {
+#endif
                 context_ptr->skip_interpolation_search = (best_fastLoop_candidate_index > NFL_IT_TH && context_ptr->md_staging_mode == 0);
 #if RE_FACTURE_PRED_KERNEL
                 context_ptr->shut_chroma_comp = EB_FALSE;
@@ -8358,6 +8407,16 @@ void AV1PerformFullLoop(
 #endif
                 tx_search_skip_flag = 0;
             else
+#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+                tx_search_skip_flag =
+                (context_ptr->skip_tx_search && best_fastLoop_candidate_index > NFL_TX_TH) ?
+                1 :
+                context_ptr->tx_search_level == TX_SEARCH_FULL_LOOP ? get_skip_tx_search_flag(
+                    context_ptr->blk_geom->sq_size,
+                    ref_fast_cost,
+                    *candidateBuffer->fast_cost_ptr,
+                    context_ptr->tx_weight) : 1;
+#else
                 tx_search_skip_flag =
                 (picture_control_set_ptr->parent_pcs_ptr->skip_tx_search && best_fastLoop_candidate_index > NFL_TX_TH) ?
                 1 :
@@ -8366,6 +8425,7 @@ void AV1PerformFullLoop(
                     ref_fast_cost,
                     *candidateBuffer->fast_cost_ptr,
                     picture_control_set_ptr->parent_pcs_ptr->tx_weight) : 1;
+#endif
 #else
             uint8_t  tx_search_skip_flag = picture_control_set_ptr->parent_pcs_ptr->tx_search_level == TX_SEARCH_FULL_LOOP ? get_skip_tx_search_flag(
 #if BYPASS_USELESS_TX_SEARCH
@@ -9061,7 +9121,11 @@ void inter_depth_tx_search(
 {
 #if ATB_MD
     // Hsan: if Transform Search ON and INTRA, then Tx Type search is performed @ the full loop
+#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+    uint8_t  tx_search_skip_flag = (context_ptr->tx_search_level == TX_SEARCH_INTER_DEPTH && (picture_control_set_ptr->parent_pcs_ptr->atb_mode == 0 || candidateBuffer ->candidate_ptr->type == INTER_MODE)) ? get_skip_tx_search_flag(
+#else
     uint8_t  tx_search_skip_flag = (picture_control_set_ptr->parent_pcs_ptr->tx_search_level == TX_SEARCH_INTER_DEPTH && (picture_control_set_ptr->parent_pcs_ptr->atb_mode == 0 || candidateBuffer ->candidate_ptr->type == INTER_MODE)) ? get_skip_tx_search_flag(
+#endif
 #else
     uint8_t  tx_search_skip_flag = picture_control_set_ptr->parent_pcs_ptr->tx_search_level == TX_SEARCH_INTER_DEPTH ? get_skip_tx_search_flag(
 #endif
@@ -9072,7 +9136,11 @@ void inter_depth_tx_search(
 #endif
         ref_fast_cost,
         *candidateBuffer->fast_cost_ptr,
+#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+        context_ptr->tx_weight) : 1;
+#else
         picture_control_set_ptr->parent_pcs_ptr->tx_weight) : 1;
+#endif
     if (!tx_search_skip_flag) {
         uint64_t      y_full_distortion[DIST_CALC_TOTAL] = { 0 };
         uint32_t      count_non_zero_coeffs[3][MAX_NUM_OF_TU_PER_CU];
@@ -11179,8 +11247,11 @@ void md_encode_block(
         candidateBuffer = candidate_buffer_ptr_array[candidateIndex];
 
         bestCandidateBuffers[0] = candidateBuffer;
-
+#if MOVE_IF_LEVELS_SIGNAL_UNDER_CTX
+        if (context_ptr->interpolation_search_level == IT_SEARCH_INTER_DEPTH) {
+#else
         if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level == IT_SEARCH_INTER_DEPTH) {
+#endif
             if (candidateBuffer->candidate_ptr->type != INTRA_MODE && candidateBuffer->candidate_ptr->motion_mode == SIMPLE_TRANSLATION) {
                 context_ptr->skip_interpolation_search = 0;
 #if RE_FACTURE_PRED_KERNEL
@@ -11208,10 +11279,20 @@ void md_encode_block(
         uint8_t sq_index = LOG2F(context_ptr->blk_geom->sq_size) - 2;
         if (context_ptr->blk_geom->shape == PART_N) {
             context_ptr->parent_sq_type[sq_index] = candidateBuffer->candidate_ptr->type;
-
-            context_ptr->parent_sq_has_coeff[sq_index] = (candidateBuffer->candidate_ptr->y_has_coeff ||
-                candidateBuffer->candidate_ptr->u_has_coeff ||
-                candidateBuffer->candidate_ptr->v_has_coeff) ? 1 : 0;
+#if DISABLE_SQ_DEPENDENT_FEATURE
+            context_ptr->parent_sq_has_coeff[sq_index] = 1;
+#else
+#if ADD_FLAG_FOR_SKIP_NEW_MV_FEATURE
+            context_ptr->parent_sq_has_coeff[sq_index] = 1;
+            if (context_ptr->skip_newmv_basedon_parent_sq_has_coeff) {
+#endif
+                context_ptr->parent_sq_has_coeff[sq_index] = (candidateBuffer->candidate_ptr->y_has_coeff ||
+                    candidateBuffer->candidate_ptr->u_has_coeff ||
+                    candidateBuffer->candidate_ptr->v_has_coeff) ? 1 : 0;
+#if ADD_FLAG_FOR_SKIP_NEW_MV_FEATURE
+            }
+#endif
+#endif
 
             context_ptr->parent_sq_pred_mode[sq_index] = candidateBuffer->candidate_ptr->pred_mode;
         }

@@ -294,8 +294,10 @@ uint8_t  circ_inc(uint8_t max, uint8_t off, uint8_t input)
 
 #define WTH 64
 #define OTH 64
+#if !MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
 #define FC_SKIP_TX_SR_TH025                     125 // Fast cost skip tx search threshold.
 #define FC_SKIP_TX_SR_TH010                     110 // Fast cost skip tx search threshold.
+#endif
 #if APPLY_TX_SEARCH_SHORTCUTS_TO_ATB
 #define FC_SKIP_ATB_SR_TH040                    140
 #endif
@@ -1242,6 +1244,7 @@ EbErrorType signal_derivation_multi_processes_oq(
         picture_control_set_ptr->nsq_search_sub_level = NO_SUB_LEVEL;
 #endif
 #endif
+#if !MOVE_IF_LEVELS_SIGNAL_UNDER_CTX
 
     // Interpolation search Level                     Settings
     // 0                                              OFF
@@ -1271,7 +1274,7 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->interpolation_search_level = IT_SEARCH_OFF;
         else
             picture_control_set_ptr->interpolation_search_level = IT_SEARCH_OFF;
-
+#endif
     // Loop filter Level                            Settings
     // 0                                            OFF
     // 1                                            CU-BASED
@@ -1403,7 +1406,7 @@ EbErrorType signal_derivation_multi_processes_oq(
         cm->wn_filter_mode = 2;
     else
         cm->wn_filter_mode = 0;
-
+#if !MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
     // Tx_search Level                                Settings
     // 0                                              OFF
     // 1                                              Tx search at encdec
@@ -1480,7 +1483,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 
     // Set skip tx search based on NFL falg (0: Skip OFF ; 1: skip ON)
     picture_control_set_ptr->skip_tx_search = 0;
-
+#endif
 #if APPLY_TX_SEARCH_SHORTCUTS_TO_ATB
     if (MR_MODE)
         picture_control_set_ptr->atb_weight = MAX_MODE_COST;

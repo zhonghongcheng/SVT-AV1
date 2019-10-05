@@ -2749,11 +2749,19 @@ void product_full_loop_tx_search(
     int32_t allowed_tx_mask[TX_TYPES] = { 0 };  // 1: allow; 0: skip.
     int32_t allowed_tx_num = 0;
     TxType uv_tx_type = DCT_DCT;
+#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+    if (context_ptr->tx_search_reduced_set == 2)
+#else
     if (picture_control_set_ptr->parent_pcs_ptr->tx_search_reduced_set == 2)
+#endif
         txk_end = 2;
 
     for (int32_t tx_type_index = txk_start; tx_type_index < txk_end; ++tx_type_index) {
+#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+        if (context_ptr->tx_search_reduced_set == 2)
+#else
     if (picture_control_set_ptr->parent_pcs_ptr->tx_search_reduced_set == 2)
+#endif
         tx_type_index = (tx_type_index  == 1) ? IDTX : tx_type_index;
         tx_type = (TxType)tx_type_index;
         allowed_tx_mask[tx_type] = 1;
@@ -2772,11 +2780,19 @@ void product_full_loop_tx_search(
         allowed_tx_mask[plane ? uv_tx_type : DCT_DCT] = 1;
     TxType best_tx_type = DCT_DCT;
     for (int32_t tx_type_index = txk_start; tx_type_index < txk_end; ++tx_type_index) {
+#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+    if (context_ptr->tx_search_reduced_set == 2)
+#else
     if (picture_control_set_ptr->parent_pcs_ptr->tx_search_reduced_set == 2)
+#endif
         tx_type_index = (tx_type_index  == 1) ? IDTX : tx_type_index;
         tx_type = (TxType)tx_type_index;
         if (!allowed_tx_mask[tx_type]) continue;
+#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+        if (context_ptr->tx_search_reduced_set == 2)
+#else
         if (picture_control_set_ptr->parent_pcs_ptr->tx_search_reduced_set)
+#endif
             if (!allowed_tx_set_a[txSize][tx_type]) continue;
 
         context_ptr->three_quad_energy = 0;
@@ -3162,14 +3178,25 @@ void encode_pass_tx_search(
         get_ext_tx_set_type(txSize, is_inter, picture_control_set_ptr->parent_pcs_ptr->reduced_tx_set_used);
 
     TxType best_tx_type = DCT_DCT;
+#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+    if (context_ptr->tx_search_reduced_set == 2)
+#else
     if (picture_control_set_ptr->parent_pcs_ptr->tx_search_reduced_set == 2)
+#endif
         txk_end = 2;
     for (int32_t tx_type_index = txk_start; tx_type_index < txk_end; ++tx_type_index) {
+#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+    if (context_ptr->tx_search_reduced_set == 2)
+#else
         if (picture_control_set_ptr->parent_pcs_ptr->tx_search_reduced_set == 2)
+#endif
             tx_type_index = (tx_type_index  == 1) ? IDTX : tx_type_index;
         tx_type = (TxType)tx_type_index;
-
+#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+    if (context_ptr->tx_search_reduced_set)
+#else
         if(picture_control_set_ptr->parent_pcs_ptr->tx_search_reduced_set)
+#endif
             if (!allowed_tx_set_a[txSize][tx_type]) continue;
 
         const int32_t eset = get_ext_tx_set(txSize, is_inter, picture_control_set_ptr->parent_pcs_ptr->reduced_tx_set_used);
@@ -3413,7 +3440,11 @@ void encode_pass_tx_search_hbd(
     for (int32_t tx_type_index = txk_start; tx_type_index < txk_end; ++tx_type_index) {
         tx_type = (TxType)tx_type_index;
         ////if (!allowed_tx_mask[tx_type]) continue;
+#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+        if (context_ptr->tx_search_reduced_set)
+#else
         if (picture_control_set_ptr->parent_pcs_ptr->tx_search_reduced_set)
+#endif
             if (!allowed_tx_set_a[txSize][tx_type]) continue;
 
         const int32_t eset = get_ext_tx_set(txSize, is_inter, picture_control_set_ptr->parent_pcs_ptr->reduced_tx_set_used);
