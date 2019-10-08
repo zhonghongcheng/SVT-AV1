@@ -61,6 +61,12 @@ extern "C" {
 #define COMP_INTERINTRA                   1 // InterIntra mode support
 
 #define ENHANCE_ATB                       1
+#if ENHANCE_ATB
+#define ATB_INTRA_2_DEPTH                 1 // ATB INTRA Depth 2
+#define ALL_LAYERS                        1 // ATB INTRA Depth 2
+#define COEFF_SKIP_OFF                    1
+#define CLASS_0_COUNT_TUNING              1
+#endif
 
 #define RDOQ_CHROMA                       1
 //FOR DEBUGGING - Do not remove
@@ -142,7 +148,11 @@ enum {
 #define ADD_DELTA_QP_SUPPORT                      1  // Add delta QP support
 #define BLOCK_MAX_COUNT_SB_128                    4421  // TODO: reduce alloction for 64x64
 #define BLOCK_MAX_COUNT_SB_64                     1101  // TODO: reduce alloction for 64x64
+#if ATB_INTRA_2_DEPTH
+#define MAX_TXB_COUNT                             16 // Maximum number of transform blocks per depth
+#else
 #define MAX_TXB_COUNT                             4 // Maximum number of transform blocks.
+#endif
 #if II_COMP_FLAG
 #define MAX_NFL                                  80
 #else

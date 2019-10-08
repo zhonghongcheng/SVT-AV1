@@ -1179,8 +1179,8 @@ EbErrorType signal_derivation_multi_processes_oq(
             CU_8x8_MODE_0;
 
         // Set atb mode      Settings
-        // 0                 OFF: no transform partitioning
-        // 1                 ON for INTRA blocks
+        // 0                 OFF
+        // 1                 ON
         if (picture_control_set_ptr->enc_mode <= ENC_M1 && sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
 
 #if SPEED_OPT
@@ -1190,7 +1190,9 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
         else
             picture_control_set_ptr->atb_mode = 0;
-
+#if ALL_LAYERS
+        picture_control_set_ptr->atb_mode = 1;
+#endif
         // Set skip atb                          Settings
         // 0                                     OFF
         // 1                                     ON
@@ -1203,7 +1205,9 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->coeff_based_skip_atb = 0;
         else
             picture_control_set_ptr->coeff_based_skip_atb = 1;
-
+#if COEFF_SKIP_OFF
+        picture_control_set_ptr->coeff_based_skip_atb = 0;
+#endif
         // Set Wedge mode      Settings
         // 0                 FULL: Full search
         // 1                 Fast: If two predictors are very similar, skip wedge compound mode search
