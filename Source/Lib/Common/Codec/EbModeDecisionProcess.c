@@ -30,8 +30,16 @@ static void mode_decision_context_dctor(EbPtr p)
     EB_DELETE_PTR_ARRAY(obj->candidate_buffer_ptr_array, MAX_NFL_BUFF);
 
 #if ENHANCE_ATB
+#if ATB_INTRA_2_DEPTH
+    EB_FREE_ARRAY(obj->candidate_buffer_tx_depth_1->candidate_ptr);
+    EB_FREE_ARRAY(obj->candidate_buffer_tx_depth_1);
+
+    EB_FREE_ARRAY(obj->candidate_buffer_tx_depth_2->candidate_ptr);
+    EB_FREE_ARRAY(obj->candidate_buffer_tx_depth_2);
+#else
     EB_FREE_ARRAY(obj->scratch_candidate_buffer->candidate_ptr);
     EB_FREE_ARRAY(obj->scratch_candidate_buffer);
+#endif
 #endif
 
     EB_DELETE(obj->trans_quant_buffers_ptr);
@@ -139,6 +147,21 @@ EbErrorType mode_decision_context_ctor(
         );
     }
 #if ENHANCE_ATB
+#if ATB_INTRA_2_DEPTH
+    EB_MALLOC_ARRAY(context_ptr->candidate_buffer_tx_depth_1, 1);
+    EB_NEW(
+        context_ptr->candidate_buffer_tx_depth_1,
+        mode_decision_scratch_candidate_buffer_ctor,
+        context_ptr->hbd_mode_decision ? EB_10BIT : EB_8BIT);
+    EB_MALLOC_ARRAY(context_ptr->candidate_buffer_tx_depth_1->candidate_ptr, 1);
+
+    EB_MALLOC_ARRAY(context_ptr->candidate_buffer_tx_depth_2, 1);
+    EB_NEW(
+        context_ptr->candidate_buffer_tx_depth_2,
+        mode_decision_scratch_candidate_buffer_ctor,
+        context_ptr->hbd_mode_decision ? EB_10BIT : EB_8BIT);
+    EB_MALLOC_ARRAY(context_ptr->candidate_buffer_tx_depth_2->candidate_ptr, 1);
+#else
     EB_MALLOC_ARRAY(context_ptr->scratch_candidate_buffer, 1);
 
     EB_NEW(
@@ -147,6 +170,7 @@ EbErrorType mode_decision_context_ctor(
         context_ptr->hbd_mode_decision ? EB_10BIT : EB_8BIT);
 
     EB_MALLOC_ARRAY(context_ptr->scratch_candidate_buffer->candidate_ptr, 1);
+#endif
 #endif
     context_ptr->md_cu_arr_nsq[0].av1xd = NULL;
     context_ptr->md_cu_arr_nsq[0].neigh_left_recon[0] = NULL;
