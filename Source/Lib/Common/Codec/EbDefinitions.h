@@ -40,7 +40,7 @@ extern "C" {
 #define UPDATE_CDEF      1 // Update bit cost estimation for CDEF
 
 #define FIX_R2R_CABAC_UPDATE   1
-#define QPS_TOWARD_LUMA      0
+#define QPS_TOWARD_LUMA      1
 #define OMBC_FLAG            1
 #if OMBC_FLAG
 #define OBMC_SUP             1
