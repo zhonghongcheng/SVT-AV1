@@ -598,8 +598,19 @@ extern "C" {
 
 
 #define  MD_CLASS                     1  //added the concept of class for each MD candidate. NFL is now per class.
-
+#define COMBINE_CLASS_PRO             0
 #if MD_CLASS
+#if COMBINE_CLASS_PRO
+#define CAND_CLASS_0 0 // INTRA
+#define CAND_CLASS_1 1 // INTER NEW
+#define CAND_CLASS_2 2 // INTER PRED
+#define CAND_CLASS_3 3 // INTER INTER
+#define CAND_CLASS_4 4 // INTER INTRA
+#define CAND_CLASS_5 5 // FILTER INTRA
+#define CAND_CLASS_6 6 // OBMC
+#define CAND_CLASS_TOTAL 7
+#define CAND_CLASS uint8_t
+#else
 typedef enum CAND_CLASS {
     CAND_CLASS_0,
     CAND_CLASS_1,
@@ -618,6 +629,7 @@ typedef enum CAND_CLASS {
 #endif
     CAND_CLASS_TOTAL
 } CAND_CLASS;
+#endif
 #else
 
 #define DECOUPLED_FAST_LOOP                            1
