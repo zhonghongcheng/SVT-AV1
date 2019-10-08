@@ -35,6 +35,7 @@
 extern "C" {
 #endif
 
+#define ALIGN_ALTREFS_TO_MASTER 1
 #define CDEF_MR_MODE     1 // Use full CDEF for MR mode
 #define UPDATE_CDEF      1 // Update bit cost estimation for CDEF
 
