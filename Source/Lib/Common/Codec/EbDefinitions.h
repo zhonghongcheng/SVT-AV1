@@ -56,6 +56,8 @@ extern "C" {
 #define MPMD_SB_1PART_IN_FP                0
 #define MPMD_LOWER_NSQ_LEVEL_IN_FP         1
 #define ADD_FLAG_FOR_SKIP_NEW_MV_FEATURE   1
+#define MPMD_TEST                          1
+#define TEST_DEPTH_REFINEMENT              1
 #endif
 #define DEBUG_MPMD_MD                      0
 #if DEBUG_MPMD_MD

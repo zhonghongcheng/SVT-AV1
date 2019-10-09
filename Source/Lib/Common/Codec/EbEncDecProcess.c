@@ -3093,10 +3093,10 @@ EbErrorType mpmd_settings(
         context_ptr->dist_base_md_stage_0_count_th = 75;
 #endif
 #endif
-/*
+#if MPMD_TEST
     if (!is_last_md_pass) {
         context_ptr->skip_newmv_basedon_parent_sq_has_coeff = 1;
-        context_ptr->nsq_max_shapes_md = 2;
+        context_ptr->nsq_max_shapes_md = 1;
         context_ptr->tx_search_reduced_set = 2;
         context_ptr->tx_search_level = TX_SEARCH_OFF;
         context_ptr->tx_weight = FC_SKIP_TX_SR_TH025;
@@ -3104,15 +3104,19 @@ EbErrorType mpmd_settings(
     }
     else {
         context_ptr->skip_newmv_basedon_parent_sq_has_coeff = 0;
-        context_ptr->nsq_max_shapes_md = 8;
+        /*context_ptr->nsq_max_shapes_md = 8;
         context_ptr->tx_search_level = TX_SEARCH_FULL_LOOP;
         context_ptr->tx_weight = MAX_MODE_COST;
-        context_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;
+        context_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;*/
     }
- */
+#endif
     return return_error;
 }
+#if MPMD_TEST
+uint8_t md_mode_settings_offset[13] = { 8,0,0,0,0,0,0,0,0,0,0,0,0 };
+#else
 uint8_t md_mode_settings_offset[13] = { 0,0,0,0,0,0,0,0,0,0,0,0,0 };
+#endif
 EbErrorType mpmd_pass_settings(
     SequenceControlSet    *sequence_control_set_ptr,
     PictureControlSet     *picture_control_set_ptr,
@@ -3417,7 +3421,11 @@ void* enc_dec_kernel(void *input_ptr)
                     uint8_t  is_complete_sb = sequence_control_set_ptr->sb_geom[sb_index].is_complete_sb;
                         if (picture_control_set_ptr->slice_type != I_SLICE && is_complete_sb) {
                             for (mpmd_pass_idx = 0; mpmd_pass_idx < mpmd_pass_num; ++mpmd_pass_idx) {
+#if TEST_DEPTH_REFINEMENT
+                                uint8_t mpmd_depth_level = 4; // 1 SQ PART only
+#else
                                 uint8_t mpmd_depth_level = 0; // 1 SQ PART only
+#endif
                                 uint8_t mpmd_1d_level = 0; // 1 NSQ PART only
 
                                 init_cu_arr_nsq(

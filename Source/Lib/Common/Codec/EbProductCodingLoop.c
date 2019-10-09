@@ -10823,7 +10823,7 @@ void md_encode_block(
 #if TBX_SPLIT_CAP
     uint8_t                          skip_atb,
 #endif
-#if MPMD_SB_1PART_IN_FP
+#if MPMD_SB
     uint8_t                          is_final_pass,
 #endif
     ModeDecisionCandidateBuffer    *bestCandidateBuffers[5])
@@ -10882,6 +10882,9 @@ void md_encode_block(
         ? EB_FALSE : is_nsq_table_used;
 #endif
 #endif
+#endif
+#if MPMD_SB
+    is_nsq_table_used = picture_control_set_ptr->slice_type == !I_SLICE && !is_final_pass ? 1 : is_nsq_table_used;
 #endif
     context_ptr->open_loop_block_rank = open_loop_block_rank;
     context_ptr->early_split_flag = early_split_flag;
@@ -12235,7 +12238,7 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #if TBX_SPLIT_CAP
                 skip_atb,
 #endif
-#if MPMD_SB_1PART_IN_FP
+#if MPMD_SB
                     is_last_md_pass,
 #endif
                     bestCandidateBuffers);
