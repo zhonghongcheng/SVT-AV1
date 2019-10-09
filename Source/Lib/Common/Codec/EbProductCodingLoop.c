@@ -296,6 +296,7 @@ void mode_decision_update_neighbor_arrays(
                 NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
 #endif
 #if ATB_FIX_DEPTH_2_PATH
+#if !ATB_INTRA_2_DEPTH
             neighbor_array_unit_mode_write(
                 picture_control_set_ptr->md_tx_depth_2_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
                 (uint8_t*)&dc_sign_level_coeff,
@@ -304,6 +305,7 @@ void mode_decision_update_neighbor_arrays(
                 context_ptr->blk_geom->tx_width[context_ptr->cu_ptr->tx_depth][txb_itr],
                 context_ptr->blk_geom->tx_height[context_ptr->cu_ptr->tx_depth][txb_itr],
                 NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
+#endif
 #endif
         }
     }
@@ -476,6 +478,16 @@ void mode_decision_update_neighbor_arrays(
                 origin_y,
                 context_ptr->blk_geom->bwidth,
                 context_ptr->blk_geom->bheight);
+#if UPDATE_ATB_INTRA_2_DEPTH
+            update_recon_neighbor_array(
+                picture_control_set_ptr->md_tx_depth_2_luma_recon_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
+                context_ptr->cu_ptr->neigh_top_recon[0],
+                context_ptr->cu_ptr->neigh_left_recon[0],
+                origin_x,
+                origin_y,
+                context_ptr->blk_geom->bwidth,
+                context_ptr->blk_geom->bheight);
+#endif
         }
 #endif
     }
@@ -601,6 +613,16 @@ void copy_neighbour_arrays(
             blk_geom->bwidth,
             blk_geom->bheight,
             NEIGHBOR_ARRAY_UNIT_FULL_MASK);
+#if UPDATE_ATB_INTRA_2_DEPTH
+        copy_neigh_arr(
+            picture_control_set_ptr->md_tx_depth_2_luma_recon_neighbor_array[src_idx],
+            picture_control_set_ptr->md_tx_depth_2_luma_recon_neighbor_array[dst_idx],
+            blk_org_x,
+            blk_org_y,
+            blk_geom->bwidth,
+            blk_geom->bheight,
+            NEIGHBOR_ARRAY_UNIT_FULL_MASK);
+#endif
     }
 #endif
 
@@ -648,6 +670,7 @@ void copy_neighbour_arrays(
         NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
 
 #if ATB_DC_CONTEXT_SUPPORT_2
+#if !REMOVE_USELESS_OPERATION
     copy_neigh_arr(
         picture_control_set_ptr->md_tx_depth_1_luma_dc_sign_level_coeff_neighbor_array[src_idx],
         picture_control_set_ptr->md_tx_depth_1_luma_dc_sign_level_coeff_neighbor_array[dst_idx],
@@ -657,7 +680,9 @@ void copy_neighbour_arrays(
         blk_geom->bheight,
         NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
 #endif
+#endif
 #if ATB_FIX_DEPTH_2_PATH
+#if !ATB_INTRA_2_DEPTH
     copy_neigh_arr(
         picture_control_set_ptr->md_tx_depth_2_luma_dc_sign_level_coeff_neighbor_array[src_idx],
         picture_control_set_ptr->md_tx_depth_2_luma_dc_sign_level_coeff_neighbor_array[dst_idx],
@@ -666,6 +691,7 @@ void copy_neighbour_arrays(
         blk_geom->bwidth,
         blk_geom->bheight,
         NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
+#endif
 #endif
     if (blk_geom->has_uv && context_ptr->chroma_level <= CHROMA_MODE_1) {
         copy_neigh_arr(
@@ -3345,6 +3371,10 @@ if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_cont
         context_ptr->fast1_cand_count[CAND_CLASS_3] = context_ptr->md_stage_2_count[CAND_CLASS_3] = context_ptr->md_stage_3_count[CAND_CLASS_3] = 0;
 #endif
 
+#if CLASS_0_5_MAX_COUNT
+    context_ptr->md_stage_3_count[CAND_CLASS_0] = context_ptr->md_stage_2_count[CAND_CLASS_0];
+    context_ptr->md_stage_3_count[CAND_CLASS_5] = context_ptr->md_stage_2_count[CAND_CLASS_5];
+#endif
 }
 #endif
 #else
@@ -6174,11 +6204,19 @@ void tx_initialize_neighbor_arrays(
 
     // Set recon neighbor array to be used @ intra compensation
     if (!is_inter)
+#if UPDATE_ATB_INTRA_2_DEPTH
+        context_ptr->tx_search_luma_recon_neighbor_array =
+            (context_ptr->tx_depth == 2) ?
+                picture_control_set_ptr->md_tx_depth_2_luma_recon_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX] :
+                (context_ptr->tx_depth == 1) ?
+                    picture_control_set_ptr->md_tx_depth_1_luma_recon_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX] :
+                    picture_control_set_ptr->md_luma_recon_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX];
+#else
         context_ptr->tx_search_luma_recon_neighbor_array =
         (context_ptr->tx_depth) ?
         picture_control_set_ptr->md_tx_depth_1_luma_recon_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX] :
         picture_control_set_ptr->md_luma_recon_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX];
-
+#endif
     // Set luma dc sign level coeff
     context_ptr->full_loop_luma_dc_sign_level_coeff_neighbor_array =
 #if ATB_INTRA_2_DEPTH
@@ -6212,7 +6250,7 @@ void tx_update_neighbor_arrays(
                 context_ptr->blk_geom->tx_width[context_ptr->tx_depth][context_ptr->txb_itr],
                 context_ptr->blk_geom->tx_height[context_ptr->tx_depth][context_ptr->txb_itr]);
         int8_t dc_sign_level_coeff = candidateBuffer->candidate_ptr->quantized_dc[0][context_ptr->txb_itr];
-
+#if !ATB_INTRA_2_DEPTH
         if (context_ptr->tx_depth == 2)
             neighbor_array_unit_mode_write(
                 picture_control_set_ptr->md_tx_depth_2_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
@@ -6223,6 +6261,7 @@ void tx_update_neighbor_arrays(
                 context_ptr->blk_geom->tx_height[context_ptr->tx_depth][context_ptr->txb_itr],
                 NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
         else
+#endif
             neighbor_array_unit_mode_write(
                 picture_control_set_ptr->md_tx_depth_1_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
                 (uint8_t*)&dc_sign_level_coeff,
@@ -6249,6 +6288,29 @@ void tx_reset_neighbor_arrays(
 
     if (end_tx_depth) {
 #endif
+
+#if UPDATE_ATB_INTRA_2_DEPTH
+        if (!is_inter) {
+            if(tx_depth == 2)
+                copy_neigh_arr(
+                    picture_control_set_ptr->md_luma_recon_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
+                    picture_control_set_ptr->md_tx_depth_2_luma_recon_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
+                    context_ptr->sb_origin_x + context_ptr->blk_geom->origin_x,
+                    context_ptr->sb_origin_y + context_ptr->blk_geom->origin_y,
+                    context_ptr->blk_geom->bwidth,
+                    context_ptr->blk_geom->bheight,
+                    NEIGHBOR_ARRAY_UNIT_FULL_MASK);
+            else 
+                copy_neigh_arr(
+                    picture_control_set_ptr->md_luma_recon_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
+                    picture_control_set_ptr->md_tx_depth_1_luma_recon_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
+                    context_ptr->sb_origin_x + context_ptr->blk_geom->origin_x,
+                    context_ptr->sb_origin_y + context_ptr->blk_geom->origin_y,
+                    context_ptr->blk_geom->bwidth,
+                    context_ptr->blk_geom->bheight,
+                    NEIGHBOR_ARRAY_UNIT_FULL_MASK);
+        }
+#else
         if (!is_inter)
             copy_neigh_arr(
                 picture_control_set_ptr->md_luma_recon_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
@@ -6258,6 +6320,7 @@ void tx_reset_neighbor_arrays(
                 context_ptr->blk_geom->bwidth,
                 context_ptr->blk_geom->bheight,
                 NEIGHBOR_ARRAY_UNIT_FULL_MASK);
+#endif
 #if !ATB_INTRA_2_DEPTH
         if (end_tx_depth == 2)
             copy_neigh_arr(
