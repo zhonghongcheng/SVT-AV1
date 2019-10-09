@@ -119,7 +119,12 @@ extern "C" {
         ModeDecisionCandidate        *fast_candidate_array;
         ModeDecisionCandidateBuffer **candidate_buffer_ptr_array;
 #if TX_TYPE_SEARCH_OPT
+#if ATB_INTRA_2_DEPTH
+        ModeDecisionCandidateBuffer  *candidate_buffer_tx_depth_1;
+        ModeDecisionCandidateBuffer  *candidate_buffer_tx_depth_2;
+#else
         ModeDecisionCandidateBuffer  *scratch_candidate_buffer;
+#endif
 #endif
         MdRateEstimationContext      *md_rate_estimation_ptr;
         InterPredictionContext       *inter_prediction_context;

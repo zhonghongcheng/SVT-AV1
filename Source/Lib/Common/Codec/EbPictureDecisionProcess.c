@@ -1178,6 +1178,11 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
 #endif
 
+
+#if NSQ_OFF
+        picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
+#endif
+
 #if MEMORY_FOOTPRINT_OPT_ME_MV
     if (picture_control_set_ptr->nsq_search_level > NSQ_SEARCH_OFF)
         assert(sequence_control_set_ptr->nsq_present == 1 && "use nsq_present 1");
@@ -1625,6 +1630,14 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->atb_mode = 0;
 
 #endif
+
+#if ALL_LAYERS
+        picture_control_set_ptr->atb_mode = 1;
+#endif
+
+#if ATB_OFF
+        picture_control_set_ptr->atb_mode = 0;
+#endif
 #if SHUT_ATB
         picture_control_set_ptr->atb_mode = 0;
 #endif
@@ -1658,6 +1671,10 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->enable_skip_atb = 1;
 
 #endif
+#if COEFF_SKIP_OFF
+        picture_control_set_ptr->enable_skip_atb = 0;
+#endif
+
 #if II_SEARCH
         // inter intra pred                      Settings
         // 0                                     OFF

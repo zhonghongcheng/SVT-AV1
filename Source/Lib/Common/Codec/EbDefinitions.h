@@ -267,6 +267,18 @@ extern "C" {
 #define ATB_INTER_SUPPORT                       1 // ATB INTER support
 #define ATB_INTER_1_DEPTH                       1 // ATB INTER Depth 1
 #define ATB_INTER_2_DEPTH                       0 // ATB INTER Depth 2
+
+#define NSQ_OFF                                 0
+#define TX_TYPE_OFF                             0
+#define ATB_OFF                                 0
+
+#define IMPROVED_ATB                            0
+#if IMPROVED_ATB
+#define ATB_INTRA_2_DEPTH                       0 
+#define ALL_LAYERS                              0 
+#define COEFF_SKIP_OFF                          0
+#endif
+
 #define ATB_RATE_UPGRADE_0                      1
 #define ATB_RATE_UPGRADE_1                      1
 #define ATB_SB_8x8_PATH                         1
@@ -594,7 +606,9 @@ extern "C" {
 
 #define EIGTH_PEL_MV                                    1
 #define EIGHT_PEL_PREDICTIVE_ME                         1 // Add eight pel as part of the predictive me.
+#if !NSQ_OFF
 #define DISABLE_NSQ_TABLE                               1 // On wil disable the nsq_table ordering algrithm for sc content. This is a temporarily adoption that will be disable once we comeup with a better ordreing mecanisme when MRP i ON.
+#endif
 #define IMPROVED_SUBPEL_SEARCH                          1
 
 
