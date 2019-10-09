@@ -49,9 +49,15 @@ extern "C" {
 #define EIGHT_PEL_PREDICTIVE_ME           1
 #define COMP_INTERINTRA                   1 // InterIntra mode support
 
+
+#define NSQ_OFF                           0
+#define TX_TYPE_OFF                       0
+#define ATB_OFF                           0
+
 #define ENHANCE_ATB                       1
 #if ENHANCE_ATB
 #define ATB_INTRA_2_DEPTH                 1 // ATB INTRA Depth 2
+#define UPDATE_ATB_INTRA_2_DEPTH          1
 #define ALL_LAYERS                        1 // ATB INTRA Depth 2
 #define COEFF_SKIP_OFF                    1
 #endif

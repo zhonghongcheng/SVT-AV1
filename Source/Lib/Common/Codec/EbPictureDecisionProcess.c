@@ -870,6 +870,9 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
 
+ #if NSQ_OFF
+        picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
+#endif
     if (picture_control_set_ptr->nsq_search_level > NSQ_SEARCH_OFF)
         assert(sequence_control_set_ptr->nsq_present == 1 && "use nsq_present 1");
 
@@ -1066,6 +1069,10 @@ EbErrorType signal_derivation_multi_processes_oq(
     else
         picture_control_set_ptr->tx_search_level = TX_SEARCH_ENC_DEC;
 
+#if TX_TYPE_OFF
+    picture_control_set_ptr->tx_search_level = 0;
+#endif
+
     // Set tx search skip weights (MAX_MODE_COST: no skipping; 0: always skipping)
     if (picture_control_set_ptr->tx_search_level == TX_SEARCH_ENC_DEC)
         picture_control_set_ptr->tx_weight = MAX_MODE_COST;
@@ -1193,6 +1200,9 @@ EbErrorType signal_derivation_multi_processes_oq(
 #if ALL_LAYERS
         picture_control_set_ptr->atb_mode = 1;
         //picture_control_set_ptr->atb_mode = (MR_MODE || picture_control_set_ptr->is_used_as_reference_flag) ? 1 : 0;
+#endif
+#if ATB_OFF
+        picture_control_set_ptr->atb_mode = 0;
 #endif
         // Set skip atb                          Settings
         // 0                                     OFF
