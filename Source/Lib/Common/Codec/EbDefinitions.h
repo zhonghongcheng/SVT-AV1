@@ -276,9 +276,12 @@ extern "C" {
 
 #define IMPROVED_ATB                            0
 #if IMPROVED_ATB
-#define ATB_INTRA_2_DEPTH                       0 
-#define ALL_LAYERS                              0 
-#define COEFF_SKIP_OFF                          0
+#define REMOVE_USELESS_OPERATION                0
+#define ATB_INTRA_2_DEPTH                       1 
+#define UPDATE_ATB_INTRA_2_DEPTH                1
+#define ALL_LAYERS                              1 
+#define COEFF_SKIP_OFF                          1
+#define CLASS_0_5_MAX_COUNT                     0
 #endif
 
 #define ATB_RATE_UPGRADE_0                      1

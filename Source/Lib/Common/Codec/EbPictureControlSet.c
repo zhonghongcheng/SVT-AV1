@@ -412,6 +412,18 @@ EbErrorType picture_control_set_ctor(
             NEIGHBOR_ARRAY_UNIT_FULL_MASK);
         if (return_error == EB_ErrorInsufficientResources)
             return EB_ErrorInsufficientResources;
+#if UPDATE_ATB_INTRA_2_DEPTH
+        return_error = neighbor_array_unit_ctor(
+            &object_ptr->md_tx_depth_2_luma_recon_neighbor_array[depth],
+            MAX_PICTURE_WIDTH_SIZE,
+            MAX_PICTURE_HEIGHT_SIZE,
+            sizeof(uint8_t),
+            SAMPLE_NEIGHBOR_ARRAY_GRANULARITY,
+            SAMPLE_NEIGHBOR_ARRAY_GRANULARITY,
+            NEIGHBOR_ARRAY_UNIT_FULL_MASK);
+        if (return_error == EB_ErrorInsufficientResources)
+            return EB_ErrorInsufficientResources;
+#endif
 #endif
 
         return_error = neighbor_array_unit_ctor(
@@ -475,6 +487,7 @@ EbErrorType picture_control_set_ctor(
             return EB_ErrorInsufficientResources;
 #endif
 #if ATB_FIX_DEPTH_2_PATH
+#if !ATB_INTRA_2_DEPTH
         // for each 4x4
         return_error = neighbor_array_unit_ctor(
             &object_ptr->md_tx_depth_2_luma_dc_sign_level_coeff_neighbor_array[depth],
@@ -487,6 +500,7 @@ EbErrorType picture_control_set_ctor(
 
         if (return_error == EB_ErrorInsufficientResources)
             return EB_ErrorInsufficientResources;
+#endif
 #endif
         // for each 4x4
         return_error = neighbor_array_unit_ctor(

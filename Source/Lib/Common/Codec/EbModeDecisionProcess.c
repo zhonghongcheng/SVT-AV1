@@ -242,6 +242,9 @@ void reset_mode_decision_neighbor_arrays(PictureControlSet *picture_control_set_
         neighbor_array_unit_reset(picture_control_set_ptr->md_luma_recon_neighbor_array[depth]);
 #if ATB_MD
         neighbor_array_unit_reset(picture_control_set_ptr->md_tx_depth_1_luma_recon_neighbor_array[depth]);
+#if UPDATE_ATB_INTRA_2_DEPTH
+        neighbor_array_unit_reset(picture_control_set_ptr->md_tx_depth_2_luma_recon_neighbor_array[depth]);
+#endif
 #endif
         neighbor_array_unit_reset(picture_control_set_ptr->md_cb_recon_neighbor_array[depth]);
         neighbor_array_unit_reset(picture_control_set_ptr->md_cr_recon_neighbor_array[depth]);
@@ -253,7 +256,9 @@ void reset_mode_decision_neighbor_arrays(PictureControlSet *picture_control_set_
         neighbor_array_unit_reset(picture_control_set_ptr->md_tx_depth_1_luma_dc_sign_level_coeff_neighbor_array[depth]);
 #endif
 #if ATB_FIX_DEPTH_2_PATH
+#if !ATB_INTRA_2_DEPTH
         neighbor_array_unit_reset(picture_control_set_ptr->md_tx_depth_2_luma_dc_sign_level_coeff_neighbor_array[depth]);
+#endif
 #endif
         neighbor_array_unit_reset(picture_control_set_ptr->md_cb_dc_sign_level_coeff_neighbor_array[depth]);
         neighbor_array_unit_reset(picture_control_set_ptr->md_cr_dc_sign_level_coeff_neighbor_array[depth]);
