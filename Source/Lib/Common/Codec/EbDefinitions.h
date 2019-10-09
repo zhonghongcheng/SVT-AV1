@@ -54,7 +54,6 @@ extern "C" {
 #define ATB_INTRA_2_DEPTH                 1 // ATB INTRA Depth 2
 #define ALL_LAYERS                        1 // ATB INTRA Depth 2
 #define COEFF_SKIP_OFF                    1
-#define CLASS_0_COUNT_TUNING              1
 #endif
 
 #define RDOQ_CHROMA                       1

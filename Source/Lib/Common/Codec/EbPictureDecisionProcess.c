@@ -1192,6 +1192,7 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->atb_mode = 0;
 #if ALL_LAYERS
         picture_control_set_ptr->atb_mode = 1;
+        //picture_control_set_ptr->atb_mode = (MR_MODE || picture_control_set_ptr->is_used_as_reference_flag) ? 1 : 0;
 #endif
         // Set skip atb                          Settings
         // 0                                     OFF
