@@ -5477,7 +5477,11 @@ uint8_t get_end_tx_depth(
 #if ATB_INTER_2_DEPTH
         tx_depth = (btype == INTRA_MODE) ? 1 : 2;
 #else
+#if ATB_INTRA_2_DEPTH //-----
+        tx_depth = (btype == INTRA_MODE) ? 2 : 1;
+#else
         tx_depth = (btype == INTRA_MODE) ? 1 : 1;
+#endif
 #endif
 #else
         tx_depth = (btype == INTRA_MODE) ? 1 : 0;
@@ -6177,9 +6181,13 @@ void tx_initialize_neighbor_arrays(
 
     // Set luma dc sign level coeff
     context_ptr->full_loop_luma_dc_sign_level_coeff_neighbor_array =
+#if ATB_INTRA_2_DEPTH
+    (context_ptr->tx_depth) ?
+#else
         (context_ptr->tx_depth == 2) ?
         picture_control_set_ptr->md_tx_depth_2_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX] :
         (context_ptr->tx_depth == 1) ?
+#endif
         picture_control_set_ptr->md_tx_depth_1_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX] :
         picture_control_set_ptr->md_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX];
 }
@@ -6233,9 +6241,14 @@ void tx_reset_neighbor_arrays(
     ModeDecisionContext          *context_ptr,
     ModeDecisionCandidateBuffer  *candidateBuffer,
     EbBool                        is_inter,
+#if ATB_INTRA_2_DEPTH
+    uint8_t              tx_depth) {
+    if (tx_depth) {
+#else
     uint8_t                       end_tx_depth) {
 
     if (end_tx_depth) {
+#endif
         if (!is_inter)
             copy_neigh_arr(
                 picture_control_set_ptr->md_luma_recon_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
@@ -6245,7 +6258,7 @@ void tx_reset_neighbor_arrays(
                 context_ptr->blk_geom->bwidth,
                 context_ptr->blk_geom->bheight,
                 NEIGHBOR_ARRAY_UNIT_FULL_MASK);
-
+#if !ATB_INTRA_2_DEPTH
         if (end_tx_depth == 2)
             copy_neigh_arr(
                 picture_control_set_ptr->md_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
@@ -6255,7 +6268,7 @@ void tx_reset_neighbor_arrays(
                 context_ptr->blk_geom->bwidth,
                 context_ptr->blk_geom->bheight,
                 NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-
+#endif
         copy_neigh_arr(
             picture_control_set_ptr->md_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
             picture_control_set_ptr->md_tx_depth_1_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
@@ -6514,12 +6527,66 @@ void tx_partitioning_path(
     uint8_t tx_search_skip_flag;
 
     // Fill the scratch buffer
+#if ATB_INTRA_2_DEPTH
+    memcpy(context_ptr->candidate_buffer_tx_depth_1->candidate_ptr, candidateBuffer->candidate_ptr, sizeof(ModeDecisionCandidate));
+    memcpy(context_ptr->candidate_buffer_tx_depth_2->candidate_ptr, candidateBuffer->candidate_ptr, sizeof(ModeDecisionCandidate));
+#else
     memcpy(context_ptr->scratch_candidate_buffer->candidate_ptr, candidateBuffer->candidate_ptr, sizeof(ModeDecisionCandidate));
-
+#endif
     if (is_inter) {
 
         uint32_t block_index = context_ptr->blk_geom->origin_x + (context_ptr->blk_geom->origin_y * MAX_SB_SIZE);
+#if ATB_INTRA_2_DEPTH
+        if (end_tx_depth >= 1) {
+            // Copy pred to tx_depth_1 candidate_buffer
+            {
+                EbByte src = &(candidateBuffer->prediction_ptr->buffer_y[block_index]);
+                EbByte dst = &(context_ptr->candidate_buffer_tx_depth_1->prediction_ptr->buffer_y[block_index]);
+                for (int i = 0; i < context_ptr->blk_geom->bheight; i++) {
+                    memcpy(dst, src, context_ptr->blk_geom->bwidth);
+                    src += candidateBuffer->prediction_ptr->stride_y;
+                    dst += context_ptr->candidate_buffer_tx_depth_1->prediction_ptr->stride_y;
+                }
+            }
 
+            // Copy residual to tx_depth_1 candidate_buffer
+            {
+                int16_t* src = &(((int16_t*)candidateBuffer->residual_ptr->buffer_y)[block_index]);
+                int16_t* dst = &(((int16_t*)context_ptr->candidate_buffer_tx_depth_1->residual_ptr->buffer_y)[block_index]);
+
+                for (int i = 0; i < context_ptr->blk_geom->bheight; i++) {
+                    memcpy(dst, src, context_ptr->blk_geom->bwidth << 1);
+                    src += candidateBuffer->residual_ptr->stride_y;
+                    dst += context_ptr->candidate_buffer_tx_depth_1->residual_ptr->stride_y;
+                }
+            }
+        }
+
+        if (end_tx_depth == 2) {
+            // Copy pred to tx_depth_2 candidate_buffer
+            {
+                EbByte src = &(candidateBuffer->prediction_ptr->buffer_y[block_index]);
+                EbByte dst = &(context_ptr->candidate_buffer_tx_depth_2->prediction_ptr->buffer_y[block_index]);
+                for (int i = 0; i < context_ptr->blk_geom->bheight; i++) {
+                    memcpy(dst, src, context_ptr->blk_geom->bwidth);
+                    src += candidateBuffer->prediction_ptr->stride_y;
+                    dst += context_ptr->candidate_buffer_tx_depth_2->prediction_ptr->stride_y;
+                }
+            }
+
+            // Copy residual to tx_depth_2 candidate_buffer
+            {
+                int16_t* src = &(((int16_t*)candidateBuffer->residual_ptr->buffer_y)[block_index]);
+                int16_t* dst = &(((int16_t*)context_ptr->candidate_buffer_tx_depth_2->residual_ptr->buffer_y)[block_index]);
+
+                for (int i = 0; i < context_ptr->blk_geom->bheight; i++) {
+                    memcpy(dst, src, context_ptr->blk_geom->bwidth << 1);
+                    src += candidateBuffer->residual_ptr->stride_y;
+                    dst += context_ptr->candidate_buffer_tx_depth_2->residual_ptr->stride_y;
+                }
+            }
+        }
+#else
         // Copy pred
         {
             EbByte src = &(candidateBuffer->prediction_ptr->buffer_y[block_index]);
@@ -6542,10 +6609,13 @@ void tx_partitioning_path(
                 dst += context_ptr->scratch_candidate_buffer->residual_ptr->stride_y;
             }
         }
+#endif
     }
 
-#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
-    if (is_inter)
+#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX  
+    if(context_ptr->tx_search_level == 0)
+        tx_search_skip_flag = EB_TRUE;
+    else if (is_inter)
         tx_search_skip_flag = context_ptr->tx_search_level == TX_SEARCH_FULL_LOOP ? get_skip_tx_search_flag(
             context_ptr->blk_geom->sq_size,
             ref_fast_cost,
@@ -6566,7 +6636,7 @@ void tx_partitioning_path(
 #endif
     if (context_ptr->md_stage == MD_STAGE_2)
         tx_search_skip_flag = EB_TRUE;
-
+#if !ATB_INTRA_2_DEPTH
     tx_reset_neighbor_arrays(
         sequence_control_set_ptr,
         picture_control_set_ptr,
@@ -6574,12 +6644,26 @@ void tx_partitioning_path(
         candidateBuffer,
         is_inter,
         end_tx_depth);
-
+#endif
     // Transform Depth Loop
     for (context_ptr->tx_depth = 0; context_ptr->tx_depth <= end_tx_depth; context_ptr->tx_depth++) {
+#if ATB_INTRA_2_DEPTH
+        tx_reset_neighbor_arrays(
+            sequence_control_set_ptr,
+            picture_control_set_ptr,
+            context_ptr,
+            candidateBuffer,
+            is_inter,
+            context_ptr->tx_depth);
 
+        ModeDecisionCandidateBuffer *tx_candidate_buffer = (context_ptr->tx_depth == 0) ?
+            candidateBuffer :
+            (context_ptr->tx_depth == 1) ?
+            context_ptr->candidate_buffer_tx_depth_1 :
+            context_ptr->candidate_buffer_tx_depth_2;
+#else
         ModeDecisionCandidateBuffer *tx_candidate_buffer = (context_ptr->tx_depth == 0) ? candidateBuffer : context_ptr->scratch_candidate_buffer;
-
+#endif
         tx_candidate_buffer->candidate_ptr->tx_depth = context_ptr->tx_depth;
 
         tx_initialize_neighbor_arrays(
@@ -6687,6 +6771,44 @@ void tx_partitioning_path(
     } // Transform Depth Loop
 
     // ATB Recon
+#if ATB_INTRA_2_DEPTH
+    if (best_tx_depth == 1) {
+
+        // Copy depth 1 mode/type/eob ..
+        memcpy(candidateBuffer->candidate_ptr, context_ptr->candidate_buffer_tx_depth_1->candidate_ptr, sizeof(ModeDecisionCandidate));
+
+        // Copy depth 1 pred
+        uint32_t block_index = context_ptr->blk_geom->origin_x + (context_ptr->blk_geom->origin_y * MAX_SB_SIZE);
+        EbByte src = &(context_ptr->candidate_buffer_tx_depth_1->prediction_ptr->buffer_y[block_index]);
+        EbByte dst = &(candidateBuffer->prediction_ptr->buffer_y[block_index]);
+        for (int i = 0; i < context_ptr->blk_geom->bheight; i++) {
+            memcpy(dst, src, context_ptr->blk_geom->bwidth);
+            src += context_ptr->candidate_buffer_tx_depth_1->prediction_ptr->stride_y;
+            dst += candidateBuffer->prediction_ptr->stride_y;
+        }
+
+        // Copy depth 1 recon coeff
+        memcpy(candidateBuffer->recon_coeff_ptr->buffer_y, context_ptr->candidate_buffer_tx_depth_1->recon_coeff_ptr->buffer_y, (context_ptr->blk_geom->bwidth * context_ptr->blk_geom->bheight << 2));
+    }
+    if (best_tx_depth == 2) {
+
+        // Copy depth 2 mode/type/eob ..
+        memcpy(candidateBuffer->candidate_ptr, context_ptr->candidate_buffer_tx_depth_2->candidate_ptr, sizeof(ModeDecisionCandidate));
+
+        // Copy depth 2 pred
+        uint32_t block_index = context_ptr->blk_geom->origin_x + (context_ptr->blk_geom->origin_y * MAX_SB_SIZE);
+        EbByte src = &(context_ptr->candidate_buffer_tx_depth_2->prediction_ptr->buffer_y[block_index]);
+        EbByte dst = &(candidateBuffer->prediction_ptr->buffer_y[block_index]);
+        for (int i = 0; i < context_ptr->blk_geom->bheight; i++) {
+            memcpy(dst, src, context_ptr->blk_geom->bwidth);
+            src += context_ptr->candidate_buffer_tx_depth_2->prediction_ptr->stride_y;
+            dst += candidateBuffer->prediction_ptr->stride_y;
+        }
+
+        // Copy depth 2 recon coeff
+        memcpy(candidateBuffer->recon_coeff_ptr->buffer_y, context_ptr->candidate_buffer_tx_depth_2->recon_coeff_ptr->buffer_y, (context_ptr->blk_geom->bwidth * context_ptr->blk_geom->bheight << 2));
+    }
+#else
     if (best_tx_depth == 1) {
         // Copy depth 1 mode/type/eob ..
         memcpy(candidateBuffer->candidate_ptr, context_ptr->scratch_candidate_buffer->candidate_ptr, sizeof(ModeDecisionCandidate));
@@ -6704,6 +6826,7 @@ void tx_partitioning_path(
         // Copy depth 1 recon coeff
         memcpy(candidateBuffer->recon_coeff_ptr->buffer_y, context_ptr->scratch_candidate_buffer->recon_coeff_ptr->buffer_y, (context_ptr->blk_geom->bwidth * context_ptr->blk_geom->bheight << 2));
     }
+#endif
 }
 #else
 #if ATB_INTER_SUPPORT
@@ -8058,10 +8181,15 @@ void md_stage_2(
 
 #if ATB_TX_TYPE_SUPPORT_PER_TU
         // Initialize tx type
+#if ATB_INTRA_2_DEPTH
+        for (int tu_index = 0; tu_index < MAX_TXB_COUNT; tu_index++)
+            candidate_ptr->transform_type[tu_index] = DCT_DCT;
+#else
         candidate_ptr->transform_type[0] = DCT_DCT;
         candidate_ptr->transform_type[1] = DCT_DCT;
         candidate_ptr->transform_type[2] = DCT_DCT;
         candidate_ptr->transform_type[3] = DCT_DCT;
+#endif
 #endif
 
 #if !ATB_MD
@@ -8721,10 +8849,15 @@ void AV1PerformFullLoop(
 
 #if ATB_TX_TYPE_SUPPORT_PER_TU
         // Initialize tx type
+#if ATB_INTRA_2_DEPTH
+        for (int tu_index = 0; tu_index < MAX_TXB_COUNT; tu_index++)
+            candidate_ptr->transform_type[tu_index] = DCT_DCT;
+#else
         candidate_ptr->transform_type[0] = DCT_DCT;
         candidate_ptr->transform_type[1] = DCT_DCT;
         candidate_ptr->transform_type[2] = DCT_DCT;
         candidate_ptr->transform_type[3] = DCT_DCT;
+#endif
 #endif
 #if !FIRST_FULL_LOOP_CHROMA_BLIND // bypass useless
 #if FULL_LOOP_SPLIT
@@ -8881,6 +9014,11 @@ void AV1PerformFullLoop(
 #if STRENGHTHEN_MD_STAGE_3
             uint8_t  tx_search_skip_flag;
 #if FI_CLASS
+#if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+            if (context_ptr->tx_search_level == 0)
+                tx_search_skip_flag = 1;
+            else
+#endif
             if (context_ptr->bypass_stage2[candidate_ptr->cand_class] == EB_FALSE && (candidate_ptr->cand_class == CAND_CLASS_0 || candidate_ptr->cand_class == CAND_CLASS_5))
 #else
             if (context_ptr->bypass_stage2[candidate_ptr->cand_class] == EB_FALSE && candidate_ptr->cand_class == CAND_CLASS_0)

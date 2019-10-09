@@ -1818,8 +1818,10 @@ static void adjust_filter_params(EbPictureBufferDesc *input_picture_ptr,
                     noiselevel_adj = 0;
             }
         }
+#if !ALIGN_ALTREFS_TO_MASTER
         else
             noiselevel_adj = 0;
+#endif
 #endif
 #if ALT_REF_Y_UV_SEPERATE_FILTER_STRENGTH
         adj_strength_y += noiselevel_adj;

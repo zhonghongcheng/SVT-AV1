@@ -95,12 +95,28 @@ EbErrorType mode_decision_context_ctor(
             return EB_ErrorInsufficientResources;
     }
 #if TX_TYPE_SEARCH_OPT
+#if ATB_INTRA_2_DEPTH
+    EB_MALLOC(ModeDecisionCandidateBuffer*, context_ptr->candidate_buffer_tx_depth_1, sizeof(ModeDecisionCandidateBuffer), EB_N_PTR);
+    EB_MALLOC(ModeDecisionCandidate*, context_ptr->candidate_buffer_tx_depth_1->candidate_ptr, sizeof(ModeDecisionCandidate), EB_N_PTR);
+    return_error = mode_decision_scratch_candidate_buffer_ctor(context_ptr->candidate_buffer_tx_depth_1);
+
+    if (return_error == EB_ErrorInsufficientResources)
+        return EB_ErrorInsufficientResources;
+
+    EB_MALLOC(ModeDecisionCandidateBuffer*, context_ptr->candidate_buffer_tx_depth_2, sizeof(ModeDecisionCandidateBuffer), EB_N_PTR);
+    EB_MALLOC(ModeDecisionCandidate*, context_ptr->candidate_buffer_tx_depth_2->candidate_ptr, sizeof(ModeDecisionCandidate), EB_N_PTR);
+    return_error = mode_decision_scratch_candidate_buffer_ctor(context_ptr->candidate_buffer_tx_depth_2);
+
+    if (return_error == EB_ErrorInsufficientResources)
+        return EB_ErrorInsufficientResources;
+#else
     EB_MALLOC(ModeDecisionCandidateBuffer*, context_ptr->scratch_candidate_buffer, sizeof(ModeDecisionCandidateBuffer), EB_N_PTR);
     EB_MALLOC(ModeDecisionCandidate*, context_ptr->scratch_candidate_buffer->candidate_ptr, sizeof(ModeDecisionCandidate), EB_N_PTR);
     return_error = mode_decision_scratch_candidate_buffer_ctor(context_ptr->scratch_candidate_buffer);
 
     if (return_error == EB_ErrorInsufficientResources)
         return EB_ErrorInsufficientResources;
+#endif
 #endif
 #if !UNPACK_REF_POST_EP
     // Inter Prediction Context

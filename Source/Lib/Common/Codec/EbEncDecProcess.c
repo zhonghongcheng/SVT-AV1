@@ -1271,6 +1271,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->tx_search_level = TX_SEARCH_ENC_DEC;
     
+#if TX_TYPE_OFF
+    context_ptr->tx_search_level = TX_SEARCH_OFF;
+#endif
+
     // Set tx search skip weights (MAX_MODE_COST: no skipping; 0: always skipping)
 #if FIX_TX_SEARCH_FOR_MR_MODE
     if (MR_MODE) // tx weight
