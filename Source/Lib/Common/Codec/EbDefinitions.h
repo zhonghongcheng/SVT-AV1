@@ -271,13 +271,20 @@ extern "C" {
 #define ATB_INTER_1_DEPTH                       1 // ATB INTER Depth 1
 #define ATB_INTER_2_DEPTH                       0 // ATB INTER Depth 2
 
+
+#define DEBUG_THIS                              0
+#if DEBUG_THIS
+#define NSQ_OFF                                 0
+#define TX_TYPE_OFF                             1
+#define ATB_OFF                                 1
+#else
 #define NSQ_OFF                                 0
 #define TX_TYPE_OFF                             0
 #define ATB_OFF                                 0
-
+#endif
 #define IMPROVED_ATB                            0
 #if IMPROVED_ATB
-#define REMOVE_USELESS_OPERATION                0
+#define REMOVE_USELESS_OPERATION                1
 #define ATB_INTRA_2_DEPTH                       1 
 #define UPDATE_ATB_INTRA_2_DEPTH                1
 #define ALL_LAYERS                              1 
@@ -612,9 +619,8 @@ extern "C" {
 
 #define EIGTH_PEL_MV                                    1
 #define EIGHT_PEL_PREDICTIVE_ME                         1 // Add eight pel as part of the predictive me.
-#if !NSQ_OFF
+
 #define DISABLE_NSQ_TABLE                               1 // On wil disable the nsq_table ordering algrithm for sc content. This is a temporarily adoption that will be disable once we comeup with a better ordreing mecanisme when MRP i ON.
-#endif
 #define IMPROVED_SUBPEL_SEARCH                          1
 
 

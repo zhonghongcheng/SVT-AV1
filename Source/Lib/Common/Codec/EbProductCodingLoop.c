@@ -5444,13 +5444,13 @@ EbErrorType av1_intra_luma_prediction(
         PLANE_TYPE_Y,                                                                          //int32_t plane,
         md_context_ptr->blk_geom->bsize,       //uint32_t puSize,
 #if ATB_EP
-        md_context_ptr->cu_origin_x,
-        md_context_ptr->cu_origin_y,
+        md_context_ptr->cu_origin_x, // useless
+        md_context_ptr->cu_origin_y, // useless
 #endif
         md_context_ptr->cu_origin_x,                  //uint32_t cuOrgX,
         md_context_ptr->cu_origin_y,                  //uint32_t cuOrgY
-        md_context_ptr->blk_geom->tx_org_x[md_context_ptr->tx_depth][md_context_ptr->txb_itr],  //uint32_t cuOrgX used only for prediction Ptr
-        md_context_ptr->blk_geom->tx_org_y[md_context_ptr->tx_depth][md_context_ptr->txb_itr]   //uint32_t cuOrgY used only for prediction Ptr
+        md_context_ptr->blk_geom->tx_org_x[md_context_ptr->tx_depth][md_context_ptr->txb_itr],  //uint32_t cuOrgX used only for prediction Ptr  // usefull
+        md_context_ptr->blk_geom->tx_org_y[md_context_ptr->tx_depth][md_context_ptr->txb_itr]   //uint32_t cuOrgY used only for prediction Ptr  // usefull
     );
 
     return return_error;
@@ -6727,6 +6727,14 @@ void tx_partitioning_path(
 #else
         ModeDecisionCandidateBuffer *tx_candidate_buffer = (context_ptr->tx_depth == 0) ? candidateBuffer : context_ptr->scratch_candidate_buffer;
 #endif
+
+#if DEBUG_THIS
+        if (tx_candidate_buffer->candidate_ptr->pred_mode == H_PRED && context_ptr->tx_depth == 2 && (context_ptr->sb_origin_x +  context_ptr->blk_geom->origin_x) == 368 && (context_ptr->sb_origin_y + context_ptr->blk_geom->origin_y) == 128 && context_ptr->blk_geom->bheight == 8 && context_ptr->blk_geom->bwidth == 16)
+            printf("");
+
+        if (context_ptr->tx_depth == 1)
+            printf("");
+#endif
         tx_candidate_buffer->candidate_ptr->tx_depth = context_ptr->tx_depth;
 
         tx_initialize_neighbor_arrays(
@@ -6745,8 +6753,9 @@ void tx_partitioning_path(
         tx_candidate_buffer->candidate_ptr->y_has_coeff = 0;
 
         uint16_t txb_count = context_ptr->blk_geom->txb_count[context_ptr->tx_depth];
-
+#if !REMOVE_USELESS_OPERATION
         uint32_t block_has_coeff = EB_FALSE;
+#endif
         for (context_ptr->txb_itr = 0; context_ptr->txb_itr < txb_count; context_ptr->txb_itr++) {
             uint16_t tx_org_x = context_ptr->blk_geom->tx_org_x[context_ptr->tx_depth][context_ptr->txb_itr];
             uint16_t tx_org_y = context_ptr->blk_geom->tx_org_y[context_ptr->tx_depth][context_ptr->txb_itr];
@@ -6756,11 +6765,25 @@ void tx_partitioning_path(
             // Y Prediction
 
             if (!is_inter) {
+#if 0//DEBUG_THIS
+                if (context_ptr->tx_depth == 2 && (context_ptr->sb_origin_x + context_ptr->blk_geom->origin_x) == 240 && (context_ptr->sb_origin_y + context_ptr->blk_geom->origin_y) == 176 && context_ptr->blk_geom->bheight == 16 && context_ptr->blk_geom->bwidth == 16)
+                    printf("");
+
+                if (context_ptr->tx_depth == 1)
+                    printf("");
+#endif
                 av1_intra_luma_prediction(
                     context_ptr,
                     picture_control_set_ptr,
                     tx_candidate_buffer);
 
+#if 0//DEBUG_THIS
+                if (context_ptr->tx_depth == 2 && (context_ptr->sb_origin_x + context_ptr->blk_geom->origin_x) == 240 && (context_ptr->sb_origin_y + context_ptr->blk_geom->origin_y) == 176 && context_ptr->blk_geom->bheight == 16 && context_ptr->blk_geom->bwidth == 16)
+                    printf("");
+
+                if (context_ptr->tx_depth == 2)
+                    printf("");
+#endif
                 // Y Residual
                 ResidualKernel(
                     &(input_picture_ptr->buffer_y[input_tu_origin_index]),
@@ -6792,18 +6815,19 @@ void tx_partitioning_path(
                 &(tx_y_count_non_zero_coeffs[0]),
                 &tx_y_coeff_bits,
                 &tx_y_full_distortion[0]);
-
+#if !REMOVE_USELESS_OPERATION
             uint32_t y_has_coeff = tx_y_count_non_zero_coeffs[context_ptr->txb_itr] > 0;
-
+#endif
             tx_update_neighbor_arrays(
                 sequence_control_set_ptr,
                 picture_control_set_ptr,
                 context_ptr,
                 tx_candidate_buffer,
                 is_inter);
-
+#if !REMOVE_USELESS_OPERATION
             if (y_has_coeff)
                 block_has_coeff = EB_TRUE;
+#endif
 
         } // Transform Loop
 
@@ -6814,11 +6838,21 @@ void tx_partitioning_path(
                 context_ptr,
                 picture_control_set_ptr,
                 context_ptr->tx_depth,
+#if REMOVE_USELESS_OPERATION
+                tx_candidate_buffer->candidate_ptr->y_has_coeff,
+#else
                 block_has_coeff,
+#endif
                 is_inter);
 
         uint64_t cost = RDCOST(context_ptr->full_lambda, (tx_y_coeff_bits + tx_size_bits), tx_y_full_distortion[DIST_CALC_RESIDUAL]);
-
+        
+#if 0//DEBUG_THIS
+        if (context_ptr->tx_depth == 2)
+            cost = 0;
+        else
+            cost = (uint64_t) ~0;
+#endif
         if (cost < best_cost_search) {
             best_cost_search = cost;
             best_tx_depth = context_ptr->tx_depth;
@@ -9655,6 +9689,14 @@ EbBool allowed_ns_cu(
     ModeDecisionContext                *context_ptr,
     uint8_t                            is_complete_sb){
     EbBool  ret = 1;
+
+#if NSQ_OFF
+
+    if (context_ptr->blk_geom->shape != PART_N) {
+        ret = 0;
+        return ret;
+    }
+#endif
 #if !MPMD_SB_1PART_IN_FP
 #if NSQ_FIX
     UNUSED(is_complete_sb);

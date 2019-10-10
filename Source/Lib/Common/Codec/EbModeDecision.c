@@ -7825,12 +7825,20 @@ void  inject_intra_candidates(
     (void)sequence_control_set_ptr;
     (void)sb_ptr;
     uint8_t                     is16bit = (sequence_control_set_ptr->static_config.encoder_bit_depth > EB_8BIT);
+#if DEBUG_THIS
+    uint8_t                     intra_mode_start = DC_PRED;// D135_PRED;
+    uint8_t                     intra_mode_end = D135_PRED;//D135_PRED;
+#else
     uint8_t                     intra_mode_start = DC_PRED;
     uint8_t                     intra_mode_end   = is16bit ? SMOOTH_H_PRED : PAETH_PRED;
+#endif
     uint8_t                     openLoopIntraCandidate;
     uint32_t                    canTotalCnt = 0;
     uint8_t                     angleDeltaCounter = 0;
     EbBool                      use_angle_delta = (context_ptr->blk_geom->bsize >= BLOCK_8X8);
+#if DEBUG_THIS
+    use_angle_delta = 0;
+#endif
     uint8_t                     angleDeltaCandidateCount = use_angle_delta ? 7 : 1;
     ModeDecisionCandidate    *candidateArray = context_ptr->fast_candidate_array;
 #if DISABLE_INTRA_4xN_NX4_IN_INTER_PIC
@@ -8432,6 +8440,7 @@ EbErrorType ProductGenerateMdCandidatesCu(
                 leaf_index);
 #endif
 #if FI_MD
+#if !DEBUG_THIS
        if (picture_control_set_ptr->pic_filter_intra_mode > 0 && av1_filter_intra_allowed_bsize(sequence_control_set_ptr->seq_header.enable_filter_intra, context_ptr->blk_geom->bsize))
 
             inject_filter_intra_candidates(
@@ -8444,6 +8453,7 @@ EbErrorType ProductGenerateMdCandidatesCu(
 #else
                 &canTotalCnt,
                 leaf_index);
+#endif
 #endif
 #endif
     }
