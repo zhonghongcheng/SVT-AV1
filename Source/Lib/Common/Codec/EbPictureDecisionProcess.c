@@ -786,39 +786,39 @@ EbErrorType signal_derivation_multi_processes_oq(
     picture_control_set_ptr->tf_enable_hme_level1_flag = tf_enable_hme_level1_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][picture_control_set_ptr->enc_mode];
     picture_control_set_ptr->tf_enable_hme_level2_flag = tf_enable_hme_level2_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][picture_control_set_ptr->enc_mode];
 
-    picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
-    picture_control_set_ptr->max_number_of_pus_per_sb = (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE) ? MAX_ME_PU_COUNT : SQUARE_PU_COUNT;
-    picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
-    picture_control_set_ptr->nsq_max_shapes_md = 0;
-    frm_hdr->allow_intrabc = 0;
-    frm_hdr->allow_screen_content_tools = 0;
-    picture_control_set_ptr->ibc_mode = 0;
+    picture_control_set_ptr->pic_depth_mode             = PIC_SQ_NON4_DEPTH_MODE;
+    picture_control_set_ptr->max_number_of_pus_per_sb   = (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE) ? MAX_ME_PU_COUNT : SQUARE_PU_COUNT;
+    picture_control_set_ptr->nsq_search_level           = NSQ_SEARCH_OFF;
+    picture_control_set_ptr->nsq_max_shapes_md          = 0;
+    frm_hdr->allow_intrabc                              = 0;
+    frm_hdr->allow_screen_content_tools                 = 0;
+    picture_control_set_ptr->ibc_mode                   = 0;
 
     picture_control_set_ptr->interpolation_search_level = IT_SEARCH_OFF;
-    picture_control_set_ptr->loop_filter_mode = 0;
-    picture_control_set_ptr->cdef_filter_mode = 0;
+    picture_control_set_ptr->loop_filter_mode           = 0;
+    picture_control_set_ptr->cdef_filter_mode           = 0;
 
-    Av1Common* cm = picture_control_set_ptr->av1_cm;
-    cm->sg_filter_mode = 0;
-    cm->wn_filter_mode = 0;
+    Av1Common* cm                                       = picture_control_set_ptr->av1_cm;
+    cm->sg_filter_mode                                  = 0;
+    cm->wn_filter_mode                                  = 0;
 
 
-    picture_control_set_ptr->tx_search_level = TX_SEARCH_OFF;
-    picture_control_set_ptr->tx_weight = MAX_MODE_COST;
-    picture_control_set_ptr->tx_search_reduced_set = 0;
-    picture_control_set_ptr->intra_pred_mode = 0;
-    picture_control_set_ptr->skip_sub_blks =   0;
-    picture_control_set_ptr->cu8x8_mode = CU_8x8_MODE_0;
-    picture_control_set_ptr->atb_mode = 0;
-    picture_control_set_ptr->coeff_based_skip_atb = 0;
-    picture_control_set_ptr->wedge_mode = 0;
+    picture_control_set_ptr->tx_search_level            = TX_SEARCH_OFF;
+    picture_control_set_ptr->tx_weight                  = MAX_MODE_COST;
+    picture_control_set_ptr->tx_search_reduced_set      = 0;
+    picture_control_set_ptr->intra_pred_mode            = 0;
+    picture_control_set_ptr->skip_sub_blks              =   0;
+    picture_control_set_ptr->cu8x8_mode                 = CU_8x8_MODE_0;
+    picture_control_set_ptr->atb_mode                   = 0;
+    picture_control_set_ptr->coeff_based_skip_atb       = 0;
+    picture_control_set_ptr->wedge_mode                 = 0;
 
-    //picture_control_set_ptr->allow_ref_frame_mvs = 0;
-    picture_control_set_ptr->prune_unipred_at_me = 0;
-    picture_control_set_ptr->enable_inter_intra = 0;
-    //picture_control_set_ptr->enable_skip_atb = 0;
-    picture_control_set_ptr->frame_end_cdf_update_mode = 0;
-    picture_control_set_ptr->frm_hdr.use_ref_frame_mvs = 0;
+    //picture_control_set_ptr->allow_ref_frame_mvs      = 0;
+    picture_control_set_ptr->prune_unipred_at_me        = 0;
+    picture_control_set_ptr->enable_inter_intra         = 0;
+    //picture_control_set_ptr->enable_skip_atb          = 0;
+    picture_control_set_ptr->frame_end_cdf_update_mode  = 0;
+    picture_control_set_ptr->frm_hdr.use_ref_frame_mvs  = 0;
 
 
 
