@@ -725,46 +725,15 @@ void* resource_coordination_kernel(void *input_ptr)
             sb_params_init(sequence_control_set_ptr);
             sb_geom_init(sequence_control_set_ptr);
 
-#if ALTREF_FILTERING_SUPPORT
-            sequence_control_set_ptr->enable_altrefs =  sequence_control_set_ptr->static_config.enable_altrefs &&
-                sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT ? EB_TRUE : EB_FALSE;
-#endif
-
             // Sep PM mode
             sequence_control_set_ptr->pm_mode = sequence_control_set_ptr->input_resolution < INPUT_SIZE_4K_RANGE ?
                 PM_MODE_2 :
                 PM_MODE_1;
 
-#if FI_EC
-#if m2_ibc_graph
-            sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M1)
-#elif M2_FI_INTRA_BASE
-            sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M2)
-#elif FI_INTRA_BASE
-            sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M1)
-#else
-            sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode == ENC_M0)
-#endif
-             ? 1 : 0;
-
-#endif
-
-#if II_COMP
-            sequence_control_set_ptr->seq_header.enable_interintra_compound = (sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;
-
-          //  sequence_control_set_ptr->seq_header.enable_interintra_compound = 1;
-#endif
-#if COMP_MODE
-
-            // Set compound mode      Settings
-            // 0                 OFF: No compond mode search : AVG only
-            // 1                 ON: full
-            sequence_control_set_ptr->compound_mode = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M4) ? 1 : 0;
-            
-
+            sequence_control_set_ptr->seq_header.enable_filter_intra        = 0;
             sequence_control_set_ptr->seq_header.enable_interintra_compound = 0;
-            sequence_control_set_ptr->compound_mode = 0;
-            sequence_control_set_ptr->enable_altrefs = 0;
+            sequence_control_set_ptr->compound_mode                         = 0;
+            sequence_control_set_ptr->enable_altrefs                        = 0;
 
             //sequence_control_set_ptr->order_hint_info_st.enable_order_hint = 1;
             //sequence_control_set_ptr->order_hint_info_st.order_hint_bits_minus_1 = 6;
@@ -782,7 +751,6 @@ void* resource_coordination_kernel(void *input_ptr)
                 sequence_control_set_ptr->seq_header.enable_masked_compound = 0;
 
             }
-#endif
 
             // Construct PM Trans Coeff Shaping
             if (context_ptr->sequence_control_set_instance_array[instance_index]->encode_context_ptr->initial_picture) {

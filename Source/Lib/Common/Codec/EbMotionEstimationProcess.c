@@ -174,12 +174,10 @@ EbErrorType signal_derivation_me_kernel_oq(
     SequenceControlSet        *sequence_control_set_ptr,
     PictureParentControlSet   *picture_control_set_ptr,
     MotionEstimationContext_t   *context_ptr) {
+
     EbErrorType return_error = EB_ErrorNone;
-#if TWO_PASS_USE_2NDP_ME_IN_1STP
+
     uint8_t  enc_mode = sequence_control_set_ptr->static_config.use_output_stat_file ? picture_control_set_ptr->enc_mode2p : picture_control_set_ptr->enc_mode;
-#else
-    uint8_t  enc_mode = picture_control_set_ptr->enc_mode;
-#endif
 
     // Set ME/HME search regions
     if (sequence_control_set_ptr->static_config.use_default_me_hme)
@@ -193,149 +191,24 @@ EbErrorType signal_derivation_me_kernel_oq(
         set_me_hme_params_from_config(
             sequence_control_set_ptr,
             context_ptr->me_context_ptr);
-        if (picture_control_set_ptr->sc_content_detected)
-#if NEW_M0_SC
-#if M0_SC_CANDIDATE
-            context_ptr->me_context_ptr->fractional_search_method = (enc_mode == ENC_M0)? FULL_SAD_SEARCH: SUB_SAD_SEARCH;
-#else
-            context_ptr->me_context_ptr->fractional_search_method = SUB_SAD_SEARCH;
-#endif
-#else
-            if (enc_mode <= ENC_M1)
-                context_ptr->me_context_ptr->fractional_search_method = SSD_SEARCH ;
-            else
-                context_ptr->me_context_ptr->fractional_search_method = SUB_SAD_SEARCH;
-#endif
-        else
-        if (enc_mode <= ENC_M6)
-        context_ptr->me_context_ptr->fractional_search_method = SSD_SEARCH ;
-#if M9_FRAC_ME_SEARCH_METHOD
-        else if (enc_mode <= ENC_M8)
-            context_ptr->me_context_ptr->fractionalSearchMethod = FULL_SAD_SEARCH;
-        else
-            context_ptr->me_context_ptr->fractionalSearchMethod = SUB_SAD_SEARCH;
-#else
-        else
-        context_ptr->me_context_ptr->fractional_search_method = FULL_SAD_SEARCH;
-#endif
-        if (picture_control_set_ptr->sc_content_detected)
-#if NEW_M0_SC
-            context_ptr->me_context_ptr->fractional_search64x64 = EB_FALSE;
-#else
-            if (enc_mode <= ENC_M1)
-                context_ptr->me_context_ptr->fractional_search64x64 = EB_TRUE;
-            else
-                context_ptr->me_context_ptr->fractional_search64x64 = EB_FALSE;
-#endif
-        else
-            context_ptr->me_context_ptr->fractional_search64x64 = EB_TRUE;
+    
+    context_ptr->me_context_ptr->fractional_search_method = SSD_SEARCH ;
+    context_ptr->me_context_ptr->fractional_search64x64   = EB_TRUE;
 
-#if M9_FRAC_ME_SEARCH_64x64
-    //if (picture_control_set_ptr->sc_content_detected)
-    //    context_ptr->fractional_search64x64 = EB_TRUE;
-    //else
-    {
-        if (enc_mode <= ENC_M8)
-            context_ptr->me_context_ptr->fractional_search64x64 = EB_TRUE;
-        else
-            context_ptr->me_context_ptr->fractional_search64x64 = EB_FALSE;
-    }
-#endif
-
-#if DECOUPLE_ALTREF_ME
     // Set HME flags
-    context_ptr->me_context_ptr->enable_hme_flag = picture_control_set_ptr->enable_hme_flag;
-    context_ptr->me_context_ptr->enable_hme_level0_flag = picture_control_set_ptr->enable_hme_level0_flag;
-    context_ptr->me_context_ptr->enable_hme_level1_flag = picture_control_set_ptr->enable_hme_level1_flag;
-    context_ptr->me_context_ptr->enable_hme_level2_flag = picture_control_set_ptr->enable_hme_level2_flag;
+    context_ptr->me_context_ptr->enable_hme_flag          = picture_control_set_ptr->enable_hme_flag;
+    context_ptr->me_context_ptr->enable_hme_level0_flag   = picture_control_set_ptr->enable_hme_level0_flag;
+    context_ptr->me_context_ptr->enable_hme_level1_flag   = picture_control_set_ptr->enable_hme_level1_flag;
+    context_ptr->me_context_ptr->enable_hme_level2_flag   = picture_control_set_ptr->enable_hme_level2_flag;
 
-    // Set the default settings of subpel
-    if (picture_control_set_ptr->sc_content_detected)
-        if (enc_mode <= ENC_M5)
-            context_ptr->me_context_ptr->use_subpel_flag = 1;
-        else
-            context_ptr->me_context_ptr->use_subpel_flag = 0;
-    else
-        context_ptr->me_context_ptr->use_subpel_flag = 1;
-    if (MR_MODE) {
-        context_ptr->me_context_ptr->half_pel_mode =
-            EX_HP_MODE;
-        context_ptr->me_context_ptr->quarter_pel_mode =
-            EX_QP_MODE;
-    }
-#if M3_SP_NREF
-    else if (enc_mode <= ENC_M1 || (enc_mode <= ENC_M2 && picture_control_set_ptr->is_used_as_reference_flag)) {
-#elif m2_ibc_graph
-    else if (enc_mode <= ENC_M1) {
-#else
-    else if (enc_mode <= ENC_M2) {
-#endif
-#if DISABLE_ENH_SUBPEL_SC
-        context_ptr->me_context_ptr->half_pel_mode = picture_control_set_ptr->sc_content_detected ? REFINEMENT_HP_MODE :
-#else
-        context_ptr->me_context_ptr->half_pel_mode =
-#endif
-            EX_HP_MODE;
-        context_ptr->me_context_ptr->quarter_pel_mode =
-            REFINEMENT_QP_MODE;
-    }
-    else {
-        context_ptr->me_context_ptr->half_pel_mode =
-            REFINEMENT_HP_MODE;
-        context_ptr->me_context_ptr->quarter_pel_mode =
-            REFINEMENT_QP_MODE;
-    }
-#endif
-
-#if M9_SUBPEL_SELECTION
-    // Set fractional search model
-    // 0: search all blocks
-    // 1: selective based on Full-Search SAD & MV.
-    // 2: off
-#if DECOUPLE_ALTREF_ME
-    if (context_ptr->me_context_ptr->use_subpel_flag == 1) {
-#else
-    if (picture_control_set_ptr->use_subpel_flag == 1) {
-#endif
-        if (enc_mode <= ENC_M6)
-            context_ptr->me_context_ptr->fractional_search_model = 0;
-        else
-            context_ptr->me_context_ptr->fractional_search_model = 1;
-    }
-    else
-        context_ptr->me_context_ptr->fractional_search_model = 2;
-#endif
-
-#if USE_SAD_HME
-    // HME Search Method
-    if (picture_control_set_ptr->sc_content_detected)
-        if (enc_mode <= ENC_M6)
-            context_ptr->me_context_ptr->hme_search_method = FULL_SAD_SEARCH;
-        else
-            context_ptr->me_context_ptr->hme_search_method = SUB_SAD_SEARCH;
-    else
-    context_ptr->me_context_ptr->hme_search_method = FULL_SAD_SEARCH;
-#else
-    context_ptr->me_context_ptr->hme_search_method = SUB_SAD_SEARCH;
-#endif
-#if USE_SAD_ME
-    // ME Search Method
-    if (picture_control_set_ptr->sc_content_detected)
-        if (enc_mode <= ENC_M5)
-            context_ptr->me_context_ptr->me_search_method = FULL_SAD_SEARCH;
-        else
-            context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH;
-    else
-#if m3_ibc_graph
-        context_ptr->me_context_ptr->me_search_method = (enc_mode <= ENC_M2) ?
-#else
-        context_ptr->me_context_ptr->me_search_method = (enc_mode <= ENC_M3) ?
-#endif
-            FULL_SAD_SEARCH :
-            SUB_SAD_SEARCH;
-#else
-    context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH  ;
-#endif
+    context_ptr->me_context_ptr->use_subpel_flag          = 1;
+    context_ptr->me_context_ptr->half_pel_mode            = picture_control_set_ptr->sc_content_detected ? REFINEMENT_HP_MODE :
+                   EX_HP_MODE;
+    context_ptr->me_context_ptr->quarter_pel_mode         =
+                   REFINEMENT_QP_MODE;
+    context_ptr->me_context_ptr->fractional_search_model  = 2;
+    context_ptr->me_context_ptr->me_search_method         = FULL_SAD_SEARCH ;
+    
     return return_error;
 };
 
@@ -433,131 +306,23 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
         sequence_control_set_ptr,
         sequence_control_set_ptr->input_resolution);
 
-    if (picture_control_set_ptr->sc_content_detected)
-#if M0_SC_CANDIDATE
-        if (picture_control_set_ptr->enc_mode == ENC_M0)
-            context_ptr->me_context_ptr->fractional_search_method = FULL_SAD_SEARCH;
-        else
-#endif
-        if (enc_mode <= ENC_M5)
-            context_ptr->me_context_ptr->fractional_search_method = SSD_SEARCH;
-        else
-            context_ptr->me_context_ptr->fractional_search_method = SUB_SAD_SEARCH;
-    else
-        if (enc_mode <= ENC_M6)
-            context_ptr->me_context_ptr->fractional_search_method = SSD_SEARCH;
-        else
-            context_ptr->me_context_ptr->fractional_search_method = FULL_SAD_SEARCH;
-    if (picture_control_set_ptr->sc_content_detected)
-        if (enc_mode <= ENC_M5)
-            context_ptr->me_context_ptr->fractional_search64x64 = EB_TRUE;
-        else
-            context_ptr->me_context_ptr->fractional_search64x64 = EB_FALSE;
-    else
-        context_ptr->me_context_ptr->fractional_search64x64 = EB_TRUE;
+    context_ptr->me_context_ptr->fractional_search_method = SSD_SEARCH;
+    context_ptr->me_context_ptr->fractional_search64x64 = EB_TRUE;
 
-#if DECOUPLE_ALTREF_ME
     // Set HME flags
     context_ptr->me_context_ptr->enable_hme_flag = picture_control_set_ptr->tf_enable_hme_flag;
     context_ptr->me_context_ptr->enable_hme_level0_flag = picture_control_set_ptr->tf_enable_hme_level0_flag;
     context_ptr->me_context_ptr->enable_hme_level1_flag = picture_control_set_ptr->tf_enable_hme_level1_flag;
     context_ptr->me_context_ptr->enable_hme_level2_flag = picture_control_set_ptr->tf_enable_hme_level2_flag;
 
-    // Set the default settings of subpel
-    if (picture_control_set_ptr->sc_content_detected)
-        if (enc_mode <= ENC_M5)
-            context_ptr->me_context_ptr->use_subpel_flag = 1;
-        else
-            context_ptr->me_context_ptr->use_subpel_flag = 0;
-    else
-        context_ptr->me_context_ptr->use_subpel_flag = 1;
-
-
-#if ALTREF_SHUT_EX_REFINEMENT
-    context_ptr->me_context_ptr->half_pel_mode =
-        REFINEMENT_HP_MODE;
-    context_ptr->me_context_ptr->quarter_pel_mode =
-        REFINEMENT_QP_MODE;
-#else
-    if (MR_MODE) {
-        context_ptr->me_context_ptr->half_pel_mode =
-            EX_HP_MODE;
-        context_ptr->me_context_ptr->quarter_pel_mode =
-            EX_QP_MODE;
-    }
-#if M3_SP_NREF
-    else if (enc_mode <= ENC_M1 || (enc_mode <= ENC_M2 && picture_control_set_ptr->is_used_as_reference_flag)) {
-#elif m2_ibc_graph
-    else if (enc_mode <= ENC_M1) {
-#else
-    else if (enc_mode <= ENC_M2) {
-#endif
-#if DISABLE_ENH_SUBPEL_SC
-        context_ptr->me_context_ptr->half_pel_mode = picture_control_set_ptr->sc_content_detected ? REFINEMENT_HP_MODE :
-#else
-        context_ptr->me_context_ptr->half_pel_mode =
-#endif
-            EX_HP_MODE;
-        context_ptr->me_context_ptr->quarter_pel_mode =
-            REFINEMENT_QP_MODE;
-    }
-    else {
-        context_ptr->me_context_ptr->half_pel_mode =
-            REFINEMENT_HP_MODE;
-        context_ptr->me_context_ptr->quarter_pel_mode =
-            REFINEMENT_QP_MODE;
-    }
-#endif
-
-
-#if ALTREF_ENABLE_EX_REFINEMENT
-    context_ptr->me_context_ptr->half_pel_mode =
+    context_ptr->me_context_ptr->use_subpel_flag = 1;
+    context_ptr->me_context_ptr->half_pel_mode = picture_control_set_ptr->sc_content_detected ? REFINEMENT_HP_MODE :
         EX_HP_MODE;
     context_ptr->me_context_ptr->quarter_pel_mode =
         REFINEMENT_QP_MODE;
-#endif
+    context_ptr->me_context_ptr->fractional_search_model = 2;
+    context_ptr->me_context_ptr->me_search_method = FULL_SAD_SEARCH;
 
-#endif
-
-    // Set fractional search model
-    // 0: search all blocks
-    // 1: selective based on Full-Search SAD & MV.
-    // 2: off
-#if DECOUPLE_ALTREF_ME
-    if (context_ptr->me_context_ptr->use_subpel_flag == 1) {
-#else
-    if (picture_control_set_ptr->use_subpel_flag == 1) {
-#endif
-        if (enc_mode <= ENC_M6)
-            context_ptr->me_context_ptr->fractional_search_model = 0;
-        else
-            context_ptr->me_context_ptr->fractional_search_model = 1;
-    }
-    else
-        context_ptr->me_context_ptr->fractional_search_model = 2;
-
-    // HME Search Method
-    if (picture_control_set_ptr->sc_content_detected)
-        if (enc_mode <= ENC_M6)
-            context_ptr->me_context_ptr->hme_search_method = FULL_SAD_SEARCH;
-        else
-            context_ptr->me_context_ptr->hme_search_method = SUB_SAD_SEARCH;
-    else
-        context_ptr->me_context_ptr->hme_search_method = FULL_SAD_SEARCH;
-    // ME Search Method
-    if (picture_control_set_ptr->sc_content_detected)
-        if (enc_mode <= ENC_M5)
-            context_ptr->me_context_ptr->me_search_method = FULL_SAD_SEARCH;
-        else
-            context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH;
-    else
-#if m3_ibc_graph
-        context_ptr->me_context_ptr->me_search_method = (enc_mode <= ENC_M2) ?
-#else
-        context_ptr->me_context_ptr->me_search_method = (enc_mode <= ENC_M3) ?
-#endif
-            FULL_SAD_SEARCH :
-            SUB_SAD_SEARCH;
     return return_error;
     };
 #endif

@@ -2864,45 +2864,10 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
     ModeDecisionConfigurationContext *context_ptr) {
     EbErrorType return_error = EB_ErrorNone;
 
-    context_ptr->adp_level = picture_control_set_ptr->parent_pcs_ptr->enc_mode;
+    context_ptr->adp_level                         = picture_control_set_ptr->parent_pcs_ptr->enc_mode;
 
-#if CABAC_UP
-    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
-        if (picture_control_set_ptr->enc_mode <= ENC_M6)
-            picture_control_set_ptr->update_cdf = 1;
-        else
-            picture_control_set_ptr->update_cdf = 0;
-    else
-        picture_control_set_ptr->update_cdf = (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M5) ? 1 : 0;
-#if DISABLE_CABAC_UP
-    picture_control_set_ptr->update_cdf = 0;
-#endif
-
-//#if MEMORY_FOOTPRINT_OPT_ME_MV
-//    if(picture_control_set_ptr->update_cdf)
-//        assert(sequence_control_set_ptr->cdf_mode == 0 && "use cdf_mode 0");
-//#endif
-#endif
-
-#if FI_MD
-    //Filter Intra Mode : 0: OFF  1: ON
-    if (sequence_control_set_ptr->seq_header.enable_filter_intra)
-#if FI_INTRA_BASE
-        picture_control_set_ptr->pic_filter_intra_mode = picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0 && picture_control_set_ptr->temporal_layer_index == 0 ? 1 : 0;
-#else
-        picture_control_set_ptr->pic_filter_intra_mode = picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0  ? 1 : 0;
-#endif
-    else
-        picture_control_set_ptr->pic_filter_intra_mode = 0;
-#endif
-#if DISABLE_FILTERED_INTRA
+    picture_control_set_ptr->update_cdf            = 0;
     picture_control_set_ptr->pic_filter_intra_mode = 0;
-#endif
-
-    picture_control_set_ptr->update_cdf = 0;
-    picture_control_set_ptr->pic_filter_intra_mode = 0;
-
-
 
     return return_error;
 }
