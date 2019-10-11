@@ -2878,10 +2878,10 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
     picture_control_set_ptr->update_cdf = 0;
 #endif
 
-#if MEMORY_FOOTPRINT_OPT_ME_MV
-    if(picture_control_set_ptr->update_cdf)
-        assert(sequence_control_set_ptr->cdf_mode == 0 && "use cdf_mode 0");
-#endif
+//#if MEMORY_FOOTPRINT_OPT_ME_MV
+//    if(picture_control_set_ptr->update_cdf)
+//        assert(sequence_control_set_ptr->cdf_mode == 0 && "use cdf_mode 0");
+//#endif
 #endif
 
 #if FI_MD
@@ -2898,6 +2898,12 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
 #if DISABLE_FILTERED_INTRA
     picture_control_set_ptr->pic_filter_intra_mode = 0;
 #endif
+
+    picture_control_set_ptr->update_cdf = 0;
+    picture_control_set_ptr->pic_filter_intra_mode = 0;
+
+
+
     return return_error;
 }
 
@@ -2935,8 +2941,8 @@ void forward_sq_non4_blocks_to_md(
 
                 resultsPtr->leaf_data_array[resultsPtr->leaf_count].leaf_index = 0;//valid only for square 85 world. will be removed.
                 resultsPtr->leaf_data_array[resultsPtr->leaf_count].mds_idx = blk_index;
-#if 0//DEBUG_THIS
-                if (blk_geom->sq_size == 16)
+#if 1
+                if (blk_geom->sq_size == 8)
                 {
                     resultsPtr->leaf_data_array[resultsPtr->leaf_count++].split_flag = EB_FALSE;
                     split_flag = EB_FALSE;

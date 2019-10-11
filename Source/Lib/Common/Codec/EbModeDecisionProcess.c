@@ -574,6 +574,10 @@ void reset_mode_decision(
 #if RESET_BUG_FIX
     }
 #endif
+
+    picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode          = 0;
+    picture_control_set_ptr->parent_pcs_ptr->switchable_motion_mode = 0;
+
     return;
 }
 

@@ -2359,6 +2359,12 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
 #endif
 #endif
 
+    sequence_control_set_ptr->nsq_present = 0;
+    sequence_control_set_ptr->temporal_mvp_enabled = 0;
+    sequence_control_set_ptr->down_sampling_method_me_search = ME_FILTERED_DOWNSAMPLED;
+    sequence_control_set_ptr->cdf_mode = 1;
+    //sequence_control_set_ptr->mfmv_enabled = 0;
+
 }
 
 void CopyApiFromApp(

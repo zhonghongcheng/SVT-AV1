@@ -7830,7 +7830,7 @@ void  inject_intra_candidates(
     uint8_t                     intra_mode_end = D135_PRED;//D135_PRED;
 #else
     uint8_t                     intra_mode_start = DC_PRED;
-    uint8_t                     intra_mode_end   = is16bit ? SMOOTH_H_PRED : PAETH_PRED;
+    uint8_t                     intra_mode_end   = DC_PRED; //is16bit ? SMOOTH_H_PRED : PAETH_PRED;
 #endif
     uint8_t                     openLoopIntraCandidate;
     uint32_t                    canTotalCnt = 0;
@@ -7866,7 +7866,7 @@ void  inject_intra_candidates(
     context_ptr->estimate_angle_intra = ((picture_control_set_ptr->enc_mode > ENC_M2) || (picture_control_set_ptr->enc_mode <= ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0)) ? 0 : 1;
 #else
 
-    context_ptr->estimate_angle_intra = ((picture_control_set_ptr->enc_mode > ENC_M3) || (picture_control_set_ptr->enc_mode <= ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0)) ? 0 : 1;
+    context_ptr->estimate_angle_intra = 0;//((picture_control_set_ptr->enc_mode > ENC_M3) || (picture_control_set_ptr->enc_mode <= ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0)) ? 0 : 1;
 #endif
 #else
     context_ptr->estimate_angle_intra = ((picture_control_set_ptr->enc_mode > ENC_M3) || (picture_control_set_ptr->enc_mode == ENC_M0)) ? 0 : 1;
@@ -7877,14 +7877,14 @@ void  inject_intra_candidates(
 
     uint8_t directional_mode_skip_mask[INTRA_MODES] = { 0 };
 
-    if (context_ptr->estimate_angle_intra==1 && use_angle_delta  )
-    {
-        EbPictureBufferDesc   *src_pic = picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr;
-        uint8_t               *src_buf = src_pic->buffer_y + (context_ptr->cu_origin_x + src_pic->origin_x) + (context_ptr->cu_origin_y + src_pic->origin_y) * src_pic->stride_y;
-        const int rows = block_size_high[context_ptr->blk_geom->bsize];
-        const int cols = block_size_wide[context_ptr->blk_geom->bsize];
-        angle_estimation(src_buf, src_pic->stride_y, rows, cols, /*context_ptr->blk_geom->bsize,*/directional_mode_skip_mask);
-    }
+    //if (context_ptr->estimate_angle_intra==1 && use_angle_delta  )
+    //{
+    //    EbPictureBufferDesc   *src_pic = picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr;
+    //    uint8_t               *src_buf = src_pic->buffer_y + (context_ptr->cu_origin_x + src_pic->origin_x) + (context_ptr->cu_origin_y + src_pic->origin_y) * src_pic->stride_y;
+    //    const int rows = block_size_high[context_ptr->blk_geom->bsize];
+    //    const int cols = block_size_wide[context_ptr->blk_geom->bsize];
+    //    angle_estimation(src_buf, src_pic->stride_y, rows, cols, /*context_ptr->blk_geom->bsize,*/directional_mode_skip_mask);
+    //}
 #endif
 
 #if M9_INTRA
@@ -7917,7 +7917,8 @@ void  inject_intra_candidates(
 #if M9_INTRA
         angleDeltaCandidateCount = disable_angle_refinement ? 1: angleDeltaCandidateCount;
 #endif
-    } else if (picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode == 2) {
+    } 
+    else if (picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode == 2) {
         disable_z2_prediction       = 0;
         disable_angle_refinement    = 0 ;
         disable_angle_prediction    = (context_ptr->blk_geom->sq_size > 16 ||
@@ -7926,7 +7927,8 @@ void  inject_intra_candidates(
 #if M9_INTRA
         angleDeltaCandidateCount = disable_angle_refinement ? 1: angleDeltaCandidateCount;
 #endif
-    } else if (picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode == 1) {
+    } 
+    else if (picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode == 1) {
         disable_z2_prediction       = (context_ptr->blk_geom->sq_size > 16 ||
                                        context_ptr->blk_geom->bwidth == 4 ||
                                        context_ptr->blk_geom->bheight == 4) ? 1 : 0;
@@ -7937,12 +7939,13 @@ void  inject_intra_candidates(
 #if M9_INTRA
         angleDeltaCandidateCount = disable_angle_refinement ? 1: angleDeltaCandidateCount;
 #endif
-    } else {
-        disable_z2_prediction       = 0;
-        disable_angle_refinement    = 0;
-        disable_angle_prediction    = 0;
+    } 
+    else {
+        disable_z2_prediction       = 1;
+        disable_angle_refinement    = 1;
+        disable_angle_prediction    = 1;
 #if M9_INTRA
-        angleDeltaCandidateCount = disable_angle_refinement ? 1: angleDeltaCandidateCount;
+        angleDeltaCandidateCount = 0;//disable_angle_refinement ? 1: angleDeltaCandidateCount;
 #endif
     }
 #if MR_MODE
@@ -7956,7 +7959,7 @@ void  inject_intra_candidates(
 
     for (openLoopIntraCandidate = intra_mode_start; openLoopIntraCandidate <= intra_mode_end ; ++openLoopIntraCandidate) {
 
-        if (av1_is_directional_mode((PredictionMode)openLoopIntraCandidate)) {
+        if (0) {
 
 #if ESTIMATE_INTRA
             if (!disable_angle_prediction &&
@@ -8085,22 +8088,22 @@ void  inject_intra_candidates(
 #if FI_MD
             candidateArray[canTotalCnt].filter_intra_mode = FILTER_INTRA_MODES;
 #endif
-            candidateArray[canTotalCnt].is_directional_mode_flag = (uint8_t)av1_is_directional_mode((PredictionMode)openLoopIntraCandidate);
+            candidateArray[canTotalCnt].is_directional_mode_flag = 0;//(uint8_t)av1_is_directional_mode((PredictionMode)openLoopIntraCandidate);
 #if !SEARCH_UV_CLEAN_UP
             candidateArray[canTotalCnt].use_angle_delta = candidateArray[canTotalCnt].is_directional_mode_flag;
 #endif
             candidateArray[canTotalCnt].angle_delta[PLANE_TYPE_Y] = 0;
 #if SEARCH_UV_MODE
             // Search the best independent intra chroma mode
-            if (context_ptr->chroma_level == CHROMA_MODE_0) {
-                candidateArray[canTotalCnt].intra_chroma_mode = disable_cfl_flag ?
-                    context_ptr->best_uv_mode[openLoopIntraCandidate][MAX_ANGLE_DELTA + candidateArray[canTotalCnt].angle_delta[PLANE_TYPE_Y]] :
-                    UV_CFL_PRED;
+            if (1) {
+                candidateArray[canTotalCnt].intra_chroma_mode = UV_DC_PRED;//disable_cfl_flag ?
+                    //context_ptr->best_uv_mode[openLoopIntraCandidate][MAX_ANGLE_DELTA + candidateArray[canTotalCnt].angle_delta[PLANE_TYPE_Y]] :
+                    //UV_CFL_PRED;
 #if CHROMA_SEARCH_FIX
-                candidateArray[canTotalCnt].angle_delta[PLANE_TYPE_UV] = disable_cfl_flag ?
-                    context_ptr->best_uv_angle[candidateArray[canTotalCnt].intra_luma_mode][MAX_ANGLE_DELTA + candidateArray[canTotalCnt].angle_delta[PLANE_TYPE_Y]] : 0;
-                candidateArray[canTotalCnt].is_directional_chroma_mode_flag = disable_cfl_flag ?
-                    (uint8_t)av1_is_directional_mode((PredictionMode)(context_ptr->best_uv_mode[candidateArray[canTotalCnt].intra_luma_mode][MAX_ANGLE_DELTA + candidateArray[canTotalCnt].angle_delta[PLANE_TYPE_Y]])) : 0;
+                candidateArray[canTotalCnt].angle_delta[PLANE_TYPE_UV] = 0; //disable_cfl_flag ?
+                    //context_ptr->best_uv_angle[candidateArray[canTotalCnt].intra_luma_mode][MAX_ANGLE_DELTA + candidateArray[canTotalCnt].angle_delta[PLANE_TYPE_Y]] : 0;
+                candidateArray[canTotalCnt].is_directional_chroma_mode_flag = 0; //disable_cfl_flag ?
+                    //(uint8_t)av1_is_directional_mode((PredictionMode)(context_ptr->best_uv_mode[candidateArray[canTotalCnt].intra_luma_mode][MAX_ANGLE_DELTA + candidateArray[canTotalCnt].angle_delta[PLANE_TYPE_Y]])) : 0;
 #endif
             }
             else {
@@ -8132,10 +8135,10 @@ void  inject_intra_candidates(
             candidateArray[canTotalCnt].intra_chroma_mode = disable_ang_uv && av1_is_directional_mode(candidateArray[canTotalCnt].intra_chroma_mode) ?
                 UV_DC_PRED : candidateArray[canTotalCnt].intra_chroma_mode;
 #endif
-#if CHROMA_DC_ONLY
+#if 1
             candidateArray[canTotalCnt].intra_chroma_mode = UV_DC_PRED;
 #if CHROMA_SEARCH_FIX
-            candidateArray[canTotalCnt].is_directional_chroma_mode_flag = (uint8_t)av1_is_directional_mode((PredictionMode)candidateArray[canTotalCnt].intra_chroma_mode);
+            candidateArray[canTotalCnt].is_directional_chroma_mode_flag = 0;//(uint8_t)av1_is_directional_mode((PredictionMode)candidateArray[canTotalCnt].intra_chroma_mode);
             candidateArray[canTotalCnt].angle_delta[PLANE_TYPE_UV] = 0;
 #endif
 #endif
@@ -8145,10 +8148,10 @@ void  inject_intra_candidates(
             candidateArray[canTotalCnt].is_directional_chroma_mode_flag = (uint8_t)av1_is_directional_mode((PredictionMode)candidateArray[canTotalCnt].intra_chroma_mode);
             candidateArray[canTotalCnt].angle_delta[PLANE_TYPE_UV] = 0;
 #endif
-#if ATB_TX_TYPE_SUPPORT_PER_TU
+//#if ATB_TX_TYPE_SUPPORT_PER_TU
             candidateArray[canTotalCnt].transform_type[0] = DCT_DCT;
-
-            if (candidateArray[canTotalCnt].intra_chroma_mode == UV_CFL_PRED)
+            candidateArray[canTotalCnt].transform_type_uv = DCT_DCT;
+            /*if (candidateArray[canTotalCnt].intra_chroma_mode == UV_CFL_PRED)
                 candidateArray[canTotalCnt].transform_type_uv = DCT_DCT;
             else
                 candidateArray[canTotalCnt].transform_type_uv =
@@ -8174,7 +8177,7 @@ void  inject_intra_candidates(
 #else
                     context_ptr->blk_geom->txsize_uv[0],
 #endif
-                    picture_control_set_ptr->parent_pcs_ptr->reduced_tx_set_used);
+                    picture_control_set_ptr->parent_pcs_ptr->reduced_tx_set_used);*/
             candidateArray[canTotalCnt].ref_frame_type = INTRA_FRAME;
             candidateArray[canTotalCnt].pred_mode = (PredictionMode)openLoopIntraCandidate;
             candidateArray[canTotalCnt].motion_mode = SIMPLE_TRANSLATION;
@@ -8428,16 +8431,16 @@ EbErrorType ProductGenerateMdCandidatesCu(
                 &canTotalCnt);
         else
             if (inject_intra_candidate)
-            inject_intra_candidates(
-                picture_control_set_ptr,
-                context_ptr,
-                sequence_control_set_ptr,
-                sb_ptr,
-#if M8_SKIP_BLK
-                &canTotalCnt);
-#else
-                &canTotalCnt,
-                leaf_index);
+                inject_intra_candidates(
+                    picture_control_set_ptr,
+                    context_ptr,
+                    sequence_control_set_ptr,
+                    sb_ptr,
+    #if M8_SKIP_BLK
+                    &canTotalCnt);
+    #else
+                    &canTotalCnt,
+                    leaf_index);
 #endif
 #if FI_MD
 #if !DEBUG_THIS

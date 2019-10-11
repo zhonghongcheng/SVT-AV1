@@ -16930,7 +16930,7 @@ EbErrorType open_loop_intra_search_sb(
             uint8_t best_intra_ois_index = 0;
             uint32_t best_intra_ois_distortion = 64 * 64 * 255;
             uint8_t intra_mode_start = DC_PRED;
-            uint8_t intra_mode_end = is_16_bit ? SMOOTH_H_PRED : PAETH_PRED;
+            uint8_t intra_mode_end = DC_PRED;//is_16_bit ? SMOOTH_H_PRED : PAETH_PRED;
             uint8_t angle_delta_counter = 0;
 #if M9_INTRA
             uint8_t angle_delta_shift = 1;

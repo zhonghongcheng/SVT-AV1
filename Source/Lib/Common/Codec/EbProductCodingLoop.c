@@ -3375,6 +3375,41 @@ if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_cont
     context_ptr->md_stage_3_count[CAND_CLASS_0] = context_ptr->md_stage_2_count[CAND_CLASS_0];
     context_ptr->md_stage_3_count[CAND_CLASS_5] = context_ptr->md_stage_2_count[CAND_CLASS_5];
 #endif
+    
+
+
+    context_ptr->fast_cand_count[CAND_CLASS_0] = 1;
+    //context_ptr->fast_cand_count[CAND_CLASS_1] = 1;
+    //context_ptr->fast_cand_count[CAND_CLASS_2] = 1;
+    //context_ptr->fast_cand_count[CAND_CLASS_3] = 1;
+    //context_ptr->fast_cand_count[CAND_CLASS_4] = 1;
+    //context_ptr->fast_cand_count[CAND_CLASS_5] = 1;
+    //context_ptr->fast_cand_count[CAND_CLASS_6] = 1;
+
+    context_ptr->fast1_cand_count[CAND_CLASS_0] = 1;
+    context_ptr->fast1_cand_count[CAND_CLASS_1] = 0;
+    context_ptr->fast1_cand_count[CAND_CLASS_2] = 0;
+    context_ptr->fast1_cand_count[CAND_CLASS_3] = 0;
+    context_ptr->fast1_cand_count[CAND_CLASS_4] = 0;
+    context_ptr->fast1_cand_count[CAND_CLASS_5] = 0;
+    context_ptr->fast1_cand_count[CAND_CLASS_6] = 0;
+
+    context_ptr->md_stage_2_count[CAND_CLASS_0] = 1;
+    context_ptr->md_stage_2_count[CAND_CLASS_1] = 0;
+    context_ptr->md_stage_2_count[CAND_CLASS_2] = 0;
+    context_ptr->md_stage_2_count[CAND_CLASS_3] = 0;
+    context_ptr->md_stage_2_count[CAND_CLASS_4] = 0;
+    context_ptr->md_stage_2_count[CAND_CLASS_5] = 0;
+    context_ptr->md_stage_2_count[CAND_CLASS_6] = 0;
+
+    context_ptr->md_stage_3_count[CAND_CLASS_0] = 1;
+    context_ptr->md_stage_3_count[CAND_CLASS_1] = 0;
+    context_ptr->md_stage_3_count[CAND_CLASS_2] = 0;
+    context_ptr->md_stage_3_count[CAND_CLASS_3] = 0;
+    context_ptr->md_stage_3_count[CAND_CLASS_4] = 0;
+    context_ptr->md_stage_3_count[CAND_CLASS_5] = 0;
+    context_ptr->md_stage_3_count[CAND_CLASS_6] = 0;
+
 }
 #endif
 #else
@@ -11690,7 +11725,6 @@ void md_encode_block(
                     context_ptr->cand_buff_indices[cand_class_it]);
             }
         }
-
 
 #if DIST_BASED_COUNT_2_PRONE
         inter_class_decision_count_2(context_ptr);

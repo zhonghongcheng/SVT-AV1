@@ -1997,6 +1997,9 @@ void av1_quantize_inv_quantize(
 #else
     EbBool perform_quantize_fp = EB_FALSE;
 #endif
+    perform_rdoq = EB_FALSE;
+    perform_quantize_fp = EB_FALSE;//picture_control_set_ptr->enc_mode == ENC_M0 ? EB_TRUE: EB_FALSE;
+    
 
     if (perform_rdoq && perform_quantize_fp && !is_inter)
         av1_quantize_fp_facade(
