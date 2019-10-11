@@ -1990,6 +1990,13 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
     else
         sequence_control_set_ptr->over_boundary_block_mode = 0;
     sequence_control_set_ptr->mfmv_enabled = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;
+
+    sequence_control_set_ptr->nsq_present = 0;
+    //sequence_control_set_ptr->temporal_mvp_enabled = 0;
+    sequence_control_set_ptr->down_sampling_method_me_search = ME_FILTERED_DOWNSAMPLED;
+    sequence_control_set_ptr->cdf_mode = 1;
+    sequence_control_set_ptr->mfmv_enabled = 0;
+    sequence_control_set_ptr->over_boundary_block_mode = 1;
 }
 
 void CopyApiFromApp(

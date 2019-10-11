@@ -1552,6 +1552,9 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
     else
     picture_control_set_ptr->update_cdf = (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M5) ? 1 : 0;
 
+    picture_control_set_ptr->update_cdf = 0;
+    //picture_control_set_ptr->pic_filter_intra_mode = 0;
+
     if(picture_control_set_ptr->update_cdf)
         assert(sequence_control_set_ptr->cdf_mode == 0 && "use cdf_mode 0");
     return return_error;
@@ -1592,6 +1595,16 @@ void forward_sq_non4_blocks_to_md(
                 resultsPtr->leaf_data_array[resultsPtr->leaf_count].leaf_index = 0;//valid only for square 85 world. will be removed.
                 resultsPtr->leaf_data_array[resultsPtr->leaf_count].mds_idx = blk_index;
 
+#if 1
+                if (blk_geom->sq_size == 8)
+                {
+                    resultsPtr->leaf_data_array[resultsPtr->leaf_count++].split_flag = EB_FALSE;
+                    split_flag = EB_FALSE;
+                }
+                else {
+                    split_flag = EB_TRUE;
+                }
+#else
                 if (blk_geom->sq_size > 8)
                 {
                     resultsPtr->leaf_data_array[resultsPtr->leaf_count++].split_flag = EB_TRUE;
@@ -1601,6 +1614,7 @@ void forward_sq_non4_blocks_to_md(
                     resultsPtr->leaf_data_array[resultsPtr->leaf_count++].split_flag = EB_FALSE;
                     split_flag = EB_FALSE;
                 }
+#endif
             }
 
             blk_index += split_flag ? d1_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth] : ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];

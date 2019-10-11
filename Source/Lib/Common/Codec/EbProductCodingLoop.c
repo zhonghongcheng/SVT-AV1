@@ -1767,6 +1767,31 @@ void set_md_stage_counts(
     // Step 4: zero-out count for CAND_CLASS_3 if CAND_CLASS_1 and CAND_CLASS_2 are merged (i.e. shift to the left)
     if (context_ptr->combine_class12)
         context_ptr->md_stage_1_count[CAND_CLASS_3] = context_ptr->md_stage_2_count[CAND_CLASS_3] = context_ptr->md_stage_3_count[CAND_CLASS_3] = 0;
+
+    context_ptr->md_stage_0_count[CAND_CLASS_0] = 1;
+ //  context_ptr->md_stage_0_count[CAND_CLASS_1] = 5;
+ //  context_ptr->md_stage_0_count[CAND_CLASS_2] = 5;
+ //  context_ptr->md_stage_0_count[CAND_CLASS_3] = 5;
+ //  context_ptr->md_stage_0_count[CAND_CLASS_4] = 5;
+
+    context_ptr->md_stage_1_count[CAND_CLASS_0] = 1;
+    context_ptr->md_stage_1_count[CAND_CLASS_1] = 1;
+    context_ptr->md_stage_1_count[CAND_CLASS_2] = 1;
+    context_ptr->md_stage_1_count[CAND_CLASS_3] = 1;
+    context_ptr->md_stage_1_count[CAND_CLASS_4] = 1;
+
+    context_ptr->md_stage_2_count[CAND_CLASS_0] = 1;
+    context_ptr->md_stage_2_count[CAND_CLASS_1] = 1;
+    context_ptr->md_stage_2_count[CAND_CLASS_2] = 1;
+    context_ptr->md_stage_2_count[CAND_CLASS_3] = 1;
+    context_ptr->md_stage_2_count[CAND_CLASS_4] = 1;
+
+    context_ptr->md_stage_3_count[CAND_CLASS_0] = 1;
+    context_ptr->md_stage_3_count[CAND_CLASS_1] = 1;
+    context_ptr->md_stage_3_count[CAND_CLASS_2] = 1;
+    context_ptr->md_stage_3_count[CAND_CLASS_3] = 1;
+    context_ptr->md_stage_3_count[CAND_CLASS_4] = 1;
+
 }
 
 void sort_stage0_fast_candidates(

@@ -113,7 +113,8 @@ EbErrorType signal_derivation_pre_analysis_oq(
 
     if (picture_control_set_ptr->enc_mode >= ENC_M8)
         sequence_control_set_ptr->seq_header.enable_restoration = 0;
-    sequence_control_set_ptr->cdf_mode = (picture_control_set_ptr->enc_mode <= ENC_M6) ? 0 : 1;
+    sequence_control_set_ptr->seq_header.enable_restoration = 0;
+
     return return_error;
 }
 
@@ -657,6 +658,13 @@ void* resource_coordination_kernel(void *input_ptr)
             // 1                 ON: full
             sequence_control_set_ptr->compound_mode = sequence_control_set_ptr->static_config.encoder_bit_depth == EB_10BIT ? 0 :
                 (sequence_control_set_ptr->static_config.enc_mode <= ENC_M4) ? 1 : 0;
+
+            sequence_control_set_ptr->seq_header.enable_interintra_compound = 0;
+            sequence_control_set_ptr->compound_mode = 0;
+            sequence_control_set_ptr->enable_altrefs = 0;
+
+
+
             if (sequence_control_set_ptr->compound_mode)
             {
                 sequence_control_set_ptr->seq_header.order_hint_info.enable_jnt_comp = 1; //DISTANCE

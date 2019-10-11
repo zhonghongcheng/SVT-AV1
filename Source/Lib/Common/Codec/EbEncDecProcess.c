@@ -1167,164 +1167,6 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     ModeDecisionContext   *context_ptr) {
     EbErrorType return_error = EB_ErrorNone;
 
-    // Set Chroma Mode
-    // Level                Settings
-    // CHROMA_MODE_0  0     Full chroma search @ MD
-    // CHROMA_MODE_1  1     Fast chroma search @ MD
-    // CHROMA_MODE_2  2     Chroma blind @ MD + CFL @ EP
-    // CHROMA_MODE_3  3     Chroma blind @ MD + no CFL @ EP
-    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
-        if (picture_control_set_ptr->enc_mode <= ENC_M6)
-            context_ptr->chroma_level = CHROMA_MODE_1;
-        else
-            if (picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0)
-                context_ptr->chroma_level = CHROMA_MODE_1;
-            else
-                context_ptr->chroma_level = (sequence_control_set_ptr->encoder_bit_depth == EB_8BIT) ?
-                CHROMA_MODE_2 :
-                CHROMA_MODE_3;
-    else
-    if (MR_MODE)
-        context_ptr->chroma_level = CHROMA_MODE_0;
-    else
-    if (picture_control_set_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->temporal_layer_index == 0)
-        context_ptr->chroma_level = CHROMA_MODE_0;
-    else
-    if (picture_control_set_ptr->enc_mode <= ENC_M4)
-        context_ptr->chroma_level = CHROMA_MODE_1;
-    else
-        context_ptr->chroma_level = (sequence_control_set_ptr->encoder_bit_depth == EB_8BIT) ?
-            CHROMA_MODE_2 :
-            CHROMA_MODE_3 ;
-
-    // Set fast loop method
-    // 1 fast loop: SSD_SEARCH not supported
-    // Level                Settings
-    //  0                   Collapsed fast loop
-    //  1                   Decoupled fast loops ( intra/inter)
-    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
-        if (picture_control_set_ptr->enc_mode <= ENC_M1)
-            context_ptr->decouple_intra_inter_fast_loop = 0;
-        else
-            context_ptr->decouple_intra_inter_fast_loop = 1;
-    else
-    context_ptr->decouple_intra_inter_fast_loop = 0;
-
-    // Set the search method when decoupled fast loop is used
-    // Hsan: FULL_SAD_SEARCH not supported
-    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
-        if (picture_control_set_ptr->enc_mode <= ENC_M1)
-            context_ptr->decoupled_fast_loop_search_method = SSD_SEARCH;
-        else
-            context_ptr->decoupled_fast_loop_search_method = FULL_SAD_SEARCH;
-    else
-        if (picture_control_set_ptr->enc_mode <= ENC_M4)
-            context_ptr->decoupled_fast_loop_search_method = SSD_SEARCH;
-        else
-            context_ptr->decoupled_fast_loop_search_method = FULL_SAD_SEARCH;
-
-    // Set the full loop escape level
-    // Level                Settings
-    // 0                    Off
-    // 1                    On but only INTRA
-    // 2                    On both INTRA and INTER
-    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
-        if (picture_control_set_ptr->enc_mode <= ENC_M1)
-            context_ptr->full_loop_escape = 0;
-        else
-            context_ptr->full_loop_escape = 2;
-    else
-    if (picture_control_set_ptr->enc_mode <= ENC_M5)
-        context_ptr->full_loop_escape = 0;
-    else
-        context_ptr->full_loop_escape = 2;
-
-    // Set global MV injection
-    // Level                Settings
-    // 0                    Injection off (Hsan: but not derivation as used by MV ref derivation)
-    // 1                    On
-    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
-        if (picture_control_set_ptr->enc_mode <= ENC_M1)
-            context_ptr->global_mv_injection = 1;
-        else
-            context_ptr->global_mv_injection = 0;
-    else
-    if (picture_control_set_ptr->enc_mode <= ENC_M7)
-        context_ptr->global_mv_injection = 1;
-    else
-        context_ptr->global_mv_injection = 0;
-
-    if (picture_control_set_ptr->enc_mode == ENC_M0)
-        context_ptr->new_nearest_near_comb_injection = 1;
-    else
-        context_ptr->new_nearest_near_comb_injection = 0;
-    if (picture_control_set_ptr->enc_mode == ENC_M0)
-        context_ptr->nx4_4xn_parent_mv_injection = 1;
-    else
-        context_ptr->nx4_4xn_parent_mv_injection = 0;
-
-    // Set warped motion injection
-    // Level                Settings
-    // 0                    OFF
-    // 1                    On
-    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
-        context_ptr->warped_motion_injection = 0;
-    else
-    context_ptr->warped_motion_injection = 1;
-
-    // Set unipred3x3 injection
-    // Level                Settings
-    // 0                    OFF
-    // 1                    ON FULL
-    // 2                    Reduced set
-    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
-        if (picture_control_set_ptr->enc_mode <= ENC_M1)
-            context_ptr->unipred3x3_injection = 1;
-        else
-            context_ptr->unipred3x3_injection = 0;
-    else
-    if (picture_control_set_ptr->enc_mode <= ENC_M1)
-        context_ptr->unipred3x3_injection = 1;
-    else if (picture_control_set_ptr->enc_mode <= ENC_M4)
-        context_ptr->unipred3x3_injection = 2;
-    else
-        context_ptr->unipred3x3_injection = 0;
-
-    // Set bipred3x3 injection
-    // Level                Settings
-    // 0                    OFF
-    // 1                    ON FULL
-    // 2                    Reduced set
-    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
-        if (picture_control_set_ptr->enc_mode <= ENC_M1)
-            context_ptr->bipred3x3_injection = 1;
-        else
-            context_ptr->bipred3x3_injection = 0;
-    else
-    if (picture_control_set_ptr->enc_mode <= ENC_M1)
-        context_ptr->bipred3x3_injection = 1;
-    else if (picture_control_set_ptr->enc_mode <= ENC_M4)
-        context_ptr->bipred3x3_injection = 2;
-    else
-        context_ptr->bipred3x3_injection = 0;
-
-    // Level                Settings
-    // 0                    Level 0: OFF
-    // 1                    Level 1: 7x5 full-pel search + sub-pel refinement off
-    // 2                    Level 2: 7x5 full-pel search +  (H + V) sub-pel refinement only = 4 half-pel + 4 quarter-pel = 8 positions + pred_me_distortion to pa_me_distortion deviation on
-    // 3                    Level 3: 7x5 full-pel search +  (H + V + D only ~ the best) sub-pel refinement = up to 6 half-pel + up to 6  quarter-pel = up to 12 positions + pred_me_distortion to pa_me_distortion deviation on
-    // 4                    Level 4: 7x5 full-pel search +  (H + V + D) sub-pel refinement = 8 half-pel + 8 quarter-pel = 16 positions + pred_me_distortion to pa_me_distortion deviation on
-    // 5                    Level 5: 7x5 full-pel search +  (H + V + D) sub-pel refinement = 8 half-pel + 8 quarter-pel = 16 positions + pred_me_distortion to pa_me_distortion deviation off
-    if (picture_control_set_ptr->slice_type != I_SLICE)
-        if (picture_control_set_ptr->enc_mode <= ENC_M1)
-            context_ptr->predictive_me_level = 4;
-        else if (picture_control_set_ptr->enc_mode <= ENC_M4)
-            context_ptr->predictive_me_level = 2;
-        else
-            context_ptr->predictive_me_level = 0;
-    else
-        context_ptr->predictive_me_level = 0;
-
     // Derive md_staging_mode
     //
     // MD_STAGING_MODE_1
@@ -1405,95 +1247,33 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // |        |                             |                             |                                |                                         |
     // |________|_____________________________|_____________________________|________________________________|_________________________________________|
 
-    if (picture_control_set_ptr->enc_mode == ENC_M0)
-        context_ptr->md_staging_mode = MD_STAGING_MODE_1;
-    else if (picture_control_set_ptr->enc_mode <= ENC_M4)
-        context_ptr->md_staging_mode = MD_STAGING_MODE_3;
-    else
-        context_ptr->md_staging_mode = MD_STAGING_MODE_0; // Default structure = fast loop + full loop = md_stage_0 + md_stage_3
 
-    // Combine MD Class1&2
-    // 0                    OFF
-    // 1                    ON
-    context_ptr->combine_class12 = (picture_control_set_ptr->enc_mode == ENC_M0) ? 0 : 1;
-
-    // Set interpolation filter search blk size
-    // Level                Settings
-    // 0                    ON for 8x8 and above
-    // 1                    ON for 16x16 and above
-    // 2                    ON for 32x32 and above
-    if (picture_control_set_ptr->enc_mode <= ENC_M4)
-        context_ptr->interpolation_filter_search_blk_size = 0;
-    else
-        context_ptr->interpolation_filter_search_blk_size = 1;
-
-    // Set PF MD
-    context_ptr->pf_md_mode = PF_OFF;
-
-    // Derive Spatial SSE Flag
-    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
-        if (picture_control_set_ptr->enc_mode <= ENC_M6)
-            context_ptr->spatial_sse_full_loop = EB_TRUE;
-        else
-            context_ptr->spatial_sse_full_loop = EB_FALSE;
-    else
-    if (picture_control_set_ptr->enc_mode <= ENC_M4)
-        context_ptr->spatial_sse_full_loop = EB_TRUE;
-    else
-        context_ptr->spatial_sse_full_loop = EB_FALSE;
-
-    if (context_ptr->chroma_level <= CHROMA_MODE_1)
-        context_ptr->blk_skip_decision = EB_TRUE;
-    else
-        context_ptr->blk_skip_decision = EB_FALSE;
-    // Derive Trellis Quant Coeff Optimization Flag
-    if (picture_control_set_ptr->enc_mode == ENC_M0)
-        context_ptr->trellis_quant_coeff_optimization = EB_TRUE;
-    else
-        context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
-
-    // Derive redundant block
-    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
-        if (picture_control_set_ptr->enc_mode <= ENC_M1)
-            context_ptr->redundant_blk = EB_TRUE;
-        else
-            context_ptr->redundant_blk = EB_FALSE;
-    else
-    if (picture_control_set_ptr->enc_mode <= ENC_M5)
-        context_ptr->redundant_blk = EB_TRUE;
-    else
-        context_ptr->redundant_blk = EB_FALSE;
-    if (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
-        if (MR_MODE || picture_control_set_ptr->enc_mode == ENC_M0)
-            context_ptr->edge_based_skip_angle_intra = 0;
-        else
-            context_ptr->edge_based_skip_angle_intra = 1;
-    else
-        context_ptr->edge_based_skip_angle_intra = 0;
-    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode == ENC_M0)
-        context_ptr->prune_ref_frame_for_rec_partitions = 0;
-    else
-        context_ptr->prune_ref_frame_for_rec_partitions = 1;
-
-#if SPEED_OPT
-    // Derive INTER/INTER WEDGE variance TH
-    if (MR_MODE)
-        context_ptr->inter_inter_wedge_variance_th = 0;
-    else
-        context_ptr->inter_inter_wedge_variance_th = 100;
-
-    // Derive MD Exit TH
-    if (MR_MODE)
-        context_ptr->md_exit_th = 0;
-    else
-        context_ptr->md_exit_th = 10;
-
-    // Derive distortion-based md_stage_0_count proning
-    if (MR_MODE)
-        context_ptr->dist_base_md_stage_0_count_th = (uint64_t)~0;
-    else
-        context_ptr->dist_base_md_stage_0_count_th = 75;
-#endif
+//    context_ptr->nic_level = 0;
+    context_ptr->chroma_level                         = CHROMA_MODE_1;
+    context_ptr->decoupled_fast_loop_search_method    = SSD_SEARCH;
+    context_ptr->full_loop_escape                     = 0;
+    context_ptr->global_mv_injection                  = 0;
+    context_ptr->new_nearest_near_comb_injection      = 0;
+    context_ptr->nx4_4xn_parent_mv_injection          = 0;
+    context_ptr->warped_motion_injection              = 0;
+    context_ptr->unipred3x3_injection                 = 0;
+    context_ptr->bipred3x3_injection                  = 0;
+    context_ptr->predictive_me_level                  = 0;
+    context_ptr->combine_class12                      = 0;
+    context_ptr->pf_md_mode                           = PF_OFF;
+    context_ptr->md_exit_th                           = 0;
+    context_ptr->dist_base_md_stage_0_count_th        = (uint64_t)~0;
+    context_ptr->trellis_quant_coeff_optimization     = EB_FALSE;
+    context_ptr->redundant_blk                        = EB_FALSE;
+    context_ptr->md_staging_mode                      = 1;
+    context_ptr->inter_inter_wedge_variance_th        = 0;
+    context_ptr->interpolation_filter_search_blk_size = 0;
+    context_ptr->blk_skip_decision                    = EB_TRUE;
+    context_ptr->spatial_sse_full_loop                = EB_TRUE;
+    context_ptr->decouple_intra_inter_fast_loop       = 0;
+    // master only
+    context_ptr->prune_ref_frame_for_rec_partitions   = 0;
+    context_ptr->edge_based_skip_angle_intra          = 0;
 
     return return_error;
 }
