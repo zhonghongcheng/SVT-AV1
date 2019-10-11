@@ -59,14 +59,16 @@ extern "C" {
 #define ADD_FLAG_FOR_SKIP_NEW_MV_FEATURE   1
 #define MPMD_TEST                          1
 #define TEST_DEPTH_REFINEMENT              1
-#define MARK_CU                            1
-#if MARK_CU
-#define UNVALID  1000
-#define USE_1SP_MODE                       1
+#define MARK_CU                            0
+
+#define USE_1SP_MODE                       0
+#if USE_1SP_MODE
 #define NUMBER_OF_MODE_TH                  25
 #define BEST_PRED_MODE_TH                  1
 #endif
-
+#if MARK_CU || USE_1SP_MODE
+#define UNVALID  1000
+#endif
 #endif
 #define DEBUG_MPMD_MD                      0
 #if DEBUG_MPMD_MD
