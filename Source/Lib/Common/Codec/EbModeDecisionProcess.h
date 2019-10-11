@@ -107,6 +107,9 @@ extern "C" {
 #if RED_CU
         uint8_t                     avail_blk_flag ;   //tells whether this CU is tested in MD and have a valid cu data
 #endif
+#if USE_1SP_MODE
+        uint8_t                     best_pred_modes_table[MAX_NFL_BUFF];
+#endif
     } MdCodingUnit;
 
     typedef struct ModeDecisionContext
@@ -230,6 +233,9 @@ extern "C" {
         MD_STAGE                         md_stage;
         uint32_t                         fast1_cand_count[CAND_CLASS_TOTAL]; //how many candiates will be tested per md level and  per class
         uint32_t                         cand_buff_indices[CAND_CLASS_TOTAL][MAX_NFL_BUFF];
+#endif
+#if USE_1SP_MODE
+        uint32_t                         final_cand_buff_indices[MAX_NFL_BUFF];
 #endif
 
         uint16_t                        cu_origin_x;
@@ -460,6 +466,12 @@ extern "C" {
     PART best_nsq_sahpe7;
     PART best_nsq_sahpe8;
 #endif
+#if MARK_CU
+    int16_t fp_depth_offset;
+#endif
+#if USE_1SP_MODE
+    int8_t fp_depth_mode_valid[MB_MODE_COUNT];
+#endif
 #if NSQ_EARLY_EXIT
     uint64_t tot_cost;
 #endif
@@ -508,6 +520,21 @@ extern "C" {
     uint64_t tx_weight;
     uint8_t tx_search_reduced_set;
     uint8_t skip_tx_search;
+#endif
+#if MOVE_ATB_MODE_SIGNAL_UNDER_CTX
+#if ATB_SUPPORT
+        uint8_t atb_mode;
+#endif
+#endif
+#if MOVE_COMPOUND_MODE_SIGNAL_UNDER_CTX
+#if COMP_MODE
+    //    OrderHintInfoEnc                        order_hint_info_st;
+        MD_COMP_TYPE compound_types_to_try;
+        uint8_t compound_mode;
+#if II_SEARCH
+        uint8_t enable_inter_intra;
+#endif
+#endif
 #endif
   } ModeDecisionContext;
 

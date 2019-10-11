@@ -77,6 +77,21 @@ int svt_is_interintra_allowed(
 
 }
 #endif
+#if USE_1SP_MODE
+uint8_t skip_cand_based_on_fp_md(
+    ModeDecisionContext             *context_ptr,
+    PredictionMode                   pred_mode_inj) {
+    uint8_t skip_candidate = 1;
+
+        for (uint16_t fp_pred_indx = 0; fp_pred_indx < NUMBER_OF_MODE_TH; fp_pred_indx++) {
+            if (context_ptr->fp_depth_mode_valid[pred_mode_inj] != -1) {
+                skip_candidate = 0;
+            }
+        }
+    
+    return skip_candidate;
+}
+#endif
 /********************************************
 * Constants
 ********************************************/
@@ -1438,6 +1453,10 @@ void Unipred3x3CandidatesInjection(
             for (ii_type = 0; ii_type < tot_ii_types; ii_type++)
             {
 #endif
+#if USE_1SP_MODE
+        PredictionMode pred_mode_inj = NEWMV;
+        if (skip_cand_based_on_fp_md(context_ptr, pred_mode_inj)) continue;
+#endif
             candidateArray[canTotalCnt].type = INTER_MODE;
             candidateArray[canTotalCnt].distortion_ready = 0;
             candidateArray[canTotalCnt].use_intrabc = 0;
@@ -1553,6 +1572,10 @@ void Unipred3x3CandidatesInjection(
                 if (ALLOW_REFINEMENT_FLAG[bipredIndex] == 0)
                     continue;
             }
+#if USE_1SP_MODE
+        PredictionMode pred_mode_inj = NEWMV;
+        if (skip_cand_based_on_fp_md(context_ptr, pred_mode_inj)) continue;
+#endif
 #if MD_INJECTION
 #if MEMORY_FOOTPRINT_OPT_ME_MV
 #if FROM_7_TO_4_MV
@@ -1729,13 +1752,24 @@ void Bipred3x3CandidatesInjection(
     IntMv  bestPredmv[2] = { {0}, {0} };
 #if COMP_MODE
     BlockSize bsize = context_ptr->blk_geom->bsize;                       // bloc size
+#if MOVE_COMPOUND_MODE_SIGNAL_UNDER_CTX
+    MD_COMP_TYPE compound_types_to_try = context_ptr->compound_types_to_try;
+#else
     MD_COMP_TYPE compound_types_to_try = picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;
+#endif
     MD_COMP_TYPE cur_type; //BIP 3x3 MiSize >= BLOCK_8X8 && MiSize <= BLOCK_32X32)
 #if COMP_OPT
+#if MOVE_COMPOUND_MODE_SIGNAL_UNDER_CTX
+        MD_COMP_TYPE tot_comp_types = context_ptr->compound_mode == 1 ?  MD_COMP_AVG :
+        (bsize >= BLOCK_8X8 && bsize <= BLOCK_32X32) ? compound_types_to_try :
+        (compound_types_to_try == MD_COMP_WEDGE) ? MD_COMP_DIFF0 :
+        context_ptr->compound_types_to_try;
+#else
     MD_COMP_TYPE tot_comp_types = picture_control_set_ptr->parent_pcs_ptr->compound_mode == 1 ?  MD_COMP_AVG :
         (bsize >= BLOCK_8X8 && bsize <= BLOCK_32X32) ? compound_types_to_try :
         (compound_types_to_try == MD_COMP_WEDGE) ? MD_COMP_DIFF0 :
         picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;
+#endif
 
 
 #if N0_COMP
@@ -1782,6 +1816,10 @@ void Bipred3x3CandidatesInjection(
                         if (ALLOW_REFINEMENT_FLAG[bipredIndex] == 0)
                             continue;
                     }
+#if USE_1SP_MODE
+        PredictionMode pred_mode_inj = NEW_NEWMV;
+        if (skip_cand_based_on_fp_md(context_ptr, pred_mode_inj)) continue;
+#endif
 #if MD_INJECTION
 #if MEMORY_FOOTPRINT_OPT_ME_MV
                     int16_t to_inject_mv_x_l0 = use_close_loop_me ? inloop_me_context->inloop_me_mv[0][0][close_loop_me_index][0] << 1 : me_results->me_mv_array[context_ptr->me_block_offset][list0_ref_index].x_mv << 1;
@@ -1950,6 +1988,10 @@ void Bipred3x3CandidatesInjection(
                 if (ALLOW_REFINEMENT_FLAG[bipredIndex] == 0)
                     continue;
             }
+#if USE_1SP_MODE
+        PredictionMode pred_mode_inj = NEW_NEWMV;
+        if (skip_cand_based_on_fp_md(context_ptr, pred_mode_inj)) continue;
+#endif
 #if MD_INJECTION
 #if MEMORY_FOOTPRINT_OPT_ME_MV
             int16_t to_inject_mv_x_l0 = use_close_loop_me ? (inloop_me_context->inloop_me_mv[0][0][close_loop_me_index][0] + BIPRED_3x3_X_POS[bipredIndex]) << 1 : (me_results->me_mv_array[context_ptr->me_block_offset][list0_ref_index].x_mv + BIPRED_3x3_X_POS[bipredIndex]) << 1;
@@ -2515,11 +2557,19 @@ void inject_mvp_candidates_II(
 #if COMP_MODE
 
     BlockSize bsize = context_ptr->blk_geom->bsize;                       // bloc size
+#if MOVE_COMPOUND_MODE_SIGNAL_UNDER_CTX
+    MD_COMP_TYPE compound_types_to_try = context_ptr->compound_types_to_try;
+    MD_COMP_TYPE cur_type; //BIP 3x3 MiSize >= BLOCK_8X8 && MiSize <= BLOCK_32X32)
+    MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize<= BLOCK_32X32 ) ? compound_types_to_try :
+                                  (compound_types_to_try == MD_COMP_WEDGE )? MD_COMP_DIFF0 :
+                                   context_ptr->compound_types_to_try;//MD_COMP_DIST;// MD_COMP_AVG;//
+#else
     MD_COMP_TYPE compound_types_to_try = picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;
     MD_COMP_TYPE cur_type; //BIP 3x3 MiSize >= BLOCK_8X8 && MiSize <= BLOCK_32X32)
     MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize<= BLOCK_32X32 ) ? compound_types_to_try :
                                   (compound_types_to_try == MD_COMP_WEDGE )? MD_COMP_DIFF0 :
                                    picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;//MD_COMP_DIST;// MD_COMP_AVG;//
+#endif
 #endif
 #if INTER_INTER_WEDGE_OPT
     if (context_ptr->source_variance < context_ptr->inter_inter_wedge_variance_th)
@@ -2549,7 +2599,11 @@ void inject_mvp_candidates_II(
 
 #if OBMC_SUP 
             uint8_t ii_type;
+#if MOVE_COMPOUND_MODE_SIGNAL_UNDER_CTX
+            uint8_t is_ii_allowed = svt_is_interintra_allowed(context_ptr->enable_inter_intra, bsize, NEARESTMV, rf);
+#else
             uint8_t is_ii_allowed = svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, NEARESTMV, rf);
+#endif
             uint8_t tot_ii_types = is_ii_allowed ? II_COUNT : 1;
             uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEARESTMV) == OBMC_CAUSAL;
             tot_ii_types = is_obmc_allowed ? tot_ii_types + 1 : tot_ii_types;
@@ -2559,6 +2613,10 @@ void inject_mvp_candidates_II(
 #endif
             for (ii_type = 0; ii_type < tot_ii_types; ii_type++)
             {
+#endif
+#if USE_1SP_MODE
+            PredictionMode pred_mode_inj = NEARESTMV;
+            if (skip_cand_based_on_fp_md(context_ptr, pred_mode_inj)) continue;
 #endif
             candidateArray[canIdx].type = INTER_MODE;
             candidateArray[canIdx].inter_mode = NEARESTMV;
@@ -2685,7 +2743,11 @@ void inject_mvp_candidates_II(
 #if II_SEARCH // NEARMV
 #if OBMC_SUP 
             uint8_t ii_type;
+#if MOVE_COMPOUND_MODE_SIGNAL_UNDER_CTX
+            uint8_t is_ii_allowed = svt_is_interintra_allowed(context_ptr->enable_inter_intra, bsize, NEARMV, rf);
+#else
             uint8_t is_ii_allowed = svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, NEARMV, rf);
+#endif
             uint8_t tot_ii_types = is_ii_allowed ? II_COUNT : 1;
             uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEARMV) == OBMC_CAUSAL;
             tot_ii_types = is_obmc_allowed ? tot_ii_types + 1 : tot_ii_types;
@@ -2696,6 +2758,10 @@ void inject_mvp_candidates_II(
 #endif
             for (ii_type = 0; ii_type < tot_ii_types; ii_type++)
             {
+#endif
+#if USE_1SP_MODE
+                PredictionMode pred_mode_inj = NEARMV;
+                if (skip_cand_based_on_fp_md(context_ptr, pred_mode_inj)) continue;
 #endif
                 candidateArray[canIdx].type = INTER_MODE;
                 candidateArray[canIdx].inter_mode = NEARMV;
@@ -2824,6 +2890,10 @@ void inject_mvp_candidates_II(
                 if (context_ptr->variance_ready)
                     if (context_ptr->prediction_mse < 8 || (!have_newmv_in_inter_mode(NEAREST_NEARESTMV) && context_ptr->prediction_mse  < 64))
                         continue;
+#if USE_1SP_MODE
+                PredictionMode pred_mode_inj = NEAREST_NEARESTMV;
+                if (skip_cand_based_on_fp_md(context_ptr, pred_mode_inj)) continue;
+#endif
 
 #if ! COMP_DIFF
                     //NEAREST-NEAREST
@@ -2930,6 +3000,10 @@ void inject_mvp_candidates_II(
                 if (context_ptr->variance_ready)
                     if (context_ptr->prediction_mse < 8 || (!have_newmv_in_inter_mode(NEAR_NEARMV) && context_ptr->prediction_mse  < 64))
                         continue;
+#if USE_1SP_MODE
+                PredictionMode pred_mode_inj = NEAR_NEARMV;
+                if (skip_cand_based_on_fp_md(context_ptr, pred_mode_inj)) continue;
+#endif
 
 #endif
                     candidateArray[canIdx].type = INTER_MODE;
@@ -3308,11 +3382,20 @@ void inject_new_nearest_new_comb_candidates(
 #if COMP_MODE
 
     BlockSize bsize = context_ptr->blk_geom->bsize;                       // bloc size
+#if MOVE_COMPOUND_MODE_SIGNAL_UNDER_CTX
+    MD_COMP_TYPE compound_types_to_try = context_ptr->compound_types_to_try;
+    MD_COMP_TYPE cur_type; //BIP 3x3 MiSize >= BLOCK_8X8 && MiSize <= BLOCK_32X32)
+    MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize<= BLOCK_32X32 ) ? compound_types_to_try :
+                                  (compound_types_to_try == MD_COMP_WEDGE )? MD_COMP_DIFF0 :
+                                  context_ptr->compound_types_to_try;//MD_COMP_DIST;// MD_COMP_AVG;//
+
+#else
     MD_COMP_TYPE compound_types_to_try = picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;
     MD_COMP_TYPE cur_type; //BIP 3x3 MiSize >= BLOCK_8X8 && MiSize <= BLOCK_32X32)
     MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize<= BLOCK_32X32 ) ? compound_types_to_try :
                                   (compound_types_to_try == MD_COMP_WEDGE )? MD_COMP_DIFF0 :
                                    picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;//MD_COMP_DIST;// MD_COMP_AVG;//
+#endif
 #endif
 #if INTER_INTER_WEDGE_OPT
     if (context_ptr->source_variance < context_ptr->inter_inter_wedge_variance_th)
@@ -3370,6 +3453,10 @@ void inject_new_nearest_new_comb_candidates(
                 if (context_ptr->variance_ready)
                     if (context_ptr->prediction_mse < 8 || (!have_newmv_in_inter_mode(NEAREST_NEWMV) && context_ptr->prediction_mse  < 64))
                         continue;
+#if USE_1SP_MODE
+                PredictionMode pred_mode_inj = NEAREST_NEWMV;
+                if (skip_cand_based_on_fp_md(context_ptr, pred_mode_inj)) continue;
+#endif
 #endif
                     candidateArray[canIdx].type = INTER_MODE;
                     candidateArray[canIdx].inter_mode = NEAREST_NEWMV;
@@ -3497,6 +3584,10 @@ void inject_new_nearest_new_comb_candidates(
                 if (context_ptr->variance_ready)
                     if (context_ptr->prediction_mse < 8 || (!have_newmv_in_inter_mode(NEW_NEARESTMV) && context_ptr->prediction_mse  < 64))
                         continue;
+#if USE_1SP_MODE
+                PredictionMode pred_mode_inj = NEW_NEARESTMV;
+                if (skip_cand_based_on_fp_md(context_ptr, pred_mode_inj)) continue;
+#endif
 #endif
                     candidateArray[canIdx].type = INTER_MODE;
                     candidateArray[canIdx].inter_mode = NEW_NEARESTMV;
@@ -3643,6 +3734,11 @@ void inject_new_nearest_new_comb_candidates(
                 if (context_ptr->variance_ready)
                     if (context_ptr->prediction_mse < 8 || (!have_newmv_in_inter_mode(NEW_NEARMV) && context_ptr->prediction_mse  < 64))
                         continue;
+
+#if USE_1SP_MODE
+                        PredictionMode pred_mode_inj = NEW_NEARMV;
+                        if (skip_cand_based_on_fp_md(context_ptr, pred_mode_inj)) continue;
+#endif
 #endif
                             candidateArray[canIdx].type = INTER_MODE;
                             candidateArray[canIdx].inter_mode = NEW_NEARMV;
@@ -3758,6 +3854,10 @@ void inject_new_nearest_new_comb_candidates(
                 if (context_ptr->variance_ready)
                     if (context_ptr->prediction_mse < 8 || (!have_newmv_in_inter_mode(NEAR_NEWMV) && context_ptr->prediction_mse  < 64))
                         continue;
+ #if USE_1SP_MODE
+                        PredictionMode pred_mode_inj = NEAR_NEWMV;
+                        if (skip_cand_based_on_fp_md(context_ptr, pred_mode_inj)) continue;
+#endif
 #endif
                        candidateArray[canIdx].type = INTER_MODE;
                        candidateArray[canIdx].inter_mode = NEAR_NEWMV;
@@ -3861,73 +3961,79 @@ void inject_warped_motion_candidates(
     int16_t to_inject_mv_y = context_ptr->cu_ptr->ref_mvs[LAST_FRAME][0].as_mv.row;
     if (context_ptr->injected_mv_count_l0 == 0 || is_already_injected_mv_l0(context_ptr, to_inject_mv_x, to_inject_mv_y) == EB_FALSE) {
 #endif
-        candidateArray[canIdx].type = INTER_MODE;
-        candidateArray[canIdx].inter_mode = NEARESTMV;
-        candidateArray[canIdx].pred_mode = NEARESTMV;
-        candidateArray[canIdx].motion_mode = WARPED_CAUSAL;
-        candidateArray[canIdx].wm_params.wmtype = AFFINE;
-        candidateArray[canIdx].is_compound = 0;
+#if USE_1SP_MODE
+        PredictionMode pred_mode_inj = NEARESTMV;
+        if (!(skip_cand_based_on_fp_md(context_ptr, pred_mode_inj))) {
+#endif
+            candidateArray[canIdx].type = INTER_MODE;
+            candidateArray[canIdx].inter_mode = NEARESTMV;
+            candidateArray[canIdx].pred_mode = NEARESTMV;
+            candidateArray[canIdx].motion_mode = WARPED_CAUSAL;
+            candidateArray[canIdx].wm_params.wmtype = AFFINE;
+            candidateArray[canIdx].is_compound = 0;
 #if II_COMP
-        candidateArray[canIdx].is_interintra_used = 0;
+            candidateArray[canIdx].is_interintra_used = 0;
 #endif
-        candidateArray[canIdx].distortion_ready = 0;
-        candidateArray[canIdx].use_intrabc = 0;
-        candidateArray[canIdx].merge_flag = EB_FALSE;
-        candidateArray[canIdx].prediction_direction[0] = UNI_PRED_LIST_0;
-        candidateArray[canIdx].is_new_mv = 0;
-        candidateArray[canIdx].is_zero_mv = 0;
+            candidateArray[canIdx].distortion_ready = 0;
+            candidateArray[canIdx].use_intrabc = 0;
+            candidateArray[canIdx].merge_flag = EB_FALSE;
+            candidateArray[canIdx].prediction_direction[0] = UNI_PRED_LIST_0;
+            candidateArray[canIdx].is_new_mv = 0;
+            candidateArray[canIdx].is_zero_mv = 0;
 #if  !MRP_DUPLICATION_FIX
-        candidateArray[canIdx].motion_vector_xl0 = to_inject_mv_x;
-        candidateArray[canIdx].motion_vector_yl0 = to_inject_mv_y;
+            candidateArray[canIdx].motion_vector_xl0 = to_inject_mv_x;
+            candidateArray[canIdx].motion_vector_yl0 = to_inject_mv_y;
 #else
-        candidateArray[canIdx].motion_vector_xl0 = context_ptr->cu_ptr->ref_mvs[LAST_FRAME][0].as_mv.col;
-        candidateArray[canIdx].motion_vector_yl0 = context_ptr->cu_ptr->ref_mvs[LAST_FRAME][0].as_mv.row;
+            candidateArray[canIdx].motion_vector_xl0 = context_ptr->cu_ptr->ref_mvs[LAST_FRAME][0].as_mv.col;
+            candidateArray[canIdx].motion_vector_yl0 = context_ptr->cu_ptr->ref_mvs[LAST_FRAME][0].as_mv.row;
 #endif
-        candidateArray[canIdx].drl_index = 0;
-        candidateArray[canIdx].ref_mv_index = 0;
-        candidateArray[canIdx].pred_mv_weight = 0;
-        candidateArray[canIdx].ref_frame_type = LAST_FRAME;
+            candidateArray[canIdx].drl_index = 0;
+            candidateArray[canIdx].ref_mv_index = 0;
+            candidateArray[canIdx].pred_mv_weight = 0;
+            candidateArray[canIdx].ref_frame_type = LAST_FRAME;
 #if MRP_LIST_REF_IDX_TYPE_LT
-        candidateArray[canIdx].ref_frame_index_l0 = 0;
-        candidateArray[canIdx].ref_frame_index_l1 = -1;
+            candidateArray[canIdx].ref_frame_index_l0 = 0;
+            candidateArray[canIdx].ref_frame_index_l1 = -1;
 #endif
 #if ATB_TX_TYPE_SUPPORT_PER_TU
-        candidateArray[canIdx].transform_type[0] = DCT_DCT;
-        candidateArray[canIdx].transform_type_uv = DCT_DCT;
+            candidateArray[canIdx].transform_type[0] = DCT_DCT;
+            candidateArray[canIdx].transform_type_uv = DCT_DCT;
 #else
-        candidateArray[canIdx].transform_type[PLANE_TYPE_Y] = DCT_DCT;
-        candidateArray[canIdx].transform_type[PLANE_TYPE_UV] = DCT_DCT;
+            candidateArray[canIdx].transform_type[PLANE_TYPE_Y] = DCT_DCT;
+            candidateArray[canIdx].transform_type[PLANE_TYPE_UV] = DCT_DCT;
 #endif
 
-        Mv mv_0;
-        mv_0.x = candidateArray[canIdx].motion_vector_xl0;
-        mv_0.y = candidateArray[canIdx].motion_vector_yl0;
-        MvUnit mv_unit;
-        mv_unit.mv[0] = mv_0;
-        candidateArray[canIdx].local_warp_valid = warped_motion_parameters(
-            picture_control_set_ptr,
-            context_ptr->cu_ptr,
-            &mv_unit,
-            context_ptr->blk_geom,
-            context_ptr->cu_origin_x,
-            context_ptr->cu_origin_y,
-            candidateArray[canIdx].ref_frame_type,
-            &candidateArray[canIdx].wm_params,
-            &candidateArray[canIdx].num_proj_ref);
+            Mv mv_0;
+            mv_0.x = candidateArray[canIdx].motion_vector_xl0;
+            mv_0.y = candidateArray[canIdx].motion_vector_yl0;
+            MvUnit mv_unit;
+            mv_unit.mv[0] = mv_0;
+            candidateArray[canIdx].local_warp_valid = warped_motion_parameters(
+                picture_control_set_ptr,
+                context_ptr->cu_ptr,
+                &mv_unit,
+                context_ptr->blk_geom,
+                context_ptr->cu_origin_x,
+                context_ptr->cu_origin_y,
+                candidateArray[canIdx].ref_frame_type,
+                &candidateArray[canIdx].wm_params,
+                &candidateArray[canIdx].num_proj_ref);
 
-        if (candidateArray[canIdx].local_warp_valid)
+            if (candidateArray[canIdx].local_warp_valid)
 #if CHECK_CAND
-            INCRMENT_CAND_TOTAL_COUNT(canIdx);
+                INCRMENT_CAND_TOTAL_COUNT(canIdx);
 #else
-            ++canIdx;
+                ++canIdx;
 #endif
 #if  !MRP_DUPLICATION_FIX
-        context_ptr->injected_mv_x_l0_array[context_ptr->injected_mv_count_l0] = to_inject_mv_x;
-        context_ptr->injected_mv_y_l0_array[context_ptr->injected_mv_count_l0] = to_inject_mv_y;
-        ++context_ptr->injected_mv_count_l0;
-    }
+            context_ptr->injected_mv_x_l0_array[context_ptr->injected_mv_count_l0] = to_inject_mv_x;
+            context_ptr->injected_mv_y_l0_array[context_ptr->injected_mv_count_l0] = to_inject_mv_y;
+            ++context_ptr->injected_mv_count_l0;
+        }
 #endif
-
+#if USE_1SP_MODE
+        }
+#endif
     //NEAR_L0
     maxDrlIndex = GetMaxDrlIndex(xd->ref_mv_count[LAST_FRAME], NEARMV);
     for (drli = 0; drli < maxDrlIndex; drli++) {
@@ -3945,6 +4051,10 @@ void inject_warped_motion_candidates(
         int16_t to_inject_mv_x = nearmv[0].as_mv.col;
         int16_t to_inject_mv_y = nearmv[0].as_mv.row;
         if (context_ptr->injected_mv_count_l0 == 0 || is_already_injected_mv_l0(context_ptr, to_inject_mv_x, to_inject_mv_y) == EB_FALSE) {
+#endif
+#if USE_1SP_MODE
+        PredictionMode pred_mode_inj = NEARESTMV;
+        if (skip_cand_based_on_fp_md(context_ptr, pred_mode_inj)) continue;
 #endif
             candidateArray[canIdx].type = INTER_MODE;
             candidateArray[canIdx].inter_mode = NEARMV;
@@ -4046,7 +4156,10 @@ void inject_warped_motion_candidates(
         to_inject_mv_y += neighbors[i].row;
         if (context_ptr->injected_mv_count_l0 == 0 || is_already_injected_mv_l0(context_ptr, to_inject_mv_x, to_inject_mv_y) == EB_FALSE) {
 #endif
-
+#if USE_1SP_MODE
+        PredictionMode pred_mode_inj = NEWMV;
+        if (skip_cand_based_on_fp_md(context_ptr, pred_mode_inj)) continue;
+#endif
         candidateArray[canIdx].type = INTER_MODE;
         candidateArray[canIdx].distortion_ready = 0;
         candidateArray[canIdx].use_intrabc = 0;
@@ -4616,14 +4729,25 @@ void inject_new_candidates(
 #if COMP_MODE
 
     BlockSize bsize = context_ptr->blk_geom->bsize;                       // bloc size
+#if MOVE_COMPOUND_MODE_SIGNAL_UNDER_CTX
+    MD_COMP_TYPE compound_types_to_try = context_ptr->compound_types_to_try;
+#else
     MD_COMP_TYPE compound_types_to_try = picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;
+#endif
     MD_COMP_TYPE cur_type; //BIP 3x3 MiSize >= BLOCK_8X8 && MiSize <= BLOCK_32X32)
 #if COMP_OPT
     //MD_COMP_TYPE tot_comp_types = MD_COMP_AVG;
+#if MOVE_COMPOUND_MODE_SIGNAL_UNDER_CTX
+    MD_COMP_TYPE tot_comp_types = context_ptr->compound_mode == 1 ? MD_COMP_AVG :
+        (bsize >= BLOCK_8X8 && bsize <= BLOCK_32X32) ? compound_types_to_try :
+        (compound_types_to_try == MD_COMP_WEDGE) ? MD_COMP_DIFF0 :
+        context_ptr->compound_types_to_try;
+#else
     MD_COMP_TYPE tot_comp_types = picture_control_set_ptr->parent_pcs_ptr->compound_mode == 1 ? MD_COMP_AVG :
         (bsize >= BLOCK_8X8 && bsize <= BLOCK_32X32) ? compound_types_to_try :
         (compound_types_to_try == MD_COMP_WEDGE) ? MD_COMP_DIFF0 :
         picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;
+#endif
 
 #if N0_COMP
     tot_comp_types = picture_control_set_ptr->enc_mode == ENC_M0 ? MD_COMP_AVG : tot_comp_types;
@@ -4685,7 +4809,11 @@ void inject_new_candidates(
              rf[1] = -1;
 #if OBMC_SUP 
              uint8_t ii_type;
+#if MOVE_COMPOUND_MODE_SIGNAL_UNDER_CTX
+             uint8_t is_ii_allowed = svt_is_interintra_allowed(context_ptr->enable_inter_intra, bsize, NEWMV, rf);
+#else
              uint8_t is_ii_allowed = svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, NEWMV, rf);
+#endif
              uint8_t tot_ii_types = is_ii_allowed ? II_COUNT : 1; 
              uint8_t is_obmc_allowed =  obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL;            
              tot_ii_types = is_obmc_allowed && picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode <= 2 ? tot_ii_types+1 : tot_ii_types;             
@@ -4697,7 +4825,10 @@ void inject_new_candidates(
             for (ii_type = 0; ii_type < tot_ii_types; ii_type++)
             {
 #endif
-
+#if USE_1SP_MODE
+                PredictionMode pred_mode_inj = NEWMV;
+                if (skip_cand_based_on_fp_md(context_ptr, pred_mode_inj)) continue;
+#endif
                 candidateArray[canTotalCnt].type = INTER_MODE;
                 candidateArray[canTotalCnt].distortion_ready = 0;
                 candidateArray[canTotalCnt].use_intrabc = 0;
@@ -4869,7 +5000,11 @@ void inject_new_candidates(
              rf[1] = -1;
 #if OBMC_SUP 
              uint8_t ii_type;
+#if MOVE_COMPOUND_MODE_SIGNAL_UNDER_CTX
+             uint8_t is_ii_allowed = svt_is_interintra_allowed(context_ptr->enable_inter_intra, bsize, NEWMV, rf);
+#else
              uint8_t is_ii_allowed = svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, NEWMV, rf);
+#endif
              uint8_t tot_ii_types = is_ii_allowed ? II_COUNT : 1;
              uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL;
              tot_ii_types = is_obmc_allowed  && picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode <= 2 ? tot_ii_types + 1 : tot_ii_types;
@@ -4880,6 +5015,10 @@ void inject_new_candidates(
 #endif
             for (ii_type = 0; ii_type < tot_ii_types; ii_type++)
             {
+#endif
+#if USE_1SP_MODE
+                    PredictionMode pred_mode_inj = NEWMV;
+                    if (skip_cand_based_on_fp_md(context_ptr, pred_mode_inj)) continue;
 #endif
                     candidateArray[canTotalCnt].type = INTER_MODE;
                     candidateArray[canTotalCnt].distortion_ready = 0;
@@ -5068,6 +5207,10 @@ void inject_new_candidates(
                 if (context_ptr->variance_ready)
                     if (context_ptr->prediction_mse < 8 || (!have_newmv_in_inter_mode(NEW_NEWMV) && context_ptr->prediction_mse  < 64))
                         continue;
+#if USE_1SP_MODE
+                    PredictionMode pred_mode_inj = NEW_NEWMV;
+                    if (skip_cand_based_on_fp_md(context_ptr, pred_mode_inj)) continue;
+#endif
 
 #endif
                             candidateArray[canTotalCnt].type = INTER_MODE;
@@ -5200,11 +5343,19 @@ void inject_predictive_me_candidates(
 
 #if COMP_MODE
     BlockSize bsize = context_ptr->blk_geom->bsize;                       // bloc size
+#if MOVE_COMPOUND_MODE_SIGNAL_UNDER_CTX
+    MD_COMP_TYPE compound_types_to_try = context_ptr->compound_types_to_try;
+    MD_COMP_TYPE cur_type; //BIP 3x3 MiSize >= BLOCK_8X8 && MiSize <= BLOCK_32X32)
+    MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize <= BLOCK_32X32) ? compound_types_to_try :
+        (compound_types_to_try == MD_COMP_WEDGE) ? MD_COMP_DIFF0 :
+        context_ptr->compound_types_to_try;//MD_COMP_DIST;// MD_COMP_AVG;//
+#else
     MD_COMP_TYPE compound_types_to_try = picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;
     MD_COMP_TYPE cur_type; //BIP 3x3 MiSize >= BLOCK_8X8 && MiSize <= BLOCK_32X32)
     MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize <= BLOCK_32X32) ? compound_types_to_try :
         (compound_types_to_try == MD_COMP_WEDGE) ? MD_COMP_DIFF0 :
         picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;//MD_COMP_DIST;// MD_COMP_AVG;//
+#endif
 #if 0//N0_COMP
     tot_comp_types = picture_control_set_ptr->enc_mode == ENC_M0 ? MD_COMP_AVG : tot_comp_types;
 #endif
@@ -5239,6 +5390,10 @@ void inject_predictive_me_candidates(
                     tot_ii_types = is_obmc_allowed ? tot_ii_types + 1 : tot_ii_types;
                     for (ii_type = 0; ii_type < tot_ii_types; ii_type++)
                     {
+#endif
+#if USE_1SP_MODE
+                    PredictionMode pred_mode_inj = NEWMV;
+                    if (skip_cand_based_on_fp_md(context_ptr, pred_mode_inj)) continue;
 #endif
                     candidateArray[canTotalCnt].type = INTER_MODE;
                     candidateArray[canTotalCnt].distortion_ready = 0;
@@ -5339,6 +5494,10 @@ void inject_predictive_me_candidates(
                         tot_ii_types = is_obmc_allowed ? tot_ii_types + 1 : tot_ii_types;
                         for (ii_type = 0; ii_type < tot_ii_types; ii_type++)
                         {
+#endif
+#if USE_1SP_MODE
+                        PredictionMode pred_mode_inj = NEWMV;
+                        if (skip_cand_based_on_fp_md(context_ptr, pred_mode_inj)) continue;
 #endif
                         candidateArray[canTotalCnt].type = INTER_MODE;
                         candidateArray[canTotalCnt].distortion_ready = 0;
@@ -5446,6 +5605,10 @@ void inject_predictive_me_candidates(
                                     if (context_ptr->prediction_mse < 8 || (!have_newmv_in_inter_mode(NEW_NEWMV) && context_ptr->prediction_mse < 64))
                                         continue;
 
+#endif
+#if USE_1SP_MODE
+                                PredictionMode pred_mode_inj = NEW_NEWMV;
+                                if (skip_cand_based_on_fp_md(context_ptr, pred_mode_inj)) continue;
 #endif
                                 candidateArray[canTotalCnt].type = INTER_MODE;
                                 candidateArray[canTotalCnt].distortion_ready = 0;
@@ -5649,14 +5812,25 @@ void  inject_inter_candidates(
 #if COMP_MODE
 
     BlockSize bsize = context_ptr->blk_geom->bsize;                       // bloc size
+#if MOVE_COMPOUND_MODE_SIGNAL_UNDER_CTX
+    MD_COMP_TYPE compound_types_to_try = context_ptr->compound_types_to_try;
+#else
     MD_COMP_TYPE compound_types_to_try = picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;
+#endif
     MD_COMP_TYPE cur_type; //BIP 3x3 MiSize >= BLOCK_8X8 && MiSize <= BLOCK_32X32)
 #if COMP_OPT
     //MD_COMP_TYPE tot_comp_types = MD_COMP_AVG;
+#if MOVE_COMPOUND_MODE_SIGNAL_UNDER_CTX
+        MD_COMP_TYPE tot_comp_types = context_ptr->compound_mode == 1 ? MD_COMP_AVG :
+        (bsize >= BLOCK_8X8 && bsize <= BLOCK_32X32) ? compound_types_to_try :
+        (compound_types_to_try == MD_COMP_WEDGE) ? MD_COMP_DIFF0 :
+        context_ptr->compound_types_to_try;
+#else
     MD_COMP_TYPE tot_comp_types = picture_control_set_ptr->parent_pcs_ptr->compound_mode == 1 ? MD_COMP_AVG :
         (bsize >= BLOCK_8X8 && bsize <= BLOCK_32X32) ? compound_types_to_try :
         (compound_types_to_try == MD_COMP_WEDGE) ? MD_COMP_DIFF0 :
         picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;
+#endif
 #if N0_COMP
     tot_comp_types = picture_control_set_ptr->enc_mode == ENC_M0 ? MD_COMP_AVG : tot_comp_types;
 #endif
@@ -6180,11 +6354,19 @@ void  inject_inter_candidates(
              MvReferenceFrame rf[2];
              rf[0] = to_inject_ref_type;
              rf[1] = -1;
+#if MOVE_COMPOUND_MODE_SIGNAL_UNDER_CTX
+             uint8_t tot_ii_types = svt_is_interintra_allowed(context_ptr->enable_inter_intra,bsize, GLOBALMV, rf) ? II_COUNT : 1;
+#else
             uint8_t tot_ii_types = svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra,bsize, GLOBALMV, rf) ? II_COUNT : 1;
+#endif
 
             uint8_t ii_type;
             for (ii_type = 0; ii_type < tot_ii_types; ii_type++)
             {
+#endif
+#if USE_1SP_MODE
+                PredictionMode pred_mode_inj = GLOBALMV;
+                if (skip_cand_based_on_fp_md(context_ptr, pred_mode_inj)) continue;
 #endif
                 candidateArray[canTotalCnt].type = INTER_MODE;
 
@@ -6286,6 +6468,11 @@ void  inject_inter_candidates(
                 if (context_ptr->variance_ready)
                     if (context_ptr->prediction_mse < 8 || (!have_newmv_in_inter_mode(GLOBAL_GLOBALMV) && context_ptr->prediction_mse  < 64))
                         continue;
+
+#if USE_1SP_MODE
+                PredictionMode pred_mode_inj = GLOBAL_GLOBALMV;
+                if (skip_cand_based_on_fp_md(context_ptr, pred_mode_inj)) continue;
+#endif
 #endif
                 candidateArray[canTotalCnt].type = INTER_MODE;
                 candidateArray[canTotalCnt].distortion_ready = 0;
@@ -7261,6 +7448,10 @@ void  inject_intra_candidates_ois(
 
     for (intra_candidate_counter = 0; intra_candidate_counter < total_intra_luma_mode; ++intra_candidate_counter) {
         intra_mode = ois_blk_ptr[can_total_cnt].intra_mode;
+#if USE_1SP_MODE
+        PredictionMode pred_mode_inj = (PredictionMode) intra_mode;
+        if (skip_cand_based_on_fp_md(context_ptr, pred_mode_inj)) continue;
+#endif
         assert(intra_mode < INTRA_MODES);
         if (av1_is_directional_mode((PredictionMode)intra_mode)) {
             int32_t angle_delta = ois_blk_ptr[can_total_cnt].angle_delta ;
@@ -7665,6 +7856,10 @@ void  inject_intra_bc_candidates(
 
     for (dv_i = 0; dv_i < num_dv_cand; dv_i++)
     {
+#if USE_1SP_MODE
+        PredictionMode pred_mode_inj = DC_PRED;
+        if (skip_cand_based_on_fp_md(context_ptr, pred_mode_inj)) continue;
+#endif
         candidateArray[*cand_cnt].type = INTRA_MODE;
         candidateArray[*cand_cnt].intra_luma_mode = DC_PRED;
         candidateArray[*cand_cnt].distortion_ready = 0;
@@ -7955,7 +8150,10 @@ void  inject_intra_candidates(
 #endif
 
     for (openLoopIntraCandidate = intra_mode_start; openLoopIntraCandidate <= intra_mode_end ; ++openLoopIntraCandidate) {
-
+#if USE_1SP_MODE
+        PredictionMode pred_mode_inj = (PredictionMode)openLoopIntraCandidate;
+        if (skip_cand_based_on_fp_md(context_ptr, pred_mode_inj)) continue;
+#endif
         if (av1_is_directional_mode((PredictionMode)openLoopIntraCandidate)) {
 
 #if ESTIMATE_INTRA
@@ -8232,6 +8430,10 @@ void  inject_filter_intra_candidates(
         printf("\nSTOPPPPPPPPP");*/
 
     for (filter_intra_mode = intra_mode_start; filter_intra_mode < intra_mode_end ; ++filter_intra_mode) {
+#if USE_1SP_MODE
+           PredictionMode pred_mode_inj = DC_PRED;
+           if (skip_cand_based_on_fp_md(context_ptr, pred_mode_inj)) continue;
+#endif
 
 
             candidateArray[canTotalCnt].type = INTRA_MODE;
@@ -8709,6 +8911,31 @@ uint8_t product_full_mode_decision(
         }
     }
 
+#if USE_1SP_MODE
+    // prune candidates
+    {
+        uint32_t i, j, index;
+        for (i = 0; i < MAX_NFL_BUFF; ++i) {
+            context_ptr->final_cand_buff_indices[i] = i;
+        }
+        for (i = 0; i < candidate_total_count - 1; ++i) {
+            for (j = i + 1; j < candidate_total_count; ++j) {
+                if (*(buffer_ptr_array[context_ptr->final_cand_buff_indices[j]]->full_cost_ptr) < *(buffer_ptr_array[context_ptr->final_cand_buff_indices[i]]->full_cost_ptr)) {
+                    index = context_ptr->final_cand_buff_indices[i];
+                    context_ptr->final_cand_buff_indices[i] = (uint32_t)context_ptr->final_cand_buff_indices[j];
+                    context_ptr->final_cand_buff_indices[j] = (uint32_t)index;
+
+                }
+            }
+        }
+        // Set the best N pred mode
+        for (i = 0; i < candidate_total_count; ++i) {
+            candidate_ptr = buffer_ptr_array[context_ptr->final_cand_buff_indices[i]]->candidate_ptr;
+            context_ptr->md_local_cu_unit[cu_ptr->mds_idx].best_pred_modes_table[i] = candidate_ptr->pred_mode;
+            //context_ptr->md_cu_arr_nsq
+        }
+    }
+#endif
     candidate_ptr = buffer_ptr_array[lowestCostIndex]->candidate_ptr;
 #if DISTORTION_WEIGHTING
     context_ptr->md_local_cu_unit[cu_ptr->mds_idx].cost = *(buffer_ptr_array[lowestCostIndex]->full_cost_ptr_id);

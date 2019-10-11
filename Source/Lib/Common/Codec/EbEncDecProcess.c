@@ -1246,6 +1246,108 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
     ModeDecisionContext   *context_ptr) {
     EbErrorType return_error = EB_ErrorNone;
+#if MOVE_COMPOUND_MODE_SIGNAL_UNDER_CTX
+#if II_SEARCH
+        // inter intra pred                      Settings
+        // 0                                     OFF
+        // 1                                     ON
+            context_ptr->enable_inter_intra = picture_control_set_ptr->slice_type != I_SLICE ? sequence_control_set_ptr->seq_header.enable_interintra_compound : 0;
+
+#endif
+#if COMP_MODE
+                        // Set compound mode      Settings
+            // 0                 OFF: No compond mode search : AVG only
+            // 1                 ON: compond mode search: 4 modes
+            // 2                 ON: full
+            if (sequence_control_set_ptr->compound_mode)
+#if M0_SC_CANDIDATE
+                if (picture_control_set_ptr->sc_content_detected)
+                    context_ptr->compound_mode = (picture_control_set_ptr->enc_mode <= ENC_M0) ? 2 : 0;
+                else
+                    context_ptr->compound_mode = picture_control_set_ptr->enc_mode <= ENC_M1 ? 2 : 1;
+#else
+#if DISABLE_COMP_SC
+#if FULL_COMPOUND_BDRATE
+                context_ptr->compound_mode = picture_control_set_ptr->parent_pcs_ptr->sc_content_detected ? 0 :
+#if M2_COMP_NREF
+                picture_control_set_ptr->enc_mode <= ENC_M0 || (picture_control_set_ptr->enc_mode <= ENC_M2 && picture_control_set_ptr->is_used_as_reference_flag) ? 2 : 1;
+#else
+                picture_control_set_ptr->enc_mode <= ENC_M1 ? 2 : 1;
+#endif
+#else
+                context_ptr->compound_mode = picture_control_set_ptr->sc_content_detected ? 0 : 1;
+#endif
+#else
+#if FULL_COMPOUND_BDRATE
+                context_ptr->compound_mode =  2;
+#else
+                context_ptr->compound_mode =  1;
+#endif
+#endif
+#endif
+            else
+                context_ptr->compound_mode = 0;
+#if SHUT_COMPOUND
+            context_ptr->compound_mode = 0;
+#endif
+            // set compound_types_to_try
+            if (context_ptr->compound_mode)
+#if COMP_OPT
+                context_ptr->compound_types_to_try = context_ptr->compound_mode == 1 ? MD_COMP_DIFF0 : MD_COMP_WEDGE;
+#else
+                context_ptr->compound_types_to_try = MD_COMP_WEDGE;//  MD_COMP_DIST;//MD_COMP_AVG;//
+#endif
+            else
+                context_ptr->compound_types_to_try = MD_COMP_AVG;
+#endif
+#endif
+#if MOVE_ATB_MODE_SIGNAL_UNDER_CTX
+#if ATB_SUPPORT
+        // Set atb mode      Settings
+        // 0                 OFF: no transform partitioning
+#if STRENGHTHEN_MD_STAGE_3
+        // 1                 ON for INTRA blocks
+#else
+        // 1                 Fast: perform transform partitioning for sensitive block sizes
+        // 2                 Full: perform transform partitioning for all block sizes
+#endif
+#if M2_ATB_NRF
+        if (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M1 && picture_control_set_ptr->is_used_as_reference_flag && sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
+#else
+        if (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M1 && sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
+#endif
+#if STRENGHTHEN_MD_STAGE_3
+#if SHUT_ATB_NREF
+#if GREEN_BACKUP_2 || BLUE_SET || ORANGE_SET
+            context_ptr->atb_mode = (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0) ? 1 : 0;
+#else
+            context_ptr->atb_mode = (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 1 : 0;
+#endif
+#else
+            context_ptr->atb_mode = 1;
+#endif
+#else
+            if (MR_MODE || USE_MR_CHROMA) // ATB
+                context_ptr->atb_mode = 2;
+            else
+                context_ptr->atb_mode = 1;
+#endif
+        else
+            context_ptr->atb_mode = 0;
+
+#endif
+
+#if ALL_LAYERS
+        context_ptr->atb_mode = 1;
+#endif
+
+#if ATB_OFF
+        context_ptr->atb_mode = 0;
+#endif
+#if SHUT_ATB
+        context_ptr->atb_mode = 0;
+#endif
+#endif
 #if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
     // Tx_search Level                                Settings
     // 0                                              OFF
@@ -1331,6 +1433,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     ep_context_ptr->skip_tx_search = context_ptr->skip_tx_search;
     ep_context_ptr->tx_search_reduced_set = context_ptr->tx_search_reduced_set;
     ep_context_ptr->tx_weight = context_ptr->tx_weight;
+#if MOVE_ATB_MODE_SIGNAL_UNDER_CTX
+    ep_context_ptr->atb_mode = context_ptr->atb_mode;
+#endif
 #endif
 #if MOVE_IF_LEVELS_SIGNAL_UNDER_CTX
     // Interpolation search Level                     Settings
@@ -2073,6 +2178,15 @@ void mpmd_init_considered_block(
             split_flag = context_ptr->md_cu_arr_nsq[blk_index].split_flag;
         if (sequence_control_set_ptr->sb_geom[sb_index].block_is_inside_md_scan[blk_index] && is_blk_allowed){
             if (blk_geom->shape == PART_N) {
+#if USE_1SP_MODE
+            for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                for (uint16_t fp_pred_indx = 0; fp_pred_indx < BEST_PRED_MODE_TH; fp_pred_indx++) {
+                    if (context_ptr->md_local_cu_unit[blk_index + block_1d_idx].best_pred_modes_table[fp_pred_indx] < MB_MODE_COUNT && context_ptr->md_local_cu_unit[blk_index + block_1d_idx].best_pred_modes_table[fp_pred_indx] >= 0)
+                        context_ptr->fp_depth_mode_valid[context_ptr->md_local_cu_unit[blk_index + block_1d_idx].best_pred_modes_table[fp_pred_indx]] = 1;
+                
+                }
+            }
+#endif
                 switch (depth_refinement_mode) {
                 case Pred:
                     // Set predicted block to be considered
@@ -2278,6 +2392,9 @@ void mpmd_init_considered_block(
                     if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
                         for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
                             cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+#if MARK_CU
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].depth_offset = 0;
+#endif
                             cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
                         }
                         if (blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && blk_geom->sq_size > 4) {
@@ -2290,6 +2407,9 @@ void mpmd_init_considered_block(
                                 parent_blk_geom->sq_size == 8 ? 5 : 1;
                             for (block_1d_idx = 0; block_1d_idx < parent_tot_d1_blocks; block_1d_idx++) {
                                 cu_ptr->leaf_data_array[parent_depth_idx_mds + block_1d_idx].consider_block = 1;
+#if MARK_CU
+                                cu_ptr->leaf_data_array[parent_depth_idx_mds + block_1d_idx].depth_offset = -1;
+#endif
                             }
                         }
 
@@ -2301,6 +2421,9 @@ void mpmd_init_considered_block(
                                     resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
                                 }*/
                                 cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+#if MARK_CU
+                                cu_ptr->leaf_data_array[blk_index + block_1d_idx].depth_offset = 0;
+#endif
                                 cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_TRUE;
                             }
                             //Set first child to be considered
@@ -2317,6 +2440,9 @@ void mpmd_init_considered_block(
                                     resultsPtr->leaf_data_array[child_block_idx_1 + block_1d_idx].consider_block = 1;
                                 }*/
                                 cu_ptr->leaf_data_array[child_block_idx_1 + block_1d_idx].consider_block = 1;
+#if MARK_CU
+                                cu_ptr->leaf_data_array[child_block_idx_1 + block_1d_idx].depth_offset = 1;
+#endif
                                 cu_ptr->leaf_data_array[child_block_idx_1 + block_1d_idx].refined_split_flag = EB_FALSE;
                             }
                             //Set second child to be considered
@@ -2332,6 +2458,9 @@ void mpmd_init_considered_block(
                                     resultsPtr->leaf_data_array[child_block_idx_2 + block_1d_idx].consider_block = 1;
                                 }*/
                                 cu_ptr->leaf_data_array[child_block_idx_2 + block_1d_idx].consider_block = 1;
+#if MARK_CU
+                                cu_ptr->leaf_data_array[child_block_idx_2 + block_1d_idx].depth_offset = 1;
+#endif
                                 cu_ptr->leaf_data_array[child_block_idx_2 + block_1d_idx].refined_split_flag = EB_FALSE;
                             }
                             //Set third child to be considered
@@ -2348,6 +2477,9 @@ void mpmd_init_considered_block(
                                     resultsPtr->leaf_data_array[child_block_idx_3 + block_1d_idx].consider_block = 1;
                                 }*/
                                 cu_ptr->leaf_data_array[child_block_idx_3 + block_1d_idx].consider_block = 1;
+#if MARK_CU
+                                cu_ptr->leaf_data_array[child_block_idx_3 + block_1d_idx].depth_offset = 1;
+#endif
                                 cu_ptr->leaf_data_array[child_block_idx_3 + block_1d_idx].refined_split_flag = EB_FALSE;
                             }
                             //Set forth child to be considered
@@ -2363,6 +2495,9 @@ void mpmd_init_considered_block(
                                     resultsPtr->leaf_data_array[child_block_idx_4 + block_1d_idx].consider_block = 1;
                                 }*/
                                 cu_ptr->leaf_data_array[child_block_idx_4 + block_1d_idx].consider_block = 1;
+#if MARK_CU
+                                cu_ptr->leaf_data_array[child_block_idx_4 + block_1d_idx].depth_offset = 1;
+#endif
                                 cu_ptr->leaf_data_array[child_block_idx_4 + block_1d_idx].refined_split_flag = EB_FALSE;
                             }
                         }
@@ -2460,6 +2595,11 @@ void init_cu_arr_nsq(
         //uint8_t                    *neigh_top_recon[3];
         context_ptr->md_cu_arr_nsq[blk_index].best_d1_blk = 0;
         context_ptr->md_cu_arr_nsq[blk_index].tx_depth = 0;
+#if USE_1SP_MODE
+        for (uint16_t pred_indx = 0; pred_indx < MB_MODE_COUNT; pred_indx++) {
+            context_ptr->md_local_cu_unit[blk_index].best_pred_modes_table[pred_indx] = UNVALID;
+        }
+#endif
 
         blk_index++;
     }
@@ -2504,9 +2644,13 @@ void copy_mdc_array_data(
         dst[blk_index].ol_best_nsq_shape8 = src[blk_index].ol_best_nsq_shape8;
         dst[blk_index].open_loop_ranking = src[blk_index].open_loop_ranking;
         dst[blk_index].refined_split_flag = src[blk_index].refined_split_flag;
+#if MARK_CU
+        dst[blk_index].fp_depth_offset = src[blk_index].fp_depth_offset;
+#endif
         blk_index++;
     }
 }
+
 void mpmd_init_split_flags(
     SequenceControlSet  *sequence_control_set_ptr,
     PictureControlSet   *picture_control_set_ptr,
@@ -2520,6 +2664,10 @@ void mpmd_init_split_flags(
         cu_ptr->leaf_data_array[blk_index].consider_block = 0;
         cu_ptr->leaf_data_array[blk_index].split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
         cu_ptr->leaf_data_array[blk_index].refined_split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
+#if MARK_CU
+        cu_ptr->leaf_data_array[blk_index].fp_depth_offset = UNVALID;
+        cu_ptr->leaf_data_array[blk_index].depth_offset = UNVALID;
+#endif
         blk_index++;
     }
 }
@@ -2556,6 +2704,9 @@ void mpmd_forward_considered_blocks(
                     cu_ptr->leaf_data_array[cu_ptr->leaf_count].leaf_index = 0;//valid only for square 85 world. will be removed.
                     cu_ptr->leaf_data_array[cu_ptr->leaf_count].mds_idx = blk_index;
                     split_flag = cu_ptr->leaf_data_array[blk_index].refined_split_flag;
+#if MARK_CU
+                    cu_ptr->leaf_data_array[cu_ptr->leaf_count].fp_depth_offset =  cu_ptr->leaf_data_array[blk_index].depth_offset;
+#endif
                     cu_ptr->leaf_data_array[cu_ptr->leaf_count++].split_flag = split_flag;
                 }
                 blk_index++;
@@ -2575,6 +2726,108 @@ EbErrorType mpmd_settings(
     uint8_t                is_last_md_pass,
     ModeDecisionContext   *context_ptr) {
     EbErrorType return_error = EB_ErrorNone;
+#if MOVE_COMPOUND_MODE_SIGNAL_UNDER_CTX
+#if II_SEARCH
+        // inter intra pred                      Settings
+        // 0                                     OFF
+        // 1                                     ON
+            context_ptr->enable_inter_intra = picture_control_set_ptr->slice_type != I_SLICE ? sequence_control_set_ptr->seq_header.enable_interintra_compound : 0;
+
+#endif
+#if COMP_MODE
+                        // Set compound mode      Settings
+            // 0                 OFF: No compond mode search : AVG only
+            // 1                 ON: compond mode search: 4 modes
+            // 2                 ON: full
+            if (sequence_control_set_ptr->compound_mode)
+#if M0_SC_CANDIDATE
+                if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+                    context_ptr->compound_mode = (enc_mode <= ENC_M0) ? 2 : 0;
+                else
+                    context_ptr->compound_mode = enc_mode <= ENC_M1 ? 2 : 1;
+#else
+#if DISABLE_COMP_SC
+#if FULL_COMPOUND_BDRATE
+                context_ptr->compound_mode = picture_control_set_ptr->parent_pcs_ptr->sc_content_detected ? 0 :
+#if M2_COMP_NREF
+                enc_mode <= ENC_M0 || (enc_mode <= ENC_M2 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 2 : 1;
+#else
+                enc_mode <= ENC_M1 ? 2 : 1;
+#endif
+#else
+                context_ptr->compound_mode = picture_control_set_ptr->sc_content_detected ? 0 : 1;
+#endif
+#else
+#if FULL_COMPOUND_BDRATE
+                context_ptr->compound_mode =  2;
+#else
+                context_ptr->compound_mode =  1;
+#endif
+#endif
+#endif
+            else
+                context_ptr->compound_mode = 0;
+#if SHUT_COMPOUND
+            context_ptr->compound_mode = 0;
+#endif
+            // set compound_types_to_try
+            if (context_ptr->compound_mode)
+#if COMP_OPT
+                context_ptr->compound_types_to_try = context_ptr->compound_mode == 1 ? MD_COMP_DIFF0 : MD_COMP_WEDGE;
+#else
+                context_ptr->compound_types_to_try = MD_COMP_WEDGE;//  MD_COMP_DIST;//MD_COMP_AVG;//
+#endif
+            else
+                context_ptr->compound_types_to_try = MD_COMP_AVG;
+#endif
+#endif
+#if MOVE_ATB_MODE_SIGNAL_UNDER_CTX
+#if ATB_SUPPORT
+        // Set atb mode      Settings
+        // 0                 OFF: no transform partitioning
+#if STRENGHTHEN_MD_STAGE_3
+        // 1                 ON for INTRA blocks
+#else
+        // 1                 Fast: perform transform partitioning for sensitive block sizes
+        // 2                 Full: perform transform partitioning for all block sizes
+#endif
+#if M2_ATB_NRF
+        if (enc_mode <= ENC_M1 && is_used_as_reference_flag && sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
+#else
+        if (enc_mode <= ENC_M1 && sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
+#endif
+#if STRENGHTHEN_MD_STAGE_3
+#if SHUT_ATB_NREF
+#if GREEN_BACKUP_2 || BLUE_SET || ORANGE_SET
+            context_ptr->atb_mode = (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0) ? 1 : 0;
+#else
+            context_ptr->atb_mode = (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 1 : 0;
+#endif
+#else
+            context_ptr->atb_mode = 1;
+#endif
+#else
+            if (MR_MODE || USE_MR_CHROMA) // ATB
+                context_ptr->atb_mode = 2;
+            else
+                context_ptr->atb_mode = 1;
+#endif
+        else
+            context_ptr->atb_mode = 0;
+
+#endif
+
+#if ALL_LAYERS
+        context_ptr->atb_mode = 1;
+#endif
+
+#if ATB_OFF
+        context_ptr->atb_mode = 0;
+#endif
+#if SHUT_ATB
+        context_ptr->atb_mode = 0;
+#endif
+#endif
 #if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
     // Tx_search Level                                Settings
     // 0                                              OFF
@@ -3104,7 +3357,10 @@ EbErrorType mpmd_settings(
         context_ptr->tx_search_reduced_set = 2;
         context_ptr->tx_search_level = TX_SEARCH_OFF;
         context_ptr->tx_weight = FC_SKIP_TX_SR_TH025;
+        context_ptr->atb_mode = 0;
         context_ptr->interpolation_search_level = IT_SEARCH_OFF;
+        context_ptr->enable_inter_intra = 0;
+        context_ptr->compound_mode = 0;
     }
     else {
         context_ptr->skip_newmv_basedon_parent_sq_has_coeff = 0;
@@ -3221,7 +3477,11 @@ void* enc_dec_kernel(void *input_ptr)
             context_ptr,
 #endif
             context_ptr->md_context);
-
+#if MOVE_ATB_MODE_SIGNAL_UNDER_CTX
+        picture_control_set_ptr->parent_pcs_ptr->tx_mode = (context_ptr->atb_mode) ?
+            TX_MODE_SELECT :
+            TX_MODE_LARGEST;
+#endif
         // SB Constants
         sb_sz = (uint8_t)sequence_control_set_ptr->sb_size_pix;
         lcuSizeLog2 = (uint8_t)Log2f(sb_sz);
@@ -3422,9 +3682,15 @@ void* enc_dec_kernel(void *input_ptr)
 #if MPMD_SB
                     uint8_t mpmd_pass_num = 1;
                     uint8_t mpmd_pass_idx;
+#if USE_1SP_MODE
+                    for (uint16_t pred_indx = 0; pred_indx < MB_MODE_COUNT; pred_indx++) {
+                        context_ptr->md_context->fp_depth_mode_valid[pred_indx] = 1;
+                    }   
+#endif
                     uint8_t  is_complete_sb = sequence_control_set_ptr->sb_geom[sb_index].is_complete_sb;
                         if (picture_control_set_ptr->slice_type != I_SLICE && is_complete_sb) {
                             for (mpmd_pass_idx = 0; mpmd_pass_idx < mpmd_pass_num; ++mpmd_pass_idx) {
+
 #if TEST_DEPTH_REFINEMENT
                                 uint8_t mpmd_depth_level = 4; // 1 SQ PART only
 #else
@@ -3483,6 +3749,11 @@ void* enc_dec_kernel(void *input_ptr)
                                     sb_origin_x,
                                     sb_origin_y);
 #if MPMD_SB_REF
+#if USE_1SP_MODE
+                                for (uint16_t pred_indx = 0; pred_indx < MB_MODE_COUNT; pred_indx++) {
+                                    context_ptr->md_context->fp_depth_mode_valid[pred_indx] = -1;
+                                }
+#endif
                                 // Mark blocks to be concidered in next md pass
                                 mpmd_init_considered_block(
                                     sequence_control_set_ptr,

@@ -1611,7 +1611,7 @@ EbErrorType signal_derivation_multi_processes_oq(
             CU_8x8_MODE_1 :
             CU_8x8_MODE_0;
 #endif
-
+#if !MOVE_ATB_MODE_SIGNAL_UNDER_CTX
 #if ATB_SUPPORT
         // Set atb mode      Settings
         // 0                 OFF: no transform partitioning
@@ -1657,6 +1657,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 #if SHUT_ATB
         picture_control_set_ptr->atb_mode = 0;
 #endif
+#endif
 #if COMP_MODE
         // Set Wedge mode      Settings
         // 0                 FULL: Full search
@@ -1690,7 +1691,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 #if COEFF_SKIP_OFF
         picture_control_set_ptr->enable_skip_atb = 0;
 #endif
-
+#if !MOVE_COMPOUND_MODE_SIGNAL_UNDER_CTX
 #if II_SEARCH
         // inter intra pred                      Settings
         // 0                                     OFF
@@ -1743,6 +1744,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
             else
                 picture_control_set_ptr->compound_types_to_try = MD_COMP_AVG;
+#endif
 #endif
 
 
@@ -4369,9 +4371,11 @@ void* picture_decision_kernel(void *input_ptr)
 
 #if ATB_SUPPORT
                             // Set tx_mode
+#if! MOVE_ATB_MODE_SIGNAL_UNDER_CTX
                             picture_control_set_ptr->tx_mode = (picture_control_set_ptr->atb_mode) ?
                                 TX_MODE_SELECT :
                                 TX_MODE_LARGEST;
+#endif
 #endif
 #if !DECOUPLE_ALTREF_ME
                             // Set the default settings of  subpel

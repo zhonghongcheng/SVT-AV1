@@ -532,7 +532,11 @@ static void Av1EncodeLoop(
 #endif
 #if ATB_MD
 #if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+#if MOVE_ATB_MODE_SIGNAL_UNDER_CTX
+        uint8_t  tx_search_skip_flag = (context_ptr->tx_search_level == TX_SEARCH_ENC_DEC && (context_ptr->atb_mode == 0 || cu_ptr->prediction_mode_flag == INTER_MODE)) ? get_skip_tx_search_flag(
+#else
         uint8_t  tx_search_skip_flag = (context_ptr->tx_search_level == TX_SEARCH_ENC_DEC && (picture_control_set_ptr->parent_pcs_ptr->atb_mode == 0 || cu_ptr->prediction_mode_flag == INTER_MODE)) ? get_skip_tx_search_flag(
+#endif
 #else
         uint8_t  tx_search_skip_flag = (picture_control_set_ptr->parent_pcs_ptr->tx_search_level == TX_SEARCH_ENC_DEC && (picture_control_set_ptr->parent_pcs_ptr->atb_mode == 0 || cu_ptr->prediction_mode_flag == INTER_MODE)) ? get_skip_tx_search_flag(
 #endif
@@ -1276,7 +1280,11 @@ static void Av1EncodeLoop16bit(
 #endif
 #if ATB_MD
 #if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+#if MOVE_ATB_MODE_SIGNAL_UNDER_CTX
+            uint8_t  tx_search_skip_flag = (context_ptr->tx_search_level == TX_SEARCH_ENC_DEC && (context_ptr->atb_mode == 0 || cu_ptr->prediction_mode_flag == INTER_MODE)) ? get_skip_tx_search_flag(
+#else
             uint8_t  tx_search_skip_flag = (context_ptr->tx_search_level == TX_SEARCH_ENC_DEC && (picture_control_set_ptr->parent_pcs_ptr->atb_mode == 0 || cu_ptr->prediction_mode_flag == INTER_MODE)) ? get_skip_tx_search_flag(
+#endif
 #else
             uint8_t  tx_search_skip_flag = (picture_control_set_ptr->parent_pcs_ptr->tx_search_level == TX_SEARCH_ENC_DEC && (picture_control_set_ptr->parent_pcs_ptr->atb_mode == 0 || cu_ptr->prediction_mode_flag == INTER_MODE)) ? get_skip_tx_search_flag(
 #endif

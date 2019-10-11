@@ -469,7 +469,11 @@ void mode_decision_update_neighbor_arrays(
             context_ptr->blk_geom->bwidth,
             context_ptr->blk_geom->bheight);
 #if ATB_MD
+#if MOVE_ATB_MODE_SIGNAL_UNDER_CTX
+        if (context_ptr->atb_mode) {
+#else
         if (picture_control_set_ptr->parent_pcs_ptr->atb_mode) {
+#endif
             update_recon_neighbor_array(
                 picture_control_set_ptr->md_tx_depth_1_luma_recon_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
                 context_ptr->cu_ptr->neigh_top_recon[0],
@@ -525,7 +529,9 @@ void copy_neighbour_arrays(
     uint32_t                            sb_org_x,
     uint32_t                            sb_org_y)
 {
+#if! MOVE_ATB_MODE_SIGNAL_UNDER_CTX
     (void)*context_ptr;
+#endif
 
     const BlockGeom * blk_geom = get_blk_geom_mds(blk_mds);
 
@@ -604,7 +610,11 @@ void copy_neighbour_arrays(
         NEIGHBOR_ARRAY_UNIT_FULL_MASK);
 
 #if ATB_MD
+#if MOVE_ATB_MODE_SIGNAL_UNDER_CTX
+    if (context_ptr->atb_mode) {
+#else
     if (picture_control_set_ptr->parent_pcs_ptr->atb_mode) {
+#endif
         copy_neigh_arr(
             picture_control_set_ptr->md_tx_depth_1_luma_recon_neighbor_array[src_idx],
             picture_control_set_ptr->md_tx_depth_1_luma_recon_neighbor_array[dst_idx],
@@ -8355,7 +8365,11 @@ void md_stage_2(
         atb_search_skip_fag = (picture_control_set_ptr->parent_pcs_ptr->skip_tx_search && best_fastLoop_candidate_index > NFL_TX_TH) ? 1 : atb_search_skip_fag;
         if (picture_control_set_ptr->parent_pcs_ptr->atb_mode && end_tx_depth && candidateBuffer->candidate_ptr->type == INTRA_MODE && candidateBuffer->candidate_ptr->use_intrabc == 0 && atb_search_skip_fag == 0) {
 #else
+#if MOVE_ATB_MODE_SIGNAL_UNDER_CTX
+        if (context_ptr->atb_mode && end_tx_depth && candidateBuffer->candidate_ptr->type == INTRA_MODE && candidateBuffer->candidate_ptr->use_intrabc == 0) {
+#else
         if (picture_control_set_ptr->parent_pcs_ptr->atb_mode && end_tx_depth && candidateBuffer->candidate_ptr->type == INTRA_MODE && candidateBuffer->candidate_ptr->use_intrabc == 0) {
+#endif
 #endif
 #if ATB_INTER_SUPPORT
             int32_t is_inter = (candidateBuffer->candidate_ptr->type == INTER_MODE || candidateBuffer->candidate_ptr->use_intrabc) ? EB_TRUE : EB_FALSE;
@@ -9037,7 +9051,11 @@ void AV1PerformFullLoop(
         if (picture_control_set_ptr->parent_pcs_ptr->atb_mode && end_tx_depth && candidateBuffer->candidate_ptr->type == INTRA_MODE && candidateBuffer->candidate_ptr->use_intrabc == 0 && atb_search_skip_fag == 0) {
 #else
 #if ATB_INTER_SUPPORT
+#if MOVE_ATB_MODE_SIGNAL_UNDER_CTX
+        if (context_ptr->atb_mode && end_tx_depth && candidateBuffer->candidate_ptr->use_intrabc == 0) {
+#else
         if (picture_control_set_ptr->parent_pcs_ptr->atb_mode && end_tx_depth && candidateBuffer->candidate_ptr->use_intrabc == 0) {
+#endif
 #else
         if (picture_control_set_ptr->parent_pcs_ptr->atb_mode && end_tx_depth && candidateBuffer->candidate_ptr->type == INTRA_MODE && candidateBuffer->candidate_ptr->use_intrabc == 0) {
 #endif
@@ -9845,7 +9863,11 @@ void inter_depth_tx_search(
 #if ATB_MD
     // Hsan: if Transform Search ON and INTRA, then Tx Type search is performed @ the full loop
 #if MOVE_TX_LEVELS_SIGNAL_UNDER_CTX
+#if MOVE_ATB_MODE_SIGNAL_UNDER_CTX
+    uint8_t  tx_search_skip_flag = (context_ptr->tx_search_level == TX_SEARCH_INTER_DEPTH && (context_ptr->atb_mode == 0 || candidateBuffer ->candidate_ptr->type == INTER_MODE)) ? get_skip_tx_search_flag(
+#else
     uint8_t  tx_search_skip_flag = (context_ptr->tx_search_level == TX_SEARCH_INTER_DEPTH && (picture_control_set_ptr->parent_pcs_ptr->atb_mode == 0 || candidateBuffer ->candidate_ptr->type == INTER_MODE)) ? get_skip_tx_search_flag(
+#endif
 #else
     uint8_t  tx_search_skip_flag = (picture_control_set_ptr->parent_pcs_ptr->tx_search_level == TX_SEARCH_INTER_DEPTH && (picture_control_set_ptr->parent_pcs_ptr->atb_mode == 0 || candidateBuffer ->candidate_ptr->type == INTER_MODE)) ? get_skip_tx_search_flag(
 #endif
@@ -11128,6 +11150,12 @@ void md_encode_block(
 #endif
 #if MPMD_SB
     is_nsq_table_used = picture_control_set_ptr->slice_type == !I_SLICE && !is_final_pass ? 1 : is_nsq_table_used;
+#if MARK_CU
+    if (context_ptr->fp_depth_offset != UNVALID) {
+        is_nsq_table_used = 1;
+        context_ptr->nsq_max_shapes_md = 4;
+    }
+#endif
 #endif
     context_ptr->open_loop_block_rank = open_loop_block_rank;
     context_ptr->early_split_flag = early_split_flag;
@@ -11357,7 +11385,11 @@ void md_encode_block(
 #if II_SO
         //for every CU, perform Luma DC/V/H/S intra prediction to be used later in inter-intra search
         int allow_ii = is_interintra_allowed_bsize(context_ptr->blk_geom->bsize);
+#if MOVE_COMPOUND_MODE_SIGNAL_UNDER_CTX
+        if (context_ptr->enable_inter_intra && allow_ii)
+#else
         if (picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra && allow_ii)
+#endif
             precompute_intra_pred_for_inter_intra(
                 picture_control_set_ptr,
                 context_ptr);
@@ -12310,6 +12342,20 @@ EB_EXTERN EbErrorType mode_decision_sb(
         context_ptr->best_nsq_sahpe7 = leafDataPtr->ol_best_nsq_shape7;
         context_ptr->best_nsq_sahpe8 = leafDataPtr->ol_best_nsq_shape8;
 #endif
+#endif
+#if MARK_CU 
+        uint8_t  is_complete_sb = sequence_control_set_ptr->sb_geom[lcuAddr].is_complete_sb;
+        if (is_last_md_pass &&  picture_control_set_ptr->slice_type != I_SLICE && is_complete_sb) {
+            context_ptr->fp_depth_offset = leafDataPtr->fp_depth_offset;
+            if (context_ptr->fp_depth_offset == UNVALID)
+                    printf("error! unvalid fp_depth_offset %d !\n", context_ptr->fp_depth_offset);    
+        }
+        else {
+            context_ptr->fp_depth_offset = UNVALID;
+        }
+#endif
+#if USE_1SP_MODE
+        context_ptr->fp_depth_mode_valid[NEARESTMV] = 1;
 #endif
         if (leafDataPtr->tot_d1_blocks != 1)
         {

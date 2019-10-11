@@ -59,6 +59,14 @@ extern "C" {
 #define ADD_FLAG_FOR_SKIP_NEW_MV_FEATURE   1
 #define MPMD_TEST                          1
 #define TEST_DEPTH_REFINEMENT              1
+#define MARK_CU                            1
+#if MARK_CU
+#define UNVALID  1000
+#define USE_1SP_MODE                       1
+#define NUMBER_OF_MODE_TH                  25
+#define BEST_PRED_MODE_TH                  1
+#endif
+
 #endif
 #define DEBUG_MPMD_MD                      0
 #if DEBUG_MPMD_MD
@@ -72,6 +80,8 @@ extern "C" {
 #endif
 #define MOVE_IF_LEVELS_SIGNAL_UNDER_CTX    1 // Move Intep-filter search feature settings under context_ptr
 #define MOVE_TX_LEVELS_SIGNAL_UNDER_CTX    1 // Move TX_search feature settings under context_ptr
+#define MOVE_ATB_MODE_SIGNAL_UNDER_CTX     1 // Move ATB_MODE feature settings under context_ptr
+#define MOVE_COMPOUND_MODE_SIGNAL_UNDER_CTX     1 // Move Compound Mode feature settings under context_ptr
 #define FIX_MDC_BUG_INCOMPLETE_SB          1
 #define WARP_UPDATE                        1 // WARP on for MR, M0 ref frame.
 #define DEBUG_2PASS_MDC                    0

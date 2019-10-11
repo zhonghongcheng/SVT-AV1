@@ -2003,7 +2003,11 @@ uint64_t av1_inter_fast_cost(
         // inter intra mode rate
         if (picture_control_set_ptr->parent_pcs_ptr->reference_mode != COMPOUND_REFERENCE &&
             picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header.enable_interintra_compound &&
+#if MOVE_COMPOUND_MODE_SIGNAL_UNDER_CTX
+            svt_is_interintra_allowed(picture_control_set_ptr->slice_type != I_SLICE ? picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header.enable_interintra_compound : 0,blk_geom->bsize, candidate_ptr->inter_mode, rf)/*is_interintra_allowed(mbmi)*/) {
+#else
             svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra,blk_geom->bsize, candidate_ptr->inter_mode, rf)/*is_interintra_allowed(mbmi)*/) {
+#endif
             const int interintra = candidate_ptr->is_interintra_used;//mbmi->ref_frame[1] == INTRA_FRAME;
             const int bsize_group = size_group_lookup[blk_geom->bsize];
 

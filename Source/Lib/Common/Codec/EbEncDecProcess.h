@@ -143,6 +143,11 @@ extern "C" {
         uint8_t tx_search_reduced_set;
         uint8_t skip_tx_search;
 #endif
+#if MOVE_ATB_MODE_SIGNAL_UNDER_CTX
+#if ATB_SUPPORT
+        uint8_t                                atb_mode;
+#endif
+#endif
     } EncDecContext;
 
     /**************************************

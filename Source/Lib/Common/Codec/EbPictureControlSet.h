@@ -13662,6 +13662,10 @@ extern "C" {
         uint8_t           consider_block;
         uint8_t           refined_split_flag;
 #endif
+#if MARK_CU
+        int16_t            depth_offset;
+        int16_t            fp_depth_offset;
+#endif
     } EbMdcLeafData;
 
     typedef struct MdcLcuData
@@ -14323,8 +14327,10 @@ extern "C" {
 #if M8_SKIP_BLK
         uint8_t                               skip_sub_blks;
 #endif
+#if !MOVE_ATB_MODE_SIGNAL_UNDER_CTX
 #if ATB_SUPPORT
         uint8_t                               atb_mode;
+#endif
 #endif
 #if COMP_MODE
         uint8_t                               wedge_mode;
@@ -14551,20 +14557,24 @@ extern "C" {
 #if TBX_SPLIT_CAP
         uint8_t                              enable_skip_atb;
 #endif
+#if !MOVE_COMPOUND_MODE_SIGNAL_UNDER_CTX
 #if II_SEARCH
         uint8_t                              enable_inter_intra;
+#endif
 #endif
 
 #if OBMC_SUP
         uint8_t                              pic_obmc_mode;
 #endif
 
+#if !MOVE_COMPOUND_MODE_SIGNAL_UNDER_CTX
 #if COMP_MODE
     //    OrderHintInfoEnc                        order_hint_info_st;
         MD_COMP_TYPE                            compound_types_to_try;
         uint8_t                                 compound_mode;
 
 
+#endif
 #endif
 #if ADAPTIVE_TXB_SEARCH_LEVEL
         uint8_t                              adaptive_txb_search_level;
