@@ -8577,6 +8577,7 @@ EbErrorType ProductGenerateMdCandidatesCu(
     EbPtr                              interPredContextPtr,
     PictureControlSet              *picture_control_set_ptr)
 {
+    EbEncMode enc_mode = picture_control_set_ptr->enc_mode;
     (void)lcuAddr;
     (void)interPredContextPtr;
     const SequenceControlSet *sequence_control_set_ptr = (SequenceControlSet*)picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr;
@@ -8704,16 +8705,16 @@ EbErrorType ProductGenerateMdCandidatesCu(
             if (cand_ptr->type == INTRA_MODE) {
 #if FI_CLASS
                 if (cand_ptr->filter_intra_mode == FILTER_INTRA_MODES) {
-                    cand_ptr->cand_class = CAND_CLASS_0;
-                    context_ptr->fast_cand_count[CAND_CLASS_0]++;
+                    cand_ptr->cand_class = (enc_mode == ENC_M0 ? CAND_CLASS_0_M0 : CAND_CLASS_0);
+                    context_ptr->fast_cand_count[(enc_mode == ENC_M0 ? CAND_CLASS_0_M0 : CAND_CLASS_0)]++;
                 }
                 else {
-                    cand_ptr->cand_class = CAND_CLASS_5;
-                    context_ptr->fast_cand_count[CAND_CLASS_5]++;
+                    cand_ptr->cand_class = (enc_mode == ENC_M0 ? CAND_CLASS_5_M0 : CAND_CLASS_5);
+                    context_ptr->fast_cand_count[(enc_mode == ENC_M0 ? CAND_CLASS_5_M0 : CAND_CLASS_5)]++;
                 }
 #else
-                cand_ptr->cand_class = CAND_CLASS_0;
-                context_ptr->fast_cand_count[CAND_CLASS_0]++;
+                cand_ptr->cand_class = (enc_mode == ENC_M0 ? CAND_CLASS_0_M0 : CAND_CLASS_0);
+                context_ptr->fast_cand_count[(enc_mode == ENC_M0 ? CAND_CLASS_0_M0 : CAND_CLASS_0)]++;
 #endif
             }
 #if COMP_FULL
@@ -8725,39 +8726,39 @@ EbErrorType ProductGenerateMdCandidatesCu(
 #endif
 #if II_CLASS
                 if (cand_ptr->is_interintra_used && cand_ptr->is_compound == 0) {
-                    cand_ptr->cand_class = CAND_CLASS_4;
-                    context_ptr->fast_cand_count[CAND_CLASS_4]++;
+                    cand_ptr->cand_class = (enc_mode == ENC_M0 ? CAND_CLASS_4_M0 : CAND_CLASS_4);
+                    context_ptr->fast_cand_count[(enc_mode == ENC_M0 ? CAND_CLASS_4_M0 : CAND_CLASS_4)]++;
 
                 }else
 #endif
 
 #if AUTO_C1C2
                     if (context_ptr->combine_class12){
-                        cand_ptr->cand_class = CAND_CLASS_1;
-                        context_ptr->fast_cand_count[CAND_CLASS_1]++;
+                        cand_ptr->cand_class = (enc_mode == ENC_M0 ? CAND_CLASS_1_M0 : CAND_CLASS_1);
+                        context_ptr->fast_cand_count[(enc_mode == ENC_M0 ? CAND_CLASS_1_M0 : CAND_CLASS_1)]++;
                     }
                     else {
                         if (cand_ptr->is_new_mv) {
-                            cand_ptr->cand_class = CAND_CLASS_1;
-                            context_ptr->fast_cand_count[CAND_CLASS_1]++;
+                            cand_ptr->cand_class = (enc_mode == ENC_M0 ? CAND_CLASS_1_M0 : CAND_CLASS_1);
+                            context_ptr->fast_cand_count[(enc_mode == ENC_M0 ? CAND_CLASS_1_M0 : CAND_CLASS_1)]++;
                         }
                         else {
-                            cand_ptr->cand_class = CAND_CLASS_2;
-                            context_ptr->fast_cand_count[CAND_CLASS_2]++;
+                            cand_ptr->cand_class = (enc_mode == ENC_M0 ? CAND_CLASS_2_M0 : CAND_CLASS_2);
+                            context_ptr->fast_cand_count[(enc_mode == ENC_M0 ? CAND_CLASS_2_M0 : CAND_CLASS_2)]++;
                         }
                     }
 #else
 #if COMBINE_C1_C2
-                cand_ptr->cand_class = CAND_CLASS_1;
-                context_ptr->fast_cand_count[CAND_CLASS_1]++;
+                cand_ptr->cand_class = (enc_mode == ENC_M0 ? CAND_CLASS_1_M0 : CAND_CLASS_1);
+                context_ptr->fast_cand_count[(enc_mode == ENC_M0 ? CAND_CLASS_1_M0 : CAND_CLASS_1)]++;
 #else
                 if (cand_ptr->is_new_mv) {
-                    cand_ptr->cand_class = CAND_CLASS_1;
-                    context_ptr->fast_cand_count[CAND_CLASS_1]++;
+                    cand_ptr->cand_class = (enc_mode == ENC_M0 ? CAND_CLASS_1_M0 : CAND_CLASS_1);
+                    context_ptr->fast_cand_count[(enc_mode == ENC_M0 ? CAND_CLASS_1_M0 : CAND_CLASS_1)]++;
                 }
                 else {
-                    cand_ptr->cand_class = CAND_CLASS_2;
-                    context_ptr->fast_cand_count[CAND_CLASS_2]++;
+                    cand_ptr->cand_class = (enc_mode == ENC_M0 ? CAND_CLASS_2_M0 : CAND_CLASS_2);
+                    context_ptr->fast_cand_count[(enc_mode == ENC_M0 ? CAND_CLASS_2_M0 : CAND_CLASS_2)]++;
                 }
 #endif
 #endif
@@ -8767,20 +8768,20 @@ EbErrorType ProductGenerateMdCandidatesCu(
 
 #if AUTO_C1C2
         if (context_ptr->combine_class12) {
-            cand_ptr->cand_class = CAND_CLASS_2;
-            context_ptr->fast_cand_count[CAND_CLASS_2]++;
+            cand_ptr->cand_class = (enc_mode == ENC_M0 ? CAND_CLASS_2_M0 : CAND_CLASS_2);
+            context_ptr->fast_cand_count[(enc_mode == ENC_M0 ? CAND_CLASS_2_M0 : CAND_CLASS_2)]++;
         }
         else {
-            cand_ptr->cand_class = CAND_CLASS_3;
-            context_ptr->fast_cand_count[CAND_CLASS_3]++;
+            cand_ptr->cand_class = (enc_mode == ENC_M0 ? CAND_CLASS_3_M0 : CAND_CLASS_3);
+            context_ptr->fast_cand_count[(enc_mode == ENC_M0 ? CAND_CLASS_3_M0 : CAND_CLASS_3)]++;
         }
 #else
 #if COMBINE_C1_C2
-                cand_ptr->cand_class = CAND_CLASS_2;
-                context_ptr->fast_cand_count[CAND_CLASS_2]++;
+                cand_ptr->cand_class = (enc_mode == ENC_M0 ? CAND_CLASS_2_M0 : CAND_CLASS_2);
+                context_ptr->fast_cand_count[(enc_mode == ENC_M0 ? CAND_CLASS_2_M0 : CAND_CLASS_2)]++;
 #else
-                cand_ptr->cand_class = CAND_CLASS_3;
-                context_ptr->fast_cand_count[CAND_CLASS_3]++;
+                cand_ptr->cand_class = (enc_mode == ENC_M0 ? CAND_CLASS_3_M0 : CAND_CLASS_3);
+                context_ptr->fast_cand_count[(enc_mode == ENC_M0 ? CAND_CLASS_3_M0 : CAND_CLASS_3)]++;
 #endif
 #endif
             }
@@ -8796,8 +8797,8 @@ EbErrorType ProductGenerateMdCandidatesCu(
                 if (cand_ptr->is_interintra_used == 0){
                     if (cand_ptr->motion_mode == OBMC_CAUSAL){
                         context_ptr->fast_cand_count[cand_ptr->cand_class]--; 
-                        cand_ptr->cand_class = CAND_CLASS_6;                       
-                        context_ptr->fast_cand_count[CAND_CLASS_6]++;
+                        cand_ptr->cand_class = (enc_mode == ENC_M0 ? CAND_CLASS_6_M0 : CAND_CLASS_6);                       
+                        context_ptr->fast_cand_count[(enc_mode == ENC_M0 ? CAND_CLASS_6_M0 : CAND_CLASS_6)]++;
                     }
                 }
             }
@@ -8806,7 +8807,7 @@ EbErrorType ProductGenerateMdCandidatesCu(
 #endif
 
     uint32_t fast_accum = 0;
-    for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
+    for (cand_class_it = (enc_mode == ENC_M0 ? CAND_CLASS_0_M0 : CAND_CLASS_0); cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
         fast_accum += context_ptr->fast_cand_count[cand_class_it];
     }
     assert(fast_accum == canTotalCnt);

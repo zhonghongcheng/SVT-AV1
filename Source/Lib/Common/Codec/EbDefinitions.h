@@ -649,6 +649,15 @@ extern "C" {
 #define CAND_CLASS_6 6 // OBMC
 #define CAND_CLASS_TOTAL 7
 #define CAND_CLASS uint8_t
+
+// redefine the constants for use with M0
+#define CAND_CLASS_0_M0 0 // INTRA
+#define CAND_CLASS_1_M0 1 // INTER NEW
+#define CAND_CLASS_2_M0 2 // INTER PRED
+#define CAND_CLASS_3_M0 3 // INTER INTER
+#define CAND_CLASS_4_M0 4 // INTER INTRA
+#define CAND_CLASS_5_M0 5 // FILTER INTRA
+#define CAND_CLASS_6_M0 6 // OBMC
 #else
 typedef enum CAND_CLASS {
     CAND_CLASS_0,
@@ -668,7 +677,25 @@ typedef enum CAND_CLASS {
 #endif
     CAND_CLASS_TOTAL
 } CAND_CLASS;
+
+// redefine for M0; otherwise will have lots of code reuse checking #if COMBINE_CLASS_PRO
+#define CAND_CLASS_0_M0 CAND_CLASS_0
+#define CAND_CLASS_1_M0 CAND_CLASS_1
+#define CAND_CLASS_2_M0 CAND_CLASS_2
+#if COMP_FULL && (!COMBINE_C1_C2 || AUTO_C1C2)
+    #define CAND_CLASS_3_M0 CAND_CLASS_3
 #endif
+#if II_CLASS
+    #define CAND_CLASS_4_M0 CAND_CLASS_4
+#endif
+#if FI_CLASS
+    #define CAND_CLASS_5_M0 CAND_CLASS_5
+#endif
+#if OBMC_CLASS
+    #define CAND_CLASS_6_M0 CAND_CLASS_6
+#endif
+#endif
+
 #else
 
 #define DECOUPLED_FAST_LOOP                            1
