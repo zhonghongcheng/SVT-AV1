@@ -826,7 +826,7 @@ EbErrorType signal_derivation_multi_processes_oq(
         if (picture_control_set_ptr->pic_depth_mode < PIC_SQ_DEPTH_MODE)
             assert(sequence_control_set_ptr->nsq_present == 1 && "use nsq_present 1");
 
-#if ALL_8x8
+#if ALL_64x64 || ALL_32x32 || ALL_16x16 || ALL_8x8 || ALL_4x4
         picture_control_set_ptr->pic_depth_mode = PIC_SQ_DEPTH_MODE;
 #endif
 

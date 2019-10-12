@@ -4577,6 +4577,10 @@ void  inject_intra_candidates(
     disable_angle_refinement    = 0;
     disable_angle_prediction    = 0;
 #endif
+#if SHUT_ANGULAR_INTRA
+    angleDeltaCandidateCount = 0;
+    disable_angle_refinement = 1;
+#endif
     for (openLoopIntraCandidate = intra_mode_start; openLoopIntraCandidate <= intra_mode_end ; ++openLoopIntraCandidate) {
         if (av1_is_directional_mode((PredictionMode)openLoopIntraCandidate)) {
             if (!disable_angle_prediction &&
