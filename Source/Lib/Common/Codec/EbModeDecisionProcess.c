@@ -559,6 +559,11 @@ void reset_mode_decision(
     else
         picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = 0;
 
+
+#if SHUT_OBMC
+    picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = 0;
+#endif
+
 #if MR_MODE
     picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode =
         picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0 && picture_control_set_ptr->slice_type != I_SLICE ? 1 : 0;

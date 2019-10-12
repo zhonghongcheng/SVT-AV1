@@ -1037,6 +1037,10 @@ EbErrorType signal_derivation_multi_processes_oq(
             assert(sequence_control_set_ptr->nsq_present == 1 && "use nsq_present 1");
 #endif
 
+#if ALL_8x8
+        picture_control_set_ptr->pic_depth_mode = PIC_SQ_DEPTH_MODE;
+#endif
+
 #if ADP_BQ
         picture_control_set_ptr->max_number_of_pus_per_sb = (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE || picture_control_set_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE) ? MAX_ME_PU_COUNT : SQUARE_PU_COUNT;
 #else
@@ -1696,7 +1700,9 @@ EbErrorType signal_derivation_multi_processes_oq(
         // 0                                     OFF
         // 1                                     ON
             picture_control_set_ptr->enable_inter_intra = picture_control_set_ptr->slice_type != I_SLICE ? sequence_control_set_ptr->seq_header.enable_interintra_compound : 0;
-
+#if SHUT_INTER_INTRA
+            picture_control_set_ptr->enable_inter_intra = 0;
+#endif
 #endif
 #if COMP_MODE
                         // Set compound mode      Settings
@@ -1732,6 +1738,10 @@ EbErrorType signal_derivation_multi_processes_oq(
             else
                 picture_control_set_ptr->compound_mode = 0;
 #if SHUT_COMPOUND
+            picture_control_set_ptr->compound_mode = 0;
+#endif
+
+#if SHUT_INTER_INTER
             picture_control_set_ptr->compound_mode = 0;
 #endif
             // set compound_types_to_try

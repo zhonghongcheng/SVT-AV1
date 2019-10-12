@@ -35,6 +35,39 @@
 extern "C" {
 #endif
 
+/***************************************************/
+#define DEBUG_TOOLS                             1
+#if DEBUG_TOOLS
+#define NSQ_OFF                                 1
+#define TX_TYPE_OFF                             1
+#define ATB_OFF                                 1
+#define SHUT_FILTERING                          1 // CDEF RESTORATION DLF
+#define SHUT_RDOQ                               1
+#define SHUT_QUANT_FP                           1
+#define ALL_8x8                                 1
+#define ONLY_DC_LUMA                            1
+#define ONLY_DC_CHROMA                          1
+#define ONLY_ME                                 1
+#define NO_BIPED                                1
+#define ONLY_FAST_LOOP                          1
+#define ZZ_TEST                                 0
+#endif
+
+#define TARGET_TOOLS                            1
+#if TARGET_TOOLS
+#define SHUT_INTER_INTER                        1
+#define SHUT_INTER_INTRA                        1
+#define SHUT_OBMC                               1
+#define LAMBDA_TUNING                           0
+#define FILTER_INTRA                            1
+#endif
+
+#define SHUT_ESTIMATE_INTRA                     1  // TO DO
+#define RESET_BUG_FIX                           1 
+
+#define SHUT_COEF_BASED_BYPASS                  0 // TO TEST BDRATE
+/***************************************************/
+
 #define ALIGN_ALTREFS_TO_MASTER 1
 #define CDEF_MR_MODE     1 // Use full CDEF for MR mode
 #define UPDATE_CDEF      1 // Update bit cost estimation for CDEF
@@ -48,7 +81,6 @@ extern "C" {
 #define OBMC_WSRC            1
 #define OBMC_MOTION_REFINE   1
 #endif
-#define RESET_BUG_FIX   1
 
 
 #define MPMD_SB                            0
@@ -272,16 +304,7 @@ extern "C" {
 #define ATB_INTER_2_DEPTH                       0 // ATB INTER Depth 2
 
 
-#define DEBUG_THIS                              0
-#if DEBUG_THIS
-#define NSQ_OFF                                 0
-#define TX_TYPE_OFF                             1
-#define ATB_OFF                                 1
-#else
-#define NSQ_OFF                                 0
-#define TX_TYPE_OFF                             0
-#define ATB_OFF                                 0
-#endif
+
 #define IMPROVED_ATB                            0
 #if IMPROVED_ATB
 #define REMOVE_USELESS_OPERATION                1
@@ -433,7 +456,6 @@ extern "C" {
 #define MOD_M0                            0 // Sub-SAD for @ HME and ME, 12 NFL, frequency see
 #define HARD_CODE_SC_SETTING              0
 #define MR_MODE                           0
-#define SHUT_FILTERING                    0 // CDEF RESTORATION DLF
 
 #define M8_SKIP_BLK                       1
 #define M8_OIS                            1
@@ -767,7 +789,6 @@ typedef enum MD_STAGE {
 #define NSQ_TAB_SIZE                                    6
 #endif
 #define MAX_MDC_LEVEL                                   8
-#define LAMBDA_TUNING                                   1
 
 #if IMPROVED_SUBPEL_SEARCH
 typedef enum ME_HP_MODE {

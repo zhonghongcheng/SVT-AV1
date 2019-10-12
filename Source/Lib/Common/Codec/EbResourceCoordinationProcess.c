@@ -746,13 +746,20 @@ void* resource_coordination_kernel(void *input_ptr)
             sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode == ENC_M0)
 #endif
              ? 1 : 0;
-
 #endif
 
+
+#if FILTER_INTRA
+            sequence_control_set_ptr->seq_header.enable_filter_intra = 0;
+#endif
 #if II_COMP
             sequence_control_set_ptr->seq_header.enable_interintra_compound = (sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;
 
           //  sequence_control_set_ptr->seq_header.enable_interintra_compound = 1;
+#endif
+
+#if SHUT_INTER_INTRA
+            sequence_control_set_ptr->seq_header.enable_interintra_compound = 0;
 #endif
 #if COMP_MODE
 
@@ -761,6 +768,9 @@ void* resource_coordination_kernel(void *input_ptr)
             // 1                 ON: full
             sequence_control_set_ptr->compound_mode = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M4) ? 1 : 0;
 
+#if SHUT_INTER_INTER
+            sequence_control_set_ptr->seq_header.enable_masked_compound = 0;
+#endif
             //sequence_control_set_ptr->order_hint_info_st.enable_order_hint = 1;
             //sequence_control_set_ptr->order_hint_info_st.order_hint_bits_minus_1 = 6;
 

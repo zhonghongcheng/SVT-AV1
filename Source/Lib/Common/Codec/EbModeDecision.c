@@ -4661,6 +4661,10 @@ void inject_new_candidates(
             int16_t to_inject_mv_x = use_close_loop_me ? inloop_me_context->inloop_me_mv[0][0][close_loop_me_index][0] << 1 : me_block_results_ptr->x_mv_l0 << 1;
             int16_t to_inject_mv_y = use_close_loop_me ? inloop_me_context->inloop_me_mv[0][0][close_loop_me_index][1] << 1 : me_block_results_ptr->y_mv_l0 << 1;
 #endif
+#if ZZ_TEST
+            to_inject_mv_x = 0;
+            to_inject_mv_y = 0;
+#endif
 #if MRP_DUPLICATION_FIX
             uint8_t to_inject_ref_type = svt_get_ref_frame_type(REF_LIST_0, list0_ref_index);
 #if PRUNE_REF_FRAME_FRO_REC_PARTITION
@@ -4846,6 +4850,11 @@ void inject_new_candidates(
                 int16_t to_inject_mv_x = use_close_loop_me ? inloop_me_context->inloop_me_mv[1][0][close_loop_me_index][0] << 1 : me_block_results_ptr->x_mv_l1 << 1;
                 int16_t to_inject_mv_y = use_close_loop_me ? inloop_me_context->inloop_me_mv[1][0][close_loop_me_index][1] << 1 : me_block_results_ptr->y_mv_l1 << 1;
 #endif
+                
+#if ZZ_TEST
+                    to_inject_mv_x = 0;
+                to_inject_mv_y = 0;
+#endif
 #if MRP_DUPLICATION_FIX
                 uint8_t to_inject_ref_type = svt_get_ref_frame_type(REF_LIST_1, list1_ref_index);
 #if PRUNE_REF_FRAME_FRO_REC_PARTITION
@@ -5016,7 +5025,11 @@ void inject_new_candidates(
             /**************
                NEW_NEWMV
             ************* */
-            if (allow_bipred) {
+#if NO_BIPED
+                if (0) {
+#else
+                if (allow_bipred) {
+#endif
 
                 if (inter_direction == 2) {
 #if MEMORY_FOOTPRINT_OPT_ME_MV
@@ -5724,7 +5737,7 @@ void  inject_inter_candidates(
     /**************
          MVP
     ************* */
-
+#if !ONLY_ME
 #if INJ_MVP
     uint32_t refIt;
     //all of ref pairs: (1)single-ref List0  (2)single-ref List1  (3)compound Bi-Dir List0-List1  (4)compound Uni-Dir List0-List0  (5)compound Uni-Dir List1-List1
@@ -5773,8 +5786,11 @@ void  inject_inter_candidates(
         }
     }
 #endif
-
-    if (inject_newmv_candidate) {
+#endif
+#if !SHUT_COEF_BASED_BYPASS
+    if (inject_newmv_candidate)
+#endif
+    {
 
 #if ENHANCED_Nx4_4xN_NEW_MV
         inject_new_candidates(
@@ -6162,7 +6178,7 @@ void  inject_inter_candidates(
         }
 #endif
     }
-
+#if !ONLY_ME
     if (context_ptr->global_mv_injection) {
         /**************
          GLOBALMV L0
@@ -6503,6 +6519,7 @@ void  inject_inter_candidates(
                     isCompoundEnabled,
                     allow_bipred,
                     &canTotalCnt);
+#endif
 #endif
 // update the total number of candidates injected
 (*candidateTotalCnt) = canTotalCnt;
@@ -7829,8 +7846,13 @@ void  inject_intra_candidates(
     uint8_t                     intra_mode_start = DC_PRED;// D135_PRED;
     uint8_t                     intra_mode_end = D135_PRED;//D135_PRED;
 #else
+#if ONLY_DC_LUMA
+    uint8_t                     intra_mode_start = DC_PRED;
+    uint8_t                     intra_mode_end = DC_PRED;
+#else
     uint8_t                     intra_mode_start = DC_PRED;
     uint8_t                     intra_mode_end   = is16bit ? SMOOTH_H_PRED : PAETH_PRED;
+#endif
 #endif
     uint8_t                     openLoopIntraCandidate;
     uint32_t                    canTotalCnt = 0;
@@ -7875,6 +7897,9 @@ void  inject_intra_candidates(
     context_ptr->estimate_angle_intra = picture_control_set_ptr->enc_mode <= ENC_M3 && !MR_MODE ? 1 : 0;
 #endif
 
+#if SHUT_ESTIMATE_INTRA
+    context_ptr->estimate_angle_intra = 0;
+#endif
     uint8_t directional_mode_skip_mask[INTRA_MODES] = { 0 };
 
     if (context_ptr->estimate_angle_intra==1 && use_angle_delta  )
@@ -8375,6 +8400,14 @@ EbErrorType ProductGenerateMdCandidatesCu(
     EbPtr                              interPredContextPtr,
     PictureControlSet              *picture_control_set_ptr)
 {
+
+    if (picture_control_set_ptr->picture_number == 5 && 
+        context_ptr->cu_origin_x == 56 && 
+        context_ptr->cu_origin_y == 16 && 
+        context_ptr->blk_geom->bwidth  == 8 &&
+        context_ptr->blk_geom->bheight == 8)
+        printf("");
+
     (void)lcuAddr;
     (void)interPredContextPtr;
     const SequenceControlSet *sequence_control_set_ptr = (SequenceControlSet*)picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr;
@@ -8441,6 +8474,7 @@ EbErrorType ProductGenerateMdCandidatesCu(
 #endif
 #if FI_MD
 #if !DEBUG_THIS
+#if !ONLY_DC_LUMA
        if (picture_control_set_ptr->pic_filter_intra_mode > 0 && av1_filter_intra_allowed_bsize(sequence_control_set_ptr->seq_header.enable_filter_intra, context_ptr->blk_geom->bsize))
 
             inject_filter_intra_candidates(
@@ -8456,8 +8490,9 @@ EbErrorType ProductGenerateMdCandidatesCu(
 #endif
 #endif
 #endif
+#endif
     }
-
+#if !ONLY_DC_LUMA
     if (picture_control_set_ptr->parent_pcs_ptr->allow_intrabc)
         inject_intra_bc_candidates(
             picture_control_set_ptr,
@@ -8467,7 +8502,7 @@ EbErrorType ProductGenerateMdCandidatesCu(
             context_ptr->cu_ptr,
             &canTotalCnt
         );
-
+#endif
     // Track the total number of fast intra candidates
     context_ptr->fast_candidate_intra_count = canTotalCnt;
 

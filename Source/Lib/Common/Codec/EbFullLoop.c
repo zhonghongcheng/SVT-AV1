@@ -1998,6 +1998,10 @@ void av1_quantize_inv_quantize(
     EbBool perform_quantize_fp = EB_FALSE;
 #endif
 
+#if SHUT_QUANT_FP
+    perform_quantize_fp = EB_FALSE;
+#endif
+
     if (perform_rdoq && perform_quantize_fp && !is_inter)
         av1_quantize_fp_facade(
             (TranLow*)coeff,
