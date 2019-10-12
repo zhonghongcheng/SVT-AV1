@@ -37,7 +37,10 @@ extern "C" {
 
 /***************************************************/
 #define DEBUG_TOOLS                             1
-#if DEBUG_TOOLS
+#define GROUP_0                                 0
+#define GROUP_1                                 0
+#define GROUP_2                                 0
+#if DEBUG_TOOLS 
 #define NSQ_OFF                                 1
 #define TX_TYPE_OFF                             1
 #define ATB_OFF                                 1
@@ -51,6 +54,19 @@ extern "C" {
 #define NO_BIPED                                1
 #define ONLY_FAST_LOOP                          1
 #define ZZ_TEST                                 0
+#endif
+
+#if GROUP_0
+#define ONLY_FAST_LOOP                          1
+#endif
+#if GROUP_1
+#define TX_TYPE_OFF                             1
+#define ATB_OFF                                 1
+#define SHUT_RDOQ                               1
+#define SHUT_QUANT_FP                           1
+#endif
+#if GROUP_2
+#define NSQ_OFF                                 1
 #endif
 
 #define TARGET_TOOLS                            1
