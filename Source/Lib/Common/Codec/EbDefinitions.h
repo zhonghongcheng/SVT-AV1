@@ -76,6 +76,7 @@ extern "C" {
 #define SHUT_OBMC                               1
 #define LAMBDA_TUNING                           0
 #define FILTER_INTRA                            1
+#define SHUT_MDC                                1
 #endif
 
 #define SHUT_ESTIMATE_INTRA                     1  // TO DO

@@ -1078,6 +1078,11 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
         else
             picture_control_set_ptr->mdc_depth_level = MAX_MDC_LEVEL; // Not tuned yet.
+#if SHUT_MDC
+        picture_control_set_ptr->mdc_depth_level = MAX_MDC_LEVEL; // Not tuned yet.
+#endif    
+
+
 #if TWO_PASS_PART
         if(sequence_control_set_ptr->static_config.use_input_stat_file)
 #if USE_PRED_ONLY_IN_2ND_PASS
