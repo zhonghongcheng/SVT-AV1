@@ -1090,8 +1090,54 @@ void forward_sq_blocks_to_md(
 
                 resultsPtr->leaf_data_array[resultsPtr->leaf_count].leaf_index = 0;//valid only for square 85 world. will be removed.
                 resultsPtr->leaf_data_array[resultsPtr->leaf_count].mds_idx = blk_index;
-#if ALL_8x8
+#if NO_4x4
+                if (blk_geom->sq_size > 8)
+                {
+                    resultsPtr->leaf_data_array[resultsPtr->leaf_count++].split_flag = EB_TRUE;
+                    split_flag = EB_TRUE;
+                }
+                else if (blk_geom->sq_size == 8) {
+                    resultsPtr->leaf_data_array[resultsPtr->leaf_count++].split_flag = EB_FALSE;
+                    split_flag = EB_FALSE;
+                }
+#elif ALL_4x4
+                if (blk_geom->sq_size == 4)
+                {
+                    resultsPtr->leaf_data_array[resultsPtr->leaf_count++].split_flag = EB_FALSE;
+                    split_flag = EB_FALSE;
+                }
+                else {
+                    split_flag = EB_TRUE;
+                }
+#elif ALL_8x8
                 if (blk_geom->sq_size == 8)
+                {
+                    resultsPtr->leaf_data_array[resultsPtr->leaf_count++].split_flag = EB_FALSE;
+                    split_flag = EB_FALSE;
+                }
+                else {
+                    split_flag = EB_TRUE;
+                }
+#elif ALL_16x16
+                if (blk_geom->sq_size == 16)
+                {
+                    resultsPtr->leaf_data_array[resultsPtr->leaf_count++].split_flag = EB_FALSE;
+                    split_flag = EB_FALSE;
+                }
+                else {
+                    split_flag = EB_TRUE;
+                }
+#elif ALL_32x32
+                if (blk_geom->sq_size == 32)
+                {
+                    resultsPtr->leaf_data_array[resultsPtr->leaf_count++].split_flag = EB_FALSE;
+                    split_flag = EB_FALSE;
+                }
+                else {
+                    split_flag = EB_TRUE;
+                }
+#elif ALL_64x64
+                if (blk_geom->sq_size == 64)
                 {
                     resultsPtr->leaf_data_array[resultsPtr->leaf_count++].split_flag = EB_FALSE;
                     split_flag = EB_FALSE;

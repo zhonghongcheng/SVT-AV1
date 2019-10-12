@@ -7848,7 +7848,7 @@ void  inject_intra_candidates(
 #else
 #if ONLY_DC_LUMA
     uint8_t                     intra_mode_start = DC_PRED;
-    uint8_t                     intra_mode_end = DC_PRED;
+    uint8_t                     intra_mode_end   = DC_PRED;
 #else
     uint8_t                     intra_mode_start = DC_PRED;
     uint8_t                     intra_mode_end   = is16bit ? SMOOTH_H_PRED : PAETH_PRED;
@@ -7978,7 +7978,10 @@ void  inject_intra_candidates(
 #if !M9_INTRA
     angleDeltaCandidateCount = disable_angle_refinement ? 1: angleDeltaCandidateCount;
 #endif
-
+#if SHUT_ANGULAR_INTRA
+    angleDeltaCandidateCount = 0;
+    disable_angle_refinement = 1;
+#endif
     for (openLoopIntraCandidate = intra_mode_start; openLoopIntraCandidate <= intra_mode_end ; ++openLoopIntraCandidate) {
 
         if (av1_is_directional_mode((PredictionMode)openLoopIntraCandidate)) {
