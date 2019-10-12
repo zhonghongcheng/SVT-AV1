@@ -77,6 +77,7 @@ extern "C" {
 #define LAMBDA_TUNING                           0
 #define FILTER_INTRA                            1
 #define SHUT_MDC                                1
+#define SHUT_PRED_CHANGE                        1
 #endif
 
 #define SHUT_ESTIMATE_INTRA                     1  // TO DO
@@ -139,8 +140,9 @@ extern "C" {
 #define TWO_PASSES_TEST              0
 #define PRED_CHANGE                  1 // Change the MRP in 4L
 #define PRED_CHANGE_5L               1 // Change the MRP in 5L Pictures 3, 5 , 7 and 9 use 1 as the reference, 11, 13, 15 and 17 use 9 as the reference
+#if !SHUT_PRED_CHANGE
 #define PRED_CHANGE_MOD              1 // Turn the feature off for M2 and M3
-
+#endif
 #define W_611                        0 // Distortion weighting + Chroma QP Offset
 #if W_611
 #define DISTORTION_WEIGHTING         1  // Distortion weighting
