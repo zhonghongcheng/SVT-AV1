@@ -1767,6 +1767,14 @@ void set_md_stage_counts(
     // Step 4: zero-out count for CAND_CLASS_3 if CAND_CLASS_1 and CAND_CLASS_2 are merged (i.e. shift to the left)
     if (context_ptr->combine_class12)
         context_ptr->md_stage_1_count[CAND_CLASS_3] = context_ptr->md_stage_2_count[CAND_CLASS_3] = context_ptr->md_stage_3_count[CAND_CLASS_3] = 0;
+
+#if ONLY_FAST_LOOP
+    for (CAND_CLASS cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
+        context_ptr->md_stage_1_count[cand_class_it] = 1;
+        context_ptr->md_stage_2_count[cand_class_it] = 1;
+        context_ptr->md_stage_3_count[cand_class_it] = 1;
+    }
+#endif
 }
 
 void sort_stage0_fast_candidates(
@@ -7711,6 +7719,9 @@ EB_EXTERN EbErrorType mode_decision_sb(
             }
         }
         else
+#if ENABLE_REDUNDANT_BLOCK
+        {
+#endif
         // Initialize tx_depth
         cu_ptr->tx_depth = 0;
         if (blk_geom->quadi > 0 && blk_geom->shape == PART_N) {
@@ -7781,7 +7792,9 @@ EB_EXTERN EbErrorType mode_decision_sb(
             else
                 context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost = 0;
         }
-
+#if ENABLE_REDUNDANT_BLOCK
+        }
+#endif
         skip_next_nsq = 0;
         if (blk_geom->nsi + 1 == blk_geom->totns)
             d1_non_square_block_decision(context_ptr);

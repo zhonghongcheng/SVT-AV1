@@ -33,6 +33,40 @@
 extern "C" {
 #endif
 
+/***************************************************/
+#define DEBUG_TOOLS                             1
+#if DEBUG_TOOLS
+#define NSQ_OFF                                 1
+#define TX_TYPE_OFF                             1
+#define ATB_OFF                                 1
+#define SHUT_FILTERING                          1 // CDEF RESTORATION DLF
+#define SHUT_RDOQ                               1
+#define SHUT_QUANT_FP                           1
+#define ALL_8x8                                 1
+#define ONLY_DC_LUMA                            1
+#define ONLY_DC_CHROMA                          1
+#define ONLY_ME                                 1
+#define NO_BIPED                                1
+#define ONLY_FAST_LOOP                          1
+#define ZZ_TEST                                 0
+#endif
+
+
+#define TARGET_TOOLS                            1
+#if TARGET_TOOLS
+#define SHUT_INTER_INTER                        1
+#define SHUT_INTER_INTRA                        1
+#endif
+
+#define SHUT_ESTIMATE_INTRA                     1  // TO DO
+#define ENABLE_REDUNDANT_BLOCK                  1 // TO DO
+#define RESET_BUG_FIX                           1 // TO DO
+#define FIX_WRAP_UPDATE                         1 // TO DO
+
+
+#define SHUT_COEF_BASED_BYPASS                  0 // TO TEST BDRATE
+/***************************************************/
+
 #define II_COMP_FLAG 1
 #define PRED_CHANGE                  1 // Change the MRP in 4L Pictures 3, 5 , 7 and 9 use 1 as the reference
 #define PRED_CHANGE_5L               1 // Change the MRP in 5L Pictures 3, 5 , 7 and 9 use 1 as the reference, 11, 13, 15 and 17 use 9 as the reference

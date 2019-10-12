@@ -1197,6 +1197,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             CHROMA_MODE_2 :
             CHROMA_MODE_3 ;
 
+#if ONLY_DC_CHROMA
+    context_ptr->chroma_level = CHROMA_MODE_3;
+#endif
+
     // Set fast loop method
     // 1 fast loop: SSD_SEARCH not supported
     // Level                Settings
@@ -1451,7 +1455,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->trellis_quant_coeff_optimization = EB_TRUE;
     else
         context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
-
+#if SHUT_RDOQ
+    context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
+#endif
     // Derive redundant block
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
@@ -1470,6 +1476,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             context_ptr->edge_based_skip_angle_intra = 1;
     else
         context_ptr->edge_based_skip_angle_intra = 0;
+
+#if SHUT_ESTIMATE_INTRA
+    context_ptr->edge_based_skip_angle_intra = 0;
+#endif
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode == ENC_M0)
         context_ptr->prune_ref_frame_for_rec_partitions = 0;
     else

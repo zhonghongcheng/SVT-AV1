@@ -826,6 +826,10 @@ EbErrorType signal_derivation_multi_processes_oq(
         if (picture_control_set_ptr->pic_depth_mode < PIC_SQ_DEPTH_MODE)
             assert(sequence_control_set_ptr->nsq_present == 1 && "use nsq_present 1");
 
+#if ALL_8x8
+        picture_control_set_ptr->pic_depth_mode = PIC_SQ_DEPTH_MODE;
+#endif
+
     picture_control_set_ptr->max_number_of_pus_per_sb = (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE) ? MAX_ME_PU_COUNT : SQUARE_PU_COUNT;
 
     // NSQ search Level                               Settings
@@ -869,6 +873,11 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL3;
         else
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
+
+
+#if NSQ_OFF
+        picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
+#endif
 
     if (picture_control_set_ptr->nsq_search_level > NSQ_SEARCH_OFF)
         assert(sequence_control_set_ptr->nsq_present == 1 && "use nsq_present 1");
@@ -1066,6 +1075,10 @@ EbErrorType signal_derivation_multi_processes_oq(
     else
         picture_control_set_ptr->tx_search_level = TX_SEARCH_ENC_DEC;
 
+#if TX_TYPE_OFF
+    picture_control_set_ptr->tx_search_level = 0;
+#endif
+
     // Set tx search skip weights (MAX_MODE_COST: no skipping; 0: always skipping)
     if (picture_control_set_ptr->tx_search_level == TX_SEARCH_ENC_DEC)
         picture_control_set_ptr->tx_weight = MAX_MODE_COST;
@@ -1191,6 +1204,10 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
             picture_control_set_ptr->atb_mode = 0;
 
+#if ATB_OFF
+        picture_control_set_ptr->atb_mode = 0;
+#endif
+
         // Set skip atb                          Settings
         // 0                                     OFF
         // 1                                     ON
@@ -1217,7 +1234,9 @@ EbErrorType signal_derivation_multi_processes_oq(
         // 0                                     OFF
         // 1                                     ON
             picture_control_set_ptr->enable_inter_intra = picture_control_set_ptr->slice_type != I_SLICE ? sequence_control_set_ptr->seq_header.enable_interintra_compound : 0;
-
+#if SHUT_INTER_INTRA
+            picture_control_set_ptr->enable_inter_intra = 0;
+#endif
 #endif
         // Set compound mode      Settings
         // 0                 OFF: No compond mode search : AVG only
@@ -1229,7 +1248,9 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
             picture_control_set_ptr->compound_mode = 0;
 
-
+#if SHUT_INTER_INTER
+        picture_control_set_ptr->compound_mode = 0;
+#endif
         // set compound_types_to_try
         if (picture_control_set_ptr->compound_mode)
             picture_control_set_ptr->compound_types_to_try = picture_control_set_ptr->compound_mode == 1 ? MD_COMP_DIFF0 : MD_COMP_WEDGE;
