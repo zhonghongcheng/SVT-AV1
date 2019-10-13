@@ -3384,6 +3384,13 @@ if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_cont
         context_ptr->md_stage_3_count[cand_class_it] = 1;
     }
 #endif
+#if ONLY_MD_STAGE_0_1
+    for (CAND_CLASS cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
+        context_ptr->fast1_cand_count[cand_class_it] = 2;
+        context_ptr->md_stage_2_count[cand_class_it] = 1;
+        context_ptr->md_stage_3_count[cand_class_it] = 1;
+    }
+#endif
 }
 #endif
 #else

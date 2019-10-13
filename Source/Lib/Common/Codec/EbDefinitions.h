@@ -53,12 +53,13 @@ extern "C" {
 #define ALL_16x16                               0
 #define ALL_32x32                               0
 #define ALL_64x64                               0
-#define SHUT_ANGULAR_INTRA                      1
+#define SHUT_ANGULAR_INTRA                      0
 #define ONLY_DC_LUMA                            0
 #define ONLY_DC_CHROMA                          0
 #define ONLY_ME                                 0
 #define NO_BIPED                                0
-#define ONLY_FAST_LOOP                          1
+#define ONLY_FAST_LOOP                          0
+#define ONLY_MD_STAGE_0_1                       0
 #define ZZ_TEST                                 0
 #endif
 
@@ -81,6 +82,8 @@ extern "C" {
 #define SHUT_INTER_INTRA                        1
 #define SHUT_OBMC                               1
 #define LAMBDA_TUNING                           0
+#define CDEF_MR_MODE                            0 // Use full CDEF for MR mode
+#define UPDATE_CDEF                             0 // Update bit cost estimation for CDEF
 #define FILTER_INTRA                            1
 #define SHUT_MDC                                1
 #define SHUT_PRED_CHANGE                        1
@@ -94,8 +97,6 @@ extern "C" {
 /***************************************************/
 
 #define ALIGN_ALTREFS_TO_MASTER 1
-#define CDEF_MR_MODE     1 // Use full CDEF for MR mode
-#define UPDATE_CDEF      1 // Update bit cost estimation for CDEF
 
 #define FIX_R2R_CABAC_UPDATE   1
 #define QPS_TOWARD_LUMA      1
