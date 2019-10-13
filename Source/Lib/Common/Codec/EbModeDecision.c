@@ -4773,7 +4773,11 @@ EbErrorType generate_md_stage_0_cand(
 }
     //----------------------
     // Intra
+#if ONLY_INTER_P_B_SLICES
+    if (context_ptr->blk_geom->sq_size < 128 && slice_type == I_SLICE) {
+#else
     if (context_ptr->blk_geom->sq_size < 128) {
+#endif
         if (picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode >= 5 && context_ptr->blk_geom->sq_size > 4 && context_ptr->blk_geom->shape == PART_N)
             inject_intra_candidates_ois(
                 picture_control_set_ptr,

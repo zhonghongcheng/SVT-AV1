@@ -1775,6 +1775,13 @@ void set_md_stage_counts(
         context_ptr->md_stage_3_count[cand_class_it] = 1;
     }
 #endif
+#if ONLY_MD_STAGE_0_1
+    for (CAND_CLASS cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
+        context_ptr->md_stage_1_count[cand_class_it] = 2; 
+        context_ptr->md_stage_2_count[cand_class_it] = 1;
+        context_ptr->md_stage_3_count[cand_class_it] = 1;
+    }
+#endif
 }
 
 void sort_stage0_fast_candidates(
@@ -1994,6 +2001,50 @@ static INLINE void sort_array_index_fast_cost_ptr(
     }
 }
 
+
+#if FIX_SORTING
+void sort_stage1_fast_candidates(
+    struct ModeDecisionContext   *context_ptr,
+    uint32_t                      num_of_cand_to_sort,
+    uint32_t                     *cand_buff_indices)
+{
+    uint32_t i, j, index;
+    ModeDecisionCandidateBuffer **buffer_ptr_array = context_ptr->candidate_buffer_ptr_array;
+
+    for (i = 0; i < num_of_cand_to_sort - 1; ++i) {
+        for (j = i + 1; j < num_of_cand_to_sort; ++j) {
+            if (*(buffer_ptr_array[cand_buff_indices[j]]->fast_cost_ptr) < *(buffer_ptr_array[cand_buff_indices[i]]->fast_cost_ptr)) {
+                index = cand_buff_indices[i];
+                cand_buff_indices[i] = (uint32_t)cand_buff_indices[j];
+                cand_buff_indices[j] = (uint32_t)index;
+
+            }
+        }
+    }
+}
+
+#else
+void sort_stage1_fast_candidates(
+    struct ModeDecisionContext   *context_ptr,
+    uint32_t                      num_of_cand_to_sort,
+    uint32_t                     *cand_buff_indices)
+{
+    uint32_t i, j, index;
+    ModeDecisionCandidateBuffer **buffer_ptr_array = context_ptr->candidate_buffer_ptr_array;
+
+    for (i = 0; i < num_of_cand_to_sort - 1; ++i) {
+        for (j = i + 1; j < num_of_cand_to_sort; ++j) {
+            if (*(buffer_ptr_array[cand_buff_indices[j]]->fast_cost_ptr) < *(buffer_ptr_array[cand_buff_indices[i]]->fast_cost_ptr)) {
+                index = cand_buff_indices[i];
+                cand_buff_indices[i] = (uint32_t)cand_buff_indices[j];
+                cand_buff_indices[j] = (uint32_t)index;
+
+            }
+        }
+    }
+}
+#endif
+#if !FIX_SORTING
 void sort_stage1_fast_candidates(
     struct ModeDecisionContext   *context_ptr,
     uint32_t                      num_of_cand_to_sort,
@@ -2005,7 +2056,7 @@ void sort_stage1_fast_candidates(
     sort_array_index_fast_cost_ptr(buffer_ptr_array,
         cand_buff_indices, num_of_cand_to_sort);
 }
-
+#endif
 void sort_stage2_candidates(
     struct ModeDecisionContext   *context_ptr,
     uint32_t                      num_of_cand_to_sort,

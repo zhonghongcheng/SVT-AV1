@@ -51,13 +51,15 @@ extern "C" {
 #define ALL_16x16                               0
 #define ALL_32x32                               0
 #define ALL_64x64                               0
-#define SHUT_ANGULAR_INTRA                      1
+#define SHUT_ANGULAR_INTRA                      0
 #define ONLY_DC_LUMA                            0
 #define ONLY_DC_CHROMA                          0
 #define ONLY_ME                                 0
 #define NO_BIPED                                0
-#define ONLY_FAST_LOOP                          1
+#define ONLY_FAST_LOOP                          0
+#define ONLY_MD_STAGE_0_1                       0
 #define ZZ_TEST                                 0
+#define ONLY_INTER_P_B_SLICES                   0
 #endif
 
 #if GROUP_0
@@ -84,8 +86,8 @@ extern "C" {
 #define RESET_BUG_FIX                           1 // TO DO
 #define FIX_WRAP_UPDATE                         1 // TO DO
 #define FIX_NEAREST_NEW                         1 // TO DO
-
-
+#define FIX_ENABLE_CDF_UPDATE                   1 // TO DO
+#define FIX_SORTING                             1 // TO DO
 #define SHUT_COEF_BASED_BYPASS                  0 // TO TEST BDRATE
 /***************************************************/
 
