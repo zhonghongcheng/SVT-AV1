@@ -46,15 +46,15 @@ extern "C" {
 #define SHUT_RDOQ                               1
 #define SHUT_QUANT_FP                           1
 #define NO_4x4                                  0
-#define ALL_4x4                                 1
-#define ALL_8x8                                 0
+#define ALL_4x4                                 0
+#define ALL_8x8                                 1
 #define ALL_16x16                               0
 #define ALL_32x32                               0
 #define ALL_64x64                               0
 #define SHUT_ANGULAR_INTRA                      1
 #define ONLY_DC_LUMA                            0
 #define ONLY_DC_CHROMA                          0
-#define ONLY_ME                                 1
+#define ONLY_ME                                 0
 #define NO_BIPED                                0
 #define ONLY_FAST_LOOP                          1
 #define ZZ_TEST                                 0
@@ -79,10 +79,11 @@ extern "C" {
 #define SHUT_INTER_INTRA                        1
 #endif
 
-#define SHUT_ESTIMATE_INTRA                     1  // TO DO
+#define SHUT_ESTIMATE_INTRA                     1 // TO DO
 #define ENABLE_REDUNDANT_BLOCK                  1 // TO DO
 #define RESET_BUG_FIX                           1 // TO DO
 #define FIX_WRAP_UPDATE                         1 // TO DO
+#define FIX_NEAREST_NEW                         1 // TO DO
 
 
 #define SHUT_COEF_BASED_BYPASS                  0 // TO TEST BDRATE
