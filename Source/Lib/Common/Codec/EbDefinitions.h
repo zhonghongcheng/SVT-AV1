@@ -61,6 +61,8 @@ extern "C" {
 #define ONLY_FAST_LOOP                          0
 #define ONLY_MD_STAGE_0_1                       0
 #define ZZ_TEST                                 0
+#define SHUT_INTER_INTER                        1
+#define SHUT_INTER_INTRA                        1
 #endif
 
 #if GROUP_0
@@ -78,8 +80,6 @@ extern "C" {
 
 #define TARGET_TOOLS                            1
 #if TARGET_TOOLS
-#define SHUT_INTER_INTER                        1
-#define SHUT_INTER_INTRA                        1
 #define SHUT_OBMC                               1
 #define LAMBDA_TUNING                           0
 #define CDEF_MR_MODE                            0 // Use full CDEF for MR mode
