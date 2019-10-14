@@ -3228,7 +3228,11 @@ enum {
 #define LOW_QPS_COMP_THRESHOLD         40
 #define HIGH_FILTERED_THRESHOLD     (4<<8) // 8 bit precision
 #define LOW_FILTERED_THRESHOLD      (2<<8) // 8 bit precision
+#if QPS_QPM_OFF
+#define QPS_SW_THRESH          100
+#else
 #define QPS_SW_THRESH          8
+#endif
 
 #define ASSIGN_MINQ_TABLE(bit_depth, name)                   \
   do {                                                       \
