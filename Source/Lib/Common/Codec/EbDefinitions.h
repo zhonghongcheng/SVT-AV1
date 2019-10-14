@@ -60,6 +60,8 @@ extern "C" {
 #define ONLY_MD_STAGE_0_1                       0
 #define ZZ_TEST                                 0
 #define ONLY_INTER_P_B_SLICES                   0
+#define SHUT_INTER_INTER                        1
+#define SHUT_INTER_INTRA                        1
 #endif
 
 #if GROUP_0
@@ -73,12 +75,6 @@ extern "C" {
 #endif
 #if GROUP_2
 #define NSQ_OFF                                 1
-#endif
-
-#define TARGET_TOOLS                            1
-#if TARGET_TOOLS
-#define SHUT_INTER_INTER                        1
-#define SHUT_INTER_INTRA                        1
 #endif
 
 #define SHUT_ESTIMATE_INTRA                     1 // TO DO
