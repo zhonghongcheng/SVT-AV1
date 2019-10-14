@@ -41,11 +41,11 @@ extern "C" {
 #define GROUP_1                                 0
 #define GROUP_2                                 0
 #if DEBUG_TOOLS
-#define QPS_QPM_OFF                             1
+#define QPS_QPM_OFF                             0
 #define ALT_REF_OFF                             1
 #define NSQ_OFF                                 1
 #define TX_TYPE_OFF                             0
-#define ATB_OFF                                 0
+#define ATB_OFF                                 1
 #define SHUT_FILTERING                          0 // CDEF RESTORATION DLF
 #define SHUT_RDOQ                               0
 #define SHUT_QUANT_FP                           0
@@ -93,7 +93,7 @@ extern "C" {
 #endif
 
 #define RESET_BUG_FIX                           1 
-
+#define RED_CU_BUG_FIX                          1
 #define SHUT_COEF_BASED_BYPASS                  0 // TO TEST BDRATE
 /***************************************************/
 
@@ -807,7 +807,7 @@ typedef enum MD_STAGE {
 #define ADD_MDC_FULL_COST                               1
 #define ADD_NEIGHBOR                                    0
 #define NSQ_EARLY_EXIT                                  0
-#define RED_CU_BUG_FIX                                  1
+
 #endif
 #define FIX_FRW_NUMBER_BLOCKS                           1
 #if COMBINE_MDC_NSQ_TABLE
