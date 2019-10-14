@@ -7575,6 +7575,9 @@ EB_EXTERN EbErrorType mode_decision_sb(
     uint32_t                               leaf_count = mdcResultTbPtr->leaf_count;
     const EbMdcLeafData *const           leaf_data_array = mdcResultTbPtr->leaf_data_array;
     context_ptr->sb_ptr = sb_ptr;
+#if FIX_COEF_BASED_ATB
+    context_ptr->coeff_based_skip_atb = 0;
+#endif
     EbBool all_cu_init = (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode <= PIC_SQ_DEPTH_MODE);
     if (all_cu_init) {
         init_sq_nsq_block(
