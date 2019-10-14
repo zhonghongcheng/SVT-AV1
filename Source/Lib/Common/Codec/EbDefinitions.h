@@ -40,7 +40,9 @@ extern "C" {
 #define GROUP_0                                 0
 #define GROUP_1                                 0
 #define GROUP_2                                 0
-#if DEBUG_TOOLS 
+#if DEBUG_TOOLS
+#define QPS_QPM_OFF                             1
+#define ALT_REF_OFF                             1
 #define NSQ_OFF                                 1
 #define TX_TYPE_OFF                             0
 #define ATB_OFF                                 0
@@ -230,7 +232,6 @@ extern "C" {
 
 
 //*************************************************//
-#define QPS_QPM_OFF              0
 #define RDOQ_CHROMA              1
 
 #define COST_WEIGHTHING_0        0

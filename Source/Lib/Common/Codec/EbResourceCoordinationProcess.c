@@ -730,6 +730,10 @@ void* resource_coordination_kernel(void *input_ptr)
                 sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT ? EB_TRUE : EB_FALSE;
 #endif
 
+#if ALT_REF_OFF
+            sequence_control_set_ptr->enable_altrefs = 0;
+#endif
+
             // Sep PM mode
             sequence_control_set_ptr->pm_mode = sequence_control_set_ptr->input_resolution < INPUT_SIZE_4K_RANGE ?
                 PM_MODE_2 :
