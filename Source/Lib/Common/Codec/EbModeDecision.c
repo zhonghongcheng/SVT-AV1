@@ -7897,9 +7897,6 @@ void  inject_intra_candidates(
     context_ptr->estimate_angle_intra = picture_control_set_ptr->enc_mode <= ENC_M3 && !MR_MODE ? 1 : 0;
 #endif
 
-#if SHUT_ESTIMATE_INTRA
-    context_ptr->estimate_angle_intra = 0;
-#endif
     uint8_t directional_mode_skip_mask[INTRA_MODES] = { 0 };
 
     if (context_ptr->estimate_angle_intra==1 && use_angle_delta  )

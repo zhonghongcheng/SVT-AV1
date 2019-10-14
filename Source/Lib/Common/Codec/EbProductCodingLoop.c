@@ -12276,6 +12276,8 @@ EB_EXTERN EbErrorType mode_decision_sb(
     uint32_t  d1_block_itr = 0;
     uint32_t  d1_first_block = 1;
 #endif
+
+
     do {
 #if M8_SKIP_BLK
         skip_sub_blocks = 0;
@@ -12380,7 +12382,8 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #if DISABLE_RED_CU
         if(0)
 #else
-        if (redundant_blk_avail && context_ptr->redundant_blk)
+        //if (redundant_blk_avail && context_ptr->redundant_blk)
+            if(0)
 #endif
         {
             // Copy results
