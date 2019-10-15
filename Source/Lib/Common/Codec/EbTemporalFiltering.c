@@ -2292,7 +2292,9 @@ EbErrorType svt_av1_init_temporal_filtering(PictureParentControlSet **list_pictu
         // Pad chroma reference samples - once only per picture
         for (int i = 0 ; i < (picture_control_set_ptr_central->past_altref_nframes + picture_control_set_ptr_central->future_altref_nframes + 1); i++) {
             EbPictureBufferDesc *pic_ptr_ref = list_picture_control_set_ptr[i]->enhanced_picture_ptr;
-
+#if FIX_ALTREF
+          if(i != picture_control_set_ptr_central->past_altref_nframes)
+#endif
             generate_padding_pic(pic_ptr_ref,
                                  ss_x,
                                  ss_y,

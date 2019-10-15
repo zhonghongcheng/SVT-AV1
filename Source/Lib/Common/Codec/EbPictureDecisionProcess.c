@@ -3633,7 +3633,11 @@ void* picture_decision_kernel(void *input_ptr)
                                 int ahd_th = (((sequence_control_set_ptr->seq_header.max_frame_width * sequence_control_set_ptr->seq_header.max_frame_height) * AHD_TH_WEIGHT) / 100);
 
                                 // Accumulative histogram absolute differences between the central and past frame
+#if FIX_ALTREF
+                                for (pic_itr = index_center - actual_past_pics; pic_itr < index_center; pic_itr++) {
+#else
                                 for (pic_itr = index_center - actual_past_pics; pic_itr < index_center - 1; pic_itr++) {
+#endif
                                     ahd = 0;
                                     for (regionInPictureWidthIndex = 0; regionInPictureWidthIndex < sequence_control_set_ptr->picture_analysis_number_of_regions_per_width; regionInPictureWidthIndex++) {
                                         for (regionInPictureHeightIndex = 0; regionInPictureHeightIndex < sequence_control_set_ptr->picture_analysis_number_of_regions_per_height; regionInPictureHeightIndex++) {
