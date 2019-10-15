@@ -7202,6 +7202,14 @@ void md_encode_block(
                 context_ptr);
 #endif
 
+        if (picture_control_set_ptr->picture_number == 4 &&
+            context_ptr->cu_origin_x == 32 &&
+            context_ptr->cu_origin_y == 16 &&
+            context_ptr->blk_geom->bwidth == 32 &&
+            context_ptr->blk_geom->bheight == 8)
+            printf("");
+
+
         generate_md_stage_0_cand(
             context_ptr->sb_ptr,
             context_ptr,
