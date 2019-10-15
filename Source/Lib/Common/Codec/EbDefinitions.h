@@ -42,7 +42,7 @@ extern "C" {
 #define GROUP_2                                 0
 #if DEBUG_TOOLS
 #define QPS_QPM_OFF                             0
-#define ALT_REF_OFF                             1
+#define ALT_REF_OFF                             0
 #define NSQ_OFF                                 0
 #define TX_TYPE_OFF                             0
 #define ATB_OFF                                 0
