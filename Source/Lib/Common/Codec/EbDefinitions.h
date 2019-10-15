@@ -41,9 +41,9 @@ extern "C" {
 #if DEBUG_TOOLS
 #define QPS_QPM_OFF                             0
 #define ALT_REF_OFF                             1
-#define NSQ_OFF                                 1
+#define NSQ_OFF                                 0
 #define TX_TYPE_OFF                             0
-#define ATB_OFF                                 1
+#define ATB_OFF                                 0
 #define SHUT_FILTERING                          0 // CDEF RESTORATION DLF
 #define SHUT_RDOQ                               0
 #define SHUT_QUANT_FP                           0
@@ -90,7 +90,7 @@ extern "C" {
 #define SHUT_COEF_BASED_BYPASS                  0 // TO TEST BDRATE
 /***************************************************/
 
-#define II_COMP_FLAG 1
+#define II_COMP_FLAG                 1
 #define PRED_CHANGE                  1 // Change the MRP in 4L Pictures 3, 5 , 7 and 9 use 1 as the reference
 #define PRED_CHANGE_5L               1 // Change the MRP in 5L Pictures 3, 5 , 7 and 9 use 1 as the reference, 11, 13, 15 and 17 use 9 as the reference
 #define SPEED_OPT                    1 // Speed optimization(s)

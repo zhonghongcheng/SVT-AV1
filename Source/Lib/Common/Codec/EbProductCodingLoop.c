@@ -7738,8 +7738,7 @@ EB_EXTERN EbErrorType mode_decision_sb(
         if (all_cu_init)
             check_redundant_block(blk_geom, context_ptr, &redundant_blk_avail, &redundant_blk_mds);
 
-        //if (redundant_blk_avail && context_ptr->redundant_blk)
-            if(0)
+        if (redundant_blk_avail && context_ptr->redundant_blk)
         {
             // Copy results
             CodingUnit *src_cu = &context_ptr->md_cu_arr_nsq[redundant_blk_mds];
