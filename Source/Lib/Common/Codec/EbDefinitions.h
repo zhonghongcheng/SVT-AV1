@@ -43,9 +43,9 @@ extern "C" {
 #if DEBUG_TOOLS
 #define QPS_QPM_OFF                             0
 #define ALT_REF_OFF                             1
-#define NSQ_OFF                                 1
+#define NSQ_OFF                                 0
 #define TX_TYPE_OFF                             0
-#define ATB_OFF                                 1
+#define ATB_OFF                                 0
 #define SHUT_FILTERING                          0 // CDEF RESTORATION DLF
 #define SHUT_RDOQ                               0
 #define SHUT_QUANT_FP                           0
@@ -95,6 +95,7 @@ extern "C" {
 #define RESET_BUG_FIX                           1 
 #define RED_CU_BUG_FIX                          1
 #define SHUT_COEF_BASED_BYPASS                  0 // TO TEST BDRATE
+#define NSQ_TABLES_NREF                         0 // To check after merging
 /***************************************************/
 
 #define ALIGN_ALTREFS_TO_MASTER 1
@@ -176,7 +177,7 @@ extern "C" {
 #define SKIP_ATB_OFF                 1
 #define NEW_NEAREST_NEW_M1_NREF      1
 #define M1_ESTIMATE_INTRA_BASE       1
-#define NSQ_TABLES_NREF              1
+
 
 // Better BDR-Speed trade-off M0-M1
 #define FI_INTRA_BASE                1

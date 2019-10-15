@@ -821,7 +821,9 @@ uint64_t  mdc_d1_non_square_block_decision(
     {
         //store best partition cost in parent square
         context_ptr->local_cu_array[context_ptr->blk_geom->sqi_mds].early_cost = tot_cost;
+#if ADD_MDC_FULL_COST
         context_ptr->local_cu_array[context_ptr->blk_geom->sqi_mds].part = from_shape_to_part[context_ptr->blk_geom->shape];
+#endif
         context_ptr->local_cu_array[context_ptr->blk_geom->sqi_mds].best_d1_blk = first_blk_idx;
     }
 #endif

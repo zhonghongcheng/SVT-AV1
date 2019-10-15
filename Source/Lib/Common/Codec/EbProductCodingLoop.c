@@ -12382,8 +12382,7 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #if DISABLE_RED_CU
         if(0)
 #else
-        //if (redundant_blk_avail && context_ptr->redundant_blk)
-            if(0)
+        if (redundant_blk_avail && context_ptr->redundant_blk)
 #endif
         {
             // Copy results
