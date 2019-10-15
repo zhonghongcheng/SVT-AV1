@@ -46,9 +46,9 @@ extern "C" {
 #define NSQ_OFF                                 0
 #define TX_TYPE_OFF                             0
 #define ATB_OFF                                 0
-#define SHUT_FILTERING                          0 // CDEF RESTORATION DLF
-#define SHUT_RDOQ                               0
-#define SHUT_QUANT_FP                           0
+#define SHUT_FILTERING                          1 // CDEF RESTORATION DLF
+#define SHUT_RDOQ                               1
+#define SHUT_QUANT_FP                           1
 #define NO_4x4                                  0
 #define ALL_4x4                                 0
 #define ALL_8x8                                 0
@@ -65,6 +65,8 @@ extern "C" {
 #define ZZ_TEST                                 0
 #define SHUT_INTER_INTER                        0
 #define SHUT_INTER_INTRA                        0
+#define ONLY_INTER_P_B_SLICES                   0
+#define ALL_16x8                                1
 #endif
 
 #if GROUP_0

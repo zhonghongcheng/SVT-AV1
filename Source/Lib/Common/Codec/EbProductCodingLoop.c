@@ -9359,7 +9359,12 @@ void AV1PerformFullLoop(
             ref_best_rd = *candidateBuffer->full_cost_ptr;
         }
 #endif
-
+#if ALL_16x8
+        if (context_ptr->blk_geom->bwidth == 16 && context_ptr->blk_geom->bheight == 8)
+            *candidateBuffer->full_cost_ptr = *candidateBuffer->full_cost_ptr;
+        else
+            *candidateBuffer->full_cost_ptr = MAX_CU_COST;
+#endif
         if (context_ptr->full_loop_escape)
         {
             if (picture_control_set_ptr->slice_type != I_SLICE) {
