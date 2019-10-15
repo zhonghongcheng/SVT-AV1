@@ -5950,6 +5950,12 @@ void md_stage_3(
             cuChromaOriginIndex,
             ref_fast_cost,
             asm_type);
+#if ALL_16x8
+        if (context_ptr->blk_geom->bwidth == 16 && context_ptr->blk_geom->bheight == 8)
+            *candidate_buffer->full_cost_ptr = *candidate_buffer->full_cost_ptr;
+        else
+            *candidate_buffer->full_cost_ptr = MAX_CU_COST;
+#endif
 
         if (context_ptr->full_loop_escape)
         {
