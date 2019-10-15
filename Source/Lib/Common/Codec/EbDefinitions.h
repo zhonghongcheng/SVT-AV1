@@ -696,6 +696,9 @@ typedef enum CAND_CLASS {
 #endif
 #endif
 
+// define macros to choose between CAND_CLASS_X_M0 and CAND_CLASS_X
+#define SELECT_CAND_CLASS(enc_mode, level) ((enc_mode) == ENC_M0 ? CAND_CLASS_##level##_M0 : CAND_CLASS_##level)
+
 #else
 
 #define DECOUPLED_FAST_LOOP                            1
