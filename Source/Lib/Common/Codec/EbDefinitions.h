@@ -36,7 +36,7 @@ extern "C" {
 #endif
 
 /***************************************************/
-#define DEBUG_TOOLS                             1
+#define DEBUG_TOOLS                             0
 #define GROUP_0                                 0
 #define GROUP_1                                 0
 #define GROUP_2                                 0
@@ -60,7 +60,7 @@ extern "C" {
 #define ONLY_DC_CHROMA                          0
 #define ONLY_ME                                 0
 #define NO_BIPED                                0
-#define ONLY_FAST_LOOP                          0
+#define ONLY_FAST_LOOP                          1
 #define ONLY_MD_STAGE_0_1                       0
 #define ZZ_TEST                                 0
 #define SHUT_INTER_INTER                        0

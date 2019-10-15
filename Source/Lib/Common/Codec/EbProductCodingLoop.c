@@ -11384,6 +11384,12 @@ void md_encode_block(
                 context_ptr);
 #endif
 
+        if (picture_control_set_ptr->picture_number == 4 &&
+            context_ptr->cu_origin_x == 32 &&
+            context_ptr->cu_origin_y == 16 &&
+            context_ptr->blk_geom->bwidth == 32 &&
+            context_ptr->blk_geom->bheight == 8)
+            printf("");
 
 #if MD_CLASS
         generate_md_stage_0_cand(
@@ -11519,6 +11525,7 @@ void md_encode_block(
         //MD Stages
         //The first stage(old fast loop) and the last stage(old full loop) should remain at their locations, new stages could be created between those two.
         //a bypass mechanism should be added to skip one or all of the intermediate stages, in a way to to be able to fall back to org design (FastLoop->FullLoop)
+
 
         set_md_stage_counts(
             picture_control_set_ptr,
