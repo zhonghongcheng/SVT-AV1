@@ -8131,6 +8131,73 @@ static void PU_QuarterPelRefinementOnTheFly(
         }
 
         // BR position
+#if FIX_QUARTER_SEARCH
+        if (validBR) {
+            searchRegionIndex1 = (int32_t)xSearchIndex +
+                (int32_t)buf1Stride[6] * (int32_t)ySearchIndex;
+            searchRegionIndex2 = (int32_t)xSearchIndex +
+                (int32_t)buf2Stride[6] * (int32_t)ySearchIndex;
+            dist =
+                (context_ptr->fractional_search_method == SSD_SEARCH)
+                ? combined_averaging_ssd(
+                    &(context_ptr->sb_buffer[puLcuBufferIndex]),
+                    BLOCK_SIZE_64,
+                    buf1[6] + searchRegionIndex1,
+                    buf1Stride[6],
+                    buf2[6] + searchRegionIndex2,
+                    buf2Stride[6],
+                    pu_height,
+                    pu_width)
+                : (context_ptr->fractional_search_method == SUB_SAD_SEARCH)
+                ? (nxm_sad_avg_kernel(
+                    &(context_ptr
+                        ->sb_buffer[puLcuBufferIndex]),
+                    BLOCK_SIZE_64 << 1,
+                    buf1[6] + searchRegionIndex1,
+                    buf1Stride[6] << 1,
+                    buf2[6] + searchRegionIndex2,
+                    buf2Stride[6] << 1,
+                    pu_height >> 1,
+                    pu_width,
+                    pu_width >> 3))
+                << 1
+                : nxm_sad_avg_kernel(
+                    &(context_ptr->sb_buffer[puLcuBufferIndex]),
+                    BLOCK_SIZE_64,
+                    buf1[6] + searchRegionIndex1,
+                    buf1Stride[6],
+                    buf2[6] + searchRegionIndex2,
+                    buf2Stride[6],
+                    pu_height,
+                    pu_width,
+                    pu_width >> 3);
+            if (context_ptr->fractional_search_method == SSD_SEARCH) {
+                if (dist < *pBestSsd) {
+                    *pBestSad =
+                        nxm_sad_avg_kernel(
+                            &(context_ptr->sb_buffer[puLcuBufferIndex]),
+                            BLOCK_SIZE_64,
+                            buf1[6] + searchRegionIndex1,
+                            buf1Stride[6],
+                            buf2[6] + searchRegionIndex2,
+                            buf2Stride[6],
+                            pu_height,
+                            pu_width,
+                            pu_width >> 3);
+                    *pBestMV = ((uint16_t)yMvQuarter[6] << 16) |
+                        ((uint16_t)xMvQuarter[6]);
+                    *pBestSsd = (uint32_t)dist;
+                }
+            }
+            else {
+                if (dist < *pBestSad) {
+                    *pBestSad = (uint32_t)dist;
+                    *pBestMV = ((uint16_t)yMvQuarter[6] << 16) |
+                        ((uint16_t)xMvQuarter[6]);
+                }
+            }
+        }
+#else
         if (validBR) {
             searchRegionIndex1 = (int32_t)xSearchIndex +
                                  (int32_t)buf1Stride[6] * (int32_t)ySearchIndex;
@@ -8195,7 +8262,7 @@ static void PU_QuarterPelRefinementOnTheFly(
                 }
             }
         }
-
+#endif
         // BL position
         if (validBL) {
             searchRegionIndex1 = (int32_t)xSearchIndex +

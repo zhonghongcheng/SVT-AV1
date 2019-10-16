@@ -92,6 +92,7 @@ extern "C" {
 #define SHUT_MDC                                1
 #define SHUT_PRED_CHANGE                        1
 #define SHUT_NEW_NEAR                           1
+#define FIX_QUARTER_SEARCH                      1 // TO DO
 #endif
 
 #define RESET_BUG_FIX                           1 
