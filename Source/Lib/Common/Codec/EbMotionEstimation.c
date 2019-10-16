@@ -7854,8 +7854,7 @@ static void PU_QuarterPelRefinementOnTheFly(
                     buf2[7] + searchRegionIndex2,
                     buf2Stride[7] << 1,
                     pu_height >> 1,
-                    pu_width,
-                    pu_width >> 3))
+                    pu_width))
                 << 1
                 : nxm_sad_averaging_kernel_func_ptr_array
                 [asm_type][pu_width >> 3](
@@ -7866,8 +7865,7 @@ static void PU_QuarterPelRefinementOnTheFly(
                     buf2[7] + searchRegionIndex2,
                     buf2Stride[7],
                     pu_height,
-                    pu_width,
-                    pu_width >> 3);
+                    pu_width);
             if (context_ptr->fractional_search_method == SSD_SEARCH) {
                 if (dist < *pBestSsd) {
                     *pBestSad =
@@ -7880,8 +7878,7 @@ static void PU_QuarterPelRefinementOnTheFly(
                             buf2[7] + searchRegionIndex2,
                             buf2Stride[7],
                             pu_height,
-                            pu_width,
-                            pu_width >> 3);
+                            pu_width);
                     *pBestMV = ((uint16_t)yMvQuarter[6] << 16) |
                         ((uint16_t)xMvQuarter[6]);
                     *pBestSsd = (uint32_t)dist;
