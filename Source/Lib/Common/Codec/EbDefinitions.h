@@ -90,7 +90,6 @@ extern "C" {
 #define FIX_COEF_BASED_ATB                      1 // TO DO
 #define FIX_ALTREF                              1 // TO DO
 #define FIX_COMPOUND                            1 // TO DO
-#define FIX_QUARTER_SEARCH                      1 // TO DO
 #define SHUT_COEF_BASED_BYPASS                  0 // TO TEST BDRATE
 /***************************************************/
 
