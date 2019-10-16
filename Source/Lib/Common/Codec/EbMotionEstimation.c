@@ -7825,7 +7825,77 @@ static void PU_QuarterPelRefinementOnTheFly(
                 }
             }
         }
-
+#if FIX_QUARTER_SEARCH
+        // BR position
+        if (validBR) {
+            searchRegionIndex1 = (int32_t)xSearchIndex +
+                (int32_t)buf1Stride[6] * (int32_t)ySearchIndex;
+            searchRegionIndex2 = (int32_t)xSearchIndex +
+                (int32_t)buf2Stride[6] * (int32_t)ySearchIndex;
+            dist =
+                (context_ptr->fractional_search_method == SSD_SEARCH)
+                ? combined_averaging_ssd_func_ptr_array[asm_type](
+                    &(context_ptr->sb_buffer[puLcuBufferIndex]),
+                    BLOCK_SIZE_64,
+                    buf1[6] + searchRegionIndex1,
+                    buf1Stride[6],
+                    buf2[6] + searchRegionIndex2,
+                    buf2Stride[6],
+                    pu_height,
+                    pu_width)
+                : (context_ptr->fractional_search_method == SUB_SAD_SEARCH)
+                ? (nxm_sad_averaging_kernel_func_ptr_array
+                    [asm_type][pu_width >> 3](
+                    &(context_ptr
+                        ->sb_buffer[puLcuBufferIndex]),
+                    BLOCK_SIZE_64 << 1,
+                    buf1[7] + searchRegionIndex1,
+                    buf1Stride[7] << 1,
+                    buf2[7] + searchRegionIndex2,
+                    buf2Stride[7] << 1,
+                    pu_height >> 1,
+                    pu_width,
+                    pu_width >> 3))
+                << 1
+                : nxm_sad_averaging_kernel_func_ptr_array
+                [asm_type][pu_width >> 3](
+                    &(context_ptr->sb_buffer[puLcuBufferIndex]),
+                    BLOCK_SIZE_64,
+                    buf1[7] + searchRegionIndex1,
+                    buf1Stride[7],
+                    buf2[7] + searchRegionIndex2,
+                    buf2Stride[7],
+                    pu_height,
+                    pu_width,
+                    pu_width >> 3);
+            if (context_ptr->fractional_search_method == SSD_SEARCH) {
+                if (dist < *pBestSsd) {
+                    *pBestSad =
+                        nxm_sad_averaging_kernel_func_ptr_array
+                        [asm_type][pu_width >> 3](
+                            &(context_ptr->sb_buffer[puLcuBufferIndex]),
+                            BLOCK_SIZE_64,
+                            buf1[7] + searchRegionIndex1,
+                            buf1Stride[7],
+                            buf2[7] + searchRegionIndex2,
+                            buf2Stride[7],
+                            pu_height,
+                            pu_width,
+                            pu_width >> 3);
+                    *pBestMV = ((uint16_t)yMvQuarter[6] << 16) |
+                        ((uint16_t)xMvQuarter[6]);
+                    *pBestSsd = (uint32_t)dist;
+                }
+            }
+            else {
+                if (dist < *pBestSad) {
+                    *pBestSad = (uint32_t)dist;
+                    *pBestMV = ((uint16_t)yMvQuarter[6] << 16) |
+                        ((uint16_t)xMvQuarter[6]);
+                }
+            }
+        }
+#else
         // BR position
         if (validBR) {
             searchRegionIndex1 = (int32_t)xSearchIndex +
@@ -7891,7 +7961,7 @@ static void PU_QuarterPelRefinementOnTheFly(
                 }
             }
         }
-
+#endif
         // BL position
         if (validBL) {
             searchRegionIndex1 = (int32_t)xSearchIndex +
