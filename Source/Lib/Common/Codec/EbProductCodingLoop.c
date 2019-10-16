@@ -2916,6 +2916,9 @@ if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_cont
 void set_md_stage_counts(
     PictureControlSet       *picture_control_set_ptr,
     ModeDecisionContext     *context_ptr,
+#if USE_MSMD_OUTPUT
+    uint8_t                  mpmd_pass_idx,
+#endif
     uint32_t                 fastCandidateTotalCount)
 {
 
@@ -3385,6 +3388,18 @@ if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_cont
     context_ptr->md_stage_3_count[CAND_CLASS_0] = context_ptr->md_stage_2_count[CAND_CLASS_0];
     context_ptr->md_stage_3_count[CAND_CLASS_5] = context_ptr->md_stage_2_count[CAND_CLASS_5];
 #endif
+#if 0//USE_MSMD_OUTPUT
+    if (mpmd_pass_idx == 0) {
+        for (uint8_t class_idx = CAND_CLASS_0; class_idx < CAND_CLASS_TOTAL; class_idx++) {
+            context_ptr->md_stage_2_count[class_idx] = 1;
+            context_ptr->md_stage_3_count[class_idx] = 1;
+        }
+    }else if (mpmd_pass_idx == 1) {
+        for (uint8_t class_idx = CAND_CLASS_0; class_idx < CAND_CLASS_TOTAL; class_idx++) {
+            context_ptr->md_stage_3_count[class_idx] = 1;
+        }
+    }
+#endif
 }
 #endif
 #else
@@ -3668,6 +3683,13 @@ void sort_stage0_fast_candidates(
             }
         }
     }
+#if USE_1SP_MODE
+    // Set the best N pred mode
+    for (i = 0; i < input_buffer_count; ++i) {
+        ModeDecisionCandidate       *candidate_ptr = buffer_ptr_array[cand_buff_indices[i]]->candidate_ptr;
+        context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].best_pred_modes_table[0][i] = candidate_ptr->pred_mode;
+    }
+#endif
 #else
     for (uint32_t buffer_index = input_buffer_start_idx; buffer_index <= input_buffer_end_idx; buffer_index++) {
         if (*(buffer_ptr_array[buffer_index]->fast_cost_ptr) == MAX_CU_COST)
@@ -3822,7 +3844,13 @@ void construct_best_sorted_arrays_md_stage_2(
         }
     }
 #endif
-
+#if USE_1SP_MODE
+    // Set the best N pred mode
+    for (i = 0; i < fullReconCandidateCount; ++i) {
+        ModeDecisionCandidate       *candidate_ptr = buffer_ptr_array[sorted_candidate_index_array[i]]->candidate_ptr;
+        context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].best_pred_modes_table[1][i] = candidate_ptr->pred_mode;
+    }
+#endif
     // tx search
     *ref_fast_cost = *(buffer_ptr_array[sorted_candidate_index_array[0]]->fast_cost_ptr);
 }
@@ -3888,6 +3916,14 @@ void construct_best_sorted_arrays_md_stage_3(
 
             }
         }
+    }
+#endif
+#if USE_1SP_MODE
+    // Set the best N pred mode
+    for (i = 0; i < fullReconCandidateCount; ++i) {
+        ModeDecisionCandidate       * candidate_ptr = buffer_ptr_array[sorted_candidate_index_array[i]]->candidate_ptr;
+        context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].best_pred_modes_table[2][i] = candidate_ptr->pred_mode;
+        //context_ptr->md_cu_arr_nsq
     }
 #endif
 }
@@ -6707,6 +6743,9 @@ void tx_partitioning_path(
     else
         tx_search_skip_flag = picture_control_set_ptr->parent_pcs_ptr->tx_search_level != TX_SEARCH_FULL_LOOP;
 #endif
+#if USE_1SP_SKIP
+    tx_search_skip_flag = (context_ptr->fp_depth_skip_valid[0] == 1 && context_ptr->fp_depth_skip_valid[1] == 0) ? EB_FALSE : tx_search_skip_flag;            
+#endif
     if (context_ptr->md_stage == MD_STAGE_2)
         tx_search_skip_flag = EB_TRUE;
 #if !ATB_INTRA_2_DEPTH
@@ -8469,6 +8508,10 @@ void md_stage_2(
 #endif
                 tx_search_skip_flag = EB_TRUE;
 
+#if USE_1SP_SKIP
+            tx_search_skip_flag = (context_ptr->fp_depth_skip_valid[0] == 1 && context_ptr->fp_depth_skip_valid[1] == 0) ? EB_FALSE : tx_search_skip_flag;            
+#endif
+
             if (!tx_search_skip_flag) {
                 product_full_loop_tx_search(
                     candidateBuffer,
@@ -9171,6 +9214,9 @@ void AV1PerformFullLoop(
                 picture_control_set_ptr->parent_pcs_ptr->tx_weight) : 1;
 
             tx_search_skip_flag = (picture_control_set_ptr->parent_pcs_ptr->skip_tx_search && best_fastLoop_candidate_index > NFL_TX_TH) ? 1 : tx_search_skip_flag;
+#endif
+#if USE_1SP_SKIP
+            tx_search_skip_flag = (context_ptr->fp_depth_skip_valid[0] == 1 && context_ptr->fp_depth_skip_valid[1] == 0) ? EB_FALSE : tx_search_skip_flag;            
 #endif
             if (!tx_search_skip_flag) {
                 product_full_loop_tx_search(
@@ -11091,6 +11137,9 @@ void md_encode_block(
 #if MPMD_SB
     uint8_t                          is_final_pass,
 #endif
+#if USE_MSMD_OUTPUT
+    uint8_t                          mpmd_pass_idx,
+#endif
     ModeDecisionCandidateBuffer    *bestCandidateBuffers[5])
 {
     ModeDecisionCandidateBuffer         **candidateBufferPtrArrayBase = context_ptr->candidate_buffer_ptr_array;
@@ -11534,6 +11583,9 @@ void md_encode_block(
         set_md_stage_counts(
             picture_control_set_ptr,
             context_ptr,
+#if USE_MSMD_OUTPUT
+            mpmd_pass_idx,
+#endif
             fastCandidateTotalCount);
 
         CAND_CLASS  cand_class_it;
@@ -12151,6 +12203,9 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #if MPMD_SB
     uint8_t                           is_last_md_pass,
 #endif
+#if USE_MSMD_OUTPUT
+    uint8_t                          mpmd_pass_idx,
+#endif
     SequenceControlSet                *sequence_control_set_ptr,
     PictureControlSet                 *picture_control_set_ptr,
     const MdcLcuData * const           mdcResultTbPtr,
@@ -12356,6 +12411,7 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #endif
 #if USE_1SP_MODE
         context_ptr->fp_depth_mode_valid[NEARESTMV] = 1;
+        context_ptr->fp_depth_mode_valid[NEAREST_NEARESTMV] = 1;
 #endif
         if (leafDataPtr->tot_d1_blocks != 1)
         {
@@ -12529,6 +12585,9 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #endif
 #if MPMD_SB
                     is_last_md_pass,
+#endif
+#if USE_MSMD_OUTPUT
+                    mpmd_pass_idx,
 #endif
                     bestCandidateBuffers);
 

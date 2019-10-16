@@ -53,6 +53,9 @@ extern "C" {
 #if MPMD_SB
         uint8_t                           is_last_md_pass,
 #endif
+#if USE_MSMD_OUTPUT
+        uint8_t                           mpmd_pass_idx,
+#endif
         SequenceControlSet                *sequence_control_set_ptr,
         PictureControlSet                 *picture_control_set_ptr,
         const MdcLcuData * const           mdcResultTbPtr,

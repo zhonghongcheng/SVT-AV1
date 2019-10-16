@@ -8916,7 +8916,7 @@ uint8_t product_full_mode_decision(
     {
         uint32_t i, j, index;
         for (i = 0; i < MAX_NFL_BUFF; ++i) {
-            context_ptr->final_cand_buff_indices[i] = i;
+            context_ptr->final_cand_buff_indices[i] = best_candidate_index_array[i];
         }
         for (i = 0; i < candidate_total_count - 1; ++i) {
             for (j = i + 1; j < candidate_total_count; ++j) {
@@ -8931,7 +8931,10 @@ uint8_t product_full_mode_decision(
         // Set the best N pred mode
         for (i = 0; i < candidate_total_count; ++i) {
             candidate_ptr = buffer_ptr_array[context_ptr->final_cand_buff_indices[i]]->candidate_ptr;
-            context_ptr->md_local_cu_unit[cu_ptr->mds_idx].best_pred_modes_table[i] = candidate_ptr->pred_mode;
+            context_ptr->md_local_cu_unit[cu_ptr->mds_idx].best_pred_modes_table[3][i] = candidate_ptr->pred_mode;
+#if USE_1SP_SKIP
+            context_ptr->md_local_cu_unit[cu_ptr->mds_idx].best_skip_table[3][i] = candidate_ptr->block_has_coeff ? 0 : 1;
+#endif
             //context_ptr->md_cu_arr_nsq
         }
     }

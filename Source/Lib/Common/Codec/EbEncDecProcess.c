@@ -2178,15 +2178,7 @@ void mpmd_init_considered_block(
             split_flag = context_ptr->md_cu_arr_nsq[blk_index].split_flag;
         if (sequence_control_set_ptr->sb_geom[sb_index].block_is_inside_md_scan[blk_index] && is_blk_allowed){
             if (blk_geom->shape == PART_N) {
-#if USE_1SP_MODE
-            for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                for (uint16_t fp_pred_indx = 0; fp_pred_indx < BEST_PRED_MODE_TH; fp_pred_indx++) {
-                    if (context_ptr->md_local_cu_unit[blk_index + block_1d_idx].best_pred_modes_table[fp_pred_indx] < MB_MODE_COUNT && context_ptr->md_local_cu_unit[blk_index + block_1d_idx].best_pred_modes_table[fp_pred_indx] >= 0)
-                        context_ptr->fp_depth_mode_valid[context_ptr->md_local_cu_unit[blk_index + block_1d_idx].best_pred_modes_table[fp_pred_indx]] = 1;
-                
-                }
-            }
-#endif
+
                 switch (depth_refinement_mode) {
                 case Pred:
                     // Set predicted block to be considered
@@ -2596,9 +2588,16 @@ void init_cu_arr_nsq(
         context_ptr->md_cu_arr_nsq[blk_index].best_d1_blk = 0;
         context_ptr->md_cu_arr_nsq[blk_index].tx_depth = 0;
 #if USE_1SP_MODE
-        for (uint16_t pred_indx = 0; pred_indx < MB_MODE_COUNT; pred_indx++) {
-            context_ptr->md_local_cu_unit[blk_index].best_pred_modes_table[pred_indx] = UNVALID;
-        }
+        for (uint16_t pred_indx = 0; pred_indx < MAX_NFL_BUFF; pred_indx++) 
+            for (uint16_t md_stage_idx = 0; md_stage_idx < 4; md_stage_idx++)
+                context_ptr->md_local_cu_unit[blk_index].best_pred_modes_table[md_stage_idx][pred_indx] = UNVALID;
+
+#if USE_1SP_SKIP
+        for (uint16_t skip_idx = 0; skip_idx < MAX_NFL_BUFF; skip_idx++) 
+            for (uint16_t md_stage_idx = 0; md_stage_idx < 4; md_stage_idx++)
+                context_ptr->md_local_cu_unit[blk_index].best_skip_table[md_stage_idx][skip_idx] = UNVALID;
+#endif
+        
 #endif
 
         blk_index++;
@@ -2674,6 +2673,9 @@ void mpmd_init_split_flags(
 void mpmd_forward_considered_blocks(
     SequenceControlSet *sequence_control_set_ptr,
     PictureControlSet *picture_control_set_ptr,
+#if USE_MSMD_OUTPUT
+    uint8_t md_stage_idx,
+#endif
     ModeDecisionContext *context_ptr,
     uint32_t sb_index) {
     MdcLcuData *cu_ptr = &picture_control_set_ptr->mpmd_sb_array[sb_index];
@@ -2709,6 +2711,22 @@ void mpmd_forward_considered_blocks(
 #endif
                     cu_ptr->leaf_data_array[cu_ptr->leaf_count++].split_flag = split_flag;
                 }
+#if USE_1SP_MODE
+                for (uint16_t fp_pred_indx = 0; fp_pred_indx < BEST_PRED_MODE_TH; fp_pred_indx++) {
+#if !USE_MSMD_OUTPUT
+                     md_stage_idx = 3;
+#endif
+                    if (context_ptr->md_local_cu_unit[blk_index].best_pred_modes_table[md_stage_idx][fp_pred_indx] < MB_MODE_COUNT && context_ptr->md_local_cu_unit[blk_index].best_pred_modes_table[md_stage_idx][fp_pred_indx] >= 0)
+                        context_ptr->fp_depth_mode_valid[context_ptr->md_local_cu_unit[blk_index].best_pred_modes_table[md_stage_idx][fp_pred_indx]] = 1;
+                }
+#if USE_1SP_SKIP
+                for (uint16_t skip_idx = 0; skip_idx < BEST_PRED_MODE_TH; skip_idx++) {
+                    uint8_t md_stage_idx = 3;
+                     if (context_ptr->md_local_cu_unit[blk_index].best_skip_table[md_stage_idx][skip_idx] <= 1 && context_ptr->md_local_cu_unit[blk_index].best_skip_table[md_stage_idx][skip_idx] >= 0)
+                        context_ptr->fp_depth_skip_valid[context_ptr->md_local_cu_unit[blk_index].best_skip_table[md_stage_idx][skip_idx]] = 1;
+                }
+#endif
+#endif
                 blk_index++;
             }
         }
@@ -3352,28 +3370,50 @@ EbErrorType mpmd_settings(
 #endif
 #if MPMD_TEST
     if (!is_last_md_pass) {
-        context_ptr->skip_newmv_basedon_parent_sq_has_coeff = 1;
-        context_ptr->nsq_max_shapes_md = 1;
-        context_ptr->tx_search_reduced_set = 2;
-        context_ptr->tx_search_level = TX_SEARCH_OFF;
-        context_ptr->tx_weight = FC_SKIP_TX_SR_TH025;
-        context_ptr->atb_mode = 0;
-        context_ptr->interpolation_search_level = IT_SEARCH_OFF;
         context_ptr->enable_inter_intra = 0;
         context_ptr->compound_mode = 0;
-    }
+        context_ptr->compound_types_to_try = MD_COMP_AVG;
+        context_ptr->atb_mode = 0;
+        context_ptr->tx_search_level = TX_SEARCH_OFF;
+        context_ptr->tx_weight = FC_SKIP_TX_SR_TH010;
+        context_ptr->tx_search_reduced_set = 2;
+        context_ptr->skip_tx_search = 0;
+        context_ptr->interpolation_search_level = IT_SEARCH_OFF;
+        context_ptr->skip_newmv_basedon_parent_sq_has_coeff = 1;
+        context_ptr->nsq_max_shapes_md = 2;
+        context_ptr->nfl_level = 7;
+        context_ptr->chroma_level = CHROMA_MODE_1;
+        context_ptr->decouple_intra_inter_fast_loop = 0;
+        context_ptr->decoupled_fast_loop_search_method = FULL_SAD_SEARCH;
+        context_ptr->full_loop_escape = 2;
+        context_ptr->global_mv_injection = 1;
+        context_ptr->new_nearest_near_comb_injection = 1;
+        context_ptr->nx4_4xn_parent_mv_injection = 0;
+        context_ptr->warped_motion_injection = 0;
+        context_ptr->unipred3x3_injection = 0;
+        context_ptr->bipred3x3_injection = 0;
+        context_ptr->predictive_me_level = 0;
+        context_ptr->combine_class12 = 0;
+        context_ptr->interpolation_filter_search_blk_size = 0;
+        context_ptr->pf_md_mode = PF_OFF;
+        context_ptr->spatial_sse_full_loop = EB_FALSE;
+        context_ptr->blk_skip_decision = EB_TRUE;
+        context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
+        context_ptr->redundant_blk = EB_TRUE;
+        context_ptr->md_staging_mode = 3;
+        context_ptr->nic_level = 1;
+        context_ptr->inter_inter_wedge_variance_th = 100;
+        context_ptr->md_exit_th = 10;
+        context_ptr->dist_base_md_stage_0_count_th = 75;
+    }   
     else {
         context_ptr->skip_newmv_basedon_parent_sq_has_coeff = 0;
-        /*context_ptr->nsq_max_shapes_md = 8;
-        context_ptr->tx_search_level = TX_SEARCH_FULL_LOOP;
-        context_ptr->tx_weight = MAX_MODE_COST;
-        context_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;*/
     }
 #endif
     return return_error;
 }
 #if MPMD_TEST
-uint8_t md_mode_settings_offset[13] = { 8,0,0,0,0,0,0,0,0,0,0,0,0 };
+uint8_t md_mode_settings_offset[13] = { 0,0,0,0,0,0,0,0,0,0,0,0,0 };
 #else
 uint8_t md_mode_settings_offset[13] = { 0,0,0,0,0,0,0,0,0,0,0,0,0 };
 #endif
@@ -3680,12 +3720,21 @@ void* enc_dec_kernel(void *input_ptr)
                     }
 
 #if MPMD_SB
+#if USE_MSMD_OUTPUT
+                    uint8_t mpmd_pass_num = 3;
+#else
                     uint8_t mpmd_pass_num = 1;
+#endif
                     uint8_t mpmd_pass_idx;
 #if USE_1SP_MODE
                     for (uint16_t pred_indx = 0; pred_indx < MB_MODE_COUNT; pred_indx++) {
                         context_ptr->md_context->fp_depth_mode_valid[pred_indx] = 1;
                     }   
+#endif
+#if USE_1SP_SKIP
+                    for (uint16_t skip_indx = 0; skip_indx < 2; skip_indx++) {
+                        context_ptr->md_context->fp_depth_skip_valid[skip_indx] = 1;
+                    }
 #endif
                     uint8_t  is_complete_sb = sequence_control_set_ptr->sb_geom[sb_index].is_complete_sb;
                         if (picture_control_set_ptr->slice_type != I_SLICE && is_complete_sb) {
@@ -3728,6 +3777,9 @@ void* enc_dec_kernel(void *input_ptr)
                                 // mode decision for sb
                                 mode_decision_sb(
                                     0,//is_last_adp_stage
+#if USE_MSMD_OUTPUT
+                                    mpmd_pass_idx,
+#endif
                                     sequence_control_set_ptr,
                                     picture_control_set_ptr,
                                     mdcPtr,
@@ -3754,6 +3806,11 @@ void* enc_dec_kernel(void *input_ptr)
                                     context_ptr->md_context->fp_depth_mode_valid[pred_indx] = -1;
                                 }
 #endif
+#if USE_1SP_SKIP
+                                for (uint16_t skip_indx = 0; skip_indx < 2; skip_indx++) {
+                                    context_ptr->md_context->fp_depth_skip_valid[skip_indx] = -1;
+                                }
+#endif
                                 // Mark blocks to be concidered in next md pass
                                 mpmd_init_considered_block(
                                     sequence_control_set_ptr,
@@ -3766,6 +3823,9 @@ void* enc_dec_kernel(void *input_ptr)
                                 mpmd_forward_considered_blocks(
                                     sequence_control_set_ptr,
                                     picture_control_set_ptr,
+#if USE_MSMD_OUTPUT
+                                    mpmd_pass_idx,
+#endif
                                     context_ptr->md_context,
                                     sb_index);
                                 //check_for_errors(sequence_control_set_ptr->max_block_cnt,mpmd_sb, mdcPtr,context_ptr->md_context);
@@ -3794,6 +3854,9 @@ void* enc_dec_kernel(void *input_ptr)
                     mode_decision_sb(
 #if MPMD_SB
                         1,
+#endif
+#if USE_MSMD_OUTPUT
+                        mpmd_pass_num,
 #endif
                         sequence_control_set_ptr,
                         picture_control_set_ptr,

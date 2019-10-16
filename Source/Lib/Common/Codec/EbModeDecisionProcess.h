@@ -108,8 +108,12 @@ extern "C" {
         uint8_t                     avail_blk_flag ;   //tells whether this CU is tested in MD and have a valid cu data
 #endif
 #if USE_1SP_MODE
-        uint8_t                     best_pred_modes_table[MAX_NFL_BUFF];
+        uint8_t                     best_pred_modes_table[4][MAX_NFL_BUFF];
+#if USE_1SP_SKIP
+        uint8_t                     best_skip_table[4][MAX_NFL_BUFF];
 #endif
+#endif
+
     } MdCodingUnit;
 
     typedef struct ModeDecisionContext
@@ -471,6 +475,9 @@ extern "C" {
 #endif
 #if USE_1SP_MODE
     int8_t fp_depth_mode_valid[MB_MODE_COUNT];
+#endif
+#if USE_1SP_SKIP
+    int8_t fp_depth_skip_valid[2];
 #endif
 #if NSQ_EARLY_EXIT
     uint64_t tot_cost;
