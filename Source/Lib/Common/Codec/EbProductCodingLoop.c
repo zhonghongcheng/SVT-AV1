@@ -2435,7 +2435,7 @@ void perform_fast_loop(
 
 #if MDLEVELS
 #if FULL_LOOP_SPLIT
-#if COMBINE_CLASS_PRO
+#if 0//COMBINE_CLASS_PRO
 
 void set_md_stage_counts(
     PictureControlSet       *picture_control_set_ptr,
@@ -3384,9 +3384,11 @@ if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_cont
         context_ptr->fast1_cand_count[SELECT_CAND_CLASS(enc_mode, 3)] = context_ptr->md_stage_2_count[SELECT_CAND_CLASS(enc_mode, 3)] = context_ptr->md_stage_3_count[SELECT_CAND_CLASS(enc_mode, 3)] = 0;
 #endif
 
+#ifdef CLASS_0_5_MAX_COUNT
 #if CLASS_0_5_MAX_COUNT
     context_ptr->md_stage_3_count[SELECT_CAND_CLASS(enc_mode, 0)] = context_ptr->md_stage_2_count[SELECT_CAND_CLASS(enc_mode, 0)];
     context_ptr->md_stage_3_count[SELECT_CAND_CLASS(enc_mode, 5)] = context_ptr->md_stage_2_count[SELECT_CAND_CLASS(enc_mode, 5)];
+#endif
 #endif
 }
 #endif
