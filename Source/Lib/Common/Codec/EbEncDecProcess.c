@@ -1758,7 +1758,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
     // Derive redundant block
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
-#if M0_SC_CANDIDATE
+#if M0_SC_CANDIDATE || USE_RED_BLOCK_M0_SC
         context_ptr->redundant_blk = EB_TRUE;
 #else
         if (picture_control_set_ptr->enc_mode >= ENC_M1)

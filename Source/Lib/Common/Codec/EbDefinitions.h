@@ -46,9 +46,9 @@ extern "C" {
 #define NSQ_OFF                                 0
 #define TX_TYPE_OFF                             0
 #define ATB_OFF                                 0
-#define SHUT_FILTERING                          1 // CDEF RESTORATION DLF
-#define SHUT_RDOQ                               1
-#define SHUT_QUANT_FP                           1
+#define SHUT_FILTERING                          0 // CDEF RESTORATION DLF
+#define SHUT_RDOQ                               0
+#define SHUT_QUANT_FP                           0
 #define NO_4x4                                  0
 #define ALL_4x4                                 0
 #define ALL_8x8                                 0
@@ -60,13 +60,13 @@ extern "C" {
 #define ONLY_DC_CHROMA                          0
 #define ONLY_ME                                 0
 #define NO_BIPED                                0
-#define ONLY_FAST_LOOP                          1
+#define ONLY_FAST_LOOP                          0
 #define ONLY_MD_STAGE_0_1                       0
 #define ZZ_TEST                                 0
 #define SHUT_INTER_INTER                        0
 #define SHUT_INTER_INTRA                        0
 #define ONLY_INTER_P_B_SLICES                   0
-#define ALL_16x8                                1
+#define ALL_16x8                                0
 #endif
 
 #if GROUP_0
@@ -85,20 +85,23 @@ extern "C" {
 #define TARGET_TOOLS                            1
 #if TARGET_TOOLS
 #define SHUT_OBMC                               1
-#define LAMBDA_TUNING                           0
-#define CDEF_MR_MODE                            0 // Use full CDEF for MR mode
-#define UPDATE_CDEF                             0 // Update bit cost estimation for CDEF
 #define FILTER_INTRA                            1
 #define SHUT_MDC                                1
 #define SHUT_PRED_CHANGE                        1
 #define SHUT_NEW_NEAR                           1
-#define FIX_QUARTER_SEARCH                      1 // TO DO
+#define USE_RED_BLOCK_M0_SC                     1
+#else
+#define LAMBDA_TUNING                           1
+#define CDEF_MR_MODE                            1 // Use full CDEF for MR mode
+#define UPDATE_CDEF                             1 // Update bit cost estimation for CDEF
+#define NSQ_TABLES_NREF                         1 // To check after merging
 #endif
 
+#define FIX_QUARTER_SEARCH                      1 // TO DO
 #define RESET_BUG_FIX                           1 
 #define RED_CU_BUG_FIX                          1
 #define SHUT_COEF_BASED_BYPASS                  0 // TO TEST BDRATE
-#define NSQ_TABLES_NREF                         0 // To check after merging
+
 /***************************************************/
 
 #define ALIGN_ALTREFS_TO_MASTER 1
