@@ -90,6 +90,7 @@ extern "C" {
 #define SHUT_PRED_CHANGE                        1
 #define SHUT_NEW_NEAR                           1
 #define USE_RED_BLOCK_M0_SC                     1
+#define SHUT_HALF_PEL_REFINEMENT                1
 #else // whatever needs to be re-evaluated before adopting to master
 #define LAMBDA_TUNING                           1
 #define CDEF_MR_MODE                            1 // Use full CDEF for MR mode

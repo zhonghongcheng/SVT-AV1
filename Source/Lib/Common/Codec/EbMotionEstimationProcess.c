@@ -270,7 +270,7 @@ EbErrorType signal_derivation_me_kernel_oq(
 #else
     else if (enc_mode <= ENC_M2) {
 #endif
-#if DISABLE_ENH_SUBPEL_SC
+#if DISABLE_ENH_SUBPEL_SC && !SHUT_HALF_PEL_REFINEMENT
         context_ptr->me_context_ptr->half_pel_mode = picture_control_set_ptr->sc_content_detected ? REFINEMENT_HP_MODE :
 #else
         context_ptr->me_context_ptr->half_pel_mode =
@@ -492,7 +492,7 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
 #else
     else if (enc_mode <= ENC_M2) {
 #endif
-#if DISABLE_ENH_SUBPEL_SC
+#if DISABLE_ENH_SUBPEL_SC && !SHUT_HALF_PEL_REFINEMENT
         context_ptr->me_context_ptr->half_pel_mode = picture_control_set_ptr->sc_content_detected ? REFINEMENT_HP_MODE :
 #else
         context_ptr->me_context_ptr->half_pel_mode =
