@@ -83,14 +83,14 @@ extern "C" {
 #endif
 
 #define TARGET_TOOLS                            1
-#if TARGET_TOOLS
+#if TARGET_TOOLS // whatever needs PR'd to master
 #define SHUT_OBMC                               1
 #define FILTER_INTRA                            1
 #define SHUT_MDC                                1
 #define SHUT_PRED_CHANGE                        1
 #define SHUT_NEW_NEAR                           1
 #define USE_RED_BLOCK_M0_SC                     1
-#else
+#else // whatever needs to be re-evaluated before adopting to master
 #define LAMBDA_TUNING                           1
 #define CDEF_MR_MODE                            1 // Use full CDEF for MR mode
 #define UPDATE_CDEF                             1 // Update bit cost estimation for CDEF
