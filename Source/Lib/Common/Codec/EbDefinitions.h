@@ -35,6 +35,8 @@
 extern "C" {
 #endif
 
+#define FIX_QUARTER_SEARCH 1 // fixed quarter pel search @ BR position
+
 #define ALIGN_ALTREFS_TO_MASTER 1
 #define CDEF_MR_MODE     1 // Use full CDEF for MR mode
 #define UPDATE_CDEF      1 // Update bit cost estimation for CDEF
