@@ -40,6 +40,7 @@ int32_t is_inter_block(const BlockModeInfo *mbmi);
   assert(weights_scale - weights_h[bh - 1] < weights_scale);          \
   assert(pred_scale < 31)  // ensures no overflow when calculating predictor.
 
+#if !ADD_MDC_FULL_COST
 static PartitionType from_shape_to_part[] =
 {
 PARTITION_NONE,
@@ -53,6 +54,7 @@ PARTITION_HORZ_4,
 PARTITION_VERT_4,
 PARTITION_SPLIT
 };
+#endif
 
 #define MIDRANGE_VALUE_8BIT    128
 #define MIDRANGE_VALUE_10BIT   512

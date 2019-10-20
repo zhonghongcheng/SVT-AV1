@@ -208,6 +208,16 @@ extern "C" {
         uint64_t                                mdc_count[5];
         uint64_t                                pred_count[5];
         uint64_t                                pred1_nfl_count[5];
+
+#if ADP_BQ
+        uint64_t                                nsq_level6_count[5];
+        uint64_t                                nsq_level5_count[5];
+        uint64_t                                nsq_level4_count[5];
+        uint64_t                                nsq_level3_count[5];
+        uint64_t                                nsq_level2_count[5];
+        uint64_t                                nsq_level1_count[5];
+        uint64_t                                nsq_level0_count[5];
+#endif
 #endif
         /* over_boundary_block (mm-signal; 0: No over boundary blk allowed, 1: over boundary blk allowed)
         *

@@ -5185,7 +5185,11 @@ void half_pel_refinement_sb(
                                   &context_ptr->p_best_full_pel_mv8x8[idx],
                                   inetger_mv);
     }
+#if ADP_BQ
+    if (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE || picture_control_set_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE) {
+#else
     if (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE) {
+#endif
         // 64x32
         for (pu_index = 0; pu_index < 2; ++pu_index) {
             block_index_shift_x = 0;
@@ -13900,13 +13904,22 @@ EbErrorType motion_estimate_lcu(
     numOfListToSearch = (picture_control_set_ptr->slice_type == P_SLICE)
                             ? (uint32_t)REF_LIST_0
                             : (uint32_t)REF_LIST_1;
-
-    EbBool is_nsq_table_used =
-        (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE &&
-         picture_control_set_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
-         picture_control_set_ptr->nsq_search_level < NSQ_SEARCH_FULL)
-            ? EB_TRUE
-            : EB_FALSE;
+#if ADP_BQ
+    // Derive is_nsq_table_used
+    EbBool is_nsq_table_used;
+    if (picture_control_set_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE)
+        is_nsq_table_used = EB_FALSE;
+    else
+        is_nsq_table_used = (picture_control_set_ptr->slice_type == !I_SLICE &&
+            picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE &&
+            picture_control_set_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
+            picture_control_set_ptr->nsq_search_level < NSQ_SEARCH_FULL &&
+            picture_control_set_ptr->enc_mode != ENC_M0) ? EB_TRUE : EB_FALSE;
+#else
+    EbBool is_nsq_table_used = (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE &&
+        picture_control_set_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
+        picture_control_set_ptr->nsq_search_level < NSQ_SEARCH_FULL) ? EB_TRUE : EB_FALSE;
+#endif
 
     is_nsq_table_used = picture_control_set_ptr->enc_mode == ENC_M0 ?  EB_FALSE : is_nsq_table_used;
 
@@ -14646,8 +14659,11 @@ EbErrorType motion_estimate_lcu(
 
             {
                 {
-                    if (picture_control_set_ptr->pic_depth_mode <=
-                        PIC_ALL_C_DEPTH_MODE) {
+#if ADP_BQ
+                    if (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE || picture_control_set_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE) {
+#else
+                    if (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE) {
+#endif
                         initialize_buffer32bits_func_ptr_array[asm_type](
                             context_ptr
                                 ->p_sb_best_sad[listIndex][ref_pic_index],
@@ -15181,8 +15197,11 @@ EbErrorType motion_estimate_lcu(
 #if TEST5_DISABLE_NSQ_ME
                             EB_FALSE);
 #else
-                            picture_control_set_ptr->pic_depth_mode <=
-                                PIC_ALL_C_DEPTH_MODE);
+#if ADP_BQ
+                            picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE || picture_control_set_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE);
+#else
+                            picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE);
+#endif
 #endif
                     }
                 }
@@ -15300,10 +15319,11 @@ if (context_ptr->me_alt_ref == EB_FALSE) {
             }
         }
         if (numOfListToSearch) {
-            if (picture_control_set_ptr->cu8x8_mode == CU_8x8_MODE_0 ||
-                pu_index < 21 ||
-                (picture_control_set_ptr->pic_depth_mode <=
-                 PIC_ALL_C_DEPTH_MODE)) {
+#if ADP_BQ
+            if (picture_control_set_ptr->cu8x8_mode == CU_8x8_MODE_0 || pu_index < 21 || picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE || picture_control_set_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE) {
+#else
+            if (picture_control_set_ptr->cu8x8_mode == CU_8x8_MODE_0 || pu_index < 21 || (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE)) {
+#endif
                 BiPredictionSearch(
                     sequence_control_set_ptr,
                     context_ptr,

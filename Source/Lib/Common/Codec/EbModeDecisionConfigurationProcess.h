@@ -12,6 +12,9 @@
 #include "EbRateControlProcess.h"
 #include "EbSequenceControlSet.h"
 #include "EbModeDecision.h"
+#if ADD_MDC_FULL_COST
+#include "EbTransQuantBuffers.h"
+#endif
 #include "EbObject.h"
 #ifdef __cplusplus
 extern "C" {
@@ -31,6 +34,8 @@ extern "C" {
         uint32_t split_context;
         EbBool   selected_cu;
         EbBool   stop_split;
+        PartitionType part;
+        uint32_t best_d1_blk;
     } MdcpLocalCodingUnit;
 
     typedef struct ModeDecisionConfigurationContext
@@ -44,7 +49,11 @@ extern "C" {
 
         uint8_t                              qp;
         uint64_t                             lambda;
+#if PREDICT_NSQ_SHAPE
+        MdcpLocalCodingUnit                   local_cu_array[BLOCK_MAX_COUNT_SB_128];
+#else
         MdcpLocalCodingUnit                  local_cu_array[CU_MAX_COUNT];
+#endif
 
         // Inter depth decision
         uint8_t                              group_of8x8_blocks_count;
@@ -62,12 +71,22 @@ extern "C" {
 
         // Adaptive Depth Partitioning
         uint32_t                            *sb_score_array;
+#if ADP_BQ
+        uint32_t                             cost_depth_mode[MAX_SUPPORTED_SEGMENTS];
+        uint32_t                            *sb_cost_array;
+#else
         uint8_t                              cost_depth_mode[SB_PRED_OPEN_LOOP_DEPTH_MODE];
         uint8_t                             *sb_cost_array;
+#endif
         uint32_t                             predicted_cost;
         uint32_t                             budget;
         int8_t                               score_th[MAX_SUPPORTED_SEGMENTS];
+#if ADP_BQ
+        uint32_t                             interval_cost[MAX_SUPPORTED_SEGMENTS];
+#else
         uint8_t                              interval_cost[MAX_SUPPORTED_SEGMENTS];
+#endif
+
         uint8_t                              number_of_segments;
         uint32_t                             sb_min_score;
         uint32_t                             sb_max_score;
@@ -81,6 +100,36 @@ extern "C" {
 
         // Multi - Mode signal(s)
         uint8_t                             adp_level;
+#if PREDICT_NSQ_SHAPE
+        uint32_t                            mds_idx;
+#endif
+#if ADD_MDC_FULL_COST
+        MdcpLocalCodingUnit                  *cu_ptr;
+        ModeDecisionCandidateBuffer          *candidate_buffer;
+        uint16_t                             sb_origin_y;
+        uint16_t                             sb_origin_x;
+        uint16_t                             cu_origin_y;
+        uint16_t                             cu_origin_x;
+        uint16_t                             round_origin_x;
+        uint16_t                             round_origin_y;
+        uint8_t                              cu_size_log2;
+        uint64_t                             three_quad_energy;
+        int16_t                              luma_txb_skip_context;
+        int16_t                              luma_dc_sign_context;
+#if ADD_NEIGHBOR
+        NeighborArrayUnit                    *mdc_luma_dc_sign_level_coeff_neighbor_array;
+#endif
+        // Transform and Quantization Buffers
+        EbTransQuantBuffers                  *trans_quant_buffers_ptr;
+        // Trasform Scratch Memory
+        int16_t                              *transform_inner_array_ptr;
+        uint8_t                               spatial_sse_full_loop;
+        EntropyCoder                         *coeff_est_entropy_coder_ptr;
+        uint64_t                             full_lambda;
+        ModeDecisionCandidate                **fast_candidate_ptr_array;
+        ModeDecisionCandidate                *fast_candidate_array;
+        ModeDecisionCandidateBuffer          **candidate_buffer_ptr_array;
+#endif
     } ModeDecisionConfigurationContext;
 
     /**************************************

@@ -24,6 +24,7 @@
 #include "EbCommonUtils.h"
 
 #define UNUSED_FUNC
+#if !ADD_MDC_FULL_COST
 static PartitionType from_shape_to_part[] = {
     PARTITION_NONE,
     PARTITION_HORZ,
@@ -36,6 +37,7 @@ static PartitionType from_shape_to_part[] = {
     PARTITION_VERT_4,
     PARTITION_SPLIT
 };
+#endif
 
 /** ScaleMV
         is used to scale the motion vector in AMVP process.
