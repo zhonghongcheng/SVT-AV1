@@ -43,7 +43,20 @@ extern "C" {
 #define FIX_SORTING_METHOD           1 // Address SORTING mismatch between rtime-m0-test and master: used same method
 #define FIX_SETTINGS_RESET           1 // Address SEGMENT_RESET mismatch between rtime-m0-test and master: only @ 1st segment
 #define FIX_COMPOUND                 1 // Address COMPOUND mismatch between rtime-m0-test and master: used block size @ the derivation of compound count
+/************************************************/
+#define MR_NSQ                       0
 
+#define REMOVE_MD_STAGE_1            0 //Remove MD Stage 1 
+#if REMOVE_MD_STAGE_1
+#define IF_CHROMA_LAST_STAGE_ONLY    0
+#define MIN_COUNT_4_MD_STAGE_3       0
+#define MIN_COUNT_6_MD_STAGE_3       0
+#define IF_TEST                      0
+#define CHROMA_TEST                  0   
+#define IF_CHROMA_TEST               0
+#define BYPASS_MD_STAGE_2            0
+#endif
+/************************************************/
 #define II_COMP_FLAG 1
 #define PRED_CHANGE                  1 // Change the MRP in 4L Pictures 3, 5 , 7 and 9 use 1 as the reference
 #define PRED_CHANGE_5L               1 // Change the MRP in 5L Pictures 3, 5 , 7 and 9 use 1 as the reference, 11, 13, 15 and 17 use 9 as the reference

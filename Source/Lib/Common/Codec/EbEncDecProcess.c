@@ -1407,14 +1407,19 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // |        |Bilinear Interpolation       |                             |No Tx Search                    |                                         |
     // |        |                             |                             |                                |                                         |
     // |________|_____________________________|_____________________________|________________________________|_________________________________________|
-
+#if REMOVE_MD_STAGE_1
+    if (picture_control_set_ptr->enc_mode <= ENC_M4)
+        context_ptr->md_staging_mode = MD_STAGING_MODE_3;
+    else
+        context_ptr->md_staging_mode = MD_STAGING_MODE_0;
+#else
     if (picture_control_set_ptr->enc_mode == ENC_M0)
         context_ptr->md_staging_mode = MD_STAGING_MODE_1;
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->md_staging_mode = MD_STAGING_MODE_3;
     else
         context_ptr->md_staging_mode = MD_STAGING_MODE_0; // Default structure = fast loop + full loop = md_stage_0 + md_stage_3
-
+#endif
     // Combine MD Class1&2
     // 0                    OFF
     // 1                    ON
@@ -1466,6 +1471,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->redundant_blk = EB_TRUE;
     else
         context_ptr->redundant_blk = EB_FALSE;
+#if MR_NSQ
+    context_ptr->redundant_blk = EB_FALSE;
+#endif
     if (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
 #if FIX_ESTIMATE_INTRA
         if (MR_MODE)
@@ -1498,7 +1506,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->md_exit_th = 0;
     else
         context_ptr->md_exit_th = 10;
-
+#if MR_NSQ
+    context_ptr->md_exit_th = 0;
+#endif
     // Derive distortion-based md_stage_0_count proning
     if (MR_MODE)
         context_ptr->dist_base_md_stage_0_count_th = (uint64_t)~0;

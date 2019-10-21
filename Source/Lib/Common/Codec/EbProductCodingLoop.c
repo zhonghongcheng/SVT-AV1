@@ -1576,6 +1576,9 @@ void set_md_stage_counts(
 {
     SequenceControlSet* scs = (SequenceControlSet*)(picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr);
     // Step 0: derive bypass_stage1 flags
+#if REMOVE_MD_STAGE_1
+    memset(context_ptr->bypass_stage1, EB_TRUE, CAND_CLASS_TOTAL);
+#else
     if (context_ptr->md_staging_mode) {
         context_ptr->bypass_stage1[CAND_CLASS_0] = EB_TRUE;
         context_ptr->bypass_stage1[CAND_CLASS_1] = EB_FALSE;
@@ -1587,8 +1590,20 @@ void set_md_stage_counts(
     }
     else
         memset(context_ptr->bypass_stage1, EB_TRUE, CAND_CLASS_TOTAL);
+#endif
     // Step 1: derive bypass_stage1 flags
     if (context_ptr->md_staging_mode)
+#if BYPASS_MD_STAGE_2
+    {
+        context_ptr->bypass_stage2[CAND_CLASS_0] = EB_FALSE;
+        context_ptr->bypass_stage2[CAND_CLASS_1] = EB_TRUE;
+        context_ptr->bypass_stage2[CAND_CLASS_2] = EB_TRUE;
+        context_ptr->bypass_stage2[CAND_CLASS_3] = EB_TRUE;
+        context_ptr->bypass_stage2[CAND_CLASS_4] = EB_TRUE;
+    }
+#elif REMOVE_MD_STAGE_1
+        memset(context_ptr->bypass_stage2, EB_FALSE, CAND_CLASS_TOTAL);
+#else
     {
         context_ptr->bypass_stage2[CAND_CLASS_0] = EB_FALSE;
 
@@ -1606,6 +1621,7 @@ void set_md_stage_counts(
             context_ptr->bypass_stage2[CAND_CLASS_4] = EB_TRUE;
 #endif
     }
+#endif
     else
         memset(context_ptr->bypass_stage2, EB_TRUE, CAND_CLASS_TOTAL);
     // Step 2: set md_stage count
@@ -1672,6 +1688,16 @@ void set_md_stage_counts(
 
 #if II_COMP_FLAG
     context_ptr->md_stage_3_count[CAND_CLASS_4] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 12 : 4;// 14 : 4;
+#endif
+#if MIN_COUNT_4_MD_STAGE_3
+    context_ptr->md_stage_3_count[CAND_CLASS_1] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 2;
+    context_ptr->md_stage_3_count[CAND_CLASS_2] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 2;
+    context_ptr->md_stage_3_count[CAND_CLASS_3] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 2;
+#endif
+#if MIN_COUNT_6_MD_STAGE_3
+    context_ptr->md_stage_3_count[CAND_CLASS_1] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 6 : 3;
+    context_ptr->md_stage_3_count[CAND_CLASS_2] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 6 : 3;
+    context_ptr->md_stage_3_count[CAND_CLASS_3] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 6 : 3;
 #endif
     if (!context_ptr->combine_class12 && picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_control_set_ptr->enc_mode == ENC_M0) {
 
@@ -5529,8 +5555,14 @@ void full_loop_core(
         if (candidate_ptr->type != INTRA_MODE) {
             if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level > IT_SEARCH_OFF)
                 if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level == IT_SEARCH_FULL_LOOP || context_ptr->md_staging_skip_full_pred == EB_FALSE) {
+#if REMOVE_MD_STAGE_1
+#if !IF_TEST
+                    candidate_buffer->candidate_ptr->interp_filters = 0;
+#endif
+#else
                     context_ptr->md_staging_interpolation_search = EB_FALSE;
                     context_ptr->md_staging_skip_inter_chroma_pred = EB_FALSE;
+#endif
                     ProductPredictionFunTable[candidate_ptr->type](
                         context_ptr,
                         picture_control_set_ptr,
@@ -5824,10 +5856,16 @@ void md_stage_2(
     uint32_t candidateIndex;
 
     // Set MD Staging full_loop_core settings
+#if !REMOVE_MD_STAGE_1
     context_ptr->md_staging_skip_full_pred = EB_TRUE;
+#endif
     context_ptr->md_staging_skip_atb = EB_TRUE;
     context_ptr->md_staging_tx_search = 0;
+#if CHROMA_TEST || IF_CHROMA_TEST
+    context_ptr->md_staging_skip_full_chroma = context_ptr->target_class == CAND_CLASS_0;
+#else
     context_ptr->md_staging_skip_full_chroma = context_ptr->target_class == CAND_CLASS_0 || context_ptr->md_staging_mode == MD_STAGING_MODE_3;
+#endif
     context_ptr->md_staging_skip_rdoq = (context_ptr->md_staging_mode == MD_STAGING_MODE_2 || context_ptr->md_staging_mode == MD_STAGING_MODE_3);
 
     for (fullLoopCandidateIndex = 0; fullLoopCandidateIndex < context_ptr->md_stage_2_count[context_ptr->target_class]; ++fullLoopCandidateIndex) {
@@ -5835,8 +5873,32 @@ void md_stage_2(
         candidateIndex = context_ptr->cand_buff_indices[context_ptr->target_class][fullLoopCandidateIndex];
         candidate_buffer = candidate_buffer_ptr_array[candidateIndex];
         candidate_ptr = candidate_buffer->candidate_ptr;
-
-
+#if REMOVE_MD_STAGE_1
+#if IF_CHROMA_LAST_STAGE_ONLY
+        context_ptr->md_staging_skip_full_pred = EB_FALSE;
+        context_ptr->md_staging_interpolation_search = EB_TRUE;
+        context_ptr->md_staging_skip_inter_chroma_pred = EB_TRUE;
+#elif IF_TEST //---
+        context_ptr->md_staging_skip_full_pred = EB_FALSE;
+        context_ptr->md_staging_interpolation_search = EB_FALSE;
+        context_ptr->md_staging_skip_inter_chroma_pred = EB_TRUE;
+        candidate_buffer->candidate_ptr->interp_filters = 0;
+#elif CHROMA_TEST
+        context_ptr->md_staging_skip_full_pred = EB_FALSE;
+        context_ptr->md_staging_interpolation_search = EB_TRUE;
+        context_ptr->md_staging_skip_inter_chroma_pred = EB_FALSE;
+#elif IF_CHROMA_TEST
+        context_ptr->md_staging_skip_full_pred = EB_FALSE;
+        context_ptr->md_staging_interpolation_search = EB_FALSE;
+        context_ptr->md_staging_skip_inter_chroma_pred = EB_FALSE;
+#elif BYPASS_MD_STAGE_2
+        context_ptr->md_staging_skip_full_pred = EB_TRUE;
+        context_ptr->md_staging_interpolation_search = EB_TRUE;
+        context_ptr->md_staging_skip_inter_chroma_pred = EB_TRUE;
+#else
+        context_ptr->md_staging_skip_full_pred = EB_TRUE;
+#endif
+#endif
         full_loop_core(
             picture_control_set_ptr,
             sb_ptr,
@@ -5885,7 +5947,29 @@ void md_stage_3(
         candidate_ptr = candidate_buffer->candidate_ptr;
 
         // Set MD Staging full_loop_core settings
+#if IF_CHROMA_LAST_STAGE_ONLY
+        context_ptr->md_staging_skip_full_pred = EB_FALSE;
+        context_ptr->md_staging_interpolation_search = EB_FALSE;
+        context_ptr->md_staging_skip_inter_chroma_pred = EB_FALSE;
+#elif IF_TEST //---
+        context_ptr->md_staging_skip_full_pred = EB_FALSE;
+        context_ptr->md_staging_interpolation_search = EB_TRUE;
+        context_ptr->md_staging_skip_inter_chroma_pred = EB_FALSE;
+#elif CHROMA_TEST
+        context_ptr->md_staging_skip_full_pred = EB_FALSE;
+        context_ptr->md_staging_interpolation_search = EB_FALSE;
+        context_ptr->md_staging_skip_inter_chroma_pred = EB_FALSE;
+#elif IF_CHROMA_TEST
+        context_ptr->md_staging_skip_full_pred = EB_TRUE;
+        context_ptr->md_staging_interpolation_search = EB_TRUE;
+        context_ptr->md_staging_skip_inter_chroma_pred = EB_TRUE;
+#elif BYPASS_MD_STAGE_2
+        context_ptr->md_staging_skip_full_pred = EB_FALSE;
+        context_ptr->md_staging_interpolation_search = EB_FALSE;
+        context_ptr->md_staging_skip_inter_chroma_pred = EB_FALSE;
+#else
         context_ptr->md_staging_skip_full_pred = (context_ptr->md_staging_mode == MD_STAGING_MODE_3) ? EB_FALSE: EB_TRUE;
+#endif
         context_ptr->md_staging_skip_atb = context_ptr->coeff_based_skip_atb;
         context_ptr->md_staging_tx_search = candidate_ptr->cand_class == CAND_CLASS_0 ? 2 : 1;
         context_ptr->md_staging_skip_full_chroma = EB_FALSE;
