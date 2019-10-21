@@ -927,7 +927,7 @@ void* motion_estimation_kernel(void *input_ptr)
                     }
                 }
             }
-#if !ADD_MDC_INTRA
+#if PREDICT_NSQ_SHAPE
             if (picture_control_set_ptr->intra_pred_mode > 4)
 #endif
                 // *** OPEN LOOP INTRA CANDIDATE SEARCH CODE ***

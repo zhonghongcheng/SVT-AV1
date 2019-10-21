@@ -95,11 +95,13 @@ const uint8_t incrementalCount[85] = {
     0, 0, 0, 4, 0, 0, 0, 4
 };
 
+#if PREDICT_NSQ_SHAPE
 extern uint32_t get_me_info_index(
     uint32_t         max_me_block,
     const BlockGeom *blk_geom,
     uint32_t         geom_offset_x,
     uint32_t         geom_offset_y);
+#endif
 
 /*******************************************
 mdcSetDepth : set depth to be tested
@@ -271,18 +273,10 @@ void RefinementPredictionLoop(
             uint32_t depth = get_coded_unit_stats(cu_index)->depth;
             uint8_t refinementLevel;
             {
-#if ADP_BQ
-                if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_SQ_DEPTH_MODE && picture_control_set_ptr->parent_pcs_ptr->sb_depth_mode_array[sb_index] == SB_PRED_OPEN_LOOP_DEPTH_MODE)
-#else
                 if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_DEPTH_MODE && picture_control_set_ptr->parent_pcs_ptr->sb_depth_mode_array[sb_index] == SB_PRED_OPEN_LOOP_DEPTH_MODE)
-#endif
                     refinementLevel = Pred;
                 else
-#if ADP_BQ
-                    if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_SQ_DEPTH_MODE && picture_control_set_ptr->parent_pcs_ptr->sb_depth_mode_array[sb_index] == SB_FAST_OPEN_LOOP_DEPTH_MODE)
-#else
                     if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_DEPTH_MODE && picture_control_set_ptr->parent_pcs_ptr->sb_depth_mode_array[sb_index] == SB_FAST_OPEN_LOOP_DEPTH_MODE)
-#endif
                         refinementLevel = ndp_level_1[depth];
                     else  { // SB_OPEN_LOOP_DEPTH_MODE
                         refinementLevel = ndp_level_0[depth];
@@ -688,25 +682,7 @@ uint64_t  mdc_d1_non_square_block_decision(
     {
         tot_cost += context_ptr->local_cu_array[first_blk_idx + blk_it].early_cost;
     }
-#if 0 //SPLIT_RATE_FIX
-    if (context_ptr->blk_geom->bsize > BLOCK_4X4) {
-        uint64_t split_cost = 0;
-        uint32_t parent_depth_idx_mds = context_ptr->blk_geom->sqi_mds;
-        av1_split_flag_rate(
-            sequence_control_set_ptr,
-            context_ptr,
-            &context_ptr->md_cu_arr_nsq[parent_depth_idx_mds],
-            0,
-            from_shape_to_part[context_ptr->blk_geom->shape],
-            &split_cost,
-            context_ptr->lambda,
-            context_ptr->md_rate_estimation_ptr,
-            sequence_control_set_ptr->max_sb_depth);
 
-        tot_cost += split_cost;
-    }
-#endif
-#if 1
     if (context_ptr->blk_geom->shape == PART_N || tot_cost < context_ptr->local_cu_array[context_ptr->blk_geom->sqi_mds].early_cost)
     {
         //store best partition cost in parent square
@@ -714,7 +690,6 @@ uint64_t  mdc_d1_non_square_block_decision(
         context_ptr->local_cu_array[context_ptr->blk_geom->sqi_mds].part = from_shape_to_part[context_ptr->blk_geom->shape];
         context_ptr->local_cu_array[context_ptr->blk_geom->sqi_mds].best_d1_blk = first_blk_idx;
     }
-#endif
     return tot_cost;
 }
 
@@ -955,19 +930,6 @@ void mdc_full_loop(
         int32_t cropped_tx_height = MIN(context_ptr->blk_geom->tx_height[tx_depth][txb_itr], sequence_control_set_ptr->seq_header.max_frame_height - (context_ptr->sb_origin_y + tx_org_y));
         context_ptr->luma_txb_skip_context = 0;
         context_ptr->luma_dc_sign_context = 0;
-#if ADD_NEIGHBOR
-        get_txb_ctx(
-            sequence_control_set_ptr,
-            COMPONENT_LUMA,
-            context_ptr->mdc_luma_dc_sign_level_coeff_neighbor_array,
-            context_ptr->sb_origin_x + tx_org_x,
-            context_ptr->sb_origin_y + tx_org_y,
-            context_ptr->blk_geom->bsize,
-            context_ptr->blk_geom->txsize[tx_depth][txb_itr],
-            &context_ptr->luma_txb_skip_context,
-            &context_ptr->luma_dc_sign_context);
-#endif
-
 
         tu_origin_index = tx_org_x + (tx_org_y * candidate_buffer->residual_ptr->stride_y);
         y_tu_coeff_bits = 0;
@@ -1047,18 +1009,22 @@ void mdc_full_loop(
             }
 
             tuFullDistortion[0][DIST_CALC_PREDICTION] = spatial_full_distortion(
-                input_picture_ptr->buffer_y + input_tu_origin_index,
+                input_picture_ptr->buffer_y,
+                input_tu_origin_index,
                 input_picture_ptr->stride_y,
-                candidate_buffer->prediction_ptr->buffer_y + tu_origin_index,
+                candidate_buffer->prediction_ptr->buffer_y,
+                tu_origin_index,
                 candidate_buffer->prediction_ptr->stride_y,
                 cropped_tx_width,
                 cropped_tx_height,
                 Log2f(context_ptr->blk_geom->tx_width[tx_depth][txb_itr]) - 2);
 
             tuFullDistortion[0][DIST_CALC_RESIDUAL] = spatial_full_distortion(
-                input_picture_ptr->buffer_y + input_tu_origin_index,
+                input_picture_ptr->buffer_y,
+                input_tu_origin_index,
                 input_picture_ptr->stride_y,
                 &(((uint8_t*)candidate_buffer->recon_ptr->buffer_y)[tu_origin_index]),
+                0,
                 candidate_buffer->recon_ptr->stride_y,
                 cropped_tx_width,
                 cropped_tx_height,
@@ -1226,567 +1192,7 @@ EbErrorType mdc_inter_pu_prediction_av1(
 
     return return_error;
 }
-#if ADD_NEIGHBOR
-void mdc_update_neighbor_arrays(
-    PictureControlSet     *picture_control_set_ptr,
-    ModeDecisionConfigurationContext   *context_ptr,
-    uint32_t               index_mds,
-    EbBool                 intraMdOpenLoop) {
-    uint32_t bwdith = context_ptr->blk_geom->bwidth;
-    uint32_t bheight = context_ptr->blk_geom->bheight;
-    uint32_t origin_x = context_ptr->cu_origin_x;
-    uint32_t origin_y = context_ptr->cu_origin_y;
-    uint32_t cu_origin_x_uv = context_ptr->round_origin_x >> 1;
-    uint32_t cu_origin_y_uv = context_ptr->round_origin_y >> 1;
-    uint32_t bwdith_uv = context_ptr->blk_geom->bwidth_uv;
-    uint32_t bwheight_uv = context_ptr->blk_geom->bheight_uv;
-    //    uint8_t modeType = context_ptr->cu_ptr->prediction_mode_flag;
-     //   uint8_t intra_luma_mode = (uint8_t)context_ptr->cu_ptr->pred_mode;
-      //  uint8_t chroma_mode = (uint8_t)context_ptr->cu_ptr->prediction_unit_array->intra_chroma_mode;
-      //  uint8_t skip_flag = (uint8_t)context_ptr->cu_ptr->skip_flag;
 
-       // context_ptr->mv_unit.pred_direction = (uint8_t)(context_ptr->md_cu_arr_nsq[index_mds].prediction_unit_array[0].inter_pred_direction_index);
-      //  context_ptr->mv_unit.mv[REF_LIST_0].mv_union = context_ptr->md_cu_arr_nsq[index_mds].prediction_unit_array[0].mv[REF_LIST_0].mv_union;
-      //  context_ptr->mv_unit.mv[REF_LIST_1].mv_union = context_ptr->md_cu_arr_nsq[index_mds].prediction_unit_array[0].mv[REF_LIST_1].mv_union;
-#if ATB_DC_CONTEXT_SUPPORT_1
-#if !DC_SIGN_CONTEXT_FIX
-    uint8_t u_has_coeff = context_ptr->cu_ptr->transform_unit_array[0].u_has_coeff;
-    int32_t cbDcCoeff = (int32_t)context_ptr->cu_ptr->quantized_dc[1][0];
-    uint8_t v_has_coeff = context_ptr->cu_ptr->transform_unit_array[0].v_has_coeff;
-    int32_t crDcCoeff = (int32_t)context_ptr->cu_ptr->quantized_dc[2][0];
-#endif
-#else
-    uint8_t                    y_has_coeff = context_ptr->cu_ptr->transform_unit_array[0].y_has_coeff;
-    int32_t                   lumaDcCoeff = (int32_t)context_ptr->cu_ptr->quantized_dc[0];
-    uint8_t                    u_has_coeff = context_ptr->cu_ptr->transform_unit_array[0].u_has_coeff;
-    int32_t                   cbDcCoeff = (int32_t)context_ptr->cu_ptr->quantized_dc[1];
-    uint8_t                    v_has_coeff = context_ptr->cu_ptr->transform_unit_array[0].v_has_coeff;
-    int32_t                   crDcCoeff = (int32_t)context_ptr->cu_ptr->quantized_dc[2];
-#endif
-    // uint8_t                    inter_pred_direction_index = (uint8_t)context_ptr->cu_ptr->prediction_unit_array->inter_pred_direction_index;
-   //  uint8_t                    ref_frame_type = (uint8_t)context_ptr->cu_ptr->prediction_unit_array[0].ref_frame_type;
-    uint8_t                    tx_depth = 0;
-    uint16_t txb_count = context_ptr->blk_geom->txb_count[tx_depth];
-    for (uint8_t txb_itr = 0; txb_itr < txb_count; txb_itr++) {
-        uint8_t dc_sign_level_coeff = (int32_t)context_ptr->mdc_cu_ptr->quantized_dc[0][txb_itr];
-        neighbor_array_unit_mode_write(
-            context_ptr->mdc_luma_dc_sign_level_coeff_neighbor_array,
-            (uint8_t*)&dc_sign_level_coeff,
-            context_ptr->sb_origin_x + context_ptr->blk_geom->tx_org_x[tx_depth][txb_itr],
-            context_ptr->sb_origin_y + context_ptr->blk_geom->tx_org_y[tx_depth][txb_itr],
-            context_ptr->blk_geom->tx_width[tx_depth][txb_itr],
-            context_ptr->blk_geom->tx_height[tx_depth][txb_itr],
-            NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-    }
-#if 0
-
-#if OPT_LOSSLESS_0
-    if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level != IT_SEARCH_OFF)
-#endif
-        neighbor_array_unit_mode_write32(
-            context_ptr->interpolation_type_neighbor_array,
-            context_ptr->cu_ptr->interp_filters,
-            origin_x,
-            origin_y,
-            bwdith,
-            bheight,
-            NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-
-    {
-        struct PartitionContext partition;
-        partition.above = partition_context_lookup[context_ptr->blk_geom->bsize].above;
-        partition.left = partition_context_lookup[context_ptr->blk_geom->bsize].left;
-
-        neighbor_array_unit_mode_write(
-            context_ptr->leaf_partition_neighbor_array,
-            (uint8_t*)(&partition), // NaderM
-            origin_x,
-            origin_y,
-            bwdith,
-            bheight,
-            NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-
-        // Mode Type Update
-        neighbor_array_unit_mode_write(
-            context_ptr->mode_type_neighbor_array,
-            &modeType,
-            origin_x,
-            origin_y,
-            bwdith,
-            bheight,
-            NEIGHBOR_ARRAY_UNIT_FULL_MASK);
-#if OPT_LOSSLESS_0
-        if (picture_control_set_ptr->parent_pcs_ptr->skip_sub_blks)
-#endif
-#if M8_SKIP_BLK
-            // Intra Luma Mode Update
-            neighbor_array_unit_mode_write(
-                context_ptr->leaf_depth_neighbor_array,
-                (uint8_t*)&context_ptr->blk_geom->bsize,//(uint8_t*)luma_mode,
-                origin_x,
-                origin_y,
-                bwdith,
-                bheight,
-                NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-#endif
-        // Intra Luma Mode Update
-        neighbor_array_unit_mode_write(
-            context_ptr->intra_luma_mode_neighbor_array,
-            &intra_luma_mode,//(uint8_t*)luma_mode,
-            origin_x,
-            origin_y,
-            bwdith,
-            bheight,
-            NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-
-
-
-        // Hsan: chroma mode rate estimation is kept even for chroma blind
-        if (context_ptr->blk_geom->has_uv) {
-            // Intra Chroma Mode Update
-            neighbor_array_unit_mode_write(
-                context_ptr->intra_chroma_mode_neighbor_array,
-                &chroma_mode,
-                cu_origin_x_uv,
-                cu_origin_y_uv,
-                bwdith_uv,
-                bwheight_uv,
-                NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-        }
-
-        neighbor_array_unit_mode_write(
-            context_ptr->skip_flag_neighbor_array,
-            &skip_flag,
-            origin_x,
-            origin_y,
-            bwdith,
-            bheight,
-            NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-
-#if !OPT_LOSSLESS_0
-        //  Update skip_coeff_neighbor_array,
-        neighbor_array_unit_mode_write(
-            context_ptr->skip_coeff_neighbor_array,
-            &skipCoeff,
-            origin_x,
-            origin_y,
-            bwdith,
-            bheight,
-            NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-#endif
-
-        if (context_ptr->blk_geom->has_uv && context_ptr->chroma_level <= CHROMA_MODE_1) {
-            //  Update chroma CB cbf and Dc context
-            {
-#if DC_SIGN_CONTEXT_FIX
-                uint8_t dc_sign_level_coeff = (int32_t)context_ptr->cu_ptr->quantized_dc[1][0];
-#else
-                uint8_t dcSignCtx = 0;
-                if (cbDcCoeff > 0)
-                    dcSignCtx = 2;
-                else if (cbDcCoeff < 0)
-                    dcSignCtx = 1;
-                else
-                    dcSignCtx = 0;
-                uint8_t dc_sign_level_coeff = (uint8_t)((dcSignCtx << COEFF_CONTEXT_BITS) | u_has_coeff);
-                if (!u_has_coeff)
-                    dc_sign_level_coeff = 0;
-#endif
-                neighbor_array_unit_mode_write(
-                    context_ptr->cb_dc_sign_level_coeff_neighbor_array,
-                    (uint8_t*)&dc_sign_level_coeff,
-                    cu_origin_x_uv,
-                    cu_origin_y_uv,
-                    bwdith_uv,
-                    bwheight_uv,
-                    NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-            }
-
-            //  Update chroma CR cbf and Dc context
-            {
-#if DC_SIGN_CONTEXT_FIX
-                uint8_t dc_sign_level_coeff = (int32_t)context_ptr->cu_ptr->quantized_dc[2][0];
-#else
-                uint8_t dcSignCtx = 0;
-                if (crDcCoeff > 0)
-                    dcSignCtx = 2;
-                else if (crDcCoeff < 0)
-                    dcSignCtx = 1;
-                else
-                    dcSignCtx = 0;
-                uint8_t dc_sign_level_coeff = (uint8_t)((dcSignCtx << COEFF_CONTEXT_BITS) | v_has_coeff);
-                if (!v_has_coeff)
-                    dc_sign_level_coeff = 0;
-#endif
-                neighbor_array_unit_mode_write(
-                    context_ptr->cr_dc_sign_level_coeff_neighbor_array,
-                    (uint8_t*)&dc_sign_level_coeff,
-                    cu_origin_x_uv,
-                    cu_origin_y_uv,
-                    bwdith_uv,
-                    bwheight_uv,
-                    NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-            }
-        }
-
-#if ATB_RATE
-        neighbor_array_unit_mode_write(
-            context_ptr->txfm_context_array,
-            &context_ptr->cu_ptr->tx_depth,
-            origin_x,
-            origin_y,
-            bwdith,
-            bheight,
-            NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-#endif
-
-        // Update the Inter Pred Type Neighbor Array
-
-        neighbor_array_unit_mode_write(
-            context_ptr->inter_pred_dir_neighbor_array,
-            &inter_pred_direction_index,
-            origin_x,
-            origin_y,
-            bwdith,
-            bheight,
-            NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-
-        // Update the refFrame Type Neighbor Array
-        neighbor_array_unit_mode_write(
-            context_ptr->ref_frame_type_neighbor_array,
-            &ref_frame_type,
-            origin_x,
-            origin_y,
-            bwdith,
-            bheight,
-            NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-
-        if (intraMdOpenLoop == EB_FALSE)
-        {
-            update_recon_neighbor_array(
-                context_ptr->luma_recon_neighbor_array,
-                context_ptr->cu_ptr->neigh_top_recon[0],
-                context_ptr->cu_ptr->neigh_left_recon[0],
-                origin_x,
-                origin_y,
-                context_ptr->blk_geom->bwidth,
-                context_ptr->blk_geom->bheight);
-#if ATB_MD
-            if (picture_control_set_ptr->parent_pcs_ptr->atb_mode) {
-                update_recon_neighbor_array(
-                    picture_control_set_ptr->md_tx_depth_1_luma_recon_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX],
-                    context_ptr->cu_ptr->neigh_top_recon[0],
-                    context_ptr->cu_ptr->neigh_left_recon[0],
-                    origin_x,
-                    origin_y,
-                    context_ptr->blk_geom->bwidth,
-                    context_ptr->blk_geom->bheight);
-            }
-#endif
-        }
-
-        if (intraMdOpenLoop == EB_FALSE) {
-            if (context_ptr->blk_geom->has_uv && context_ptr->chroma_level <= CHROMA_MODE_1) {
-                update_recon_neighbor_array(
-                    context_ptr->cb_recon_neighbor_array,
-                    context_ptr->cu_ptr->neigh_top_recon[1],
-                    context_ptr->cu_ptr->neigh_left_recon[1],
-                    cu_origin_x_uv,
-                    cu_origin_y_uv,
-                    bwdith_uv,
-                    bwheight_uv);
-                update_recon_neighbor_array(
-                    context_ptr->cr_recon_neighbor_array,
-                    context_ptr->cu_ptr->neigh_top_recon[2],
-                    context_ptr->cu_ptr->neigh_left_recon[2],
-                    cu_origin_x_uv,
-                    cu_origin_y_uv,
-                    bwdith_uv,
-                    bwheight_uv);
-            }
-        }
-#endif
-        return;
-    }
-
-    void mdc_update_all_neighbour_arrays(
-        PictureControlSet                *picture_control_set_ptr,
-        ModeDecisionConfigurationContext *context_ptr,
-        uint32_t                          lastCuIndex_mds,
-        uint32_t                          sb_origin_x,
-        uint32_t                          sb_origin_y)
-    {
-        context_ptr->blk_geom = get_blk_geom_mds(lastCuIndex_mds);
-        context_ptr->cu_origin_x = sb_origin_x + context_ptr->blk_geom->origin_x;
-        context_ptr->cu_origin_y = sb_origin_y + context_ptr->blk_geom->origin_y;
-        context_ptr->round_origin_x = ((context_ptr->cu_origin_x >> 3) << 3);
-        context_ptr->round_origin_y = ((context_ptr->cu_origin_y >> 3) << 3);
-
-        context_ptr->cu_ptr = &context_ptr->local_cu_array[lastCuIndex_mds];
-
-        mdc_update_neighbor_arrays(
-            picture_control_set_ptr,
-            context_ptr,
-            lastCuIndex_mds,
-            picture_control_set_ptr->intra_md_open_loop_flag);
-#if 0
-        update_mi_map(
-            context_ptr,
-            context_ptr->cu_ptr,
-            context_ptr->cu_origin_x,
-            context_ptr->cu_origin_y,
-            context_ptr->blk_geom,
-            0,
-            picture_control_set_ptr);
-#endif
-    }
-
-    void mdc_update_all_neighbour_arrays_multiple(
-        PictureControlSet                *picture_control_set_ptr,
-        ModeDecisionConfigurationContext               *context_ptr,
-        uint32_t                            blk_mds,
-        uint32_t                            sb_origin_x,
-        uint32_t                            sb_origin_y) {
-        context_ptr->blk_geom = get_blk_geom_mds(blk_mds);
-
-        uint32_t blk_it;
-        for (blk_it = 0; blk_it < context_ptr->blk_geom->totns; blk_it++)
-        {
-            mdc_update_all_neighbour_arrays(
-                picture_control_set_ptr,
-                context_ptr,
-                blk_mds + blk_it,
-                sb_origin_x,
-                sb_origin_y);
-        }
-    }
-    void mdc_copy_neighbour_arrays(
-        PictureControlSet                   *picture_control_set_ptr,
-        ModeDecisionConfigurationContext    *context_ptr,
-        uint32_t                            src_idx,
-        uint32_t                            dst_idx,
-        uint32_t                            blk_mds,
-        uint32_t                            sb_org_x,
-        uint32_t                            sb_org_y)
-    {
-        (void)*context_ptr;
-
-        const BlockGeom * blk_geom = get_blk_geom_mds(blk_mds);
-
-        uint32_t                            blk_org_x = sb_org_x + blk_geom->origin_x;
-        uint32_t                            blk_org_y = sb_org_y + blk_geom->origin_y;
-        uint32_t                            blk_org_x_uv = (blk_org_x >> 3 << 3) >> 1;
-        uint32_t                            blk_org_y_uv = (blk_org_y >> 3 << 3) >> 1;
-        uint32_t                            bwidth_uv = blk_geom->bwidth_uv;
-        uint32_t                            bheight_uv = blk_geom->bheight_uv;
-
-        //neighbor_array_unit_reset(picture_control_set_ptr->md_luma_dc_sign_level_coeff_neighbor_array[depth]);
-        copy_neigh_arr(
-            picture_control_set_ptr->mdc_luma_dc_sign_level_coeff_neighbor_array[src_idx],
-            picture_control_set_ptr->mdc_luma_dc_sign_level_coeff_neighbor_array[dst_idx],
-            blk_org_x,
-            blk_org_y,
-            blk_geom->bwidth,
-            blk_geom->bheight,
-            NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-#if 0
-
-        copy_neigh_arr(
-            picture_control_set_ptr->md_intra_luma_mode_neighbor_array[src_idx],
-            picture_control_set_ptr->md_intra_luma_mode_neighbor_array[dst_idx],
-            blk_org_x,
-            blk_org_y,
-            blk_geom->bwidth,
-            blk_geom->bheight,
-            NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-
-        //neighbor_array_unit_reset(picture_control_set_ptr->md_intra_chroma_mode_neighbor_array[depth]);
-        copy_neigh_arr(
-            picture_control_set_ptr->md_intra_chroma_mode_neighbor_array[src_idx],
-            picture_control_set_ptr->md_intra_chroma_mode_neighbor_array[dst_idx],
-            blk_org_x_uv,
-            blk_org_y_uv,
-            bwidth_uv,
-            bheight_uv,
-            NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-
-        //neighbor_array_unit_reset(picture_control_set_ptr->md_skip_flag_neighbor_array[depth]);
-        copy_neigh_arr(
-            picture_control_set_ptr->md_skip_flag_neighbor_array[src_idx],
-            picture_control_set_ptr->md_skip_flag_neighbor_array[dst_idx],
-            blk_org_x,
-            blk_org_y,
-            blk_geom->bwidth,
-            blk_geom->bheight,
-            NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-
-        //neighbor_array_unit_reset(picture_control_set_ptr->md_mode_type_neighbor_array[depth]);
-        copy_neigh_arr(
-            picture_control_set_ptr->md_mode_type_neighbor_array[src_idx],
-            picture_control_set_ptr->md_mode_type_neighbor_array[dst_idx],
-            blk_org_x,
-            blk_org_y,
-            blk_geom->bwidth,
-            blk_geom->bheight,
-            NEIGHBOR_ARRAY_UNIT_FULL_MASK);
-
-        //neighbor_array_unit_reset(picture_control_set_ptr->md_leaf_depth_neighbor_array[depth]);
-        copy_neigh_arr(
-            picture_control_set_ptr->md_leaf_depth_neighbor_array[src_idx],
-            picture_control_set_ptr->md_leaf_depth_neighbor_array[dst_idx],
-            blk_org_x,
-            blk_org_y,
-            blk_geom->bwidth,
-            blk_geom->bheight,
-            NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-        copy_neigh_arr(
-            picture_control_set_ptr->mdleaf_partition_neighbor_array[src_idx],
-            picture_control_set_ptr->mdleaf_partition_neighbor_array[dst_idx],
-            blk_org_x,
-            blk_org_y,
-            blk_geom->bwidth,
-            blk_geom->bheight,
-            NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-
-        //neighbor_array_unit_reset(picture_control_set_ptr->md_luma_recon_neighbor_array[depth]);
-        copy_neigh_arr(
-            picture_control_set_ptr->md_luma_recon_neighbor_array[src_idx],
-            picture_control_set_ptr->md_luma_recon_neighbor_array[dst_idx],
-            blk_org_x,
-            blk_org_y,
-            blk_geom->bwidth,
-            blk_geom->bheight,
-            NEIGHBOR_ARRAY_UNIT_FULL_MASK);
-
-#if ATB_MD
-        if (picture_control_set_ptr->parent_pcs_ptr->atb_mode) {
-            copy_neigh_arr(
-                picture_control_set_ptr->md_tx_depth_1_luma_recon_neighbor_array[src_idx],
-                picture_control_set_ptr->md_tx_depth_1_luma_recon_neighbor_array[dst_idx],
-                blk_org_x,
-                blk_org_y,
-                blk_geom->bwidth,
-                blk_geom->bheight,
-                NEIGHBOR_ARRAY_UNIT_FULL_MASK);
-        }
-#endif
-
-        if (blk_geom->has_uv && context_ptr->chroma_level <= CHROMA_MODE_1) {
-            //neighbor_array_unit_reset(picture_control_set_ptr->md_cb_recon_neighbor_array[depth]);
-
-            copy_neigh_arr(
-                picture_control_set_ptr->md_cb_recon_neighbor_array[src_idx],
-                picture_control_set_ptr->md_cb_recon_neighbor_array[dst_idx],
-                blk_org_x_uv,
-                blk_org_y_uv,
-                bwidth_uv,
-                bheight_uv,
-                NEIGHBOR_ARRAY_UNIT_FULL_MASK);
-
-            //neighbor_array_unit_reset(picture_control_set_ptr->md_cr_recon_neighbor_array[depth]);
-            copy_neigh_arr(
-                picture_control_set_ptr->md_cr_recon_neighbor_array[src_idx],
-                picture_control_set_ptr->md_cr_recon_neighbor_array[dst_idx],
-                blk_org_x_uv,
-                blk_org_y_uv,
-                bwidth_uv,
-                bheight_uv,
-                NEIGHBOR_ARRAY_UNIT_FULL_MASK);
-        }
-#if !REMOVE_SKIP_COEFF_NEIGHBOR_ARRAY
-        //neighbor_array_unit_reset(picture_control_set_ptr->md_skip_coeff_neighbor_array[depth]);
-        copy_neigh_arr(
-            picture_control_set_ptr->md_skip_coeff_neighbor_array[src_idx],
-            picture_control_set_ptr->md_skip_coeff_neighbor_array[dst_idx],
-            blk_org_x,
-            blk_org_y,
-            blk_geom->bwidth,
-            blk_geom->bheight,
-            NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-#endif
-        //neighbor_array_unit_reset(picture_control_set_ptr->md_luma_dc_sign_level_coeff_neighbor_array[depth]);
-        copy_neigh_arr(
-            picture_control_set_ptr->md_luma_dc_sign_level_coeff_neighbor_array[src_idx],
-            picture_control_set_ptr->md_luma_dc_sign_level_coeff_neighbor_array[dst_idx],
-            blk_org_x,
-            blk_org_y,
-            blk_geom->bwidth,
-            blk_geom->bheight,
-            NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-
-#if ATB_DC_CONTEXT_SUPPORT_2
-        copy_neigh_arr(
-            picture_control_set_ptr->md_tx_depth_1_luma_dc_sign_level_coeff_neighbor_array[src_idx],
-            picture_control_set_ptr->md_tx_depth_1_luma_dc_sign_level_coeff_neighbor_array[dst_idx],
-            blk_org_x,
-            blk_org_y,
-            blk_geom->bwidth,
-            blk_geom->bheight,
-            NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-#endif
-
-        if (blk_geom->has_uv && context_ptr->chroma_level <= CHROMA_MODE_1) {
-            copy_neigh_arr(
-                picture_control_set_ptr->md_cb_dc_sign_level_coeff_neighbor_array[src_idx],
-                picture_control_set_ptr->md_cb_dc_sign_level_coeff_neighbor_array[dst_idx],
-                blk_org_x_uv,
-                blk_org_y_uv,
-                bwidth_uv,
-                bheight_uv,
-                NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-            //neighbor_array_unit_reset(picture_control_set_ptr->md_cr_dc_sign_level_coeff_neighbor_array[depth]);
-
-            copy_neigh_arr(
-                picture_control_set_ptr->md_cr_dc_sign_level_coeff_neighbor_array[src_idx],
-                picture_control_set_ptr->md_cr_dc_sign_level_coeff_neighbor_array[dst_idx],
-                blk_org_x_uv,
-                blk_org_y_uv,
-                bwidth_uv,
-                bheight_uv,
-                NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-        }
-
-#if ATB_RATE
-        //neighbor_array_unit_reset(picture_control_set_ptr->md_txfm_context_array[depth]);
-        copy_neigh_arr(
-            picture_control_set_ptr->md_txfm_context_array[src_idx],
-            picture_control_set_ptr->md_txfm_context_array[dst_idx],
-            blk_org_x,
-            blk_org_y,
-            blk_geom->bwidth,
-            blk_geom->bheight,
-            NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-#endif
-        //neighbor_array_unit_reset(picture_control_set_ptr->md_inter_pred_dir_neighbor_array[depth]);
-        copy_neigh_arr(
-            picture_control_set_ptr->md_inter_pred_dir_neighbor_array[src_idx],
-            picture_control_set_ptr->md_inter_pred_dir_neighbor_array[dst_idx],
-            blk_org_x,
-            blk_org_y,
-            blk_geom->bwidth,
-            blk_geom->bheight,
-            NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-        //neighbor_array_unit_reset(picture_control_set_ptr->md_ref_frame_type_neighbor_array[depth]);
-        copy_neigh_arr(
-            picture_control_set_ptr->md_ref_frame_type_neighbor_array[src_idx],
-            picture_control_set_ptr->md_ref_frame_type_neighbor_array[dst_idx],
-            blk_org_x,
-            blk_org_y,
-            blk_geom->bwidth,
-            blk_geom->bheight,
-            NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-
-        copy_neigh_arr_32(
-            picture_control_set_ptr->md_interpolation_type_neighbor_array[src_idx],
-            picture_control_set_ptr->md_interpolation_type_neighbor_array[dst_idx],
-            blk_org_x,
-            blk_org_y,
-            blk_geom->bwidth,
-            blk_geom->bheight,
-            NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
-#endif
-    }
-#endif
     uint64_t mdc_av1_full_cost(
         ModeDecisionConfigurationContext     *context_ptr,
         uint64_t                             *y_distortion,
@@ -1890,20 +1296,6 @@ void mdc_update_neighbor_arrays(
             context_ptr->candidate_buffer->candidate_ptr = &context_ptr->fast_candidate_array[0];
             EbAsm asm_type = sequence_control_set_ptr->encode_context_ptr->asm_type;
             cu_ptr->best_d1_blk = blk_idx_mds;
-#if ADD_NEIGHBOR
-            if (leaf_data_ptr->tot_d1_blocks != 1) {
-                if (blk_geom->shape == PART_N) {
-                    mdc_copy_neighbour_arrays(
-                        picture_control_set_ptr,
-                        context_ptr,
-                        0,//src_idx,
-                        1,//dst_idx,
-                        blk_idx_mds,
-                        sb_originx,
-                        sb_originy);
-                }
-            }
-#endif
 #endif
             if (picture_control_set_ptr->slice_type != I_SLICE) {
                 uint32_t geom_offset_x = 0;
@@ -2156,9 +1548,7 @@ void mdc_update_neighbor_arrays(
 
                 context_ptr->candidate_buffer->candidate_ptr->tx_depth = 0;
                 context_ptr->spatial_sse_full_loop = 0;
-#if ADD_NEIGHBOR
-                context_ptr->mdc_luma_dc_sign_level_coeff_neighbor_array = picture_control_set_ptr->mdc_luma_dc_sign_level_coeff_neighbor_array[MD_NEIGHBOR_ARRAY_INDEX];
-#endif
+
                 mdc_full_loop(
                     context_ptr->candidate_buffer,
                     context_ptr,
@@ -2214,106 +1604,6 @@ void mdc_update_neighbor_arrays(
 
             }
 
-#if ADD_MDC_INTRA
-            // Check best Intra OIS Candidate
-#if FIX_CRASH
-            if (sequence_control_set_ptr->seq_header.sb_size == BLOCK_64X64 && sequence_control_set_ptr->sb_geom[sb_ptr->index].is_complete_sb && context_ptr->blk_geom->sq_size > 4 && context_ptr->blk_geom->sq_size < 128 && context_ptr->blk_geom->shape == PART_N) {
-#else
-            if (context_ptr->blk_geom->sq_size > 4 && context_ptr->blk_geom->sq_size < 128 && context_ptr->blk_geom->shape == PART_N) {
-#endif
-                context_ptr->mdc_cu_ptr->is_inter_ctx = 0;
-                context_ptr->mdc_cu_ptr->skip_flag_context = 0;
-                context_ptr->mdc_cu_ptr->inter_mode_ctx[context_ptr->mdc_candidate_ptr->ref_frame_type] = 0;
-                uint8_t         intra_candidate_counter;
-                uint8_t         intra_mode;
-                uint32_t        can_total_cnt = 0;
-                EbBool          disable_cfl_flag = EB_TRUE;// (MAX(context_ptr->blk_geom->bheight, context_ptr->blk_geom->bwidth) > 32) ? EB_TRUE : EB_FALSE;
-                OisSbResults    *ois_sb_results_ptr = picture_control_set_ptr->parent_pcs_ptr->ois_sb_results[sb_ptr->index];
-                OisCandidate    *ois_blk_ptr = ois_sb_results_ptr->ois_candidate_array[ep_to_pa_block_index[context_ptr->blk_geom->blkidx_mds]];
-                uint8_t          total_intra_luma_mode = MIN(3, ois_sb_results_ptr->total_ois_intra_candidate[ep_to_pa_block_index[context_ptr->blk_geom->blkidx_mds]]);
-                uint64_t temp_intra_cost = MAX_CU_COST;
-                uint64_t intra_cost = MAX_CU_COST;
-                for (intra_candidate_counter = 0; intra_candidate_counter < total_intra_luma_mode; ++intra_candidate_counter) {
-                    intra_mode = ois_blk_ptr[can_total_cnt].intra_mode;
-                    assert(intra_mode < INTRA_MODES);
-                    if (av1_is_directional_mode((PredictionMode)intra_mode)) {
-                        int32_t angle_delta = ois_blk_ptr[can_total_cnt].angle_delta;
-                        context_ptr->mdc_candidate_ptr->type = INTRA_MODE;
-                        context_ptr->mdc_candidate_ptr->intra_luma_mode = intra_mode;
-                        context_ptr->mdc_candidate_ptr->distortion_ready = 1;
-                        context_ptr->mdc_candidate_ptr->me_distortion = ois_blk_ptr[can_total_cnt].distortion;
-                        context_ptr->mdc_candidate_ptr->use_intrabc = 0;
-                        context_ptr->mdc_candidate_ptr->is_directional_mode_flag = (uint8_t)av1_is_directional_mode((PredictionMode)intra_mode);
-#if !SEARCH_UV_CLEAN_UP
-                        context_ptr->mdc_candidate_ptr->use_angle_delta = use_angle_delta ? context_ptr->mdc_candidate_ptr->is_directional_mode_flag : 0;
-#endif
-                        context_ptr->mdc_candidate_ptr->angle_delta[PLANE_TYPE_Y] = angle_delta;
-                        context_ptr->mdc_candidate_ptr->intra_chroma_mode = disable_cfl_flag ? intra_luma_to_chroma[intra_mode] : UV_CFL_PRED;
-
-                        context_ptr->mdc_candidate_ptr->cfl_alpha_signs = 0;
-                        context_ptr->mdc_candidate_ptr->cfl_alpha_idx = 0;
-                        context_ptr->mdc_candidate_ptr->is_directional_chroma_mode_flag = (uint8_t)av1_is_directional_mode((PredictionMode)context_ptr->mdc_candidate_ptr->intra_chroma_mode);
-                        context_ptr->mdc_candidate_ptr->angle_delta[PLANE_TYPE_UV] = 0;
-                        context_ptr->mdc_candidate_ptr->transform_type[0] = DCT_DCT;
-                        context_ptr->mdc_candidate_ptr->transform_type_uv = DCT_DCT;
-                        context_ptr->mdc_candidate_ptr->ref_frame_type = INTRA_FRAME;
-                        context_ptr->mdc_candidate_ptr->pred_mode = (PredictionMode)intra_mode;
-                        context_ptr->mdc_candidate_ptr->motion_mode = SIMPLE_TRANSLATION;
-
-                    }
-                    else {
-                        context_ptr->mdc_candidate_ptr->type = INTRA_MODE;
-                        context_ptr->mdc_candidate_ptr->intra_luma_mode = intra_mode;
-                        context_ptr->mdc_candidate_ptr->distortion_ready = 1;
-                        context_ptr->mdc_candidate_ptr->me_distortion = ois_blk_ptr[can_total_cnt].distortion;
-                        context_ptr->mdc_candidate_ptr->use_intrabc = 0;
-                        context_ptr->mdc_candidate_ptr->is_directional_mode_flag = (uint8_t)av1_is_directional_mode((PredictionMode)intra_mode);
-#if !SEARCH_UV_CLEAN_UP
-                        context_ptr->mdc_candidate_ptr->use_angle_delta = context_ptr->mdc_candidate_ptr->is_directional_mode_flag;
-#endif
-                        context_ptr->mdc_candidate_ptr->angle_delta[PLANE_TYPE_Y] = 0;
-                        context_ptr->mdc_candidate_ptr->intra_chroma_mode = disable_cfl_flag ? intra_luma_to_chroma[intra_mode] : UV_CFL_PRED;
-
-                        context_ptr->mdc_candidate_ptr->cfl_alpha_signs = 0;
-                        context_ptr->mdc_candidate_ptr->cfl_alpha_idx = 0;
-                        context_ptr->mdc_candidate_ptr->is_directional_chroma_mode_flag = (uint8_t)av1_is_directional_mode((PredictionMode)context_ptr->mdc_candidate_ptr->intra_chroma_mode);
-                        context_ptr->mdc_candidate_ptr->angle_delta[PLANE_TYPE_UV] = 0;
-                        context_ptr->mdc_candidate_ptr->transform_type[0] = DCT_DCT;
-                        context_ptr->mdc_candidate_ptr->transform_type_uv = DCT_DCT;
-                        context_ptr->mdc_candidate_ptr->ref_frame_type = INTRA_FRAME;
-                        context_ptr->mdc_candidate_ptr->pred_mode = (PredictionMode)intra_mode;
-                        context_ptr->mdc_candidate_ptr->motion_mode = SIMPLE_TRANSLATION;
-
-                    }
-                    // Fast Cost Calc
-                    temp_intra_cost = av1_intra_fast_cost(
-                        context_ptr->mdc_cu_ptr,
-                        context_ptr->mdc_candidate_ptr,
-                        context_ptr->qp,
-#if MD_INJECTION
-                        context_ptr->mdc_candidate_ptr->me_distortion,
-#else
-                        mePuResult->distortion_direction[0].distortion,
-#endif
-                        (uint64_t)0,
-                        context_ptr->lambda,
-                        0,
-                        picture_control_set_ptr,
-                        context_ptr->mdc_ref_mv_stack,
-                        blk_geom,
-                        (sb_originy + blk_geom->origin_y) >> MI_SIZE_LOG2,
-                        (sb_originx + blk_geom->origin_x) >> MI_SIZE_LOG2,
-                        0,
-                        DC_PRED,        // Hsan: neighbor not generated @ open loop partitioning
-                        DC_PRED);       // Hsan: neighbor not generated @ open loop partitioning
-
-                    if (temp_intra_cost < intra_cost)
-                        intra_cost = temp_intra_cost;
-                }
-                cu_ptr->early_cost = intra_cost;
-            }
-#endif
-
 
             //NADER - FORCE DEPTH
             /*SbParams *sb_params = &sequence_control_set_ptr->sb_params_array[sb_index];
@@ -2330,25 +1620,6 @@ void mdc_update_neighbor_arrays(
             }
 
             d1_blocks_accumlated = blk_geom->shape == PART_N ? 1 : d1_blocks_accumlated + 1;
-#if ADD_NEIGHBOR
-            if (blk_geom->shape != PART_N) {
-                if (blk_geom->nsi + 1 < blk_geom->totns)
-                    mdc_update_all_neighbour_arrays(
-                        picture_control_set_ptr,
-                        context_ptr,
-                        blk_idx_mds,
-                        sb_originx,
-                        sb_originy);
-                else
-                    mdc_copy_neighbour_arrays(      //restore [1] in [0] after done last ns block
-                        picture_control_set_ptr,
-                        context_ptr,
-                        1, 0,
-                        blk_geom->sqi_mds,
-                        sb_originx,
-                        sb_originy);
-            }
-#endif
 
             if (d1_blocks_accumlated == leaf_data_ptr->tot_d1_blocks)
             {
@@ -2405,18 +1676,6 @@ void mdc_update_neighbor_arrays(
                     sb_index);
                 if (last_cu_index)
                     last_cu_index = 0;
-#if ADD_NEIGHBOR
-                if (context_ptr->local_cu_array[last_cu_index].early_split_flag == EB_FALSE)
-                {
-                    mdc_update_all_neighbour_arrays_multiple(
-                        picture_control_set_ptr,
-                        context_ptr,
-                        context_ptr->local_cu_array[last_cu_index].best_d1_blk,
-                        sb_originx,
-                        sb_originy);
-                }
-#endif
-
             }
             cuIdx++;
             } while (cuIdx < leaf_count);// End of CU loop

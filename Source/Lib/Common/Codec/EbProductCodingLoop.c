@@ -6106,13 +6106,7 @@ void move_cu_data_redund(
     //CHKN    };
 
     dst_cu->leaf_index = src_cu->leaf_index;
-#if !RED_CU_BUG_FIX
-    dst_cu->split_flag = src_cu->split_flag;
-#endif
     dst_cu->skip_flag = src_cu->skip_flag;
-#if !RED_CU_BUG_FIX
-    dst_cu->mdc_split_flag = src_cu->mdc_split_flag;
-#endif
     dst_cu->tx_depth = src_cu->tx_depth;
     //CHKN    MacroBlockD*  av1xd;
     memcpy(dst_cu->av1xd, src_cu->av1xd, sizeof(MacroBlockD));
@@ -6187,9 +6181,6 @@ uint8_t shape_rank_th[NUMBER_OF_DEPTH] = { 10,10,10,10,10,10 }; // Range 0-10;  
 *   performs CL (LCU)
 *******************************************/
 EbBool allowed_ns_cu(
-#if NSQ_EARLY_EXIT
-    uint8_t                           skip_remaining_nsq[10],
-#endif
 #if NSQ_SUB_LEVEL
     uint8_t                            temporal_layer,
     uint8_t                            nsq_search_sub_level,
@@ -6203,12 +6194,7 @@ EbBool allowed_ns_cu(
     uint8_t                            is_complete_sb){
     EbBool  ret = 1;
     UNUSED(is_complete_sb);
-#if NSQ_EARLY_EXIT
-    if (skip_remaining_nsq[context_ptr->blk_geom->shape]) {
-        ret = 0;
-        return ret;
-    }
-#endif
+
 #if COMBINE_MDC_NSQ_TABLE
     if (is_nsq_table_used) {
         if (mdc_depth_level == MAX_MDC_LEVEL) {
@@ -6278,17 +6264,6 @@ EbBool allowed_ns_cu(
 #endif
     }
 #else
-#if MDC_ONLY
-    if (is_nsq_table_used) {
-        if (context_ptr->blk_geom->shape != PART_N) {
-            uint8_t depth = get_depth(context_ptr->blk_geom->sq_size);
-            uint8_t shape_rank_th_tab[6] = { 6,9,9,9,4,1 };
-            uint8_t shape_rank = context_ptr->open_loop_block_rank;
-            if (shape_rank > shape_rank_th_tab[depth])
-                ret = 0;
-        }
-    }
-#else
     if (is_nsq_table_used) {
         if (context_ptr->blk_geom->shape != PART_N) {
             ret = 0;
@@ -6298,7 +6273,6 @@ EbBool allowed_ns_cu(
             }
         }
     }
-#endif
 #endif
     return ret;
 }
@@ -7152,11 +7126,8 @@ uint8_t check_skip_sub_blks(
     uint8_t                           is_complete_sb,
     uint32_t                          sb_index) {
     uint8_t skip_sub_blocks = 0;
-#if ADP_BQ
-    if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_OPEN_LOOP_DEPTH_MODE || (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_SQ_DEPTH_MODE && picture_control_set_ptr->parent_pcs_ptr->sb_depth_mode_array[sb_index] >= SB_OPEN_LOOP_DEPTH_MODE))
-#else
+
     if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_OPEN_LOOP_DEPTH_MODE || (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_DEPTH_MODE && picture_control_set_ptr->parent_pcs_ptr->sb_depth_mode_array[sb_index] >= SB_OPEN_LOOP_DEPTH_MODE))
-#endif
         if (is_complete_sb)
             if ((context_ptr->md_local_cu_unit[cu_ptr->mds_idx].top_neighbor_depth == context_ptr->blk_geom->bsize) &&  (context_ptr->md_local_cu_unit[cu_ptr->mds_idx].left_neighbor_depth == context_ptr->blk_geom->bsize)) {
                 skip_sub_blocks = 1;
@@ -7435,9 +7406,6 @@ void md_encode_block(
     uint8_t                          open_loop_block_rank,
     uint8_t                          early_split_flag,
 #endif
-#if NSQ_EARLY_EXIT
-    uint8_t                           skip_remaining_nsq[10],
-#endif
     ModeDecisionCandidateBuffer    *bestcandidate_buffers[5])
 {
     ModeDecisionCandidateBuffer  **candidate_buffer_ptr_array_base = context_ptr->candidate_buffer_ptr_array;
@@ -7460,30 +7428,12 @@ void md_encode_block(
         context_ptr->ref_best_cost_sq_table[ref_idx] = MAX_CU_COST;
 
 #if PREDICT_NSQ_SHAPE
-#if MDC_ONLY
-    EbBool is_nsq_table_used = (picture_control_set_ptr->slice_type == !I_SLICE) ? EB_TRUE : EB_FALSE;
-#else
-#if ADP_BQ
-    // Derive is_nsq_table_used
-    EbBool is_nsq_table_used;
-    if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE)
-        is_nsq_table_used = (picture_control_set_ptr->parent_pcs_ptr->sb_depth_mode_array[lcuAddr] == SB_NSQ_LEVEL_6_DEPTH_MODE) ?
-        EB_FALSE :
-        EB_TRUE;
-    else
-        is_nsq_table_used = (picture_control_set_ptr->slice_type == !I_SLICE &&
-            picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE &&
-            picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
-            picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL &&
-            picture_control_set_ptr->enc_mode != ENC_M0) ? EB_TRUE : EB_FALSE;
-#else
     EbBool is_nsq_table_used = (picture_control_set_ptr->slice_type == !I_SLICE &&
         picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL) ? EB_TRUE : EB_FALSE;
     is_nsq_table_used = picture_control_set_ptr->parent_pcs_ptr->sc_content_detected ? EB_FALSE : is_nsq_table_used;
-#endif
-#endif
+
     context_ptr->open_loop_block_rank = open_loop_block_rank;
     context_ptr->early_split_flag = early_split_flag;
     context_ptr->nsq_mode_idx = picture_control_set_ptr->parent_pcs_ptr->sb_depth_mode_array[lcuAddr] - 1;
@@ -7510,25 +7460,11 @@ void md_encode_block(
     }
 #endif
 #else
-#if ADP_BQ
-    // Derive is_nsq_table_used
-    EbBool is_nsq_table_used;
-    if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE)
-        is_nsq_table_used = (picture_control_set_ptr->parent_pcs_ptr->sb_depth_mode_array[lcuAddr] == SB_NSQ_LEVEL_6_DEPTH_MODE) ?
-        EB_FALSE :
-        EB_TRUE;
-    else
-        is_nsq_table_used = (picture_control_set_ptr->slice_type == !I_SLICE &&
-            picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE &&
-            picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
-            picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL &&
-            picture_control_set_ptr->enc_mode != ENC_M0) ? EB_TRUE : EB_FALSE;
-#else
     EbBool is_nsq_table_used = (picture_control_set_ptr->slice_type == !I_SLICE &&
         picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL) ? EB_TRUE : EB_FALSE;
-#endif
+
     if (is_nsq_table_used) {
         if (context_ptr->blk_geom->shape == PART_N) {
             order_nsq_table(
@@ -7543,20 +7479,7 @@ void md_encode_block(
 
     uint8_t                            is_complete_sb = sequence_control_set_ptr->sb_geom[lcuAddr].is_complete_sb;
 
-#if ADP_BQ && !PREDICT_NSQ_SHAPE
-    uint8_t partitioning_to_nsq_max_shapes[SB_NSQ_LEVEL_0_DEPTH_MODE] = { 6,5,4,3,2,1,0 };
-    uint8_t nsq_max_shapes_md = (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE) ?
-        partitioning_to_nsq_max_shapes[picture_control_set_ptr->parent_pcs_ptr->sb_depth_mode_array[lcuAddr] - 1] :
-        (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_SQ_DEPTH_MODE) ?
-        NSQ_SEARCH_OFF :
-        picture_control_set_ptr->parent_pcs_ptr->nsq_max_shapes_md;
-
-    if (allowed_ns_cu(is_nsq_table_used, nsq_max_shapes_md, context_ptr, is_complete_sb))
-#else
     if (allowed_ns_cu(
-#if NSQ_EARLY_EXIT
-        skip_remaining_nsq,
-#endif
 #if NSQ_SUB_LEVEL
         picture_control_set_ptr->temporal_layer_index,
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_sub_level,
@@ -7565,7 +7488,6 @@ void md_encode_block(
         picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level,
 #endif
         is_nsq_table_used, picture_control_set_ptr->parent_pcs_ptr->nsq_max_shapes_md, context_ptr, is_complete_sb))
-#endif
     {
 
 #if SPEED_OPT
@@ -8054,11 +7976,7 @@ EB_EXTERN EbErrorType mode_decision_sb(
     context_ptr->coeff_based_skip_atb = 0;
 #endif
 
-#if ADP_BQ
-    EbBool all_cu_init = (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode <= PIC_SQ_DEPTH_MODE || picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE);
-#else
     EbBool all_cu_init = (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode <= PIC_SQ_DEPTH_MODE);
-#endif
 
     if (all_cu_init) {
         init_sq_nsq_block(
@@ -8099,12 +8017,6 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #if DEPTH_RANKING
     for (uint8_t depth_idx = 0;depth_idx < NUMBER_OF_DEPTH; depth_idx++)
         context_ptr->open_loop_depth_rank[depth_idx] = sb_ptr->depth_ranking[depth_idx];
-#endif
-#if NSQ_EARLY_EXIT
-    uint64_t md_nsq_cost[10] = { MAX_MODE_COST,MAX_MODE_COST,MAX_MODE_COST,
-                        MAX_MODE_COST,MAX_MODE_COST,MAX_MODE_COST,
-                        MAX_MODE_COST,MAX_MODE_COST,MAX_MODE_COST,MAX_MODE_COST };
-    uint8_t skip_remaining_nsq[10] = { 0 };
 #endif
 #if ADD_SUPPORT_TO_SKIP_PART_N
     uint32_t  d1_block_itr = 0;
@@ -8373,9 +8285,6 @@ EB_EXTERN EbErrorType mode_decision_sb(
                     open_loop_block_rank,
                     early_split_flag,
 #endif
-#if NSQ_EARLY_EXIT
-                    skip_remaining_nsq,
-#endif
                     bestcandidate_buffers);
 
             }
@@ -8414,9 +8323,6 @@ EB_EXTERN EbErrorType mode_decision_sb(
             uint32_t first_blk_idx = context_ptr->cu_ptr->mds_idx - (blk_geom->nsi);//index of first block in this partition
             for (int blk_it = 0; blk_it < blk_geom->nsi + 1; blk_it++)
                 tot_cost += context_ptr->md_local_cu_unit[first_blk_idx + blk_it].cost;
-#if NSQ_EARLY_EXIT
-            context_ptr->tot_cost = tot_cost;
-#endif
 #if SPEED_OPT
             if ((tot_cost + tot_cost * (blk_geom->totns - (blk_geom->nsi + 1))* context_ptr->md_exit_th / (blk_geom->nsi + 1) / 100) > context_ptr->md_local_cu_unit[context_ptr->blk_geom->sqi_mds].cost)
 #else
@@ -8424,29 +8330,7 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #endif
                 skip_next_nsq = 1;
         }
-#if NSQ_EARLY_EXIT // Needs to be updated to support the  skipping of PART_N
-        md_nsq_cost[blk_geom->shape] = context_ptr->tot_cost;
-        if (picture_control_set_ptr->slice_type != I_SLICE) {
-            uint64_t skip_th = 90;
-            if (blk_geom->shape == PART_V) {
-                if ((md_nsq_cost[PART_N] < ((md_nsq_cost[PART_H] * skip_th) / 100)) && (md_nsq_cost[PART_N] < ((md_nsq_cost[PART_V] * skip_th / 100)))) {
-                    for (uint8_t nsq_idx = 3; nsq_idx < 10; nsq_idx++) {
-                        skip_remaining_nsq[nsq_idx] = 1;
-                    }
-                }
-                else if ((md_nsq_cost[PART_H] < ((md_nsq_cost[PART_N] * skip_th) / 100)) && (md_nsq_cost[PART_H] < ((md_nsq_cost[PART_V] * skip_th / 100)))) {
-                    skip_remaining_nsq[PART_VA] = 1;
-                    skip_remaining_nsq[PART_VB] = 1;
-                    skip_remaining_nsq[PART_V4] = 1;
-                }
-                else if ((md_nsq_cost[PART_V] < ((md_nsq_cost[PART_N] * skip_th) / 100)) && (md_nsq_cost[PART_V] < ((md_nsq_cost[PART_H] * skip_th / 100)))) {
-                    skip_remaining_nsq[PART_HA] = 1;
-                    skip_remaining_nsq[PART_HB] = 1;
-                    skip_remaining_nsq[PART_H4] = 1;
-                }
-            }
-        }
-#endif
+
         if (blk_geom->shape != PART_N) {
             if (blk_geom->nsi + 1 < blk_geom->totns)
                 md_update_all_neighbour_arrays(
@@ -8486,13 +8370,6 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #if ADD_SUPPORT_TO_SKIP_PART_N
             d1_block_itr = 0;
             d1_first_block = 1;
-#endif
-#if NSQ_EARLY_EXIT
-            // Reset Early skip parameter for next block branch
-            for (uint8_t nsq_idx = 0; nsq_idx < 10; nsq_idx++) {
-                md_nsq_cost[nsq_idx] = MAX_MODE_COST;
-                skip_remaining_nsq[nsq_idx] = 0;
-            }
 #endif
             context_ptr->coeff_based_skip_atb = picture_control_set_ptr->parent_pcs_ptr->coeff_based_skip_atb && context_ptr->md_cu_arr_nsq[lastCuIndex_mds].block_has_coeff == 0 ? 1 : 0;
             if (context_ptr->md_cu_arr_nsq[lastCuIndex_mds].split_flag == EB_FALSE)
@@ -12095,59 +11972,63 @@ EB_EXTERN EbErrorType in_loop_motion_estimation_sblock(
     return return_error;
 }
 
-uint32_t spatial_full_distortion_helper(
+uint64_t spatial_full_distortion_helper(
     uint8_t  *input,
+    uint32_t input_offset,
     uint32_t  input_stride,
     uint8_t  *recon,
+    uint32_t recon_offset,
     uint32_t  recon_stride,
     uint32_t  area_width,
     uint32_t  area_height,
     uint8_t  choice) {
 
-    uint32_t sfd = 0;
+    uint64_t sfd = 0;
 
     switch (choice) {
     case 0:
-        sfd = spatial_full_distortion_kernel4x_n_sse2_intrin(input, input_stride, recon, recon_stride, area_width, area_height);break;
+        sfd = spatial_full_distortion_kernel4x_n_sse2_intrin(input, input_offset, input_stride, recon, recon_offset, recon_stride, area_width, area_height);break;
     case 1:
-        sfd = spatial_full_distortion_kernel8x_n_sse2_intrin(input, input_stride, recon, recon_stride, area_width, area_height);break;
+        sfd = spatial_full_distortion_kernel8x_n_sse2_intrin(input, input_offset, input_stride, recon, recon_offset, recon_stride, area_width, area_height);break;
     case 2:
-        sfd = spatial_full_distortion_kernel16x_n_sse2_intrin(input, input_stride, recon, recon_stride, area_width, area_height);break;
+        sfd = spatial_full_distortion_kernel16x_n_sse2_intrin(input, input_offset, input_stride, recon, recon_offset, recon_stride, area_width, area_height);break;
     case 3:
-        sfd = spatial_full_distortion_kernel32x_n_sse2_intrin(input, input_stride, recon, recon_stride, area_width, area_height);break;
+        sfd = spatial_full_distortion_kernel32x_n_sse2_intrin(input, input_offset, input_stride, recon, recon_offset, recon_stride, area_width, area_height);break;
     case 4:
-        sfd = spatial_full_distortion_kernel64x_n_sse2_intrin(input, input_stride, recon, recon_stride, area_width, area_height);break;
+        sfd = spatial_full_distortion_kernel64x_n_sse2_intrin(input, input_offset, input_stride, recon, recon_offset, recon_stride, area_width, area_height);break;
     case 5:
-        sfd = spatial_full_distortion_kernel128x_n_sse2_intrin(input, input_stride, recon, recon_stride, area_width, area_height);break;
+        sfd = spatial_full_distortion_kernel128x_n_sse2_intrin(input, input_offset, input_stride, recon, recon_offset, recon_stride, area_width, area_height);break;
     }
 
     return sfd;
 }
 
-uint32_t spatial_full_distortion_avx2_helper(
+uint64_t spatial_full_distortion_avx2_helper(
     uint8_t  *input,
+    uint32_t input_offset,
     uint32_t  input_stride,
     uint8_t  *recon,
+    uint32_t recon_offset,
     uint32_t  recon_stride,
     uint32_t  area_width,
     uint32_t  area_height,
     uint8_t  choice) {
 
-    uint32_t sfd = 0;
+    uint64_t sfd = 0;
 
     switch (choice) {
     case 0:
-        sfd = spatial_full_distortion_kernel4x_n_avx2_intrin(input, input_stride, recon, recon_stride, area_width, area_height);break;
+        sfd = spatial_full_distortion_kernel4x_n_avx2_intrin(input, input_offset, input_stride, recon, recon_offset, recon_stride, area_width, area_height);break;
     case 1:
-        sfd = spatial_full_distortion_kernel8x_n_avx2_intrin(input, input_stride, recon, recon_stride, area_width, area_height);break;
+        sfd = spatial_full_distortion_kernel8x_n_avx2_intrin(input, input_offset, input_stride, recon, recon_offset, recon_stride, area_width, area_height);break;
     case 2:
-        sfd = spatial_full_distortion_kernel16x_n_avx2_intrin(input, input_stride, recon, recon_stride, area_width, area_height);break;
+        sfd = spatial_full_distortion_kernel16x_n_avx2_intrin(input, input_offset, input_stride, recon, recon_offset, recon_stride, area_width, area_height);break;
     case 3:
-        sfd = spatial_full_distortion_kernel32x_n_avx2_intrin(input, input_stride, recon, recon_stride, area_width, area_height);break;
+        sfd = spatial_full_distortion_kernel32x_n_avx2_intrin(input, input_offset, input_stride, recon, recon_offset, recon_stride, area_width, area_height);break;
     case 4:
-        sfd = spatial_full_distortion_kernel64x_n_avx2_intrin(input, input_stride, recon, recon_stride, area_width, area_height);break;
+        sfd = spatial_full_distortion_kernel64x_n_avx2_intrin(input, input_offset, input_stride, recon, recon_offset, recon_stride, area_width, area_height);break;
     case 5:
-        sfd = spatial_full_distortion_kernel128x_n_avx2_intrin(input, input_stride, recon, recon_stride, area_width, area_height);break;
+        sfd = spatial_full_distortion_kernel128x_n_avx2_intrin(input, input_offset, input_stride, recon, recon_offset, recon_stride, area_width, area_height);break;
     }
 
     return sfd;

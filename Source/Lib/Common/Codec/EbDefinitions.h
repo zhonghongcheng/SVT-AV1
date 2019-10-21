@@ -155,19 +155,12 @@ enum {
 
 #define PAD_VALUE                                (128+32)
 
+/* Use open-loop data to predict the NSQ partitions. */
 #define PREDICT_NSQ_SHAPE                               1
 #if PREDICT_NSQ_SHAPE
-#define NSQ_MDC_L01                                     0
-#define EXTEND_NSQ_MDC_TO_M3                            0
-#define M3_MDC_LEVEL                                    2
-#define NEW_M3_NSQ_SETTING                              0
-#define ADD_MDC_INTRA                                   0
 #define DEPTH_RANKING                                   1
 #define NUMBER_OF_DEPTH                                 6
 #define NUMBER_OF_SHAPES                                10
-#define ADP_BQ                                          0 // Added the ability to perform ADP for best quality mode
-#define P_NSQ_NEW                                       0
-#define MDC_ONLY                                        0
 #define ADD_SAD_FOR_128X128                             1
 #define ADJUST_NSQ_RANK_BASED_ON_NEIGH                  1
 #define COMBINE_MDC_NSQ_TABLE                           1
@@ -176,23 +169,10 @@ enum {
 #define ADD_SUPPORT_TO_SKIP_PART_N                      1
 #define ADD_MDC_REFINEMENT_LOOP                         1
 #define ADD_MDC_FULL_COST                               1
-#define ADD_NEIGHBOR                                    0
-#define NSQ_EARLY_EXIT                                  0
-#define RED_CU_BUG_FIX                                  1
 #endif
-#define FIX_FRW_NUMBER_BLOCKS                           1
-#if COMBINE_MDC_NSQ_TABLE
 #define NSQ_TAB_SIZE                                    8
-#else
-#define NSQ_TAB_SIZE                                    6
-#endif
 #define MAX_MDC_LEVEL                                   8
 
-// Used by certain PREDICT_NSQ_SHAPE blocks
-#define M3_NSQ_MDC_CANDIDATE         0
-#define m2_ibc_graph                 0
-#define m3_ibc_graph                 0
-#define m3_nsq_l1                    0
 
 
 //  Delta QP support
@@ -2963,39 +2943,16 @@ typedef enum EbPictureDepthMode
     PIC_ALL_C_DEPTH_MODE        = 1, // ALL sq and nsq with control :  SB size -> 4x4
     PIC_SQ_DEPTH_MODE           = 2, // ALL sq:  SB size -> 4x4
     PIC_SQ_NON4_DEPTH_MODE      = 3, // SQ:  SB size -> 8x8
-#if ADP_BQ
-    PIC_SB_SWITCH_SQ_DEPTH_MODE = 5, // Adaptive Depth Partitioning SQ
-    PIC_SB_SWITCH_NSQ_DEPTH_MODE = 6,  // Adaptive Depth Partitioning NSQ
-#else
-    PIC_SB_SWITCH_DEPTH_MODE = 5,  // Adaptive Depth Partitioning
-#endif
-    PIC_OPEN_LOOP_DEPTH_MODE = 4, // Early Inter Depth Decision:  SB size -> 8x8
-   // PIC_SB_SWITCH_DEPTH_MODE = 5  // Adaptive Depth Partitioning
+    PIC_OPEN_LOOP_DEPTH_MODE    = 4, // Early Inter Depth Decision:  SB size -> 8x8
+    PIC_SB_SWITCH_DEPTH_MODE    = 5  // Adaptive Depth Partitioning
 } EbPictureDepthMode;
 
 #define EB_SB_DEPTH_MODE              uint8_t
-#if ADP_BQ
-// ADP for NSQ
-#define SB_NSQ_LEVEL_6_DEPTH_MODE           1
-#define SB_NSQ_LEVEL_5_DEPTH_MODE           2
-#define SB_NSQ_LEVEL_4_DEPTH_MODE           3
-#define SB_NSQ_LEVEL_3_DEPTH_MODE           4
-#define SB_NSQ_LEVEL_2_DEPTH_MODE           5
-#define SB_NSQ_LEVEL_1_DEPTH_MODE           6
-#define SB_NSQ_LEVEL_0_DEPTH_MODE           7
-// ADP for SQ
 #define SB_SQ_BLOCKS_DEPTH_MODE             1
 #define SB_SQ_NON4_BLOCKS_DEPTH_MODE        2
 #define SB_OPEN_LOOP_DEPTH_MODE             3
 #define SB_FAST_OPEN_LOOP_DEPTH_MODE        4
 #define SB_PRED_OPEN_LOOP_DEPTH_MODE        5
-#else
-#define SB_SQ_BLOCKS_DEPTH_MODE             1
-#define SB_SQ_NON4_BLOCKS_DEPTH_MODE        2
-#define SB_OPEN_LOOP_DEPTH_MODE             3
-#define SB_FAST_OPEN_LOOP_DEPTH_MODE        4
-#define SB_PRED_OPEN_LOOP_DEPTH_MODE        5
-#endif
 
 typedef enum EbIntrA4x4SearchMethod
 {

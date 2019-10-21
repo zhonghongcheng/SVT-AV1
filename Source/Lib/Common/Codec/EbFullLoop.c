@@ -3028,9 +3028,6 @@ void  d1_non_square_block_decision(
 
         tot_cost += split_cost;
     }
-#if NSQ_EARLY_EXIT
-    context_ptr->tot_cost = tot_cost;
-#endif
     if (merge_block_cnt == context_ptr->blk_geom->totns) merge_block_flag = EB_TRUE;
 #if ADD_SUPPORT_TO_SKIP_PART_N
     if (d1_block_itr == 0 || (tot_cost < context_ptr->md_local_cu_unit[context_ptr->blk_geom->sqi_mds].cost && merge_block_flag == EB_FALSE))

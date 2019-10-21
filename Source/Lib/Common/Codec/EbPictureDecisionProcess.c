@@ -819,76 +819,32 @@ EbErrorType signal_derivation_multi_processes_oq(
                     picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
             else
                 picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
-        else
 
-            if (picture_control_set_ptr->enc_mode <= ENC_M1)
+        else if (picture_control_set_ptr->enc_mode <= ENC_M1)
                 picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
-#if EXTEND_NSQ_MDC_TO_M3
-            else if (picture_control_set_ptr->enc_mode <= ENC_M3)
-#else
-#if M3_NSQ_MDC_CANDIDATE
-            else if (picture_control_set_ptr->enc_mode <= ENC_M3)
-#else
-            else if (picture_control_set_ptr->enc_mode <= ENC_M2)
-#endif
-#endif
-#if ADP_BQ
-                if (picture_control_set_ptr->slice_type == I_SLICE)
-                    picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
-                else
-                    picture_control_set_ptr->pic_depth_mode = PIC_SB_SWITCH_NSQ_DEPTH_MODE;
-#elif     m2_ibc_graph
-                if (picture_control_set_ptr->temporal_layer_index == 0)
 
-                    picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
-                else
-                    picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
-#else
-
+        else if (picture_control_set_ptr->enc_mode <= ENC_M2)
                 if (picture_control_set_ptr->slice_type == I_SLICE)
                     picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
                 else
                     picture_control_set_ptr->pic_depth_mode = PIC_ALL_C_DEPTH_MODE;
-#endif
-// Only recheck M3 if hasn't been done above
-#if !m3_ibc_graph && !M3_NSQ_MDC_CANDIDATE && !EXTEND_NSQ_MDC_TO_M3 && (!EXTEND_NSQ_MDC_TO_M3 && !M3_NSQ_MDC_CANDIDATE)
-            else if (picture_control_set_ptr->enc_mode <= ENC_M3)
-#if NSQ_MDC_L01
-                if (picture_control_set_ptr->temporal_layer_index == 0)
-                    picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
-                else
-                    picture_control_set_ptr->pic_depth_mode = PIC_SQ_DEPTH_MODE;
-#elif  m3_nsq_l1
-                if (picture_control_set_ptr->temporal_layer_index == 0)
+        else if (picture_control_set_ptr->enc_mode <= ENC_M3)
+            picture_control_set_ptr->pic_depth_mode = PIC_SQ_DEPTH_MODE;
 
-                    picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
-                else
-                    picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
-
-#else
-                picture_control_set_ptr->pic_depth_mode = PIC_SQ_DEPTH_MODE;
-#endif
-#endif
-         else if (picture_control_set_ptr->enc_mode <= ENC_M5)
+        else if (picture_control_set_ptr->enc_mode <= ENC_M5)
             picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
-         else
+
+        else
             if (picture_control_set_ptr->slice_type == I_SLICE)
                 picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
             else
-#if ADP_BQ
-                picture_control_set_ptr->pic_depth_mode = PIC_SB_SWITCH_SQ_DEPTH_MODE;
-#else
                 picture_control_set_ptr->pic_depth_mode = PIC_SB_SWITCH_DEPTH_MODE;
-#endif
+
 
         if (picture_control_set_ptr->pic_depth_mode < PIC_SQ_DEPTH_MODE)
             assert(sequence_control_set_ptr->nsq_present == 1 && "use nsq_present 1");
 
-#if ADP_BQ
-        picture_control_set_ptr->max_number_of_pus_per_sb = (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE || picture_control_set_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE) ? MAX_ME_PU_COUNT : SQUARE_PU_COUNT;
-#else
         picture_control_set_ptr->max_number_of_pus_per_sb = (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE) ? MAX_ME_PU_COUNT : SQUARE_PU_COUNT;
-#endif
 
 #if PREDICT_NSQ_SHAPE
     // Depth Level                           Settings
@@ -904,32 +860,14 @@ EbErrorType signal_derivation_multi_processes_oq(
         picture_control_set_ptr->mdc_depth_level = MAX_MDC_LEVEL;
     else if (picture_control_set_ptr->enc_mode == ENC_M0)
         picture_control_set_ptr->mdc_depth_level = (sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER) ? MAX_MDC_LEVEL : 6;
-#if m2_ibc_graph
-    else if (picture_control_set_ptr->enc_mode <= ENC_M1)
-#else
-    else if (picture_control_set_ptr->enc_mode <= ENC_M2)
-#endif
-        picture_control_set_ptr->mdc_depth_level = 5;
-#if M3_NSQ_MDC_CANDIDATE
-    else if (picture_control_set_ptr->enc_mode <= ENC_M3)
 
-        picture_control_set_ptr->mdc_depth_level = 2;
-#endif
-#if EXTEND_NSQ_MDC_TO_M3
-    else if (picture_control_set_ptr->enc_mode <= ENC_M3)
-        picture_control_set_ptr->mdc_depth_level = (sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER) ? (M3_MDC_LEVEL - 1) : M3_MDC_LEVEL;
-#endif
+    else if (picture_control_set_ptr->enc_mode <= ENC_M2)
+        picture_control_set_ptr->mdc_depth_level = 5;
+
     else
         picture_control_set_ptr->mdc_depth_level = MAX_MDC_LEVEL; // Not tuned yet.
 #endif
-#if ADP_BQ
-    // Set nsq_search_level and nsq_max_shapes_md to invalid if ADP
-    if (picture_control_set_ptr->pic_depth_mode == PIC_SB_SWITCH_SQ_DEPTH_MODE || picture_control_set_ptr->pic_depth_mode == PIC_SB_SWITCH_NSQ_DEPTH_MODE) {
-        picture_control_set_ptr->nsq_search_level = ~0;
-        picture_control_set_ptr->nsq_max_shapes_md = ~0;
-    }
-    else {
-#endif
+
     // NSQ search Level                               Settings
     // NSQ_SEARCH_OFF                                 OFF
     // NSQ_SEARCH_LEVEL1                              Allow only NSQ Inter-NEAREST/NEAR/GLOBAL if parent SQ has no coeff + reordering nsq_table number and testing only 1 NSQ SHAPE
@@ -967,43 +905,13 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
         else if (picture_control_set_ptr->enc_mode <= ENC_M1)
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL6;
-#if EXTEND_NSQ_MDC_TO_M3
-        else if (picture_control_set_ptr->enc_mode <= ENC_M3)
-#else
+
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
-#endif
-#if NEW_M3_NSQ_SETTING
-        if (picture_control_set_ptr->is_used_as_reference_flag)
-            picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL4;
-        else
-            picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL1;
-#elif m2_ibc_graph
-        if (picture_control_set_ptr->temporal_layer_index == 0)
-
-            picture_control_set_ptr->pic_depth_mode = NSQ_SEARCH_LEVEL1;
-        else
-            picture_control_set_ptr->pic_depth_mode = NSQ_SEARCH_OFF;
-#else
-
-        if (picture_control_set_ptr->is_used_as_reference_flag)
-            picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL5;
-        else
-            picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL2;
-// Only check M3 if haven't already
-#if NSQ_MDC_L01 && !EXTEND_NSQ_MDC_TO_M3
-        else if (picture_control_set_ptr->enc_mode <= ENC_M3)
-            if (picture_control_set_ptr->temporal_layer_index == 0)
+            if (picture_control_set_ptr->is_used_as_reference_flag)
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL5;
             else
-                picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
-#elif M3_NSQ_MDC_CANDIDATE && !EXTEND_NSQ_MDC_TO_M3
-        else if (picture_control_set_ptr->enc_mode <= ENC_M3)
-            if (picture_control_set_ptr->is_used_as_reference_flag)
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL2;
-            else
-                picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL1;
-#endif
-#endif
+
         else
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
 
@@ -1047,9 +955,7 @@ EbErrorType signal_derivation_multi_processes_oq(
         if (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE) picture_control_set_ptr->pic_depth_mode = PIC_SQ_DEPTH_MODE;
     if (picture_control_set_ptr->pic_depth_mode > PIC_SQ_DEPTH_MODE)
         assert(picture_control_set_ptr->nsq_search_level == NSQ_SEARCH_OFF);
-#if ADP_BQ
-    }
-#endif
+
 #if NSQ_SUB_LEVEL
     // NSQ search sub Level                           Settings
     // Feature off                                    OFF
@@ -1059,14 +965,8 @@ EbErrorType signal_derivation_multi_processes_oq(
     // NSQ_LEVEL, Otherwise.
     // NSQ_SEARCH_SUB_LEVEL2                          // NSQ LEVEL at ref
     // NSQ Off for 8x8/16x16 at non-ref
-#if NSQ_MDC_L01
-    if (picture_control_set_ptr->nsq_search_level != NSQ_SEARCH_OFF)
-        picture_control_set_ptr->nsq_search_sub_level = (picture_control_set_ptr->enc_mode == ENC_M3) ? NSQ_SEARCH_SUB_LEVEL1 : NO_SUB_LEVEL;
-    else
-        picture_control_set_ptr->nsq_search_sub_level = NO_SUB_LEVEL;
-#else
+
     picture_control_set_ptr->nsq_search_sub_level = NO_SUB_LEVEL;
-#endif
 #endif
 
     // Interpolation search Level                     Settings
