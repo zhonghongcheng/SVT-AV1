@@ -4129,53 +4129,52 @@ void  inject_inter_candidates(
 #if II_COMP_FLAG && !FIX_COMPOUND
     BlockSize bsize = context_ptr->blk_geom->bsize;                       // bloc size
 #endif
-
-uint32_t mi_row = context_ptr->cu_origin_y >> MI_SIZE_LOG2;
-uint32_t mi_col = context_ptr->cu_origin_x >> MI_SIZE_LOG2;
-eb_av1_count_overlappable_neighbors(
-picture_control_set_ptr,
-context_ptr->cu_ptr,
-context_ptr->blk_geom->bsize,
-mi_row,
-mi_col);
+    uint32_t mi_row = context_ptr->cu_origin_y >> MI_SIZE_LOG2;
+    uint32_t mi_col = context_ptr->cu_origin_x >> MI_SIZE_LOG2;
+    eb_av1_count_overlappable_neighbors(
+        picture_control_set_ptr,
+        context_ptr->cu_ptr,
+        context_ptr->blk_geom->bsize,
+        mi_row,
+        mi_col);
 #if OBMC_FLAG
-uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, context_ptr->blk_geom->bsize, LAST_FRAME, -1, NEWMV) == OBMC_CAUSAL;
-if (is_obmc_allowed)
-precompute_obmc_data(
-    picture_control_set_ptr,
-    context_ptr);
+    uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, context_ptr->blk_geom->bsize, LAST_FRAME, -1, NEWMV) == OBMC_CAUSAL;
+    if (is_obmc_allowed)
+        precompute_obmc_data(
+            picture_control_set_ptr,
+            context_ptr);
 #endif
-/**************
-    MVP
-************* */
+    /**************
+         MVP
+    ************* */
 
-uint32_t refIt;
-//all of ref pairs: (1)single-ref List0  (2)single-ref List1  (3)compound Bi-Dir List0-List1  (4)compound Uni-Dir List0-List0  (5)compound Uni-Dir List1-List1
-for (refIt = 0; refIt < picture_control_set_ptr->parent_pcs_ptr->tot_ref_frame_types; ++refIt) {
-MvReferenceFrame ref_frame_pair = picture_control_set_ptr->parent_pcs_ptr->ref_frame_type_arr[refIt];
-inject_mvp_candidates_II(
-    context_ptr,
-    picture_control_set_ptr,
-    context_ptr->cu_ptr,
-    ref_frame_pair,
-    &canTotalCnt);
-}
-
-//----------------------
-//    NEAREST_NEWMV, NEW_NEARESTMV, NEAR_NEWMV, NEW_NEARMV.
-//----------------------
-if (context_ptr->new_nearest_near_comb_injection) {
-EbBool allow_compound = (frm_hdr->reference_mode == SINGLE_REFERENCE || context_ptr->blk_geom->bwidth == 4 || context_ptr->blk_geom->bheight == 4) ? EB_FALSE : EB_TRUE;
-if (allow_compound) {
+    uint32_t refIt;
     //all of ref pairs: (1)single-ref List0  (2)single-ref List1  (3)compound Bi-Dir List0-List1  (4)compound Uni-Dir List0-List0  (5)compound Uni-Dir List1-List1
     for (refIt = 0; refIt < picture_control_set_ptr->parent_pcs_ptr->tot_ref_frame_types; ++refIt) {
         MvReferenceFrame ref_frame_pair = picture_control_set_ptr->parent_pcs_ptr->ref_frame_type_arr[refIt];
-        inject_new_nearest_new_comb_candidates(
-            sequence_control_set_ptr,
+        inject_mvp_candidates_II(
             context_ptr,
             picture_control_set_ptr,
+            context_ptr->cu_ptr,
             ref_frame_pair,
             &canTotalCnt);
+    }
+
+    //----------------------
+    //    NEAREST_NEWMV, NEW_NEARESTMV, NEAR_NEWMV, NEW_NEARMV.
+    //----------------------
+    if (context_ptr->new_nearest_near_comb_injection) {
+        EbBool allow_compound = (frm_hdr->reference_mode == SINGLE_REFERENCE || context_ptr->blk_geom->bwidth == 4 || context_ptr->blk_geom->bheight == 4) ? EB_FALSE : EB_TRUE;
+        if (allow_compound) {
+            //all of ref pairs: (1)single-ref List0  (2)single-ref List1  (3)compound Bi-Dir List0-List1  (4)compound Uni-Dir List0-List0  (5)compound Uni-Dir List1-List1
+            for (refIt = 0; refIt < picture_control_set_ptr->parent_pcs_ptr->tot_ref_frame_types; ++refIt) {
+                MvReferenceFrame ref_frame_pair = picture_control_set_ptr->parent_pcs_ptr->ref_frame_type_arr[refIt];
+                inject_new_nearest_new_comb_candidates(
+                    sequence_control_set_ptr,
+                    context_ptr,
+                    picture_control_set_ptr,
+                    ref_frame_pair,
+                    &canTotalCnt);
             }
         }
     }
@@ -4248,23 +4247,23 @@ if (allow_compound) {
 
     if (context_ptr->global_mv_injection) {
         /**************
-            GLOBALMV L0
+         GLOBALMV L0
         ************* */
         {
             int16_t to_inject_mv_x = (int16_t)(picture_control_set_ptr->parent_pcs_ptr->global_motion[LAST_FRAME].wmmat[1] >> GM_TRANS_ONLY_PREC_DIFF);
             int16_t to_inject_mv_y = (int16_t)(picture_control_set_ptr->parent_pcs_ptr->global_motion[LAST_FRAME].wmmat[0] >> GM_TRANS_ONLY_PREC_DIFF);
             uint8_t to_inject_ref_type = svt_get_ref_frame_type(REF_LIST_0, 0/*list0_ref_index*/);
             inj_mv = context_ptr->injected_mv_count_l0 == 0 || mrp_is_already_injected_mv_l0(context_ptr, to_inject_mv_x, to_inject_mv_y, to_inject_ref_type) == EB_FALSE;
-            if (umv0tile)
+            if(umv0tile)
                 inside_tile = is_inside_tile_boundary(&(xd->tile), to_inject_mv_x, to_inject_mv_y, mi_col, mi_row, context_ptr->blk_geom->bsize);
             inj_mv = inj_mv && inside_tile;
             if (inj_mv) {
 
 
 #if II_COMP_FLAG      // GLOBALMV L0
-            MvReferenceFrame rf[2];
-            rf[0] = to_inject_ref_type;
-            rf[1] = -1;
+             MvReferenceFrame rf[2];
+             rf[0] = to_inject_ref_type;
+             rf[1] = -1;
 
             uint8_t inter_type;
             uint8_t is_ii_allowed = svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, GLOBALMV, rf);
@@ -4305,72 +4304,72 @@ if (allow_compound) {
                 candidateArray[canTotalCnt].motion_vector_yl0 = to_inject_mv_y;
 
 #if II_COMP_FLAG
-                if (inter_type == 0) {
-                    candidateArray[canTotalCnt].is_interintra_used = 0;
-                    candidateArray[canTotalCnt].motion_mode = SIMPLE_TRANSLATION;
-                }
-                else {
-                    if (is_ii_allowed) {
-                        if (inter_type == 1) {
-                            inter_intra_search(
-                                picture_control_set_ptr,
-                                context_ptr,
-                                &candidateArray[canTotalCnt]);
-                            candidateArray[canTotalCnt].is_interintra_used = 1;
-                            candidateArray[canTotalCnt].use_wedge_interintra = 1;
-                            candidateArray[canTotalCnt].ii_wedge_sign = 0;
-                        }
-                        else if (inter_type == 2) {
-                            candidateArray[canTotalCnt].is_interintra_used = 1;
-                            candidateArray[canTotalCnt].interintra_mode = candidateArray[canTotalCnt - 1].interintra_mode;
-                            candidateArray[canTotalCnt].use_wedge_interintra = 0;
-                        }
+            if (inter_type == 0) {
+                candidateArray[canTotalCnt].is_interintra_used = 0;
+                candidateArray[canTotalCnt].motion_mode = SIMPLE_TRANSLATION;
+            }
+            else {
+                if (is_ii_allowed) {
+                    if (inter_type == 1) {
+                        inter_intra_search(
+                            picture_control_set_ptr,
+                            context_ptr,
+                            &candidateArray[canTotalCnt]);
+                        candidateArray[canTotalCnt].is_interintra_used = 1;
+                        candidateArray[canTotalCnt].use_wedge_interintra = 1;
+                        candidateArray[canTotalCnt].ii_wedge_sign = 0;
                     }
-                    //if (is_obmc_allowed && inter_type == tot_inter_types - 1) {
-                    //    candidateArray[canTotalCnt].is_interintra_used = 0;
-                    //    candidateArray[canTotalCnt].motion_mode = OBMC_CAUSAL;
-                    //}
+                    else if (inter_type == 2) {
+                        candidateArray[canTotalCnt].is_interintra_used = 1;
+                        candidateArray[canTotalCnt].interintra_mode = candidateArray[canTotalCnt - 1].interintra_mode;
+                        candidateArray[canTotalCnt].use_wedge_interintra = 0;
+                    }
                 }
+                //if (is_obmc_allowed && inter_type == tot_inter_types - 1) {
+                //    candidateArray[canTotalCnt].is_interintra_used = 0;
+                //    candidateArray[canTotalCnt].motion_mode = OBMC_CAUSAL;
+                //}
+            }
 #endif
-                 INCRMENT_CAND_TOTAL_COUNT(canTotalCnt);
+                INCRMENT_CAND_TOTAL_COUNT(canTotalCnt);
 
 #if II_COMP_FLAG
             }
 #endif
-            context_ptr->injected_mv_x_l0_array[context_ptr->injected_mv_count_l0] = to_inject_mv_x;
-            context_ptr->injected_mv_y_l0_array[context_ptr->injected_mv_count_l0] = to_inject_mv_y;
-            context_ptr->injected_ref_type_l0_array[context_ptr->injected_mv_count_l0] = to_inject_ref_type;
-            ++context_ptr->injected_mv_count_l0;
-        }
-    }
+                context_ptr->injected_mv_x_l0_array[context_ptr->injected_mv_count_l0] = to_inject_mv_x;
+                context_ptr->injected_mv_y_l0_array[context_ptr->injected_mv_count_l0] = to_inject_mv_y;
+                context_ptr->injected_ref_type_l0_array[context_ptr->injected_mv_count_l0] = to_inject_ref_type;
+                ++context_ptr->injected_mv_count_l0;
+            }
+            }
 
-    if (isCompoundEnabled && allow_bipred) {
-        /**************
-        GLOBAL_GLOBALMV
-        ************* */
+        if (isCompoundEnabled && allow_bipred) {
+            /**************
+            GLOBAL_GLOBALMV
+            ************* */
 
-        int16_t to_inject_mv_x_l0 = (int16_t)(picture_control_set_ptr->parent_pcs_ptr->global_motion[LAST_FRAME].wmmat[1] >> GM_TRANS_ONLY_PREC_DIFF);
-        int16_t to_inject_mv_y_l0 = (int16_t)(picture_control_set_ptr->parent_pcs_ptr->global_motion[LAST_FRAME].wmmat[0] >> GM_TRANS_ONLY_PREC_DIFF);
-        int16_t to_inject_mv_x_l1 = (int16_t)(picture_control_set_ptr->parent_pcs_ptr->global_motion[BWDREF_FRAME].wmmat[1] >> GM_TRANS_ONLY_PREC_DIFF);
-        int16_t to_inject_mv_y_l1 = (int16_t)(picture_control_set_ptr->parent_pcs_ptr->global_motion[BWDREF_FRAME].wmmat[0] >> GM_TRANS_ONLY_PREC_DIFF);
-        MvReferenceFrame rf[2];
-        rf[0] = svt_get_ref_frame_type(REF_LIST_0, 0/*list0_ref_index*/);
-        rf[1] = svt_get_ref_frame_type(REF_LIST_1, 0/*list1_ref_index*/);
-        uint8_t to_inject_ref_type = av1_ref_frame_type(rf);
-        inside_tile = 1;
-        if (umv0tile) {
-            inside_tile = is_inside_tile_boundary(&(xd->tile), to_inject_mv_x_l0, to_inject_mv_y_l1, mi_col, mi_row, context_ptr->blk_geom->bsize) &&
-                is_inside_tile_boundary(&(xd->tile), to_inject_mv_x_l0, to_inject_mv_y_l1, mi_col, mi_row, context_ptr->blk_geom->bsize);
-        }
-        if (inside_tile && (context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, to_inject_ref_type) == EB_FALSE)) {
-            context_ptr->variance_ready = 0;
-            for (cur_type = MD_COMP_AVG; cur_type <= tot_comp_types; cur_type++)
-            {
-                if (cur_type == MD_COMP_WEDGE && wedge_params_lookup[context_ptr->blk_geom->bsize].bits == 0) continue;
-                // If two predictors are very similar, skip wedge compound mode search
-                if (context_ptr->variance_ready)
-                    if (context_ptr->prediction_mse < 8 || (!have_newmv_in_inter_mode(GLOBAL_GLOBALMV) && context_ptr->prediction_mse < 64))
-                        continue;
+            int16_t to_inject_mv_x_l0 = (int16_t)(picture_control_set_ptr->parent_pcs_ptr->global_motion[LAST_FRAME].wmmat[1] >> GM_TRANS_ONLY_PREC_DIFF);
+            int16_t to_inject_mv_y_l0 = (int16_t)(picture_control_set_ptr->parent_pcs_ptr->global_motion[LAST_FRAME].wmmat[0] >> GM_TRANS_ONLY_PREC_DIFF);
+            int16_t to_inject_mv_x_l1 = (int16_t)(picture_control_set_ptr->parent_pcs_ptr->global_motion[BWDREF_FRAME].wmmat[1] >> GM_TRANS_ONLY_PREC_DIFF);
+            int16_t to_inject_mv_y_l1 = (int16_t)(picture_control_set_ptr->parent_pcs_ptr->global_motion[BWDREF_FRAME].wmmat[0] >> GM_TRANS_ONLY_PREC_DIFF);
+            MvReferenceFrame rf[2];
+            rf[0] = svt_get_ref_frame_type(REF_LIST_0, 0/*list0_ref_index*/);
+            rf[1] = svt_get_ref_frame_type(REF_LIST_1, 0/*list1_ref_index*/);
+            uint8_t to_inject_ref_type = av1_ref_frame_type(rf);
+            inside_tile = 1;
+            if(umv0tile) {
+                inside_tile = is_inside_tile_boundary(&(xd->tile), to_inject_mv_x_l0, to_inject_mv_y_l1, mi_col, mi_row, context_ptr->blk_geom->bsize) &&
+                              is_inside_tile_boundary(&(xd->tile), to_inject_mv_x_l0, to_inject_mv_y_l1, mi_col, mi_row, context_ptr->blk_geom->bsize);
+            }
+            if (inside_tile && (context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, to_inject_ref_type) == EB_FALSE)) {
+                context_ptr->variance_ready = 0;
+                for (cur_type = MD_COMP_AVG; cur_type <= tot_comp_types; cur_type++)
+                {
+                    if (cur_type == MD_COMP_WEDGE && wedge_params_lookup[context_ptr->blk_geom->bsize].bits == 0) continue;
+                    // If two predictors are very similar, skip wedge compound mode search
+                    if (context_ptr->variance_ready)
+                        if (context_ptr->prediction_mse < 8 || (!have_newmv_in_inter_mode(GLOBAL_GLOBALMV) && context_ptr->prediction_mse < 64))
+                            continue;
                 candidateArray[canTotalCnt].type = INTER_MODE;
                 candidateArray[canTotalCnt].distortion_ready = 0;
                 candidateArray[canTotalCnt].use_intrabc = 0;
@@ -4423,26 +4422,26 @@ if (allow_compound) {
             }
         }
 
-// Warped Motion
-if (frm_hdr->allow_warped_motion &&
-    has_overlappable_candidates(context_ptr->cu_ptr) &&
-    context_ptr->blk_geom->bwidth >= 8 &&
-    context_ptr->blk_geom->bheight >= 8 &&
-    context_ptr->warped_motion_injection) {
-    inject_warped_motion_candidates(
-        picture_control_set_ptr,
-        context_ptr,
-        context_ptr->cu_ptr,
-        &canTotalCnt,
-        ss_mecontext,
-        me_results,
-        use_close_loop_me,
-        close_loop_me_index);
-}
+    // Warped Motion
+    if (frm_hdr->allow_warped_motion &&
+        has_overlappable_candidates(context_ptr->cu_ptr) &&
+        context_ptr->blk_geom->bwidth >= 8 &&
+        context_ptr->blk_geom->bheight >= 8 &&
+        context_ptr->warped_motion_injection) {
+        inject_warped_motion_candidates(
+            picture_control_set_ptr,
+            context_ptr,
+            context_ptr->cu_ptr,
+            &canTotalCnt,
+            ss_mecontext,
+            me_results,
+            use_close_loop_me,
+            close_loop_me_index);
+    }
 
-if (inject_newmv_candidate) {
-    if (isCompoundEnabled) {
-        if (allow_bipred) {
+    if (inject_newmv_candidate) {
+        if (isCompoundEnabled) {
+            if (allow_bipred) {
 
             //----------------------
             // Bipred2Nx2N
@@ -4481,42 +4480,42 @@ if (inject_newmv_candidate) {
         }
 
 #if EIGTH_PEL_MV && !EIGHT_PEL_PREDICTIVE_ME
-//----------------------
-// Eighth-pel refinement
-//----------------------
-if (inject_newmv_candidate && picture_control_set_ptr->parent_pcs_ptr->allow_high_precision_mv) {
-    if (allow_bipred) {
         //----------------------
-        // Inject eight-pel bi-pred
+        // Eighth-pel refinement
         //----------------------
-        if (context_ptr->bipred3x3_injection > 0)
-            if (picture_control_set_ptr->slice_type == B_SLICE)
-                eighth_pel_bipred_refinement(
-                    sequence_control_set_ptr,
-                    picture_control_set_ptr,
-                    context_ptr,
-                    me_sb_addr,
-                    ss_mecontext,
-                    use_close_loop_me,
-                    close_loop_me_index,
-                    &canTotalCnt);
+        if (inject_newmv_candidate && picture_control_set_ptr->parent_pcs_ptr->allow_high_precision_mv) {
+            if (allow_bipred) {
+                //----------------------
+                // Inject eight-pel bi-pred
+                //----------------------
+                if (context_ptr->bipred3x3_injection > 0)
+                    if (picture_control_set_ptr->slice_type == B_SLICE)
+                        eighth_pel_bipred_refinement(
+                            sequence_control_set_ptr,
+                            picture_control_set_ptr,
+                            context_ptr,
+                            me_sb_addr,
+                            ss_mecontext,
+                            use_close_loop_me,
+                            close_loop_me_index,
+                            &canTotalCnt);
 
-        //----------------------
-        // Inject eight-pel uni-pred
-        //----------------------
-        if (context_ptr->unipred3x3_injection > 0)
-            if (picture_control_set_ptr->slice_type != I_SLICE)
-                eighth_pel_unipred_refinement(
-                    sequence_control_set_ptr,
-                    picture_control_set_ptr,
-                    context_ptr,
-                    me_sb_addr,
-                    ss_mecontext,
-                    use_close_loop_me,
-                    close_loop_me_index,
-                    &canTotalCnt);
+            //----------------------
+            // Inject eight-pel uni-pred
+            //----------------------
+            if (context_ptr->unipred3x3_injection > 0)
+                if (picture_control_set_ptr->slice_type != I_SLICE)
+                    eighth_pel_unipred_refinement(
+                        sequence_control_set_ptr,
+                        picture_control_set_ptr,
+                        context_ptr,
+                        me_sb_addr,
+                        ss_mecontext,
+                        use_close_loop_me,
+                        close_loop_me_index,
+                        &canTotalCnt);
+                }
             }
-        }
 #endif
 
         if (context_ptr->predictive_me_level)
@@ -4526,10 +4525,10 @@ if (inject_newmv_candidate && picture_control_set_ptr->parent_pcs_ptr->allow_hig
                 isCompoundEnabled,
                 allow_bipred,
                 &canTotalCnt);
-        // update the total number of candidates injected
-        (*candidateTotalCnt) = canTotalCnt;
+// update the total number of candidates injected
+(*candidateTotalCnt) = canTotalCnt;
 
-        return;
+return;
     }
 }
 
@@ -4555,9 +4554,8 @@ extern PredictionMode get_uv_mode(UvPredictionMode mode) {
     };
     return uv2y[mode];
 }
-
 static TxType intra_mode_to_tx_type(const MbModeInfo *mbmi,
-        PlaneType plane_type) {
+    PlaneType plane_type) {
     static const TxType _intra_mode_to_tx_type[INTRA_MODES] = {
         DCT_DCT,    // DC
         ADST_DCT,   // V

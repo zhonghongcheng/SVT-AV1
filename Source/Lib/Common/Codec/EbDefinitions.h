@@ -169,9 +169,13 @@ enum {
 #define ADD_SUPPORT_TO_SKIP_PART_N                      1
 #define ADD_MDC_REFINEMENT_LOOP                         1
 #define ADD_MDC_FULL_COST                               1
-#endif
 #define NSQ_TAB_SIZE                                    8
 #define MAX_MDC_LEVEL                                   8
+#else
+#define NSQ_TAB_SIZE                                    6
+#endif
+
+
 
 
 
