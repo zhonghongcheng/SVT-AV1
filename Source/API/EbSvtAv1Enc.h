@@ -224,7 +224,10 @@ typedef struct EbSvtAv1EncConfiguration
     *
     * Default is 0. */
     EbBool                   enable_warped_motion;
-
+    /* Restoration filtering
+    *
+    * Default is 1. */
+    EbBool                   enable_restoration_filtering;
     /* OBMC
     *
     * Default is 1. */
