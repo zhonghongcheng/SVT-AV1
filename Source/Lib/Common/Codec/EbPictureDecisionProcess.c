@@ -1261,15 +1261,21 @@ EbErrorType signal_derivation_multi_processes_oq(
         // Set atb mode      Settings
         // 0                 OFF: no transform partitioning
         // 1                 ON for INTRA blocks
-        if (picture_control_set_ptr->enc_mode <= ENC_M1 && sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
+        if (sequence_control_set_ptr->static_config.enable_atb == -1) {
+            if (picture_control_set_ptr->enc_mode <= ENC_M1 && sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
 
 #if SPEED_OPT
-            picture_control_set_ptr->atb_mode = (MR_MODE || picture_control_set_ptr->temporal_layer_index == 0) ? 1 : 0;
+                picture_control_set_ptr->atb_mode = (MR_MODE || picture_control_set_ptr->temporal_layer_index == 0) ? 1 : 0;
 #else
-            picture_control_set_ptr->atb_mode = 1;
+                picture_control_set_ptr->atb_mode = 1;
 #endif
-        else
-            picture_control_set_ptr->atb_mode = 0;
+            else
+                picture_control_set_ptr->atb_mode = 0;
+        }
+
+        else 
+            picture_control_set_ptr->atb_mode = sequence_control_set_ptr->static_config.enable_atb;
+
 
         // Set skip atb                          Settings
         // 0                                     OFF

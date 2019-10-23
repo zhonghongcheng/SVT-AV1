@@ -66,6 +66,13 @@
 #define INTRA_REFRESH_TYPE_TOKEN        "-irefresh-type" // no Eval
 #define LOOP_FILTER_DISABLE_TOKEN       "-dlf"
 #define RESTORATION_ENABLE_TOKEN        "-restoration-filtering"
+#define ATB_ENABLE_TOKEN                "-atb"
+#define CDF_ENABLE_TOKEN                "-cdf"
+#define CLASS_12_TOKEN                  " -class-12"
+#define EDGE_SKIP_ANGLE_INTRA_TOKEN     "-intra-edge-skp"
+#define INTER_INTRA_COMPOUND_TOKEN      "-interintra-comp"
+#define FRAC_SEARCH_64_TOKEN            "-frac-search-64"
+#define GLOBAL_MV_INJECT_TOKEN          "-global-motion-inject"
 #define LOCAL_WARPED_ENABLE_TOKEN       "-local-warp"
 #define OBMC_TOKEN                      "-obmc"
 #define FILTER_INTRA_TOKEN              "-filter-intra"
@@ -240,6 +247,13 @@ static void SetCfgFilmGrain                     (const char *value, EbConfig *cf
 static void SetDisableDlfFlag                   (const char *value, EbConfig *cfg) {cfg->disable_dlf_flag = (EbBool)strtoul(value, NULL, 0);};
 static void SetEnableLocalWarpedMotionFlag      (const char *value, EbConfig *cfg) {cfg->enable_warped_motion = (EbBool)strtoul(value, NULL, 0);};
 static void SetEnableRestorationFilterFlag      (const char *value, EbConfig *cfg) { cfg->enable_restoration_filtering = strtol(value, NULL, 0);};
+static void SetEnableAtbFlag                    (const char *value, EbConfig *cfg) { cfg->enable_atb = strtol(value, NULL, 0);};
+static void SetEnableCdfFlag                    (const char *value, EbConfig *cfg) { cfg->enable_cdf = strtol(value, NULL, 0);};
+static void SetClass12Flag                      (const char *value, EbConfig *cfg) { cfg->combine_class_12 = strtol(value, NULL, 0);};
+static void SetEdgeSkipAngleIntraFlag           (const char *value, EbConfig *cfg) { cfg->edge_skp_angle_intra = strtol(value, NULL, 0);};
+static void SetInterIntraCompoundFlag           (const char *value, EbConfig *cfg) { cfg->inter_intra_compound = strtol(value, NULL, 0);};
+static void SetFractionalSearch64Flag           (const char *value, EbConfig *cfg) { cfg->fract_search_64 = strtol(value, NULL, 0);};
+static void SetInjectGlobalMVFlag               (const char *value, EbConfig *cfg) { cfg->inject_global_mv = strtol(value, NULL, 0);};
 static void SetEnableObmcFlag                   (const char *value, EbConfig *cfg) {cfg->enable_obmc = (EbBool)strtoul(value, NULL, 0);};
 static void SetEnableFilterIntraFlag            (const char *value, EbConfig *cfg) {cfg->enable_filter_intra = (EbBool)strtoul(value, NULL, 0);};
 static void SetEnableHmeFlag                    (const char *value, EbConfig *cfg) {cfg->enable_hme_flag = (EbBool)strtoul(value, NULL, 0);};
@@ -376,6 +390,20 @@ config_entry_t config_entry[] = {
 
     // DLF
     { SINGLE_INPUT, LOOP_FILTER_DISABLE_TOKEN, "LoopFilterDisable", SetDisableDlfFlag },
+    // ATB
+    { SINGLE_INPUT, ATB_ENABLE_TOKEN, "Atb", SetEnableAtbFlag },
+    // CDF
+    { SINGLE_INPUT, CDF_ENABLE_TOKEN, "Cdf", SetEnableCdfFlag },
+    // CLASS 12
+    { SINGLE_INPUT, CLASS_12_TOKEN, "COmbineClass12", SetClass12Flag },
+    // EDGE SKIP ANGLE INTRA
+    { SINGLE_INPUT, EDGE_SKIP_ANGLE_INTRA_TOKEN, "EdgeSkipAngleIntra", SetEdgeSkipAngleIntraFlag },
+    // INTER INTRA COMPOUND
+    { SINGLE_INPUT, INTER_INTRA_COMPOUND_TOKEN, "InterIntraCompound", SetInterIntraCompoundFlag },
+    // FRACTIONAL SEARCH 64x64
+    { SINGLE_INPUT, FRAC_SEARCH_64_TOKEN, "FractionalSearch64", SetFractionalSearch64Flag },
+    // GLOBAL MV INJECTION
+    { SINGLE_INPUT, GLOBAL_MV_INJECT_TOKEN, "GlobalMvInjection", SetInjectGlobalMVFlag },
     // RESTORATION
     { SINGLE_INPUT, RESTORATION_ENABLE_TOKEN, "RestorationFilter", SetEnableRestorationFilterFlag },
     // LOCAL WARPED MOTION
@@ -500,6 +528,13 @@ void eb_config_ctor(EbConfig *config_ptr)
     config_ptr->pred_structure                       = 2;
     config_ptr->disable_dlf_flag                     = EB_FALSE;
     config_ptr->enable_warped_motion                 = EB_FALSE;
+    config_ptr->enable_atb                           = -1;
+    config_ptr->enable_cdf                           = -1;
+    config_ptr->combine_class_12                     = -1;
+    config_ptr->edge_skp_angle_intra                 = -1;
+    config_ptr->inter_intra_compound                 = -1;
+    config_ptr->fract_search_64                      = -1;
+    config_ptr->inject_global_mv                     = -1;
     config_ptr->enable_restoration_filtering         = -1;
     config_ptr->enable_obmc                          = EB_TRUE;
     config_ptr->enable_filter_intra                  = EB_TRUE;
@@ -928,7 +963,7 @@ static EbErrorType VerifySettings(EbConfig *config, uint32_t channelNumber)
     }
 
      // Resotration Filtering
-     if (config->enable_restoration_filtering != 0 && config->enable_restoration_filtering != 1) {
+     if (config->enable_restoration_filtering != -1 && config->enable_restoration_filtering != 0 && config->enable_restoration_filtering != 1) {
          fprintf(config->error_log_file, "Error instance %u: Invalid restoration flag [0 - 1], your input: %d\n", channelNumber + 1, config->target_socket);
          return_error = EB_ErrorBadParameter;
      }
