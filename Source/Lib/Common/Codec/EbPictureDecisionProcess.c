@@ -819,17 +819,30 @@ EbErrorType signal_derivation_multi_processes_oq(
                     picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
             else
                 picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
-
+#if PREDICT_NSQ_SHAPE
         else if (picture_control_set_ptr->enc_mode <= ENC_M1)
                 picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
-
+#else
+        else if (picture_control_set_ptr->enc_mode <= ENC_M2)
+            picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
+#endif
+#if PREDICT_NSQ_SHAPE
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
                 if (picture_control_set_ptr->slice_type == I_SLICE)
                     picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
                 else
                     picture_control_set_ptr->pic_depth_mode = PIC_ALL_C_DEPTH_MODE;
+#else
+        else if (picture_control_set_ptr->enc_mode <= ENC_M3)
+            if (picture_control_set_ptr->slice_type == I_SLICE)
+                picture_control_set_ptr->pic_depth_mode = PIC_ALL_C_DEPTH_MODE;
+            else
+                picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
+#endif
+#if PREDICT_NSQ_SHAPE
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
             picture_control_set_ptr->pic_depth_mode = PIC_SQ_DEPTH_MODE;
+#endif
 
         else if (picture_control_set_ptr->enc_mode <= ENC_M5)
             picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
@@ -910,8 +923,11 @@ EbErrorType signal_derivation_multi_processes_oq(
             if (picture_control_set_ptr->is_used_as_reference_flag)
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL5;
             else
+#if PREDICT_NSQ_SHAPE
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL2;
-
+#else
+				picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL3;
+#endif
         else
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
 
@@ -940,9 +956,11 @@ EbErrorType signal_derivation_multi_processes_oq(
     case NSQ_SEARCH_LEVEL6:
         picture_control_set_ptr->nsq_max_shapes_md = 6;
         break;
+#if PREDICT_NSQ_SHAPE
     case NSQ_SEARCH_LEVEL7:
         picture_control_set_ptr->nsq_max_shapes_md = 7;
         break;
+#endif
     case NSQ_SEARCH_FULL:
         picture_control_set_ptr->nsq_max_shapes_md = 6;
         break;

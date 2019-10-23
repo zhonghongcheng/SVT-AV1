@@ -688,7 +688,9 @@ uint64_t  mdc_d1_non_square_block_decision(
     {
         //store best partition cost in parent square
         context_ptr->local_cu_array[context_ptr->blk_geom->sqi_mds].early_cost = tot_cost;
+#if ADD_MDC_FULL_COST
         context_ptr->local_cu_array[context_ptr->blk_geom->sqi_mds].part = from_shape_to_part[context_ptr->blk_geom->shape];
+#endif
         context_ptr->local_cu_array[context_ptr->blk_geom->sqi_mds].best_d1_blk = first_blk_idx;
     }
     return tot_cost;
@@ -1114,11 +1116,9 @@ EbErrorType mdc_inter_pu_prediction_av1(
     EbAsm                                   asm_type)
 {
     UNUSED(asm_type);
-    //picture_control_set_ptr;
     EbErrorType           return_error = EB_ErrorNone;
     EbPictureBufferDesc  *ref_pic_list0;
     EbPictureBufferDesc  *ref_pic_list1 = NULL;
-    //ModeDecisionCandidate *const candidate_ptr = candidate_buffer_ptr->candidate_ptr;
 
     Mv mv_0;
     Mv mv_1;
@@ -1130,7 +1130,6 @@ EbErrorType mdc_inter_pu_prediction_av1(
     mv_unit.pred_direction = candidate_buffer_ptr->candidate_ptr->prediction_direction[0];
     mv_unit.mv[0] = mv_0;
     mv_unit.mv[1] = mv_1;
-    //SequenceControlSet* sequence_control_set_ptr = ((SequenceControlSet*)(picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr));
     int8_t ref_idx_l0 = candidate_buffer_ptr->candidate_ptr->ref_frame_index_l0;
     int8_t ref_idx_l1 = candidate_buffer_ptr->candidate_ptr->ref_frame_index_l1;
     // MRP_MD_UNI_DIR_BIPRED
@@ -1237,7 +1236,6 @@ EbErrorType mdc_inter_pu_prediction_av1(
         uint32_t                                cuIdx;
         uint32_t leaf_idx;
         uint32_t start_idx, end_idx;
-        //ModeDecisionCandidateBuffer            *bestCandidateBuffers[5];
 
         uint32_t                                leaf_count = mdcResultTbPtr->leaf_count;
         EbMdcLeafData *              leaf_data_array = mdcResultTbPtr->leaf_data_array;
@@ -1442,7 +1440,7 @@ EbErrorType mdc_inter_pu_prediction_av1(
                     context_ptr->mdc_candidate_ptr->ref_frame_type = LAST_FRAME;
                     context_ptr->mdc_candidate_ptr->is_compound = 0;
                 }
-                else { // context_ptr->mdc_candidate_ptr->prediction_direction[0]
+                else {
                     context_ptr->mdc_candidate_ptr->ref_frame_type = BWDREF_FRAME;
                     context_ptr->mdc_candidate_ptr->is_compound = 0;
                 }
@@ -1450,8 +1448,6 @@ EbErrorType mdc_inter_pu_prediction_av1(
                 context_ptr->mdc_candidate_ptr->motion_vector_pred_y[REF_LIST_0] = 0;
                 // Initialize the ref mv
                 memset(context_ptr->mdc_ref_mv_stack, 0, sizeof(CandidateMv));
-                //blk_geom = get_blk_geom_mds(pa_to_ep_block_index[cuIdx]);
-                // Initialize mdc cu (only av1 rate estimation inputs)
                 context_ptr->mdc_cu_ptr->is_inter_ctx = 0;
                 context_ptr->mdc_cu_ptr->skip_flag_context = 0;
                 context_ptr->mdc_cu_ptr->inter_mode_ctx[context_ptr->mdc_candidate_ptr->ref_frame_type] = 0;
@@ -1460,7 +1456,6 @@ EbErrorType mdc_inter_pu_prediction_av1(
                 av1_zero(context_ptr->mdc_cu_ptr->av1xd->neighbors_ref_counts); // Hsan: neighbor not generated @ open loop partitioning => assumes always (0,0)
 
 #if ADD_MDC_FULL_COST
-            //const uint8_t inter_direction = me_block_results[me_index].direction;
                 const uint8_t list0_ref_index = me_block_results[me_index].ref_idx_l0;
                 const uint8_t list1_ref_index = me_block_results[me_index].ref_idx_l1;
                 context_ptr->candidate_buffer->candidate_ptr->use_intrabc = 0;
@@ -1558,7 +1553,6 @@ EbErrorType mdc_inter_pu_prediction_av1(
                     count_non_zero_coeffs,
                     &y_coeff_bits,
                     y_full_distortion);
-                //txb_count = context_ptr->blk_geom->txb_count[context_ptr->candidate_buffer->candidate_ptr->tx_depth];
                 for (uint8_t txb_itr = 0; txb_itr < txb_count; txb_itr++) {
                     context_ptr->mdc_cu_ptr->quantized_dc[0][txb_itr] = context_ptr->candidate_buffer->candidate_ptr->quantized_dc[0][txb_itr];
                 }
@@ -1570,7 +1564,7 @@ EbErrorType mdc_inter_pu_prediction_av1(
                     context_ptr->mdc_candidate_ptr,
                     context_ptr->qp,
 
-                    mePuResult->distortion_direction[0].distortion,
+                    me_block_results[me_index].distortion,
 
                     (uint64_t)0,
                     context_ptr->lambda,
@@ -1591,7 +1585,7 @@ EbErrorType mdc_inter_pu_prediction_av1(
                     context_ptr->qp,
                     blk_geom->sq_size == 128 ? me_128x128 : me_block_results[me_index].distortion,
                     context_ptr->lambda,
-                    0,//use_ssd,
+                    0,
                     picture_control_set_ptr,
                     context_ptr->mdc_ref_mv_stack,
                     blk_geom);
@@ -1605,17 +1599,6 @@ EbErrorType mdc_inter_pu_prediction_av1(
 
             }
 
-
-            //NADER - FORCE DEPTH
-            /*SbParams *sb_params = &sequence_control_set_ptr->sb_params_array[sb_index];
-            if (sb_params->is_complete_sb) {
-                if (context_ptr->blk_geom->sq_size == 32)
-                    cu_ptr->early_cost = 0;
-            }
-            else {
-                if (context_ptr->blk_geom->sq_size == 4)
-                    cu_ptr->early_cost = 0;
-            }*/
             if (blk_geom->nsi + 1 == blk_geom->totns) {
                 nsq_cost[context_ptr->blk_geom->shape] = mdc_d1_non_square_block_decision(sequence_control_set_ptr, context_ptr);
             }
@@ -1645,7 +1628,6 @@ EbErrorType mdc_inter_pu_prediction_av1(
                 // Assign ranking # to each block
                 for (leaf_idx = start_idx; leaf_idx < end_idx; leaf_idx++) {
                     EbMdcLeafData * current_depth_leaf_data = &mdcResultTbPtr->leaf_data_array[leaf_idx];
-                    //uint32_t idx_mds = leaf_data_array[leaf_idx].mds_idx;
                     const BlockGeom * bepth_blk_geom = get_blk_geom_mds(leaf_data_array[leaf_idx].mds_idx);
                     current_depth_leaf_data->open_loop_ranking = find_shape_index(bepth_blk_geom->shape, nsq_shape_table);
 #if COMBINE_MDC_NSQ_TABLE

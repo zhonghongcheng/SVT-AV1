@@ -13829,7 +13829,6 @@ extern "C" {
         NeighborArrayUnit                  *ep_luma_dc_sign_level_coeff_neighbor_array;
         NeighborArrayUnit                  *ep_cr_dc_sign_level_coeff_neighbor_array;
         NeighborArrayUnit                  *ep_cb_dc_sign_level_coeff_neighbor_array;
-
         // Entropy Coding Neighbor Arrays
         NeighborArrayUnit                  *mode_type_neighbor_array;
         NeighborArrayUnit                  *partition_context_neighbor_array;
@@ -14160,7 +14159,9 @@ extern "C" {
 #if CONFIG_ENTROPY_STATS
         int32_t                               coef_cdf_category;
 #endif
+#if PREDICT_NSQ_SHAPE
         uint16_t                              base_qindex;
+#endif
         int32_t                               separate_uv_delta_q;
 
         // Global quant matrix tables
@@ -14183,9 +14184,11 @@ extern "C" {
         uint64_t                              frame_offset;
         uint32_t                              large_scale_tile;
         int32_t                               nb_cdef_strengths;
+#if PREDICT_NSQ_SHAPE
         ReferenceMode                         reference_mode;
         int32_t                               delta_q_present_flag;
         int32_t                               reduced_tx_set_used;
+#endif
 
 #if ADD_DELTA_QP_SUPPORT
         // Resolution of delta quant

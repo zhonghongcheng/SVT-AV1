@@ -6168,14 +6168,6 @@ void check_redundant_block(const BlockGeom * blk_geom, ModeDecisionContext *cont
     }
 }
 
-#if PREDICT_NSQ_SHAPE
-// SAHPE  NONE, H, V, HA, HB, VA, VB, H4, V4, S
-// DEPTH  0-6 128x128-4x4
-uint8_t enable_ol_per_depth[NUMBER_OF_DEPTH] = { 1,1,1,1,1,1 }; // 0: OL application OFF; 1: OL application ON
-uint8_t depth_rank_th[NUMBER_OF_DEPTH] = { 6,6,6,6,6,6 }; // Range: 0-6;  0: is always ON; 6: is always off.
-uint8_t shape_rank_th[NUMBER_OF_DEPTH] = { 10,10,10,10,10,10 }; // Range 0-10;  0: is always ON;  10: is always off.
-#endif
-
 /*******************************************
 * ModeDecision LCU
 *   performs CL (LCU)
@@ -7126,7 +7118,6 @@ uint8_t check_skip_sub_blks(
     uint8_t                           is_complete_sb,
     uint32_t                          sb_index) {
     uint8_t skip_sub_blocks = 0;
-
     if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_OPEN_LOOP_DEPTH_MODE || (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_SB_SWITCH_DEPTH_MODE && picture_control_set_ptr->parent_pcs_ptr->sb_depth_mode_array[sb_index] >= SB_OPEN_LOOP_DEPTH_MODE))
         if (is_complete_sb)
             if ((context_ptr->md_local_cu_unit[cu_ptr->mds_idx].top_neighbor_depth == context_ptr->blk_geom->bsize) &&  (context_ptr->md_local_cu_unit[cu_ptr->mds_idx].left_neighbor_depth == context_ptr->blk_geom->bsize)) {
@@ -7432,7 +7423,8 @@ void md_encode_block(
         picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL) ? EB_TRUE : EB_FALSE;
-    is_nsq_table_used = picture_control_set_ptr->parent_pcs_ptr->sc_content_detected ? EB_FALSE : is_nsq_table_used;
+		
+    is_nsq_table_used = picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode == ENC_M0 ? EB_FALSE : is_nsq_table_used;
 
     context_ptr->open_loop_block_rank = open_loop_block_rank;
     context_ptr->early_split_flag = early_split_flag;
@@ -7465,6 +7457,7 @@ void md_encode_block(
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL) ? EB_TRUE : EB_FALSE;
 
+	is_nsq_table_used = picture_control_set_ptr->enc_mode == ENC_M0 ?  EB_FALSE : is_nsq_table_used;
     if (is_nsq_table_used) {
         if (context_ptr->blk_geom->shape == PART_N) {
             order_nsq_table(
@@ -7975,9 +7968,7 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #if FIX_COEF_BASED_ATB_SKIP
     context_ptr->coeff_based_skip_atb = 0;
 #endif
-
     EbBool all_cu_init = (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode <= PIC_SQ_DEPTH_MODE);
-
     if (all_cu_init) {
         init_sq_nsq_block(
             sequence_control_set_ptr,
@@ -11972,6 +11963,7 @@ EB_EXTERN EbErrorType in_loop_motion_estimation_sblock(
     return return_error;
 }
 
+#if PREDICT_NSQ_SHAPE
 uint64_t spatial_full_distortion_helper(
     uint8_t  *input,
     uint32_t input_offset,
@@ -12033,3 +12025,4 @@ uint64_t spatial_full_distortion_avx2_helper(
 
     return sfd;
 }
+#endif

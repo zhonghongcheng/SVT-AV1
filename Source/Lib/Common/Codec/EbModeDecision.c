@@ -4124,8 +4124,6 @@ void  inject_inter_candidates(
     if (context_ptr->source_variance < context_ptr->inter_inter_wedge_variance_th)
         tot_comp_types = MIN(tot_comp_types, MD_COMP_DIFF0);
 #endif
-    if (picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
-        picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL) {
 #if II_COMP_FLAG && !FIX_COMPOUND
     BlockSize bsize = context_ptr->blk_geom->bsize;                       // bloc size
 #endif
@@ -4530,52 +4528,6 @@ void  inject_inter_candidates(
 
 return;
     }
-}
-
-extern PredictionMode get_uv_mode(UvPredictionMode mode) {
-    assert(mode < UV_INTRA_MODES);
-    static const PredictionMode uv2y[] = {
-        DC_PRED,        // UV_DC_PRED
-        V_PRED,         // UV_V_PRED
-        H_PRED,         // UV_H_PRED
-        D45_PRED,       // UV_D45_PRED
-        D135_PRED,      // UV_D135_PRED
-        D113_PRED,      // UV_D113_PRED
-        D157_PRED,      // UV_D157_PRED
-        D203_PRED,      // UV_D203_PRED
-        D67_PRED,       // UV_D67_PRED
-        SMOOTH_PRED,    // UV_SMOOTH_PRED
-        SMOOTH_V_PRED,  // UV_SMOOTH_V_PRED
-        SMOOTH_H_PRED,  // UV_SMOOTH_H_PRED
-        PAETH_PRED,     // UV_PAETH_PRED
-        DC_PRED,        // UV_CFL_PRED
-        INTRA_INVALID,  // UV_INTRA_MODES
-        INTRA_INVALID,  // UV_MODE_INVALID
-    };
-    return uv2y[mode];
-}
-static TxType intra_mode_to_tx_type(const MbModeInfo *mbmi,
-    PlaneType plane_type) {
-    static const TxType _intra_mode_to_tx_type[INTRA_MODES] = {
-        DCT_DCT,    // DC
-        ADST_DCT,   // V
-        DCT_ADST,   // H
-        DCT_DCT,    // D45
-        ADST_ADST,  // D135
-        ADST_DCT,   // D117
-        DCT_ADST,   // D153
-        DCT_ADST,   // D207
-        ADST_DCT,   // D63
-        ADST_ADST,  // SMOOTH
-        ADST_DCT,   // SMOOTH_V
-        DCT_ADST,   // SMOOTH_H
-        ADST_ADST,  // PAETH
-    };
-    const PredictionMode mode =
-        (plane_type == PLANE_TYPE_Y) ? mbmi->mode : get_uv_mode(mbmi->uv_mode);
-    assert(mode < INTRA_MODES);
-    return _intra_mode_to_tx_type[mode];
-}
 
 static INLINE TxType av1_get_tx_type(
     BlockSize  sb_type,

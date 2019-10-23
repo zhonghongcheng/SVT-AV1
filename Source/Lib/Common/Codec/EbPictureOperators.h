@@ -30,6 +30,7 @@ extern "C" {
         uint32_t  height,
         EbAsm     asm_type);
 
+#if PREDICT_NSQ_SHAPE
     extern EbErrorType picture_copy8_bit(
         EbPictureBufferDesc  *src,
         uint32_t                src_luma_origin_index,
@@ -43,6 +44,7 @@ extern "C" {
         uint32_t                chroma_area_height,
         uint32_t                component_mask,
         EbAsm                   asm_type);
+#endif
 
     extern EbErrorType picture_full_distortion32_bits(
         EbPictureBufferDesc  *coeff,

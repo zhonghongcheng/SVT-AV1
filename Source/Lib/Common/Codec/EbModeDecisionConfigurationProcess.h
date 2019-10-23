@@ -34,8 +34,10 @@ extern "C" {
         uint32_t split_context;
         EbBool   selected_cu;
         EbBool   stop_split;
+#if PREDICT_NSQ_SHAPE
         PartitionType part;
         uint32_t best_d1_blk;
+#endif
     } MdcpLocalCodingUnit;
 
     typedef struct ModeDecisionConfigurationContext
@@ -77,7 +79,6 @@ extern "C" {
         uint32_t                             budget;
         int8_t                               score_th[MAX_SUPPORTED_SEGMENTS];
         uint8_t                              interval_cost[MAX_SUPPORTED_SEGMENTS];
-
         uint8_t                              number_of_segments;
         uint32_t                             sb_min_score;
         uint32_t                             sb_max_score;

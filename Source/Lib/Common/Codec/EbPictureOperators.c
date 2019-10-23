@@ -69,7 +69,7 @@ void pic_copy_kernel_8bit(
     for (uint32_t j = 0; j < area_height; j++)
         memcpy(dst + j * dst_stride, src + j * src_stride, area_width);
 }
-
+#if PREDICT_NSQ_SHAPE
 void pic_copy_kernel(
     EbByte                  src,
     uint32_t                   src_stride,
@@ -136,6 +136,7 @@ EbErrorType picture_copy8_bit(
 
     return return_error;
 }
+#endif
 
 void pic_copy_kernel_16bit(
     uint16_t                  *src,

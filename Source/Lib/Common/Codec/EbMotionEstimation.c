@@ -15178,7 +15178,8 @@ EbErrorType motion_estimate_lcu(
                             enableHalfPel16x16,
                             enableHalfPel8x8,
                             enableQuarterPel,
-                            picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE);
+                            picture_control_set_ptr->pic_depth_mode <=
+                                PIC_ALL_C_DEPTH_MODE);
                     }
                 }
                 if (is_nsq_table_used && ref_pic_index == 0) {

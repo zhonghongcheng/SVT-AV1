@@ -321,41 +321,6 @@ static int32_t get_eob_cost(int32_t eob, const LvMapEobCost *txb_eob_costs,
     return eob_cost;
 }
 
-static INLINE int32_t get_br_ctx(const uint8_t *const levels,
-    const int32_t c,  // raster order
-    const int32_t bwl, const TxType tx_type) {
-    const int32_t row = c >> bwl;
-    const int32_t col = c - (row << bwl);
-    const int32_t stride = (1 << bwl) + TX_PAD_HOR;
-    const TxClass tx_class = tx_type_to_class[tx_type];
-    const int32_t pos = row * stride + col;
-    int32_t mag = levels[pos + 1];
-    mag += levels[pos + stride];
-    switch (tx_class) {
-    case TX_CLASS_2D:
-        mag += levels[pos + stride + 1];
-        mag = AOMMIN((mag + 1) >> 1, 6);
-        if (c == 0) return mag;
-        if ((row < 2) && (col < 2)) return mag + 7;
-        break;
-    case TX_CLASS_HORIZ:
-        mag += levels[pos + 2];
-        mag = AOMMIN((mag + 1) >> 1, 6);
-        if (c == 0) return mag;
-        if (col == 0) return mag + 7;
-        break;
-    case TX_CLASS_VERT:
-        mag += levels[pos + (stride << 1)];
-        mag = AOMMIN((mag + 1) >> 1, 6);
-        if (c == 0) return mag;
-        if (row == 0) return mag + 7;
-        break;
-    default: break;
-    }
-
-    return mag + 14;
-}
-
 #if ADD_MDC_FULL_COST
 int32_t av1_cost_skip_txb(
 #else
@@ -743,32 +708,7 @@ uint64_t av1_intra_fast_cost(
         }
     }
 #endif
-    // NM- Harcoded assuming luma mode is equal to chroma mode
-    //if (!cm->seq_params.monochrome &&
-    //    is_chroma_reference(mi_row, mi_col, bsize, xd->plane[1].subsampling_x,
-    //    xd->plane[1].subsampling_y)) {
-    //    mbmi->uv_mode =
-    //        read_intra_mode_uv(ec_ctx, r, is_cfl_allowed(xd), mbmi->mode);
-    //    if (mbmi->uv_mode == UV_CFL_PRED) {
-    //        mbmi->cfl_alpha_idx =
-    //            read_cfl_alphas(xd->tile_ctx, r, &mbmi->cfl_alpha_signs);
-    //        xd->cfl.store_y = 1;
-    //    }
-    //    else {
-    //        xd->cfl.store_y = 0;
-    //    }
-    //    mbmi->angle_delta[PLANE_TYPE_UV] =
-    //        use_angle_delta && av1_is_directional_mode(get_uv_mode(mbmi->uv_mode))
-    //        ? read_angle_delta(r,
-    //        ec_ctx->angle_delta_cdf[mbmi->uv_mode - V_PRED])
-    //        : 0;
-    //}
-    //else {
-    //    // Avoid decoding angle_info if there is is no chroma prediction
-    //    mbmi->uv_mode = UV_DC_PRED;
-    //    xd->cfl.is_chroma_reference = 0;
-    //    xd->cfl.store_y = 1;
-    //}
+
     if (blk_geom->has_uv) {
         if (!isMonochromeFlag && is_chroma_reference(miRow, miCol, blk_geom->bsize, subSamplingX, subSamplingY)) {
             // Estimate luma nominal intra mode bits
@@ -1337,6 +1277,7 @@ int svt_is_interintra_allowed(
     PredictionMode mode,
     MvReferenceFrame ref_frame[2]);
 #endif
+
 #if ADD_MDC_FULL_COST
 uint64_t mdc_av1_inter_fast_cost(
     CodingUnit             *cu_ptr,

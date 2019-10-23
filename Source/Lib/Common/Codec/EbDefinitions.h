@@ -614,7 +614,9 @@ typedef enum NsqSearchLevel
     NSQ_SEARCH_LEVEL4,
     NSQ_SEARCH_LEVEL5,
     NSQ_SEARCH_LEVEL6,
+#if PREDICT_NSQ_SHAPE
     NSQ_SEARCH_LEVEL7,
+#endif
     NSQ_SEARCH_FULL
 } NsqSearchLevel;
 
@@ -2947,8 +2949,8 @@ typedef enum EbPictureDepthMode
     PIC_ALL_C_DEPTH_MODE        = 1, // ALL sq and nsq with control :  SB size -> 4x4
     PIC_SQ_DEPTH_MODE           = 2, // ALL sq:  SB size -> 4x4
     PIC_SQ_NON4_DEPTH_MODE      = 3, // SQ:  SB size -> 8x8
-    PIC_OPEN_LOOP_DEPTH_MODE    = 4, // Early Inter Depth Decision:  SB size -> 8x8
-    PIC_SB_SWITCH_DEPTH_MODE    = 5  // Adaptive Depth Partitioning
+    PIC_OPEN_LOOP_DEPTH_MODE = 4, // Early Inter Depth Decision:  SB size -> 8x8
+    PIC_SB_SWITCH_DEPTH_MODE = 5  // Adaptive Depth Partitioning
 } EbPictureDepthMode;
 
 #define EB_SB_DEPTH_MODE              uint8_t
