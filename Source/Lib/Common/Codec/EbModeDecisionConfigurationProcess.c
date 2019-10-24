@@ -1317,6 +1317,9 @@ void init_considered_block(
     SbParams *sb_params = &sequence_control_set_ptr->sb_params_array[sb_index];
     uint8_t  is_complete_sb = sb_params->is_complete_sb;
 #endif
+#if MDC_ADAPTIVE_DEPTH_REFINEMENT
+    LargestCodingUnit  *sb_ptr = picture_control_set_ptr->sb_ptr_array[sb_index];
+#endif
     uint32_t tot_d1_blocks,block_1d_idx;
     EbBool split_flag;
     uint32_t depth_refinement_mode = AllD;
@@ -1434,6 +1437,72 @@ void init_considered_block(
             split_flag = context_ptr->local_cu_array[blk_index].early_split_flag;
         if (sequence_control_set_ptr->sb_geom[sb_index].block_is_inside_md_scan[blk_index] && is_blk_allowed){
             if (blk_geom->shape == PART_N) {
+#if MDC_ADAPTIVE_DEPTH_REFINEMENT
+            // Update MDC refinement
+                uint8_t depth_offset = sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 0 : 1;
+                uint8_t start_depth = sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 0 : 1;
+                uint8_t end_depth = 5;
+                uint8_t depth = blk_geom->depth + depth_offset;
+                int64_t curr_depth_cost  = sb_ptr->depth_cost[depth];
+                int64_t above_depth_cost = sb_ptr->depth_cost[depth > start_depth ? depth - 1 : depth];
+                int64_t below_depth_cost = sb_ptr->depth_cost[depth < end_depth ? depth + 1 : depth];
+                uint8_t adjusted_depth_level = picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level;
+                int64_t var_th = 100;
+                // Add a logic to refine the refinement level
+                int64_t average_cost = (curr_depth_cost + above_depth_cost + below_depth_cost) / 3;
+                int64_t above_depth_cost_dist = (above_depth_cost - average_cost);
+                int64_t below_depth_cost_dist = (below_depth_cost - average_cost);
+                int64_t above_below_cost_var = (curr_depth_cost - average_cost) + (above_depth_cost_dist) + (below_depth_cost_dist);
+                above_below_cost_var = above_below_cost_var / 3;
+                if (above_below_cost_var < var_th) {
+                    //Do noting or use more relaxed level than teh original mdc_depth_level
+                    //Example
+                    adjusted_depth_level = picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level;
+                }
+                else if (above_depth_cost_dist > average_cost && below_depth_cost_dist < average_cost) {
+                    // Try to avoid the above refienment by eliminating the m's
+                    //Example
+                    adjusted_depth_level = 2; // Predp2
+                }
+                else if (below_depth_cost_dist > average_cost && above_depth_cost_dist < average_cost) {
+                    // Try to avoid the below refinement by eliminating the p's
+                    //Example
+                    adjusted_depth_level = 8;// Predm1;
+                }
+
+                switch (adjusted_depth_level) {
+                case 0:
+                    depth_refinement_mode = is_complete_sb ? Pred : AllD;
+                    break;
+                case 1:
+                    depth_refinement_mode = is_complete_sb ? Predp1 : AllD;
+                    break;
+                case 2:
+                    depth_refinement_mode = is_complete_sb ? Predp2 : AllD;
+                    break;
+                case 3:
+                    depth_refinement_mode = is_complete_sb ? Predp3 : AllD;
+                    break;
+                case 4:
+                    depth_refinement_mode = is_complete_sb ? Predm1p1 : AllD;
+                    break;
+                case 5:
+                    depth_refinement_mode = is_complete_sb ? Predm1p2 : AllD;
+                    break;
+                case 6:
+                    depth_refinement_mode = is_complete_sb ? Predm1p3 : AllD;
+                    break;
+                case 7:
+                    depth_refinement_mode = is_complete_sb ? Predm2p3 : AllD;
+                    break;
+                case 8:
+                    depth_refinement_mode = is_complete_sb ? Predm1 : AllD;
+                    break;
+                default:
+                    printf("Not supported refined mdc_depth_level");
+                    break;
+                }
+#endif
                 switch (depth_refinement_mode) {
                 case Pred:
                     // Set predicted block to be considered

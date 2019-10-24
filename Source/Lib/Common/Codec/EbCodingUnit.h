@@ -532,6 +532,9 @@ extern "C" {
         TileInfo tile_info;
 #if DEPTH_RANKING
         uint8_t                       depth_ranking[NUMBER_OF_DEPTH];
+#if MDC_ADAPTIVE_DEPTH_REFINEMENT
+        uint64_t                      depth_cost[NUMBER_OF_DEPTH];
+#endif
 #endif
     } LargestCodingUnit;
 

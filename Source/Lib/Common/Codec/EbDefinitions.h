@@ -775,6 +775,7 @@ typedef enum MD_STAGE {
 #define ADD_NEIGHBOR                                    0
 #define NSQ_EARLY_EXIT                                  0
 #define RED_CU_BUG_FIX                                  1
+#define MDC_ADAPTIVE_DEPTH_REFINEMENT                   0
 #endif
 #define FIX_FRW_NUMBER_BLOCKS                           1
 #if COMBINE_MDC_NSQ_TABLE

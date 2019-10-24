@@ -2542,8 +2542,10 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
     } while (cuIdx < leaf_count);// End of CU loop
 
 #if DEPTH_RANKING
+#if !MDC_ADAPTIVE_DEPTH_REFINEMENT
     if (sequence_control_set_ptr->seq_header.sb_size == BLOCK_64X64)
         depth_cost[0] = MAX_CU_COST;
+#endif
     //Sorting
     {
         uint32_t i, j, index;
@@ -2557,8 +2559,12 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
             }
         }
     }
-    for (uint8_t depth_idx = 0; depth_idx < NUMBER_OF_DEPTH; depth_idx++)
+    for (uint8_t depth_idx = 0; depth_idx < NUMBER_OF_DEPTH; depth_idx++) {
         sb_ptr->depth_ranking[depth_idx] = find_depth_index(depth_idx, depth_table);
+#if MDC_ADAPTIVE_DEPTH_REFINEMENT
+        sb_ptr->depth_cost[depth_idx] = depth_cost[depth_idx];
+#endif
+    }
 #endif
     return return_error;
 }
