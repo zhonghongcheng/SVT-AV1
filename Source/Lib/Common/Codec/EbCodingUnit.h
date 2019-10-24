@@ -536,6 +536,9 @@ extern "C" {
         uint64_t                      depth_cost[NUMBER_OF_DEPTH];
 #endif
 #endif
+#if MPMD_ADAPTIVE_REFINEMENT
+       uint64_t md_depth_cost[NUMBER_OF_DEPTH];
+#endif
     } LargestCodingUnit;
 
     extern EbErrorType largest_coding_unit_ctor(

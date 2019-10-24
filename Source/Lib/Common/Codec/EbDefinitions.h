@@ -62,7 +62,7 @@ extern "C" {
 #define MPMD_TEST                          1
 #define TEST_DEPTH_REFINEMENT              1
 #define MARK_CU                            0
-
+#define MPMD_ADAPTIVE_REFINEMENT           1
 #define USE_1SP_MODE                       1
 #if USE_1SP_MODE
 #define NUMBER_OF_MODE_TH                  25

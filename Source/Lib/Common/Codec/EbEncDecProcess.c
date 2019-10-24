@@ -2120,6 +2120,9 @@ void mpmd_init_considered_block(
     ModeDecisionContext *context_ptr,
     uint32_t            sb_index,
     uint8_t             mpmd_depth_level,
+#if MPMD_ADAPTIVE_REFINEMENT
+    uint8_t             best_depth,
+#endif
     uint8_t             mpmd_1d_level) {
     MdcLcuData *cu_ptr = &picture_control_set_ptr->mpmd_sb_array[sb_index];
     cu_ptr->leaf_count = 0;
@@ -2178,7 +2181,17 @@ void mpmd_init_considered_block(
             split_flag = context_ptr->md_cu_arr_nsq[blk_index].split_flag;
         if (sequence_control_set_ptr->sb_geom[sb_index].block_is_inside_md_scan[blk_index] && is_blk_allowed){
             if (blk_geom->shape == PART_N) {
-
+#if MPMD_ADAPTIVE_REFINEMENT
+                // Adjust depth refinement mode
+                if (depth_refinement_mode != AllD) {
+                    /*if (best_depth < blk_geom->depth)
+                        depth_refinement_mode = Predm1;*/
+                    if (best_depth > blk_geom->depth)
+                        depth_refinement_mode = Predp1;
+                    else if (best_depth == blk_geom->depth && blk_index == 0)
+                        depth_refinement_mode = Pred;
+                }
+#endif
                 switch (depth_refinement_mode) {
                 case Pred:
                     // Set predicted block to be considered
@@ -2714,7 +2727,7 @@ void mpmd_forward_considered_blocks(
 #if USE_1SP_MODE
                 for (uint16_t fp_pred_indx = 0; fp_pred_indx < BEST_PRED_MODE_TH; fp_pred_indx++) {
 #if !USE_MSMD_OUTPUT
-                     md_stage_idx = 3;
+                    uint16_t md_stage_idx = 3;
 #endif
                     if (context_ptr->md_local_cu_unit[blk_index].best_pred_modes_table[md_stage_idx][fp_pred_indx] < MB_MODE_COUNT && context_ptr->md_local_cu_unit[blk_index].best_pred_modes_table[md_stage_idx][fp_pred_indx] >= 0)
                         context_ptr->fp_depth_mode_valid[context_ptr->md_local_cu_unit[blk_index].best_pred_modes_table[md_stage_idx][fp_pred_indx]] = 1;
@@ -3436,6 +3449,26 @@ EbErrorType mpmd_pass_settings(
         context_ptr);
     return return_error;
 }
+#if MPMD_ADAPTIVE_REFINEMENT
+uint8_t set_refinement_level_sb(
+    SequenceControlSet  *sequence_control_set_ptr,
+    PictureControlSet   *picture_control_set_ptr,
+    ModeDecisionContext *context_ptr,
+    uint32_t            sb_index) {
+
+    LargestCodingUnit *sb_ptr = picture_control_set_ptr->sb_ptr_array[sb_index];
+    uint64_t mincost = MAX_CU_COST;
+    uint8_t i,best_depth;
+    for (i = 0; i < 6; i++) {
+        if (mincost < sb_ptr->md_depth_cost[i]) {
+            mincost = sb_ptr->md_depth_cost[i];
+            best_depth = i;
+        }
+    }
+
+    return best_depth;
+}
+#endif
 #endif
 #if CABAC_UP
 void av1_estimate_syntax_rate___partial(
@@ -3792,6 +3825,13 @@ void* enc_dec_kernel(void *input_ptr)
                                     sb_index,
                                     context_ptr->ss_mecontext,
                                     context_ptr->md_context);
+#if MPMD_ADAPTIVE_REFINEMENT
+                                 uint8_t best_depth = set_refinement_level_sb(
+                                    sequence_control_set_ptr,
+                                    picture_control_set_ptr,
+                                    context_ptr->md_context,
+                                    sb_index);
+#endif
                                 // Restore the clean copy of the neighbor arrays for next md pass
                                 copy_neighbour_arrays(
                                     picture_control_set_ptr,
@@ -3818,6 +3858,9 @@ void* enc_dec_kernel(void *input_ptr)
                                     context_ptr->md_context,
                                     sb_index,
                                     mpmd_depth_level,
+#if MPMD_ADAPTIVE_REFINEMENT
+                                    best_depth,
+#endif
                                     mpmd_1d_level);
                                 // Set split flags and block indexes to be tested in next md pass
                                 mpmd_forward_considered_blocks(

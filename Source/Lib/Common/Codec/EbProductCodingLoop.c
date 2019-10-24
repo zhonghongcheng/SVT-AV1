@@ -12257,7 +12257,14 @@ EB_EXTERN EbErrorType mode_decision_sb(
     EbBool all_cu_init = (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode <= PIC_SQ_DEPTH_MODE);
 #endif
 #endif
-
+#if MPMD_ADAPTIVE_REFINEMENT
+    sb_ptr->md_depth_cost[0] = 0;
+    sb_ptr->md_depth_cost[1] = 0;
+    sb_ptr->md_depth_cost[2] = 0;
+    sb_ptr->md_depth_cost[3] = 0;
+    sb_ptr->md_depth_cost[4] = 0;
+    sb_ptr->md_depth_cost[5] = 0;
+#endif
 #if OPT_LOSSLESS_0
 #if BYPASSED_RED_CU_IF_SQ_ONLY
     if(all_cu_init) {
@@ -12719,6 +12726,9 @@ EB_EXTERN EbErrorType mode_decision_sb(
 
         if (d1_blocks_accumlated == leafDataPtr->tot_d1_blocks)
         {
+#if MPMD_ADAPTIVE_REFINEMENT
+            sb_ptr->md_depth_cost[blk_geom->depth] += context_ptr->md_local_cu_unit[blk_geom->sqi_mds].cost;
+#endif
             uint32_t  lastCuIndex_mds = d2_inter_depth_block_decision(
                 context_ptr,
                 blk_geom->sqi_mds,//input is parent square
