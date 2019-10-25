@@ -3009,6 +3009,9 @@ extern void eb_av1_predict_intra_block_16bit(
     PredictionMode mode,
     int32_t angle_delta,
     int32_t use_palette,
+#if PAL_SUP
+    PALETTE_INFO  *palette_info,
+#endif
     FilterIntraMode filter_intra_mode,
     uint16_t* topNeighArray,
     uint16_t* leftNeighArray,
@@ -6066,6 +6069,9 @@ EbErrorType av1_inter_prediction_hbd(
                 interintra_to_intra_mode[interintra_mode],          //PredictionMode mode,
                 0,
                 0,                                                  //int32_t use_palette,
+#if PAL_SUP
+                NULL,
+#endif
                 FILTER_INTRA_MODES,                                 // FilterIntraMode filter_intra_mode,
                 topNeighArray + 1,
                 leftNeighArray + 1,
