@@ -1569,7 +1569,12 @@ void perform_intra_coding_loop(
                 tx_size,
                 mode,
                 pu_ptr->angle_delta[PLANE_TYPE_Y],
+#if PAL_SUP
+                cu_ptr->palette_info.pmi.palette_size[0] > 0,
+                &cu_ptr->palette_info,
+#else
                 0,
+#endif
 #if FILTER_INTRA_FLAG
                 cu_ptr->filter_intra_mode,
 #else
@@ -1619,7 +1624,12 @@ void perform_intra_coding_loop(
                 tx_size,
                 mode,
                 pu_ptr->angle_delta[PLANE_TYPE_Y],
+#if PAL_SUP
+                cu_ptr->palette_info.pmi.palette_size[0] > 0,
+                &cu_ptr->palette_info,
+#else
                 0,
+#endif
 #if FILTER_INTRA_FLAG
                 cu_ptr->filter_intra_mode,
 #else
@@ -1825,7 +1835,12 @@ void perform_intra_coding_loop(
                     tx_size,
                     mode,
                     plane ? pu_ptr->angle_delta[PLANE_TYPE_UV] : pu_ptr->angle_delta[PLANE_TYPE_Y],
+#if PAL_SUP
+                    0, //chroma
+                    &cu_ptr->palette_info,
+#else
                     0,
+#endif
                     FILTER_INTRA_MODES,
                     topNeighArray + 1,
                     leftNeighArray + 1,
@@ -1889,7 +1904,12 @@ void perform_intra_coding_loop(
                     tx_size,
                     mode,
                     plane ? pu_ptr->angle_delta[PLANE_TYPE_UV] : pu_ptr->angle_delta[PLANE_TYPE_Y],
+#if PAL_SUP
+                    0, //chroma
+                    &cu_ptr->palette_info,
+#else
                     0,
+#endif
                     FILTER_INTRA_MODES,
                     topNeighArray + 1,
                     leftNeighArray + 1,
@@ -2379,6 +2399,17 @@ EB_EXTERN void av1_encode_pass(
                     context_ptr->tot_intra_coded_area += blk_geom->bwidth* blk_geom->bheight;
                     if (picture_control_set_ptr->slice_type != I_SLICE)
                         context_ptr->intra_coded_area_sb[tbAddr] += blk_geom->bwidth* blk_geom->bheight;
+
+
+
+#if PAL_SUP
+                    if (sequence_control_set_ptr->static_config.encoder_bit_depth > EB_8BIT && picture_control_set_ptr->hbd_mode_decision==0 &&
+                        cu_ptr->palette_info.pmi.palette_size[0] > 0){
+                        //MD was done on 8bit, scale  palette colors to 10bit
+                        for (uint8_t col = 0; col < cu_ptr->palette_info.pmi.palette_size[0]; col++)
+                            cu_ptr->palette_info.pmi.palette_colors[col] *= 4;
+                    }
+#endif
                     // *Note - Transforms are the same size as predictions
                     // Partition Loop
                     context_ptr->txb_itr = 0;
@@ -2618,7 +2649,13 @@ EB_EXTERN void av1_encode_pass(
                                         tx_size,
                                         mode,                                                       //PredictionMode mode,
                                         plane ? pu_ptr->angle_delta[PLANE_TYPE_UV] : pu_ptr->angle_delta[PLANE_TYPE_Y],
+#if PAL_SUP
+                                        plane ? 0    : cu_ptr->palette_info.pmi.palette_size[0] > 0,
+                                        plane ? NULL : &cu_ptr->palette_info,
+#else
                                         0,                                                          //int32_t use_palette,
+#endif
+
 #if FILTER_INTRA_FLAG
                                         plane ? FILTER_INTRA_MODES : cu_ptr->filter_intra_mode,
 #else
@@ -2697,7 +2734,12 @@ EB_EXTERN void av1_encode_pass(
                                         tx_size,
                                         mode,                                                       //PredictionMode mode,
                                         plane ? pu_ptr->angle_delta[PLANE_TYPE_UV] : pu_ptr->angle_delta[PLANE_TYPE_Y],
+#if PAL_SUP
+                                        1,
+                                        NULL, //coz we should not get here ?
+#else
                                         0,                                                          //int32_t use_palette,
+#endif
                                         FILTER_INTRA_MODES,                                         //CHKN FilterIntraMode filter_intra_mode,
                                         topNeighArray + 1,
                                         leftNeighArray + 1,
