@@ -353,7 +353,7 @@ static AOM_INLINE void extend_palette_color_map(uint8_t *const color_map,
  void palette_rd_y(
     PALETTE_INFO                 *palette_info,
     ModeDecisionContext          *context_ptr,
-     BlockSize bsize, int mi_row, int mi_col,
+     BlockSize bsize,
     const int *data,
     int *centroids, int n, uint16_t *color_cache, int n_cache
 )
@@ -397,8 +397,6 @@ int av1_count_colors_highbd(uint16_t *src, int stride, int rows, int cols,
      PALETTE_INFO                 *palette_cand,
      uint32_t                     *tot_palette_cands)
  {
-
-     int rate_overhead = 0;
      int colors, n;
      EbPictureBufferDesc   *src_pic = picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr;
      const int src_stride = src_pic->stride_y;
@@ -407,9 +405,6 @@ int av1_count_colors_highbd(uint16_t *src, int stride, int rows, int cols,
      int block_width, block_height, rows, cols;
      uint8_t hbd_md = 0;
 
-     //CHKN this should have been done for all at once, at the start of block
-     int32_t mi_row = context_ptr->cu_origin_y >> MI_SIZE_LOG2;
-     int32_t mi_col = context_ptr->cu_origin_x >> MI_SIZE_LOG2;
      Av1Common  *cm = picture_control_set_ptr->parent_pcs_ptr->av1_cm;
      MacroBlockD  *xd = context_ptr->cu_ptr->av1xd;
      TileInfo * tile = &context_ptr->sb_ptr->tile_info;
@@ -514,7 +509,7 @@ int av1_count_colors_highbd(uint16_t *src, int stride, int rows, int cols,
              for (i = 0; i < n; ++i)
                  centroids[i] = top_colors[i];
 
-             palette_rd_y(&palette_cand[*tot_palette_cands], context_ptr, bsize, mi_row, mi_col, data, centroids, n, color_cache, n_cache);
+             palette_rd_y(&palette_cand[*tot_palette_cands], context_ptr, bsize, data, centroids, n, color_cache, n_cache);
 
              //consider this candidate if it has some non zero palette
              if(palette_cand[*tot_palette_cands].pmi.palette_size[0]>2)
@@ -547,7 +542,7 @@ int av1_count_colors_highbd(uint16_t *src, int stride, int rows, int cols,
                  av1_k_means(data, centroids, color_map, rows * cols, n, 1, max_itr);
              }
 
-             palette_rd_y(&palette_cand[*tot_palette_cands], context_ptr, bsize, mi_row, mi_col, data, centroids, n, color_cache, n_cache);
+             palette_rd_y(&palette_cand[*tot_palette_cands], context_ptr, bsize, data, centroids, n, color_cache, n_cache);
 
              //consider this candidate if it has some non zero palette
              if (palette_cand[*tot_palette_cands].pmi.palette_size[0] > 2)
