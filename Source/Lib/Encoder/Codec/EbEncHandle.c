@@ -1972,10 +1972,12 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
     //0: MRP Mode 0 (4,3)
     //1: MRP Mode 1 (2,2)
     sequence_control_set_ptr->mrp_mode = (uint8_t) (sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 0 : 1;
-
-    //0: ON
-    //1: OFF
-    sequence_control_set_ptr->cdf_mode = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode <= ENC_M6) ? 0 : 1;
+    if (sequence_control_set_ptr->static_config.enable_cdf == AUTO_MODE)
+        //0: ON
+        //1: OFF
+        sequence_control_set_ptr->cdf_mode = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode <= ENC_M6) ? 0 : 1;
+    else
+        sequence_control_set_ptr->cdf_mode = sequence_control_set_ptr->static_config.enable_cdf;
 
     //0: NSQ absent
     //1: NSQ present
@@ -2083,7 +2085,7 @@ void CopyApiFromApp(
     sequence_control_set_ptr->static_config.disable_dlf_flag = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->disable_dlf_flag;
 
     // Local Warped Motion
-    sequence_control_set_ptr->static_config.enable_warped_motion = EB_TRUE;
+    sequence_control_set_ptr->static_config.enable_warped_motion         = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enable_warped_motion;
     // Restoration filtering
     sequence_control_set_ptr->static_config.enable_restoration_filtering = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enable_restoration_filtering;
     // atb mode
@@ -2128,11 +2130,14 @@ void CopyApiFromApp(
     sequence_control_set_ptr->static_config.nsq_table                    = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->nsq_table;
     // frame end cdf update mode
     sequence_control_set_ptr->static_config.frame_end_cdf_update         = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->frame_end_cdf_update;
-
-
     // OBMC
     sequence_control_set_ptr->static_config.enable_obmc                  = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enable_obmc;
-
+    // Predictive ME
+    sequence_control_set_ptr->static_config.pred_me                      = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->pred_me;
+    // BiPred 3x3 injection
+    sequence_control_set_ptr->static_config.bipred_3x3_inject            = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->bipred_3x3_inject;
+    // Compound mode
+    sequence_control_set_ptr->static_config.coumpound_level              = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->coumpound_level;
     // Filter intra prediction
     sequence_control_set_ptr->static_config.enable_filter_intra         = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enable_filter_intra;
 	
@@ -2652,7 +2657,7 @@ EbErrorType eb_svt_enc_init_parameter(
     config_ptr->hierarchical_levels = 4;
     config_ptr->pred_structure = EB_PRED_RANDOM_ACCESS;
     config_ptr->disable_dlf_flag = EB_FALSE;
-    config_ptr->enable_warped_motion = EB_TRUE;
+    config_ptr->enable_warped_motion = -1;
     config_ptr->enable_atb = -1;
     config_ptr->enable_cdf = -1;
     config_ptr->edge_skp_angle_intra = -1;
@@ -2675,7 +2680,10 @@ EbErrorType eb_svt_enc_init_parameter(
     config_ptr->prune_ref_rec_part           = -1;
     config_ptr->nsq_table                    = -1;
     config_ptr->frame_end_cdf_update         = -1;
-    config_ptr->enable_obmc = EB_TRUE;
+    config_ptr->enable_obmc                  = -1;
+    config_ptr->pred_me                      = -1;
+    config_ptr->bipred_3x3_inject            = -1;
+    config_ptr->coumpound_level              = -1;
     config_ptr->enable_filter_intra = EB_TRUE;
     config_ptr->in_loop_me_flag = EB_TRUE;
     config_ptr->ext_block_flag = EB_FALSE;
