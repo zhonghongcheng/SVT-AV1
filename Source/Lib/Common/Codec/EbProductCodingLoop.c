@@ -1581,6 +1581,9 @@ void set_md_stage_counts(
 #if FILTER_INTRA_FLAG
         context_ptr->bypass_stage1[CAND_CLASS_6] = EB_TRUE;
 #endif
+#if PAL_CLASS
+        context_ptr->bypass_stage1[CAND_CLASS_7] = EB_TRUE;
+#endif
         context_ptr->bypass_stage1[CAND_CLASS_1] = EB_FALSE;
         context_ptr->bypass_stage1[CAND_CLASS_2] = EB_FALSE;
         context_ptr->bypass_stage1[CAND_CLASS_3] = context_ptr->combine_class12 ? EB_TRUE : EB_FALSE;
@@ -1600,7 +1603,9 @@ void set_md_stage_counts(
 #if FILTER_INTRA_FLAG
         context_ptr->bypass_stage2[CAND_CLASS_6] = EB_FALSE;
 #endif
-
+#if PAL_CLASS
+        context_ptr->bypass_stage2[CAND_CLASS_7] = EB_FALSE;
+#endif
         if (context_ptr->md_staging_mode == MD_STAGING_MODE_2 || context_ptr->md_staging_mode == MD_STAGING_MODE_3) {
             context_ptr->bypass_stage2[CAND_CLASS_1] = EB_FALSE;
             context_ptr->bypass_stage2[CAND_CLASS_2] = EB_FALSE;
@@ -1624,6 +1629,9 @@ void set_md_stage_counts(
     context_ptr->md_stage_1_count[CAND_CLASS_0] = (picture_control_set_ptr->slice_type == I_SLICE) ? fastCandidateTotalCount : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTRA_NFL : (INTRA_NFL >> 1);
 #if FILTER_INTRA_FLAG
     context_ptr->md_stage_1_count[CAND_CLASS_6] = 5;
+#endif
+#if PAL_CLASS
+    context_ptr->md_stage_1_count[CAND_CLASS_7] = 14;
 #endif
     context_ptr->md_stage_1_count[CAND_CLASS_1] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_NEW_NFL : (INTER_NEW_NFL >> 1);
     context_ptr->md_stage_1_count[CAND_CLASS_2] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
@@ -1657,6 +1665,9 @@ void set_md_stage_counts(
     context_ptr->md_stage_2_count[CAND_CLASS_0] = (picture_control_set_ptr->slice_type == I_SLICE) ? fastCandidateTotalCount : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTRA_NFL : (INTRA_NFL >> 1);
 #if FILTER_INTRA_FLAG
     context_ptr->md_stage_2_count[CAND_CLASS_6] =  5;
+#endif
+#if PAL_CLASS
+    context_ptr->md_stage_2_count[CAND_CLASS_7] = 14;// context_ptr->bypass_stage1[CAND_CLASS_7] ? context_ptr->md_stage_1_count[CAND_CLASS_7] : 14;
 #endif
     context_ptr->md_stage_2_count[CAND_CLASS_1] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 14 : 4;
     context_ptr->md_stage_2_count[CAND_CLASS_2] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 14 : 4;
@@ -1692,6 +1703,21 @@ void set_md_stage_counts(
     context_ptr->md_stage_3_count[CAND_CLASS_6] = (picture_control_set_ptr->temporal_layer_index == 0) ? 5 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 3 : 2;
     context_ptr->md_stage_3_count[CAND_CLASS_6] = (picture_control_set_ptr->temporal_layer_index == 0) ? 5 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 3 : 2;
 #endif
+#if PAL_CLASS
+    if (picture_control_set_ptr->parent_pcs_ptr->palette_mode == 1)
+        context_ptr->md_stage_3_count[CAND_CLASS_7] =// context_ptr->bypass_stage2[CAND_CLASS_7] ? context_ptr->md_stage_2_count[CAND_CLASS_7] :
+        (picture_control_set_ptr->temporal_layer_index == 0) ? 7 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 4;
+    else if (picture_control_set_ptr->parent_pcs_ptr->palette_mode == 2 || picture_control_set_ptr->parent_pcs_ptr->palette_mode == 3)
+        context_ptr->md_stage_3_count[CAND_CLASS_7] =// context_ptr->bypass_stage2[CAND_CLASS_7] ? context_ptr->md_stage_2_count[CAND_CLASS_7] :
+        (picture_control_set_ptr->temporal_layer_index == 0) ? 7 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 2 : 2;
+    else if (picture_control_set_ptr->parent_pcs_ptr->palette_mode == 4 || picture_control_set_ptr->parent_pcs_ptr->palette_mode == 5)
+        context_ptr->md_stage_3_count[CAND_CLASS_7] =// context_ptr->bypass_stage2[CAND_CLASS_7] ? context_ptr->md_stage_2_count[CAND_CLASS_7] :
+        (picture_control_set_ptr->temporal_layer_index == 0) ? 4 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 2 : 1;
+    else
+        context_ptr->md_stage_3_count[CAND_CLASS_7] = //context_ptr->bypass_stage2[CAND_CLASS_7] ? context_ptr->md_stage_2_count[CAND_CLASS_7] :
+        (picture_control_set_ptr->temporal_layer_index == 0) ? 2 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 1 : 1;
+#endif
+
     context_ptr->md_stage_3_count[CAND_CLASS_1] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 3 : 1;
     context_ptr->md_stage_3_count[CAND_CLASS_2] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 3 : 1;
 
@@ -1803,6 +1829,15 @@ void set_md_stage_counts(
     context_ptr->md_stage_3_count[CAND_CLASS_1] = context_ptr->bypass_stage2[CAND_CLASS_1] ? context_ptr->md_stage_2_count[CAND_CLASS_1] : context_ptr->md_stage_3_count[CAND_CLASS_1];
     context_ptr->md_stage_3_count[CAND_CLASS_2] = context_ptr->bypass_stage2[CAND_CLASS_2] ? context_ptr->md_stage_2_count[CAND_CLASS_2] : context_ptr->md_stage_3_count[CAND_CLASS_2];
     context_ptr->md_stage_3_count[CAND_CLASS_3] = context_ptr->bypass_stage2[CAND_CLASS_3] ? context_ptr->md_stage_2_count[CAND_CLASS_3] : context_ptr->md_stage_3_count[CAND_CLASS_3];
+
+   // stage2_cand_count[CAND_CLASS_i] = bypass_stage2 ? stage3_cand_count[CAND_CLASS_i] : stage2_cand_count[CAND_CLASS_i];
+   // stage1_cand_count[CAND_CLASS_i] = bypass_stage1 ? stage2_cand_count[CAND_CLASS_i] : stage1_cand_count[CAND_CLASS_i];
+
+
+#if PAL_CLASS  //THIS SHOULD BE rEMOVED AFTER REBAS~~~
+    context_ptr->md_stage_2_count[CAND_CLASS_7] = context_ptr->bypass_stage1[CAND_CLASS_7] ? context_ptr->md_stage_1_count[CAND_CLASS_7] : context_ptr->md_stage_2_count[CAND_CLASS_7];
+    context_ptr->md_stage_3_count[CAND_CLASS_7] = context_ptr->bypass_stage2[CAND_CLASS_7] ? context_ptr->md_stage_2_count[CAND_CLASS_7] : context_ptr->md_stage_3_count[CAND_CLASS_7];
+#endif
 
     // Step 4: zero-out count for CAND_CLASS_3 if CAND_CLASS_1 and CAND_CLASS_2 are merged (i.e. shift to the left)
     if (context_ptr->combine_class12)
@@ -2188,7 +2223,13 @@ void md_stage_0(
 
     context_ptr->md_staging_skip_interpolation_search = (context_ptr->md_staging_mode) ? EB_TRUE : picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? EB_FALSE : EB_TRUE;
 #if FILTER_INTRA_FLAG
+#if PAL_CLASS
+    context_ptr->md_staging_skip_inter_chroma_pred =
+        (context_ptr->md_staging_mode && context_ptr->md_stage == MD_STAGE_0 && context_ptr->target_class != CAND_CLASS_0 && context_ptr->target_class != CAND_CLASS_7)
+        ? EB_TRUE : EB_FALSE;
+#else
     context_ptr->md_staging_skip_inter_chroma_pred = (context_ptr->md_staging_mode && context_ptr->md_stage == MD_STAGE_0 && context_ptr->target_class != CAND_CLASS_0 && context_ptr->target_class != CAND_CLASS_6) ? EB_TRUE : EB_FALSE;
+#endif
 #else
     context_ptr->md_staging_skip_inter_chroma_pred = (context_ptr->md_staging_mode && context_ptr->md_stage == MD_STAGE_0 && context_ptr->target_class != CAND_CLASS_0) ? EB_TRUE : EB_FALSE;
 #endif
@@ -3736,7 +3777,12 @@ EbErrorType av1_intra_luma_prediction(
             tx_size,
             mode,                                                                           //PredictionMode mode,
             candidate_buffer_ptr->candidate_ptr->angle_delta[PLANE_TYPE_Y],
+#if PAL_SUP
+            candidate_buffer_ptr->candidate_ptr->palette_info.pmi.palette_size[0]>0,
+            &candidate_buffer_ptr->candidate_ptr->palette_info ,    //ATB MD
+#else
             0,                                                                              //int32_t use_palette,
+#endif
 #if FILTER_INTRA_FLAG
             candidate_buffer_ptr->candidate_ptr->filter_intra_mode,
 #else
@@ -3778,7 +3824,12 @@ EbErrorType av1_intra_luma_prediction(
             tx_size,
             mode,
             candidate_buffer_ptr->candidate_ptr->angle_delta[PLANE_TYPE_Y],
+#if PAL_SUP
+            candidate_buffer_ptr->candidate_ptr->palette_info.pmi.palette_size[0] > 0,
+            &candidate_buffer_ptr->candidate_ptr->palette_info,    //ATB MD
+#else
             0,
+#endif
             FILTER_INTRA_MODES,
             topNeighArray + 1,
             leftNeighArray + 1,
@@ -5818,7 +5869,12 @@ void md_stage_2(
     context_ptr->md_staging_skip_atb = EB_TRUE;
     context_ptr->md_staging_tx_search = 0;
 #if FILTER_INTRA_FLAG
+#if PAL_CLASS
+    context_ptr->md_staging_skip_full_chroma = context_ptr->target_class == CAND_CLASS_7 ||
+        context_ptr->target_class == CAND_CLASS_0 || context_ptr->target_class == CAND_CLASS_6 || context_ptr->md_staging_mode == MD_STAGING_MODE_3;
+#else
     context_ptr->md_staging_skip_full_chroma =  context_ptr->target_class == CAND_CLASS_0 || context_ptr->target_class == CAND_CLASS_6 || context_ptr->md_staging_mode == MD_STAGING_MODE_3;
+#endif
 #else
     context_ptr->md_staging_skip_full_chroma = context_ptr->target_class == CAND_CLASS_0 || context_ptr->md_staging_mode == MD_STAGING_MODE_3;
 #endif
@@ -5882,7 +5938,13 @@ void md_stage_3(
         context_ptr->md_staging_skip_full_pred = (context_ptr->md_staging_mode == MD_STAGING_MODE_3) ? EB_FALSE: EB_TRUE;
         context_ptr->md_staging_skip_atb = context_ptr->coeff_based_skip_atb;
 #if FILTER_INTRA_FLAG
+#if PAL_CLASS
+        context_ptr->md_staging_tx_search =
+            (candidate_ptr->cand_class == CAND_CLASS_0 || candidate_ptr->cand_class == CAND_CLASS_6 || candidate_ptr->cand_class == CAND_CLASS_7)
+            ? 2 : 1;
+#else
         context_ptr->md_staging_tx_search = (candidate_ptr->cand_class == CAND_CLASS_0 || candidate_ptr->cand_class == CAND_CLASS_6)? 2 : 1;
+#endif
 #else
         context_ptr->md_staging_tx_search = candidate_ptr->cand_class == CAND_CLASS_0 ? 2 : 1;
 #endif
@@ -5929,6 +5991,11 @@ void move_cu_data(
     CodingUnit *src_cu,
     CodingUnit *dst_cu)
 {
+#if PAL_SUP
+    dst_cu->palette_info.color_idx_map = (uint8_t *)malloc(MAX_PALETTE_SQUARE);
+    memcpy(dst_cu->palette_info.color_idx_map, src_cu->palette_info.color_idx_map, MAX_PALETTE_SQUARE);
+    memcpy(&dst_cu->palette_info.pmi, &src_cu->palette_info.pmi, sizeof(PALETTE_MODE_INFO));
+#endif
 #if OBMC_FLAG
     dst_cu->interp_filters = src_cu->interp_filters;
 #endif
@@ -6046,6 +6113,10 @@ void move_cu_data_redund(
     CodingUnit *src_cu,
     CodingUnit *dst_cu){
 
+#if PAL_SUP
+    memcpy(dst_cu->palette_info.color_idx_map, src_cu->palette_info.color_idx_map, MAX_PALETTE_SQUARE);
+    memcpy(&dst_cu->palette_info.pmi, &src_cu->palette_info.pmi, sizeof(PALETTE_MODE_INFO));
+#endif
 #if OBMC_FLAG
     dst_cu->interp_filters = src_cu->interp_filters;
 #endif
