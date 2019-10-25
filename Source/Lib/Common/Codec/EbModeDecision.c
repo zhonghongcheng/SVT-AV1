@@ -3616,8 +3616,11 @@ void inject_new_candidates(
             /**************
                NEW_NEWMV
             ************* */
+#if NO_BIPED
+                if (0) {
+#else
             if (allow_bipred) {
-
+#endif
                 if (inter_direction == 2) {
                     int16_t to_inject_mv_x_l0 = use_close_loop_me ? inloop_me_context->inloop_me_mv[0][0][close_loop_me_index][0] << 1 : me_results->me_mv_array[me_block_offset][list0_ref_index].x_mv << 1;
                     int16_t to_inject_mv_y_l0 = use_close_loop_me ? inloop_me_context->inloop_me_mv[0][0][close_loop_me_index][1] << 1 : me_results->me_mv_array[me_block_offset][list0_ref_index].y_mv << 1;
@@ -4128,7 +4131,7 @@ void  inject_inter_candidates(
     /**************
          MVP
     ************* */
-
+#if !ONLY_ME
     uint32_t refIt;
     //all of ref pairs: (1)single-ref List0  (2)single-ref List1  (3)compound Bi-Dir List0-List1  (4)compound Uni-Dir List0-List0  (5)compound Uni-Dir List1-List1
     for (refIt = 0; refIt < picture_control_set_ptr->parent_pcs_ptr->tot_ref_frame_types; ++refIt) {
@@ -4159,7 +4162,7 @@ void  inject_inter_candidates(
             }
         }
     }
-
+#endif
     if (inject_newmv_candidate) {
 
         inject_new_candidates(
@@ -4226,6 +4229,7 @@ void  inject_inter_candidates(
         }
     }
 
+#if !ONLY_ME
     if (context_ptr->global_mv_injection) {
         /**************
          GLOBALMV L0
@@ -4506,6 +4510,7 @@ void  inject_inter_candidates(
                 isCompoundEnabled,
                 allow_bipred,
                 &canTotalCnt);
+#endif
 // update the total number of candidates injected
 (*candidateTotalCnt) = canTotalCnt;
 
@@ -5398,6 +5403,9 @@ EbErrorType generate_md_stage_0_cand(
             inject_intra_candidate = context_ptr->blk_geom->shape == PART_N ? 1 :
                 context_ptr->parent_sq_has_coeff[sq_index] != 0 ? inject_intra_candidate : 0;
         }
+#if NO_INTRA_IN_INTER
+        inject_intra_candidate = 0;
+#endif
 }
     //----------------------
     // Intra
@@ -5417,6 +5425,29 @@ EbErrorType generate_md_stage_0_cand(
                 sb_ptr,
                 &canTotalCnt);
     }
+#if NO_INTRA_IN_INTER
+    if (slice_type == I_SLICE) {
+#if FILTER_INTRA_FLAG
+        if (picture_control_set_ptr->pic_filter_intra_mode > 0 && av1_filter_intra_allowed_bsize(sequence_control_set_ptr->seq_header.enable_filter_intra, context_ptr->blk_geom->bsize))
+            inject_filter_intra_candidates(
+                picture_control_set_ptr,
+                context_ptr,
+                &canTotalCnt);
+
+#endif
+        if (frm_hdr->allow_intrabc)
+            inject_intra_bc_candidates(
+                picture_control_set_ptr,
+                context_ptr,
+                sequence_control_set_ptr,
+                context_ptr->cu_ptr,
+                &canTotalCnt
+            );
+
+        // Track the total number of fast intra candidates
+        context_ptr->fast_candidate_intra_count = canTotalCnt;
+    }
+#else
 #if FILTER_INTRA_FLAG
        if (picture_control_set_ptr->pic_filter_intra_mode > 0 && av1_filter_intra_allowed_bsize(sequence_control_set_ptr->seq_header.enable_filter_intra, context_ptr->blk_geom->bsize))
             inject_filter_intra_candidates(
@@ -5436,7 +5467,7 @@ EbErrorType generate_md_stage_0_cand(
 
     // Track the total number of fast intra candidates
     context_ptr->fast_candidate_intra_count = canTotalCnt;
-
+#endif
     if (slice_type != I_SLICE) {
         if (inject_inter_candidate)
             inject_inter_candidates(

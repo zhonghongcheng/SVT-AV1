@@ -842,7 +842,10 @@ EbErrorType signal_derivation_multi_processes_oq(
         if (picture_control_set_ptr->pic_depth_mode < PIC_SQ_DEPTH_MODE)
             assert(sequence_control_set_ptr->nsq_present == 1 && "use nsq_present 1");
 
-        picture_control_set_ptr->max_number_of_pus_per_sb = (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE) ? MAX_ME_PU_COUNT : SQUARE_PU_COUNT;
+#if ALL_64x64 || ALL_32x32 || ALL_16x16 || ALL_8x8 || ALL_4x4
+        picture_control_set_ptr->pic_depth_mode = PIC_SQ_DEPTH_MODE;
+#endif
+    picture_control_set_ptr->max_number_of_pus_per_sb = (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE) ? MAX_ME_PU_COUNT : SQUARE_PU_COUNT;
 
 #if PREDICT_NSQ_SHAPE
     // Depth Level                           Settings
@@ -907,7 +910,9 @@ EbErrorType signal_derivation_multi_processes_oq(
 				picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL3;
         else
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
-
+#if NSQ_OFF
+        picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
+#endif
     if (picture_control_set_ptr->nsq_search_level > NSQ_SEARCH_OFF)
         assert(sequence_control_set_ptr->nsq_present == 1 && "use nsq_present 1");
 
@@ -1147,7 +1152,9 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->tx_search_reduced_set = 1;
     else
         picture_control_set_ptr->tx_search_reduced_set = 1;
-
+#if TX_TYPE_OFF
+    picture_control_set_ptr->tx_search_level = 0;
+#endif
     // Intra prediction modes                       Settings
     // 0                                            FULL
     // 1                                            LIGHT per block : disable_z2_prediction && disable_angle_refinement  for 64/32/4
@@ -1233,7 +1240,9 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
         else
             picture_control_set_ptr->atb_mode = 0;
-
+#if ATB_OFF
+        picture_control_set_ptr->atb_mode = 0;
+#endif
         // Set skip atb                          Settings
         // 0                                     OFF
         // 1                                     ON

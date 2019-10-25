@@ -1495,6 +1495,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->redundant_blk = EB_TRUE;
     else
         context_ptr->redundant_blk = EB_FALSE;
+#if NO_REDUD_BLOCK
+    context_ptr->redundant_blk = EB_FALSE;
+#endif
     if (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
 #if FIX_ESTIMATE_INTRA
         if (MR_MODE)
