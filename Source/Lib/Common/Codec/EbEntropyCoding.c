@@ -6240,7 +6240,7 @@ assert(bsize < BlockSizeS_ALL);
                     int rows, cols;
                     av1_get_block_dimensions(blk_geom->bsize, plane, cu_ptr->av1xd, NULL, NULL, &rows,
                         &cols);
-                    pack_map_tokens(ec_writer, &context_ptr->tok, palette_size_plane, rows * cols);
+                    pack_map_tokens(ec_writer, (const TOKENEXTRA **)(&context_ptr->tok), palette_size_plane, rows * cols);
                     //advance the pointer
                     context_ptr->tok = tok;
                 }
@@ -6649,7 +6649,7 @@ assert(bsize < BlockSizeS_ALL);
                         int rows, cols;
                         av1_get_block_dimensions(blk_geom->bsize, plane, cu_ptr->av1xd, NULL, NULL, &rows,
                             &cols);
-                        pack_map_tokens(ec_writer, &context_ptr->tok, palette_size_plane, rows * cols);
+                        pack_map_tokens(ec_writer, (const TOKENEXTRA **)(&context_ptr->tok), palette_size_plane, rows * cols);
                         //advance the pointer
                         context_ptr->tok = tok;
                     }
