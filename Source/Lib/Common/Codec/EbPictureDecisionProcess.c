@@ -998,10 +998,31 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->ibc_mode = 1;
     }
     else {
+#if PAL_SUP
+        //this will enable sc tools for P frames. hence change bitstream even if palette mode is OFF
+        frm_hdr->allow_screen_content_tools = picture_control_set_ptr->sc_content_detected;
+#else
         frm_hdr->allow_screen_content_tools = 0;
+#endif
         frm_hdr->allow_intrabc = 0;
     }
 
+#if PAL_SUP
+    //Palette Modes:  0:OFF  1:Slow ... 6:Fastest
+    if (frm_hdr->allow_screen_content_tools)
+        picture_control_set_ptr->palette_mode =
+          (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT ||
+          (sequence_control_set_ptr->static_config.encoder_bit_depth > EB_8BIT && sequence_control_set_ptr->static_config.enable_hbd_mode_decision ==0) ) &&
+          picture_control_set_ptr->enc_mode == ENC_M0 ? 1 : 0;
+
+    else
+        picture_control_set_ptr->palette_mode = 0;
+
+    //-------- TO REMOVE BEFORE COMMIT
+    picture_control_set_ptr->palette_mode = 1;// 6;
+
+    assert(picture_control_set_ptr->palette_mode<7);
+#endif
     if (!picture_control_set_ptr->sequence_control_set_ptr->static_config.disable_dlf_flag && frm_hdr->allow_intrabc == 0) {
     if (sc_content_detected)
         if (picture_control_set_ptr->enc_mode == ENC_M0)

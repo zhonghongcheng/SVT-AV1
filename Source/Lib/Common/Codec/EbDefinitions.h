@@ -33,6 +33,14 @@
 extern "C" {
 #endif
 
+/* Note: shutting the macro PAL_SUP will not give SS as pcs->palette_mode = 0
+   rate estimation is changed for I frame + enabled sc for P (rate estimation
+   is a result changed for P frames)
+*/
+#define PAL_SUP     1
+#define PAL_CLASS   1
+
+
 #define FIX_ALTREF                   1 // Address ALTREF mismatch between rtime-m0-test and master: fixed actual_future_pics derivation, shut padding of the central frame, fixed end past frame index prior to window shrinking
 #define FIX_NEAREST_NEW              1 // Address NEAREST_NEW mismatch between rtime-m0-test and master: fixed injection and fixed settings
 #define FIX_ESTIMATE_INTRA           1 // Address ESTIMATE_INTRA mismatch between rtime-m0-test and master: fixed settings
@@ -525,6 +533,9 @@ typedef enum CAND_CLASS {
 #endif
 #if FILTER_INTRA_FLAG
     CAND_CLASS_6,
+#endif
+#if PAL_CLASS
+    CAND_CLASS_7,
 #endif
     CAND_CLASS_TOTAL
 } CAND_CLASS;
@@ -2316,6 +2327,20 @@ typedef enum EbAsm
     ASM_TYPE_INVALID = ~0
 } EbAsm;
 
+#if PAL_SUP
+typedef struct {
+    // Value of base colors for Y, U, and V
+    uint16_t palette_colors[3 * PALETTE_MAX_SIZE];
+    // Number of base colors for Y (0) and UV (1)
+    uint8_t palette_size[2];
+
+} PALETTE_MODE_INFO;
+
+typedef struct {
+    PALETTE_MODE_INFO pmi;
+    uint8_t  *color_idx_map;
+} PALETTE_INFO;
+#endif
 /** The EB_NULL type is used to define the C style NULL pointer.
 */
 #define EB_NULL ((void*) 0)
