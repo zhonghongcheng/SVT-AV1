@@ -37,8 +37,8 @@ extern "C" {
    rate estimation is changed for I frame + enabled sc for P (rate estimation
    is a result changed for P frames)
 */
-#define PAL_SUP     0
-#define PAL_CLASS   0
+#define PAL_SUP     1
+#define PAL_CLASS   1
 
 
 #define FIX_ALTREF                   1 // Address ALTREF mismatch between rtime-m0-test and master: fixed actual_future_pics derivation, shut padding of the central frame, fixed end past frame index prior to window shrinking
