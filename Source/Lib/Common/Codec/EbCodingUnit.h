@@ -579,6 +579,10 @@ extern "C" {
         // Quantized Coefficients
         EbPictureBufferDesc          *quantized_coeff;
         TileInfo tile_info;
+#if MDC_ADAPTIVE_LEVEL
+        uint8_t                       depth_ranking[NUMBER_OF_DEPTH];
+        uint64_t                      depth_cost[NUMBER_OF_DEPTH];
+#endif
     } LargestCodingUnit;
 
     extern EbErrorType largest_coding_unit_ctor(

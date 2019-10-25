@@ -1151,8 +1151,13 @@ void init_considered_block(
     resultsPtr->leaf_count = 0;
     uint32_t  blk_index = 0;
     uint32_t  parent_depth_idx_mds, sparent_depth_idx_mds, child_block_idx_1, child_block_idx_2, child_block_idx_3, child_block_idx_4;
+#if MDC_ADAPTIVE_LEVEL
+    uint8_t  is_complete_sb = sequence_control_set_ptr->sb_geom[sb_index].is_complete_sb;
+    LargestCodingUnit  *sb_ptr = picture_control_set_ptr->sb_ptr_array[sb_index];
+#else
     SbParams *sb_params = &sequence_control_set_ptr->sb_params_array[sb_index];
     uint8_t  is_complete_sb = sb_params->is_complete_sb;
+#endif
     uint32_t tot_d1_blocks, block_1d_idx;
     EbBool split_flag;
     uint32_t depth_refinement_mode = AllD;
@@ -1202,6 +1207,70 @@ void init_considered_block(
             split_flag = context_ptr->local_cu_array[blk_index].early_split_flag;
         if (sequence_control_set_ptr->sb_geom[sb_index].block_is_inside_md_scan[blk_index] && is_blk_allowed) {
             if (blk_geom->shape == PART_N) {
+#if MDC_ADAPTIVE_LEVEL
+            // Update MDC refinement
+                uint8_t depth_offset = sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 0 : 1;
+                uint8_t start_depth = sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 0 : 1;
+                uint8_t end_depth = 5;
+                uint8_t depth = blk_geom->depth + depth_offset;
+                uint64_t sum_cost=0;
+                uint64_t average_cost=0;
+                uint64_t var_cost=0;
+                uint64_t i;
+                uint8_t adjusted_depth_level = picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level;
+                for (i = start_depth; i < end_depth; i++) {
+                    sum_cost += sb_ptr->depth_cost[i];
+                }
+                average_cost = sum_cost / ((end_depth + 1) - start_depth);
+                for (i = start_depth; i < end_depth; i++) {
+                    var_cost += (sb_ptr->depth_cost[i] - average_cost);
+                }
+                var_cost = (var_cost / ((end_depth + 1) - start_depth)) >> 16;
+
+                if(var_cost < 100)
+                    adjusted_depth_level = 5;
+                else
+                    adjusted_depth_level = 6;
+                
+                if ((sb_ptr->depth_ranking[depth] == 0) &&
+                    (sb_ptr->depth_ranking[depth > start_depth ? depth - 1 : depth] > 3) &&
+                    (sb_ptr->depth_ranking[depth < end_depth ? depth + 1 : depth] > 3)) {
+                    adjusted_depth_level = 4;
+                }
+
+                switch (adjusted_depth_level) {
+                case 0:
+                    depth_refinement_mode = is_complete_sb ? Pred : AllD;
+                    break;
+                case 1:
+                    depth_refinement_mode = is_complete_sb ? Predp1 : AllD;
+                    break;
+                case 2:
+                    depth_refinement_mode = is_complete_sb ? Predp2 : AllD;
+                    break;
+                case 3:
+                    depth_refinement_mode = is_complete_sb ? Predp3 : AllD;
+                    break;
+                case 4:
+                    depth_refinement_mode = is_complete_sb ? Predm1p1 : AllD;
+                    break;
+                case 5:
+                    depth_refinement_mode = is_complete_sb ? Predm1p2 : AllD;
+                    break;
+                case 6:
+                    depth_refinement_mode = is_complete_sb ? Predm1p3 : AllD;
+                    break;
+                case 7:
+                    depth_refinement_mode = is_complete_sb ? Predm2p3 : AllD;
+                    break;
+                case 8:
+                    depth_refinement_mode = is_complete_sb ? Predm1 : AllD;
+                    break;
+                default:
+                    printf("Not supported refined mdc_depth_level");
+                    break;
+                }
+#endif
                 switch (depth_refinement_mode) {
                 case Pred:
                     // Set predicted block to be considered

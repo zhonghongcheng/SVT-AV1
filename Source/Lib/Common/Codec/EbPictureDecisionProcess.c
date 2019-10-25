@@ -857,7 +857,11 @@ EbErrorType signal_derivation_multi_processes_oq(
     if (MR_MODE || sc_content_detected || sequence_control_set_ptr->static_config.enable_hbd_mode_decision)
         picture_control_set_ptr->mdc_depth_level = MAX_MDC_LEVEL;
     else if (picture_control_set_ptr->enc_mode == ENC_M0)
+#if MDC_ADAPTIVE_LEVEL
+        picture_control_set_ptr->mdc_depth_level = 6;
+#else
         picture_control_set_ptr->mdc_depth_level = (sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER) ? MAX_MDC_LEVEL : 6;
+#endif
     else
         picture_control_set_ptr->mdc_depth_level = MAX_MDC_LEVEL; // Not tuned yet.
 #endif
