@@ -37,8 +37,8 @@ extern "C" {
    rate estimation is changed for I frame + enabled sc for P (rate estimation
    is a result changed for P frames)
 */
-#define PAL_SUP     0
-#define PAL_CLASS   0
+#define PAL_SUP     1
+#define PAL_CLASS   1
 #define M0_tune                      0
 #define TWO_PASS_IMPROVEMENT         1 // Tune 2 pass for better Luma
 #define NON_KF_INTRA_FIX             1 // Fix altref for non-key Intra frames
