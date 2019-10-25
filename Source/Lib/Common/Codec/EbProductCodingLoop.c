@@ -2408,7 +2408,7 @@ void md_stage_0(
 #if REMOVE_MD_STAGE_1 && PAL_CLASS
     context_ptr->md_staging_skip_inter_chroma_pred = (context_ptr->md_staging_mode == MD_STAGING_MODE_1 && context_ptr->target_class != CAND_CLASS_0 && context_ptr->target_class != CAND_CLASS_6 && context_ptr->target_class != CAND_CLASS_7) ? EB_TRUE : EB_FALSE;
 #elif REMOVE_MD_STAGE_1
-    context_ptr->md_staging_skip_inter_chroma_pred = (context_ptr->md_staging_mode == MD_STAGING_MODE_1 && context_ptr->target_class != CAND_CLASS_0 && context_ptr->target_class != CAND_CLASS_6) ? EB_TRUE : EB_FALSE;
+    context_ptr->md_staging_skip_inter_chroma_pred = (context_ptr->md_staging_mode == MD_STAGING_MODE_1 && context_ptr->target_class != CAND_CLASS_0 && context_ptr->target_class != CAND_CLASS_6 && context_ptr->target_class != CAND_CLASS_7) ? EB_TRUE : EB_FALSE;
 #else
     context_ptr->md_staging_skip_inter_chroma_pred = (context_ptr->md_staging_mode && context_ptr->md_stage == MD_STAGE_0 && context_ptr->target_class != CAND_CLASS_0 && context_ptr->target_class != CAND_CLASS_6) ? EB_TRUE : EB_FALSE;
 #endif
