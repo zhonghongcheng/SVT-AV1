@@ -1013,13 +1013,11 @@ EbErrorType signal_derivation_multi_processes_oq(
         picture_control_set_ptr->palette_mode =
           (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT ||
           (sequence_control_set_ptr->static_config.encoder_bit_depth > EB_8BIT && sequence_control_set_ptr->static_config.enable_hbd_mode_decision ==0) ) &&
-          picture_control_set_ptr->enc_mode == ENC_M0 ? 1 : 0;
-
+          picture_control_set_ptr->enc_mode == ENC_M0 ? 6 : 0;
     else
         picture_control_set_ptr->palette_mode = 0;
 
-    //-------- TO REMOVE BEFORE COMMIT
-    picture_control_set_ptr->palette_mode = 1;// 6;
+
 
     assert(picture_control_set_ptr->palette_mode<7);
 #endif
