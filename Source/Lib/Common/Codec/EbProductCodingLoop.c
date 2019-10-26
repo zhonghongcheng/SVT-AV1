@@ -6176,13 +6176,21 @@ EbBool allowed_ns_cu(
 #if COMBINE_MDC_NSQ_TABLE
     uint8_t                            mdc_depth_level,
 #endif
+#if NSQ_EARLY_EXIT
+    uint8_t                           skip_remaining_nsq[NUMBER_OF_SHAPES],
+#endif
     EbBool                             is_nsq_table_used,
     uint8_t                            nsq_max_shapes_md,
     ModeDecisionContext              *context_ptr,
     uint8_t                            is_complete_sb){
     EbBool  ret = 1;
     UNUSED(is_complete_sb);
-
+#if NSQ_EARLY_EXIT
+    if (skip_remaining_nsq[context_ptr->blk_geom->shape]) {
+        ret = 0;
+        return ret;
+    }
+#endif
 #if COMBINE_MDC_NSQ_TABLE
     if (is_nsq_table_used) {
         if (mdc_depth_level == MAX_MDC_LEVEL) {
@@ -7294,6 +7302,9 @@ void md_encode_block(
     SsMeContext                    *ss_mecontext,
     uint8_t                        *skip_sub_blocks,
     uint32_t                        lcuAddr,
+#if NSQ_EARLY_EXIT
+    uint8_t                         skip_remaining_nsq[NUMBER_OF_SHAPES],
+#endif
     ModeDecisionCandidateBuffer    *bestcandidate_buffers[5])
 {
     ModeDecisionCandidateBuffer  **candidate_buffer_ptr_array_base = context_ptr->candidate_buffer_ptr_array;
@@ -7368,6 +7379,9 @@ void md_encode_block(
     if (allowed_ns_cu(
 #if COMBINE_MDC_NSQ_TABLE
         picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level,
+#endif
+#if NSQ_EARLY_EXIT
+       skip_remaining_nsq,
 #endif
         is_nsq_table_used, picture_control_set_ptr->parent_pcs_ptr->nsq_max_shapes_md, context_ptr, is_complete_sb))
     {
@@ -7959,6 +7973,12 @@ EB_EXTERN EbErrorType mode_decision_sb(
     int skip_next_sq = 0;
     uint32_t next_non_skip_blk_idx_mds = 0;
     uint8_t skip_sub_blocks;
+#if NSQ_EARLY_EXIT
+    uint64_t md_nsq_cost[NUMBER_OF_SHAPES] = { MAX_MODE_COST,MAX_MODE_COST,MAX_MODE_COST,
+                        MAX_MODE_COST,MAX_MODE_COST,MAX_MODE_COST,
+                        MAX_MODE_COST,MAX_MODE_COST,MAX_MODE_COST,MAX_MODE_COST };
+    uint8_t skip_remaining_nsq[NUMBER_OF_SHAPES] = { 0 };
+#endif
     do {
         skip_sub_blocks = 0;
         blk_idx_mds = leaf_data_array[cuIdx].mds_idx;
@@ -8151,6 +8171,9 @@ EB_EXTERN EbErrorType mode_decision_sb(
                     ss_mecontext,
                     &skip_sub_blocks,
                     lcuAddr,
+#if NSQ_EARLY_EXIT
+                    skip_remaining_nsq,
+#endif
                     bestcandidate_buffers);
 
             }
@@ -8189,6 +8212,9 @@ EB_EXTERN EbErrorType mode_decision_sb(
             uint32_t first_blk_idx = context_ptr->cu_ptr->mds_idx - (blk_geom->nsi);//index of first block in this partition
             for (int blk_it = 0; blk_it < blk_geom->nsi + 1; blk_it++)
                 tot_cost += context_ptr->md_local_cu_unit[first_blk_idx + blk_it].cost;
+#if NSQ_EARLY_EXIT
+                context_ptr->tot_cost = tot_cost;
+#endif
 #if SPEED_OPT
             if ((tot_cost + tot_cost * (blk_geom->totns - (blk_geom->nsi + 1))* context_ptr->md_exit_th / (blk_geom->nsi + 1) / 100) > context_ptr->md_local_cu_unit[context_ptr->blk_geom->sqi_mds].cost)
 #else
@@ -8196,7 +8222,29 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #endif
                 skip_next_nsq = 1;
         }
-
+#if NSQ_EARLY_EXIT // Needs to be updated to support the  skipping of PART_N
+        md_nsq_cost[blk_geom->shape] = context_ptr->tot_cost;
+        if (picture_control_set_ptr->slice_type != I_SLICE) {
+            uint64_t skip_th =  NSQ_SKIP_TH;
+            if (blk_geom->shape == PART_V) {
+                if ((md_nsq_cost[PART_N] < ((md_nsq_cost[PART_H] * skip_th) / 100)) && (md_nsq_cost[PART_N] < ((md_nsq_cost[PART_V] * skip_th / 100)))) {
+                    for (uint8_t nsq_idx = 3; nsq_idx < NUMBER_OF_SHAPES; nsq_idx++) {
+                        skip_remaining_nsq[nsq_idx] = 1;
+                    }
+                }
+                else if ((md_nsq_cost[PART_H] < ((md_nsq_cost[PART_N] * skip_th) / 100)) && (md_nsq_cost[PART_H] < ((md_nsq_cost[PART_V] * skip_th / 100)))) {
+                    skip_remaining_nsq[PART_VA] = 1;
+                    skip_remaining_nsq[PART_VB] = 1;
+                    skip_remaining_nsq[PART_V4] = 1;
+                }
+                else if ((md_nsq_cost[PART_V] < ((md_nsq_cost[PART_N] * skip_th) / 100)) && (md_nsq_cost[PART_V] < ((md_nsq_cost[PART_H] * skip_th / 100)))) {
+                    skip_remaining_nsq[PART_HA] = 1;
+                    skip_remaining_nsq[PART_HB] = 1;
+                    skip_remaining_nsq[PART_H4] = 1;
+                }
+            }
+        }
+#endif
         if (blk_geom->shape != PART_N) {
             if (blk_geom->nsi + 1 < blk_geom->totns)
                 md_update_all_neighbour_arrays(
@@ -8236,6 +8284,13 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #if ADD_SUPPORT_TO_SKIP_PART_N
             d1_block_itr = 0;
             d1_first_block = 1;
+#endif
+#if NSQ_EARLY_EXIT
+            // Reset Early skip parameter for next block branch
+            for (uint8_t nsq_idx = 0; nsq_idx < NUMBER_OF_SHAPES; nsq_idx++) {
+                md_nsq_cost[nsq_idx] = MAX_MODE_COST;
+                skip_remaining_nsq[nsq_idx] = 0;
+            }
 #endif
             context_ptr->coeff_based_skip_atb = picture_control_set_ptr->parent_pcs_ptr->coeff_based_skip_atb && context_ptr->md_cu_arr_nsq[lastCuIndex_mds].block_has_coeff == 0 ? 1 : 0;
             if (context_ptr->md_cu_arr_nsq[lastCuIndex_mds].split_flag == EB_FALSE)

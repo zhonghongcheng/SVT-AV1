@@ -169,6 +169,10 @@ enum {
 #define NSQ_TAB_SIZE                                    8
 #define MAX_MDC_LEVEL                                   8
 #define MDC_ADAPTIVE_LEVEL                              0
+#define NSQ_EARLY_EXIT                                  0
+#if NSQ_EARLY_EXIT
+#define NSQ_SKIP_TH                                     70 // 80 // 90
+#endif
 #else
 #define NSQ_TAB_SIZE                                    6
 #endif
