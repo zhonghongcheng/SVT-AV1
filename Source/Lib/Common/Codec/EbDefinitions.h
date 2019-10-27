@@ -40,7 +40,8 @@ extern "C" {
 #define PAL_SUP     1
 #define PAL_CLASS   1
 
-
+#define TWO_PASS_IMPROVEMENT         1 // Tune 2 pass for better Luma
+#define NON_KF_INTRA_FIX             1 // Fix altref for non-key Intra frames
 #define FIX_ALTREF                   1 // Address ALTREF mismatch between rtime-m0-test and master: fixed actual_future_pics derivation, shut padding of the central frame, fixed end past frame index prior to window shrinking
 #define FIX_NEAREST_NEW              1 // Address NEAREST_NEW mismatch between rtime-m0-test and master: fixed injection and fixed settings
 #define FIX_ESTIMATE_INTRA           1 // Address ESTIMATE_INTRA mismatch between rtime-m0-test and master: fixed settings
