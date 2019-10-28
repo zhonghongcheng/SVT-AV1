@@ -1332,7 +1332,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 5                    Level 5: 7x5 full-pel search +  (H + V + D) sub-pel refinement = 8 half-pel + 8 quarter-pel = 16 positions + pred_me_distortion to pa_me_distortion deviation off
     if (picture_control_set_ptr->slice_type != I_SLICE)
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#if M0_tune
+            context_ptr->predictive_me_level = (picture_control_set_ptr->enc_mode <= ENC_M0)? 5: 4;
+#else
             context_ptr->predictive_me_level = 4;
+#endif
         else if (picture_control_set_ptr->enc_mode <= ENC_M4)
             context_ptr->predictive_me_level = 2;
         else
@@ -1487,7 +1491,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             context_ptr->edge_based_skip_angle_intra = 0;
         else
 #if FIX_ESTIMATE_INTRA
+#if M0_tune
+            context_ptr->edge_based_skip_angle_intra = (picture_control_set_ptr->enc_mode == ENC_M0) ? 0 : 1;
+#else
             context_ptr->edge_based_skip_angle_intra = (picture_control_set_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0) ? 0 : 1;
+#endif
 #else
             context_ptr->edge_based_skip_angle_intra = 1;
 #endif
