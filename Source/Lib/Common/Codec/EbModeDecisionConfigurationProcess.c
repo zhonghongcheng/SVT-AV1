@@ -1141,7 +1141,10 @@ void set_child_to_be_considered(
                 depth_step - 1);
     }
 }
-
+#if MDC_ADAPTIVE_LEVEL
+extern uint16_t get_variance_for_cu(const BlockGeom *blk_geom,
+    uint16_t *variance_ptr);
+#endif
 void init_considered_block(
     SequenceControlSet *sequence_control_set_ptr,
     PictureControlSet  *picture_control_set_ptr,
@@ -1209,34 +1212,33 @@ void init_considered_block(
             if (blk_geom->shape == PART_N) {
 #if MDC_ADAPTIVE_LEVEL
             // Update MDC refinement
+                uint8_t cost_th = sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER ? 100 :
+                    picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag ? 300 : 150;
+                uint8_t var_th[2] = { 0, 50 };
+                uint8_t rank_th = 0;
                 uint8_t depth_offset = sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 0 : 1;
                 uint8_t start_depth = sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 0 : 1;
                 uint8_t end_depth = 5;
                 uint8_t depth = blk_geom->depth + depth_offset;
-                uint64_t sum_cost=0;
-                uint64_t average_cost=0;
-                uint64_t var_cost=0;
-                uint64_t i;
-                uint8_t adjusted_depth_level = picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level;
-                for (i = start_depth; i < end_depth; i++) {
-                    sum_cost += sb_ptr->depth_cost[i];
-                }
-                average_cost = sum_cost / ((end_depth + 1) - start_depth);
-                for (i = start_depth; i < end_depth; i++) {
-                    var_cost += (sb_ptr->depth_cost[i] - average_cost);
-                }
-                var_cost = (var_cost / ((end_depth + 1) - start_depth)) >> 16;
 
-                if(var_cost < 100)
+                uint8_t adjusted_depth_level = picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level;
+
+                uint16_t *variance_ptr = picture_control_set_ptr->parent_pcs_ptr->variance[sb_ptr->index];
+                uint16_t variance = get_variance_for_cu(blk_geom, variance_ptr);
+                
+                int64_t above_diff = (int64_t)sb_ptr->depth_cost[depth > start_depth ? depth - 1 : depth] - (int64_t)sb_ptr->depth_cost[depth];
+                int64_t below_diff = (int64_t)sb_ptr->depth_cost[depth < end_depth ? depth + 1 : depth] - (int64_t)sb_ptr->depth_cost[depth];
+                uint64_t above_dist = sb_ptr->depth_cost[depth] ? (ABS(above_diff) *100)/sb_ptr->depth_cost[depth] : 0;
+                uint64_t below_dist = sb_ptr->depth_cost[depth] ? (ABS(below_diff) *100)/sb_ptr->depth_cost[depth] : 0;
+
+                if(variance == var_th[0] && sb_ptr->depth_ranking[depth] == rank_th && above_dist > cost_th && below_dist > cost_th)
+                    adjusted_depth_level = 0;
+                else  if(variance < var_th[1] && sb_ptr->depth_ranking[depth] == rank_th && (above_dist > cost_th || below_dist > cost_th))
+                    adjusted_depth_level = 4;
+                else  if(sb_ptr->depth_ranking[depth] == rank_th && (above_dist > cost_th || below_dist > cost_th))
                     adjusted_depth_level = 5;
                 else
                     adjusted_depth_level = 6;
-                
-                if ((sb_ptr->depth_ranking[depth] == 0) &&
-                    (sb_ptr->depth_ranking[depth > start_depth ? depth - 1 : depth] > 3) &&
-                    (sb_ptr->depth_ranking[depth < end_depth ? depth + 1 : depth] > 3)) {
-                    adjusted_depth_level = 4;
-                }
 
                 switch (adjusted_depth_level) {
                 case 0:
@@ -1327,7 +1329,7 @@ void init_considered_block(
                             resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
                             resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
                         }
-                        if (blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && blk_geom->sq_size > 4) {
+                        if (blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64)) {
                             //Set parent to be considered
                             parent_depth_idx_mds = (blk_geom->sqi_mds - (blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
                             const BlockGeom * parent_blk_geom = get_blk_geom_mds(parent_depth_idx_mds);
@@ -1356,7 +1358,7 @@ void init_considered_block(
                             resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
                             resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
                         }
-                        if (blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && blk_geom->sq_size > 4) {
+                        if (blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64)) {
                             //Set parent to be considered
                             parent_depth_idx_mds = (blk_geom->sqi_mds - (blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
                             const BlockGeom * parent_blk_geom = get_blk_geom_mds(parent_depth_idx_mds);
@@ -1385,7 +1387,7 @@ void init_considered_block(
                             resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
                             resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
                         }
-                        if (blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && blk_geom->sq_size > 4) {
+                        if (blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64)) {
                             //Set parent to be considered
                             parent_depth_idx_mds = (blk_geom->sqi_mds - (blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
                             const BlockGeom * parent_blk_geom = get_blk_geom_mds(parent_depth_idx_mds);
@@ -1396,7 +1398,7 @@ void init_considered_block(
                             for (block_1d_idx = 0; block_1d_idx < parent_tot_d1_blocks; block_1d_idx++) {
                                 resultsPtr->leaf_data_array[parent_depth_idx_mds + block_1d_idx].consider_block = 1;
                             }
-                            if (parent_blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && parent_blk_geom->sq_size > 4) {
+                            if (parent_blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64)) {
                                 //Set parent to be considered
                                 sparent_depth_idx_mds = (parent_blk_geom->sqi_mds - (parent_blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][parent_blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][parent_blk_geom->depth];
                                 uint32_t sparent_tot_d1_blocks =
@@ -1425,7 +1427,7 @@ void init_considered_block(
                             resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
                             resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
                         }
-                        if (blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && blk_geom->sq_size > 4) {
+                        if (blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64)) {
                             //Set parent to be considered
                             parent_depth_idx_mds = (blk_geom->sqi_mds - (blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
                             const BlockGeom * parent_blk_geom = get_blk_geom_mds(parent_depth_idx_mds);
@@ -1446,7 +1448,7 @@ void init_considered_block(
                             resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
                             resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
                         }
-                        if (blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && blk_geom->sq_size > 4) {
+                        if (blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64)) {
                             //Set parent to be considered
                             parent_depth_idx_mds = (blk_geom->sqi_mds - (blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
                             const BlockGeom * parent_blk_geom = get_blk_geom_mds(parent_depth_idx_mds);
