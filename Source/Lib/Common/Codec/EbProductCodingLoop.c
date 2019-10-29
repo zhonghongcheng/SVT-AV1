@@ -8484,6 +8484,7 @@ EB_EXTERN EbErrorType mode_decision_sb(
         }
 
 #if LESS_RECTANGULAR_CHECK_LEVEL
+        #define PER_ERROR 0
         // Jack TODO : collapse the spare code into function; input: context_ptr and skip_next_nsq | output: skip_next_nsq 
         if (blk_geom->bsize > BLOCK_8X8)
         {
@@ -8512,7 +8513,7 @@ EB_EXTERN EbErrorType mode_decision_sb(
             case 7:
             case 8:
             case 9:
-                skip_next_nsq = (h_cost > sq_cost) ? 1 : skip_next_nsq;
+                skip_next_nsq = (h_cost > ((sq_cost * (100 + PER_ERROR)) / 100)) ? 1 : skip_next_nsq;
                 break;
             case 10:
             case 11:
@@ -8520,7 +8521,7 @@ EB_EXTERN EbErrorType mode_decision_sb(
             case 13:
             case 14:
             case 15:
-                skip_next_nsq = (v_cost > sq_cost) ? 1 : skip_next_nsq;
+                skip_next_nsq = (v_cost > ((sq_cost * (100 + PER_ERROR)) / 100)) ? 1 : skip_next_nsq;
                 break;
             }
         }
