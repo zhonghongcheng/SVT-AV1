@@ -13912,7 +13912,8 @@ EbErrorType motion_estimate_lcu(
 
     if (context_ptr->me_alt_ref == EB_TRUE)
         numOfListToSearch = 0;
-
+   /* if(picture_control_set_ptr->picture_number == 16)
+        numOfListToSearch = 0;*/
     // Uni-Prediction motion estimation loop
     // List Loop
     for (listIndex = REF_LIST_0; listIndex <= numOfListToSearch; ++listIndex) {

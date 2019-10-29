@@ -33,18 +33,19 @@
 extern "C" {
 #endif
 /************************ DEBUG **********************************/
-#define SB_64X64                     0 //1 //0 //1
-#define NO_INTRA_IN_INTER            0 //1
-#define SHUT_ALL_FILTERING           0 //1 // CDEF RESTORATION DLF
-#define NSQ_OFF                      0 //1
-#define ATB_OFF                      0 //1
-#define TX_TYPE_OFF                  0 //1
+#define SB_64X64                     1 //0 //1
+#define NO_INTRA_IN_INTER            1
+#define SHUT_ALL_FILTERING           1 // CDEF RESTORATION DLF
+#define NSQ_OFF                      1
+#define ATB_OFF                      1
+#define TX_TYPE_OFF                  1
 
-#define QPS_QPM_OFF                             0 //1 //0
-#define ALT_REF_OFF                             0 //1 //0
+#define QPS_QPM_OFF                             1 //0
+#define ALT_REF_OFF                             1 //0
 #define ALL_8x8                                 0 //1 //0
-#define ONLY_ME                                 0 //1
-#define NO_BIPED                                0 //1
+#define ALL_32x32                               1
+#define ONLY_ME                                 1
+#define NO_BIPED                                1
 #define NO_REDUD_BLOCK                          1
 /****************************************************************/
 #define FIX_ALTREF                   1 // Address ALTREF mismatch between rtime-m0-test and master: fixed actual_future_pics derivation, shut padding of the central frame, fixed end past frame index prior to window shrinking

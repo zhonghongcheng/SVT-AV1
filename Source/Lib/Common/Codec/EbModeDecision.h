@@ -281,6 +281,7 @@ extern "C" {
 #endif
 
     uint32_t product_full_mode_decision(
+        PictureControlSet              *picture_control_set_ptr,
          struct ModeDecisionContext  *context_ptr,
         CodingUnit                   *cu_ptr,
         ModeDecisionCandidateBuffer **buffer_ptr_array,

@@ -1004,6 +1004,15 @@ void forward_sq_blocks_to_md(
                 else {
                     split_flag = EB_TRUE;
                 }
+#elif ALL_32x32
+                if (blk_geom->sq_size == 32)
+                {
+                    resultsPtr->leaf_data_array[resultsPtr->leaf_count++].split_flag = EB_FALSE;
+                    split_flag = EB_FALSE;
+                }
+                else {
+                    split_flag = EB_TRUE;
+                }
 #else
                 if (blk_geom->sq_size > 4)
                 {

@@ -7933,6 +7933,7 @@ void md_encode_block(
 
         // Full Mode Decision (choose the best mode)
         candidate_index = product_full_mode_decision(
+            picture_control_set_ptr,
             context_ptr,
             cu_ptr,
             candidate_buffer_ptr_array,

@@ -5482,7 +5482,8 @@ EbErrorType generate_md_stage_0_cand(
     *candidate_total_count_ptr = canTotalCnt;
     CAND_CLASS  cand_class_it;
     memset(context_ptr->md_stage_0_count, 0, CAND_CLASS_TOTAL * sizeof(uint32_t));
-
+    /*if ((picture_control_set_ptr->picture_number == 16) && (canTotalCnt != 2))
+        printf("canTotalCnt %d \n",canTotalCnt);*/
     uint32_t cand_i;
     for (cand_i = 0; cand_i < canTotalCnt; cand_i++)
     {
@@ -5577,6 +5578,7 @@ EbErrorType generate_md_stage_0_cand(
 * Full Mode Decision
 ***************************************/
 uint32_t product_full_mode_decision(
+    PictureControlSet            *picture_control_set_ptr,
     struct ModeDecisionContext   *context_ptr,
     CodingUnit                   *cu_ptr,
     ModeDecisionCandidateBuffer **buffer_ptr_array,
@@ -5755,7 +5757,6 @@ uint32_t product_full_mode_decision(
             pu_ptr->mv[REF_LIST_1].x = candidate_ptr->motion_vector_xl1;
             pu_ptr->mv[REF_LIST_1].y = candidate_ptr->motion_vector_yl1;
         }
-
         if (pu_ptr->inter_pred_direction_index == BI_PRED)
         {
             //EB_MEMCPY(&pu_ptr->mv[REF_LIST_0].x,&candidate_ptr->mvs,8);
@@ -5780,6 +5781,19 @@ uint32_t product_full_mode_decision(
             cu_ptr->predmv[1].as_mv.row = candidate_ptr->motion_vector_pred_y[REF_LIST_1];
         }
 #endif
+#if 0 //TTK
+        if (picture_control_set_ptr->picture_number == 16)
+        {
+            FILE *fp;
+            fp = fopen("Excel_out.csv", "a");
+            if (fp != NULL)
+            {
+                fprintf(fp,"PRED_DIREC %d \t MV_x %d \t MV_y %d \n ", pu_ptr->inter_pred_direction_index,
+                    pu_ptr->mv[pu_ptr->inter_pred_direction_index].x, pu_ptr->mv[pu_ptr->inter_pred_direction_index].y);
+            }
+            fclose(fp);
+        }
+#endif 
         // The MV prediction indicies are recalcated by the EncDec.
         pu_ptr->mvd[REF_LIST_0].pred_idx = 0;
         pu_ptr->mvd[REF_LIST_1].pred_idx = 0;
