@@ -1196,6 +1196,24 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
                 CHROMA_MODE_2 :
                 CHROMA_MODE_3;
     else
+#if rtime_presets
+
+        if (MR_MODE) 
+            context_ptr->chroma_level = CHROMA_MODE_0;
+        else
+            if (picture_control_set_ptr->enc_mode <= ENC_M5 && picture_control_set_ptr->temporal_layer_index == 0)
+
+
+                context_ptr->chroma_level = CHROMA_MODE_0;
+            else
+                if (picture_control_set_ptr->enc_mode <= ENC_M5)
+                    context_ptr->chroma_level = CHROMA_MODE_1;
+                else
+                    context_ptr->chroma_level = (sequence_control_set_ptr->encoder_bit_depth == EB_8BIT) ?
+                    CHROMA_MODE_2 :
+                    CHROMA_MODE_3;
+
+#else
     if (MR_MODE)
         context_ptr->chroma_level = CHROMA_MODE_0;
     else
@@ -1208,7 +1226,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->chroma_level = (sequence_control_set_ptr->encoder_bit_depth == EB_8BIT) ?
             CHROMA_MODE_2 :
             CHROMA_MODE_3 ;
-
+#endif
     // Set fast loop method
     // 1 fast loop: SSD_SEARCH not supported
     // Level                Settings
@@ -1528,9 +1546,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         else
             context_ptr->redundant_blk = EB_FALSE;
     else
+#if 1//!rtime_presets
     if (picture_control_set_ptr->enc_mode <= ENC_M5)
         context_ptr->redundant_blk = EB_TRUE;
     else
+#endif
         context_ptr->redundant_blk = EB_FALSE;
     if (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
 #if FIX_ESTIMATE_INTRA
