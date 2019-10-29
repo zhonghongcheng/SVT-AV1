@@ -8233,6 +8233,11 @@ EB_EXTERN EbErrorType mode_decision_sb(
 
     //CU Loop
     cuIdx = 0;  //index over mdc array
+#if LESS_RECTANGULAR_CHECK_LEVEL
+    uint64_t sq_cost = 0;
+    uint64_t h_cost;
+    uint64_t v_cost;
+#endif
 
     uint32_t blk_idx_mds = 0;
     uint32_t  d1_blocks_accumlated = 0;
