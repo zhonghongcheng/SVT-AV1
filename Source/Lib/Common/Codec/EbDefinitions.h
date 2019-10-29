@@ -87,6 +87,11 @@ extern "C" {
 #define ADP_STATS_PER_LAYER                             0
 #define AOM_INTERP_EXTEND                               4
 #define OPTIMISED_EX_SUBPEL                             1
+#define MPMD_SB                                         0
+#if MPMD_SB
+#define MPMD_SB_REF                                     1
+#define SKIP_2ND_PASS_BASED_ON_1ST_PASS                 1
+#endif
 
 #define AOM_LEFT_TOP_MARGIN_PX(subsampling) \
   ((AOM_BORDER_IN_PIXELS >> subsampling) - AOM_INTERP_EXTEND)

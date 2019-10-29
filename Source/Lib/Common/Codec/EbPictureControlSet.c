@@ -211,6 +211,9 @@ void picture_control_set_dctor(EbPtr p)
     EB_FREE_ARRAY(obj->rate_est_array);
 
     EB_FREE_ARRAY(obj->mdc_sb_array);
+#if MPMD_SB
+    EB_FREE_ARRAY(obj->mpmd_sb_array);
+#endif
     EB_FREE_ARRAY(obj->qp_array);
     EB_DESTROY_MUTEX(obj->entropy_coding_mutex);
     EB_DESTROY_MUTEX(obj->intra_mutex);
@@ -416,6 +419,9 @@ EbErrorType picture_control_set_ctor(
 
     // Mode Decision Control config
     EB_MALLOC_ARRAY(object_ptr->mdc_sb_array, object_ptr->sb_total_count);
+#if MPMD_SB
+    EB_MALLOC_ARRAY(object_ptr->mpmd_sb_array, object_ptr->sb_total_count);
+#endif
     object_ptr->qp_array_stride = (uint16_t)((initDataPtr->picture_width + MIN_BLOCK_SIZE - 1) / MIN_BLOCK_SIZE);
     object_ptr->qp_array_size = ((initDataPtr->picture_width + MIN_BLOCK_SIZE - 1) / MIN_BLOCK_SIZE) *
         ((initDataPtr->picture_height + MIN_BLOCK_SIZE - 1) / MIN_BLOCK_SIZE);

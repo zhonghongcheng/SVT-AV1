@@ -322,6 +322,10 @@ extern "C" {
     PART best_nsq_sahpe7;
     PART best_nsq_sahpe8;
 #endif
+#if SKIP_2ND_PASS_BASED_ON_1ST_PASS
+    uint64_t sb_cost;
+    uint64_t sb_dist;
+#endif
     } ModeDecisionContext;
 
     typedef void(*EbAv1LambdaAssignFunc)(

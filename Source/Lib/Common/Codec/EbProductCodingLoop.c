@@ -7836,9 +7836,16 @@ void md_encode_block(
 }
 
 EB_EXTERN EbErrorType mode_decision_sb(
+#if MPMD_SB
+    uint8_t                           is_last_md_pass,
+    uint8_t                           mpmd_pass_idx,
+#endif
     SequenceControlSet                *sequence_control_set_ptr,
     PictureControlSet                 *picture_control_set_ptr,
     const MdcLcuData * const           mdcResultTbPtr,
+#if MPMD_SB
+    MdcLcuData *                       mpmd_sb,
+#endif
     LargestCodingUnit                 *sb_ptr,
     uint16_t                             sb_origin_x,
     uint16_t                             sb_origin_y,
