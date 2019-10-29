@@ -2582,17 +2582,16 @@ BlockSize av1_predict_max_partition(
         probs[MAX_NUM_CLASSES_MAX_MIN_PART_PRED] = { 0.0f };
 
     const NN_CONFIG *nn_config = &av1_max_part_pred_nn_config;
-#if 0
-    assert(cpi->sf.auto_max_partition_based_on_simple_motion != NOT_IN_USE);
-#endif
+
+    assert(picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion != NOT_IN_USE);
+
     aom_clear_system_state();
     av1_nn_predict(features, nn_config, 1, scores);
-#if 0
     av1_nn_softmax(scores, probs, MAX_NUM_CLASSES_MAX_MIN_PART_PRED);
-#endif
+
     int result = MAX_NUM_CLASSES_MAX_MIN_PART_PRED - 1;
-#if 0
-    if (cpi->sf.auto_max_partition_based_on_simple_motion == DIRECT_PRED) {
+
+    if (picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion == DIRECT_PRED) {
         result = 0;
         float max_prob = probs[0];
         for (int i = 1; i < MAX_NUM_CLASSES_MAX_MIN_PART_PRED; ++i) {
@@ -2602,7 +2601,7 @@ BlockSize av1_predict_max_partition(
             }
         }
     }
-    else if (cpi->sf.auto_max_partition_based_on_simple_motion ==
+    else if (picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion ==
         RELAXED_PRED) {
         for (result = MAX_NUM_CLASSES_MAX_MIN_PART_PRED - 1; result >= 0;
             --result) {
@@ -2612,8 +2611,11 @@ BlockSize av1_predict_max_partition(
             if (probs[result] > 0.2) break;
         }
     }
-    else if (cpi->sf.auto_max_partition_based_on_simple_motion == ADAPT_PRED) {
-        const BLOCK_SIZE sb_size = cpi->common.seq_params.sb_size;
+    else if (picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion == ADAPT_PRED) {
+
+#if 0 // Jack TODO : ADAPT_PRED not yet supported
+        const BlockSize sb_size = cpi->common.seq_params.sb_size;
+
         MACROBLOCKD *const xd = &x->e_mbd;
         // TODO(debargha): x->source_variance is unavailable at this point,
         // so compute. The redundant recomputation later can be removed.
@@ -2631,9 +2633,10 @@ BlockSize av1_predict_max_partition(
                 }
                 if (probs[result] > thresh) break;
             }
-}
-    }
+        }
 #endif
+    }
+
     return (BlockSize)((result + 2) * 3);
 }
 
@@ -2794,12 +2797,16 @@ void* mode_decision_configuration_kernel(void *input_ptr)
             picture_control_set_ptr->coeff_est_entropy_coder_ptr->fc);
 
 #if AUTO_MAX_PARTITION
+        // Jack TODO : ADAPT_PRED not yet supported (use RELAXED_PRED for now)
+        picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion = RELAXED_PRED;
+
         if (sequence_control_set_ptr->static_config.super_block_size == 128) {
             BlockSize max_sq_size = sequence_control_set_ptr->static_config.super_block_size;
             float features[FEATURE_SIZE_MAX_MIN_PART_PRED] = { 0.0f };
             av1_get_max_min_partition_features(sequence_control_set_ptr, picture_control_set_ptr, features);
             max_sq_size = MIN(av1_predict_max_partition(sequence_control_set_ptr, picture_control_set_ptr, features), max_sq_size);
         }
+
 #endif
 
 
