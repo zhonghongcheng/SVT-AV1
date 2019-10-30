@@ -31,6 +31,12 @@
 #include "EbAvcStyleMcp.h"
 #include "aom_dsp_rtcd.h"
 #include "EbCodingLoop.h"
+#if AUTO_MAX_PARTITION
+#include "EbMotionEstimation.h"
+#include "aom_dsp_rtcd.h"
+#include "partition_model_weights.h"
+#include "ml.h"
+#endif
 
 #define PREDICTIVE_ME_MAX_MVP_CANIDATES  4
 #define PREDICTIVE_ME_DEVIATION_TH      50
@@ -8160,7 +8166,248 @@ void decide_next_nsq_and_update_cost(
         break;
     }
 }
+#if AUTO_MAX_PARTITION
+#define FLT_MAX          3.402823466e+38F        // max value
+#define FEATURE_SIZE_MAX_MIN_PART_PRED 13
 
+uint32_t mds_idx_16x16[64] = {
+
+     67 ,  128, 336, 397,1168,1229,1437,1498,
+     189,  250, 458, 519,1290,1351,1559,1620,
+     605,  666, 874, 935,1706,1767,1975,2036,
+     727,  788, 996,1057,1828,1889,2097,2158,
+    2269, 2330,2538,2599,3370,3431,3639,3700,
+    2391, 2452,2660,2721,3492,3553,3761,3822,
+    2807, 2868,3076,3137,3908,3969,4177,4238,
+    2929, 2990,3198,3259,4030,4091,4299,4360
+
+};
+
+void av1_get_max_min_partition_features(
+    SequenceControlSet *sequence_control_set_ptr,
+    PictureControlSet  *picture_control_set_ptr,
+    float              *features,
+    int                 sb_index,
+    uint16_t            sb_origin_x,
+    uint16_t            sb_origin_y) {
+#if 0
+    AV1_COMMON *const cm = &cpi->common;
+    MACROBLOCKD *xd = &x->e_mbd;
+    const BLOCK_SIZE sb_size = cm->seq_params.sb_size;
+
+    assert(sb_size == BLOCK_128X128);
+#endif
+    int f_idx = 0;
+#if 1
+    uint32_t qIndex = picture_control_set_ptr->parent_pcs_ptr->frm_hdr.quantization_params.base_q_idx;
+    const int dc_q = eb_av1_dc_quant_QTX(qIndex, 0, sequence_control_set_ptr->static_config.encoder_bit_depth) >> (sequence_control_set_ptr->static_config.encoder_bit_depth - 8);
+#else
+    const int dc_q = av1_dc_quant_QTX(x->qindex, 0, xd->bd) >> (xd->bd - 8);
+#endif
+    aom_clear_system_state();
+    const float log_q_sq = logf(1.0f + (float)(dc_q * dc_q) / 256.0f);
+
+    // Perform full-pixel single motion search in Y plane of 16x16 mbs in the sb
+    float sum_mv_row_sq = 0;
+    float sum_mv_row = 0;
+    float min_abs_mv_row = FLT_MAX;
+    float max_abs_mv_row = 0;
+
+    float sum_mv_col_sq = 0;
+    float sum_mv_col = 0;
+    float min_abs_mv_col = FLT_MAX;
+    float max_abs_mv_col = 0;
+
+    float sum_log_sse_sq = 0;
+    float sum_log_sse = 0;
+    float min_log_sse = FLT_MAX;
+    float max_log_sse = 0;
+#if 1
+    // 16x16 motion search results
+    for (uint32_t index = 0; index < 64; index++)
+    {
+
+        float mv_col;
+        float mv_row;
+        unsigned int sse;
+
+        uint32_t blk_idx_mds = mds_idx_16x16[index];
+        const BlockGeom * blk_geom = get_blk_geom_mds(blk_idx_mds);
+
+        uint32_t me_sb_size = sequence_control_set_ptr->sb_sz;
+        uint32_t me_pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / me_sb_size;
+
+        uint32_t me_sb_x = ((blk_geom->origin_x + sb_origin_x) / me_sb_size);
+        uint32_t me_sb_y = ((blk_geom->origin_y + sb_origin_y) / me_sb_size);
+        uint32_t me_sb_addr = me_sb_x + me_sb_y * me_pic_width_in_sb;
+        uint32_t geom_offset_x = (me_sb_x & 0x1) * me_sb_size;
+        uint32_t geom_offset_y = (me_sb_y & 0x1) * me_sb_size;
+        uint32_t me_block_offset = get_me_info_index(picture_control_set_ptr->parent_pcs_ptr->max_number_of_pus_per_sb, blk_geom, geom_offset_x, geom_offset_y);
+
+        const MeLcuResults *me_results = picture_control_set_ptr->parent_pcs_ptr->me_results[me_sb_addr];
+        uint8_t total_me_cnt = me_results->total_me_candidate_index[me_block_offset];
+        const MeCandidate *me_block_results = me_results->me_candidate[me_block_offset];
+
+
+
+        for (uint8_t me_candidate_index = 0; me_candidate_index < total_me_cnt; ++me_candidate_index)
+        {
+            const MeCandidate *me_block_results_ptr = &me_block_results[me_candidate_index];
+            const uint8_t inter_direction = me_block_results_ptr->direction;
+            const uint8_t list0_ref_index = me_block_results_ptr->ref_idx_l0;
+            const uint8_t list1_ref_index = me_block_results_ptr->ref_idx_l1;
+
+            if (inter_direction == 0 && list0_ref_index == 0) {
+                mv_col = (float)((me_results->me_mv_array[me_block_offset][list0_ref_index].x_mv << 1) >> 3);
+                mv_row = (float)((me_results->me_mv_array[me_block_offset][list0_ref_index].y_mv << 1) >> 3);
+                sse = me_results->me_candidate[me_block_offset]->distortion;
+                break;
+            }
+        }
+
+
+#else
+    const BlockSize mb_size = BLOCK_16X16;
+    const int mb_rows = block_size_high[sb_size] / block_size_high[mb_size];
+    const int mb_cols = block_size_wide[sb_size] / block_size_wide[mb_size];
+    const int mb_in_mi_size_high_log2 = mi_size_high_log2[mb_size];
+    const int mb_in_mi_size_wide_log2 = mi_size_wide_log2[mb_size];
+
+
+    for (int mb_row = 0; mb_row < mb_rows; mb_row++)
+        for (int mb_col = 0; mb_col < mb_cols; mb_col++) {
+
+            const int this_mi_row = mi_row + (mb_row << mb_in_mi_size_high_log2);
+            const int this_mi_col = mi_col + (mb_col << mb_in_mi_size_wide_log2);
+
+            unsigned int sse = 0;
+            unsigned int var = 0;
+
+            const MV ref_mv_full = { .row = 0,.col = 0 };
+
+            av1_simple_motion_sse_var(cpi, x, this_mi_row, this_mi_col, mb_size,
+                ref_mv_full, 0, &sse, &var);
+
+            aom_clear_system_state();
+
+            const float mv_row = (float)(x->best_mv.as_mv.row / 8);
+            const float mv_col = (float)(x->best_mv.as_mv.col / 8);
+#endif
+            const float log_sse = logf(1.0f + (float)sse);
+            const float abs_mv_row = fabsf(mv_row);
+            const float abs_mv_col = fabsf(mv_col);
+
+            sum_mv_row_sq += mv_row * mv_row;
+            sum_mv_row += mv_row;
+            sum_mv_col_sq += mv_col * mv_col;
+            sum_mv_col += mv_col;
+
+            if (abs_mv_row < min_abs_mv_row) min_abs_mv_row = abs_mv_row;
+            if (abs_mv_row > max_abs_mv_row) max_abs_mv_row = abs_mv_row;
+            if (abs_mv_col < min_abs_mv_col) min_abs_mv_col = abs_mv_col;
+            if (abs_mv_col > max_abs_mv_col) max_abs_mv_col = abs_mv_col;
+
+            sum_log_sse_sq += log_sse * log_sse;
+            sum_log_sse += log_sse;
+            if (log_sse < min_log_sse) min_log_sse = log_sse;
+            if (log_sse > max_log_sse) max_log_sse = log_sse;
+        }
+    aom_clear_system_state();
+    const float avg_mv_row = sum_mv_row / 64.0f;
+    const float var_mv_row = sum_mv_row_sq / 64.0f - avg_mv_row * avg_mv_row;
+
+    const float avg_mv_col = sum_mv_col / 64.0f;
+    const float var_mv_col = sum_mv_col_sq / 64.0f - avg_mv_col * avg_mv_col;
+
+    const float avg_log_sse = sum_log_sse / 64.0f;
+    const float var_log_sse = sum_log_sse_sq / 64.0f - avg_log_sse * avg_log_sse;
+
+    features[f_idx++] = avg_log_sse;
+    features[f_idx++] = avg_mv_col;
+    features[f_idx++] = avg_mv_row;
+    features[f_idx++] = log_q_sq;
+    features[f_idx++] = max_abs_mv_col;
+    features[f_idx++] = max_abs_mv_row;
+    features[f_idx++] = max_log_sse;
+    features[f_idx++] = min_abs_mv_col;
+    features[f_idx++] = min_abs_mv_row;
+    features[f_idx++] = min_log_sse;
+    features[f_idx++] = var_log_sse;
+    features[f_idx++] = var_mv_col;
+    features[f_idx++] = var_mv_row;
+
+    assert(f_idx == FEATURE_SIZE_MAX_MIN_PART_PRED);
+    }
+
+#define MAX_NUM_CLASSES_MAX_MIN_PART_PRED 4
+BlockSize av1_predict_max_partition(
+    SequenceControlSet *sequence_control_set_ptr,
+    PictureControlSet *picture_control_set_ptr,
+    const float *features) {
+
+    float scores[MAX_NUM_CLASSES_MAX_MIN_PART_PRED] = { 0.0f },
+        probs[MAX_NUM_CLASSES_MAX_MIN_PART_PRED] = { 0.0f };
+
+    const NN_CONFIG *nn_config = &av1_max_part_pred_nn_config;
+
+    assert(picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion != NOT_IN_USE);
+
+    aom_clear_system_state();
+    av1_nn_predict(features, nn_config, 1, scores);
+    av1_nn_softmax(scores, probs, MAX_NUM_CLASSES_MAX_MIN_PART_PRED);
+
+    int result = MAX_NUM_CLASSES_MAX_MIN_PART_PRED - 1;
+
+    if (picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion == DIRECT_PRED) {
+        result = 0;
+        float max_prob = probs[0];
+        for (int i = 1; i < MAX_NUM_CLASSES_MAX_MIN_PART_PRED; ++i) {
+            if (probs[i] > max_prob) {
+                max_prob = probs[i];
+                result = i;
+            }
+        }
+    }
+    else if (picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion ==
+        RELAXED_PRED) {
+        for (result = MAX_NUM_CLASSES_MAX_MIN_PART_PRED - 1; result >= 0;
+            --result) {
+            if (result < MAX_NUM_CLASSES_MAX_MIN_PART_PRED - 1) {
+                probs[result] += probs[result + 1];
+            }
+            if (probs[result] > 0.2) break;
+        }
+    }
+    else if (picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion == ADAPT_PRED) {
+
+#if 0 // Jack TODO : ADAPT_PRED not yet supported
+        const BlockSize sb_size = cpi->common.seq_params.sb_size;
+
+        MACROBLOCKD *const xd = &x->e_mbd;
+        // TODO(debargha): x->source_variance is unavailable at this point,
+        // so compute. The redundant recomputation later can be removed.
+        const unsigned int source_variance =
+            is_cur_buf_hbd(xd)
+            ? av1_high_get_sby_perpixel_variance(cpi, &x->plane[0].src, sb_size,
+                xd->bd)
+            : av1_get_sby_perpixel_variance(cpi, &x->plane[0].src, sb_size);
+        if (source_variance > 16) {
+            const double thresh = source_variance < 128 ? 0.05 : 0.1;
+            for (result = MAX_NUM_CLASSES_MAX_MIN_PART_PRED - 1; result >= 0;
+                --result) {
+                if (result < MAX_NUM_CLASSES_MAX_MIN_PART_PRED - 1) {
+                    probs[result] += probs[result + 1];
+                }
+                if (probs[result] > thresh) break;
+            }
+        }
+#endif
+    }
+
+    return (BlockSize)((result + 2) * 3);
+}
+
+#endif
 EB_EXTERN EbErrorType mode_decision_sb(
     SequenceControlSet                *sequence_control_set_ptr,
     PictureControlSet                 *picture_control_set_ptr,
@@ -8276,6 +8523,18 @@ EB_EXTERN EbErrorType mode_decision_sb(
         input_picture_ptr = picture_control_set_ptr->input_frame16bit;
     }
 
+#if AUTO_MAX_PARTITION
+    // Jack TODO : ADAPT_PRED not yet supported (use RELAXED_PRED for now)
+    picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion = RELAXED_PRED;
+        BlockSize max_sq_size = sequence_control_set_ptr->static_config.super_block_size;
+    if (picture_control_set_ptr->slice_type != I_SLICE && sequence_control_set_ptr->static_config.super_block_size == 128)
+    {
+        float features[FEATURE_SIZE_MAX_MIN_PART_PRED] = { 0.0f };
+
+        av1_get_max_min_partition_features(sequence_control_set_ptr, picture_control_set_ptr, features, lcuAddr, sb_origin_x, sb_origin_y);
+        max_sq_size = MIN(av1_predict_max_partition(sequence_control_set_ptr, picture_control_set_ptr, features), max_sq_size);
+    }
+#endif
     //CU Loop
     cuIdx = 0;  //index over mdc array
 #if LESS_RECTANGULAR_CHECK_LEVEL
