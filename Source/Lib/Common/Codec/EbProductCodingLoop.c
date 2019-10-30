@@ -1735,7 +1735,6 @@ void set_md_stage_counts(
     PictureControlSet       *picture_control_set_ptr,
     ModeDecisionContext     *context_ptr,
     uint32_t                 fastCandidateTotalCount)
-
 {
     SequenceControlSet* scs = (SequenceControlSet*)(picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr);
     // Step 0: derive bypass_stage1 flags
@@ -2008,7 +2007,6 @@ void set_md_stage_counts(
     context_ptr->md_stage_2_count[CAND_CLASS_7] = context_ptr->bypass_stage1[CAND_CLASS_7] ? context_ptr->md_stage_1_count[CAND_CLASS_7] : context_ptr->md_stage_2_count[CAND_CLASS_7];
     context_ptr->md_stage_3_count[CAND_CLASS_7] = context_ptr->bypass_stage2[CAND_CLASS_7] ? context_ptr->md_stage_2_count[CAND_CLASS_7] : context_ptr->md_stage_3_count[CAND_CLASS_7];
 #endif
-
 
     // Step 4: zero-out count for CAND_CLASS_3 if CAND_CLASS_1 and CAND_CLASS_2 are merged (i.e. shift to the left)
     if (context_ptr->combine_class12)
@@ -7785,6 +7783,7 @@ void md_encode_block(
             ss_mecontext,
             &fast_candidate_total_count,
             picture_control_set_ptr);
+
         //MD Stages
         //The first stage(old fast loop) and the last stage(old full loop) should remain at their locations, new stages could be created between those two.
         //a bypass mechanism should be added to skip one or all of the intermediate stages, in a way to to be able to fall back to org design (FastLoop->FullLoop)
