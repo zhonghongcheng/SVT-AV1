@@ -30,7 +30,7 @@ struct NN_CONFIG {
   // Bias parameters, indexed by layer.
   const float *bias[NN_MAX_HIDDEN_LAYERS + 1];
 };
-// Typedef from struct NN_CONFIG to NN_CONFIG is in rtcd_defs
+typedef struct NN_CONFIG NN_CONFIG;
 
 #if CONFIG_NN_V2
 // Fully-connectedly layer configuration

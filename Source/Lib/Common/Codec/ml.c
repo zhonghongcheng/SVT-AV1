@@ -12,11 +12,9 @@
 #include <assert.h>
 #include <math.h>
 
-#include "aom_dsp_rtcd.h"
 #include "ml.h"
 
-struct NN_CONFIG;
-typedef struct NN_CONFIG NN_CONFIG;
+#define AOMMAX(x, y) (((x) > (y)) ? (x) : (y))
 
 void av1_nn_output_prec_reduce(float *const output, int num_output) {
   const int prec_bits = 11;
