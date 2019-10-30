@@ -1376,7 +1376,9 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
         else
             picture_control_set_ptr->compound_mode = 0;
-
+#if SHUT_CPMPOUND
+        picture_control_set_ptr->compound_mode = 0;
+#endif
 
         // set compound_types_to_try
         if (picture_control_set_ptr->compound_mode)
