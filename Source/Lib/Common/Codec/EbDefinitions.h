@@ -53,7 +53,7 @@ extern "C" {
 #define FIX_SETTINGS_RESET           1 // Address SEGMENT_RESET mismatch between rtime-m0-test and master: only @ 1st segment
 #define FIX_COMPOUND                 1 // Address COMPOUND mismatch between rtime-m0-test and master: used block size @ the derivation of compound count
 #define rtime_presets                0    
-
+#define SHUT_CPMPOUND                0
 
 #define OBMC_FLAG                    1 // OBMC motion mode flag
 #define OBMC_CONVOLVE                1 // to track convolve kernels changes
