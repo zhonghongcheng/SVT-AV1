@@ -8187,7 +8187,6 @@ void av1_get_max_min_partition_features(
     SequenceControlSet *sequence_control_set_ptr,
     PictureControlSet  *picture_control_set_ptr,
     float              *features,
-    int                 sb_index,
     uint16_t            sb_origin_x,
     uint16_t            sb_origin_y) {
 #if 0
@@ -8526,14 +8525,18 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #if AUTO_MAX_PARTITION
     // Jack TODO : ADAPT_PRED not yet supported (use RELAXED_PRED for now)
     picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion = RELAXED_PRED;
-        BlockSize max_sq_size = sequence_control_set_ptr->static_config.super_block_size;
+    BlockSize max_bsize = BLOCK_128X128;
     if (picture_control_set_ptr->slice_type != I_SLICE && sequence_control_set_ptr->static_config.super_block_size == 128)
     {
         float features[FEATURE_SIZE_MAX_MIN_PART_PRED] = { 0.0f };
 
-        av1_get_max_min_partition_features(sequence_control_set_ptr, picture_control_set_ptr, features, lcuAddr, sb_origin_x, sb_origin_y);
-        max_sq_size = MIN(av1_predict_max_partition(sequence_control_set_ptr, picture_control_set_ptr, features), max_sq_size);
+        av1_get_max_min_partition_features(sequence_control_set_ptr, picture_control_set_ptr, features, sb_origin_x, sb_origin_y);
+        max_bsize = MIN(av1_predict_max_partition(sequence_control_set_ptr, picture_control_set_ptr, features), max_bsize);
     }
+    uint8_t max_bwidth = block_size_wide[max_bsize];
+    uint8_t max_bheight = block_size_high[max_bsize];
+
+    printf("%d\t%d\t%d\t%d\t%d\n", picture_control_set_ptr->picture_number, sb_origin_x, sb_origin_y, max_bwidth, max_bheight);
 #endif
     //CU Loop
     cuIdx = 0;  //index over mdc array
@@ -8731,8 +8734,11 @@ EB_EXTERN EbErrorType mode_decision_sb(
             // skip until we reach the next block @ the parent block depth
             if (cu_ptr->mds_idx >= next_non_skip_blk_idx_mds && skip_next_sq == 1)
                 skip_next_sq = 0;
-
+#if AUTO_MAX_PARTITION
+            if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[cu_ptr->mds_idx] && !skip_next_nsq && !skip_next_sq && context_ptr->blk_geom->bwidth <= max_bwidth && context_ptr->blk_geom->bheight <= max_bheight) {
+#else
             if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[cu_ptr->mds_idx] && !skip_next_nsq && !skip_next_sq) {
+#endif
                 md_encode_block(
                     sequence_control_set_ptr,
                     picture_control_set_ptr,
@@ -8744,6 +8750,14 @@ EB_EXTERN EbErrorType mode_decision_sb(
                     bestcandidate_buffers);
 
             }
+#if AUTO_MAX_PARTITION
+            if (context_ptr->blk_geom->bwidth > max_bwidth || context_ptr->blk_geom->bheight > max_bheight) {
+                if (context_ptr->blk_geom->shape != PART_N)
+                    context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost = (MAX_MODE_COST >> 4);
+                else
+                    context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost = (MAX_MODE_COST >> 10);
+            }
+#endif
             else if (skip_next_sq) {
                 context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost = (MAX_MODE_COST >> 10);
             }
