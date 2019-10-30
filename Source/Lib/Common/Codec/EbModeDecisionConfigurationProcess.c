@@ -2772,7 +2772,7 @@ void* mode_decision_configuration_kernel(void *input_ptr)
                         sb_ptr->origin_x = x_lcu_index << lcu_size_log_2;
                         sb_ptr->origin_y = y_lcu_index << lcu_size_log_2;
                         uint32_t is_complete_sb = sequence_control_set_ptr->sb_geom[sb_index].is_complete_sb;
-                        if (sequence_control_set_ptr->over_boundary_block_mode == 0 && is_complete_sb) {
+                        if (sequence_control_set_ptr->over_boundary_block_mode == 1 || is_complete_sb) {
                             open_loop_partitioning_pass(
                                 sequence_control_set_ptr,
                                 picture_control_set_ptr,

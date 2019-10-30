@@ -763,7 +763,12 @@ int32_t mdc_av1_quantize_inv_quantize(
     MacroblockPlane candidate_plane;
     const QmVal *qMatrix = picture_control_set_ptr->parent_pcs_ptr->gqmatrix[NUM_QM_LEVELS - 1][0][txsize];
     const QmVal *iqMatrix = picture_control_set_ptr->parent_pcs_ptr->giqmatrix[NUM_QM_LEVELS - 1][0][txsize];
+#if ADD_DELTA_QP_SUPPORT
+    uint32_t segmentation_qp_offset = 0; //Assuming no segmentation.
+    uint32_t qIndex = picture_control_set_ptr->parent_pcs_ptr->frm_hdr.delta_q_params.delta_q_present ? quantizer_to_qindex[qp] : picture_control_set_ptr->parent_pcs_ptr->frm_hdr.quantization_params.base_q_idx + segmentation_qp_offset;
+#else
     uint32_t qIndex = picture_control_set_ptr->parent_pcs_ptr->delta_q_present_flag ? quantizer_to_qindex[qp] : picture_control_set_ptr->parent_pcs_ptr->base_qindex;
+#endif
     if (component_type == COMPONENT_LUMA) {
         candidate_plane.quant_QTX = picture_control_set_ptr->parent_pcs_ptr->quantsMd.y_quant[qIndex];
         candidate_plane.quant_fp_QTX = picture_control_set_ptr->parent_pcs_ptr->quantsMd.y_quant_fp[qIndex];
@@ -1108,41 +1113,41 @@ EbErrorType mdc_inter_pu_prediction_av1(
     else
         ref_pic_list1 = (EbPictureBufferDesc*)EB_NULL;
 
-    candidate_buffer_ptr->candidate_ptr->interp_filters = 0;
+        candidate_buffer_ptr->candidate_ptr->interp_filters = 0;
 
-    av1_inter_prediction(
-        picture_control_set_ptr,
-        candidate_buffer_ptr->candidate_ptr->interp_filters,
-        context_ptr->mdc_cu_ptr,
-        candidate_buffer_ptr->candidate_ptr->ref_frame_type,
-        &mv_unit,
-        candidate_buffer_ptr->candidate_ptr->use_intrabc,
+        av1_inter_prediction(
+            picture_control_set_ptr,
+            candidate_buffer_ptr->candidate_ptr->interp_filters,
+            context_ptr->mdc_cu_ptr,
+            candidate_buffer_ptr->candidate_ptr->ref_frame_type,
+            &mv_unit,
+            candidate_buffer_ptr->candidate_ptr->use_intrabc,
 #if OBMC_FLAG
-        SIMPLE_TRANSLATION,
-        0,
-        0,
+            SIMPLE_TRANSLATION,
+            0,
+            0,
 #endif
-        candidate_buffer_ptr->candidate_ptr->compound_idx,
-        &candidate_buffer_ptr->candidate_ptr->interinter_comp,
+            candidate_buffer_ptr->candidate_ptr->compound_idx,
+            &candidate_buffer_ptr->candidate_ptr->interinter_comp,
 #if II_COMP_FLAG
-        NULL,
-        NULL,//ep_luma_recon_neighbor_array,
-        NULL,//ep_cb_recon_neighbor_array ,
-        NULL,//ep_cr_recon_neighbor_array ,
-        0,//cu_ptr->is_interintra_used,
-        0,//cu_ptr->interintra_mode,
-        0,//cu_ptr->use_wedge_interintra,
-        0,//cu_ptr->interintra_wedge_index,
+            NULL,
+            NULL,//ep_luma_recon_neighbor_array,
+            NULL,//ep_cb_recon_neighbor_array ,
+            NULL,//ep_cr_recon_neighbor_array ,
+            0,//cu_ptr->is_interintra_used,
+            0,//cu_ptr->interintra_mode,
+            0,//cu_ptr->use_wedge_interintra,
+            0,//cu_ptr->interintra_wedge_index,
 #endif
-        context_ptr->cu_origin_x,
-        context_ptr->cu_origin_y,
-        context_ptr->blk_geom->bwidth,
-        context_ptr->blk_geom->bheight,
-        ref_pic_list0,
-        ref_pic_list1,
-        candidate_buffer_ptr->prediction_ptr,
-        context_ptr->blk_geom->origin_x,
-        context_ptr->blk_geom->origin_y,
+            context_ptr->cu_origin_x,
+            context_ptr->cu_origin_y,
+            context_ptr->blk_geom->bwidth,
+            context_ptr->blk_geom->bheight,
+            ref_pic_list0,
+            ref_pic_list1,
+            candidate_buffer_ptr->prediction_ptr,
+            context_ptr->blk_geom->origin_x,
+            context_ptr->blk_geom->origin_y,
         0,
         asm_type); // No chroma
 
