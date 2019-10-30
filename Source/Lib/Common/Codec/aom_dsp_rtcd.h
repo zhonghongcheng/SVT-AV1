@@ -24,8 +24,6 @@
 #endif
 #if AUTO_MAX_PARTITION
 # include "ml.h"
-struct NN_CONFIG;
-typedef struct NN_CONFIG NN_CONFIG;
 #endif
 
 #ifdef RTCD_C
@@ -2970,9 +2968,7 @@ extern "C" {
 
 #if AUTO_MAX_PARTITION
     void av1_nn_predict_c(const float *input_nodes, const NN_CONFIG *const nn_config, int reduce_prec, float *const output);
-#if 0 // to do
-    void av1_nn_predict_sse3(const float *input_nodes, const NN_CONFIG *const nn_config, int reduce_prec, float *const output);
-#endif
+    //void av1_nn_predict_sse3(const float *input_nodes, const NN_CONFIG *const nn_config, int reduce_prec, float *const output);
     RTCD_EXTERN void(*av1_nn_predict)(const float *input_nodes, const NN_CONFIG *const nn_config, int reduce_prec, float *const output);
 #endif
 
@@ -3326,13 +3322,11 @@ extern "C" {
         if (flags & HAS_SSE4_1) aom_highbd_blend_a64_hmask = aom_highbd_blend_a64_hmask_sse4_1;
         aom_highbd_blend_a64_vmask = aom_highbd_blend_a64_vmask_c;
         if (flags & HAS_SSE4_1) aom_highbd_blend_a64_vmask = aom_highbd_blend_a64_vmask_sse4_1;
-        
+
 
 #if AUTO_MAX_PARTITION
         av1_nn_predict = av1_nn_predict_c;
-#if 0 // to do
-        if (flags & HAS_SSE3) av1_nn_predict = av1_nn_predict_sse3;
-#endif
+        //if (flags & HAS_SSE3) av1_nn_predict = av1_nn_predict_sse3;
 #endif
 
 
@@ -4544,7 +4538,7 @@ extern "C" {
         eb_aom_fft8x8_float = eb_aom_fft8x8_float_c;
         if (flags & HAS_AVX2) eb_aom_fft8x8_float = eb_aom_fft8x8_float_avx2;
 
-		
+
         eb_aom_ifft16x16_float = eb_aom_ifft16x16_float_c;
         if (flags & HAS_AVX2) eb_aom_ifft16x16_float = eb_aom_ifft16x16_float_avx2;
         eb_aom_ifft32x32_float = eb_aom_ifft32x32_float_c;
