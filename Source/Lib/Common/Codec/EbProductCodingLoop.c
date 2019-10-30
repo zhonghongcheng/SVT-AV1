@@ -8116,6 +8116,51 @@ void md_encode_block(
     }
 }
 
+
+#define PER_ERROR 0
+void decide_next_nsq_and_update_cost(
+        ModeDecisionContext *context_ptr, 
+        uint64_t *sq_cost, uint64_t *h_cost, 
+        uint64_t *v_cost, int *skip_next_nsq){
+
+    switch (context_ptr->blk_geom->d1i)
+    {
+    case 0:
+        *sq_cost = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+        *h_cost = 0;
+        *v_cost = 0;
+        break;
+    case 1:
+        *h_cost = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+        break;
+    case 2:
+        *h_cost += context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+        break;
+    case 3:
+        *v_cost = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+        break;
+    case 4:
+        *v_cost += context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+        *skip_next_nsq = (*h_cost > *sq_cost) ? 1 : *skip_next_nsq;
+        break;
+    case 5:
+    case 6:
+    case 7:
+    case 8:
+    case 9:
+        *skip_next_nsq = (*h_cost > ((*sq_cost * (100 + PER_ERROR)) / 100)) ? 1 : *skip_next_nsq;
+        break;
+    case 10:
+    case 11:
+    case 12:
+    case 13:
+    case 14:
+    case 15:
+        *skip_next_nsq = (*v_cost > ((*sq_cost * (100 + PER_ERROR)) / 100)) ? 1 : *skip_next_nsq;
+        break;
+    }
+}
+
 EB_EXTERN EbErrorType mode_decision_sb(
     SequenceControlSet                *sequence_control_set_ptr,
     PictureControlSet                 *picture_control_set_ptr,
@@ -8484,48 +8529,10 @@ EB_EXTERN EbErrorType mode_decision_sb(
         }
 
 #if LESS_RECTANGULAR_CHECK_LEVEL
-        #define PER_ERROR 0
-        // Jack TODO : collapse the spare code into function; input: context_ptr and skip_next_nsq | output: skip_next_nsq 
         if (blk_geom->bsize > BLOCK_8X8)
-        {
-            switch (blk_geom->d1i)
-            {
-            case 0:
-                sq_cost = context_ptr->md_local_cu_unit[cu_ptr->mds_idx].cost;
-                h_cost = 0;
-                v_cost = 0;
-                break;
-            case 1:
-                h_cost = context_ptr->md_local_cu_unit[cu_ptr->mds_idx].cost;
-                break;
-            case 2:
-                h_cost += context_ptr->md_local_cu_unit[cu_ptr->mds_idx].cost;
-                break;
-            case 3:
-                v_cost = context_ptr->md_local_cu_unit[cu_ptr->mds_idx].cost;
-                break;
-            case 4:
-                v_cost += context_ptr->md_local_cu_unit[cu_ptr->mds_idx].cost;
-                skip_next_nsq = (h_cost > sq_cost) ? 1 : skip_next_nsq;
-                break;
-            case 5:
-            case 6:
-            case 7:
-            case 8:
-            case 9:
-                skip_next_nsq = (h_cost > ((sq_cost * (100 + PER_ERROR)) / 100)) ? 1 : skip_next_nsq;
-                break;
-            case 10:
-            case 11:
-            case 12:
-            case 13:
-            case 14:
-            case 15:
-                skip_next_nsq = (v_cost > ((sq_cost * (100 + PER_ERROR)) / 100)) ? 1 : skip_next_nsq;
-                break;
-            }
-        }
+            decide_next_nsq_and_update_cost(context_ptr, &sq_cost, &h_cost, &v_cost, &skip_next_nsq);
 #endif
+
         if (blk_geom->shape != PART_N) {
             if (blk_geom->nsi + 1 < blk_geom->totns)
                 md_update_all_neighbour_arrays(
