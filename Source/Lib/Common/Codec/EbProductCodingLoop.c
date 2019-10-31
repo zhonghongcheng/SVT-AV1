@@ -8238,8 +8238,11 @@ void av1_get_max_min_partition_features(
         uint32_t me_sb_size = sequence_control_set_ptr->sb_sz;
         uint32_t me_pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / me_sb_size;
 
-        uint32_t me_sb_x = ((blk_geom->origin_x + sb_origin_x) / me_sb_size);
-        uint32_t me_sb_y = ((blk_geom->origin_y + sb_origin_y) / me_sb_size);
+        const uint32_t cu_origin_x = sb_origin_x + blk_geom->origin_x;
+        const uint32_t cu_origin_y = sb_origin_y + blk_geom->origin_y;
+
+        uint32_t me_sb_x = (cu_origin_x / me_sb_size);
+        uint32_t me_sb_y = (cu_origin_y / me_sb_size);
         uint32_t me_sb_addr = me_sb_x + me_sb_y * me_pic_width_in_sb;
         uint32_t geom_offset_x = (me_sb_x & 0x1) * me_sb_size;
         uint32_t geom_offset_y = (me_sb_y & 0x1) * me_sb_size;
@@ -8306,9 +8309,9 @@ void av1_get_max_min_partition_features(
 
                 const aom_variance_fn_ptr_t *fn_ptr = &mefn_ptr[blk_geom->bsize];
 
-                const uint32_t inputOriginIndex = ((blk_geom->origin_y + sb_origin_y) + input_picture_ptr->origin_y) * input_picture_ptr->stride_y + ((blk_geom->origin_x + sb_origin_x) + input_picture_ptr->origin_x);
-                const uint32_t cuOriginIndex = blk_geom->origin_x + blk_geom->origin_y * SB_STRIDE_Y;
-                fn_ptr->vf((input_picture_ptr->buffer_y + inputOriginIndex), input_picture_ptr->stride_y, (prediction_ptr->buffer_y + cuOriginIndex), prediction_ptr->stride_y, &sse);
+                const uint32_t input_origin_index = (cu_origin_y + input_picture_ptr->origin_y) * input_picture_ptr->stride_y + (cu_origin_x + input_picture_ptr->origin_x);
+                const uint32_t cu_origin_index = blk_geom->origin_x + blk_geom->origin_y * SB_STRIDE_Y;
+                fn_ptr->vf((input_picture_ptr->buffer_y + input_origin_index), input_picture_ptr->stride_y, (prediction_ptr->buffer_y + cu_origin_index), prediction_ptr->stride_y, &sse);
 
                 mv_col = (float)(candidate_ptr->motion_vector_xl0 >> 3);
                 mv_row = (float)(candidate_ptr->motion_vector_yl0 >> 3);
@@ -8408,9 +8411,9 @@ BlockSize av1_predict_max_partition(
     }
     else if (picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion == ADAPT_PRED) {
 
-        const uint32_t inputOriginIndex = (sb_origin_y + input_picture_ptr->origin_y) * input_picture_ptr->stride_y + (sb_origin_x + input_picture_ptr->origin_x);
+        const uint32_t input_origin_index = (sb_origin_y + input_picture_ptr->origin_y) * input_picture_ptr->stride_y + (sb_origin_x + input_picture_ptr->origin_x);
         const aom_variance_fn_ptr_t *fn_ptr = &mefn_ptr[BLOCK_128X128];
-        const unsigned int source_variance = eb_av1_get_sby_perpixel_variance(fn_ptr, (input_picture_ptr->buffer_y + inputOriginIndex), input_picture_ptr->stride_y, BLOCK_128X128);
+        const unsigned int source_variance = eb_av1_get_sby_perpixel_variance(fn_ptr, (input_picture_ptr->buffer_y + input_origin_index), input_picture_ptr->stride_y, BLOCK_128X128);
 
         if (source_variance > 16) {
             const double thresh = source_variance < 128 ? 0.05 : 0.1;
