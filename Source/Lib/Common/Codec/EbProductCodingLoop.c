@@ -8187,8 +8187,8 @@ void av1_get_max_min_partition_features(
     SequenceControlSet  *sequence_control_set_ptr,
     PictureControlSet   *picture_control_set_ptr,
     ModeDecisionContext *context_ptr,
-    EbPictureBufferDesc *input_picture_ptr,
     float               *features,
+    EbPictureBufferDesc *input_picture_ptr,
     uint16_t             sb_origin_x,
     uint16_t             sb_origin_y) {
 #if 0
@@ -8366,9 +8366,12 @@ void av1_get_max_min_partition_features(
 
 #define MAX_NUM_CLASSES_MAX_MIN_PART_PRED 4
 BlockSize av1_predict_max_partition(
-    SequenceControlSet *sequence_control_set_ptr,
-    PictureControlSet *picture_control_set_ptr,
-    const float *features) {
+    SequenceControlSet  *sequence_control_set_ptr,
+    PictureControlSet   *picture_control_set_ptr,
+    const float         *features,
+    EbPictureBufferDesc *input_picture_ptr,
+    uint16_t             sb_origin_x,
+    uint16_t             sb_origin_y) {
 
     float scores[MAX_NUM_CLASSES_MAX_MIN_PART_PRED] = { 0.0f },
         probs[MAX_NUM_CLASSES_MAX_MIN_PART_PRED] = { 0.0f };
@@ -8405,17 +8408,10 @@ BlockSize av1_predict_max_partition(
     }
     else if (picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion == ADAPT_PRED) {
 
-#if 0 // Jack TODO : ADAPT_PRED not yet supported
-        const BlockSize sb_size = cpi->common.seq_params.sb_size;
+        const uint32_t inputOriginIndex = (sb_origin_y + input_picture_ptr->origin_y) * input_picture_ptr->stride_y + (sb_origin_x + input_picture_ptr->origin_x);
+        const aom_variance_fn_ptr_t *fn_ptr = &mefn_ptr[BLOCK_128X128];
+        const unsigned int source_variance = eb_av1_get_sby_perpixel_variance(fn_ptr, (input_picture_ptr->buffer_y + inputOriginIndex), input_picture_ptr->stride_y, BLOCK_128X128);
 
-        MACROBLOCKD *const xd = &x->e_mbd;
-        // TODO(debargha): x->source_variance is unavailable at this point,
-        // so compute. The redundant recomputation later can be removed.
-        const unsigned int source_variance =
-            is_cur_buf_hbd(xd)
-            ? av1_high_get_sby_perpixel_variance(cpi, &x->plane[0].src, sb_size,
-                xd->bd)
-            : av1_get_sby_perpixel_variance(cpi, &x->plane[0].src, sb_size);
         if (source_variance > 16) {
             const double thresh = source_variance < 128 ? 0.05 : 0.1;
             for (result = MAX_NUM_CLASSES_MAX_MIN_PART_PRED - 1; result >= 0;
@@ -8426,7 +8422,7 @@ BlockSize av1_predict_max_partition(
                 if (probs[result] > thresh) break;
             }
         }
-#endif
+
     }
 
     return (BlockSize)((result + 2) * 3);
@@ -8550,7 +8546,7 @@ EB_EXTERN EbErrorType mode_decision_sb(
 
 #if AUTO_MAX_PARTITION
     // Jack TODO : ADAPT_PRED not yet supported (use RELAXED_PRED for now)
-    picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion = RELAXED_PRED;
+    picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion = DIRECT_PRED;// ADAPT_PRED; // RELAXED_PRED
     BlockSize max_bsize = BLOCK_128X128;
 
     if (picture_control_set_ptr->slice_type != I_SLICE && sequence_control_set_ptr->static_config.super_block_size == 128) {
@@ -8559,8 +8555,8 @@ EB_EXTERN EbErrorType mode_decision_sb(
 
             float features[FEATURE_SIZE_MAX_MIN_PART_PRED] = { 0.0f };
 
-            av1_get_max_min_partition_features(sequence_control_set_ptr, picture_control_set_ptr, context_ptr, input_picture_ptr, features, sb_origin_x, sb_origin_y);
-            max_bsize = MIN(av1_predict_max_partition(sequence_control_set_ptr, picture_control_set_ptr, features), max_bsize);
+            av1_get_max_min_partition_features(sequence_control_set_ptr, picture_control_set_ptr, context_ptr, features, input_picture_ptr, sb_origin_x, sb_origin_y);
+            max_bsize = MIN(av1_predict_max_partition(sequence_control_set_ptr, picture_control_set_ptr, features, input_picture_ptr, sb_origin_x, sb_origin_y), max_bsize);
         }
     }
     uint8_t max_bwidth = block_size_wide[max_bsize];
