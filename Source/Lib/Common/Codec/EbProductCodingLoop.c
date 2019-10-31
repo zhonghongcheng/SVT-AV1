@@ -8526,12 +8526,16 @@ EB_EXTERN EbErrorType mode_decision_sb(
     // Jack TODO : ADAPT_PRED not yet supported (use RELAXED_PRED for now)
     picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion = RELAXED_PRED;
     BlockSize max_bsize = BLOCK_128X128;
-    if (picture_control_set_ptr->slice_type != I_SLICE && sequence_control_set_ptr->static_config.super_block_size == 128)
-    {
-        float features[FEATURE_SIZE_MAX_MIN_PART_PRED] = { 0.0f };
 
-        av1_get_max_min_partition_features(sequence_control_set_ptr, picture_control_set_ptr, features, sb_origin_x, sb_origin_y);
-        max_bsize = MIN(av1_predict_max_partition(sequence_control_set_ptr, picture_control_set_ptr, features), max_bsize);
+    if (picture_control_set_ptr->slice_type != I_SLICE && sequence_control_set_ptr->static_config.super_block_size == 128) {
+        if ((sb_origin_x + sequence_control_set_ptr->static_config.super_block_size) < picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header.max_frame_width  &&
+            (sb_origin_y + sequence_control_set_ptr->static_config.super_block_size) < picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header.max_frame_height ){
+
+            float features[FEATURE_SIZE_MAX_MIN_PART_PRED] = { 0.0f };
+
+            av1_get_max_min_partition_features(sequence_control_set_ptr, picture_control_set_ptr, features, sb_origin_x, sb_origin_y);
+            max_bsize = MIN(av1_predict_max_partition(sequence_control_set_ptr, picture_control_set_ptr, features), max_bsize);
+        }
     }
     uint8_t max_bwidth = block_size_wide[max_bsize];
     uint8_t max_bheight = block_size_high[max_bsize];
@@ -8751,7 +8755,7 @@ EB_EXTERN EbErrorType mode_decision_sb(
 
             }
 #if AUTO_MAX_PARTITION
-            if (context_ptr->blk_geom->bwidth > max_bwidth || context_ptr->blk_geom->bheight > max_bheight) {
+            else if (context_ptr->blk_geom->bwidth > max_bwidth || context_ptr->blk_geom->bheight > max_bheight) {
                 if (context_ptr->blk_geom->shape != PART_N)
                     context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost = (MAX_MODE_COST >> 4);
                 else
