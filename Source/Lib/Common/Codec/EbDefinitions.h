@@ -54,6 +54,7 @@ extern "C" {
 #define FIX_COMPOUND                 1 // Address COMPOUND mismatch between rtime-m0-test and master: used block size @ the derivation of compound count
 #define rtime_presets                0
 #define NIC_LUT                      0 // Cleanup NIC function for ease of tuning
+#define M3_NSQ_MDC_CANDIDATE         0
 #define SHUT_CPMPOUND                0
 
 #define OBMC_FLAG                    1 // OBMC motion mode flag
