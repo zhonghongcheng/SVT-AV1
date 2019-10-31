@@ -52,7 +52,8 @@ extern "C" {
 #define FIX_SORTING_METHOD           1 // Address SORTING mismatch between rtime-m0-test and master: used same method
 #define FIX_SETTINGS_RESET           1 // Address SEGMENT_RESET mismatch between rtime-m0-test and master: only @ 1st segment
 #define FIX_COMPOUND                 1 // Address COMPOUND mismatch between rtime-m0-test and master: used block size @ the derivation of compound count
-#define rtime_presets                0    
+#define rtime_presets                0
+#define NIC_LUT                      0 // Cleanup NIC function for ease of tuning
 #define SHUT_CPMPOUND                0
 
 #define OBMC_FLAG            1 // OBMC motion mode flag
