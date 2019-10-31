@@ -2674,20 +2674,24 @@ void* mode_decision_configuration_kernel(void *input_ptr)
                         LargestCodingUnit  *sb_ptr = picture_control_set_ptr->sb_ptr_array[sb_index];
                         sb_ptr->origin_x = x_lcu_index << lcu_size_log_2;
                         sb_ptr->origin_y = y_lcu_index << lcu_size_log_2;
-                        open_loop_partitioning_pass(
-                            sequence_control_set_ptr,
-                            picture_control_set_ptr,
-                            context_ptr,
-                            sb_index);
-                        init_considered_block(
-                            sequence_control_set_ptr,
-                            picture_control_set_ptr,
-                            context_ptr,
-                            sb_index);
-                        forward_considered_blocks(
-                            sequence_control_set_ptr,
-                            picture_control_set_ptr,
-                            sb_index);
+                        uint32_t is_complete_sb = sequence_control_set_ptr->sb_geom[sb_index].is_complete_sb;  //Nader MDC fix
+                        if (sequence_control_set_ptr->over_boundary_block_mode == 1 || is_complete_sb) {       //Nader MDC fix
+
+                            open_loop_partitioning_pass(
+                                sequence_control_set_ptr,
+                                picture_control_set_ptr,
+                                context_ptr,
+                                sb_index);
+                            init_considered_block(
+                                sequence_control_set_ptr,
+                                picture_control_set_ptr,
+                                context_ptr,
+                                sb_index);
+                            forward_considered_blocks(
+                                sequence_control_set_ptr,
+                                picture_control_set_ptr,
+                                sb_index);
+                        }
                     }
                 }
             }
