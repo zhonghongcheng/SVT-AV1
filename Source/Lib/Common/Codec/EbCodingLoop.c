@@ -2083,6 +2083,44 @@ void av1_copy_frame_mvs(PictureControlSet *picture_control_set_ptr, const Av1Com
         frame_mvs += frame_mvs_stride;
     }
 }
+#if STAT_UPDATE
+#define TPL_DEP_COST_SCALE_LOG2 4
+static int64_t delta_rate_cost(int64_t delta_rate, int64_t recrf_dist,
+    int64_t srcrf_dist, int pix_num) {
+    double beta = (double)srcrf_dist / recrf_dist;
+    int64_t rate_cost = delta_rate;
+
+    if (srcrf_dist <= 128) return rate_cost;
+
+    double dr =
+        (double)(delta_rate >> (TPL_DEP_COST_SCALE_LOG2 + AV1_PROB_COST_SHIFT)) /
+        pix_num;
+
+    double log_den = log(beta) / log(2.0) + 2.0 * dr;
+
+    if (log_den > log(10.0) / log(2.0)) {
+        rate_cost = (int64_t)((log(1.0 / beta) * pix_num) / log(2.0) / 2.0);
+        rate_cost <<= (TPL_DEP_COST_SCALE_LOG2 + AV1_PROB_COST_SHIFT);
+        return rate_cost;
+    }
+
+    double num = pow(2.0, log_den);
+    double den = num * beta + (1 - beta) * beta;
+
+    rate_cost = (int64_t)((pix_num * log(num / den)) / log(2.0) / 2.0);
+
+    rate_cost <<= (TPL_DEP_COST_SCALE_LOG2 + AV1_PROB_COST_SHIFT);
+
+    return rate_cost;
+}
+
+static double iiratio_nonlinear(double iiratio) {
+    double z = 8 * (iiratio - 0.5);
+    double sigmoid = 1.0 / (1.0 + exp(-z));
+    return sigmoid;
+    return iiratio * iiratio;
+}
+#endif
 /*******************************************
 * Encode Pass
 *
@@ -2373,7 +2411,36 @@ EB_EXTERN void av1_encode_pass(
                     cu_ptr->delta_qp = sb_ptr->delta_qp;
                 }
 
+#if STAT_UPDATE
+                // Collect the referenced area per 64x64
+                if (sequence_control_set_ptr->use_output_stat_file) {
+                    cu_ptr->cur_stat.inter_cost = cu_ptr->lowest_inter_cost;
+                    cu_ptr->cur_stat.intra_cost = cu_ptr->lowest_intra_cost;
+                    cu_ptr->cur_stat.srcrf_dist = cu_ptr->lowest_inter_total_dist[0];
+                    cu_ptr->cur_stat.recrf_dist = cu_ptr->lowest_intra_total_dist[0];
+                    cu_ptr->cur_stat.srcrf_rate = cu_ptr->lowest_inter_total_rate;
+                    cu_ptr->cur_stat.recrf_rate = cu_ptr->lowest_intra_total_rate;
+                    cu_ptr->cur_stat.quant_ratio = (double)cu_ptr->lowest_inter_total_dist[0] / (double)cu_ptr->lowest_inter_total_dist[1];
+                    cu_ptr->cur_stat.mc_flow = 0;// For now, only 1 level of propagation is considered
+                    cu_ptr->cur_stat.mc_dep_cost = cu_ptr->cur_stat.intra_cost + cu_ptr->cur_stat.mc_flow; // to update at the time of writing to file
+    //                    cu_ptr->cur_stat.cur_dep_dist = to do on the fly
+    //                        cu_ptr->cur_stat.recrf_dist - cu_ptr->cur_stat.srcrf_dist;
+     //                   cu_ptr->cur_stat.delta_rate = cu_ptr->cur_stat.recrf_rate - cu_ptr->cur_stat.srcrf_rate;
+    //
+                        //cu_ptr->cur_stat.mc_dep_delta = 0; // not used in first pass
+                    cu_ptr->cur_stat.mc_dep_rate = 0;
+                    cu_ptr->cur_stat.mc_dep_dist = 0;
+                    cu_ptr->cur_stat.mc_count = 0;
+                    cu_ptr->cur_stat.mc_saved = 0;
 
+                    //// to update below
+                    //cu_ptr->cur_stat.mc_flow = 0;
+                    //cu_ptr->cur_stat.mc_dep_rate = 0;
+                    //cu_ptr->cur_stat.mc_dep_dist = 0;
+                    //cu_ptr->cur_stat.mc_count = 0;
+                    //cu_ptr->cur_stat.mc_saved = 0;
+                }
+#endif
                 if (cu_ptr->prediction_mode_flag == INTRA_MODE) {
                     context_ptr->is_inter = cu_ptr->av1xd->use_intrabc;
                     context_ptr->tot_intra_coded_area += blk_geom->bwidth* blk_geom->bheight;
@@ -3657,6 +3724,38 @@ EB_EXTERN void av1_encode_pass(
                                     uint16_t sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
                                     uint16_t width, height, weight;
                                     weight = 1 << (4 - picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index);
+
+#if STAT_UPDATE
+                                    const int pix_num = blk_geom->bwidth * blk_geom->bheight;
+                                    const double iiratio_nl = iiratio_nonlinear(
+                                        (double)cu_ptr->cur_stat.inter_cost / cu_ptr->cur_stat.intra_cost);
+                                    int64_t mc_flow =
+                                        (int64_t)(cu_ptr->cur_stat.quant_ratio * cu_ptr->cur_stat.mc_dep_cost *
+                                        (1.0 - iiratio_nl));
+                                    int64_t cur_dep_dist = 
+                                        cu_ptr->cur_stat.recrf_dist - cu_ptr->cur_stat.srcrf_dist;
+                                    
+                                    int64_t mc_dep_dist = (int64_t)(
+                                        cu_ptr->cur_stat.mc_dep_dist *
+                                        ((double)(cu_ptr->cur_stat.recrf_dist - cu_ptr->cur_stat.srcrf_dist) /
+                                            cu_ptr->cur_stat.recrf_dist));
+                                    
+                                    int64_t delta_rate = 
+                                        cu_ptr->cur_stat.recrf_rate - cu_ptr->cur_stat.srcrf_rate;
+
+                                    int64_t mc_dep_rate =
+                                        delta_rate_cost(cu_ptr->cur_stat.mc_dep_rate, cu_ptr->cur_stat.recrf_dist,
+                                            cu_ptr->cur_stat.srcrf_dist, pix_num);
+
+                                    int64_t mc_saved = cu_ptr->cur_stat.intra_cost - cu_ptr->cur_stat.inter_cost;
+                                        //// to update below
+                                        //cu_ptr->cur_stat.mc_flow = 0;
+                                        //cu_ptr->cur_stat.mc_dep_rate = 0;
+                                        //cu_ptr->cur_stat.mc_dep_dist = 0;
+                                        //cu_ptr->cur_stat.mc_count = 0;
+                                        //cu_ptr->cur_stat.mc_saved = 0;
+#endif
+
 
                                     width = MIN(sb_origin_x + context_ptr->sb_sz, origin_x + blk_geom->bwidth) - origin_x;
                                     height = MIN(sb_origin_y + context_ptr->sb_sz, origin_y + blk_geom->bheight) - origin_y;

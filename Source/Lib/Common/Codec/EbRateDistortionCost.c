@@ -2201,7 +2201,11 @@ EbErrorType Av1FullCost(
     candidate_buffer_ptr->full_lambda_rate = *candidate_buffer_ptr->full_cost_ptr - totalDistortion;
     coeffRate = *y_coeff_bits;
     candidate_buffer_ptr->full_cost_luma = RDCOST(lambda, lumaRate + *y_coeff_bits, luma_sse);
-
+#if STAT_UPDATE
+    candidate_buffer_ptr->total_rate = rate;
+    candidate_buffer_ptr->total_dist[0] = y_distortion[0] + cb_distortion[0] + cr_distortion[0];
+    candidate_buffer_ptr->total_dist[1] = y_distortion[1] + cb_distortion[1] + cr_distortion[1];
+#endif
     return return_error;
 }
 
@@ -2360,6 +2364,7 @@ EbErrorType  Av1MergeSkipFullCost(
         }
     }
 #endif
+
     // Assigne full cost
     *candidate_buffer_ptr->full_cost_ptr = (skip_cost <= merge_cost) ? skip_cost : merge_cost;
 
@@ -2375,7 +2380,11 @@ EbErrorType  Av1MergeSkipFullCost(
     candidate_buffer_ptr->candidate_ptr->skip_flag = (skip_cost <= merge_cost) ? EB_TRUE : EB_FALSE;
 
     //CHKN:  skip_flag context is not accurate as MD does not keep skip info in sync with EncDec.
-
+#if STAT_UPDATE
+    candidate_buffer_ptr->total_rate = (skip_cost <= merge_cost) ? skipModeRate : mergeRate;
+    candidate_buffer_ptr->total_dist[0] = (skip_cost <= merge_cost) ? skipDistortion : mergeDistortion;
+    candidate_buffer_ptr->total_dist[1] = skipDistortion;
+#endif
     return return_error;
 }
 /*********************************************************************************

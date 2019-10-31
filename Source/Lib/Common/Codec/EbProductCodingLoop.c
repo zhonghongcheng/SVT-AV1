@@ -6257,6 +6257,17 @@ void move_cu_data(
 #if FILTER_INTRA_FLAG
     dst_cu->filter_intra_mode = src_cu->filter_intra_mode;
 #endif
+#if STAT_UPDATE
+    dst_cu->lowest_intra_cost          = src_cu->lowest_intra_cost;
+    dst_cu->lowest_intra_total_rate    = src_cu->lowest_intra_total_rate;
+    dst_cu->lowest_intra_total_dist[0] = src_cu->lowest_intra_total_dist[0];
+    dst_cu->lowest_intra_total_dist[1] = src_cu->lowest_intra_total_dist[1];
+    dst_cu->lowest_inter_cost          = src_cu->lowest_inter_cost;
+    dst_cu->lowest_inter_total_rate    = src_cu->lowest_inter_total_rate;
+    dst_cu->lowest_inter_total_dist[0] = src_cu->lowest_inter_total_dist[0];
+    dst_cu->lowest_inter_total_dist[1] = src_cu->lowest_inter_total_dist[1];
+#endif
+
 }
 void move_cu_data_redund(
     CodingUnit *src_cu,

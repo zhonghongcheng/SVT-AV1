@@ -515,6 +515,15 @@ extern "C" {
 #if FILTER_INTRA_FLAG
        uint8_t                      filter_intra_mode;
 #endif
+#if STAT_UPDATE
+       uint64_t                     lowest_intra_cost;;
+       uint64_t                     lowest_intra_total_rate;
+       uint64_t                     lowest_intra_total_dist[2];
+       uint64_t                     lowest_inter_cost;
+       uint64_t                     lowest_inter_total_rate;
+       uint64_t                     lowest_inter_total_dist[2];
+       dept_stat_t                  cur_stat;
+#endif
     } CodingUnit;
 
         typedef struct OisCandidate

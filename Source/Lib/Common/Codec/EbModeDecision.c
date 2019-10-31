@@ -5611,7 +5611,41 @@ uint32_t product_full_mode_decision(
             lowestCost = *(buffer_ptr_array[candidateIndex]->full_cost_ptr);
         }
     }
+#if STAT_UPDATE // what happens if there is no inter or no intra
+    uint64_t                  lowest_intra_cost  = 0xFFFFFFFFFFFFFFFFull;
+    uint64_t                  lowest_intra_total_rate;
+    uint64_t                  lowest_intra_total_dist[2];
+    uint64_t                  lowest_inter_cost = 0xFFFFFFFFFFFFFFFFull;
+    uint64_t                  lowest_inter_total_rate;
+    uint64_t                  lowest_inter_total_dist[2];
+    
+    // Find the candidate with the lowest cost
+    for (i = 0; i < candidate_total_count; ++i) {
+        candidateIndex = best_candidate_index_array[i];
 
+        if ((*(buffer_ptr_array[candidateIndex]->full_cost_ptr) < lowest_intra_cost) && buffer_ptr_array[candidateIndex]->candidate_ptr->type == INTRA_MODE) {
+            lowest_intra_cost = *(buffer_ptr_array[candidateIndex]->full_cost_ptr);
+            lowest_intra_total_rate = buffer_ptr_array[candidateIndex]->total_rate;
+            lowest_intra_total_dist[0] = buffer_ptr_array[candidateIndex]->total_dist[0];
+            lowest_intra_total_dist[1] = buffer_ptr_array[candidateIndex]->total_dist[1];
+        }
+
+        if ((*(buffer_ptr_array[candidateIndex]->full_cost_ptr) < lowest_inter_cost) && buffer_ptr_array[candidateIndex]->candidate_ptr->type == INTER_MODE) {
+            lowest_inter_cost  = *(buffer_ptr_array[candidateIndex]->full_cost_ptr);
+            lowest_inter_total_rate = buffer_ptr_array[candidateIndex]->total_rate;
+            lowest_inter_total_dist[0] = buffer_ptr_array[candidateIndex]->total_dist[0];
+            lowest_inter_total_dist[1] = buffer_ptr_array[candidateIndex]->total_dist[1];
+        }
+    }
+    cu_ptr->lowest_intra_cost           = lowest_intra_cost;
+    cu_ptr->lowest_intra_total_rate     = lowest_intra_total_rate;
+    cu_ptr->lowest_intra_total_dist[0]  = lowest_intra_total_dist[0];
+    cu_ptr->lowest_intra_total_dist[1]  = lowest_intra_total_dist[1];
+    cu_ptr->lowest_inter_cost           = lowest_inter_cost;
+    cu_ptr->lowest_inter_total_rate     = lowest_inter_total_rate;
+    cu_ptr->lowest_inter_total_dist[0]  = lowest_inter_total_dist[0];
+    cu_ptr->lowest_inter_total_dist[1]  = lowest_inter_total_dist[1];
+#endif
     candidate_ptr = buffer_ptr_array[lowestCostIndex]->candidate_ptr;
 
     context_ptr->md_local_cu_unit[cu_ptr->mds_idx].cost = *(buffer_ptr_array[lowestCostIndex]->full_cost_ptr);

@@ -33,6 +33,8 @@
 extern "C" {
 #endif
 
+#define STAT_UPDATE                  1
+
 #define FIX_ALTREF                   1 // Address ALTREF mismatch between rtime-m0-test and master: fixed actual_future_pics derivation, shut padding of the central frame, fixed end past frame index prior to window shrinking
 #define FIX_NEAREST_NEW              1 // Address NEAREST_NEW mismatch between rtime-m0-test and master: fixed injection and fixed settings
 #define FIX_ESTIMATE_INTRA           1 // Address ESTIMATE_INTRA mismatch between rtime-m0-test and master: fixed settings
@@ -3306,9 +3308,35 @@ static const uint32_t MD_SCAN_TO_OIS_32x32_SCAN[CU_MAX_COUNT] =
 };
 
 #if TWO_PASS
+typedef struct dep_stat_t {
+    int64_t intra_cost;
+    int64_t inter_cost;
+    int64_t mc_flow;
+    int64_t mc_dep_cost;
+    int64_t srcrf_dist;
+    int64_t recrf_dist;
+    int64_t srcrf_rate;
+    int64_t recrf_rate;
+    int64_t mc_dep_delta;
+    int64_t mc_dep_rate;
+    int64_t mc_dep_dist;
+    int64_t src_rdcost; //--> why different than Inter cost
+    int64_t rec_rdcost; //--> why different than Intra cost
+//    int_mv mv;
+    int ref_frame_index;
+    double quant_ratio;
+    int64_t mc_count;
+    int64_t mc_saved;
+
+} dept_stat_t;
+
+
 typedef struct stat_struct_t
 {
     uint32_t                        referenced_area[MAX_NUMBER_OF_TREEBLOCKS_PER_PICTURE];
+#if STAT_UPDATE
+    dept_stat_t                     cur_stat[MAX_NUMBER_OF_TREEBLOCKS_PER_PICTURE];
+#endif
 } stat_struct_t;
 #endif
 #define SC_MAX_LEVEL 2 // 2 sets of HME/ME settings are used depending on the scene content mode

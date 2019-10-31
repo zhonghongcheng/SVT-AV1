@@ -259,6 +259,11 @@ extern "C" {
         uint64_t                                cr_distortion[2];
         uint64_t                                y_full_distortion[DIST_CALC_TOTAL];
         uint64_t                                y_coeff_bits;
+
+#if STAT_UPDATE
+        uint64_t                                total_rate;
+        uint64_t                                total_dist[2];
+#endif
     } ModeDecisionCandidateBuffer;
 
     /**************************************
