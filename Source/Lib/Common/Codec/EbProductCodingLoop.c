@@ -8223,7 +8223,7 @@ void av1_get_max_min_partition_features(
     float sum_log_sse = 0;
     float min_log_sse = FLT_MAX;
     float max_log_sse = 0;
-#if 1
+
     // 16x16 motion search results
     for (uint32_t index = 0; index < 64; index++)
     {
@@ -8259,11 +8259,7 @@ void av1_get_max_min_partition_features(
             const uint8_t list1_ref_index = me_block_results_ptr->ref_idx_l1;
 
             if (inter_direction == 0 && list0_ref_index == 0) {
-                mv_col = (float)((me_results->me_mv_array[me_block_offset][list0_ref_index].x_mv << 1) >> 3);
-                mv_row = (float)((me_results->me_mv_array[me_block_offset][list0_ref_index].y_mv << 1) >> 3);
 
-
-#if 1
                 EbAsm asm_type = sequence_control_set_ptr->encode_context_ptr->asm_type;
                 uint32_t  distortion;
                 ModeDecisionCandidateBuffer *candidate_buffer = &(context_ptr->candidate_buffer_ptr_array[0][0]);
@@ -8291,10 +8287,10 @@ void av1_get_max_min_partition_features(
                 candidate_ptr->ref_frame_type = svt_get_ref_frame_type(inter_direction, list0_ref_index);
                 candidate_ptr->transform_type[PLANE_TYPE_Y] = DCT_DCT;
                 candidate_ptr->transform_type[PLANE_TYPE_UV] = DCT_DCT;
-                candidate_ptr->motion_vector_xl0 = mv_col;
-                candidate_ptr->motion_vector_yl0 = mv_row;
-                candidate_ptr->motion_vector_xl1 = mv_col;
-                candidate_ptr->motion_vector_yl1 = mv_row;
+                candidate_ptr->motion_vector_xl0 = me_results->me_mv_array[me_block_offset][list0_ref_index].x_mv << 1;
+                candidate_ptr->motion_vector_yl0 = me_results->me_mv_array[me_block_offset][list0_ref_index].y_mv << 1;
+                candidate_ptr->motion_vector_xl1 = me_results->me_mv_array[me_block_offset][list0_ref_index].x_mv << 1;
+                candidate_ptr->motion_vector_yl1 = me_results->me_mv_array[me_block_offset][list0_ref_index].y_mv << 1;
                 candidate_ptr->ref_frame_index_l0 = inter_direction == 0 ? list0_ref_index : -1;
                 candidate_ptr->ref_frame_index_l1 = inter_direction == 1 ? list0_ref_index : -1;
                 candidate_ptr->interp_filters = 0;
@@ -8313,60 +8309,34 @@ void av1_get_max_min_partition_features(
                 const uint32_t inputOriginIndex = ((blk_geom->origin_y + sb_origin_y) + input_picture_ptr->origin_y) * input_picture_ptr->stride_y + ((blk_geom->origin_x + sb_origin_x) + input_picture_ptr->origin_x);
                 const uint32_t cuOriginIndex = blk_geom->origin_x + blk_geom->origin_y * SB_STRIDE_Y;
                 fn_ptr->vf((input_picture_ptr->buffer_y + inputOriginIndex), input_picture_ptr->stride_y, (prediction_ptr->buffer_y + cuOriginIndex), prediction_ptr->stride_y, &sse);
-#else
-                sse = me_results->me_candidate[me_block_offset]->distortion;
-#endif
+
+                mv_col = (float)(candidate_ptr->motion_vector_xl0 >> 3);
+                mv_row = (float)(candidate_ptr->motion_vector_yl0 >> 3);
+
                 break;
             }
         }
 
+        const float log_sse = logf(1.0f + (float)sse);
+        const float abs_mv_row = fabsf(mv_row);
+        const float abs_mv_col = fabsf(mv_col);
 
-#else
-    const BlockSize mb_size = BLOCK_16X16;
-    const int mb_rows = block_size_high[sb_size] / block_size_high[mb_size];
-    const int mb_cols = block_size_wide[sb_size] / block_size_wide[mb_size];
-    const int mb_in_mi_size_high_log2 = mi_size_high_log2[mb_size];
-    const int mb_in_mi_size_wide_log2 = mi_size_wide_log2[mb_size];
+        sum_mv_row_sq += mv_row * mv_row;
+        sum_mv_row += mv_row;
+        sum_mv_col_sq += mv_col * mv_col;
+        sum_mv_col += mv_col;
 
+        if (abs_mv_row < min_abs_mv_row) min_abs_mv_row = abs_mv_row;
+        if (abs_mv_row > max_abs_mv_row) max_abs_mv_row = abs_mv_row;
+        if (abs_mv_col < min_abs_mv_col) min_abs_mv_col = abs_mv_col;
+        if (abs_mv_col > max_abs_mv_col) max_abs_mv_col = abs_mv_col;
 
-    for (int mb_row = 0; mb_row < mb_rows; mb_row++)
-        for (int mb_col = 0; mb_col < mb_cols; mb_col++) {
+        sum_log_sse_sq += log_sse * log_sse;
+        sum_log_sse += log_sse;
+        if (log_sse < min_log_sse) min_log_sse = log_sse;
+        if (log_sse > max_log_sse) max_log_sse = log_sse;
+    }
 
-            const int this_mi_row = mi_row + (mb_row << mb_in_mi_size_high_log2);
-            const int this_mi_col = mi_col + (mb_col << mb_in_mi_size_wide_log2);
-
-            unsigned int sse = 0;
-            unsigned int var = 0;
-
-            const MV ref_mv_full = { .row = 0,.col = 0 };
-
-            av1_simple_motion_sse_var(cpi, x, this_mi_row, this_mi_col, mb_size,
-                ref_mv_full, 0, &sse, &var);
-
-            aom_clear_system_state();
-
-            const float mv_row = (float)(x->best_mv.as_mv.row / 8);
-            const float mv_col = (float)(x->best_mv.as_mv.col / 8);
-#endif
-            const float log_sse = logf(1.0f + (float)sse);
-            const float abs_mv_row = fabsf(mv_row);
-            const float abs_mv_col = fabsf(mv_col);
-
-            sum_mv_row_sq += mv_row * mv_row;
-            sum_mv_row += mv_row;
-            sum_mv_col_sq += mv_col * mv_col;
-            sum_mv_col += mv_col;
-
-            if (abs_mv_row < min_abs_mv_row) min_abs_mv_row = abs_mv_row;
-            if (abs_mv_row > max_abs_mv_row) max_abs_mv_row = abs_mv_row;
-            if (abs_mv_col < min_abs_mv_col) min_abs_mv_col = abs_mv_col;
-            if (abs_mv_col > max_abs_mv_col) max_abs_mv_col = abs_mv_col;
-
-            sum_log_sse_sq += log_sse * log_sse;
-            sum_log_sse += log_sse;
-            if (log_sse < min_log_sse) min_log_sse = log_sse;
-            if (log_sse > max_log_sse) max_log_sse = log_sse;
-        }
     aom_clear_system_state();
     const float avg_mv_row = sum_mv_row / 64.0f;
     const float var_mv_row = sum_mv_row_sq / 64.0f - avg_mv_row * avg_mv_row;
@@ -8392,7 +8362,7 @@ void av1_get_max_min_partition_features(
     features[f_idx++] = var_mv_row;
 
     assert(f_idx == FEATURE_SIZE_MAX_MIN_PART_PRED);
-    }
+}
 
 #define MAX_NUM_CLASSES_MAX_MIN_PART_PRED 4
 BlockSize av1_predict_max_partition(
