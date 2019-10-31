@@ -34,8 +34,8 @@ extern "C" {
 #endif
 
 
-#define LESS_RECTANGULAR_CHECK_LEVEL 0
-#define AUTO_MAX_PARTITION           0
+#define LESS_RECTANGULAR_CHECK_LEVEL 1
+#define AUTO_MAX_PARTITION           1
 
 
 #define FIX_ALTREF                   1 // Address ALTREF mismatch between rtime-m0-test and master: fixed actual_future_pics derivation, shut padding of the central frame, fixed end past frame index prior to window shrinking

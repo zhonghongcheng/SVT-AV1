@@ -8184,11 +8184,13 @@ uint32_t mds_idx_16x16[64] = {
 };
 
 void av1_get_max_min_partition_features(
-    SequenceControlSet *sequence_control_set_ptr,
-    PictureControlSet  *picture_control_set_ptr,
-    float              *features,
-    uint16_t            sb_origin_x,
-    uint16_t            sb_origin_y) {
+    SequenceControlSet  *sequence_control_set_ptr,
+    PictureControlSet   *picture_control_set_ptr,
+    ModeDecisionContext *context_ptr,
+    EbPictureBufferDesc *input_picture_ptr,
+    float               *features,
+    uint16_t             sb_origin_x,
+    uint16_t             sb_origin_y) {
 #if 0
     AV1_COMMON *const cm = &cpi->common;
     MACROBLOCKD *xd = &x->e_mbd;
@@ -8228,7 +8230,7 @@ void av1_get_max_min_partition_features(
 
         float mv_col;
         float mv_row;
-        unsigned int sse;
+        unsigned int sse = 0;
 
         uint32_t blk_idx_mds = mds_idx_16x16[index];
         const BlockGeom * blk_geom = get_blk_geom_mds(blk_idx_mds);
@@ -8259,7 +8261,61 @@ void av1_get_max_min_partition_features(
             if (inter_direction == 0 && list0_ref_index == 0) {
                 mv_col = (float)((me_results->me_mv_array[me_block_offset][list0_ref_index].x_mv << 1) >> 3);
                 mv_row = (float)((me_results->me_mv_array[me_block_offset][list0_ref_index].y_mv << 1) >> 3);
+
+
+#if 1
+                EbAsm asm_type = sequence_control_set_ptr->encode_context_ptr->asm_type;
+                uint32_t  distortion;
+                ModeDecisionCandidateBuffer *candidate_buffer = &(context_ptr->candidate_buffer_ptr_array[0][0]);
+                candidate_buffer->candidate_ptr = &(context_ptr->fast_candidate_array[0]);
+                ModeDecisionCandidate *candidate_ptr = candidate_buffer->candidate_ptr;
+                EbPictureBufferDesc   *prediction_ptr = candidate_buffer->prediction_ptr;
+
+                candidate_ptr->type = INTER_MODE;
+                candidate_ptr->distortion_ready = 0;
+                candidate_ptr->use_intrabc = 0;
+                candidate_ptr->merge_flag = EB_FALSE;
+                candidate_ptr->prediction_direction[0] = (EbPredDirection)inter_direction;
+                candidate_ptr->inter_mode = NEWMV;
+                candidate_ptr->pred_mode = NEWMV;
+                candidate_ptr->motion_mode = SIMPLE_TRANSLATION;
+#if II_COMP_FLAG
+                candidate_ptr->is_interintra_used = 0;
+#endif
+                candidate_ptr->is_compound = 0;
+                candidate_ptr->is_new_mv = 1;
+                candidate_ptr->is_zero_mv = 0;
+                candidate_ptr->drl_index = 0;
+                candidate_ptr->ref_mv_index = 0;
+                candidate_ptr->pred_mv_weight = 0;
+                candidate_ptr->ref_frame_type = svt_get_ref_frame_type(inter_direction, list0_ref_index);
+                candidate_ptr->transform_type[PLANE_TYPE_Y] = DCT_DCT;
+                candidate_ptr->transform_type[PLANE_TYPE_UV] = DCT_DCT;
+                candidate_ptr->motion_vector_xl0 = mv_col;
+                candidate_ptr->motion_vector_yl0 = mv_row;
+                candidate_ptr->motion_vector_xl1 = mv_col;
+                candidate_ptr->motion_vector_yl1 = mv_row;
+                candidate_ptr->ref_frame_index_l0 = inter_direction == 0 ? list0_ref_index : -1;
+                candidate_ptr->ref_frame_index_l1 = inter_direction == 1 ? list0_ref_index : -1;
+                candidate_ptr->interp_filters = 0;
+
+                // Prediction
+                context_ptr->md_staging_skip_interpolation_search = EB_TRUE;
+                context_ptr->md_staging_skip_inter_chroma_pred = EB_TRUE;
+                ProductPredictionFunTable[INTER_MODE](
+                    context_ptr,
+                    picture_control_set_ptr,
+                    candidate_buffer,
+                    asm_type);
+
+                const aom_variance_fn_ptr_t *fn_ptr = &mefn_ptr[blk_geom->bsize];
+
+                const uint32_t inputOriginIndex = ((blk_geom->origin_y + sb_origin_y) + input_picture_ptr->origin_y) * input_picture_ptr->stride_y + ((blk_geom->origin_x + sb_origin_x) + input_picture_ptr->origin_x);
+                const uint32_t cuOriginIndex = blk_geom->origin_x + blk_geom->origin_y * SB_STRIDE_Y;
+                fn_ptr->vf((input_picture_ptr->buffer_y + inputOriginIndex), input_picture_ptr->stride_y, (prediction_ptr->buffer_y + cuOriginIndex), prediction_ptr->stride_y, &sse);
+#else
                 sse = me_results->me_candidate[me_block_offset]->distortion;
+#endif
                 break;
             }
         }
@@ -8533,7 +8589,7 @@ EB_EXTERN EbErrorType mode_decision_sb(
 
             float features[FEATURE_SIZE_MAX_MIN_PART_PRED] = { 0.0f };
 
-            av1_get_max_min_partition_features(sequence_control_set_ptr, picture_control_set_ptr, features, sb_origin_x, sb_origin_y);
+            av1_get_max_min_partition_features(sequence_control_set_ptr, picture_control_set_ptr, context_ptr, input_picture_ptr, features, sb_origin_x, sb_origin_y);
             max_bsize = MIN(av1_predict_max_partition(sequence_control_set_ptr, picture_control_set_ptr, features), max_bsize);
         }
     }
