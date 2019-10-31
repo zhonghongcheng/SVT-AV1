@@ -1142,52 +1142,28 @@ void set_child_to_be_considered(
     }
 }
 #if MDC_ADAPTIVE_LEVEL
-extern uint16_t get_variance_for_cu(const BlockGeom *blk_geom,
-    uint16_t *variance_ptr);
-uint8_t updated_level[8][2][4] = {
-        { {0,4,5,6},{0,5,5,6} },
-        { {0,4,5,5},{0,4,5,5} },
-        { {0,4,5,5},{0,4,5,5} },
-        { {0,4,4,5},{0,4,4,5} },
-        { {0,1,4,5},{0,1,4,5} },
-        { {0,1,4,4},{0,1,4,4} },
-        { {0,1,4,4},{0,1,4,4} },
-        { {0,0,4,4},{0,0,4,4} } };
+#define MDC_COST_WEIGHT 50000
 // Update MDC refinement
 uint8_t update_mdc_level(
-    PictureControlSet  *picture_control_set_ptr,
     LargestCodingUnit  *sb_ptr,
-    uint32_t sb_index,
     uint32_t sb_size,
     const BlockGeom * blk_geom,
-    EbInputResolution input_resolution,
-    uint8_t is_used_as_reference_flag,
     uint8_t mdc_depth_level) {
-    uint8_t cost_th = input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER ? 100 :
-        is_used_as_reference_flag ? 300 : 150;
-    uint8_t var_th[2] = { 0, 50 };
-    uint8_t rank_th = 0;
+
+    uint64_t cost_th_0 = (uint64_t)blk_geom->bwidth * (uint64_t)blk_geom->bheight;
+    uint64_t cost_th_1 = cost_th_0 * MDC_COST_WEIGHT;
     uint8_t depth_offset = sb_size == BLOCK_128X128 ? 0 : 1;
-    uint8_t start_depth = sb_size == BLOCK_128X128 ? 0 : 1;
-    uint8_t end_depth = 5;
     uint8_t depth = blk_geom->depth + depth_offset;
     uint8_t adjusted_depth_level = mdc_depth_level;
     uint8_t depth_refinement_mode = mdc_depth_level;
-    uint16_t *variance_ptr = picture_control_set_ptr->parent_pcs_ptr->variance[sb_index];
-    uint16_t variance = get_variance_for_cu(blk_geom, variance_ptr);
-    int64_t above_diff = (int64_t)sb_ptr->depth_cost[depth > start_depth ? depth - 1 : depth] - (int64_t)sb_ptr->depth_cost[depth];
-    int64_t below_diff = (int64_t)sb_ptr->depth_cost[depth < end_depth ? depth + 1 : depth] - (int64_t)sb_ptr->depth_cost[depth];
-    uint64_t above_dist = sb_ptr->depth_cost[depth] ? (ABS(above_diff) * 100) / sb_ptr->depth_cost[depth] : 0;
-    uint64_t below_dist = sb_ptr->depth_cost[depth] ? (ABS(below_diff) * 100) / sb_ptr->depth_cost[depth] : 0;
-    uint8_t resoltion_index = input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER ? 0 : 1;
-    if (variance == var_th[0] && sb_ptr->depth_ranking[depth] == rank_th && above_dist > cost_th && below_dist > cost_th)
-        adjusted_depth_level = updated_level[picture_control_set_ptr->enc_mode][resoltion_index][0];
-    else  if (variance < var_th[1] && sb_ptr->depth_ranking[depth] == rank_th && (above_dist > cost_th || below_dist > cost_th))
-        adjusted_depth_level = updated_level[picture_control_set_ptr->enc_mode][resoltion_index][1];
-    else  if (sb_ptr->depth_ranking[depth] == rank_th && (above_dist > cost_th || below_dist > cost_th))
-        adjusted_depth_level = updated_level[picture_control_set_ptr->enc_mode][resoltion_index][2];
+
+    if (sb_ptr->depth_cost[depth] < cost_th_0)
+        adjusted_depth_level = 1;
+    else if (sb_ptr->depth_cost[depth] < cost_th_1)
+        adjusted_depth_level = MAX((int8_t)mdc_depth_level - 1, 0);
     else
-        adjusted_depth_level = updated_level[picture_control_set_ptr->enc_mode][resoltion_index][3];
+        adjusted_depth_level = mdc_depth_level;
+
     switch (adjusted_depth_level) {
     case 0:
         depth_refinement_mode =  Pred;
@@ -1288,15 +1264,11 @@ void init_considered_block(
             if (blk_geom->shape == PART_N) {
 #if MDC_ADAPTIVE_LEVEL
                 // Update MDC refinement
-                if (is_complete_sb && picture_control_set_ptr->enc_mode == ENC_M0)
+                if (is_complete_sb)
                     depth_refinement_mode = update_mdc_level(
-                        picture_control_set_ptr,
                         sb_ptr,
-                        sb_index,
                         sequence_control_set_ptr->seq_header.sb_size,
                         blk_geom,
-                        sequence_control_set_ptr->input_resolution,
-                        picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag,
                         picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level);
 #endif
                 switch (depth_refinement_mode) {
