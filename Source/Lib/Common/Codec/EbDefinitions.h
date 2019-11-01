@@ -55,6 +55,7 @@ extern "C" {
 #define FIX_COMPOUND                 1 // Address COMPOUND mismatch between rtime-m0-test and master: used block size @ the derivation of compound count
 #define rtime_presets                1
 #define NIC_LUT                      0 // Cleanup NIC function for ease of tuning
+#define M4_TUNE                      1
 #define M3_NSQ_MDC_CANDIDATE         1
 #define SHUT_CPMPOUND                0
 
