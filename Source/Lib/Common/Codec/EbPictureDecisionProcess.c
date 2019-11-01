@@ -823,7 +823,9 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
             if (picture_control_set_ptr->enc_mode <= ENC_M1)
                 picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
-#if M3_NSQ_MDC_CANDIDATE
+#if M3_NSQ_MDC_CANDIDATE_IN_M4
+            else if (picture_control_set_ptr->enc_mode <= ENC_M4)
+#elif M3_NSQ_MDC_CANDIDATE
             else if (picture_control_set_ptr->enc_mode <= ENC_M3)
 #else
             else if (picture_control_set_ptr->enc_mode <= ENC_M2)
@@ -885,7 +887,10 @@ EbErrorType signal_derivation_multi_processes_oq(
 #if rtime_presets
     else if (picture_control_set_ptr->enc_mode <= ENC_M2)
         picture_control_set_ptr->mdc_depth_level = 5;
-#if M3_NSQ_MDC_CANDIDATE
+#if M3_NSQ_MDC_CANDIDATE_IN_M4
+    else if (picture_control_set_ptr->enc_mode <= ENC_M4)
+        picture_control_set_ptr->mdc_depth_level = 2;
+#elif M3_NSQ_MDC_CANDIDATE
     else if (picture_control_set_ptr->enc_mode <= ENC_M3)
 
         picture_control_set_ptr->mdc_depth_level = 2;
@@ -940,7 +945,13 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL5;
             else
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL2;
-#if M3_NSQ_MDC_CANDIDATE
+#if M3_NSQ_MDC_CANDIDATE_IN_M4
+        else if (picture_control_set_ptr->enc_mode <= ENC_M4)
+            if (picture_control_set_ptr->is_used_as_reference_flag)
+                picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL2;
+            else
+                picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL1;
+#elif M3_NSQ_MDC_CANDIDATE
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
             if (picture_control_set_ptr->is_used_as_reference_flag)
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL2;
