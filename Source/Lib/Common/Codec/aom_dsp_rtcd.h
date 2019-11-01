@@ -2968,7 +2968,7 @@ extern "C" {
 
 #if AUTO_MAX_PARTITION
     void av1_nn_predict_c(const float *input_nodes, const NN_CONFIG *const nn_config, int reduce_prec, float *const output);
-    //void av1_nn_predict_sse3(const float *input_nodes, const NN_CONFIG *const nn_config, int reduce_prec, float *const output);
+    void av1_nn_predict_sse3(const float *input_nodes, const NN_CONFIG *const nn_config, int reduce_prec, float *const output);
     RTCD_EXTERN void(*av1_nn_predict)(const float *input_nodes, const NN_CONFIG *const nn_config, int reduce_prec, float *const output);
 #endif
 
@@ -3326,7 +3326,7 @@ extern "C" {
 
 #if AUTO_MAX_PARTITION
         av1_nn_predict = av1_nn_predict_c;
-        //if (flags & HAS_SSE3) av1_nn_predict = av1_nn_predict_sse3;
+        if (flags & HAS_SSE3) av1_nn_predict = av1_nn_predict_sse3;
 #endif
 
 
