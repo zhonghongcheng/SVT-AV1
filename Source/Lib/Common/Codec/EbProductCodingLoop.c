@@ -8548,13 +8548,29 @@ EB_EXTERN EbErrorType mode_decision_sb(
     }
 
 #if AUTO_MAX_PARTITION
+    uint8_t min_bwidth  = 128;
+    uint8_t min_bheight = 128;
+    uint8_t max_bwidth  =   0;
+    uint8_t max_bheight =   0;
+
+    for (uint32_t mdc_block_idx = 0; mdc_block_idx < leaf_count; mdc_block_idx++) {
+
+        const BlockGeom *blk_geom = context_ptr->blk_geom = get_blk_geom_mds(leaf_data_array[mdc_block_idx].mds_idx);
+
+        min_bwidth = (blk_geom->bwidth < min_bwidth) ? blk_geom->bwidth : min_bwidth;
+        min_bheight = (blk_geom->bheight < min_bheight) ? blk_geom->bheight : min_bheight;
+        max_bwidth = (blk_geom->bwidth > max_bwidth) ? blk_geom->bwidth : max_bwidth;
+        max_bheight = (blk_geom->bheight > max_bheight) ? blk_geom->bheight : max_bheight;
+
+    }
+
     // Jack TODO : ADAPT_PRED not yet supported (use RELAXED_PRED for now)
     picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion = DIRECT_PRED;// ADAPT_PRED; // RELAXED_PRED
     BlockSize max_bsize = BLOCK_128X128;
 
     if (picture_control_set_ptr->slice_type != I_SLICE && sequence_control_set_ptr->static_config.super_block_size == 128) {
-        if ((sb_origin_x + sequence_control_set_ptr->static_config.super_block_size) < picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header.max_frame_width  &&
-            (sb_origin_y + sequence_control_set_ptr->static_config.super_block_size) < picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header.max_frame_height ){
+        if ((sb_origin_x + sequence_control_set_ptr->static_config.super_block_size) < picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header.max_frame_width &&
+            (sb_origin_y + sequence_control_set_ptr->static_config.super_block_size) < picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header.max_frame_height) {
 
             float features[FEATURE_SIZE_MAX_MIN_PART_PRED] = { 0.0f };
 
@@ -8562,8 +8578,8 @@ EB_EXTERN EbErrorType mode_decision_sb(
             max_bsize = MIN(av1_predict_max_partition(sequence_control_set_ptr, picture_control_set_ptr, features, input_picture_ptr, sb_origin_x, sb_origin_y), max_bsize);
         }
     }
-    uint8_t max_bwidth = block_size_wide[max_bsize];
-    uint8_t max_bheight = block_size_high[max_bsize];
+    max_bwidth  = (MIN(block_size_wide[max_bsize], max_bwidth ) > min_bwidth ) ? MIN(block_size_wide[max_bsize], max_bwidth ) : max_bwidth ;
+    max_bheight = (MIN(block_size_high[max_bsize], max_bheight) > min_bheight) ? MIN(block_size_high[max_bsize], max_bheight) : max_bheight;
 
     printf("%d\t%d\t%d\t%d\t%d\n", picture_control_set_ptr->picture_number, sb_origin_x, sb_origin_y, max_bwidth, max_bheight);
 #endif
