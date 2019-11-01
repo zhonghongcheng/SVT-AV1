@@ -1598,6 +1598,22 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->dist_base_md_stage_0_count_th = 75;
 #endif
 
+
+#if LESS_RECTANGULAR_CHECK_LEVEL
+
+    // Weighting (expressed as a percentage) applied to 
+    // square shape costs for determining if a and b 
+    // shapes should be skipped. Namely:
+    // skip HA and HB if h_cost > (weighted sq_cost)
+    // skip VA and VB if v_cost > (weighted sq_cost)
+    
+    if (MR_MODE)
+        context_ptr->sq_to_h_v_weight_to_skip_a_b = (uint32_t)~0;
+    else
+        context_ptr->sq_to_h_v_weight_to_skip_a_b = 100;
+#endif
+
+
     return return_error;
 }
 
