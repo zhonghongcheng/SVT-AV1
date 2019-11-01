@@ -57,6 +57,7 @@ extern "C" {
 #define NIC_LUT                      0 // Cleanup NIC function for ease of tuning
 #define M4_TUNE                      1
 #define M3_NSQ_MDC_CANDIDATE         1
+#define M3_NSQ_MDC_CANDIDATE_IN_M4   0
 #define SHUT_CPMPOUND                0
 
 #define OBMC_FLAG            1 // OBMC motion mode flag
