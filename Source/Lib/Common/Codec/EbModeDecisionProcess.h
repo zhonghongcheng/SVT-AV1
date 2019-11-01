@@ -343,6 +343,10 @@ extern "C" {
     PART best_nsq_sahpe7;
     PART best_nsq_sahpe8;
 #endif
+
+#if LESS_RECTANGULAR_CHECK_LEVEL
+    uint32_t sq_to_h_v_weight_to_skip_a_b;
+#endif
     } ModeDecisionContext;
 
     typedef void(*EbAv1LambdaAssignFunc)(
