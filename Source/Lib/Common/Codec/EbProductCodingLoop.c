@@ -8630,7 +8630,13 @@ EB_EXTERN EbErrorType mode_decision_sb(
     }
 
     // Jack TODO : ADAPT_PRED not yet supported (use RELAXED_PRED for now)
+#if USE_ADAPT_PRED
+    picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion = ADAPT_PRED; // 
+#elif USE_RELAXED_PRED
+    picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion = RELAXED_PRED;// ADAPT_PRED; // 
+#else
     picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion = DIRECT_PRED;//RELAXED_PRED;// ADAPT_PRED; // 
+#endif
     BlockSize max_bsize = BLOCK_128X128;
 
     if (picture_control_set_ptr->slice_type != I_SLICE && sequence_control_set_ptr->static_config.super_block_size == 128) {
