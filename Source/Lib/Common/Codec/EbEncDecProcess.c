@@ -1597,6 +1597,13 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->dist_base_md_stage_0_count_th = 75;
 #endif
+#if PRUNE_MD_STAGE_1_COUNT
+    // Derive cost-based md_stage_2_count proning
+    if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        context_ptr->cost_dev_based_md_stage_2_count_prooning = (uint64_t)~0;
+    else
+        context_ptr->cost_dev_based_md_stage_2_count_prooning = 25;
+#endif
 
 
 #if LESS_RECTANGULAR_CHECK_LEVEL
