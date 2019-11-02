@@ -1836,7 +1836,7 @@ void set_md_stage_counts(
     uint8_t is_intra = (picture_control_set_ptr->slice_type == I_SLICE) ? 1 : 0;
     uint8_t obmc_m = picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode;
     uint8_t pal_m = picture_control_set_ptr->parent_pcs_ptr->palette_mode;
-    if (picture_control_set_ptr->enc_mode <= ENC_M4) {
+    if (picture_control_set_ptr->enc_mode >= ENC_M3 && picture_control_set_ptr->enc_mode <= ENC_M4) {
 
         // Stage 1 Cand Count
         context_ptr->md_stage_1_count[CAND_CLASS_0] = is_intra ? fastCandidateTotalCount : is_ref ? 16 : 8;
