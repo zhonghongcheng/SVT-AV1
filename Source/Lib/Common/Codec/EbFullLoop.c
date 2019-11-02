@@ -1797,11 +1797,19 @@ void product_full_loop_tx_search(
     int32_t allowed_tx_mask[TX_TYPES] = { 0 };  // 1: allow; 0: skip.
     int32_t allowed_tx_num = 0;
     TxType uv_tx_type = DCT_DCT;
+#if MPMD_ADD_SB_SETTINGS_TO_CTX
+    if (context_ptr->tx_search_reduced_set == 2)
+#else
     if (picture_control_set_ptr->parent_pcs_ptr->tx_search_reduced_set == 2)
+#endif
         txk_end = 2;
 
     for (int32_t tx_type_index = txk_start; tx_type_index < txk_end; ++tx_type_index) {
+#if MPMD_ADD_SB_SETTINGS_TO_CTX
+        if (context_ptr->tx_search_reduced_set == 2)
+#else
         if (picture_control_set_ptr->parent_pcs_ptr->tx_search_reduced_set == 2)
+#endif
             tx_type_index = (tx_type_index  == 1) ? IDTX : tx_type_index;
         tx_type = (TxType)tx_type_index;
         allowed_tx_mask[tx_type] = 1;
@@ -1820,11 +1828,19 @@ void product_full_loop_tx_search(
         allowed_tx_mask[plane ? uv_tx_type : DCT_DCT] = 1;
     TxType best_tx_type = DCT_DCT;
     for (int32_t tx_type_index = txk_start; tx_type_index < txk_end; ++tx_type_index) {
+#if MPMD_ADD_SB_SETTINGS_TO_CTX
+        if (context_ptr->tx_search_reduced_set == 2)
+#else
         if (picture_control_set_ptr->parent_pcs_ptr->tx_search_reduced_set == 2)
+#endif
             tx_type_index = (tx_type_index  == 1) ? IDTX : tx_type_index;
         tx_type = (TxType)tx_type_index;
         if (!allowed_tx_mask[tx_type]) continue;
+#if MPMD_ADD_SB_SETTINGS_TO_CTX
+        if (context_ptr->tx_search_reduced_set)
+#else
         if (picture_control_set_ptr->parent_pcs_ptr->tx_search_reduced_set)
+#endif
             if (!allowed_tx_set_a[txSize][tx_type]) continue;
 
         context_ptr->three_quad_energy = 0;
@@ -3051,6 +3067,10 @@ void   compute_depth_costs(
     uint32_t                  curr_depth_mds,
     uint32_t                  above_depth_mds,
     uint32_t                  step,
+#if SKIP_2ND_PASS_BASED_ON_1ST_PASS
+    uint32_t                 *above_depth_dist,
+    uint32_t                 *curr_depth_dist,
+#endif
     uint64_t                 *above_depth_cost,
     uint64_t                 *curr_depth_cost)
 {
@@ -3088,6 +3108,9 @@ void   compute_depth_costs(
     if (context_ptr->md_local_cu_unit[above_depth_mds].tested_cu_flag == EB_TRUE)
     {
         *above_depth_cost = context_ptr->md_local_cu_unit[above_depth_mds].cost + above_non_split_rate;
+#if SKIP_2ND_PASS_BASED_ON_1ST_PASS
+        *above_depth_dist = context_ptr->md_local_cu_unit[above_depth_mds].full_distortion;
+#endif
         // Compute curr depth  cost
         av1_split_flag_rate(
             sequence_control_set_ptr,
@@ -3101,7 +3124,15 @@ void   compute_depth_costs(
             sequence_control_set_ptr->max_sb_depth);
     }
     else
+#if SKIP_2ND_PASS_BASED_ON_1ST_PASS
+    {
         *above_depth_cost = MAX_MODE_COST;
+        *above_depth_dist = MAX_MODE_COST;
+    }
+#else
+        *above_depth_cost = MAX_MODE_COST;
+#endif
+
     if (context_ptr->blk_geom->bsize > BLOCK_4X4) {
         if (context_ptr->md_cu_arr_nsq[curr_depth_blk0_mds].mdc_split_flag == 0)
             av1_split_flag_rate(
@@ -3159,6 +3190,13 @@ void   compute_depth_costs(
         context_ptr->md_local_cu_unit[curr_depth_mds - 2 * step].cost + curr_non_split_rate_blk1 +
         context_ptr->md_local_cu_unit[curr_depth_mds - 3 * step].cost + curr_non_split_rate_blk0 +
         above_split_rate;
+#if SKIP_2ND_PASS_BASED_ON_1ST_PASS
+    *curr_depth_dist =
+        context_ptr->md_local_cu_unit[curr_depth_mds].full_distortion + curr_non_split_rate_blk3 +
+        context_ptr->md_local_cu_unit[curr_depth_mds - 1 * step].full_distortion + curr_non_split_rate_blk2 +
+        context_ptr->md_local_cu_unit[curr_depth_mds - 2 * step].full_distortion + curr_non_split_rate_blk1 +
+        context_ptr->md_local_cu_unit[curr_depth_mds - 3 * step].full_distortion + curr_non_split_rate_blk0;
+#endif
 }
 
 uint32_t d2_inter_depth_block_decision(
@@ -3185,6 +3223,9 @@ uint32_t d2_inter_depth_block_decision(
     UNUSED(d1_idx_mds);
     UNUSED(d0_idx_mds);
     uint64_t                    parent_depth_cost = 0, current_depth_cost = 0;
+#if SKIP_2ND_PASS_BASED_ON_1ST_PASS
+    uint32_t parent_depth_dist = 0, current_depth_dist = 0;
+#endif
     SequenceControlSet     *sequence_control_set_ptr = (SequenceControlSet*)picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr;
     EbBool                    lastDepthFlag;
     const BlockGeom          * blk_geom;
@@ -3201,19 +3242,48 @@ uint32_t d2_inter_depth_block_decision(
         while (blk_geom->is_last_quadrant) {
             //get parent idx
             parent_depth_idx_mds = current_depth_idx_mds - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
+#if SKIP_2ND_PASS_BASED_ON_1ST_PASS
+            if (picture_control_set_ptr->slice_type == I_SLICE && parent_depth_idx_mds == 0 && sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128) {
+                parent_depth_cost = MAX_MODE_COST;
+                parent_depth_dist = MAX_MODE_COST;
+            }
+            else 
+                compute_depth_costs(
+                    context_ptr,
+                    sequence_control_set_ptr,
+                    current_depth_idx_mds,
+                    parent_depth_idx_mds,
+                    ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth],
+                    &parent_depth_dist,
+                    &current_depth_dist,
+                    &parent_depth_cost,
+                    &current_depth_cost);
+            
+            if (!sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[parent_depth_idx_mds]) {
+                parent_depth_cost = MAX_MODE_COST;
+                parent_depth_dist = MAX_MODE_COST;
+            }
+#else
             if (picture_control_set_ptr->slice_type == I_SLICE && parent_depth_idx_mds == 0 && sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128)
                 parent_depth_cost = MAX_MODE_COST;
             else
                 compute_depth_costs(context_ptr, sequence_control_set_ptr, current_depth_idx_mds, parent_depth_idx_mds, ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth], &parent_depth_cost, &current_depth_cost);
             if (!sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[parent_depth_idx_mds])
                 parent_depth_cost = MAX_MODE_COST;
+#endif
             if (parent_depth_cost <= current_depth_cost) {
                 context_ptr->md_cu_arr_nsq[parent_depth_idx_mds].split_flag = EB_FALSE;
                 context_ptr->md_local_cu_unit[parent_depth_idx_mds].cost = parent_depth_cost;
+#if SKIP_2ND_PASS_BASED_ON_1ST_PASS
+                context_ptr->md_local_cu_unit[parent_depth_idx_mds].full_distortion = parent_depth_dist;
+#endif
                 lastCuIndex = parent_depth_idx_mds;
             }
             else {
                 context_ptr->md_local_cu_unit[parent_depth_idx_mds].cost = current_depth_cost;
+#if SKIP_2ND_PASS_BASED_ON_1ST_PASS
+                context_ptr->md_local_cu_unit[parent_depth_idx_mds].full_distortion = current_depth_dist;
+#endif
                 context_ptr->md_cu_arr_nsq[parent_depth_idx_mds].part = PARTITION_SPLIT;
             }
 

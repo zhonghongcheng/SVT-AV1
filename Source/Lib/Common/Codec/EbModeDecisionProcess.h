@@ -347,6 +347,32 @@ extern "C" {
 #if LESS_RECTANGULAR_CHECK_LEVEL
     uint32_t sq_to_h_v_weight_to_skip_a_b;
 #endif
+#if SKIP_2ND_PASS_BASED_ON_1ST_PASS
+    uint64_t sb_cost;
+    uint64_t sb_dist;
+#endif
+#if MPMD_ADD_SB_SETTINGS_TO_CTX
+     uint8_t                               wedge_mode;
+#if II_COMP_FLAG
+        uint8_t                              enable_inter_intra;
+#endif
+#if OBMC_FLAG
+        uint8_t                              pic_obmc_mode;
+#endif
+    MD_COMP_TYPE                          compound_types_to_try;
+    uint8_t                               compound_mode;
+    uint8_t                               coeff_based_skip_atb_sb;
+    uint8_t                               atb_mode;
+    uint8_t                               intra_pred_mode;
+    uint8_t                               skip_sub_blks;
+    uint8_t                               tx_search_level;
+    uint64_t                              tx_weight;
+    uint8_t                               tx_search_reduced_set;
+    uint8_t                               interpolation_search_level;
+    uint8_t                               nsq_search_level;
+    uint8_t                               nsq_max_shapes_md;
+#endif
+
     } ModeDecisionContext;
 
     typedef void(*EbAv1LambdaAssignFunc)(

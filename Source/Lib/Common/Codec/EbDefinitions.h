@@ -55,7 +55,7 @@ extern "C" {
 #define FIX_COMPOUND                 1 // Address COMPOUND mismatch between rtime-m0-test and master: used block size @ the derivation of compound count
 #define rtime_presets                1
 #define NIC_LUT                      0 // Cleanup NIC function for ease of tuning
-#define M4_TUNE                      1
+#define M4_TUNE                      0
 #define M3_NSQ_MDC_CANDIDATE         1
 #define M3_NSQ_MDC_CANDIDATE_IN_M4   0
 #define SHUT_CPMPOUND                0
@@ -191,11 +191,17 @@ enum {
 #define ADD_MDC_FULL_COST                               1
 #define NSQ_TAB_SIZE                                    8
 #define MAX_MDC_LEVEL                                   8
-#define MDC_ADAPTIVE_LEVEL                              0
+#define MDC_ADAPTIVE_LEVEL                              1
 #else
 #define NSQ_TAB_SIZE                                    6
 #endif
-
+#define MPMD_SB                                         0
+#if MPMD_SB
+#define MPMD_SB_REF                                     1
+#define MPMD_ADD_SB_SETTINGS_TO_CTX                     1
+#define SKIP_2ND_PASS_BASED_ON_1ST_PASS                 1
+#endif
+#define DISABLE_RED_CU                                  0
 //  Delta QP support
 #define ADD_DELTA_QP_SUPPORT                      1  // Add delta QP support
 #define BLOCK_MAX_COUNT_SB_128                    4421  // TODO: reduce alloction for 64x64

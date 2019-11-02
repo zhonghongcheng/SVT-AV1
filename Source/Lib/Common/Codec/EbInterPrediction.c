@@ -2484,7 +2484,11 @@ static void  pick_interinter_wedge(
 
     // Two method
     // Fast seatch method to be added  OMK
+#if MPMD_ADD_SB_SETTINGS_TO_CTX
+     if (context_ptr->wedge_mode == 2 || context_ptr->wedge_mode == 3) {
+#else
     if (picture_control_set_ptr->parent_pcs_ptr->wedge_mode == 2 || picture_control_set_ptr->parent_pcs_ptr->wedge_mode == 3) {
+#endif
         wedge_sign = estimate_wedge_sign(picture_control_set_ptr, context_ptr, bsize, p0, bw, p1, bw);
     }
     else {
@@ -2703,7 +2707,11 @@ void search_compound_diff_wedge(
         aom_subtract_block(bheight, bwidth, context_ptr->diff10, bwidth, context_ptr->pred1, bwidth, context_ptr->pred0, bwidth);
 
         //*calc_pred_masked_compound = 0;
+#if MPMD_ADD_SB_SETTINGS_TO_CTX
+        if (context_ptr->wedge_mode == 1 || context_ptr->wedge_mode == 3)
+#else
         if (picture_control_set_ptr->parent_pcs_ptr->wedge_mode == 1 || picture_control_set_ptr->parent_pcs_ptr->wedge_mode == 3)
+#endif
             if (candidate_ptr->interinter_comp.type == COMPOUND_DIFFWTD && context_ptr->variance_ready == 0) {
                 const aom_variance_fn_ptr_t *fn_ptr = &mefn_ptr[context_ptr->blk_geom->bsize];
 
@@ -6883,8 +6891,13 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
     int64_t *const skip_sse_sb)
 {
     const Av1Common *cm = picture_control_set_ptr->parent_pcs_ptr->av1_cm;//&cpi->common;
+#if MPMD_ADD_SB_SETTINGS_TO_CTX
+        EbBool use_uv = (md_context_ptr->blk_geom->has_uv && md_context_ptr->chroma_level <= CHROMA_MODE_1 &&
+        md_context_ptr->interpolation_search_level != IT_SEARCH_FAST_LOOP_UV_BLIND) ? EB_TRUE : EB_FALSE;
+#else
     EbBool use_uv = (md_context_ptr->blk_geom->has_uv && md_context_ptr->chroma_level <= CHROMA_MODE_1 &&
         picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level != IT_SEARCH_FAST_LOOP_UV_BLIND) ? EB_TRUE : EB_FALSE;
+#endif
     const int32_t num_planes = use_uv ? MAX_MB_PLANE : 1;
 
     int32_t i;
@@ -6967,8 +6980,11 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
             const int32_t filter_set_size = DUAL_FILTER_SET_SIZE;
             int32_t best_in_temp = 0;
             uint32_t best_filters = 0;// mbmi->interp_filters;
-
+#if MPMD_ADD_SB_SETTINGS_TO_CTX
+            if (md_context_ptr->interpolation_search_level &&
+#else
             if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level &&
+#endif
                 picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header.enable_dual_filter) {
                 int32_t tmp_skip_sb = 0;
                 int64_t tmp_skip_sse = INT64_MAX;
@@ -7403,8 +7419,11 @@ EbErrorType inter_pu_prediction_av1(
 
     uint16_t capped_size = md_context_ptr->interpolation_filter_search_blk_size == 0 ? 4 :
                            md_context_ptr->interpolation_filter_search_blk_size == 1 ? 8 : 16 ;
-
+#if MPMD_ADD_SB_SETTINGS_TO_CTX
+    if (md_context_ptr->interpolation_search_level == IT_SEARCH_OFF ||
+#else
     if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level == IT_SEARCH_OFF ||
+#endif
         md_context_ptr->hbd_mode_decision)
     {
         candidate_buffer_ptr->candidate_ptr->interp_filters = 0;
