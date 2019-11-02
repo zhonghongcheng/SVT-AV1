@@ -1845,6 +1845,28 @@ void set_md_stage_counts(
     uint8_t is_intra = (picture_control_set_ptr->slice_type == I_SLICE) ? 1 : 0;
     uint8_t obmc_m = picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode;
     uint8_t pal_m = picture_control_set_ptr->parent_pcs_ptr->palette_mode;
+#if M3_M1_NIC
+    if (picture_control_set_ptr->enc_mode == ENC_M3) {
+        context_ptr->md_stage_1_count[CAND_CLASS_0] = is_intra ? fastCandidateTotalCount : is_ref ? 16 : 8;
+        context_ptr->md_stage_1_count[CAND_CLASS_1] = is_intra ? 0 : is_ref ? 16 : 8;
+        context_ptr->md_stage_1_count[CAND_CLASS_2] = is_intra ? 0 : is_ref ? 16 : 8;
+        context_ptr->md_stage_1_count[CAND_CLASS_3] = is_intra ? 0 : is_ref ? 16 : 8;
+        context_ptr->md_stage_1_count[CAND_CLASS_4] = is_intra ? 0 : is_ref ? 14 : 6;
+        context_ptr->md_stage_1_count[CAND_CLASS_5] = 16;
+        context_ptr->md_stage_1_count[CAND_CLASS_6] = is_base ? 10 : 5;
+        context_ptr->md_stage_1_count[CAND_CLASS_7] = 14; 
+
+
+        // Stage 2 Cand Count
+        context_ptr->md_stage_2_count[CAND_CLASS_0] = is_intra ? 10 : is_ref ? 4  : 1;
+        context_ptr->md_stage_2_count[CAND_CLASS_1] = is_intra ? 0  : is_ref ? 6  : 3;
+        context_ptr->md_stage_2_count[CAND_CLASS_2] = is_intra ? 0  : is_ref ? 6  : 3;
+        context_ptr->md_stage_2_count[CAND_CLASS_3] = is_intra ? 0  : is_ref ? 6  : 3;
+        context_ptr->md_stage_2_count[CAND_CLASS_4] = is_intra ? 0  : is_ref ? 12 : 4;
+        context_ptr->md_stage_2_count[CAND_CLASS_6] = is_base  ? 5  : is_ref ? 3  : 2;
+
+    } else 
+#endif
     if (picture_control_set_ptr->enc_mode == ENC_M4) {
 
         // Stage 1 Cand Count

@@ -1494,7 +1494,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // Combine MD Class1&2
     // 0                    OFF
     // 1                    ON
-#if rtime_presets
+
+#if M3_M1_NIC
+    context_ptr->combine_class12 = (picture_control_set_ptr->enc_mode <= ENC_M3) ? 0 : 1;
+#elif rtime_presets
     context_ptr->combine_class12 = (picture_control_set_ptr->enc_mode <= ENC_M1) ? 0 : 1;
 #else
     context_ptr->combine_class12 = (picture_control_set_ptr->enc_mode == ENC_M0) ? 0 : 1;
