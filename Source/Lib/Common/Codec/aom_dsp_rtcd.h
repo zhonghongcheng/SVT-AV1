@@ -3325,7 +3325,7 @@ extern "C" {
 
 #if AUTO_MAX_PARTITION
         av1_nn_predict = av1_nn_predict_c;
-        if (flags & HAS_SSE3) av1_nn_predict = av1_nn_predict_sse3;
+        //if (flags & HAS_SSE3) av1_nn_predict = av1_nn_predict_sse3;
 #endif
 
         eb_av1_txb_init_levels = eb_av1_txb_init_levels_c;
