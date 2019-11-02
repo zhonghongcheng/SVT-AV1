@@ -8110,8 +8110,9 @@ void md_encode_block(
         for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
             //number of next level candidates could not exceed number of curr level candidates
             context_ptr->md_stage_2_count[cand_class_it] = MIN(context_ptr->md_stage_1_count[cand_class_it], context_ptr->md_stage_2_count[cand_class_it]);
+#if !PRUNE_MD_STAGE_1_COUNT
             context_ptr->md_stage_2_total_count += context_ptr->md_stage_2_count[cand_class_it];
-
+#endif
             if (context_ptr->bypass_md_stage_1[cand_class_it] == EB_FALSE && context_ptr->md_stage_1_count[cand_class_it] > 0 && context_ptr->md_stage_2_count[cand_class_it] > 0) {
 #else
         context_ptr->md_stage = MD_STAGE_2;
@@ -8169,6 +8170,9 @@ void md_encode_block(
                 }
 #endif
             }
+#if PRUNE_MD_STAGE_1_COUNT
+            context_ptr->md_stage_2_total_count += context_ptr->md_stage_2_count[cand_class_it];
+#endif
         }
 
 
