@@ -1609,8 +1609,17 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     
     if (MR_MODE)
         context_ptr->sq_to_h_v_weight_to_skip_a_b = (uint32_t)~0;
+#if RECT_THRESH
+    else if (picture_control_set_ptr->enc_mode <= ENC_M0)
+        context_ptr->sq_to_h_v_weight_to_skip_a_b = 100;
+    else if (picture_control_set_ptr->enc_mode <= ENC_M1)
+        context_ptr->sq_to_h_v_weight_to_skip_a_b = 95;
+    else
+        context_ptr->sq_to_h_v_weight_to_skip_a_b = 90;
+#else
     else
         context_ptr->sq_to_h_v_weight_to_skip_a_b = 100;
+#endif
 #endif
 
 
