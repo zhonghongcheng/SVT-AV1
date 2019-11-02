@@ -60,10 +60,18 @@ extern "C" {
 #define M3_NSQ_MDC_CANDIDATE_IN_M4   0
 #define SHUT_CPMPOUND                0
 
-#define OBMC_FLAG                    1 // OBMC motion mode flag
-#define OBMC_CONVOLVE                1 // to track convolve kernels changes
-#define INJECT_NEW_NEAR_NEAR_NEW     1 // Inject NEW_NEAR / NEAR_NEW inter prediction
-#define FILTER_INTRA_FLAG            1 // Filter intra prediction
+#define OBMC_FLAG            1 // OBMC motion mode flag
+#define OBMC_CONVOLVE        1 // to track convolve kernels changes
+
+#define AUTO_MAX_PARTITION           0
+#if AUTO_MAX_PARTITION
+#define USE_ADAPT_PRED               0
+#endif
+
+#define INJECT_NEW_NEAR_NEAR_NEW   1   // Inject NEW_NEAR / NEAR_NEW inter prediction
+#define FILTER_INTRA_FLAG    1 // Filter intra prediction
+
+
 #define II_COMP_FLAG                 1 // InterIntra compound
 #define PAETH_HBD                    1 // Enbale Intra PAETH for 10bit
 #define INTER_INTER_HBD              1 // Upgrade InterInter compound 10bit
