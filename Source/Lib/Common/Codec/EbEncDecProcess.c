@@ -1495,7 +1495,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 0                    OFF
     // 1                    ON
 
-#if M3_M1_NIC
+#if M3_M0_NIC
     context_ptr->combine_class12 = (picture_control_set_ptr->enc_mode <= ENC_M3) ? 0 : 1;
 #elif rtime_presets
     context_ptr->combine_class12 = (picture_control_set_ptr->enc_mode <= ENC_M1) ? 0 : 1;
@@ -1605,7 +1605,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         context_ptr->cost_dev_based_md_stage_2_count_prooning = (uint64_t)~0;
     else
-        context_ptr->cost_dev_based_md_stage_2_count_prooning = 25;
+        context_ptr->cost_dev_based_md_stage_2_count_prooning = 10;
 #endif
 
 

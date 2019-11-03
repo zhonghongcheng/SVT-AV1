@@ -56,7 +56,7 @@ extern "C" {
 #define rtime_presets                1
 #define NIC_LUT                      0 // Cleanup NIC function for ease of tuning
 #define M4_TUNE                      1
-#define M3_M1_NIC                    0
+#define M3_M0_NIC                    0
 #define M3_NSQ_MDC_CANDIDATE         1
 #define M3_NSQ_MDC_CANDIDATE_IN_M4   0
 #define RECT_THRESH                  0
