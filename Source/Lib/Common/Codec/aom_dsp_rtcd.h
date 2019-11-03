@@ -3326,7 +3326,7 @@ extern "C" {
 
 #if AUTO_MAX_PARTITION || LESS_4_PARTITIONS
         av1_nn_predict = av1_nn_predict_c;
-        if (flags & HAS_SSE3) av1_nn_predict = av1_nn_predict_sse3;
+        //if (flags & HAS_SSE3) av1_nn_predict = av1_nn_predict_sse3;
 #endif
 
 
