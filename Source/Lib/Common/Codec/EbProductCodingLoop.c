@@ -8319,6 +8319,7 @@ void decide_next_nsq_and_update_cost(
         const aom_variance_fn_ptr_t *fn_ptr = &mefn_ptr[context_ptr->blk_geom->bsize];
         *sq_source_variance = eb_av1_get_sby_perpixel_variance(fn_ptr, (input_picture_ptr->buffer_y + input_origin_index), input_picture_ptr->stride_y, context_ptr->blk_geom->bsize);
         *best_rd = *sq_cost;
+        *part_ctx = 0;
 #endif
         break;
     case 1:
@@ -8331,7 +8332,10 @@ void decide_next_nsq_and_update_cost(
         *h_cost += context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
 #if LESS_4_PARTITIONS
         horz_rd[1] = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
-        *best_rd = MIN(*best_rd, (horz_rd[0] + horz_rd[1]));
+        if ((horz_rd[0] + horz_rd[1]) < *best_rd) {
+            *best_rd = horz_rd[0] + horz_rd[1];
+            *part_ctx = 1; 
+        }
 #endif
         break;
     case 3:
@@ -8344,7 +8348,10 @@ void decide_next_nsq_and_update_cost(
         *v_cost += context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
 #if LESS_4_PARTITIONS
         vert_rd[1] = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
-        *best_rd = MIN(*best_rd, (vert_rd[0] + vert_rd[1]));
+        if ((vert_rd[0] + vert_rd[1]) < *best_rd) {
+            *best_rd = vert_rd[0] + vert_rd[1];
+            *part_ctx = 2;
+        }
 #endif
         *skip_next_nsq = (*h_cost > ((*sq_cost * (100 + PER_ERROR)) / 100)) ? 1 : *skip_next_nsq;
         break;
@@ -8370,7 +8377,10 @@ void decide_next_nsq_and_update_cost(
     case 10:
         *skip_next_nsq = (*v_cost > ((*sq_cost * (100 + PER_ERROR)) / 100)) ? 1 : *skip_next_nsq;
         split_rd[3] = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
-        *best_rd = MIN(*best_rd, (split_rd[0] + split_rd[1] + split_rd[2] + split_rd[3]));
+        if ((split_rd[0] + split_rd[1] + split_rd[2] + split_rd[3]) < *best_rd) {
+            *best_rd = split_rd[0] + split_rd[1] + split_rd[2] + split_rd[3];
+            *part_ctx = 3;
+        }
         break;
 #else
     case 5:
