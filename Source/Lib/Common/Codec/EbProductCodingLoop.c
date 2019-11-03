@@ -31,7 +31,7 @@
 #include "EbAvcStyleMcp.h"
 #include "aom_dsp_rtcd.h"
 #include "EbCodingLoop.h"
-#if AUTO_MAX_PARTITION
+#if AUTO_MAX_PARTITION || LESS_4_PARTITIONS
 #include "EbMotionEstimation.h"
 #include "aom_dsp_rtcd.h"
 #include "partition_model_weights.h"
@@ -7849,8 +7849,9 @@ void md_encode_block(
         for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
             //number of next level candidates could not exceed number of curr level candidates
             context_ptr->md_stage_2_count[cand_class_it] = MIN(context_ptr->md_stage_1_count[cand_class_it], context_ptr->md_stage_2_count[cand_class_it]);
+#if !PRUNE_MD_STAGE_1_COUNT
             context_ptr->md_stage_2_total_count += context_ptr->md_stage_2_count[cand_class_it];
-
+#endif
             if (context_ptr->bypass_md_stage_1[cand_class_it] == EB_FALSE && context_ptr->md_stage_1_count[cand_class_it] > 0 && context_ptr->md_stage_2_count[cand_class_it] > 0) {
 #else
         context_ptr->md_stage = MD_STAGE_2;
@@ -7896,22 +7897,21 @@ void md_encode_block(
                         context_ptr->cand_buff_indices[cand_class_it]);
 #endif
 
-#if PROONE_MD_STAGE_1_COUNT
-                uint64_t cost_dev_based_md_stage_2_count_prooning = (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected) ?
-                    (uint64_t)~0 :
-                    25;
-
-                // Remove outliers from the list; prone if cost-to-best deviation bigger than x TH 
+#if PRUNE_MD_STAGE_1_COUNT
+                // Remove outliers from the list; prone if cost-to-best deviation bigger than  context_ptr->cost_dev_based_md_stage_2_count_prooning
                 {
                     uint32_t *cand_buff_indices = context_ptr->cand_buff_indices[cand_class_it];
                     uint32_t md_stage_2_count = 1;
-                    while (md_stage_2_count < context_ptr->md_stage_2_count[cand_class_it] && ((((*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[md_stage_2_count]]->full_cost_ptr) - *(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->full_cost_ptr)) * 100) / (*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->full_cost_ptr))) < cost_dev_based_md_stage_2_count_prooning)) {
+                    while (md_stage_2_count < context_ptr->md_stage_2_count[cand_class_it] && ((((*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[md_stage_2_count]]->full_cost_ptr) - *(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->full_cost_ptr)) * 100) / (*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->full_cost_ptr))) < context_ptr->cost_dev_based_md_stage_2_count_prooning)) {
                         md_stage_2_count++;
                     }
                     context_ptr->md_stage_2_count[cand_class_it] = md_stage_2_count;
                 }
 #endif
             }
+#if PRUNE_MD_STAGE_1_COUNT
+            context_ptr->md_stage_2_total_count += context_ptr->md_stage_2_count[cand_class_it];
+#endif
         }
 
 
@@ -8137,13 +8137,175 @@ void md_encode_block(
         cu_ptr->prediction_unit_array->ref_frame_type = 0;
     }
 }
+#if LESS_4_PARTITIONS
 
+struct NN_CONFIG;
+typedef struct NN_CONFIG NN_CONFIG;
+#define FEATURES 18
+#define LABELS 4
+// Use a ML model to predict if horz4 and vert4 should be considered.
+void av1_ml_prune_4_partition(
+    ModeDecisionContext *context_ptr,
+    EbPictureBufferDesc *input_picture_ptr,
+    uint16_t sb_origin_x,
+    uint16_t sb_origin_y,
+    BlockSize *sq_bsize,
+    unsigned int *sq_source_variance,
+    int64_t *horz_rd,
+    int64_t *vert_rd,
+    int64_t *split_rd,
+    int64_t *best_rd,
+    float *part_ctx,
+    int *const partition_horz4_allowed,
+    int *const partition_vert4_allowed) {
+
+    if (*best_rd >= 1000000000) return;
+
+    const NN_CONFIG *nn_config = NULL;
+
+    switch (*sq_bsize) {
+    case BLOCK_16X16: nn_config = &av1_4_partition_nnconfig_16; break;
+    case BLOCK_32X32: nn_config = &av1_4_partition_nnconfig_32; break;
+    case BLOCK_64X64: nn_config = &av1_4_partition_nnconfig_64; break;
+    default: assert(0 && "Unexpected bsize.");
+    }
+    if (!nn_config) return;
+
+    aom_clear_system_state();
+
+    // Generate features.
+    float features[FEATURES];
+    int feature_index = 0;
+    features[feature_index++] = (float)*part_ctx;
+    features[feature_index++] = (float)get_unsigned_bits(*sq_source_variance);
+
+    const int rdcost = (int)AOMMIN(INT_MAX, *best_rd);
+
+    int sub_block_rdcost[8] = { 0 };
+    int rd_index = 0;
+
+    for (int i = 0; i < 2; ++i) {
+        if (horz_rd[i] > 0 && horz_rd[i] < 1000000000)
+            sub_block_rdcost[rd_index] = (int)horz_rd[i];
+        ++rd_index;
+    }
+    for (int i = 0; i < 2; ++i) {
+        if (vert_rd[i] > 0 && vert_rd[i] < 1000000000)
+            sub_block_rdcost[rd_index] = (int)vert_rd[i];
+        ++rd_index;
+    }
+    for (int i = 0; i < 4; ++i) {
+        if (split_rd[i] > 0 && split_rd[i] < 1000000000)
+            sub_block_rdcost[rd_index] = (int)split_rd[i];
+        ++rd_index;
+    }
+
+    for (int i = 0; i < 8; ++i) {
+        // Ratio between the sub-block RD and the whole-block RD.
+        float rd_ratio = 1.0f;
+
+        if (sub_block_rdcost[i] > 0 && sub_block_rdcost[i] < rdcost)
+            rd_ratio = (float)sub_block_rdcost[i] / (float)rdcost;
+
+        features[feature_index++] = rd_ratio;
+    }
+
+    // Get variance of the 1:4 and 4:1 sub-blocks.
+    unsigned int horz_4_source_var[4] = { 0 };
+    unsigned int vert_4_source_var[4] = { 0 };
+    BlockGeom * blk_geom;
+    uint32_t input_origin_index;
+    aom_variance_fn_ptr_t *fn_ptr;
+    {
+        for (int i = 0; i < 4; ++i) {
+            // Get variance of the 1:4
+            blk_geom = get_blk_geom_mds(context_ptr->cu_ptr->mds_idx + 1 + i);         
+            input_origin_index = ((sb_origin_y + blk_geom->origin_y) + input_picture_ptr->origin_y) * input_picture_ptr->stride_y + ((sb_origin_x + blk_geom->origin_x) + input_picture_ptr->origin_x);
+            fn_ptr = &mefn_ptr[blk_geom->bsize];
+            horz_4_source_var[i] = eb_av1_get_sby_perpixel_variance(fn_ptr, (input_picture_ptr->buffer_y + input_origin_index), input_picture_ptr->stride_y, blk_geom->bsize);
+            // Get variance of the 4:1
+            blk_geom = get_blk_geom_mds(context_ptr->cu_ptr->mds_idx + 5 + i);
+            input_origin_index = ((sb_origin_y + blk_geom->origin_y) + input_picture_ptr->origin_y) * input_picture_ptr->stride_y + ((sb_origin_x + blk_geom->origin_x) + input_picture_ptr->origin_x);
+            fn_ptr = &mefn_ptr[blk_geom->bsize];
+            vert_4_source_var[i] = eb_av1_get_sby_perpixel_variance(fn_ptr, (input_picture_ptr->buffer_y + input_origin_index), input_picture_ptr->stride_y, blk_geom->bsize);
+        }
+    }
+
+    const float denom = (float)(*sq_source_variance + 1);
+    const float low_b = 0.1f;
+    const float high_b = 10.0f;
+    for (int i = 0; i < 4; ++i) {
+        // Ratio between the 4:1 sub-block variance and the whole-block variance.
+        float var_ratio = (float)(horz_4_source_var[i] + 1) / denom;
+        if (var_ratio < low_b) var_ratio = low_b;
+        if (var_ratio > high_b) var_ratio = high_b;
+        features[feature_index++] = var_ratio;
+    }
+    for (int i = 0; i < 4; ++i) {
+        // Ratio between the 1:4 sub-block RD and the whole-block RD.
+        float var_ratio = (float)(vert_4_source_var[i] + 1) / denom;
+        if (var_ratio < low_b) var_ratio = low_b;
+        if (var_ratio > high_b) var_ratio = high_b;
+        features[feature_index++] = var_ratio;
+    }
+    assert(feature_index == FEATURES);
+
+    // Calculate scores using the NN model.
+    float score[LABELS] = { 0.0f };
+    av1_nn_predict(features, nn_config, 1, score);
+    aom_clear_system_state();
+    int int_score[LABELS];
+    int max_score = -1000;
+    for (int i = 0; i < LABELS; ++i) {
+        int_score[i] = (int)(100 * score[i]);
+        max_score = AOMMAX(int_score[i], max_score);
+    }
+
+    // Make decisions based on the model scores.
+    int thresh = max_score;
+    switch (*sq_bsize) {
+    case BLOCK_16X16: thresh -= 500; break;
+    case BLOCK_32X32: thresh -= 500; break;
+    case BLOCK_64X64: thresh -= 200; break;
+    default: break;
+    }
+    *partition_horz4_allowed = 0;
+    *partition_vert4_allowed = 0;
+    for (int i = 0; i < LABELS; ++i) {
+        if (int_score[i] >= thresh) {
+            if ((i >> 0) & 1) *partition_horz4_allowed = 1;
+            if ((i >> 1) & 1) *partition_vert4_allowed = 1;
+        }
+    }
+
+}
+#undef FEATURES
+#undef LABELS
+#endif
 
 #define PER_ERROR 0
 void decide_next_nsq_and_update_cost(
-        ModeDecisionContext *context_ptr, 
-        uint64_t *sq_cost, uint64_t *h_cost, 
-        uint64_t *v_cost, int *skip_next_nsq){
+    ModeDecisionContext *context_ptr,
+    uint64_t *sq_cost,
+    uint64_t *h_cost,
+    uint64_t *v_cost,
+#if LESS_4_PARTITIONS
+    int *skip_next_nsq,
+    BlockSize *sq_bsize,
+    unsigned int *sq_source_variance,
+    int64_t *horz_rd,
+    int64_t *vert_rd,
+    int64_t *split_rd,
+    int64_t *best_rd,
+    float *part_ctx,
+    EbPictureBufferDesc *input_picture_ptr,
+    uint16_t sb_origin_x,
+    uint16_t sb_origin_y,
+    int *const partition_horz4_allowed,
+    int *const partition_vert4_allowed) {
+#else
+    int *skip_next_nsq){
+#endif
 
     switch (context_ptr->blk_geom->d1i)
     {
@@ -8151,20 +8313,66 @@ void decide_next_nsq_and_update_cost(
         *sq_cost = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
         *h_cost = 0;
         *v_cost = 0;
+#if LESS_4_PARTITIONS
+        *sq_bsize = context_ptr->blk_geom->bsize;
+        const uint32_t input_origin_index = ((sb_origin_y + context_ptr->blk_geom->origin_y) + input_picture_ptr->origin_y) * input_picture_ptr->stride_y + ((sb_origin_x + context_ptr->blk_geom->origin_x) + input_picture_ptr->origin_x);
+        const aom_variance_fn_ptr_t *fn_ptr = &mefn_ptr[context_ptr->blk_geom->bsize];
+        *sq_source_variance = eb_av1_get_sby_perpixel_variance(fn_ptr, (input_picture_ptr->buffer_y + input_origin_index), input_picture_ptr->stride_y, context_ptr->blk_geom->bsize);
+        *best_rd = *sq_cost;
+#endif
         break;
     case 1:
         *h_cost = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+#if LESS_4_PARTITIONS
+        horz_rd[0] = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+#endif
         break;
     case 2:
         *h_cost += context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+#if LESS_4_PARTITIONS
+        horz_rd[1] = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+        *best_rd = MIN(*best_rd, (horz_rd[0] + horz_rd[1]));
+#endif
         break;
     case 3:
         *v_cost = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+#if LESS_4_PARTITIONS
+        vert_rd[0] = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+#endif
         break;
     case 4:
         *v_cost += context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
-        *skip_next_nsq = (*h_cost > *sq_cost) ? 1 : *skip_next_nsq;
+#if LESS_4_PARTITIONS
+        vert_rd[1] = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+        *best_rd = MIN(*best_rd, (vert_rd[0] + vert_rd[1]));
+#endif
+        *skip_next_nsq = (*h_cost > ((*sq_cost * (100 + PER_ERROR)) / 100)) ? 1 : *skip_next_nsq;
         break;
+#if LESS_4_PARTITIONS
+    case 5:
+        *skip_next_nsq = (*h_cost > ((*sq_cost * (100 + PER_ERROR)) / 100)) ? 1 : *skip_next_nsq;
+        split_rd[0] = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+        break;
+    case 6:
+        *skip_next_nsq = (*h_cost > ((*sq_cost * (100 + PER_ERROR)) / 100)) ? 1 : *skip_next_nsq;
+        split_rd[1] = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+        break;
+    case 7:
+        *skip_next_nsq = (*h_cost > ((*sq_cost * (100 + PER_ERROR)) / 100)) ? 1 : *skip_next_nsq;
+        break;
+    case 8:
+        *skip_next_nsq = (*h_cost > ((*sq_cost * (100 + PER_ERROR)) / 100)) ? 1 : *skip_next_nsq;
+        break;
+    case 9:
+        *skip_next_nsq = (*h_cost > ((*sq_cost * (100 + PER_ERROR)) / 100)) ? 1 : *skip_next_nsq;
+        split_rd[2] = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+        break;
+    case 10:
+        *skip_next_nsq = (*v_cost > ((*sq_cost * (100 + PER_ERROR)) / 100)) ? 1 : *skip_next_nsq;
+        split_rd[3] = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+        *best_rd = MIN(*best_rd, (split_rd[0] + split_rd[1] + split_rd[2] + split_rd[3]));
+        break;
+#else
     case 5:
     case 6:
     case 7:
@@ -8173,6 +8381,7 @@ void decide_next_nsq_and_update_cost(
         *skip_next_nsq = (*h_cost > ((*sq_cost * (100 + PER_ERROR)) / 100)) ? 1 : *skip_next_nsq;
         break;
     case 10:
+#endif
     case 11:
     case 12:
     case 13:
@@ -8180,6 +8389,38 @@ void decide_next_nsq_and_update_cost(
     case 15:
         *skip_next_nsq = (*v_cost > ((*sq_cost * (100 + PER_ERROR)) / 100)) ? 1 : *skip_next_nsq;
         break;
+#if LESS_4_PARTITIONS
+    case 16:
+        if (*sq_bsize == BLOCK_16X16 || *sq_bsize == BLOCK_32X32 || *sq_bsize == BLOCK_64X64)
+            av1_ml_prune_4_partition(
+                context_ptr,
+                input_picture_ptr,
+                sb_origin_x,
+                sb_origin_y,
+                sq_bsize,
+                sq_source_variance,
+                horz_rd,
+                vert_rd,
+                split_rd,
+                best_rd,
+                part_ctx,
+                partition_horz4_allowed,
+                partition_vert4_allowed);
+
+            *skip_next_nsq = (*partition_horz4_allowed == 0) ? 1 : *skip_next_nsq;
+        break;
+    case 17:
+    case 18:
+    case 19:
+        *skip_next_nsq = (*partition_horz4_allowed == 0) ? 1 : *skip_next_nsq;
+        break;
+    case 20:
+    case 21:
+    case 22:
+    case 23:
+        *skip_next_nsq = (*partition_vert4_allowed == 0) ? 1 : *skip_next_nsq;
+        break;
+#endif
     }
 }
 #if AUTO_MAX_PARTITION
@@ -8678,6 +8919,19 @@ EB_EXTERN EbErrorType mode_decision_sb(
     uint64_t v_cost;
 #endif
 
+
+#if LESS_4_PARTITIONS
+    BlockSize sq_bsize = BLOCK_128X128;
+    unsigned int sq_source_variance = 0;
+    int64_t horz_rd[2] = { 0 };
+    int64_t vert_rd[2] = { 0 };
+    int64_t split_rd[4] = { 0 };
+    int64_t best_rd = 0;
+    float part_ctx = 0;
+    int *const partition_horz4_allowed = 1;
+    int *const partition_vert4_allowed = 1;
+#endif
+
     uint32_t blk_idx_mds = 0;
     uint32_t  d1_blocks_accumlated = 0;
     int skip_next_nsq = 0;
@@ -8935,7 +9189,28 @@ EB_EXTERN EbErrorType mode_decision_sb(
 
 #if LESS_RECTANGULAR_CHECK_LEVEL
         if (blk_geom->bsize > BLOCK_8X8)
+#if LESS_4_PARTITIONS
+            decide_next_nsq_and_update_cost(
+                context_ptr, 
+                &sq_cost, 
+                &h_cost, 
+                &v_cost,
+                &skip_next_nsq, 
+                &sq_bsize, 
+                &sq_source_variance, 
+                horz_rd,
+                vert_rd,
+                split_rd,
+                &best_rd,
+                &part_ctx,
+                input_picture_ptr,
+                sb_origin_x, 
+                sb_origin_y,
+                &partition_horz4_allowed,
+                &partition_vert4_allowed);
+#else
             decide_next_nsq_and_update_cost(context_ptr, &sq_cost, &h_cost, &v_cost, &skip_next_nsq);
+#endif
 #endif
 
         if (blk_geom->shape != PART_N) {

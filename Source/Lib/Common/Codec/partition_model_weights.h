@@ -1314,7 +1314,7 @@ static const NN_CONFIG av1_ab_partition_nnconfig_16 = {
 
 #undef FEATURE_SIZE
 #undef LABEL_SIZE
-
+#endif
 #define FEATURE_SIZE 18
 #define LABEL_SIZE 4
 
@@ -1727,7 +1727,7 @@ static const NN_CONFIG av1_4_partition_nnconfig_64 = {
 
 #undef FEATURE_SIZE
 #undef LABEL_SIZE
-
+#if 1
 #define FEATURE_SIZE 4
 static const float
     av1_partition_breakout_nn_weights_128_layer0[FEATURE_SIZE * 32] = {

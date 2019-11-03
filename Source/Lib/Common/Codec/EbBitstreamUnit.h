@@ -79,6 +79,11 @@ extern "C" {
         _BitScanReverse(&first_set_bit, n);
         return first_set_bit;
     }
+#if LESS_4_PARTITIONS
+    static INLINE int get_unsigned_bits(unsigned int num_values) {
+        return num_values > 0 ? get_msb(num_values) + 1 : 0;
+    }
+#endif
 #undef USE_MSC_INTRINSICS
 #else
 // Returns (int32_t)floor(log2(n)). n must be > 0.

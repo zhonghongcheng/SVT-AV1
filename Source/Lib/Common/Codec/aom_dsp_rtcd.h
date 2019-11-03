@@ -22,7 +22,7 @@
 #if OBMC_FLAG
 #include "EbCodingUnit.h"
 #endif
-#if AUTO_MAX_PARTITION
+#if AUTO_MAX_PARTITION || LESS_4_PARTITIONS
 # include "ml.h"
 #endif
 
@@ -2966,7 +2966,7 @@ extern "C" {
     void aom_highbd_blend_a64_hmask_sse4_1(uint8_t *dst, uint32_t dst_stride, const uint8_t *src0, uint32_t src0_stride, const uint8_t *src1, uint32_t src1_stride, const uint8_t *mask, int w, int h, int bd);
     RTCD_EXTERN void(*aom_highbd_blend_a64_hmask)(uint8_t *dst, uint32_t dst_stride, const uint8_t *src0, uint32_t src0_stride, const uint8_t *src1, uint32_t src1_stride, const uint8_t *mask, int w, int h, int bd);
 
-#if AUTO_MAX_PARTITION
+#if AUTO_MAX_PARTITION || LESS_4_PARTITIONS
     void av1_nn_predict_c(const float *input_nodes, const NN_CONFIG *const nn_config, int reduce_prec, float *const output);
     void av1_nn_predict_sse3(const float *input_nodes, const NN_CONFIG *const nn_config, int reduce_prec, float *const output);
     RTCD_EXTERN void(*av1_nn_predict)(const float *input_nodes, const NN_CONFIG *const nn_config, int reduce_prec, float *const output);
@@ -3324,7 +3324,7 @@ extern "C" {
         if (flags & HAS_SSE4_1) aom_highbd_blend_a64_vmask = aom_highbd_blend_a64_vmask_sse4_1;
 
 
-#if AUTO_MAX_PARTITION
+#if AUTO_MAX_PARTITION || LESS_4_PARTITIONS
         av1_nn_predict = av1_nn_predict_c;
         if (flags & HAS_SSE3) av1_nn_predict = av1_nn_predict_sse3;
 #endif
