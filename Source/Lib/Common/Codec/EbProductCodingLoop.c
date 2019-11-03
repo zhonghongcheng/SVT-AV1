@@ -1846,7 +1846,7 @@ void set_md_stage_counts(
     uint8_t obmc_m = picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode;
     uint8_t pal_m = picture_control_set_ptr->parent_pcs_ptr->palette_mode;
 #if M3_M0_NIC
-    if (picture_control_set_ptr->enc_mode == ENC_M3) {
+    if (picture_control_set_ptr->enc_mode <= ENC_M4) {
         context_ptr->md_stage_1_count[CAND_CLASS_0] = is_intra ? fastCandidateTotalCount : is_ref ? 16 : 8;
         context_ptr->md_stage_1_count[CAND_CLASS_1] = is_intra ? 0 : is_ref ? 16 : 8;
         context_ptr->md_stage_1_count[CAND_CLASS_2] = is_intra ? 0 : is_ref ? 16 : 8;
