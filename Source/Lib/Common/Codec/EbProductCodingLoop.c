@@ -1634,7 +1634,11 @@ void set_md_stage_counts(
     }
 
 #if rtime_presets
+#if CTX1
+    if (context_ptr->stage_1_count) {
+#else
     if (picture_control_set_ptr->enc_mode >= ENC_M3) {
+#endif
 #else
     if (picture_control_set_ptr->enc_mode >= ENC_M2) {
 #endif
@@ -1686,7 +1690,11 @@ void set_md_stage_counts(
         context_ptr->md_stage_2_count[CAND_CLASS_1] = context_ptr->md_stage_2_count[CAND_CLASS_1] * 2;
     }
 
+#if CTX1
+    if (!context_ptr->combine_class12 && picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && context_ptr->cond1) {
+#else
     if (!context_ptr->combine_class12 && picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_control_set_ptr->enc_mode == ENC_M0) {
+#endif
         context_ptr->md_stage_2_count[CAND_CLASS_0] = (picture_control_set_ptr->slice_type == I_SLICE) ? 10 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 8 : 4;
 #if REMOVE_MD_STAGE_1
         context_ptr->md_stage_2_count[CAND_CLASS_1] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 12 : 6;
@@ -1698,12 +1706,19 @@ void set_md_stage_counts(
         context_ptr->md_stage_2_count[CAND_CLASS_3] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 8 : 4;
 #endif
     }
-
+#if CTX1
+    if (context_ptr->cond2)
+#else
     if (picture_control_set_ptr->enc_mode >= ENC_M1)
+#endif
         context_ptr->md_stage_2_count[CAND_CLASS_0] = (picture_control_set_ptr->slice_type == I_SLICE) ? 10 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 1;
 
 #if rtime_presets
+#if CTX1
+    if (context_ptr->cond3) {
+#else
     if (picture_control_set_ptr->enc_mode >= ENC_M3 && picture_control_set_ptr->enc_mode <= ENC_M4) {
+#endif
 #else
     if (picture_control_set_ptr->enc_mode >= ENC_M2 && picture_control_set_ptr->enc_mode <= ENC_M4) {
 #endif
@@ -1714,8 +1729,13 @@ void set_md_stage_counts(
             context_ptr->md_stage_2_count[CAND_CLASS_3] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 2 : 1;
         }
     }
+#if CTX1
+    else if (context_ptr->cond4) {
+        if (context_ptr->cond5) {
+#else
     else if (picture_control_set_ptr->enc_mode >= ENC_M5) {
         if (picture_control_set_ptr->enc_mode <= ENC_M6) {
+#endif
             context_ptr->md_stage_1_count[CAND_CLASS_0] = (picture_control_set_ptr->slice_type == I_SLICE) ? 8 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 3 : 1;
 
             if (context_ptr->combine_class12) {
@@ -7863,6 +7883,9 @@ void md_encode_block(
     SsMeContext                    *ss_mecontext,
     uint8_t                        *skip_sub_blocks,
     uint32_t                        lcuAddr,
+#if MPMD_SB
+    uint8_t                         is_last_md_pass,
+#endif
     ModeDecisionCandidateBuffer    *bestcandidate_buffers[5])
 {
     ModeDecisionCandidateBuffer  **candidate_buffer_ptr_array_base = context_ptr->candidate_buffer_ptr_array;
@@ -7898,6 +7921,9 @@ void md_encode_block(
 #endif
 		
     is_nsq_table_used = picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode == ENC_M0 ? EB_FALSE : is_nsq_table_used;
+#if MPMD_SB
+    is_nsq_table_used = is_last_md_pass == 0 ? EB_TRUE : is_nsq_table_used;
+#endif
 #if ADJUST_NSQ_RANK_BASED_ON_NEIGH
     if (is_nsq_table_used) {
         if (context_ptr->blk_geom->shape == PART_N) {
@@ -9261,6 +9287,9 @@ EB_EXTERN EbErrorType mode_decision_sb(
                     ss_mecontext,
                     &skip_sub_blocks,
                     lcuAddr,
+#if MPMD_SB
+                    is_last_md_pass,
+#endif
                     bestcandidate_buffers);
 
             }

@@ -371,6 +371,18 @@ extern "C" {
     uint8_t                               interpolation_search_level;
     uint8_t                               nsq_search_level;
     uint8_t                               nsq_max_shapes_md;
+ #if CTX1
+    EbBool perform_quantize_fp;
+    uint8_t stage_1_count;
+    uint8_t cond1;
+    uint8_t cond2;
+    uint8_t cond3;
+    uint8_t cond4;
+    uint8_t cond5;
+    uint8_t cond6;
+    uint8_t cond7;
+    uint8_t cond8;
+#endif
 #endif
 
     } ModeDecisionContext;

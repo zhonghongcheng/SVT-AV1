@@ -2456,6 +2456,15 @@ EbErrorType mpmd_update_pic_settings_sb(
     uint8_t sc_content_detected = picture_control_set_ptr->sc_content_detected;
     picture_control_set_ptr->max_number_of_pus_per_sb = (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE) ? MAX_ME_PU_COUNT : SQUARE_PU_COUNT;
 
+#if CTX1
+    context_ptr->perform_quantize_fp = enc_mode <= ENC_M3 ? EB_TRUE : EB_FALSE;
+    context_ptr->stage_1_count = enc_mode >= ENC_M3 ? 1 : 0;
+    context_ptr->cond1 = enc_mode == ENC_M0 ? 1 : 0;
+    context_ptr->cond2 = enc_mode >= ENC_M1 ? 1 : 0;
+    context_ptr->cond3 = (enc_mode >= ENC_M3 && enc_mode <= ENC_M4) ? 1 : 0;
+    context_ptr->cond4 = (enc_mode >= ENC_M5) ? 1 : 0;
+    context_ptr->cond5 = (enc_mode <= ENC_M6) ? 1 : 0;
+#endif
     // NSQ search Level                               Settings
     // NSQ_SEARCH_OFF                                 OFF
     // NSQ_SEARCH_LEVEL1                              Allow only NSQ Inter-NEAREST/NEAR/GLOBAL if parent SQ has no coeff + reordering nsq_table number and testing only 1 NSQ SHAPE
@@ -2502,7 +2511,7 @@ EbErrorType mpmd_update_pic_settings_sb(
         else
             context_ptr->nsq_search_level = NSQ_SEARCH_LEVEL2;
 #if M3_NSQ_MDC_CANDIDATE_IN_M4
-        else if (picture_control_set_ptr->enc_mode <= ENC_M4)
+        else if (enc_mode <= ENC_M4)
             if (picture_control_set_ptr->is_used_as_reference_flag)
                 context_ptr->nsq_search_level = NSQ_SEARCH_LEVEL2;
             else
@@ -3286,7 +3295,7 @@ EbErrorType mpmd_settings(
 #if MPMD_TEST
 uint8_t md_mode_settings_offset[13] = { 0,0,0,0,0,0,0,0,0,0,0,0,0 };
 #else
-uint8_t md_mode_settings_offset[13] = { 4,0,0,0,0,0,0,0,0,0,0,0,0 };
+uint8_t md_mode_settings_offset[13] = { 3,0,0,0,0,0,0,0,0,0,0,0,0 };
 #endif
 EbErrorType mpmd_pass_settings(
     SequenceControlSet    *sequence_control_set_ptr,
@@ -3551,6 +3560,7 @@ void* enc_dec_kernel(void *input_ptr)
                     context_ptr->md_context->sb_cost = 0;
                     context_ptr->md_context->sb_dist = 0;
                     uint64_t dist_th = 1000;
+#if 0
                     // Th0 
                     uint64_t cost_th0 = 200000000 / context_ptr->md_context->qp;
                     // Th1
@@ -3561,6 +3571,18 @@ void* enc_dec_kernel(void *input_ptr)
                     //uint64_t cost_th3 = 200000000000 / context_ptr->md_context->qp;
                     //Th4
                     //uint64_t cost_th4 = 2000000000000 / context_ptr->md_context->qp;
+#else
+                    // Th0 
+                    uint64_t cost_th0 = 25000000 / context_ptr->md_context->qp;
+                    // Th1
+                    uint64_t cost_th1 = 200000000 / context_ptr->md_context->qp;
+                    // Th2
+                    uint64_t cost_th2 = 2000000000 / context_ptr->md_context->qp;
+                    // Th3
+                    //uint64_t cost_th3 = 200000000000 / context_ptr->md_context->qp;
+                    //Th4
+                    //uint64_t cost_th4 = 2000000000000 / context_ptr->md_context->qp;
+#endif
 #endif
 
                     mpmd_pass_settings(
@@ -3630,7 +3652,7 @@ void* enc_dec_kernel(void *input_ptr)
                                 picture_control_set_ptr,
                                 context_ptr->md_context,
                                 sb_index);
-                            skip_next_pass =  (context_ptr->md_context->sb_cost < cost_th0) ? 1 : 0;
+                            skip_next_pass = (context_ptr->md_context->sb_cost < cost_th0) ? 1 : 0;
                             uint8_t mpmd_depth_level = 6; // 1 SQ PART only
                             uint8_t mpmd_1d_level = 0; // 1 NSQ PART only
                             if(context_ptr->md_context->sb_cost < cost_th1)

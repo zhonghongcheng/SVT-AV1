@@ -1398,7 +1398,11 @@ int32_t av1_quantize_inv_quantize(
 
     // Hsan: set to FALSE until adding x86 quantize_fp
 #if rtime_presets
+ #if CTX1
+    EbBool perform_quantize_fp = md_context->perform_quantize_fp;
+#else
     EbBool perform_quantize_fp = picture_control_set_ptr->enc_mode <= ENC_M3 ? EB_TRUE : EB_FALSE;
+#endif
 #else
     EbBool perform_quantize_fp = picture_control_set_ptr->enc_mode == ENC_M0 ? EB_TRUE: EB_FALSE;
 #endif
