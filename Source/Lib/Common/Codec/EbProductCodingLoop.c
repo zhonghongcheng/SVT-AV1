@@ -63,6 +63,11 @@ void precompute_intra_pred_for_inter_intra(
     PictureControlSet            *picture_control_set_ptr,
     ModeDecisionContext          *context_ptr);
 #endif
+
+#if PAL_SUP
+int svt_av1_allow_palette(int allow_palette,
+    BlockSize sb_type);
+#endif
 /*******************************************
 * set Penalize Skip Flag
 *
@@ -1835,7 +1840,9 @@ void set_md_stage_counts(
     uint8_t is_base = (picture_control_set_ptr->temporal_layer_index == 0) ? 1 : 0;
     uint8_t is_intra = (picture_control_set_ptr->slice_type == I_SLICE) ? 1 : 0;
     uint8_t obmc_m = picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode;
+#if PAL_CLASS
     uint8_t pal_m = picture_control_set_ptr->parent_pcs_ptr->palette_mode;
+#endif
 #if M3_M0_NIC
     if (picture_control_set_ptr->enc_mode <= ENC_M4) {
         context_ptr->md_stage_1_count[CAND_CLASS_0] = is_intra ? fastCandidateTotalCount : is_ref ? 16 : 8;
@@ -1845,7 +1852,9 @@ void set_md_stage_counts(
         context_ptr->md_stage_1_count[CAND_CLASS_4] = is_intra ? 0 : is_ref ? 14 : 6;
         context_ptr->md_stage_1_count[CAND_CLASS_5] = 16;
         context_ptr->md_stage_1_count[CAND_CLASS_6] = is_base ? 10 : 5;
-        context_ptr->md_stage_1_count[CAND_CLASS_7] = 14; 
+#if PAL_CLASS
+        context_ptr->md_stage_1_count[CAND_CLASS_7] = 14;
+#endif
 
 
         // Stage 2 Cand Count
@@ -1868,7 +1877,9 @@ void set_md_stage_counts(
         context_ptr->md_stage_1_count[CAND_CLASS_4] = is_intra ? 0 : is_ref ? 14 : 6;
         context_ptr->md_stage_1_count[CAND_CLASS_5] = 16;
         context_ptr->md_stage_1_count[CAND_CLASS_6] = is_base ? 10 : 5;
+#if PAL_CLASS
         context_ptr->md_stage_1_count[CAND_CLASS_7] = 14;
+#endif
 
         // Stage 2 Cand Count
         context_ptr->md_stage_2_count[CAND_CLASS_0] = is_intra ? 7 : is_ref ? 2 : 1;
@@ -1885,6 +1896,7 @@ void set_md_stage_counts(
             context_ptr->md_stage_2_count[CAND_CLASS_5] = is_base ? 12 : is_ref ? 8 : 4;
 
         context_ptr->md_stage_2_count[CAND_CLASS_6] = is_intra ? 4 : is_ref ? 4 : 4;
+#if PAL_CLASS
         if (pal_m == 1)
             context_ptr->md_stage_2_count[CAND_CLASS_7] = is_base ? 7 : is_ref ? 4 : 4;
         else if (pal_m == 2 || pal_m == 3)
@@ -1893,6 +1905,8 @@ void set_md_stage_counts(
             context_ptr->md_stage_2_count[CAND_CLASS_7] = is_base ? 4 : is_ref ? 2 : 1;
         else
             context_ptr->md_stage_2_count[CAND_CLASS_7] = is_base ? 2 : is_ref ? 1 : 1;
+#endif
+
     }
 #endif
 
@@ -1907,7 +1921,9 @@ void set_md_stage_counts(
     context_ptr->md_stage_2_count[CAND_CLASS_4] = context_ptr->bypass_md_stage_1[CAND_CLASS_4] ? context_ptr->md_stage_1_count[CAND_CLASS_4] : context_ptr->md_stage_2_count[CAND_CLASS_4];
     context_ptr->md_stage_2_count[CAND_CLASS_5] = context_ptr->bypass_md_stage_1[CAND_CLASS_5] ? context_ptr->md_stage_1_count[CAND_CLASS_5] : context_ptr->md_stage_2_count[CAND_CLASS_5];
     context_ptr->md_stage_2_count[CAND_CLASS_6] = context_ptr->bypass_md_stage_1[CAND_CLASS_6] ? context_ptr->md_stage_1_count[CAND_CLASS_6] : context_ptr->md_stage_2_count[CAND_CLASS_6];
+#if PAL_CLASS
     context_ptr->md_stage_2_count[CAND_CLASS_7] = context_ptr->bypass_md_stage_1[CAND_CLASS_7] ? context_ptr->md_stage_1_count[CAND_CLASS_7] : context_ptr->md_stage_2_count[CAND_CLASS_7];
+#endif
 
     // Step 4: zero-out count for CAND_CLASS_3 if CAND_CLASS_1 and CAND_CLASS_2 are merged (i.e. shift to the left)
     if (context_ptr->combine_class12)
