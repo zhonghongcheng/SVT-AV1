@@ -5289,7 +5289,7 @@ int write_uniform_cost(int n, int v) {
 // cache is used. Those colors that are not in the cache are transmitted with
 // delta encoding.
 static AOM_INLINE void write_palette_colors_y(
-    const MacroBlockD *const xd, const PALETTE_MODE_INFO *const pmi,
+    const MacroBlockD *const xd, const PaletteModeInfo *const pmi,
     int bit_depth, AomWriter *w) {
     const int n = pmi->palette_size[0];
     uint16_t color_cache[2 * PALETTE_MAX_SIZE];
@@ -5337,7 +5337,7 @@ static void write_palette_mode_info(
     const int num_planes = 3;// av1_num_planes(cm);
 
 #if PAL_SUP
-    const PALETTE_MODE_INFO *const pmi = &cu_ptr->palette_info.pmi;
+    const PaletteModeInfo *const pmi = &cu_ptr->palette_info.pmi;
     const int bsize_ctx = av1_get_palette_bsize_ctx(bsize);
     assert(bsize_ctx >= 0);
     if (intra_luma_mode == DC_PRED) {
@@ -6703,7 +6703,11 @@ assert(bsize < BlockSizeS_ALL);
         coeff_ptr);
 
 #if PAL_SUP
-    free(cu_ptr->palette_info.color_idx_map);
+    if (svt_av1_allow_palette(picture_control_set_ptr->parent_pcs_ptr->palette_mode, blk_geom->bsize)) {
+        assert(cu_ptr->palette_info.color_idx_map != NULL && "free palette:Null");     
+        free(cu_ptr->palette_info.color_idx_map);
+        cu_ptr->palette_info.color_idx_map = NULL;
+    }
 #endif
     return return_error;
 }

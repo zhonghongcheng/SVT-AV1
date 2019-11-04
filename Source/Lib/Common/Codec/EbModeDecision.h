@@ -71,7 +71,7 @@ extern "C" {
         uint16_t                               count_non_zero_coeffs;
         uint8_t                                type;
 #if PAL_SUP
-        PALETTE_INFO                          palette_info;
+        PaletteInfo                          palette_info;
 #endif
         // MD Rate Estimation Ptr
         MdRateEstimationContext             *md_rate_estimation_ptr; // 64 bits

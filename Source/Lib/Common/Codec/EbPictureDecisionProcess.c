@@ -1123,12 +1123,25 @@ EbErrorType signal_derivation_multi_processes_oq(
     }
 
 #if PAL_SUP
-    //Palette Modes:  0:OFF  1:Slow ... 6:Fastest
+
+   /*Palette Modes:
+        0:OFF
+        1:Slow    NIC=7/4/4
+        2:        NIC=7/2/2
+        3:        NIC=7/2/2 + No K means for non ref
+        4:        NIC=4/2/1
+        5:        NIC=4/2/1 + No K means for Inter frame
+        6:Fastest NIC=4/2/1 + No K means for non base + step for non base for most dominent
+
+    */
     if (frm_hdr->allow_screen_content_tools)
-        picture_control_set_ptr->palette_mode =
-          (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT ||
-          (sequence_control_set_ptr->static_config.encoder_bit_depth > EB_8BIT && sequence_control_set_ptr->static_config.enable_hbd_mode_decision ==0) ) &&
-          picture_control_set_ptr->enc_mode == ENC_M0 ? 6 : 0;
+        if (sequence_control_set_ptr->static_config.enable_palette == -1)//auto mode; if not set by cfg
+            picture_control_set_ptr->palette_mode =
+            (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT ||
+            (sequence_control_set_ptr->static_config.encoder_bit_depth > EB_8BIT && sequence_control_set_ptr->static_config.enable_hbd_mode_decision == 0)) &&
+            picture_control_set_ptr->enc_mode == ENC_M0 ? 6 : 0;
+        else
+            picture_control_set_ptr->palette_mode = sequence_control_set_ptr->static_config.enable_palette;
     else
         picture_control_set_ptr->palette_mode = 0;
 

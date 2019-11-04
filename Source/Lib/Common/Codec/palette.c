@@ -156,7 +156,7 @@ int av1_index_color_cache(const uint16_t *color_cache, int n_cache,
 }
 
 
-int av1_get_palette_delta_bits_v(const PALETTE_MODE_INFO *const pmi,
+int av1_get_palette_delta_bits_v(const PaletteModeInfo *const pmi,
                                  int bit_depth, int *zero_count,
                                  int *min_bits) {
   const int n = pmi->palette_size[1];
@@ -175,7 +175,7 @@ int av1_get_palette_delta_bits_v(const PALETTE_MODE_INFO *const pmi,
   return AOMMAX(av1_ceil_log2(max_d + 1), *min_bits);
 }
 
-int av1_palette_color_cost_y(const PALETTE_MODE_INFO *const pmi,
+int av1_palette_color_cost_y(const PaletteModeInfo *const pmi,
                              uint16_t *color_cache, int n_cache,
                              int bit_depth) {
   const int n = pmi->palette_size[0];
@@ -189,7 +189,7 @@ int av1_palette_color_cost_y(const PALETTE_MODE_INFO *const pmi,
   return av1_cost_literal(total_bits);
 }
 
-int av1_palette_color_cost_uv(const PALETTE_MODE_INFO *const pmi,
+int av1_palette_color_cost_uv(const PaletteModeInfo *const pmi,
                               uint16_t *color_cache, int n_cache,
                               int bit_depth) {
   const int n = pmi->palette_size[1];
@@ -351,7 +351,7 @@ static AOM_INLINE void extend_palette_color_map(uint8_t *const color_map,
     }
 }
  void palette_rd_y(
-    PALETTE_INFO                 *palette_info,
+     PaletteInfo                 *palette_info,
     ModeDecisionContext          *context_ptr,
      BlockSize bsize,
     const int *data,
@@ -394,7 +394,7 @@ int av1_count_colors_highbd(uint16_t *src, int stride, int rows, int cols,
  void  search_palette_luma(
      PictureControlSet            *picture_control_set_ptr,
      ModeDecisionContext          *context_ptr,
-     PALETTE_INFO                 *palette_cand,
+     PaletteInfo                 *palette_cand,
      uint32_t                     *tot_palette_cands)
  {
      int colors, n;
@@ -571,35 +571,35 @@ int av1_count_colors_highbd(uint16_t *src, int stride, int rows, int cols,
      ColorCost color_cost;
  } Av1ColorMapParam;
 
- static void get_palette_params(FRAME_CONTEXT *frameContext, CodingUnit*cu_ptr, int plane,
+ static void get_palette_params(FRAME_CONTEXT *frame_context, CodingUnit*cu_ptr, int plane,
      BlockSize bsize, Av1ColorMapParam *params) {
      const MacroBlockD *const xd = cu_ptr->av1xd;
      MbModeInfo * mbmi = &(xd->mi[0]->mbmi);
-     const PALETTE_MODE_INFO *const pmi = &mbmi->palette_mode_info;
+     const PaletteModeInfo *const pmi = &mbmi->palette_mode_info;
      params->color_map = cu_ptr->palette_info.color_idx_map;
-     params->map_cdf = plane ? frameContext->palette_uv_color_index_cdf
-         : frameContext->palette_y_color_index_cdf;
+     params->map_cdf = plane ? frame_context->palette_uv_color_index_cdf
+         : frame_context->palette_y_color_index_cdf;
      params->color_cost = NULL;
      params->n_colors = pmi->palette_size[plane];
      av1_get_block_dimensions(bsize, plane, xd, &params->plane_width, NULL,
          &params->rows, &params->cols);
  }
 
- static void get_color_map_params(FRAME_CONTEXT *frameContext, CodingUnit*cu_ptr , int plane,
+ static void get_color_map_params(FRAME_CONTEXT *frame_context, CodingUnit*cu_ptr , int plane,
      BlockSize bsize, TxSize tx_size,
      COLOR_MAP_TYPE type,
      Av1ColorMapParam *params) {
      (void)tx_size;
      memset(params, 0, sizeof(*params));
      switch (type) {
-     case PALETTE_MAP: get_palette_params(frameContext, cu_ptr, plane, bsize, params); break;
+     case PALETTE_MAP: get_palette_params(frame_context, cu_ptr, plane, bsize, params); break;
      default: assert(0 && "Invalid color map type"); return;
      }
  }
- static void get_palette_params_rate(PALETTE_INFO *palette_info, MdRateEstimationContext  *rate_table, CodingUnit*cu_ptr, int plane,
+ static void get_palette_params_rate(PaletteInfo *palette_info, MdRateEstimationContext  *rate_table, CodingUnit*cu_ptr, int plane,
      BlockSize bsize, Av1ColorMapParam *params) {
      const MacroBlockD *const xd = cu_ptr->av1xd;
-     const PALETTE_MODE_INFO *const pmi = &palette_info->pmi;
+     const PaletteModeInfo *const pmi = &palette_info->pmi;
 
      params->color_map = palette_info->color_idx_map;
      params->map_cdf = NULL;
@@ -610,7 +610,7 @@ int av1_count_colors_highbd(uint16_t *src, int stride, int rows, int cols,
          &params->rows, &params->cols);
  }
 
- static void get_color_map_params_rate(PALETTE_INFO *palette_info, MdRateEstimationContext  *rate_table,/*const MACROBLOCK *const x*/ CodingUnit*cu_ptr, int plane,
+ static void get_color_map_params_rate(PaletteInfo *palette_info, MdRateEstimationContext  *rate_table,/*const MACROBLOCK *const x*/ CodingUnit*cu_ptr, int plane,
      BlockSize bsize,
      COLOR_MAP_TYPE type,
      Av1ColorMapParam *params) {
@@ -622,7 +622,7 @@ int av1_count_colors_highbd(uint16_t *src, int stride, int rows, int cols,
  }
 #define MAX_COLOR_CONTEXT_HASH 8
  // Negative values are invalid
- static const int palette_color_index_context_lookup[MAX_COLOR_CONTEXT_HASH +
+ int palette_color_index_context_lookup[MAX_COLOR_CONTEXT_HASH +
      1] = { -1, -1, 0, -1, -1,
             4,  3,  2, 1 };
 
@@ -769,7 +769,7 @@ int av1_count_colors_highbd(uint16_t *src, int stride, int rows, int cols,
      cost_and_tokenize_map(&color_map_params, t, plane, 0, allow_update_cdf,
          map_pb_cdf);
  }
- int av1_cost_color_map(PALETTE_INFO *palette_info, MdRateEstimationContext  *rate_table, CodingUnit*cu_ptr, int plane, BlockSize bsize,
+ int av1_cost_color_map(PaletteInfo *palette_info, MdRateEstimationContext  *rate_table, CodingUnit*cu_ptr, int plane, BlockSize bsize,
       COLOR_MAP_TYPE type) {
      assert(plane == 0 || plane == 1);
      Av1ColorMapParam color_map_params;

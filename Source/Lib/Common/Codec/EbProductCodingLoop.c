@@ -1609,7 +1609,7 @@ void set_md_stage_counts(
     context_ptr->md_stage_1_count[CAND_CLASS_6] = (picture_control_set_ptr->temporal_layer_index == 0) ? 10 : 5;
 #endif
 #if PAL_CLASS
-    context_ptr->md_stage_1_count[CAND_CLASS_7] = 14;
+    context_ptr->md_stage_1_count[CAND_CLASS_7] = 12;
 #endif
     if (context_ptr->combine_class12) {
         context_ptr->md_stage_1_count[CAND_CLASS_1] = context_ptr->md_stage_1_count[CAND_CLASS_1] * 2;
@@ -1703,8 +1703,10 @@ void set_md_stage_counts(
             if (context_ptr->combine_class12) {
                 context_ptr->md_stage_1_count[CAND_CLASS_1] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 5 : 3;
                 context_ptr->md_stage_1_count[CAND_CLASS_2] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 1 : 1;
+
             }
             else {
+
                 context_ptr->md_stage_1_count[CAND_CLASS_1] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 2 : 1;
                 context_ptr->md_stage_1_count[CAND_CLASS_2] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 2 : 1;
                 context_ptr->md_stage_1_count[CAND_CLASS_3] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 1 : 1;
@@ -1863,7 +1865,11 @@ void set_md_stage_counts(
     context_ptr->md_stage_2_count[CAND_CLASS_4] = context_ptr->bypass_md_stage_1[CAND_CLASS_4] ? context_ptr->md_stage_1_count[CAND_CLASS_4] : context_ptr->md_stage_2_count[CAND_CLASS_4];
     context_ptr->md_stage_2_count[CAND_CLASS_5] = context_ptr->bypass_md_stage_1[CAND_CLASS_5] ? context_ptr->md_stage_1_count[CAND_CLASS_5] : context_ptr->md_stage_2_count[CAND_CLASS_5];
     context_ptr->md_stage_2_count[CAND_CLASS_6] = context_ptr->bypass_md_stage_1[CAND_CLASS_6] ? context_ptr->md_stage_1_count[CAND_CLASS_6] : context_ptr->md_stage_2_count[CAND_CLASS_6];
+
+
 #if PAL_CLASS
+    //TODO: use actual number of stages on the setting section and update using the following logic.
+    // stage1_cand_count[CAND_CLASS_i] = bypass_stage1 ? stage2_cand_count[CAND_CLASS_i] : stage1_cand_count[CAND_CLASS_i];
     context_ptr->md_stage_2_count[CAND_CLASS_7] = context_ptr->bypass_md_stage_1[CAND_CLASS_7] ? context_ptr->md_stage_1_count[CAND_CLASS_7] : context_ptr->md_stage_2_count[CAND_CLASS_7];
 #endif
 
@@ -2016,16 +2022,16 @@ void set_md_stage_counts(
 #endif
 #if PAL_CLASS
     if (picture_control_set_ptr->parent_pcs_ptr->palette_mode == 1)
-        context_ptr->md_stage_3_count[CAND_CLASS_7] =// context_ptr->bypass_stage2[CAND_CLASS_7] ? context_ptr->md_stage_2_count[CAND_CLASS_7] :
+        context_ptr->md_stage_3_count[CAND_CLASS_7] =
         (picture_control_set_ptr->temporal_layer_index == 0) ? 7 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 4;
     else if (picture_control_set_ptr->parent_pcs_ptr->palette_mode == 2 || picture_control_set_ptr->parent_pcs_ptr->palette_mode == 3)
-        context_ptr->md_stage_3_count[CAND_CLASS_7] =// context_ptr->bypass_stage2[CAND_CLASS_7] ? context_ptr->md_stage_2_count[CAND_CLASS_7] :
+        context_ptr->md_stage_3_count[CAND_CLASS_7] =
         (picture_control_set_ptr->temporal_layer_index == 0) ? 7 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 2 : 2;
     else if (picture_control_set_ptr->parent_pcs_ptr->palette_mode == 4 || picture_control_set_ptr->parent_pcs_ptr->palette_mode == 5)
-        context_ptr->md_stage_3_count[CAND_CLASS_7] =// context_ptr->bypass_stage2[CAND_CLASS_7] ? context_ptr->md_stage_2_count[CAND_CLASS_7] :
+        context_ptr->md_stage_3_count[CAND_CLASS_7] =
         (picture_control_set_ptr->temporal_layer_index == 0) ? 4 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 2 : 1;
     else
-        context_ptr->md_stage_3_count[CAND_CLASS_7] = //context_ptr->bypass_stage2[CAND_CLASS_7] ? context_ptr->md_stage_2_count[CAND_CLASS_7] :
+        context_ptr->md_stage_3_count[CAND_CLASS_7] =
         (picture_control_set_ptr->temporal_layer_index == 0) ? 2 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 1 : 1;
 #endif
 
@@ -2143,7 +2149,7 @@ void set_md_stage_counts(
     context_ptr->md_stage_3_count[CAND_CLASS_1] = context_ptr->bypass_stage2[CAND_CLASS_1] ? context_ptr->md_stage_2_count[CAND_CLASS_1] : context_ptr->md_stage_3_count[CAND_CLASS_1];
     context_ptr->md_stage_3_count[CAND_CLASS_2] = context_ptr->bypass_stage2[CAND_CLASS_2] ? context_ptr->md_stage_2_count[CAND_CLASS_2] : context_ptr->md_stage_3_count[CAND_CLASS_2];
     context_ptr->md_stage_3_count[CAND_CLASS_3] = context_ptr->bypass_stage2[CAND_CLASS_3] ? context_ptr->md_stage_2_count[CAND_CLASS_3] : context_ptr->md_stage_3_count[CAND_CLASS_3];
-
+   //TODO: use actual number of stages on the setting section and update using the following logic.
    // stage2_cand_count[CAND_CLASS_i] = bypass_stage2 ? stage3_cand_count[CAND_CLASS_i] : stage2_cand_count[CAND_CLASS_i];
    // stage1_cand_count[CAND_CLASS_i] = bypass_stage1 ? stage2_cand_count[CAND_CLASS_i] : stage1_cand_count[CAND_CLASS_i];
 
@@ -6362,13 +6368,23 @@ void md_stage_3(
 }
 
 void move_cu_data(
+#if PAL_SUP
+    PictureControlSet* pcs,
+    EncDecContext      *context_ptr,
+#endif
     CodingUnit *src_cu,
     CodingUnit *dst_cu)
 {
-#if PAL_SUP
-    dst_cu->palette_info.color_idx_map = (uint8_t *)malloc(MAX_PALETTE_SQUARE);
-    memcpy(dst_cu->palette_info.color_idx_map, src_cu->palette_info.color_idx_map, MAX_PALETTE_SQUARE);
-    memcpy(&dst_cu->palette_info.pmi, &src_cu->palette_info.pmi, sizeof(PALETTE_MODE_INFO));
+#if PAL_SUP  
+        memcpy(&dst_cu->palette_info.pmi, &src_cu->palette_info.pmi, sizeof(PaletteModeInfo));
+        if (svt_av1_allow_palette(pcs->parent_pcs_ptr->palette_mode, context_ptr->blk_geom->bsize)){
+            dst_cu->palette_info.color_idx_map = (uint8_t *)malloc(MAX_PALETTE_SQUARE);          
+            assert(dst_cu->palette_info.color_idx_map != NULL && "palette:Not-Enough-Memory");
+            if(dst_cu->palette_info.color_idx_map != NULL)
+                 memcpy(dst_cu->palette_info.color_idx_map, src_cu->palette_info.color_idx_map, MAX_PALETTE_SQUARE);   
+            else
+                printf("ERROR palette:Not-Enough-Memory\n");
+        }
 #endif
 #if OBMC_FLAG
     dst_cu->interp_filters = src_cu->interp_filters;
@@ -6484,12 +6500,18 @@ void move_cu_data(
 #endif
 }
 void move_cu_data_redund(
+#if PAL_SUP
+    PictureControlSet     *pcs,
+    ModeDecisionContext   *context_ptr,
+#endif
     CodingUnit *src_cu,
     CodingUnit *dst_cu){
 
-#if PAL_SUP
-    memcpy(dst_cu->palette_info.color_idx_map, src_cu->palette_info.color_idx_map, MAX_PALETTE_SQUARE);
-    memcpy(&dst_cu->palette_info.pmi, &src_cu->palette_info.pmi, sizeof(PALETTE_MODE_INFO));
+#if PAL_SUP 
+    memcpy(&dst_cu->palette_info.pmi, &src_cu->palette_info.pmi, sizeof(PaletteModeInfo));
+    if (svt_av1_allow_palette(pcs->parent_pcs_ptr->palette_mode, context_ptr->blk_geom->bsize))
+        memcpy(dst_cu->palette_info.color_idx_map, src_cu->palette_info.color_idx_map, MAX_PALETTE_SQUARE);
+  
 #endif
 #if OBMC_FLAG
     dst_cu->interp_filters = src_cu->interp_filters;
@@ -7767,7 +7789,7 @@ void md_encode_block(
         picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL) ? EB_TRUE : EB_FALSE;
-		
+
     is_nsq_table_used = picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode == ENC_M0 ? EB_FALSE : is_nsq_table_used;
 #if ADJUST_NSQ_RANK_BASED_ON_NEIGH
     if (is_nsq_table_used) {
@@ -7797,7 +7819,7 @@ void md_encode_block(
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL) ? EB_TRUE : EB_FALSE;
 
-	is_nsq_table_used = picture_control_set_ptr->enc_mode == ENC_M0 ?  EB_FALSE : is_nsq_table_used;
+    is_nsq_table_used = picture_control_set_ptr->enc_mode == ENC_M0 ?  EB_FALSE : is_nsq_table_used;
     if (is_nsq_table_used) {
         if (context_ptr->blk_geom->shape == PART_N) {
             order_nsq_table(
@@ -9015,8 +9037,12 @@ EB_EXTERN EbErrorType mode_decision_sb(
             // Copy results
             CodingUnit *src_cu = &context_ptr->md_cu_arr_nsq[redundant_blk_mds];
             CodingUnit *dst_cu = cu_ptr;
-
+#if PAL_SUP
+         
+            move_cu_data_redund(picture_control_set_ptr, context_ptr,src_cu, dst_cu);
+#else
             move_cu_data_redund(src_cu, dst_cu);
+#endif
             memcpy(&context_ptr->md_local_cu_unit[cu_ptr->mds_idx], &context_ptr->md_local_cu_unit[redundant_blk_mds], sizeof(MdCodingUnit));
 
             if (!context_ptr->hbd_mode_decision) {

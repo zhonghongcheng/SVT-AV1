@@ -1704,10 +1704,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
     return return_error;
 }
-
+#if! PAL_SUP
 void move_cu_data(
     CodingUnit *src_cu,
     CodingUnit *dst_cu);
+#endif
 
 void av1_estimate_syntax_rate___partial(
     MdRateEstimationContext        *md_rate_estimation_array,

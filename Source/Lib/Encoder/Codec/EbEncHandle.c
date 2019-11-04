@@ -2176,7 +2176,7 @@ void CopyApiFromApp(
     // MD Parameters
     sequence_control_set_ptr->static_config.enable_hbd_mode_decision = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->encoder_bit_depth > 8 ? ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enable_hbd_mode_decision : 0;
     sequence_control_set_ptr->static_config.constrained_intra = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->constrained_intra;
-
+    sequence_control_set_ptr->static_config.enable_palette = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enable_palette;
     // Adaptive Loop Filter
     sequence_control_set_ptr->static_config.tile_rows = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->tile_rows;
     sequence_control_set_ptr->static_config.tile_columns = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->tile_columns;
@@ -2685,7 +2685,7 @@ EbErrorType eb_svt_enc_init_parameter(
     config_ptr->hme_level2_search_area_in_height_array[1] = 1;
     config_ptr->enable_hbd_mode_decision = EB_TRUE;
     config_ptr->constrained_intra = EB_FALSE;
-
+    config_ptr->enable_palette = -1;
     // Bitstream options
     //config_ptr->codeVpsSpsPps = 0;
     //config_ptr->codeEosNal = 0;
