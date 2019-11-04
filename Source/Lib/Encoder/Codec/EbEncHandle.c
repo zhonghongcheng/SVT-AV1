@@ -2011,6 +2011,15 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
     // Set down-sampling method     Settings
     // 0                            0: filtering
     // 1                            1: decimation
+
+#if sc_rtime_presets
+    if (sequence_control_set_ptr->static_config.screen_content_mode == 1)
+        if (sequence_control_set_ptr->static_config.enc_mode <= ENC_M4)
+            sequence_control_set_ptr->down_sampling_method_me_search = ME_FILTERED_DOWNSAMPLED;
+        else
+            sequence_control_set_ptr->down_sampling_method_me_search = ME_DECIMATED_DOWNSAMPLED;
+    else
+#endif
 #if rtime_presets
     if (sequence_control_set_ptr->static_config.enc_mode <= ENC_M3)
 #else
@@ -2032,6 +2041,11 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
     else
         sequence_control_set_ptr->over_boundary_block_mode = 0;
 #if rtime_presets
+#if sc_rtime_presets
+    if (sequence_control_set_ptr->static_config.screen_content_mode == 1)
+        sequence_control_set_ptr->mfmv_enabled = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;
+    else
+#endif
     sequence_control_set_ptr->mfmv_enabled = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode <= ENC_M1) ? 1 : 0;
 #else
     sequence_control_set_ptr->mfmv_enabled = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;
