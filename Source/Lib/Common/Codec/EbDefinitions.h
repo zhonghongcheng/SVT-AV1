@@ -37,8 +37,8 @@ extern "C" {
    rate estimation is changed for I frame + enabled sc for P (rate estimation
    is a result changed for P frames)
 */
-#define PAL_SUP     1
-#define PAL_CLASS   1
+#define PAL_SUP                      0
+#define PAL_CLASS                    0
 #define M0_tune                      0
 #define TWO_PASS_IMPROVEMENT         1 // Tune 2 pass for better Luma
 #define NON_KF_INTRA_FIX             1 // Fix altref for non-key Intra frames
@@ -196,6 +196,7 @@ enum {
 #define TURN_MDC_OFF                                    0   // MDC is ON by default; set this to 1 to turn MDC off by setting mdc to MAX_DEPTH_LEVEL
 #define MDC_ADAPTIVE_LEVEL                              0
 #define NEW_MDC_REFINEMENT                              0
+#define NEW_MDC_REFINEMENT_V2                           0
 #else
 #define NSQ_TAB_SIZE                                    6
 #endif
