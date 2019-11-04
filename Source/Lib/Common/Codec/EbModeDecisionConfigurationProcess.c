@@ -1174,12 +1174,12 @@ uint8_t update_mdc_level(
      uint64_t th01 = 100;
      uint64_t th02 = 100;
      uint64_t th03 = 100;
-     uint64_t dist_001 = sb_ptr->depth_cost[depth] != 0 ? ABS(sb_ptr->depth_cost[depth] - sb_ptr->depth_cost[depthp1]) * 100)/ MAX(sb_ptr->depth_cost[depth],sb_ptr->depth_cost[depthp1]) : 0;
-     uint64_t dist_100 = sb_ptr->depth_cost[depth] != 0 ? ABS(sb_ptr->depth_cost[depth] - sb_ptr->depth_cost[depthm1]) * 100)/ MAX(sb_ptr->depth_cost[depth],sb_ptr->depth_cost[depthp1]) : 0;
-     uint64_t dist_002 = sb_ptr->depth_cost[depth] != 0 ? ABS(sb_ptr->depth_cost[depth] - sb_ptr->depth_cost[depthp2]) * 100)/ MAX(sb_ptr->depth_cost[depth],sb_ptr->depth_cost[depthm2]) : 0;
-     uint64_t dist_200 = sb_ptr->depth_cost[depth] != 0 ? ABS(sb_ptr->depth_cost[depth] - sb_ptr->depth_cost[depthm2]) * 100)/ MAX(sb_ptr->depth_cost[depth],sb_ptr->depth_cost[depthm2]) : 0;
-     uint64_t dist_003 = sb_ptr->depth_cost[depth] != 0 ? ABS(sb_ptr->depth_cost[depth] - sb_ptr->depth_cost[depthp3]) * 100)/ MAX(sb_ptr->depth_cost[depth],sb_ptr->depth_cost[depthm3]) : 0;
-     uint64_t dist_300 = sb_ptr->depth_cost[depth] != 0 ? ABS(sb_ptr->depth_cost[depth] - sb_ptr->depth_cost[depthm3]) * 100)/ MAX(sb_ptr->depth_cost[depth],sb_ptr->depth_cost[depthm3]) : 0;
+     uint64_t dist_001 = sb_ptr->depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthp1]) * 100)/ MAX(sb_ptr->depth_cost[depth],sb_ptr->depth_cost[depthp1]) : 0;
+     uint64_t dist_100 = sb_ptr->depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthm1]) * 100)/ MAX(sb_ptr->depth_cost[depth],sb_ptr->depth_cost[depthp1]) : 0;
+     uint64_t dist_002 = sb_ptr->depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthp2]) * 100)/ MAX(sb_ptr->depth_cost[depth],sb_ptr->depth_cost[depthm2]) : 0;
+     uint64_t dist_200 = sb_ptr->depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthm2]) * 100)/ MAX(sb_ptr->depth_cost[depth],sb_ptr->depth_cost[depthm2]) : 0;
+     uint64_t dist_003 = sb_ptr->depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthp3]) * 100)/ MAX(sb_ptr->depth_cost[depth],sb_ptr->depth_cost[depthm3]) : 0;
+     uint64_t dist_300 = sb_ptr->depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthm3]) * 100)/ MAX(sb_ptr->depth_cost[depth],sb_ptr->depth_cost[depthm3]) : 0;
 
      if ((dist_001 > th01) && (dist_100 > th01)) {
          adjusted_depth_level = 0; // Pred only
@@ -1736,7 +1736,7 @@ void init_considered_block(
                             if (parent_blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && parent_blk_geom->sq_size > 4) {
                                 //Set parent to be considered
                                 sparent_depth_idx_mds = (parent_blk_geom->sqi_mds - (parent_blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][parent_blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][parent_blk_geom->depth];
-                                const BlockGeom * sparent_blk_geom = get_blk_geom_mds(sparent_blk_geom);
+                                const BlockGeom * sparent_blk_geom = get_blk_geom_mds(sparent_depth_idx_mds);
                                 uint32_t sparent_tot_d1_blocks =
                                     parent_blk_geom->sq_size == 128 ? 17 :
                                     parent_blk_geom->sq_size > 8 ? 25 :
@@ -1787,7 +1787,7 @@ void init_considered_block(
                             if (parent_blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && parent_blk_geom->sq_size > 4) {
                                 //Set parent to be considered
                                 sparent_depth_idx_mds = (parent_blk_geom->sqi_mds - (parent_blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][parent_blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][parent_blk_geom->depth];
-                                const BlockGeom * sparent_blk_geom = get_blk_geom_mds(sparent_blk_geom);
+                                const BlockGeom * sparent_blk_geom = get_blk_geom_mds(sparent_depth_idx_mds);
                                 uint32_t sparent_tot_d1_blocks =
                                     parent_blk_geom->sq_size == 128 ? 17 :
                                     parent_blk_geom->sq_size > 8 ? 25 :
