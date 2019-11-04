@@ -1612,6 +1612,8 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->cost_dev_based_md_stage_2_count_pruning = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 20 : 18;
     else if (picture_control_set_ptr->enc_mode <= ENC_M2)
         context_ptr->cost_dev_based_md_stage_2_count_pruning = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 15 : 12;
+    else if (picture_control_set_ptr->enc_mode <= ENC_M3)
+        context_ptr->cost_dev_based_md_stage_2_count_pruning = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 7  : 5;
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->cost_dev_based_md_stage_2_count_pruning = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 5  : 3;
     else
