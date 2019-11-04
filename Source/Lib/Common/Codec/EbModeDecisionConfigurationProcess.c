@@ -1170,47 +1170,47 @@ uint8_t update_mdc_level(
      uint8_t depthm1 = depth - 1 >= start_depth ? depth - 1 : depth;
      uint8_t depthm2 = depth - 2 >= start_depth ? depth - 2 : depth - 1 >= start_depth ? depth - 1 : depth;
      uint8_t depthm3 = depth - 3 >= start_depth ? depth - 3 : depth - 2 >= start_depth ? depth - 2 : depth - 1 >= start_depth ? depth - 1 : depth;
-     adjusted_depth_level = 7;
-     uint64_t th01 = 1000;
-     uint64_t th02 = 10000;
-     uint64_t th03 = 100000;
-     uint64_t dist_001 = ABS(sb_ptr->depth_cost[depth] - sb_ptr->depth_cost[depthp1]);
-     uint64_t dist_100 = ABS(sb_ptr->depth_cost[depth] - sb_ptr->depth_cost[depthm1]);
-     uint64_t dist_002 = ABS(sb_ptr->depth_cost[depth] - sb_ptr->depth_cost[depthp2]);
-     uint64_t dist_200 = ABS(sb_ptr->depth_cost[depth] - sb_ptr->depth_cost[depthm2]);
-     uint64_t dist_003 = ABS(sb_ptr->depth_cost[depth] - sb_ptr->depth_cost[depthp3]);
-     uint64_t dist_300 = ABS(sb_ptr->depth_cost[depth] - sb_ptr->depth_cost[depthm3]);
+     adjusted_depth_level = 13;
+     uint64_t th01 = 100;
+     uint64_t th02 = 100;
+     uint64_t th03 = 100;
+     uint64_t dist_001 = sb_ptr->depth_cost[depth] != 0 ? ABS(sb_ptr->depth_cost[depth] - sb_ptr->depth_cost[depthp1]) * 100)/ MAX(sb_ptr->depth_cost[depth],sb_ptr->depth_cost[depthp1]) : 0;
+     uint64_t dist_100 = sb_ptr->depth_cost[depth] != 0 ? ABS(sb_ptr->depth_cost[depth] - sb_ptr->depth_cost[depthm1]) * 100)/ MAX(sb_ptr->depth_cost[depth],sb_ptr->depth_cost[depthp1]) : 0;
+     uint64_t dist_002 = sb_ptr->depth_cost[depth] != 0 ? ABS(sb_ptr->depth_cost[depth] - sb_ptr->depth_cost[depthp2]) * 100)/ MAX(sb_ptr->depth_cost[depth],sb_ptr->depth_cost[depthm2]) : 0;
+     uint64_t dist_200 = sb_ptr->depth_cost[depth] != 0 ? ABS(sb_ptr->depth_cost[depth] - sb_ptr->depth_cost[depthm2]) * 100)/ MAX(sb_ptr->depth_cost[depth],sb_ptr->depth_cost[depthm2]) : 0;
+     uint64_t dist_003 = sb_ptr->depth_cost[depth] != 0 ? ABS(sb_ptr->depth_cost[depth] - sb_ptr->depth_cost[depthp3]) * 100)/ MAX(sb_ptr->depth_cost[depth],sb_ptr->depth_cost[depthm3]) : 0;
+     uint64_t dist_300 = sb_ptr->depth_cost[depth] != 0 ? ABS(sb_ptr->depth_cost[depth] - sb_ptr->depth_cost[depthm3]) * 100)/ MAX(sb_ptr->depth_cost[depth],sb_ptr->depth_cost[depthm3]) : 0;
 
      if ((dist_001 > th01) && (dist_100 > th01)) {
          adjusted_depth_level = 0; // Pred only
      }
      else if ((dist_001 > th01) && (dist_100 < th01)) {
-         adjusted_depth_level = 1; // p+1
-     }
-     else if ((dist_001 < th01) && (dist_100 > th01)) {
          adjusted_depth_level = 8; // p-1
      }
-     else if ((dist_001 < th01) && (dist_100 < th01)) {
+     else if ((dist_001 < th01) && (dist_100 > th01)) {
+         adjusted_depth_level = 1; // p+1
+     }
+     else if ((dist_001 <= th01) && (dist_100 <= th01)) {
 
          if ((dist_002 > th02) && (dist_200 > th02)) {
              adjusted_depth_level = 4; // p-1+1
          }
          else if ((dist_002 > th02) && (dist_200 < th02)) {
-             adjusted_depth_level = 5; // p-1+2
+             adjusted_depth_level = 10; // p-2+1 
          }
          else if ((dist_002 < th02) && (dist_200 > th02)) {
-             adjusted_depth_level = 10; // p-2+1
+             adjusted_depth_level = 5; // p-1+2
          }
-         else if ((dist_002 < th02) && (dist_200 < th02)) {
+         else if ((dist_002 <= th02) && (dist_200 <= th02)) {
 
              if ((dist_003 > th03) && (dist_300 > th03)) {
                  adjusted_depth_level = 11; // p-2+2
              }
              else if ((dist_003 > th03) && (dist_300 < th03)) {
-                 adjusted_depth_level = 7; // p-2+3
+                 adjusted_depth_level = 12; // p-3+2 
              }
              else if ((dist_003 < th03) && (dist_300 > th03)) {
-                 adjusted_depth_level = 12; // p-3+2
+                 adjusted_depth_level = 7; // p-2+3 
              }
              else {
                  adjusted_depth_level = 13; // p-3+3
