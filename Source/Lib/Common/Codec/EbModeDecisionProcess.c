@@ -13,6 +13,9 @@ static void mode_decision_context_dctor(EbPtr p)
 {
     ModeDecisionContext* obj = (ModeDecisionContext*)p;
 #if PAL_SUP
+    for (int cd = 0; cd < MAX_PAL_CAND; cd++)
+        if (obj->palette_cand_array[cd].color_idx_map)
+            EB_FREE_ARRAY(obj->palette_cand_array[cd].color_idx_map);
     for (uint32_t candidateIndex = 0; candidateIndex < MODE_DECISION_CANDIDATE_MAX_COUNT; ++candidateIndex)
         if (obj->fast_candidate_ptr_array[candidateIndex]->palette_info.color_idx_map)
             EB_FREE_ARRAY(obj->fast_candidate_ptr_array[candidateIndex]->palette_info.color_idx_map);
@@ -131,6 +134,13 @@ EbErrorType mode_decision_context_ctor(
 #endif
     }
 
+#if PAL_SUP
+    for (int cd = 0; cd < MAX_PAL_CAND; cd++)
+        if (cfg_palette)
+            EB_MALLOC_ARRAY(context_ptr->palette_cand_array[cd].color_idx_map, MAX_PALETTE_SQUARE);
+        else
+            context_ptr->palette_cand_array[cd].color_idx_map = NULL;
+#endif
     // Transform and Quantization Buffers
     EB_NEW(
         context_ptr->trans_quant_buffers_ptr,

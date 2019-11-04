@@ -2981,7 +2981,7 @@ void search_compound_avg_dist(
     int32_t angle_delta,
     int32_t use_palette,
 #if PAL_SUP
-     PALETTE_INFO  *palette_info,
+     PaletteInfo  *palette_info,
 #endif
     FilterIntraMode filter_intra_mode,
     uint8_t* topNeighArray,
@@ -3010,7 +3010,7 @@ extern void eb_av1_predict_intra_block_16bit(
     int32_t angle_delta,
     int32_t use_palette,
 #if PAL_SUP
-    PALETTE_INFO  *palette_info,
+    PaletteInfo  *palette_info,
 #endif
     FilterIntraMode filter_intra_mode,
     uint16_t* topNeighArray,

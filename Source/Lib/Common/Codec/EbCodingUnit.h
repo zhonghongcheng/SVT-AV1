@@ -301,7 +301,7 @@ extern "C" {
         uint8_t tx_depth;
         BlockModeInfo block_mi;
 #if PAL_SUP
-        PALETTE_MODE_INFO palette_mode_info;
+        PaletteModeInfo palette_mode_info;
 #endif
     } MbModeInfo;
 
@@ -519,7 +519,7 @@ extern "C" {
        uint8_t                      filter_intra_mode;
 #endif
 #if PAL_SUP
-       PALETTE_INFO                          palette_info;
+       PaletteInfo                          palette_info;
 #endif
     } CodingUnit;
 

@@ -1480,6 +1480,10 @@ void update_av1_mi_map(
     PictureControlSet *picture_control_set_ptr);
 
 void move_cu_data(
+#if PAL_SUP
+    PictureControlSet  *pcs,
+    EncDecContext      *context_ptr,
+#endif
     CodingUnit *src_cu,
     CodingUnit *dst_cu);
 
@@ -3813,8 +3817,11 @@ EB_EXTERN void av1_encode_pass(
                     CodingUnit *src_cu = &context_ptr->md_context->md_cu_arr_nsq[d1_itr];
 
                     CodingUnit *dst_cu = &sb_ptr->final_cu_arr[final_cu_itr++];
-
+#if PAL_SUP
+                    move_cu_data(picture_control_set_ptr, context_ptr,src_cu, dst_cu);
+#else
                     move_cu_data(src_cu, dst_cu);
+#endif
                 }
                 if (sequence_control_set_ptr->mfmv_enabled && picture_control_set_ptr->slice_type != I_SLICE && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) {
                     uint32_t mi_stride = picture_control_set_ptr->mi_stride;

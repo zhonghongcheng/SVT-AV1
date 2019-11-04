@@ -38,10 +38,10 @@ int av1_get_palette_bsize_ctx(BlockSize bsize);
 int av1_get_palette_mode_ctx(const MacroBlockD *xd);
 int write_uniform_cost(int n, int v);
 int eb_get_palette_cache(const MacroBlockD *const xd, int plane,uint16_t *cache);
-int av1_palette_color_cost_y(const PALETTE_MODE_INFO *const pmi,
+int av1_palette_color_cost_y(const PaletteModeInfo *const pmi,
     uint16_t *color_cache, int n_cache,
     int bit_depth);
-int av1_cost_color_map(PALETTE_INFO *palette_info, MdRateEstimationContext  *rate_table, CodingUnit*cu_ptr, int plane, BlockSize bsize,
+int av1_cost_color_map(PaletteInfo *palette_info, MdRateEstimationContext  *rate_table, CodingUnit*cu_ptr, int plane, BlockSize bsize,
      COLOR_MAP_TYPE type);
 void av1_get_block_dimensions(BlockSize bsize, int plane,
     const MacroBlockD *xd, int *width,
@@ -775,7 +775,7 @@ uint64_t av1_intra_fast_cost(
             }
 #if PAL_SUP
             if (av1_allow_palette(picture_control_set_ptr->parent_pcs_ptr->frm_hdr.allow_screen_content_tools, blk_geom->bsize) && chroma_mode == UV_DC_PRED) {
-                const PALETTE_MODE_INFO *pmi = &candidate_ptr->palette_info.pmi;
+                const PaletteModeInfo *pmi = &candidate_ptr->palette_info.pmi;
                 const int use_palette = pmi->palette_size[1] > 0;
                 intraChromaAngModeBitsNum +=
                     candidate_ptr->md_rate_estimation_ptr->palette_uv_mode_fac_bits[pmi->palette_size[0] > 0][use_palette];
