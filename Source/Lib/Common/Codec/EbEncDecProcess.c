@@ -1659,24 +1659,37 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->dist_base_md_stage_0_count_th = 75;
 #endif
-#if PRUNE_MD_STAGE_1_COUNT
-    // Derive cost-based md_stage_2_count proning
-    if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
-        context_ptr->cost_dev_based_md_stage_2_count_pruning = (uint64_t)~0;
+#if STAGE_2_COUNT_PRUNING_TH_S
+    // TH_S(for candidate removal per class)
+    // Remove candidate if deviation to the best higher than TH_S
+    if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected) // <-- Hsan: M0 has already settings (to remove this check)
+        context_ptr->md_stage_2_count_th_s = (uint64_t)~0;
     else if (picture_control_set_ptr->enc_mode <= ENC_M0)
-        context_ptr->cost_dev_based_md_stage_2_count_pruning = 25;
+        if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+            context_ptr->md_stage_2_count_th_s = 25;
+        else
+            context_ptr->md_stage_2_count_th_s = 15;
     else if (picture_control_set_ptr->enc_mode <= ENC_M1)
-        context_ptr->cost_dev_based_md_stage_2_count_pruning = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 20 : 18;
+        context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 20 : 18; // <-- Hsan: M0 settings are more agressive (to update this)
     else if (picture_control_set_ptr->enc_mode <= ENC_M2)
-        context_ptr->cost_dev_based_md_stage_2_count_pruning = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 15 : 12;
+        context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 15 : 12;
     else if (picture_control_set_ptr->enc_mode <= ENC_M3)
-        context_ptr->cost_dev_based_md_stage_2_count_pruning = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 7  : 5;
+        context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 7  : 5;
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
-        context_ptr->cost_dev_based_md_stage_2_count_pruning = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 5  : 3;
+        context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 5  : 3;
     else
-        context_ptr->cost_dev_based_md_stage_2_count_pruning = (uint64_t)~0; // until tested
+        context_ptr->md_stage_2_count_th_s = (uint64_t)~0; // until tested
 #endif
-
+#if STAGE_2_COUNT_PRUNING_TH_C
+    // TH_C(for class removal)
+    // Remove class if deviation to the best higher than TH_C
+    if (MR_MODE)
+        context_ptr->md_stage_2_count_th_c = (uint64_t)~0;
+    else if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        context_ptr->md_stage_2_count_th_c = 100;
+    else
+        context_ptr->md_stage_2_count_th_c = 25;
+#endif
 
 #if LESS_RECTANGULAR_CHECK_LEVEL
 

@@ -68,7 +68,8 @@ extern "C" {
 #if AUTO_MAX_PARTITION
 #define USE_ADAPT_PRED               1
 #endif
-#define PRUNE_MD_STAGE_1_COUNT       1
+#define STAGE_2_COUNT_PRUNING_TH_S   1
+#define STAGE_2_COUNT_PRUNING_TH_C   0
 
 #define INJECT_NEW_NEAR_NEAR_NEW   1   // Inject NEW_NEAR / NEAR_NEW inter prediction
 #define FILTER_INTRA_FLAG    1 // Filter intra prediction
