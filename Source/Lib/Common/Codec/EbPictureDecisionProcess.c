@@ -916,6 +916,9 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
     else
         picture_control_set_ptr->mdc_depth_level = MAX_MDC_LEVEL; // Not tuned yet.
+#if TURN_MDC_OFF
+    picture_control_set_ptr->mdc_depth_level = MAX_MDC_LEVEL;
+#endif
 #endif
 
     // NSQ search Level                               Settings
