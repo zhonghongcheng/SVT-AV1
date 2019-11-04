@@ -192,6 +192,7 @@ enum {
 #define NSQ_TAB_SIZE                                    8
 #define MAX_MDC_LEVEL                                   8
 #define MDC_ADAPTIVE_LEVEL                              1
+#define NEW_MDC_REFINEMENT                              0
 #else
 #define NSQ_TAB_SIZE                                    6
 #endif
