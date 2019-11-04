@@ -55,7 +55,7 @@ extern "C" {
 #define FIX_COMPOUND                 1 // Address COMPOUND mismatch between rtime-m0-test and master: used block size @ the derivation of compound count
 #define rtime_presets                1
 #define M4_TUNE                      1
-#define M3_M0_NIC                    0
+#define M3_M0_NIC                    1
 #define M3_NSQ_MDC_CANDIDATE         1
 #define M3_NSQ_MDC_CANDIDATE_IN_M4   0
 #define RECT_THRESH                  0
@@ -68,7 +68,7 @@ extern "C" {
 #if AUTO_MAX_PARTITION
 #define USE_ADAPT_PRED               1
 #endif
-#define PRUNE_MD_STAGE_1_COUNT       0
+#define PRUNE_MD_STAGE_1_COUNT       1
 
 #define INJECT_NEW_NEAR_NEAR_NEW   1   // Inject NEW_NEAR / NEAR_NEW inter prediction
 #define FILTER_INTRA_FLAG    1 // Filter intra prediction
