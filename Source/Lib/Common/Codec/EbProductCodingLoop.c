@@ -7845,14 +7845,14 @@ void md_encode_block(
 
 
         // 1st Full-Loop
-#if INTER_PRUNE_MD_STAGE_1_COUNT
+#if STAGE_2_COUNT_PRUNING_TH_C
         uint64_t best_md_sage_2_cost = (uint64_t) ~0;
 #endif
 #if REMOVE_MD_STAGE_1
         for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
             //number of next level candidates could not exceed number of curr level candidates
             context_ptr->md_stage_2_count[cand_class_it] = MIN(context_ptr->md_stage_1_count[cand_class_it], context_ptr->md_stage_2_count[cand_class_it]);
-#if !PRUNE_MD_STAGE_1_COUNT && !INTER_PRUNE_MD_STAGE_1_COUNT
+#if !STAGE_2_COUNT_PRUNING_TH_S && !STAGE_2_COUNT_PRUNING_TH_C
             context_ptr->md_stage_2_total_count += context_ptr->md_stage_2_count[cand_class_it];
 #endif
             if (context_ptr->bypass_md_stage_1[cand_class_it] == EB_FALSE && context_ptr->md_stage_1_count[cand_class_it] > 0 && context_ptr->md_stage_2_count[cand_class_it] > 0) {
@@ -7900,35 +7900,34 @@ void md_encode_block(
                         context_ptr->cand_buff_indices[cand_class_it]);
 #endif
 
-#if PRUNE_MD_STAGE_1_COUNT
+
+#if STAGE_2_COUNT_PRUNING_TH_C
+                uint32_t *cand_buff_indices = context_ptr->cand_buff_indices[cand_class_it];
+                best_md_sage_2_cost = MIN((*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->full_cost_ptr)), best_md_sage_2_cost);
+#endif
+            }
+        }
+
+#if STAGE_2_COUNT_PRUNING_TH_S || STAGE_2_COUNT_PRUNING_TH_C
+        for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
+
+            if (context_ptr->bypass_md_stage_1[cand_class_it] == EB_FALSE && context_ptr->md_stage_1_count[cand_class_it] > 0 && context_ptr->md_stage_2_count[cand_class_it] > 0) {
+                uint32_t *cand_buff_indices = context_ptr->cand_buff_indices[cand_class_it];
+#if STAGE_2_COUNT_PRUNING_TH_C
+                if ((((*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->full_cost_ptr) - best_md_sage_2_cost) * 100) / best_md_sage_2_cost) > context_ptr->md_stage_2_count_th_c) {
+                    context_ptr->md_stage_2_count[cand_class_it] = 0;
+                }
+#endif
+#if STAGE_2_COUNT_PRUNING_TH_S
                 // Remove outliers from the list; prone if cost-to-best deviation bigger than  context_ptr->cost_dev_based_md_stage_2_count_prooning
-                {
-                    uint32_t *cand_buff_indices = context_ptr->cand_buff_indices[cand_class_it];
+                if (context_ptr->md_stage_2_count[cand_class_it]) {
                     uint32_t md_stage_2_count = 1;
-                    while (md_stage_2_count < context_ptr->md_stage_2_count[cand_class_it] && ((((*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[md_stage_2_count]]->full_cost_ptr) - *(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->full_cost_ptr)) * 100) / (*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->full_cost_ptr))) < context_ptr->cost_dev_based_md_stage_2_count_prooning)) {
+                    while (md_stage_2_count < context_ptr->md_stage_2_count[cand_class_it] && ((((*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[md_stage_2_count]]->full_cost_ptr) - *(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->full_cost_ptr)) * 100) / (*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->full_cost_ptr))) < context_ptr->md_stage_2_count_th_s)) {
                         md_stage_2_count++;
                     }
                     context_ptr->md_stage_2_count[cand_class_it] = md_stage_2_count;
                 }
 #endif
-
-#if INTER_PRUNE_MD_STAGE_1_COUNT
-                uint32_t *cand_buff_indices = context_ptr->cand_buff_indices[cand_class_it];
-                best_md_sage_2_cost = MIN((*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->full_cost_ptr)), best_md_sage_2_cost);
-#endif
-            }
-#if PRUNE_MD_STAGE_1_COUNT
-            context_ptr->md_stage_2_total_count += context_ptr->md_stage_2_count[cand_class_it];
-#endif
-        }
-
-#if INTER_PRUNE_MD_STAGE_1_COUNT
-        for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
-            if (context_ptr->bypass_md_stage_1[cand_class_it] == EB_FALSE && context_ptr->md_stage_1_count[cand_class_it] > 0 && context_ptr->md_stage_2_count[cand_class_it] > 0) {
-                uint32_t *cand_buff_indices = context_ptr->cand_buff_indices[cand_class_it];
-                if ((((*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->full_cost_ptr) - best_md_sage_2_cost) * 100) / best_md_sage_2_cost) > context_ptr->inter_class_pruning_cost_dev_based_md_stage_2_count_prooning) {
-                    context_ptr->md_stage_2_count[cand_class_it] = 0;
-                }
             }
             context_ptr->md_stage_2_total_count += context_ptr->md_stage_2_count[cand_class_it];
         }

@@ -1534,19 +1534,19 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->dist_base_md_stage_0_count_th = 75;
 #endif
-#if PRUNE_MD_STAGE_1_COUNT
+#if STAGE_2_COUNT_PRUNING_TH_S
     // Derive cost-based md_stage_2_count proning
     if (MR_MODE)
-        context_ptr->cost_dev_based_md_stage_2_count_prooning = (uint64_t)~0;
+        context_ptr->md_stage_2_count_th_s = (uint64_t)~0;
     else
-        context_ptr->cost_dev_based_md_stage_2_count_prooning = 25;
+        context_ptr->md_stage_2_count_th_s = 25;
 #endif
-#if INTER_PRUNE_MD_STAGE_1_COUNT
+#if STAGE_2_COUNT_PRUNING_TH_C
     // Derive cost-based md_stage_2_count proning
     if (MR_MODE)
-        context_ptr->inter_class_pruning_cost_dev_based_md_stage_2_count_prooning = (uint64_t)~0;
+        context_ptr->md_stage_2_count_th_c = (uint64_t)~0;
     else
-        context_ptr->inter_class_pruning_cost_dev_based_md_stage_2_count_prooning = 25;
+        context_ptr->md_stage_2_count_th_c = 25;
 #endif
     return return_error;
 }

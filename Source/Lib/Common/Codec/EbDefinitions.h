@@ -43,9 +43,9 @@ extern "C" {
 #define USE_RELAXED_PRED             0
 #endif
 
-#define PRUNE_MD_STAGE_1_COUNT       0
+#define STAGE_2_COUNT_PRUNING_TH_S   0
 
-#define INTER_PRUNE_MD_STAGE_1_COUNT 0
+#define STAGE_2_COUNT_PRUNING_TH_C   0
 
 #define FIX_ALTREF                   1 // Address ALTREF mismatch between rtime-m0-test and master: fixed actual_future_pics derivation, shut padding of the central frame, fixed end past frame index prior to window shrinking
 #define FIX_NEAREST_NEW              1 // Address NEAREST_NEW mismatch between rtime-m0-test and master: fixed injection and fixed settings

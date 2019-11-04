@@ -314,11 +314,11 @@ extern "C" {
     uint64_t                            md_exit_th;
     uint64_t                            dist_base_md_stage_0_count_th;
 #endif
-#if PRUNE_MD_STAGE_1_COUNT
-    uint64_t                           cost_dev_based_md_stage_2_count_prooning;
+#if STAGE_2_COUNT_PRUNING_TH_S
+    uint64_t                            md_stage_2_count_th_s; // THs (for candidate removal per class) 
 #endif
-#if INTER_PRUNE_MD_STAGE_1_COUNT
-    uint64_t                           inter_class_pruning_cost_dev_based_md_stage_2_count_prooning;
+#if STAGE_2_COUNT_PRUNING_TH_C
+    uint64_t                            md_stage_2_count_th_c; // THc (for class removal)
 #endif
 #if OBMC_FLAG
     DECLARE_ALIGNED(16, uint8_t, obmc_buff_0[2 * MAX_MB_PLANE * MAX_SB_SQUARE]);
