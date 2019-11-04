@@ -3131,7 +3131,7 @@ void   compute_depth_costs(
 #if SKIP_2ND_PASS_BASED_ON_1ST_PASS
     {
         *above_depth_cost = MAX_MODE_COST;
-        *above_depth_dist = MAX_MODE_COST;
+        *above_depth_dist = 0xFFFFFFFF;
     }
 #else
         *above_depth_cost = MAX_MODE_COST;
@@ -3196,10 +3196,10 @@ void   compute_depth_costs(
         above_split_rate;
 #if SKIP_2ND_PASS_BASED_ON_1ST_PASS
     *curr_depth_dist =
-        context_ptr->md_local_cu_unit[curr_depth_mds].full_distortion + curr_non_split_rate_blk3 +
-        context_ptr->md_local_cu_unit[curr_depth_mds - 1 * step].full_distortion + curr_non_split_rate_blk2 +
-        context_ptr->md_local_cu_unit[curr_depth_mds - 2 * step].full_distortion + curr_non_split_rate_blk1 +
-        context_ptr->md_local_cu_unit[curr_depth_mds - 3 * step].full_distortion + curr_non_split_rate_blk0;
+        context_ptr->md_local_cu_unit[curr_depth_mds].full_distortion +
+        context_ptr->md_local_cu_unit[curr_depth_mds - 1 * step].full_distortion +
+        context_ptr->md_local_cu_unit[curr_depth_mds - 2 * step].full_distortion +
+        context_ptr->md_local_cu_unit[curr_depth_mds - 3 * step].full_distortion;
 #endif
 }
 
@@ -3249,7 +3249,7 @@ uint32_t d2_inter_depth_block_decision(
 #if SKIP_2ND_PASS_BASED_ON_1ST_PASS
             if (picture_control_set_ptr->slice_type == I_SLICE && parent_depth_idx_mds == 0 && sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128) {
                 parent_depth_cost = MAX_MODE_COST;
-                parent_depth_dist = MAX_MODE_COST;
+                parent_depth_dist = 0xFFFFFFFF;
             }
             else 
                 compute_depth_costs(
@@ -3265,7 +3265,7 @@ uint32_t d2_inter_depth_block_decision(
             
             if (!sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[parent_depth_idx_mds]) {
                 parent_depth_cost = MAX_MODE_COST;
-                parent_depth_dist = MAX_MODE_COST;
+                parent_depth_dist = 0xFFFFFFFF;
             }
 #else
             if (picture_control_set_ptr->slice_type == I_SLICE && parent_depth_idx_mds == 0 && sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128)
