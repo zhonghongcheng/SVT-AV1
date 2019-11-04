@@ -7845,11 +7845,14 @@ void md_encode_block(
 
 
         // 1st Full-Loop
+#if INTER_PRUNE_MD_STAGE_1_COUNT
+        uint64_t best_md_sage_2_cost = (uint64_t) ~0;
+#endif
 #if REMOVE_MD_STAGE_1
         for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
             //number of next level candidates could not exceed number of curr level candidates
             context_ptr->md_stage_2_count[cand_class_it] = MIN(context_ptr->md_stage_1_count[cand_class_it], context_ptr->md_stage_2_count[cand_class_it]);
-#if !PRUNE_MD_STAGE_1_COUNT
+#if !PRUNE_MD_STAGE_1_COUNT && !INTER_PRUNE_MD_STAGE_1_COUNT
             context_ptr->md_stage_2_total_count += context_ptr->md_stage_2_count[cand_class_it];
 #endif
             if (context_ptr->bypass_md_stage_1[cand_class_it] == EB_FALSE && context_ptr->md_stage_1_count[cand_class_it] > 0 && context_ptr->md_stage_2_count[cand_class_it] > 0) {
@@ -7908,13 +7911,28 @@ void md_encode_block(
                     context_ptr->md_stage_2_count[cand_class_it] = md_stage_2_count;
                 }
 #endif
+
+#if INTER_PRUNE_MD_STAGE_1_COUNT
+                uint32_t *cand_buff_indices = context_ptr->cand_buff_indices[cand_class_it];
+                best_md_sage_2_cost = MIN((*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->full_cost_ptr)), best_md_sage_2_cost);
+#endif
             }
 #if PRUNE_MD_STAGE_1_COUNT
             context_ptr->md_stage_2_total_count += context_ptr->md_stage_2_count[cand_class_it];
 #endif
         }
 
-
+#if INTER_PRUNE_MD_STAGE_1_COUNT
+        for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
+            if (context_ptr->bypass_md_stage_1[cand_class_it] == EB_FALSE && context_ptr->md_stage_1_count[cand_class_it] > 0 && context_ptr->md_stage_2_count[cand_class_it] > 0) {
+                uint32_t *cand_buff_indices = context_ptr->cand_buff_indices[cand_class_it];
+                if ((((*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->full_cost_ptr) - best_md_sage_2_cost) * 100) / best_md_sage_2_cost) > context_ptr->inter_class_pruning_cost_dev_based_md_stage_2_count_prooning) {
+                    context_ptr->md_stage_2_count[cand_class_it] = 0;
+                }
+            }
+            context_ptr->md_stage_2_total_count += context_ptr->md_stage_2_count[cand_class_it];
+        }
+#endif
 #if REMOVE_MD_STAGE_1
         assert(context_ptr->md_stage_2_total_count <= MAX_NFL);
         assert(context_ptr->md_stage_2_total_count > 0);
@@ -8138,6 +8156,10 @@ void md_encode_block(
     }
 }
 #if LESS_4_PARTITIONS
+#define INT_MAX       2147483647    // maximum (signed) int value
+static INLINE int get_unsigned_bits(unsigned int num_values) {
+    return num_values > 0 ? get_msb(num_values) + 1 : 0;
+}
 
 struct NN_CONFIG;
 typedef struct NN_CONFIG NN_CONFIG;
@@ -8156,8 +8178,8 @@ void av1_ml_prune_4_partition(
     int64_t *split_rd,
     int64_t *best_rd,
     float *part_ctx,
-    int *const partition_horz4_allowed,
-    int *const partition_vert4_allowed) {
+    int *partition_horz4_allowed,
+    int *partition_vert4_allowed) {
 
     if (*best_rd >= 1000000000) return;
 
@@ -8213,7 +8235,7 @@ void av1_ml_prune_4_partition(
     // Get variance of the 1:4 and 4:1 sub-blocks.
     unsigned int horz_4_source_var[4] = { 0 };
     unsigned int vert_4_source_var[4] = { 0 };
-    BlockGeom * blk_geom;
+    const BlockGeom *blk_geom;
     uint32_t input_origin_index;
     aom_variance_fn_ptr_t *fn_ptr;
     {
@@ -8301,8 +8323,8 @@ void decide_next_nsq_and_update_cost(
     EbPictureBufferDesc *input_picture_ptr,
     uint16_t sb_origin_x,
     uint16_t sb_origin_y,
-    int *const partition_horz4_allowed,
-    int *const partition_vert4_allowed) {
+    int *partition_horz4_allowed,
+    int *partition_vert4_allowed) {
 #else
     int *skip_next_nsq){
 #endif
@@ -8401,7 +8423,7 @@ void decide_next_nsq_and_update_cost(
         break;
 #if LESS_4_PARTITIONS
     case 16:
-        if (*sq_bsize == BLOCK_16X16 || *sq_bsize == BLOCK_32X32 || *sq_bsize == BLOCK_64X64)
+        if (((*sq_bsize) == BLOCK_16X16) || ((*sq_bsize) == BLOCK_32X32) || ((*sq_bsize) == BLOCK_64X64))
             av1_ml_prune_4_partition(
                 context_ptr,
                 input_picture_ptr,
@@ -8938,8 +8960,8 @@ EB_EXTERN EbErrorType mode_decision_sb(
     int64_t split_rd[4] = { 0 };
     int64_t best_rd = 0;
     float part_ctx = 0;
-    int *const partition_horz4_allowed = 1;
-    int *const partition_vert4_allowed = 1;
+    int partition_horz4_allowed = 0;
+    int partition_vert4_allowed = 0;
 #endif
 
     uint32_t blk_idx_mds = 0;

@@ -317,6 +317,9 @@ extern "C" {
 #if PRUNE_MD_STAGE_1_COUNT
     uint64_t                           cost_dev_based_md_stage_2_count_prooning;
 #endif
+#if INTER_PRUNE_MD_STAGE_1_COUNT
+    uint64_t                           inter_class_pruning_cost_dev_based_md_stage_2_count_prooning;
+#endif
 #if OBMC_FLAG
     DECLARE_ALIGNED(16, uint8_t, obmc_buff_0[2 * MAX_MB_PLANE * MAX_SB_SQUARE]);
     DECLARE_ALIGNED(16, uint8_t, obmc_buff_1[2 * MAX_MB_PLANE * MAX_SB_SQUARE]);
