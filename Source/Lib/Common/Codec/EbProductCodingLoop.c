@@ -8108,11 +8108,11 @@ void md_encode_block(
 #endif
 
 #if PRUNE_MD_STAGE_1_COUNT
-                // Remove outliers from the list; prone if cost-to-best deviation bigger than  context_ptr->cost_dev_based_md_stage_2_count_prooning
+                // Remove outliers from the list; prone if cost-to-best deviation bigger than  context_ptr->cost_dev_based_md_stage_2_count_pruning
                 {
                     uint32_t *cand_buff_indices = context_ptr->cand_buff_indices[cand_class_it];
                     uint32_t md_stage_2_count = 1;
-                    while (md_stage_2_count < context_ptr->md_stage_2_count[cand_class_it] && ((((*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[md_stage_2_count]]->full_cost_ptr) - *(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->full_cost_ptr)) * 100) / (*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->full_cost_ptr))) < context_ptr->cost_dev_based_md_stage_2_count_prooning)) {
+                    while (md_stage_2_count < context_ptr->md_stage_2_count[cand_class_it] && ((((*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[md_stage_2_count]]->full_cost_ptr) - *(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->full_cost_ptr)) * 100) / (*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->full_cost_ptr))) < context_ptr->cost_dev_based_md_stage_2_count_pruning)) {
                         md_stage_2_count++;
                     }
                     context_ptr->md_stage_2_count[cand_class_it] = md_stage_2_count;

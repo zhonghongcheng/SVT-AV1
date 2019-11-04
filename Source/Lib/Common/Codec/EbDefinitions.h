@@ -54,7 +54,6 @@ extern "C" {
 #define FIX_SETTINGS_RESET           1 // Address SEGMENT_RESET mismatch between rtime-m0-test and master: only @ 1st segment
 #define FIX_COMPOUND                 1 // Address COMPOUND mismatch between rtime-m0-test and master: used block size @ the derivation of compound count
 #define rtime_presets                1
-#define NIC_LUT                      0 // Cleanup NIC function for ease of tuning
 #define M4_TUNE                      1
 #define M3_M0_NIC                    0
 #define M3_NSQ_MDC_CANDIDATE         1
