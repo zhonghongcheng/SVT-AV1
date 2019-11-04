@@ -1233,7 +1233,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     //  0                   Collapsed fast loop
     //  1                   Decoupled fast loops ( intra/inter)
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if sc_rtime_presets
+        if (picture_control_set_ptr->enc_mode <= ENC_M5)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
             context_ptr->decouple_intra_inter_fast_loop = 0;
         else
             context_ptr->decouple_intra_inter_fast_loop = 1;
@@ -1243,7 +1247,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // Set the search method when decoupled fast loop is used
     // Hsan: FULL_SAD_SEARCH not supported
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if sc_rtime_presets
+        if (picture_control_set_ptr->enc_mode <= ENC_M5)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
             context_ptr->decoupled_fast_loop_search_method = SSD_SEARCH;
         else
             context_ptr->decoupled_fast_loop_search_method = FULL_SAD_SEARCH;
@@ -1259,7 +1267,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 1                    On but only INTRA
     // 2                    On both INTRA and INTER
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if sc_rtime_presets
+        if (picture_control_set_ptr->enc_mode <= ENC_M5)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
             context_ptr->full_loop_escape = 0;
         else
             context_ptr->full_loop_escape = 2;
@@ -1274,7 +1286,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 0                    Injection off (Hsan: but not derivation as used by MV ref derivation)
     // 1                    On
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if sc_rtime_presets
+        if (picture_control_set_ptr->enc_mode <= ENC_M5)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
             context_ptr->global_mv_injection = 1;
         else
             context_ptr->global_mv_injection = 0;
@@ -1291,6 +1307,14 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->new_nearest_near_comb_injection = 1;
     else
         context_ptr->new_nearest_near_comb_injection = 0;
+#if sc_rtime_presets
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        if (picture_control_set_ptr->enc_mode <= ENC_M3)
+            context_ptr->nx4_4xn_parent_mv_injection = 1;
+        else
+            context_ptr->nx4_4xn_parent_mv_injection = 0;
+    else
+#endif
 #if rtime_presets
     if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #else
@@ -1317,6 +1341,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
             context_ptr->unipred3x3_injection = 1;
+#if sc_rtime_presets
+
+        else if (picture_control_set_ptr->enc_mode <= ENC_M3)
+            context_ptr->unipred3x3_injection = 2;
+#endif
         else
             context_ptr->unipred3x3_injection = 0;
     else
@@ -1337,7 +1366,12 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 1                    ON FULL
     // 2                    Reduced set
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if sc_rtime_presets
+
+        if (picture_control_set_ptr->enc_mode <= ENC_M4)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
             context_ptr->bipred3x3_injection = 1;
         else
             context_ptr->bipred3x3_injection = 0;
@@ -1361,6 +1395,16 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 4                    Level 4: 7x5 full-pel search +  (H + V + D) sub-pel refinement = 8 half-pel + 8 quarter-pel = 16 positions + pred_me_distortion to pa_me_distortion deviation on
     // 5                    Level 5: 7x5 full-pel search +  (H + V + D) sub-pel refinement = 8 half-pel + 8 quarter-pel = 16 positions + pred_me_distortion to pa_me_distortion deviation off
     if (picture_control_set_ptr->slice_type != I_SLICE)
+#if sc_rtime_presets
+        if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+            if (picture_control_set_ptr->enc_mode <= ENC_M1)
+                context_ptr->predictive_me_level = 4;
+            else if (picture_control_set_ptr->enc_mode <= ENC_M4)
+                context_ptr->predictive_me_level = 2;
+            else
+                context_ptr->predictive_me_level = 0;
+        else
+#endif
 #if rtime_presets
         if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #else
@@ -1518,7 +1562,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
     // Derive Spatial SSE Flag
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if sc_rtime_presets
+        if (picture_control_set_ptr->enc_mode <= ENC_M4)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M6)
+#endif
             context_ptr->spatial_sse_full_loop = EB_TRUE;
         else
             context_ptr->spatial_sse_full_loop = EB_FALSE;
@@ -1533,6 +1581,15 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->blk_skip_decision = EB_FALSE;
     // Derive Trellis Quant Coeff Optimization Flag
+#if sc_rtime_presets
+
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        if (picture_control_set_ptr->enc_mode <= ENC_M2)
+            context_ptr->trellis_quant_coeff_optimization = EB_TRUE;
+        else
+            context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
+    else
+#endif
 #if rtime_presets
     if (picture_control_set_ptr->enc_mode <= ENC_M3)
 #else

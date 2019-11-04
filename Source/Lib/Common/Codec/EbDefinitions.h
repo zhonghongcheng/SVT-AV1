@@ -61,7 +61,7 @@ extern "C" {
 #define M3_NSQ_MDC_CANDIDATE_IN_M4   0
 #define RECT_THRESH                  0
 #define SHUT_CPMPOUND                0
-
+#define sc_rtime_presets             0
 #define OBMC_FLAG            1 // OBMC motion mode flag
 #define OBMC_CONVOLVE        1 // to track convolve kernels changes
 
