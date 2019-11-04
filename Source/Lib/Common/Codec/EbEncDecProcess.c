@@ -1648,8 +1648,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // Derive MD Exit TH
     if (MR_MODE)
         context_ptr->md_exit_th = 0;
+    else if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        context_ptr->md_exit_th = 10;
     else
-        context_ptr->md_exit_th = (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected) ? 10 : 18;
+        context_ptr->md_exit_th = 18;
 
     // Derive distortion-based md_stage_0_count proning
     if (MR_MODE)
@@ -1660,17 +1662,19 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if PRUNE_MD_STAGE_1_COUNT
     // Derive cost-based md_stage_2_count proning
     if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
-        context_ptr->cost_dev_based_md_stage_2_count_prooning = (uint64_t)~0;
+        context_ptr->cost_dev_based_md_stage_2_count_pruning = (uint64_t)~0;
     else if (picture_control_set_ptr->enc_mode <= ENC_M0)
-        context_ptr->cost_dev_based_md_stage_2_count_prooning = 25;
+        context_ptr->cost_dev_based_md_stage_2_count_pruning = 25;
     else if (picture_control_set_ptr->enc_mode <= ENC_M1)
-        context_ptr->cost_dev_based_md_stage_2_count_prooning = 20;
+        context_ptr->cost_dev_based_md_stage_2_count_pruning = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 20 : 18;
     else if (picture_control_set_ptr->enc_mode <= ENC_M2)
-        context_ptr->cost_dev_based_md_stage_2_count_prooning = 15;
+        context_ptr->cost_dev_based_md_stage_2_count_pruning = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 15 : 12;
     else if (picture_control_set_ptr->enc_mode <= ENC_M3)
-        context_ptr->cost_dev_based_md_stage_2_count_prooning = 10;
+        context_ptr->cost_dev_based_md_stage_2_count_pruning = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 7  : 5;
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
-        context_ptr->cost_dev_based_md_stage_2_count_prooning = 5;
+        context_ptr->cost_dev_based_md_stage_2_count_pruning = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 5  : 3;
+    else
+        context_ptr->cost_dev_based_md_stage_2_count_pruning = (uint64_t)~0; // until tested
 #endif
 
 
@@ -1681,7 +1685,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // shapes should be skipped. Namely:
     // skip HA and HB if h_cost > (weighted sq_cost)
     // skip VA and VB if v_cost > (weighted sq_cost)
-    
+
     if (MR_MODE)
         context_ptr->sq_to_h_v_weight_to_skip_a_b = (uint32_t)~0;
 #if RECT_THRESH
