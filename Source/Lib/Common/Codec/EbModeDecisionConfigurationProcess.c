@@ -1184,7 +1184,7 @@ uint8_t update_mdc_level(
      uint64_t dist_300 = sb_ptr->depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthm3]) * 100)/ sb_ptr->depth_cost[depth] : max_distance;
 
      int8_t s_depth = -3;
-     int8_t e_depth = -3;
+     int8_t e_depth =  3;
      if (dist_003 < th03) 
          s_depth = -3;
      else if (dist_002 < th02) 
