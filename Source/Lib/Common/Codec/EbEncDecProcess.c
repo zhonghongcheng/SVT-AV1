@@ -1538,13 +1538,17 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // Derive cost-based md_stage_2_count proning
     if (MR_MODE)
         context_ptr->md_stage_2_count_th_s = (uint64_t)~0;
-    else
+    else if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         context_ptr->md_stage_2_count_th_s = 25;
+    else
+        context_ptr->md_stage_2_count_th_s = 15;
 #endif
 #if STAGE_2_COUNT_PRUNING_TH_C
     // Derive cost-based md_stage_2_count proning
     if (MR_MODE)
         context_ptr->md_stage_2_count_th_c = (uint64_t)~0;
+    else if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        context_ptr->md_stage_2_count_th_c = 100;
     else
         context_ptr->md_stage_2_count_th_c = 25;
 #endif
