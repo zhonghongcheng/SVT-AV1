@@ -323,7 +323,7 @@ extern "C" {
     uint64_t                            dist_base_md_stage_0_count_th;
 #endif
 #if PRUNE_MD_STAGE_1_COUNT
-    uint64_t                           cost_dev_based_md_stage_2_count_prooning;
+    uint64_t                           cost_dev_based_md_stage_2_count_pruning;
 #endif
 #if OBMC_FLAG
     DECLARE_ALIGNED(16, uint8_t, obmc_buff_0[2 * MAX_MB_PLANE * MAX_SB_SQUARE]);
