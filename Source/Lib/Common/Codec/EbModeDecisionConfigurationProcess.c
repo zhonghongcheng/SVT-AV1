@@ -1185,20 +1185,20 @@ uint8_t update_mdc_level(
 
      int8_t s_depth = -3;
      int8_t e_depth =  3;
-     if (dist_003 < th03) 
+     if (dist_300 < th03) 
          s_depth = -3;
-     else if (dist_002 < th02) 
+     else if (dist_200 < th02) 
          s_depth = -2;
-     else if (dist_001 < th01) 
+     else if (dist_100 < th01) 
          s_depth = -1;
      else
          s_depth = 0;
 
-     if (dist_300 < th03) 
+     if (dist_003 < th03) 
          e_depth = 3;
-     else if (dist_200 < th02) 
+     else if (dist_002 < th02) 
          e_depth = 2;
-     else if (dist_100 < th01) 
+     else if (dist_001 < th01) 
          e_depth = 1;
      else
          e_depth = 0;
