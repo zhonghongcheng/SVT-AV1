@@ -77,6 +77,7 @@ typedef EbErrorType(*EB_MDC_FUNC)(
 #define Predm2p2 0xA2
 #define Predm3p2 0xA3
 #define Predm3p3 0xA4
+#define Predm3p1 0xA5
 #endif
 
 EB_ALIGN(16) static const uint8_t ndp_level_0[4] = {Pred + Predp1 + Predp2, Pred + Predp1, Pred + Predp1, Pred + Predm1};
