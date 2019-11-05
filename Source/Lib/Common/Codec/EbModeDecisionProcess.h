@@ -387,6 +387,7 @@ extern "C" {
 #endif
 #endif
 #if FIX_MPMD_SB
+    uint8_t pic_obmc_mode;
     uint8_t allow_warped_motion;
     uint8_t allow_high_precision_mv;
     uint8_t pic_filter_intra_mode;

@@ -99,6 +99,9 @@ int svt_is_interintra_allowed(
 #if OBMC_FLAG
 MotionMode obmc_motion_mode_allowed(
     const PictureControlSet       *picture_control_set_ptr,
+#if FIX_MPMD_SB
+    uint8_t                          pic_obmc_mode,
+#endif
     const CodingUnit              *cu_ptr,
     const BlockSize                 bsize,
     MvReferenceFrame                rf0,
@@ -2011,7 +2014,11 @@ void inject_mvp_candidates_II(
 #endif
             uint8_t tot_inter_types = is_ii_allowed ? II_COUNT : 1;
 #if OBMC_FLAG
+#if FIX_MPMD_SB
+            uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->pic_obmc_mode, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEARESTMV) == OBMC_CAUSAL;
+#else
             uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEARESTMV) == OBMC_CAUSAL;
+#endif
             tot_inter_types = is_obmc_allowed ? tot_inter_types + 1 : tot_inter_types;
 #endif
             for (inter_type = 0; inter_type < tot_inter_types; inter_type++)
@@ -2126,7 +2133,11 @@ void inject_mvp_candidates_II(
 #endif
             uint8_t tot_inter_types = is_ii_allowed ? II_COUNT : 1;
 #if OBMC_FLAG
+#if FIX_MPMD_SB
+            uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->pic_obmc_mode, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEARMV) == OBMC_CAUSAL;
+#else
             uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEARMV) == OBMC_CAUSAL;
+#endif
             tot_inter_types = is_obmc_allowed ? tot_inter_types+1 : tot_inter_types;
 #endif
 
@@ -3411,8 +3422,14 @@ void inject_new_candidates(
 #endif
             uint8_t tot_inter_types = is_ii_allowed ? II_COUNT : 1;
 #if OBMC_FLAG
-             uint8_t is_obmc_allowed =  obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL;
+
+#if FIX_MPMD_SB
+            uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->pic_obmc_mode, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL;
+             tot_inter_types = is_obmc_allowed && context_ptr->pic_obmc_mode <= 2 ? tot_inter_types + 1 : tot_inter_types;
+#else
+            uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL;
              tot_inter_types = is_obmc_allowed && picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode <= 2 ? tot_inter_types+1 : tot_inter_types;
+#endif
 #endif
             for (inter_type = 0; inter_type < tot_inter_types; inter_type++)
             {
@@ -3544,8 +3561,13 @@ void inject_new_candidates(
 #endif
             uint8_t tot_inter_types = is_ii_allowed ? II_COUNT : 1;
 #if OBMC_FLAG
+#if FIX_MPMD_SB
+            uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->pic_obmc_mode, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL;
+            tot_inter_types = is_obmc_allowed && context_ptr->pic_obmc_mode <= 2 ? tot_inter_types + 1 : tot_inter_types;
+#else
             uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL;
             tot_inter_types = is_obmc_allowed  && picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode <= 2 ? tot_inter_types + 1 : tot_inter_types;
+#endif
 #endif
             for (inter_type = 0; inter_type < tot_inter_types; inter_type++)
             {
@@ -3809,7 +3831,11 @@ void inject_new_candidates(
                             uint8_t inter_type;
                             uint8_t is_ii_allowed = 0;// svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, NEWMV, rf);
                             uint8_t tot_inter_types = is_ii_allowed ? II_COUNT : 1;
+#if FIX_MPMD_SB
+                            uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->pic_obmc_mode, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL;
+#else
                             uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL;
+#endif
                             tot_inter_types = is_obmc_allowed ? tot_inter_types + 1 : tot_inter_types;
                             for (inter_type = 0; inter_type < tot_inter_types; inter_type++)
                             {
@@ -3904,7 +3930,11 @@ void inject_new_candidates(
                                 uint8_t inter_type;
                                 uint8_t is_ii_allowed = 0;// svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, NEWMV, rf);
                                 uint8_t tot_inter_types = is_ii_allowed ? II_COUNT : 1;
+#if FIX_MPMD_SB
+                                uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->pic_obmc_mode, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL;
+#else
                                 uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL;
+#endif
                                 tot_inter_types = is_obmc_allowed ? tot_inter_types + 1 : tot_inter_types;
                                 for (inter_type = 0; inter_type < tot_inter_types; inter_type++)
                                 {
@@ -4166,7 +4196,11 @@ void  inject_inter_candidates(
         mi_row,
         mi_col);
 #if OBMC_FLAG
+#if FIX_MPMD_SB
+    uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->pic_obmc_mode, context_ptr->cu_ptr, context_ptr->blk_geom->bsize, LAST_FRAME, -1, NEWMV) == OBMC_CAUSAL;
+#else
     uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, context_ptr->blk_geom->bsize, LAST_FRAME, -1, NEWMV) == OBMC_CAUSAL;
+#endif
     if (is_obmc_allowed)
         precompute_obmc_data(
             picture_control_set_ptr,

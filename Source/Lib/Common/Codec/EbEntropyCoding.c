@@ -1563,14 +1563,20 @@ static INLINE int is_inter_mode(PredictionMode mode)
 #if OBMC_FLAG
 MotionMode obmc_motion_mode_allowed(
     const PictureControlSet         *picture_control_set_ptr,
+#if FIX_MPMD_SB
+    uint8_t                          pic_obmc_mode,
+#endif
     const CodingUnit                *cu_ptr,
     const BlockSize                 bsize,
     MvReferenceFrame                rf0,
     MvReferenceFrame                rf1,
     PredictionMode                  mode)
 {
-
+#if FIX_MPMD_SB
+    if (!pic_obmc_mode)
+#else
     if(!picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode)
+#endif
         return SIMPLE_TRANSLATION;
 
     FrameHeader *frm_hdr = &picture_control_set_ptr->parent_pcs_ptr->frm_hdr;
