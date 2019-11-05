@@ -1850,9 +1850,9 @@ void mpmd_init_considered_block(
                 uint8_t depthm3 = depth - 3 >= start_depth ? depth - 3 : depth - 2 >= start_depth ? depth - 2 : depth - 1 >= start_depth ? depth - 1 : depth;
                 uint8_t adjusted_depth_level = 13;
                 uint64_t max_distance = 0xFFFFFFFFFFFFF;
-                uint64_t th01 = max_distance;
-                uint64_t th02 = max_distance;
-                uint64_t th03 = max_distance;
+                uint64_t th01 = 10000;
+                uint64_t th02 = 10000;
+                uint64_t th03 = 10000;
                 uint64_t dist_001 = sb_ptr->md_depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->md_depth_cost[depth] - (int64_t)sb_ptr->md_depth_cost[depthp1]) * 100) / sb_ptr->md_depth_cost[depth] : max_distance;
                 uint64_t dist_100 = sb_ptr->md_depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->md_depth_cost[depth] - (int64_t)sb_ptr->md_depth_cost[depthm1]) * 100) / sb_ptr->md_depth_cost[depth] : max_distance;
                 uint64_t dist_002 = sb_ptr->md_depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->md_depth_cost[depth] - (int64_t)sb_ptr->md_depth_cost[depthp2]) * 100) / sb_ptr->md_depth_cost[depth] : max_distance;
@@ -2562,7 +2562,7 @@ void mpmd_init_considered_block(
                     }
                     break;
                 default:
-                    printf("Error! invalid mdc_refinement_mode %d \n",adjusted_depth_level);
+                    printf("Error! invalid mdc_refinement_mode\n");
                     break;
                 }
             }
@@ -4166,7 +4166,7 @@ void* enc_dec_kernel(void *input_ptr)
                                 context_ptr->md_context,
                                 sb_index);
                             skip_next_pass = 0;// (context_ptr->md_context->sb_cost < cost_th0) ? 1 : 0;
-                            uint8_t mpmd_depth_level = 6; // 1 SQ PART only
+                            uint8_t mpmd_depth_level = 7; // 1 SQ PART only
                             uint8_t mpmd_1d_level = 0; // 1 NSQ PART only
 
                             if (!skip_next_pass) {
