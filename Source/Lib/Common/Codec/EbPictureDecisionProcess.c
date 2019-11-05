@@ -1380,6 +1380,28 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->intra_pred_mode = 4;
     else {
     if (sc_content_detected)
+#if sc_rtime_presets
+        if (picture_control_set_ptr->enc_mode <= ENC_M0)
+            picture_control_set_ptr->intra_pred_mode = 0;
+        else if (picture_control_set_ptr->enc_mode <= ENC_M2)
+            if (picture_control_set_ptr->temporal_layer_index == 0)
+                picture_control_set_ptr->intra_pred_mode = 1;
+            else
+                picture_control_set_ptr->intra_pred_mode = 2;
+        else if (picture_control_set_ptr->enc_mode <= ENC_M5)
+            if (picture_control_set_ptr->temporal_layer_index == 0)
+                picture_control_set_ptr->intra_pred_mode = 1;
+            else
+                picture_control_set_ptr->intra_pred_mode = 3;
+        else if (picture_control_set_ptr->enc_mode <= ENC_M6)
+            if (picture_control_set_ptr->temporal_layer_index == 0)
+                picture_control_set_ptr->intra_pred_mode = 2;
+            else
+                picture_control_set_ptr->intra_pred_mode = 3;
+        else
+            picture_control_set_ptr->intra_pred_mode = 4;
+
+#else
         if (picture_control_set_ptr->enc_mode == ENC_M0)
             picture_control_set_ptr->intra_pred_mode = 0;
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
@@ -1394,6 +1416,7 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->intra_pred_mode = 3;
         else
             picture_control_set_ptr->intra_pred_mode = 4;
+#endif
     else
 #if rtime_presets
         if ((picture_control_set_ptr->enc_mode <= ENC_M1) || (picture_control_set_ptr->enc_mode <= ENC_M2 && picture_control_set_ptr->temporal_layer_index == 0))
