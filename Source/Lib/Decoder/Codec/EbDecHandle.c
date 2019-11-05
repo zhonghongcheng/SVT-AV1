@@ -31,6 +31,7 @@
 # include <intrin.h>
 #endif
 
+#define RTCD_C
 #include "aom_dsp_rtcd.h"
 
 /**************************************
@@ -60,7 +61,7 @@ void dec_init_intra_predictors_internal(void);
 extern void av1_init_wedge_masks(void);
 
 EbErrorType decode_multiple_obu(EbDecHandle *dec_handle_ptr,
-                                uint8_t **data, size_t data_size, uint32_t is_annexb);
+                                uint8_t **data, size_t data_size);
 
 void SwitchToRealTime(){
 #ifndef _WIN32
@@ -520,8 +521,7 @@ __attribute__((visibility("default")))
 EB_API EbErrorType eb_svt_decode_frame(
     EbComponentType     *svt_dec_component,
     const uint8_t       *data,
-    const size_t         data_size,
-    uint32_t             is_annexb)
+    const size_t         data_size)
 {
     EbErrorType return_error = EB_ErrorNone;
     if (svt_dec_component == NULL)
@@ -539,9 +539,11 @@ EB_API EbErrorType eb_svt_decode_frame(
         //printf("\n SVT-AV1 Dec : Decoding Pic #%d", dec_handle_ptr->dec_cnt);
 
         uint64_t frame_size = 0;
+        /*if (ctx->is_annexb) {
+        }
+        else*/
         frame_size = data_end - data_start;
-        return_error = decode_multiple_obu(dec_handle_ptr, &data_start,
-            frame_size, is_annexb);
+        return_error = decode_multiple_obu(dec_handle_ptr, &data_start, frame_size);
 
         if (return_error != EB_ErrorNone)
             assert(0);

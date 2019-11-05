@@ -11,7 +11,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
 #include "EbDecParamParser.h"
 
@@ -104,6 +103,14 @@ EbErrorType read_command_line(int32_t argc, char *const argv[],
                 else {
                     cli->inFile = fin;
                     cli->inFilename = config_strings[token_index];
+                    if (file_is_ivf(cli))
+                        cli->inFileType = FILE_TYPE_IVF;
+                    else if (file_is_obu(cli, obu_ctx))
+                        cli->inFileType = FILE_TYPE_OBU;
+                    else {
+                        printf("Unsupported input file format. \n");
+                        return EB_ErrorBadParameter;
+                    }
                 }
             }
             else if (EB_STRCMP(cmd_copy[token_index], OUTPUT_FILE_TOKEN) == 0) {
@@ -126,8 +133,6 @@ EbErrorType read_command_line(int32_t argc, char *const argv[],
                 cli->fps_summary = 1;
             else if (EB_STRCMP(cmd_copy[token_index], FILM_GRAIN_TOKEN) == 0)
                 cli->skip_film_grain = 1;
-            else if (EB_STRCMP(cmd_copy[token_index], ANNEX_B_TOKEN) == 0)
-                obu_ctx->is_annexb = 1;
             else if (EB_STRCMP(cmd_copy[token_index], HELP_TOKEN) == 0)
                 showHelp();
             else {
@@ -175,15 +180,5 @@ EbErrorType read_command_line(int32_t argc, char *const argv[],
 
     configs->skip_film_grain = cli->skip_film_grain;
 
-    if (file_is_ivf(cli)) {
-        cli->inFileType = FILE_TYPE_IVF;
-        assert(0 == obu_ctx->is_annexb);
-    }
-    else if (file_is_obu(cli, obu_ctx))
-        cli->inFileType = FILE_TYPE_OBU;
-    else {
-        printf("Unsupported input file format. \n");
-        return EB_ErrorBadParameter;
-    }
     return EB_ErrorNone;
 }

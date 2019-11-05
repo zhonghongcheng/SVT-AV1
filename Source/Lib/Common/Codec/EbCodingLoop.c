@@ -2226,7 +2226,8 @@ EB_EXTERN void av1_encode_pass(
                 (uint16_t *)context_ptr->input_sample16bit_buffer->buffer_y,
                 context_ptr->input_sample16bit_buffer->stride_y,
                 sb_width,
-                sb_height);
+                sb_height,
+                asm_type);
 
             compressed_pack_lcu(
                 inputPicture->buffer_cb + input_cb_offset,
@@ -2236,7 +2237,8 @@ EB_EXTERN void av1_encode_pass(
                 (uint16_t *)context_ptr->input_sample16bit_buffer->buffer_cb,
                 context_ptr->input_sample16bit_buffer->stride_cb,
                 sb_width >> 1,
-                sb_height >> 1);
+                sb_height >> 1,
+                asm_type);
 
             compressed_pack_lcu(
                 inputPicture->buffer_cr + input_cr_offset,
@@ -2246,7 +2248,8 @@ EB_EXTERN void av1_encode_pass(
                 (uint16_t *)context_ptr->input_sample16bit_buffer->buffer_cr,
                 context_ptr->input_sample16bit_buffer->stride_cr,
                 sb_width >> 1,
-                sb_height >> 1);
+                sb_height >> 1,
+                asm_type);
         }
         else {
             const uint32_t input_luma_offset = ((sb_origin_y + inputPicture->origin_y)         * inputPicture->stride_y) + (sb_origin_x + inputPicture->origin_x);
@@ -3225,7 +3228,8 @@ EB_EXTERN void av1_encode_pass(
                                         eobs[context_ptr->txb_itr][0],
                                         0,
                                         0,
-                                        COMPONENT_LUMA);
+                                        COMPONENT_LUMA,
+                                        asm_type);
                                 TxSize  txSize = blk_geom->txsize[cu_ptr->tx_depth][context_ptr->txb_itr];
                                 int32_t shift = (MAX_TX_SCALE - av1_get_tx_scale(txSize)) * 2;
                                 yTuFullDistortion[DIST_CALC_RESIDUAL] = RIGHT_SIGNED_SHIFT(yTuFullDistortion[DIST_CALC_RESIDUAL], shift);

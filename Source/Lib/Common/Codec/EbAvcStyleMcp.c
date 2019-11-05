@@ -5,7 +5,6 @@
 
 #include "EbAvcStyleMcp.h"
 #include "EbPictureOperators.h"
-#include "aom_dsp_rtcd.h"
 
 static const   uint8_t  frac_mapped_pos_tab_x[16] = { 0, 1, 2, 3,
     0, 1, 2, 3,
@@ -163,9 +162,9 @@ void estimate_bi_pred_interpolation_unpacked_avc_style(
         mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
 
     // bi-pred luma
-    picture_average_kernel(ref_list0_temp_dst, pu_width << sub_sample_pred_flag, ref_list1_temp_dst, pu_width << sub_sample_pred_flag, bi_dst->buffer_y + dst_luma_index, luma_stride << sub_sample_pred_flag, pu_width, pu_height >> sub_sample_pred_flag);
+    picture_average_array[asm_type](ref_list0_temp_dst, pu_width << sub_sample_pred_flag, ref_list1_temp_dst, pu_width << sub_sample_pred_flag, bi_dst->buffer_y + dst_luma_index, luma_stride << sub_sample_pred_flag, pu_width, pu_height >> sub_sample_pred_flag);
     if (sub_sample_pred_flag)
-        picture_average_kernel1_line(ref_list0_temp_dst + (pu_height - 1)*pu_width, ref_list1_temp_dst + (pu_height - 1)*pu_width, bi_dst->buffer_y + dst_luma_index + (pu_height - 1)*luma_stride, pu_width);
+        picture_average1_line_array[asm_type](ref_list0_temp_dst + (pu_height - 1)*pu_width, ref_list1_temp_dst + (pu_height - 1)*pu_width, bi_dst->buffer_y + dst_luma_index + (pu_height - 1)*luma_stride, pu_width);
 }
 
 /*******************************************************************************
@@ -373,9 +372,9 @@ void estimate_bi_pred_interpolation_avc_luma(
             mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
 
         // bi-pred luma
-        picture_average_kernel(ref_list0_temp_dst, pu_width << sub_sample_pred_flag, ref_list1_temp_dst, pu_width << sub_sample_pred_flag, bi_dst->buffer_y + dst_luma_index, luma_stride << sub_sample_pred_flag, pu_width, pu_height >> sub_sample_pred_flag);
+        picture_average_array[asm_type](ref_list0_temp_dst, pu_width << sub_sample_pred_flag, ref_list1_temp_dst, pu_width << sub_sample_pred_flag, bi_dst->buffer_y + dst_luma_index, luma_stride << sub_sample_pred_flag, pu_width, pu_height >> sub_sample_pred_flag);
         if (sub_sample_pred_flag)
-            picture_average_kernel1_line(ref_list0_temp_dst + (pu_height - 1)*pu_width, ref_list1_temp_dst + (pu_height - 1)*pu_width, bi_dst->buffer_y + dst_luma_index + (pu_height - 1)*luma_stride, pu_width);
+            picture_average1_line_array[asm_type](ref_list0_temp_dst + (pu_height - 1)*pu_width, ref_list1_temp_dst + (pu_height - 1)*pu_width, bi_dst->buffer_y + dst_luma_index + (pu_height - 1)*luma_stride, pu_width);
     }
 
     //uni-prediction List0 chroma
@@ -434,7 +433,7 @@ void estimate_bi_pred_interpolation_avc_luma(
             mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
 
         // bi-pred Chroma Cb
-        picture_average_kernel(
+        picture_average_array[asm_type](
             ref_list0_temp_dst,
             chroma_pu_width << shift,
             ref_list1_temp_dst,
@@ -499,7 +498,7 @@ void estimate_bi_pred_interpolation_avc_luma(
             mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
 
         // bi-pred Chroma Cr
-        picture_average_kernel(
+        picture_average_array[asm_type](
             ref_list0_temp_dst,
             chroma_pu_width << shift,
             ref_list1_temp_dst,
@@ -524,7 +523,8 @@ void estimate_uni_pred_interpolation_avc_lumaRef10Bit(
     uint32_t                 component_mask,
     EbByte                  temp_buf,
     EbBool                   sub_pred,
-    EbBool                   sub_pred_chroma)
+    EbBool                   sub_pred_chroma,
+    EbAsm                    asm_type)
 {
     uint32_t   chroma_pu_width = pu_width >> 1;
     uint32_t   chroma_pu_height = pu_height >> 1;
@@ -544,7 +544,8 @@ void estimate_uni_pred_interpolation_avc_lumaRef10Bit(
             dst->stride_y << sub_pred,
             pu_width,
             pu_height >> sub_pred,
-            sub_pred
+            sub_pred,
+            asm_type
         );
     }
     //chroma
@@ -561,7 +562,8 @@ void estimate_uni_pred_interpolation_avc_lumaRef10Bit(
                 dst->buffer_cb + dst_chroma_index,
                 dst->stride_cb << sub_pred,
                 chroma_pu_width,
-                chroma_pu_height >> sub_pred
+                chroma_pu_height >> sub_pred,
+                asm_type
             );
 
             ptr16 = (uint16_t *)ref_frame_pic_list0->buffer_cr + in_pos_x + in_pos_y * ref_frame_pic_list0->stride_cr;
@@ -572,7 +574,8 @@ void estimate_uni_pred_interpolation_avc_lumaRef10Bit(
                 dst->buffer_cr + dst_chroma_index,
                 dst->stride_cr << sub_pred,
                 chroma_pu_width,
-                chroma_pu_height >> sub_pred
+                chroma_pu_height >> sub_pred,
+                asm_type
             );
         }
     }
@@ -589,7 +592,8 @@ void estimate_uni_pred_interpolation_avc_chroma_ref10_bit(
     uint32_t                 dst_chroma_index,          //input parameter, please refer to the detailed explanation above.
     uint32_t                 component_mask,
     EbByte                  temp_buf,
-    EbBool                   sub_pred)
+    EbBool                   sub_pred,
+    EbAsm                    asm_type)
 {
     uint32_t   chroma_pu_width = pu_width >> 1;
     uint32_t   chroma_pu_height = pu_height >> 1;
@@ -607,7 +611,8 @@ void estimate_uni_pred_interpolation_avc_chroma_ref10_bit(
         dst->buffer_cb + dst_chroma_index,
         dst->stride_cb << sub_pred,
         chroma_pu_width,
-        chroma_pu_height >> sub_pred
+        chroma_pu_height >> sub_pred,
+        asm_type
     );
 
     ptr16 = (uint16_t *)ref_frame_pic_list0->buffer_cr + in_pos_x + in_pos_y * ref_frame_pic_list0->stride_cr;
@@ -618,7 +623,8 @@ void estimate_uni_pred_interpolation_avc_chroma_ref10_bit(
         dst->buffer_cr + dst_chroma_index,
         dst->stride_cr << sub_pred,
         chroma_pu_width,
-        chroma_pu_height >> sub_pred
+        chroma_pu_height >> sub_pred,
+        asm_type
     );
 }
 void estimate_bi_pred_interpolation_avc_chroma_ref10_bit(
@@ -637,7 +643,8 @@ void estimate_bi_pred_interpolation_avc_chroma_ref10_bit(
     EbByte                  ref_list0_temp_dst,
     EbByte                  ref_list1_temp_dst,
     EbByte                  first_pass_if_temp_dst,
-    EbBool                   sub_pred)
+    EbBool                   sub_pred,
+    EbAsm                    asm_type)
 {
     uint32_t   chroma_pu_width = pu_width >> 1;
     uint32_t   chroma_pu_height = pu_height >> 1;
@@ -655,7 +662,8 @@ void estimate_bi_pred_interpolation_avc_chroma_ref10_bit(
         bi_dst->buffer_cb + dst_chroma_index,
         bi_dst->stride_cb << sub_pred,
         chroma_pu_width,
-        chroma_pu_height >> sub_pred
+        chroma_pu_height >> sub_pred,
+        asm_type
     );
 
     unpack_l0l1_avg(
@@ -666,7 +674,8 @@ void estimate_bi_pred_interpolation_avc_chroma_ref10_bit(
         bi_dst->buffer_cr + dst_chroma_index,
         bi_dst->stride_cr << sub_pred,
         chroma_pu_width,
-        chroma_pu_height >> sub_pred
+        chroma_pu_height >> sub_pred,
+        asm_type
     );
 }
 
@@ -687,7 +696,8 @@ void estimate_bi_pred_interpolation_avc_luma_ref10_bit(
     EbByte                  ref_list1_temp_dst,
     EbByte                  first_pass_if_temp_dst,
     EbBool                   sub_pred,
-    EbBool                   sub_pred_chroma)
+    EbBool                   sub_pred_chroma,
+    EbAsm                    asm_type)
 {
     uint32_t   chroma_pu_width = pu_width >> 1;
     uint32_t   chroma_pu_height = pu_height >> 1;
@@ -706,7 +716,8 @@ void estimate_bi_pred_interpolation_avc_luma_ref10_bit(
             bi_dst->stride_y << sub_pred,
             pu_width,
             pu_height >> sub_pred,
-            sub_pred
+            sub_pred,
+            asm_type
         );
     }
 
@@ -721,7 +732,8 @@ void estimate_bi_pred_interpolation_avc_luma_ref10_bit(
             bi_dst->buffer_cb + dst_chroma_index,
             bi_dst->stride_cb << sub_pred,
             chroma_pu_width,
-            chroma_pu_height >> sub_pred);
+            chroma_pu_height >> sub_pred,
+            asm_type);
 
         unpack_l0l1_avg(
             (uint16_t *)ref_frame_pic_list0->buffer_cr + (ref_list0_pos_x >> 3) + (ref_list0_pos_y >> 3)*ref_frame_pic_list0->stride_cr,
@@ -731,7 +743,8 @@ void estimate_bi_pred_interpolation_avc_luma_ref10_bit(
             bi_dst->buffer_cr + dst_chroma_index,
             bi_dst->stride_cr << sub_pred,
             chroma_pu_width,
-            chroma_pu_height >> sub_pred);
+            chroma_pu_height >> sub_pred,
+            asm_type);
     }
 }
 
@@ -921,9 +934,9 @@ void bi_pred_i_free_ref8_bit(
             mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
 
         // bi-pred luma
-        picture_average_kernel(ref_list0_temp_dst, pu_width << sub_sample_pred_flag, ref_list1_temp_dst, pu_width << sub_sample_pred_flag, bi_dst->buffer_y + dst_luma_index, luma_stride << sub_sample_pred_flag, pu_width, pu_height >> sub_sample_pred_flag);
+        picture_average_array[asm_type](ref_list0_temp_dst, pu_width << sub_sample_pred_flag, ref_list1_temp_dst, pu_width << sub_sample_pred_flag, bi_dst->buffer_y + dst_luma_index, luma_stride << sub_sample_pred_flag, pu_width, pu_height >> sub_sample_pred_flag);
         if (sub_sample_pred_flag)
-            picture_average_kernel1_line(ref_list0_temp_dst + (pu_height - 1)*pu_width, ref_list1_temp_dst + (pu_height - 1)*pu_width, bi_dst->buffer_y + dst_luma_index + (pu_height - 1)*luma_stride, pu_width);
+            picture_average1_line_array[asm_type](ref_list0_temp_dst + (pu_height - 1)*pu_width, ref_list1_temp_dst + (pu_height - 1)*pu_width, bi_dst->buffer_y + dst_luma_index + (pu_height - 1)*luma_stride, pu_width);
     }
 
     //uni-prediction List0 chroma
@@ -983,7 +996,7 @@ void bi_pred_i_free_ref8_bit(
             mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
 
         // bi-pred Chroma Cb
-        picture_average_kernel(
+        picture_average_array[asm_type](
             ref_list0_temp_dst,
             chroma_pu_width << shift,
             ref_list1_temp_dst,
@@ -1046,7 +1059,7 @@ void bi_pred_i_free_ref8_bit(
             mapped_frac_posx ? mapped_frac_posx : mapped_frac_posy);
 
         // bi-pred Chroma Cr
-        picture_average_kernel(
+        picture_average_array[asm_type](
             ref_list0_temp_dst,
             chroma_pu_width << shift,
             ref_list1_temp_dst,
@@ -1140,7 +1153,7 @@ void avc_style_luma_interpolation_filter_pose(
     avc_style_luma_interpolation_filter_vertical(
         ref_pic, src_stride, temp_buf + temp_buf_size, pu_width, pu_width, pu_height, 0,
         2);
-    picture_average_kernel_c(temp_buf, pu_width, temp_buf + temp_buf_size, pu_width, dst,
+    picture_average_kernel(temp_buf, pu_width, temp_buf + temp_buf_size, pu_width, dst,
                          dst_stride, pu_width, pu_height);
 }
 
@@ -1161,7 +1174,7 @@ void avc_style_luma_interpolation_filter_posf(
     avc_style_luma_interpolation_filter_posj(
         ref_pic, src_stride, temp_buf + temp_buf_size, pu_width, pu_width, pu_height,
         temp_buf + 2 * temp_buf_size, 2);
-    picture_average_kernel_c(temp_buf, pu_width, temp_buf + temp_buf_size, pu_width, dst,
+    picture_average_kernel(temp_buf, pu_width, temp_buf + temp_buf_size, pu_width, dst,
                          dst_stride, pu_width, pu_height);
 }
 
@@ -1182,7 +1195,7 @@ void avc_style_luma_interpolation_filter_posg(
     avc_style_luma_interpolation_filter_vertical(
         ref_pic + 1, src_stride, temp_buf + temp_buf_size, pu_width, pu_width, pu_height,
         0, 2);
-    picture_average_kernel_c(temp_buf, pu_width, temp_buf + temp_buf_size, pu_width, dst,
+    picture_average_kernel(temp_buf, pu_width, temp_buf + temp_buf_size, pu_width, dst,
                          dst_stride, pu_width, pu_height);
 }
 
@@ -1203,7 +1216,7 @@ void avc_style_luma_interpolation_filter_posi(
     avc_style_luma_interpolation_filter_posj(
         ref_pic, src_stride, temp_buf + temp_buf_size, pu_width, pu_width, pu_height,
         temp_buf + 2 * temp_buf_size, 2);
-    picture_average_kernel_c(temp_buf, pu_width, temp_buf + temp_buf_size, pu_width, dst,
+    picture_average_kernel(temp_buf, pu_width, temp_buf + temp_buf_size, pu_width, dst,
                          dst_stride, pu_width, pu_height);
 }
 
@@ -1242,7 +1255,7 @@ void avc_style_luma_interpolation_filter_posk(
     avc_style_luma_interpolation_filter_posj(
         ref_pic, src_stride, temp_buf + temp_buf_size, pu_width, pu_width, pu_height,
         temp_buf + 2 * temp_buf_size, 2);
-    picture_average_kernel_c(temp_buf, pu_width, temp_buf + temp_buf_size, pu_width, dst,
+    picture_average_kernel(temp_buf, pu_width, temp_buf + temp_buf_size, pu_width, dst,
                          dst_stride, pu_width, pu_height);
 }
 
@@ -1263,7 +1276,7 @@ void avc_style_luma_interpolation_filter_posp(
     avc_style_luma_interpolation_filter_horizontal(
         ref_pic + src_stride, src_stride, temp_buf + temp_buf_size, pu_width, pu_width,
         pu_height, 0, 2);
-    picture_average_kernel_c(temp_buf, pu_width, temp_buf + temp_buf_size, pu_width, dst,
+    picture_average_kernel(temp_buf, pu_width, temp_buf + temp_buf_size, pu_width, dst,
                          dst_stride, pu_width, pu_height);
 }
 
@@ -1284,7 +1297,7 @@ void avc_style_luma_interpolation_filter_posq(
     avc_style_luma_interpolation_filter_posj(
         ref_pic, src_stride, temp_buf + temp_buf_size, pu_width, pu_width, pu_height,
         temp_buf + 2 * temp_buf_size, 2);
-    picture_average_kernel_c(temp_buf, pu_width, temp_buf + temp_buf_size, pu_width, dst,
+    picture_average_kernel(temp_buf, pu_width, temp_buf + temp_buf_size, pu_width, dst,
                          dst_stride, pu_width, pu_height);
 }
 
@@ -1305,6 +1318,6 @@ void avc_style_luma_interpolation_filter_posr(
     avc_style_luma_interpolation_filter_horizontal(
         ref_pic + src_stride, src_stride, temp_buf + temp_buf_size, pu_width, pu_width,
         pu_height, 0, 2);
-    picture_average_kernel_c(temp_buf, pu_width, temp_buf + temp_buf_size, pu_width, dst,
+    picture_average_kernel(temp_buf, pu_width, temp_buf + temp_buf_size, pu_width, dst,
                          dst_stride, pu_width, pu_height);
 }
