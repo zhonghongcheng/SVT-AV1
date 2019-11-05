@@ -352,7 +352,8 @@ extern "C" {
     uint64_t sb_dist;
 #endif
 #if MPMD_ADD_SB_SETTINGS_TO_CTX
-     uint8_t                               wedge_mode;
+    uint8_t                               pass_idx;
+    uint8_t                               wedge_mode;
 #if II_COMP_FLAG
         uint8_t                              enable_inter_intra;
 #endif

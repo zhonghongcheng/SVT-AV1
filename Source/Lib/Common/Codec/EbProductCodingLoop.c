@@ -1950,6 +1950,16 @@ void set_md_stage_counts(
     }
 #endif
 
+#if 0//MPMD_SB
+    // Set 1 full loop 
+    if (context_ptr->md_staging_mode == MD_STAGING_MODE_0) {
+        if (context_ptr->pass_idx == 0) {
+            for (CAND_CLASS cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
+                context_ptr->md_stage_1_count[cand_class_it] = 1;
+            }
+        }
+    }
+#endif
 
 
 
@@ -9117,7 +9127,7 @@ EB_EXTERN EbErrorType mode_decision_sb(
     uint32_t next_non_skip_blk_idx_mds = 0;
     uint8_t skip_sub_blocks;
 #if MPMD_REFINEMENT_V2
-    uint64_t depth_cost[NUMBER_OF_DEPTH] = { 0 };
+    int64_t depth_cost[NUMBER_OF_DEPTH] = { -1,-1,-1,-1,-1,-1};
     uint8_t  depth_table[NUMBER_OF_DEPTH] = { 0, 1, 2 , 3 ,4 ,5 };
     uint64_t nsq_cost[NUMBER_OF_SHAPES] = { MAX_CU_COST, MAX_CU_COST,MAX_CU_COST,MAX_CU_COST,MAX_CU_COST,
         MAX_CU_COST, MAX_CU_COST,MAX_CU_COST,MAX_CU_COST,MAX_CU_COST };
@@ -9486,7 +9496,7 @@ EB_EXTERN EbErrorType mode_decision_sb(
     if (sequence_control_set_ptr->seq_header.sb_size == BLOCK_64X64)
         depth_cost[0] = MAX_CU_COST;
     for (uint8_t depth_idx = 0; depth_idx < NUMBER_OF_DEPTH; depth_idx++) {
-        sb_ptr->md_depth_cost[depth_idx] = depth_cost[depth_idx];
+        sb_ptr->md_depth_cost[depth_idx] = depth_cost[depth_idx] < 0 ? MAX_MODE_COST : depth_cost[depth_idx];
     }
 #endif
     return return_error;

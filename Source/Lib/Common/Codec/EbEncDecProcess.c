@@ -1849,7 +1849,7 @@ void mpmd_init_considered_block(
                 uint8_t depthm2 = depth - 2 >= start_depth ? depth - 2 : depth - 1 >= start_depth ? depth - 1 : depth;
                 uint8_t depthm3 = depth - 3 >= start_depth ? depth - 3 : depth - 2 >= start_depth ? depth - 2 : depth - 1 >= start_depth ? depth - 1 : depth;
                 uint8_t adjusted_depth_level = 13;
-                uint64_t max_distance = 0xFFFFFFFFFFFFFFFF;
+                uint64_t max_distance = 0xFFFFFFFFFFFFF;
                 uint64_t th01 = max_distance;
                 uint64_t th02 = max_distance;
                 uint64_t th03 = max_distance;
@@ -1860,6 +1860,8 @@ void mpmd_init_considered_block(
                 uint64_t dist_003 = sb_ptr->md_depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->md_depth_cost[depth] - (int64_t)sb_ptr->md_depth_cost[depthp3]) * 100) / sb_ptr->md_depth_cost[depth] : max_distance;
                 uint64_t dist_300 = sb_ptr->md_depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->md_depth_cost[depth] - (int64_t)sb_ptr->md_depth_cost[depthm3]) * 100) / sb_ptr->md_depth_cost[depth] : max_distance;
 
+                //printf("%lld\t%lld\tll%d\t%lld\t%lld\t%lld\n", dist_300, dist_200, dist_100, dist_003, dist_002, dist_001);
+                
                 int8_t s_depth = -3;
                 int8_t e_depth = 3;
                 if (dist_300 < th03)
@@ -1881,37 +1883,37 @@ void mpmd_init_considered_block(
                     e_depth = 0;
 
                 if (s_depth == 0 && e_depth == 0)
-                    adjusted_depth_level = 0; // Pred only
+                    adjusted_depth_level = Pred; // Pred only
                 else if (s_depth == -1 && e_depth == 0)
-                    adjusted_depth_level = 8; // Pred -1
+                    adjusted_depth_level = Predm1; // Pred -1
                 else if (s_depth == -2 && e_depth == 0)
-                    adjusted_depth_level = 9; // Pred -2
+                    adjusted_depth_level = Predm2; // Pred -2
                 else if (s_depth == -3 && e_depth == 0)
-                    adjusted_depth_level = 14; // Pred -3
+                    adjusted_depth_level = Predm3; // Pred -3
                 else if (s_depth == -3 && e_depth == 1)
-                    adjusted_depth_level = 15; // Pred -3 + 1
+                    adjusted_depth_level = Predm3p1; // Pred -3 + 1
                 else if (s_depth == -2 && e_depth == 1)
-                    adjusted_depth_level = 10; // Pred -2 + 1
+                    adjusted_depth_level = Predm2p1; // Pred -2 + 1
                 else if (s_depth == -1 && e_depth == 1)
-                    adjusted_depth_level = 4; // Pred -1 + 1
+                    adjusted_depth_level = Predm1p1; // Pred -1 + 1
                 else if (s_depth == 0 && e_depth == 1)
-                    adjusted_depth_level = 1; // Pred + 1
+                    adjusted_depth_level = Predp1; // Pred + 1
                 else if (s_depth == -3 && e_depth == 2)
-                    adjusted_depth_level = 12; // Pred -3 + 1
+                    adjusted_depth_level = Predm3p2; // Pred -3 + 2
                 else if (s_depth == -2 && e_depth == 2)
-                    adjusted_depth_level = 11; // Pred -3 + 1
+                    adjusted_depth_level = Predm2p2; // Pred -2 + 2
                 else if (s_depth == -1 && e_depth == 2)
-                    adjusted_depth_level = 5; // Pred -3 + 1
+                    adjusted_depth_level = Predm1p1; // Pred -1 + 1
                 else if (s_depth == 0 && e_depth == 2)
-                    adjusted_depth_level = 2; // Pred + 2
+                    adjusted_depth_level = Predp2; // Pred + 2
                 else if (s_depth == -3 && e_depth == 3)
-                    adjusted_depth_level = 13; // Pred -3 + 3
+                    adjusted_depth_level = Predm3p3; // Pred -3 + 3
                 else if (s_depth == -2 && e_depth == 3)
-                    adjusted_depth_level = 7; // Pred -2 + 3
+                    adjusted_depth_level = Predm2p3; // Pred -2 + 3
                 else if (s_depth == -1 && e_depth == 3)
-                    adjusted_depth_level = 6; // Pred -1 + 3
+                    adjusted_depth_level = Predm1p3; // Pred -1 + 3
                 else if (s_depth == 0 && e_depth == 3)
-                    adjusted_depth_level = 3; // Pred + 3
+                    adjusted_depth_level = Predp3; // Pred + 3
                 else
                     printf("Error: unvalid s_depth && e_depth");
                 
@@ -2560,7 +2562,7 @@ void mpmd_init_considered_block(
                     }
                     break;
                 default:
-                    printf("Error! invalid mdc_refinement_mode\n");
+                    printf("Error! invalid mdc_refinement_mode %d \n",adjusted_depth_level);
                     break;
                 }
             }
@@ -3750,7 +3752,7 @@ EbErrorType mpmd_settings(
 #endif
 #if 0
     if (!is_last_md_pass) {
-        context_ptr->chroma_level = CHROMA_MODE_0;
+        context_ptr->chroma_level = CHROMA_MODE_2;
         context_ptr->decouple_intra_inter_fast_loop = 0;
         context_ptr->decoupled_fast_loop_search_method = FULL_SAD_SEARCH;
         context_ptr->full_loop_escape = 2;
@@ -3760,7 +3762,7 @@ EbErrorType mpmd_settings(
         context_ptr->unipred3x3_injection = 0;
         context_ptr->bipred3x3_injection = 0;
         context_ptr->predictive_me_level = 0;
-        context_ptr->md_staging_mode = MD_STAGING_MODE_1;
+        context_ptr->md_staging_mode = MD_STAGING_MODE_0;
         context_ptr->combine_class12 = 1;
         context_ptr->interpolation_filter_search_blk_size = 1;
         context_ptr->pf_md_mode = PF_OFF;
@@ -3768,20 +3770,19 @@ EbErrorType mpmd_settings(
         context_ptr->blk_skip_decision = EB_TRUE;
         context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
         context_ptr->redundant_blk = EB_TRUE;
-        context_ptr->redundant_blk = EB_FALSE;
         context_ptr->edge_based_skip_angle_intra = 1;
         context_ptr->prune_ref_frame_for_rec_partitions = 1;
         context_ptr->inter_inter_wedge_variance_th = 100;
         context_ptr->md_exit_th = (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected) ? 10 : 18;
         context_ptr->dist_base_md_stage_0_count_th = 75;
         context_ptr->sq_to_h_v_weight_to_skip_a_b = 100;
-        context_ptr->perform_quantize_fp = enc_mode <= ENC_M3 ? EB_TRUE : EB_FALSE;
-        context_ptr->stage_1_count = enc_mode >= ENC_M3 ? 1 : 0;
-        context_ptr->cond1 = enc_mode == ENC_M0 ? 1 : 0;
-        context_ptr->cond2 = enc_mode >= ENC_M1 ? 1 : 0;
-        context_ptr->cond3 = (enc_mode >= ENC_M3 && enc_mode <= ENC_M4) ? 1 : 0;
-        context_ptr->cond4 = (enc_mode >= ENC_M5) ? 1 : 0;
-        context_ptr->cond5 = (enc_mode <= ENC_M6) ? 1 : 0;
+        context_ptr->perform_quantize_fp = EB_FALSE;
+        context_ptr->stage_1_count =  0;
+        context_ptr->cond1 = 0;//enc_mode == ENC_M0 ? 1 : 0;
+        context_ptr->cond2 = 0;//enc_mode >= ENC_M1 ? 1 : 0;
+        context_ptr->cond3 = 0;//(enc_mode >= ENC_M3 && enc_mode <= ENC_M4) ? 1 : 0;
+        context_ptr->cond4 = 0;//(enc_mode >= ENC_M5) ? 1 : 0;
+        context_ptr->cond5 = 0;//(enc_mode <= ENC_M6) ? 1 : 0;
         context_ptr->nsq_search_level = NSQ_SEARCH_OFF;
         context_ptr->nsq_max_shapes_md = 0;
         context_ptr->interpolation_search_level = IT_SEARCH_OFF;
@@ -4135,10 +4136,11 @@ void* enc_dec_kernel(void *input_ptr)
 #if FIX_MPMD_SB
                             context_ptr->md_context->is_last_md_pass = 0;
 #endif
+                            context_ptr->md_context->pass_idx = 0;
                             // mode decision for sb
                             mode_decision_sb(
                                 0,//is_last_adp_stage
-                                mpmd_pass_idx,
+                                context_ptr->md_context->pass_idx,
                                 sequence_control_set_ptr,
                                 picture_control_set_ptr,
                                 mdcPtr,
@@ -4178,6 +4180,13 @@ void* enc_dec_kernel(void *input_ptr)
                                     sb_origin_y);
 #if MPMD_SB_REF
                                 // Mark blocks to be concidered in next md pass
+                                //printf("%lld\t%lld\t%lld\tll%d\t%lld\t%lld\t%lld\n", sb_ptr->md_depth_cost[0],
+                                //    sb_ptr->md_depth_cost[1], 
+                                //    sb_ptr->md_depth_cost[2], 
+                                //    sb_ptr->md_depth_cost[3], 
+                                //    sb_ptr->md_depth_cost[4],
+                                //    sb_ptr->md_depth_cost[5],
+                                //    sb_ptr->md_depth_cost[6]);
                                 mpmd_init_considered_block(
                                     sequence_control_set_ptr,
                                     picture_control_set_ptr,
@@ -4229,12 +4238,13 @@ void* enc_dec_kernel(void *input_ptr)
                     context_ptr->md_context->is_last_md_pass = 1;
 #endif
 #if SKIP_2ND_PASS_BASED_ON_1ST_PASS
+                    context_ptr->md_context->pass_idx = 1;
                    if (!skip_next_pass)
 #endif
                     mode_decision_sb(
 #if MPMD_SB
                         1,
-                        mpmd_pass_num,
+                        context_ptr->md_context->pass_idx,
 #endif
                         sequence_control_set_ptr,
                         picture_control_set_ptr,
