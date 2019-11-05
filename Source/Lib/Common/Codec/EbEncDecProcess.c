@@ -1669,8 +1669,6 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             context_ptr->md_stage_2_count_th_s = 25;
         else
             context_ptr->md_stage_2_count_th_s = 15;
-    else if (picture_control_set_ptr->enc_mode <= ENC_M1)
-        context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 20 : 18; // <-- Hsan: M0 settings are more agressive (to update this)
     else if (picture_control_set_ptr->enc_mode <= ENC_M2)
         context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 15 : 12;
     else if (picture_control_set_ptr->enc_mode <= ENC_M3)
