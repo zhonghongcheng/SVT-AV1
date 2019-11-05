@@ -39,7 +39,7 @@ extern "C" {
 */
 #define PAL_SUP                      1
 #define PAL_CLASS                    1
-#define M0_tune                      0
+#define M0_tune                      1
 #define TWO_PASS_IMPROVEMENT         1 // Tune 2 pass for better Luma
 #define NON_KF_INTRA_FIX             1 // Fix altref for non-key Intra frames
 #define LESS_RECTANGULAR_CHECK_LEVEL 1
@@ -57,23 +57,24 @@ extern "C" {
 #define M4_TUNE                      1
 #define M3_M0_NIC                    1
 #define M3_NSQ_MDC_CANDIDATE         1
-#define M3_NSQ_MDC_CANDIDATE_IN_M4   0
-#define RECT_THRESH                  0
-#define SHUT_CPMPOUND                0
-#define sc_rtime_presets             0
-#define OBMC_FLAG            1 // OBMC motion mode flag
-#define OBMC_CONVOLVE        1 // to track convolve kernels changes
 
+#define sc_rtime_presets             1
+#define OBMC_FLAG                    1 // OBMC motion mode flag
+#define OBMC_CONVOLVE                1 // to track convolve kernels changes
+#define ENABLE_FI_M3                 1
 #define AUTO_MAX_PARTITION           1
 #if AUTO_MAX_PARTITION
 #define USE_ADAPT_PRED               1
 #endif
 #define STAGE_2_COUNT_PRUNING_TH_S   1
-#define STAGE_2_COUNT_PRUNING_TH_C   0
+#define STAGE_2_COUNT_PRUNING_TH_C   1
 
-#define INJECT_NEW_NEAR_NEAR_NEW   1   // Inject NEW_NEAR / NEAR_NEW inter prediction
-#define FILTER_INTRA_FLAG    1 // Filter intra prediction
+#define INJECT_NEW_NEAR_NEAR_NEW     1   // Inject NEW_NEAR / NEAR_NEW inter prediction
+#define FILTER_INTRA_FLAG            1 // Filter intra prediction
 
+#define M3_NSQ_MDC_CANDIDATE_IN_M4   0
+#define RECT_THRESH                  0
+#define SHUT_CPMPOUND                0
 
 #define II_COMP_FLAG                 1 // InterIntra compound
 #define PAETH_HBD                    1 // Enbale Intra PAETH for 10bit
