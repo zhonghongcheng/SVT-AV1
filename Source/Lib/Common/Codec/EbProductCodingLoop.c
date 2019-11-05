@@ -1655,13 +1655,25 @@ void set_md_stage_counts(
     context_ptr->md_stage_2_count[CAND_CLASS_6] = (picture_control_set_ptr->temporal_layer_index == 0) ? 5 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 3 : 2;
 #endif
 #if PAL_CLASS
+#if FIX_MPMD_SB
+    if (context_ptr->palette_mode == 1)
+#else
     if (picture_control_set_ptr->parent_pcs_ptr->palette_mode == 1)
+#endif
         context_ptr->md_stage_2_count[CAND_CLASS_7] =
         (picture_control_set_ptr->temporal_layer_index == 0) ? 7 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 4;
+#if FIX_MPMD_SB
+    else if (context_ptr->palette_mode == 2 || context_ptr->palette_mode == 3)
+#else
     else if (picture_control_set_ptr->parent_pcs_ptr->palette_mode == 2 || picture_control_set_ptr->parent_pcs_ptr->palette_mode == 3)
+#endif
         context_ptr->md_stage_2_count[CAND_CLASS_7] =
         (picture_control_set_ptr->temporal_layer_index == 0) ? 7 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 2 : 2;
+#if FIX_MPMD_SB
+    else if (context_ptr->palette_mode == 4 || context_ptr->palette_mode == 5)
+#else
     else if (picture_control_set_ptr->parent_pcs_ptr->palette_mode == 4 || picture_control_set_ptr->parent_pcs_ptr->palette_mode == 5)
+#endif
         context_ptr->md_stage_2_count[CAND_CLASS_7] =
         (picture_control_set_ptr->temporal_layer_index == 0) ? 4 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 2 : 1;
     else
@@ -3372,7 +3384,11 @@ void predictive_me_search(
                     }
 #if EIGHT_PEL_PREDICTIVE_ME
                     // Step 5: perform eigh pel search around the best quarter pel position
+#if FIX_MPMD_SB // allow_high_precision_mv
+                    if (context_ptr->allow_high_precision_mv) { 
+#else
                     if (picture_control_set_ptr->parent_pcs_ptr->frm_hdr.allow_high_precision_mv) {
+#endif
                         uint8_t search_pattern = 0;
                         predictive_me_sub_pel_search(
                             sequence_control_set_ptr,

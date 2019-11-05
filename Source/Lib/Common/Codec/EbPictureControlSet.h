@@ -13905,8 +13905,10 @@ extern "C" {
         struct MdRateEstimationContext *md_rate_estimation_array;
         int8_t ref_frame_side[REF_FRAMES];
         TPL_MV_REF  *tpl_mvs;
+#if !FIX_MPMD_SB  // filter intra
 #if FILTER_INTRA_FLAG
         uint8_t pic_filter_intra_mode;
+#endif
 #endif
 #if PAL_SUP
         TOKENEXTRA *tile_tok[64][64];
@@ -14270,8 +14272,10 @@ extern "C" {
         uint8_t                               tx_search_reduced_set;
         uint8_t                               interpolation_search_level;
         uint8_t                               nsq_search_level;
+#if !FIX_MPMD_SB //palette
 #if PAL_SUP
         uint8_t                               palette_mode;
+#endif
 #endif
         uint8_t                               nsq_max_shapes_md; // max number of shapes to be tested in MD
         uint8_t                              sc_content_detected;
@@ -14312,9 +14316,11 @@ extern "C" {
 #if II_COMP_FLAG
         uint8_t                              enable_inter_intra;
 #endif
+
 #if OBMC_FLAG
         uint8_t                              pic_obmc_mode;
 #endif
+
 #if TWO_PASS
         stat_struct_t*                       stat_struct_first_pass_ptr; // pointer to stat_struct in the first pass
         struct stat_struct_t                 stat_struct; // stat_struct used in the second pass

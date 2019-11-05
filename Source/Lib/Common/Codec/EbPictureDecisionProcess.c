@@ -1079,7 +1079,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
         frm_hdr->allow_intrabc = 0;
     }
-
+#if !FIX_MPMD_SB
 #if PAL_SUP
     //Palette Modes:  0:OFF  1:Slow ... 6:Fastest
     if (frm_hdr->allow_screen_content_tools)
@@ -1093,6 +1093,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 
 
     assert(picture_control_set_ptr->palette_mode<7);
+#endif
 #endif
     if (!picture_control_set_ptr->sequence_control_set_ptr->static_config.disable_dlf_flag && frm_hdr->allow_intrabc == 0) {
     if (sc_content_detected)

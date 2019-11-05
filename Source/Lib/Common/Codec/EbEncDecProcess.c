@@ -3187,7 +3187,14 @@ EbErrorType mpmd_update_pic_settings_sb(
     // inter intra pred                      Settings
     // 0                                     OFF
     // 1                                     ON
+#if FIX_MPMD_SB // inter intra
+    EbBool enable_inter_intra =  // check  the derivation of sequence_control_set_ptr->seq_header.enable_interintra_compound
+        (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_10BIT && sequence_control_set_ptr->static_config.enable_hbd_mode_decision) ? 0 :
+        (enc_mode == ENC_M0) ? 1 : 0;
+    context_ptr->enable_inter_intra = picture_control_set_ptr->slice_type != I_SLICE ? enable_inter_intra : 0;
+#else
     context_ptr->enable_inter_intra = picture_control_set_ptr->slice_type != I_SLICE ? sequence_control_set_ptr->seq_header.enable_interintra_compound : 0;
+#endif
 #endif
     
     // Set compound mode      Settings
@@ -3195,7 +3202,12 @@ EbErrorType mpmd_update_pic_settings_sb(
     // 1                 ON: compond mode search: AVG/DIST/DIFF
     // 2                 ON: AVG/DIST/DIFF/WEDGE
     
+#if FIX_MPMD_SB
+    EbBool compound_mode = (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_10BIT && sequence_control_set_ptr->static_config.enable_hbd_mode_decision) ? 0 : enc_mode <= ENC_M4;
+    if (compound_mode && sequence_control_set_ptr->compound_mode)
+#else
     if (sequence_control_set_ptr->compound_mode)
+#endif
 #if M0_tune
         if (picture_control_set_ptr->sc_content_detected)
             context_ptr->compound_mode = (enc_mode <= ENC_M0) ? 2 : 0;
@@ -3217,6 +3229,44 @@ EbErrorType mpmd_update_pic_settings_sb(
     else
         context_ptr->compound_types_to_try = MD_COMP_AVG;
 
+
+#if FIX_MPMD_SB
+
+    context_ptr->allow_high_precision_mv = (picture_control_set_ptr->frm_hdr.allow_high_precision_mv) ?
+        enc_mode == ENC_M0 && (sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER) ? 1 : 0 :
+        0;
+
+    EbBool enable_wm;
+    if (picture_control_set_ptr->sc_content_detected)
+        enable_wm = EB_FALSE;
+    else
+        enable_wm = (MR_MODE || (enc_mode == ENC_M0 && picture_control_set_ptr->is_used_as_reference_flag) || (enc_mode <= ENC_M5 && picture_control_set_ptr->temporal_layer_index == 0)) ? EB_TRUE : EB_FALSE;
+    context_ptr->allow_warped_motion = (frm_hdr->allow_warped_motion) ?
+        enable_wm ? 1 : 0 :
+        0;
+
+#if FILTER_INTRA_FLAG
+    //Filter Intra Mode : 0: OFF  1: ON
+     if (enc_mode <= ENC_M2)  // check  the derivation of (sequence_control_set_ptr->seq_header.enable_filter_intra)
+        context_ptr->pic_filter_intra_mode = picture_control_set_ptr->sc_content_detected == 0 && picture_control_set_ptr->temporal_layer_index == 0 ? 1 : 0;
+    else
+        context_ptr->pic_filter_intra_mode = 0;
+#endif
+#if PAL_SUP
+    //Palette Modes:  0:OFF  1:Slow ... 6:Fastest
+    if (frm_hdr->allow_screen_content_tools)
+        context_ptr->palette_mode =
+        (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT ||
+        (sequence_control_set_ptr->static_config.encoder_bit_depth > EB_8BIT && sequence_control_set_ptr->static_config.enable_hbd_mode_decision == 0)) &&
+        enc_mode == ENC_M0 ? 6 : 0;
+    else
+        context_ptr->palette_mode = 0;
+
+
+
+    assert(context_ptr->palette_mode < 7);
+#endif
+#endif
     return return_error;
 }
 #endif
@@ -4058,7 +4108,9 @@ void* enc_dec_kernel(void *input_ptr)
                             // Init local cu and ep_pipe
                             reset_local_cu_cost(context_ptr->md_context);
                             reset_ep_pipe_sb(context_ptr->md_context);
-
+#if FIX_MPMD_SB
+                            context_ptr->md_context->is_last_md_pass = 0;
+#endif
                             // mode decision for sb
                             mode_decision_sb(
                                 0,//is_last_adp_stage
@@ -4148,6 +4200,9 @@ void* enc_dec_kernel(void *input_ptr)
                         }
 #endif
                     }
+#endif
+#if FIX_MPMD_SB
+                    context_ptr->md_context->is_last_md_pass = 1;
 #endif
 #if SKIP_2ND_PASS_BASED_ON_1ST_PASS
                    if (!skip_next_pass)

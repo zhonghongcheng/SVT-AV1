@@ -356,8 +356,10 @@ extern "C" {
 #if II_COMP_FLAG
         uint8_t                              enable_inter_intra;
 #endif
+#if !FIX_MPMD_SB // obmc
 #if OBMC_FLAG
         uint8_t                              pic_obmc_mode;
+#endif
 #endif
     MD_COMP_TYPE                          compound_types_to_try;
     uint8_t                               compound_mode;
@@ -384,7 +386,13 @@ extern "C" {
     uint8_t cond8;
 #endif
 #endif
-
+#if FIX_MPMD_SB
+    uint8_t allow_warped_motion;
+    uint8_t allow_high_precision_mv;
+    uint8_t pic_filter_intra_mode;
+    uint8_t palette_mode;
+    uint8_t is_last_md_pass;
+#endif
     } ModeDecisionContext;
 
     typedef void(*EbAv1LambdaAssignFunc)(

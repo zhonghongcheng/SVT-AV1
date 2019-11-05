@@ -4455,7 +4455,11 @@ void  inject_inter_candidates(
         }
 
     // Warped Motion
+#if FIX_MPMD_SB // warped
+    if (context_ptr->allow_warped_motion &&
+#else
     if (frm_hdr->allow_warped_motion &&
+#endif
         has_overlappable_candidates(context_ptr->cu_ptr) &&
         context_ptr->blk_geom->bwidth >= 8 &&
         context_ptr->blk_geom->bheight >= 8 &&
@@ -5667,7 +5671,11 @@ EbErrorType generate_md_stage_0_cand(
                 &canTotalCnt);
     }
 #if FILTER_INTRA_FLAG
+#if FIX_MPMD_SB
+       if (context_ptr->pic_filter_intra_mode > 0 && av1_filter_intra_allowed_bsize(sequence_control_set_ptr->seq_header.enable_filter_intra, context_ptr->blk_geom->bsize))
+#else
        if (picture_control_set_ptr->pic_filter_intra_mode > 0 && av1_filter_intra_allowed_bsize(sequence_control_set_ptr->seq_header.enable_filter_intra, context_ptr->blk_geom->bsize))
+#endif
             inject_filter_intra_candidates(
                 picture_control_set_ptr,
                 context_ptr,
@@ -5689,7 +5697,11 @@ EbErrorType generate_md_stage_0_cand(
         assert(context_ptr->fast_candidate_array[i].palette_info.pmi.palette_size[0] == 0);
         assert(context_ptr->fast_candidate_array[i].palette_info.pmi.palette_size[1] == 0);
     }
+#if FIX_MPMD_SB
+    if (svt_av1_allow_palette(context_ptr->palette_mode, context_ptr->blk_geom->bsize)) {
+#else
     if (svt_av1_allow_palette(picture_control_set_ptr->parent_pcs_ptr->palette_mode, context_ptr->blk_geom->bsize)) {
+#endif
         inject_palette_candidates(
             picture_control_set_ptr,
             context_ptr,
