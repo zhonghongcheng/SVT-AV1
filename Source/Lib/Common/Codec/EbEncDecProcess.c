@@ -3674,6 +3674,7 @@ EbErrorType mpmd_settings(
     else
         context_ptr->sq_to_h_v_weight_to_skip_a_b = 100;
 #endif
+#if 0
     if (!is_last_md_pass) {
         context_ptr->chroma_level = CHROMA_MODE_0;
         context_ptr->decouple_intra_inter_fast_loop = 0;
@@ -3699,7 +3700,7 @@ EbErrorType mpmd_settings(
         context_ptr->inter_inter_wedge_variance_th = 100;
         context_ptr->md_exit_th = (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected) ? 10 : 18;
         context_ptr->dist_base_md_stage_0_count_th = 75;
-        // context_ptr->sq_to_h_v_weight_to_skip_a_b = 100;
+        context_ptr->sq_to_h_v_weight_to_skip_a_b = 100;
         context_ptr->perform_quantize_fp = enc_mode <= ENC_M3 ? EB_TRUE : EB_FALSE;
         context_ptr->stage_1_count = enc_mode >= ENC_M3 ? 1 : 0;
         context_ptr->cond1 = enc_mode == ENC_M0 ? 1 : 0;
@@ -3721,6 +3722,7 @@ EbErrorType mpmd_settings(
         context_ptr->compound_mode = 0;
         context_ptr->compound_types_to_try = MD_COMP_AVG;
     }
+#endif
     
     return return_error;
 }
