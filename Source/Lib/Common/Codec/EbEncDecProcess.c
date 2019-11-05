@@ -1685,8 +1685,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->md_stage_2_count_th_c = (uint64_t)~0;
     else if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         context_ptr->md_stage_2_count_th_c = 100;
-    else
+    else if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->md_stage_2_count_th_c = 25;
+    else // to be tested for m5-m8
+        context_ptr->md_stage_2_count_th_c = (uint64_t)~0;
+
 #endif
 
 #if LESS_RECTANGULAR_CHECK_LEVEL
