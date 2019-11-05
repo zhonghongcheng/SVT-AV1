@@ -500,7 +500,11 @@ void reset_mode_decision(
     else
 #if WARP_UPDATE
         enable_wm = (MR_MODE ||
+#if TEST_OLD_M0M1_SET
+        (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M1 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ||
+#else
         (picture_control_set_ptr->parent_pcs_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ||
+#endif
         (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M5 && picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0)) ? EB_TRUE : EB_FALSE;
 #else
         enable_wm = (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M5) || MR_MODE ? EB_TRUE : EB_FALSE;
@@ -520,7 +524,11 @@ void reset_mode_decision(
     // 3                                            OBMC @(MVP, PME ) + Opt NICs
     // 4                                            OBMC @(MVP, PME ) + Opt2 NICs
     if (sequence_control_set_ptr->static_config.enable_obmc) {
+#if TEST_NEW_M0M1_SET0
+        if (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M1)
+#else
         if (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M0)
+#endif
             picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode =
             picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0 && picture_control_set_ptr->slice_type != I_SLICE ? 2 : 0;
         else

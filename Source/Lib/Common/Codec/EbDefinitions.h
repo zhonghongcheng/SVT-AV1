@@ -37,6 +37,17 @@ extern "C" {
    rate estimation is changed for I frame + enabled sc for P (rate estimation
    is a result changed for P frames)
 */
+// Testing M0-M1 difference
+#define TEST_OLD_M0M1_SET            0
+#define TEST_NEW_M0M1_SET0           0
+#define TEST_NEW_M0M1_SET1           0
+#define TEST_PART_M0M1_SET           0
+// Testing M1-M2 difference
+
+
+
+
+
 #define PAL_SUP                      1
 #define PAL_CLASS                    1
 #define M0_tune                      1

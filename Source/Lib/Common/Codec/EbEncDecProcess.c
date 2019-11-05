@@ -1300,7 +1300,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->global_mv_injection = 0;
 #if FIX_NEAREST_NEW
+#if TEST_OLD_M0M1_SET
+    if (picture_control_set_ptr->enc_mode <= ENC_M1 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
+#else
     if (picture_control_set_ptr->enc_mode <= ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
+#endif
 #else
     if (picture_control_set_ptr->enc_mode == ENC_M0)
 #endif
@@ -1411,7 +1415,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #endif
 #if M0_tune
+#if TEST_OLD_M0M1_SET
+            context_ptr->predictive_me_level = (picture_control_set_ptr->enc_mode <= ENC_M1) ? 5 : 4;
+#else
             context_ptr->predictive_me_level = (picture_control_set_ptr->enc_mode <= ENC_M0)? 5: 4;
+#endif
 #else
             context_ptr->predictive_me_level = 4;
 #endif
@@ -1624,7 +1632,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         else
 #if FIX_ESTIMATE_INTRA
 #if M0_tune
+#if TEST_OLD_M0M1_SET
+            context_ptr->edge_based_skip_angle_intra = (picture_control_set_ptr->enc_mode <= ENC_M1) ? 0 : 1;
+#else
             context_ptr->edge_based_skip_angle_intra = (picture_control_set_ptr->enc_mode == ENC_M0) ? 0 : 1;
+#endif
 #else
 #if rtime_presets
             context_ptr->edge_based_skip_angle_intra = ((picture_control_set_ptr->enc_mode > ENC_M3) || (picture_control_set_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0)) ? 0 : 1;
@@ -1637,7 +1649,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
     else
         context_ptr->edge_based_skip_angle_intra = 0;
+#if TEST_OLD_M0M1_SET
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode <= ENC_M1)
+#else
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode == ENC_M0)
+#endif
         context_ptr->prune_ref_frame_for_rec_partitions = 0;
     else
         context_ptr->prune_ref_frame_for_rec_partitions = 1;
@@ -1668,7 +1684,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // Remove candidate if deviation to the best higher than TH_S
     if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected) // <-- Hsan: M0 has already settings (to remove this check)
         context_ptr->md_stage_2_count_th_s = (uint64_t)~0;
+#if TEST_NEW_M0M1_SET1
+    else if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#else
     else if (picture_control_set_ptr->enc_mode <= ENC_M0)
+#endif
         if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
             context_ptr->md_stage_2_count_th_s = 25;
         else

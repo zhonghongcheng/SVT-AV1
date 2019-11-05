@@ -900,7 +900,11 @@ EbErrorType signal_derivation_multi_processes_oq(
     // 7                                     All
     if (MR_MODE || sc_content_detected || sequence_control_set_ptr->static_config.enable_hbd_mode_decision)
         picture_control_set_ptr->mdc_depth_level = MAX_MDC_LEVEL;
+#if TEST_PART_M0M1_SET
+    else if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#else
     else if (picture_control_set_ptr->enc_mode == ENC_M0)
+#endif
         picture_control_set_ptr->mdc_depth_level = (sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER) ? MAX_MDC_LEVEL : 6;
 #if rtime_presets
     else if (picture_control_set_ptr->enc_mode <= ENC_M2)
@@ -978,7 +982,11 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL7;
 #endif
 #if rtime_presets
+#if TEST_PART_M0M1_SET
+        else if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#else
         else if (picture_control_set_ptr->enc_mode <= ENC_M0)
+#endif
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL6;
         else if (picture_control_set_ptr->enc_mode <= ENC_M1)
             picture_control_set_ptr->nsq_search_level = (picture_control_set_ptr->is_used_as_reference_flag) ? NSQ_SEARCH_LEVEL6 : NSQ_SEARCH_LEVEL3;
@@ -1201,7 +1209,11 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->cdef_filter_mode = 4;
         else
 #if M0_tune
+#if TEST_NEW_M0M1_SET1
+            picture_control_set_ptr->cdef_filter_mode = (picture_control_set_ptr->enc_mode <= ENC_M1) ? 5 : 2;
+#else
             picture_control_set_ptr->cdef_filter_mode = (picture_control_set_ptr->enc_mode <= ENC_M0)?5: 2;
+#endif
 #else
             picture_control_set_ptr->cdef_filter_mode = 2;
 #endif
