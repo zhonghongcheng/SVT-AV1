@@ -1777,10 +1777,13 @@ void mpmd_init_considered_block(
     uint8_t             best_depth,
 #endif
     uint8_t             mpmd_1d_level) {
+#if MPMD_REFINEMENT_V2
+    LargestCodingUnit  *sb_ptr = picture_control_set_ptr->sb_ptr_array[sb_index];
+#endif
     MdcLcuData *cu_ptr = &picture_control_set_ptr->mpmd_sb_array[sb_index];
     cu_ptr->leaf_count = 0;
     uint32_t  blk_index = 0;
-    uint32_t  parent_depth_idx_mds,sparent_depth_idx_mds,child_block_idx_1,child_block_idx_2,child_block_idx_3,child_block_idx_4;
+    uint32_t  parent_depth_idx_mds,sparent_depth_idx_mds,ssparent_depth_idx_mds, child_block_idx_1,child_block_idx_2,child_block_idx_3,child_block_idx_4;
     uint8_t  is_complete_sb = sequence_control_set_ptr->sb_geom[sb_index].is_complete_sb;
 
     uint32_t tot_d1_blocks,block_1d_idx;
@@ -1834,19 +1837,86 @@ void mpmd_init_considered_block(
             split_flag = context_ptr->md_cu_arr_nsq[blk_index].split_flag;
         if (sequence_control_set_ptr->sb_geom[sb_index].block_is_inside_md_scan[blk_index] && is_blk_allowed){
             if (blk_geom->shape == PART_N) {
-#if MPMD_ADAPTIVE_REFINEMENT
-                // Adjust depth refinement mode
-                uint8_t refined_depth = depth_refinement_mode;
-                if (depth_refinement_mode != AllD) {
-                   /* if (best_depth < blk_geom->depth)
-                        depth_refinement_mode = Predm1;*/
-                   /* if (best_depth > blk_geom->depth)
-                        depth_refinement_mode = Predp1;*/
-                     if (best_depth == blk_geom->depth && blk_index == 0)
-                        refined_depth = Pred;
-                }
-                context_ptr->mdc_number_of_64x64 += sb_index == 0 ? 1 : 0;
-                switch (refined_depth) {
+#if MPMD_REFINEMENT_V2
+                uint8_t depth_offset = sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 0 : 1;
+                int8_t depth = blk_geom->depth + depth_offset;
+                int8_t start_depth = sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 0 : 1;
+                int8_t end_depth = 5;
+                int8_t depthp1 = depth + 1 <= end_depth ? depth + 1 : depth;
+                int8_t depthp2 = depth + 2 <= end_depth ? depth + 2 : depth + 1 <= end_depth ? depth + 1 : depth;
+                int8_t depthp3 = depth + 3 <= end_depth ? depth + 3 : depth + 2 <= end_depth ? depth + 2 : depth + 1 <= end_depth ? depth + 1 : depth;
+                uint8_t depthm1 = depth - 1 >= start_depth ? depth - 1 : depth;
+                uint8_t depthm2 = depth - 2 >= start_depth ? depth - 2 : depth - 1 >= start_depth ? depth - 1 : depth;
+                uint8_t depthm3 = depth - 3 >= start_depth ? depth - 3 : depth - 2 >= start_depth ? depth - 2 : depth - 1 >= start_depth ? depth - 1 : depth;
+                uint8_t adjusted_depth_level = 13;
+                uint64_t max_distance = 0xFFFFFFFFFFFFFFFF;
+                uint64_t th01 = max_distance;
+                uint64_t th02 = max_distance;
+                uint64_t th03 = max_distance;
+                uint64_t dist_001 = sb_ptr->md_depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->md_depth_cost[depth] - (int64_t)sb_ptr->md_depth_cost[depthp1]) * 100) / sb_ptr->md_depth_cost[depth] : max_distance;
+                uint64_t dist_100 = sb_ptr->md_depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->md_depth_cost[depth] - (int64_t)sb_ptr->md_depth_cost[depthm1]) * 100) / sb_ptr->md_depth_cost[depth] : max_distance;
+                uint64_t dist_002 = sb_ptr->md_depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->md_depth_cost[depth] - (int64_t)sb_ptr->md_depth_cost[depthp2]) * 100) / sb_ptr->md_depth_cost[depth] : max_distance;
+                uint64_t dist_200 = sb_ptr->md_depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->md_depth_cost[depth] - (int64_t)sb_ptr->md_depth_cost[depthm2]) * 100) / sb_ptr->md_depth_cost[depth] : max_distance;
+                uint64_t dist_003 = sb_ptr->md_depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->md_depth_cost[depth] - (int64_t)sb_ptr->md_depth_cost[depthp3]) * 100) / sb_ptr->md_depth_cost[depth] : max_distance;
+                uint64_t dist_300 = sb_ptr->md_depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->md_depth_cost[depth] - (int64_t)sb_ptr->md_depth_cost[depthm3]) * 100) / sb_ptr->md_depth_cost[depth] : max_distance;
+
+                int8_t s_depth = -3;
+                int8_t e_depth = 3;
+                if (dist_300 < th03)
+                    s_depth = -3;
+                else if (dist_200 < th02)
+                    s_depth = -2;
+                else if (dist_100 < th01)
+                    s_depth = -1;
+                else
+                    s_depth = 0;
+
+                if (dist_003 < th03)
+                    e_depth = 3;
+                else if (dist_002 < th02)
+                    e_depth = 2;
+                else if (dist_001 < th01)
+                    e_depth = 1;
+                else
+                    e_depth = 0;
+
+                if (s_depth == 0 && e_depth == 0)
+                    adjusted_depth_level = 0; // Pred only
+                else if (s_depth == -1 && e_depth == 0)
+                    adjusted_depth_level = 8; // Pred -1
+                else if (s_depth == -2 && e_depth == 0)
+                    adjusted_depth_level = 9; // Pred -2
+                else if (s_depth == -3 && e_depth == 0)
+                    adjusted_depth_level = 14; // Pred -3
+                else if (s_depth == -3 && e_depth == 1)
+                    adjusted_depth_level = 15; // Pred -3 + 1
+                else if (s_depth == -2 && e_depth == 1)
+                    adjusted_depth_level = 10; // Pred -2 + 1
+                else if (s_depth == -1 && e_depth == 1)
+                    adjusted_depth_level = 4; // Pred -1 + 1
+                else if (s_depth == 0 && e_depth == 1)
+                    adjusted_depth_level = 1; // Pred + 1
+                else if (s_depth == -3 && e_depth == 2)
+                    adjusted_depth_level = 12; // Pred -3 + 1
+                else if (s_depth == -2 && e_depth == 2)
+                    adjusted_depth_level = 11; // Pred -3 + 1
+                else if (s_depth == -1 && e_depth == 2)
+                    adjusted_depth_level = 5; // Pred -3 + 1
+                else if (s_depth == 0 && e_depth == 2)
+                    adjusted_depth_level = 2; // Pred + 2
+                else if (s_depth == -3 && e_depth == 3)
+                    adjusted_depth_level = 13; // Pred -3 + 3
+                else if (s_depth == -2 && e_depth == 3)
+                    adjusted_depth_level = 7; // Pred -2 + 3
+                else if (s_depth == -1 && e_depth == 3)
+                    adjusted_depth_level = 6; // Pred -1 + 3
+                else if (s_depth == 0 && e_depth == 3)
+                    adjusted_depth_level = 3; // Pred + 3
+                else
+                    printf("Error: unvalid s_depth && e_depth");
+                
+     
+                switch (adjusted_depth_level) {
 #else
                 switch (depth_refinement_mode) {
 #endif
@@ -2165,6 +2235,323 @@ void mpmd_init_considered_block(
                         }
                     }
                     break;
+#if MPMD_REFINEMENT_V2
+                    case Predm2:
+                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
+                        }
+                        if (blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && blk_geom->sq_size > 4) {
+                            //Set parent to be considered
+                            parent_depth_idx_mds = (blk_geom->sqi_mds - (blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
+                            const BlockGeom * parent_blk_geom = get_blk_geom_mds(parent_depth_idx_mds);
+                            uint32_t parent_tot_d1_blocks =
+                                parent_blk_geom->sq_size == 128 ? 17 :
+                                parent_blk_geom->sq_size > 8 ? 25 :
+                                parent_blk_geom->sq_size == 8 ? 5 : 1;
+                            for (block_1d_idx = 0; block_1d_idx < parent_tot_d1_blocks; block_1d_idx++) {
+                                cu_ptr->leaf_data_array[parent_depth_idx_mds + block_1d_idx].consider_block = 1;
+                            }
+                            if (parent_blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && parent_blk_geom->sq_size > 4) {
+                                //Set parent to be considered
+                                sparent_depth_idx_mds = (parent_blk_geom->sqi_mds - (parent_blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][parent_blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][parent_blk_geom->depth];
+                                uint32_t sparent_tot_d1_blocks =
+                                    parent_blk_geom->sq_size == 128 ? 17 :
+                                    parent_blk_geom->sq_size > 8 ? 25 :
+                                    parent_blk_geom->sq_size == 8 ? 5 : 1;
+                                for (block_1d_idx = 0; block_1d_idx < sparent_tot_d1_blocks; block_1d_idx++)
+                                    cu_ptr->leaf_data_array[sparent_depth_idx_mds + block_1d_idx].consider_block = 1;
+                            }
+                        }
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
+                        }
+                    }
+                    break;
+                case Predm2p1:
+                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
+                        }
+                        // P-1
+                        if (blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && blk_geom->sq_size > 4) {
+                            //Set parent to be considered
+                            parent_depth_idx_mds = (blk_geom->sqi_mds - (blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
+                            const BlockGeom * parent_blk_geom = get_blk_geom_mds(parent_depth_idx_mds);
+                            uint32_t parent_tot_d1_blocks =
+                                parent_blk_geom->sq_size == 128 ? 17 :
+                                parent_blk_geom->sq_size > 8 ? 25 :
+                                parent_blk_geom->sq_size == 8 ? 5 : 1;
+                            for (block_1d_idx = 0; block_1d_idx < parent_tot_d1_blocks; block_1d_idx++) {
+                                cu_ptr->leaf_data_array[parent_depth_idx_mds + block_1d_idx].consider_block = 1;
+                            }
+                            // P-2
+                            if (parent_blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && parent_blk_geom->sq_size > 4) {
+                                //Set parent to be considered
+                                sparent_depth_idx_mds = (parent_blk_geom->sqi_mds - (parent_blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][parent_blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][parent_blk_geom->depth];
+                                uint32_t sparent_tot_d1_blocks =
+                                    parent_blk_geom->sq_size == 128 ? 17 :
+                                    parent_blk_geom->sq_size > 8 ? 25 :
+                                    parent_blk_geom->sq_size == 8 ? 5 : 1;
+                                for (block_1d_idx = 0; block_1d_idx < sparent_tot_d1_blocks; block_1d_idx++)
+                                    cu_ptr->leaf_data_array[sparent_depth_idx_mds + block_1d_idx].consider_block = 1;
+                            }
+                        }
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
+                        }
+                        mpmd_set_child_to_be_considered(
+                            cu_ptr,
+                            blk_index,
+                            sequence_control_set_ptr->seq_header.sb_size,
+                            1);
+                    }
+                    break;
+                case Predm2p2:
+                     if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
+                        }
+                        // P-1
+                        if (blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && blk_geom->sq_size > 4) {
+                            //Set parent to be considered
+                            parent_depth_idx_mds = (blk_geom->sqi_mds - (blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
+                            const BlockGeom * parent_blk_geom = get_blk_geom_mds(parent_depth_idx_mds);
+                            uint32_t parent_tot_d1_blocks =
+                                parent_blk_geom->sq_size == 128 ? 17 :
+                                parent_blk_geom->sq_size > 8 ? 25 :
+                                parent_blk_geom->sq_size == 8 ? 5 : 1;
+                            for (block_1d_idx = 0; block_1d_idx < parent_tot_d1_blocks; block_1d_idx++) {
+                                cu_ptr->leaf_data_array[parent_depth_idx_mds + block_1d_idx].consider_block = 1;
+                            }
+                            // P-2
+                            if (parent_blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && parent_blk_geom->sq_size > 4) {
+                                //Set parent to be considered
+                                sparent_depth_idx_mds = (parent_blk_geom->sqi_mds - (parent_blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][parent_blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][parent_blk_geom->depth];
+                                uint32_t sparent_tot_d1_blocks =
+                                    parent_blk_geom->sq_size == 128 ? 17 :
+                                    parent_blk_geom->sq_size > 8 ? 25 :
+                                    parent_blk_geom->sq_size == 8 ? 5 : 1;
+                                for (block_1d_idx = 0; block_1d_idx < sparent_tot_d1_blocks; block_1d_idx++)
+                                    cu_ptr->leaf_data_array[sparent_depth_idx_mds + block_1d_idx].consider_block = 1;
+                            }
+                        }
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
+                        }
+                        mpmd_set_child_to_be_considered(
+                            cu_ptr,
+                            blk_index,
+                            sequence_control_set_ptr->seq_header.sb_size,
+                            2);
+                    }
+                    break;
+                case Predm3p2:
+                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
+                        }
+                        if (blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && blk_geom->sq_size > 4) {
+                            //Set parent to be considered
+                            parent_depth_idx_mds = (blk_geom->sqi_mds - (blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
+                            const BlockGeom * parent_blk_geom = get_blk_geom_mds(parent_depth_idx_mds);
+                            uint32_t parent_tot_d1_blocks =
+                                parent_blk_geom->sq_size == 128 ? 17 :
+                                parent_blk_geom->sq_size > 8 ? 25 :
+                                parent_blk_geom->sq_size == 8 ? 5 : 1;
+                            for (block_1d_idx = 0; block_1d_idx < parent_tot_d1_blocks; block_1d_idx++) {
+                                cu_ptr->leaf_data_array[parent_depth_idx_mds + block_1d_idx].consider_block = 1;
+                            }
+                            if (parent_blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && parent_blk_geom->sq_size > 4) {
+                                //Set parent to be considered
+                                sparent_depth_idx_mds = (parent_blk_geom->sqi_mds - (parent_blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][parent_blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][parent_blk_geom->depth];
+                                const BlockGeom * sparent_blk_geom = get_blk_geom_mds(sparent_depth_idx_mds);
+                                uint32_t sparent_tot_d1_blocks =
+                                    parent_blk_geom->sq_size == 128 ? 17 :
+                                    parent_blk_geom->sq_size > 8 ? 25 :
+                                    parent_blk_geom->sq_size == 8 ? 5 : 1;
+                                for (block_1d_idx = 0; block_1d_idx < sparent_tot_d1_blocks; block_1d_idx++)
+                                    cu_ptr->leaf_data_array[sparent_depth_idx_mds + block_1d_idx].consider_block = 1;
+
+                                if (sparent_blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && sparent_blk_geom->sq_size > 4) {
+                                //Set parent to be considered
+                                ssparent_depth_idx_mds = (sparent_blk_geom->sqi_mds - (sparent_blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][sparent_blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][sparent_blk_geom->depth];
+                                uint32_t ssparent_tot_d1_blocks =
+                                    sparent_blk_geom->sq_size == 128 ? 17 :
+                                    sparent_blk_geom->sq_size > 8 ? 25 :
+                                    sparent_blk_geom->sq_size == 8 ? 5 : 1;
+                                for (block_1d_idx = 0; block_1d_idx < sparent_tot_d1_blocks; block_1d_idx++)
+                                    cu_ptr->leaf_data_array[ssparent_depth_idx_mds + block_1d_idx].consider_block = 1;
+                                }
+                            }
+                        }
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
+                        }
+                        mpmd_set_child_to_be_considered(
+                            cu_ptr,
+                            blk_index,
+                            sequence_control_set_ptr->seq_header.sb_size,
+                            2);
+                    }
+                    break;
+                case Predm3p3:
+                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
+                        }
+                        if (blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && blk_geom->sq_size > 4) {
+                            //Set parent to be considered
+                            parent_depth_idx_mds = (blk_geom->sqi_mds - (blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
+                            const BlockGeom * parent_blk_geom = get_blk_geom_mds(parent_depth_idx_mds);
+                            uint32_t parent_tot_d1_blocks =
+                                parent_blk_geom->sq_size == 128 ? 17 :
+                                parent_blk_geom->sq_size > 8 ? 25 :
+                                parent_blk_geom->sq_size == 8 ? 5 : 1;
+                            for (block_1d_idx = 0; block_1d_idx < parent_tot_d1_blocks; block_1d_idx++) {
+                                cu_ptr->leaf_data_array[parent_depth_idx_mds + block_1d_idx].consider_block = 1;
+                            }
+                            if (parent_blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && parent_blk_geom->sq_size > 4) {
+                                //Set parent to be considered
+                                sparent_depth_idx_mds = (parent_blk_geom->sqi_mds - (parent_blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][parent_blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][parent_blk_geom->depth];
+                                const BlockGeom * sparent_blk_geom = get_blk_geom_mds(sparent_depth_idx_mds);
+                                uint32_t sparent_tot_d1_blocks =
+                                    parent_blk_geom->sq_size == 128 ? 17 :
+                                    parent_blk_geom->sq_size > 8 ? 25 :
+                                    parent_blk_geom->sq_size == 8 ? 5 : 1;
+                                for (block_1d_idx = 0; block_1d_idx < sparent_tot_d1_blocks; block_1d_idx++)
+                                    cu_ptr->leaf_data_array[sparent_depth_idx_mds + block_1d_idx].consider_block = 1;
+
+                                if (sparent_blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && sparent_blk_geom->sq_size > 4) {
+                                //Set parent to be considered
+                                ssparent_depth_idx_mds = (sparent_blk_geom->sqi_mds - (sparent_blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][sparent_blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][sparent_blk_geom->depth];
+                                uint32_t ssparent_tot_d1_blocks =
+                                    sparent_blk_geom->sq_size == 128 ? 17 :
+                                    sparent_blk_geom->sq_size > 8 ? 25 :
+                                    sparent_blk_geom->sq_size == 8 ? 5 : 1;
+                                for (block_1d_idx = 0; block_1d_idx < sparent_tot_d1_blocks; block_1d_idx++)
+                                    cu_ptr->leaf_data_array[ssparent_depth_idx_mds + block_1d_idx].consider_block = 1;
+                                }
+                            }
+                        }
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
+                        }
+                        mpmd_set_child_to_be_considered(
+                            cu_ptr,
+                            blk_index,
+                            sequence_control_set_ptr->seq_header.sb_size,
+                            3);
+                    }
+                    break;
+                 case Predm3p1:
+                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
+                        }
+                        if (blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && blk_geom->sq_size > 4) {
+                            //Set parent to be considered
+                            parent_depth_idx_mds = (blk_geom->sqi_mds - (blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
+                            const BlockGeom * parent_blk_geom = get_blk_geom_mds(parent_depth_idx_mds);
+                            uint32_t parent_tot_d1_blocks =
+                                parent_blk_geom->sq_size == 128 ? 17 :
+                                parent_blk_geom->sq_size > 8 ? 25 :
+                                parent_blk_geom->sq_size == 8 ? 5 : 1;
+                            for (block_1d_idx = 0; block_1d_idx < parent_tot_d1_blocks; block_1d_idx++) {
+                                cu_ptr->leaf_data_array[parent_depth_idx_mds + block_1d_idx].consider_block = 1;
+                            }
+                            if (parent_blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && parent_blk_geom->sq_size > 4) {
+                                //Set parent to be considered
+                                sparent_depth_idx_mds = (parent_blk_geom->sqi_mds - (parent_blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][parent_blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][parent_blk_geom->depth];
+                                const BlockGeom * sparent_blk_geom = get_blk_geom_mds(sparent_depth_idx_mds);
+                                uint32_t sparent_tot_d1_blocks =
+                                    parent_blk_geom->sq_size == 128 ? 17 :
+                                    parent_blk_geom->sq_size > 8 ? 25 :
+                                    parent_blk_geom->sq_size == 8 ? 5 : 1;
+                                for (block_1d_idx = 0; block_1d_idx < sparent_tot_d1_blocks; block_1d_idx++)
+                                    cu_ptr->leaf_data_array[sparent_depth_idx_mds + block_1d_idx].consider_block = 1;
+
+                                if (sparent_blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && sparent_blk_geom->sq_size > 4) {
+                                //Set parent to be considered
+                                ssparent_depth_idx_mds = (sparent_blk_geom->sqi_mds - (sparent_blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][sparent_blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][sparent_blk_geom->depth];
+                                uint32_t ssparent_tot_d1_blocks =
+                                    sparent_blk_geom->sq_size == 128 ? 17 :
+                                    sparent_blk_geom->sq_size > 8 ? 25 :
+                                    sparent_blk_geom->sq_size == 8 ? 5 : 1;
+                                for (block_1d_idx = 0; block_1d_idx < sparent_tot_d1_blocks; block_1d_idx++)
+                                    cu_ptr->leaf_data_array[ssparent_depth_idx_mds + block_1d_idx].consider_block = 1;
+                                }
+                            }
+                        }
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
+                        }
+                        mpmd_set_child_to_be_considered(
+                            cu_ptr,
+                            blk_index,
+                            sequence_control_set_ptr->seq_header.sb_size,
+                            1);
+                    }
+                    break;
+                case Predm3:
+                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
+                        }
+                        if (blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && blk_geom->sq_size > 4) {
+                            //Set parent to be considered
+                            parent_depth_idx_mds = (blk_geom->sqi_mds - (blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
+                            const BlockGeom * parent_blk_geom = get_blk_geom_mds(parent_depth_idx_mds);
+                            uint32_t parent_tot_d1_blocks =
+                                parent_blk_geom->sq_size == 128 ? 17 :
+                                parent_blk_geom->sq_size > 8 ? 25 :
+                                parent_blk_geom->sq_size == 8 ? 5 : 1;
+                            for (block_1d_idx = 0; block_1d_idx < parent_tot_d1_blocks; block_1d_idx++) {
+                                cu_ptr->leaf_data_array[parent_depth_idx_mds + block_1d_idx].consider_block = 1;
+                            }
+                            if (parent_blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && parent_blk_geom->sq_size > 4) {
+                                //Set parent to be considered
+                                sparent_depth_idx_mds = (parent_blk_geom->sqi_mds - (parent_blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][parent_blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][parent_blk_geom->depth];
+                                const BlockGeom * sparent_blk_geom = get_blk_geom_mds(sparent_depth_idx_mds);
+                                uint32_t sparent_tot_d1_blocks =
+                                    parent_blk_geom->sq_size == 128 ? 17 :
+                                    parent_blk_geom->sq_size > 8 ? 25 :
+                                    parent_blk_geom->sq_size == 8 ? 5 : 1;
+                                for (block_1d_idx = 0; block_1d_idx < sparent_tot_d1_blocks; block_1d_idx++)
+                                    cu_ptr->leaf_data_array[sparent_depth_idx_mds + block_1d_idx].consider_block = 1;
+
+                                if (sparent_blk_geom->sq_size < (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 128 : 64) && sparent_blk_geom->sq_size > 4) {
+                                //Set parent to be considered
+                                ssparent_depth_idx_mds = (sparent_blk_geom->sqi_mds - (sparent_blk_geom->quadi - 3) * ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][sparent_blk_geom->depth]) - parent_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][sparent_blk_geom->depth];
+                                uint32_t ssparent_tot_d1_blocks =
+                                    sparent_blk_geom->sq_size == 128 ? 17 :
+                                    sparent_blk_geom->sq_size > 8 ? 25 :
+                                    sparent_blk_geom->sq_size == 8 ? 5 : 1;
+                                for (block_1d_idx = 0; block_1d_idx < sparent_tot_d1_blocks; block_1d_idx++)
+                                    cu_ptr->leaf_data_array[ssparent_depth_idx_mds + block_1d_idx].consider_block = 1;
+                                }
+                            }
+                        }
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                            cu_ptr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
+                        }
+                    }
+                    break;
+#endif
                 case AllD:
                     // Set all block to be considered
                     for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
@@ -2782,7 +3169,7 @@ EbErrorType mpmd_update_pic_settings_sb(
 #if SPEED_OPT
     if (MR_MODE || picture_control_set_ptr->sc_content_detected)
 #else
-    if (MR_MODE || enc_mode == ENC_M0 || picture_control_set_ptr->sc_content_detected)
+    if (MR_MODE ||  enc_mode == ENC_M0 || picture_control_set_ptr->sc_content_detected)
 #endif
         context_ptr->coeff_based_skip_atb_sb = 0;
     else
@@ -3287,8 +3674,54 @@ EbErrorType mpmd_settings(
     else
         context_ptr->sq_to_h_v_weight_to_skip_a_b = 100;
 #endif
-
-
+    if (!is_last_md_pass) {
+        context_ptr->chroma_level = CHROMA_MODE_0;
+        context_ptr->decouple_intra_inter_fast_loop = 0;
+        context_ptr->decoupled_fast_loop_search_method = FULL_SAD_SEARCH;
+        context_ptr->full_loop_escape = 2;
+        context_ptr->global_mv_injection = 0;
+        context_ptr->new_nearest_near_comb_injection = 0;
+        context_ptr->nx4_4xn_parent_mv_injection = 0;
+        context_ptr->unipred3x3_injection = 0;
+        context_ptr->bipred3x3_injection = 0;
+        context_ptr->predictive_me_level = 0;
+        context_ptr->md_staging_mode = MD_STAGING_MODE_1;
+        context_ptr->combine_class12 = 1;
+        context_ptr->interpolation_filter_search_blk_size = 1;
+        context_ptr->pf_md_mode = PF_OFF;
+        context_ptr->spatial_sse_full_loop = EB_FALSE;
+        context_ptr->blk_skip_decision = EB_TRUE;
+        context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
+        context_ptr->redundant_blk = EB_TRUE;
+        context_ptr->redundant_blk = EB_FALSE;
+        context_ptr->edge_based_skip_angle_intra = 1;
+        context_ptr->prune_ref_frame_for_rec_partitions = 1;
+        context_ptr->inter_inter_wedge_variance_th = 100;
+        context_ptr->md_exit_th = (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected) ? 10 : 18;
+        context_ptr->dist_base_md_stage_0_count_th = 75;
+        // context_ptr->sq_to_h_v_weight_to_skip_a_b = 100;
+        context_ptr->perform_quantize_fp = enc_mode <= ENC_M3 ? EB_TRUE : EB_FALSE;
+        context_ptr->stage_1_count = enc_mode >= ENC_M3 ? 1 : 0;
+        context_ptr->cond1 = enc_mode == ENC_M0 ? 1 : 0;
+        context_ptr->cond2 = enc_mode >= ENC_M1 ? 1 : 0;
+        context_ptr->cond3 = (enc_mode >= ENC_M3 && enc_mode <= ENC_M4) ? 1 : 0;
+        context_ptr->cond4 = (enc_mode >= ENC_M5) ? 1 : 0;
+        context_ptr->cond5 = (enc_mode <= ENC_M6) ? 1 : 0;
+        context_ptr->nsq_search_level = NSQ_SEARCH_OFF;
+        context_ptr->nsq_max_shapes_md = 0;
+        context_ptr->interpolation_search_level = IT_SEARCH_OFF;
+        context_ptr->tx_search_level = TX_SEARCH_OFF;
+        context_ptr->tx_weight = FC_SKIP_TX_SR_TH010;
+        context_ptr->tx_search_reduced_set = 0;
+        context_ptr->intra_pred_mode = 4;
+        context_ptr->skip_sub_blks = 0;
+        context_ptr->atb_mode = 0;
+        context_ptr->coeff_based_skip_atb_sb = 1;
+        context_ptr->wedge_mode = 0;
+        context_ptr->compound_mode = 0;
+        context_ptr->compound_types_to_try = MD_COMP_AVG;
+    }
+    
     return return_error;
 }
 
@@ -3652,13 +4085,10 @@ void* enc_dec_kernel(void *input_ptr)
                                 picture_control_set_ptr,
                                 context_ptr->md_context,
                                 sb_index);
-                            skip_next_pass = (context_ptr->md_context->sb_cost < cost_th0) ? 1 : 0;
+                            skip_next_pass = 0;// (context_ptr->md_context->sb_cost < cost_th0) ? 1 : 0;
                             uint8_t mpmd_depth_level = 6; // 1 SQ PART only
                             uint8_t mpmd_1d_level = 0; // 1 NSQ PART only
-                            if(context_ptr->md_context->sb_cost < cost_th1)
-                                mpmd_depth_level = 1;
-                            else if (context_ptr->md_context->sb_cost < cost_th2)
-                                mpmd_depth_level = 4;
+
                             if (!skip_next_pass) {
 #endif
                                 copy_neighbour_arrays(

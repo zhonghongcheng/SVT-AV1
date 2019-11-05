@@ -203,6 +203,7 @@ enum {
 #define MPMD_ADD_SB_SETTINGS_TO_CTX                     1
 #define SKIP_2ND_PASS_BASED_ON_1ST_PASS                 1
 #define CTX1                                            1
+#define MPMD_REFINEMENT_V2                              0
 #endif
 #define DISABLE_RED_CU                                  0
 //  Delta QP support

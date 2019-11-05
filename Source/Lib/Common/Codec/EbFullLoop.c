@@ -3015,7 +3015,11 @@ EbBool merge_1D_inter_block(
     }
     return merge_blocks;
 }
+#if MPMD_REFINEMENT_V2
+uint64_t  d1_non_square_block_decision(
+#else
 void  d1_non_square_block_decision(
+#endif
     ModeDecisionContext               *context_ptr
 #if ADD_SUPPORT_TO_SKIP_PART_N
     , uint32_t                         d1_block_itr
@@ -3062,6 +3066,9 @@ void  d1_non_square_block_decision(
         context_ptr->md_cu_arr_nsq[context_ptr->blk_geom->sqi_mds].part = from_shape_to_part[context_ptr->blk_geom->shape];
         context_ptr->md_cu_arr_nsq[context_ptr->blk_geom->sqi_mds].best_d1_blk = first_blk_idx;
     }
+#if MPMD_REFINEMENT_V2
+    return tot_cost;
+#endif
 }
 
 /// compute the cost of curr depth, and the depth above

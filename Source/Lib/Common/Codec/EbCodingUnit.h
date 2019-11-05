@@ -588,6 +588,7 @@ extern "C" {
         uint8_t                       depth_ranking[NUMBER_OF_DEPTH];
         uint64_t                      depth_cost[NUMBER_OF_DEPTH];
 #endif
+        uint64_t                      md_depth_cost[NUMBER_OF_DEPTH];
         TileInfo tile_info;
     } LargestCodingUnit;
 
