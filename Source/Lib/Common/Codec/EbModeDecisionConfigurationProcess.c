@@ -1177,6 +1177,19 @@ void set_child_to_be_considered(
 }
 #if MDC_ADAPTIVE_LEVEL
 #define MDC_COST_WEIGHT 50000
+#if NEW_MDC_REFINEMENT_V2
+uint64_t  mdc_tab[9][2][3] = {
+    {{150,80,40},{150,80,40}},
+    {{150,40,0},{200,100,10}},
+    {{150,40,0},{200,100,10}},
+    {{150,40,0},{200,100,10}},
+    {{150,0,0},{200,100,10}},
+    {{150,0,0},{150,80,10}},
+    {{150,0,0},{150,80,0}},
+    {{150,0,0},{150,80,0}},
+    {{150,0,0},{150,80,0}}
+};
+#endif
 // Update MDC refinement
 uint8_t update_mdc_level(
     PictureControlSet  *picture_control_set_ptr,
@@ -1196,6 +1209,7 @@ uint8_t update_mdc_level(
     uint8_t depth_refinement_mode = mdc_depth_level;
 
 #if NEW_MDC_REFINEMENT
+    uint8_t encode_mode = picture_control_set_ptr->parent_pcs_ptr->enc_mode;
     int8_t start_depth = sb_size == BLOCK_128X128 ? 0 : 1;
     int8_t end_depth = 5;
     int8_t depthp1 = depth + 1 <= end_depth ? depth + 1 : depth;
@@ -1207,9 +1221,12 @@ uint8_t update_mdc_level(
     adjusted_depth_level = 13;
 #if NEW_MDC_REFINEMENT_V2
     uint64_t max_distance = 0xFFFFFFFFFFFFFFFF;
-    uint64_t th01 = max_distance;
-    uint64_t th02 = max_distance;
-    uint64_t th03 = max_distance;
+    uint64_t mth01 = mdc_tab[encode_mode][0][0];
+    uint64_t mth02 = mdc_tab[encode_mode][0][1];
+    uint64_t mth03 = mdc_tab[encode_mode][0][2];
+    uint64_t pth01 = mdc_tab[encode_mode][1][0];
+    uint64_t pth02 = mdc_tab[encode_mode][1][1];
+    uint64_t pth03 = mdc_tab[encode_mode][1][2];
     uint64_t dist_001 = sb_ptr->depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthp1]) * 100) / sb_ptr->depth_cost[depth] : max_distance;
     uint64_t dist_100 = sb_ptr->depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthm1]) * 100) / sb_ptr->depth_cost[depth] : max_distance;
     uint64_t dist_002 = sb_ptr->depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthp2]) * 100) / sb_ptr->depth_cost[depth] : max_distance;
@@ -1217,22 +1234,25 @@ uint8_t update_mdc_level(
     uint64_t dist_003 = sb_ptr->depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthp3]) * 100) / sb_ptr->depth_cost[depth] : max_distance;
     uint64_t dist_300 = sb_ptr->depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthm3]) * 100) / sb_ptr->depth_cost[depth] : max_distance;
 
+    /*printf("%d\t%d\t%d\t%d\t%d\t%d\t%d\n",sb_ptr->depth_cost[depthp3],sb_ptr->depth_cost[depthp2],sb_ptr->depth_cost[depthp1],sb_ptr->depth_cost[depth],sb_ptr->depth_cost[depthp1],sb_ptr->depth_cost[depthp2],sb_ptr->depth_cost[depthp3]);
+    printf("%d\t%d\t%d\t%d\t%d\t%d\n",sb_ptr->depth_cost[depthp3],sb_ptr->depth_cost[depthp2],sb_ptr->depth_cost[depthp1],sb_ptr->depth_cost[depth],sb_ptr->depth_cost[depthp1],sb_ptr->depth_cost[depthp2],sb_ptr->depth_cost[depthp3]);*/
+
     int8_t s_depth = -3;
     int8_t e_depth = 3;
-    if (dist_003 < th03)
+    if (dist_300 < mth03)
         s_depth = -3;
-    else if (dist_002 < th02)
+    else if (dist_200 < mth02)
         s_depth = -2;
-    else if (dist_001 < th01)
+    else if (dist_100 < mth01)
         s_depth = -1;
     else
         s_depth = 0;
 
-    if (dist_300 < th03)
+    if (dist_003 < pth03)
         e_depth = 3;
-    else if (dist_200 < th02)
+    else if (dist_002 < pth02)
         e_depth = 2;
-    else if (dist_100 < th01)
+    else if (dist_001 < pth01)
         e_depth = 1;
     else
         e_depth = 0;
@@ -1271,6 +1291,7 @@ uint8_t update_mdc_level(
         adjusted_depth_level = 3; // Pred + 3
     else
         printf("Error: unvalid s_depth && e_depth");
+
 
 #else
     uint64_t th01 = 100;
@@ -1456,8 +1477,9 @@ void init_considered_block(
             if (blk_geom->shape == PART_N) {
 #if MDC_ADAPTIVE_LEVEL
                 // Update MDC refinement
-                if (is_complete_sb)
-                    depth_refinement_mode = update_mdc_level(
+                uint8_t adjusted_refinement_mode = depth_refinement_mode;
+                if (is_complete_sb && (context_ptr->local_cu_array[blk_index].early_split_flag == EB_FALSE))
+                    adjusted_refinement_mode = update_mdc_level(
                         picture_control_set_ptr,
                         sb_ptr,
                         sb_index,
@@ -1466,8 +1488,11 @@ void init_considered_block(
                         sequence_control_set_ptr->input_resolution,
                         picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag,
                         picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level);
-#endif
+
+                switch (adjusted_refinement_mode) {
+#else
                 switch (depth_refinement_mode) {
+#endif
                 case Pred:
                     // Set predicted block to be considered
                     if (context_ptr->local_cu_array[blk_index].early_split_flag == EB_FALSE) {
