@@ -943,6 +943,17 @@ void forward_all_blocks_to_md(
 
                 resultsPtr->leaf_data_array[resultsPtr->leaf_count].leaf_index = 0;//valid only for square 85 world. will be removed.
                 resultsPtr->leaf_data_array[resultsPtr->leaf_count].mds_idx = blk_index;
+
+#if ONLY_32_WITH_NSQ
+                if (blk_geom->sq_size == 16)
+                {
+                    resultsPtr->leaf_data_array[resultsPtr->leaf_count++].split_flag = EB_FALSE;
+                    split_flag = EB_FALSE;
+                }
+                else {
+                    split_flag = EB_TRUE;
+                }
+#else
                 if (blk_geom->sq_size > 4)
                 {
                     resultsPtr->leaf_data_array[resultsPtr->leaf_count++].split_flag = EB_TRUE;
@@ -952,6 +963,7 @@ void forward_all_blocks_to_md(
                     resultsPtr->leaf_data_array[resultsPtr->leaf_count++].split_flag = EB_FALSE;
                     split_flag = EB_FALSE;
                 }
+#endif
             }
 
             blk_index++;
@@ -2126,6 +2138,11 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
 
     if(picture_control_set_ptr->update_cdf)
         assert(sequence_control_set_ptr->cdf_mode == 0 && "use cdf_mode 0");
+
+#if CABAC_OFF
+    picture_control_set_ptr->update_cdf = 0;
+#endif
+
 #if FILTER_INTRA_FLAG
     //Filter Intra Mode : 0: OFF  1: ON
     if (sequence_control_set_ptr->seq_header.enable_filter_intra)

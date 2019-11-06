@@ -463,9 +463,9 @@ extern "C" {
         signed                      delta_qp                : 8; // can be signed 8bits
 #else
         uint16_t                    qp;
-        uint16_t                    ref_qp;
+        uint16_t                    ref_qp;   //CHKn not assigned !!  #if FIX__R2RS
         int16_t                     delta_qp; // can be signed 8bits
-        int16_t                     org_delta_qp;
+        int16_t                     org_delta_qp;    //CHKn not assigned !!
 #endif
 
         // Coded Tree
@@ -481,7 +481,7 @@ extern "C" {
         EbPictureBufferDesc      *recon_tmp;
         uint32_t                    cand_buff_index;
 #endif
-        MacroBlockD                *av1xd;
+        MacroBlockD                *av1xd;  
         // uint8_t ref_mv_count[MODE_CTX_REF_FRAMES];
         int16_t                     inter_mode_ctx[MODE_CTX_REF_FRAMES];
         IntMv                       ref_mvs[MODE_CTX_REF_FRAMES][MAX_MV_REF_CANDIDATES]; //used only for nonCompound modes.

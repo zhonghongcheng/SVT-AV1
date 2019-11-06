@@ -6262,6 +6262,10 @@ void move_cu_data_redund(
     CodingUnit *src_cu,
     CodingUnit *dst_cu){
 
+#if FIX__R2RS
+    dst_cu->segment_id= src_cu->segment_id;
+    dst_cu->seg_id_predicted= src_cu->seg_id_predicted;
+#endif
 #if OBMC_FLAG
     dst_cu->interp_filters = src_cu->interp_filters;
 #endif
@@ -6325,7 +6329,7 @@ void move_cu_data_redund(
     dst_cu->skip_flag = src_cu->skip_flag;
     dst_cu->tx_depth = src_cu->tx_depth;
     //CHKN    MacroBlockD*  av1xd;
-    memcpy(dst_cu->av1xd, src_cu->av1xd, sizeof(MacroBlockD));
+    memcpy(dst_cu->av1xd, src_cu->av1xd, sizeof(MacroBlockD));   //CHKN pointers inside!!!
 
     // uint8_t ref_mv_count[MODE_CTX_REF_FRAMES];
 
@@ -6365,7 +6369,7 @@ void move_cu_data_redund(
     dst_cu->is_inter_ctx = src_cu->is_inter_ctx;
     dst_cu->interp_filters = src_cu->interp_filters;
 
-    dst_cu->part = src_cu->part;
+    dst_cu->part = src_cu->part;    //CHKN NA??? #if FIX__R2RS
    dst_cu->shape = src_cu->shape;
   //dst_cu->mds_idx = src_cu->mds_idx;
 }
@@ -6431,6 +6435,16 @@ EbBool allowed_ns_cu(
         }
     }
 #endif
+
+#if 0
+    ret = 1;
+    if (context_ptr->sb_ptr->index==57)
+        ret = 1;
+    else if( context_ptr->blk_geom->sq_size != 16)
+        ret = 0;
+#endif
+
+
     return ret;
 }
 
@@ -7116,6 +7130,13 @@ void  order_nsq_table(
     context_ptr->nsq_table[4] = PART_VA;
     context_ptr->nsq_table[5] = PART_VB;
 
+#if FIX__R2RS
+    context_ptr->nsq_table[6] = PART_H4;
+    context_ptr->nsq_table[7] = PART_V4;
+#endif
+
+
+
     if (isCompoundEnabled == 0) me_part_1 = me_part_0;
 
     // Insert predicted Shapes based on ME information
@@ -7764,10 +7785,18 @@ void md_encode_block(
                     buffer_count_for_curr_class, //how many cand buffers to sort. one of the buffers can have max cost.
                     context_ptr->cand_buff_indices[cand_class_it]);
 #if REMOVE_MD_STAGE_1
+
+
                 // Distortion-based NIC proning to CLASS_1, CLASS_2, CLASS_3
                 if (cand_class_it == CAND_CLASS_1 || cand_class_it == CAND_CLASS_2 || cand_class_it == CAND_CLASS_3) {
                     uint32_t *cand_buff_indices = context_ptr->cand_buff_indices[cand_class_it];
+
+#if FIX__R2RS
+                    assert(context_ptr->md_stage_0_count[CAND_CLASS_0] > 0);
+                    if (context_ptr->md_stage_0_count[CAND_CLASS_0] > 0  && *(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->fast_cost_ptr) < *(context_ptr->candidate_buffer_ptr_array[context_ptr->cand_buff_indices[CAND_CLASS_0][0]]->fast_cost_ptr)) {
+#else
                     if (*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->fast_cost_ptr) < *(context_ptr->candidate_buffer_ptr_array[context_ptr->cand_buff_indices[CAND_CLASS_0][0]]->fast_cost_ptr)) {
+#endif
                         uint32_t fast1_cand_count = 1;
                         while (fast1_cand_count < context_ptr->md_stage_1_count[cand_class_it] && ((((*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[fast1_cand_count]]->fast_cost_ptr) - *(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->fast_cost_ptr)) * 100) / (*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->fast_cost_ptr))) < context_ptr->dist_base_md_stage_0_count_th)) {
                             fast1_cand_count++;
@@ -8356,7 +8385,8 @@ EB_EXTERN EbErrorType mode_decision_sb(
             }
 
             memcpy(&context_ptr->md_ep_pipe_sb[cu_ptr->mds_idx], &context_ptr->md_ep_pipe_sb[redundant_blk_mds], sizeof(MdEncPassCuData));
-#if ADD_SUPPORT_TO_SKIP_PART_N
+
+#if  ADD_SUPPORT_TO_SKIP_PART_N  && !FIX__R2RS //CHKN using the next condition makes more sense
             if (d1_block_itr == 0) {
                 uint8_t sq_index = LOG2F(context_ptr->blk_geom->sq_size) - 2;
                 context_ptr->parent_sq_type[sq_index] = src_cu->prediction_mode_flag;
@@ -8364,7 +8394,7 @@ EB_EXTERN EbErrorType mode_decision_sb(
                 context_ptr->parent_sq_pred_mode[sq_index] = src_cu->pred_mode;
             }
 #else
-            if (context_ptr->blk_geom->shape == PART_N) {
+            if (context_ptr->blk_geom->shape == PART_N) {  
                 uint8_t sq_index = LOG2F(context_ptr->blk_geom->sq_size) - 2;
                 context_ptr->parent_sq_type[sq_index] = src_cu->prediction_mode_flag;
                 context_ptr->parent_sq_has_coeff[sq_index] = src_cu->block_has_coeff;
@@ -8519,7 +8549,15 @@ EB_EXTERN EbErrorType mode_decision_sb(
             d1_block_itr = 0;
             d1_first_block = 1;
 #endif
+
+#if FIX__R2RS
+            context_ptr->coeff_based_skip_atb = picture_control_set_ptr->parent_pcs_ptr->coeff_based_skip_atb && 
+                context_ptr->md_local_cu_unit[lastCuIndex_mds].avail_blk_flag &&
+                context_ptr->md_cu_arr_nsq[lastCuIndex_mds].block_has_coeff == 0 ? 1 : 0;
+#else
             context_ptr->coeff_based_skip_atb = picture_control_set_ptr->parent_pcs_ptr->coeff_based_skip_atb && context_ptr->md_cu_arr_nsq[lastCuIndex_mds].block_has_coeff == 0 ? 1 : 0;
+           
+#endif 
             if (context_ptr->md_cu_arr_nsq[lastCuIndex_mds].split_flag == EB_FALSE)
             {
                 md_update_all_neighbour_arrays_multiple(

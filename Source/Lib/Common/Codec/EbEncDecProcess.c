@@ -1256,6 +1256,12 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->global_mv_injection = 1;
     else
         context_ptr->global_mv_injection = 0;
+
+#if GLOBAL_OFF
+    context_ptr->global_mv_injection = 0;
+#endif
+
+
 #if FIX_NEAREST_NEW
     if (picture_control_set_ptr->enc_mode <= ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
 #else
@@ -1264,10 +1270,20 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->new_nearest_near_comb_injection = 1;
     else
         context_ptr->new_nearest_near_comb_injection = 0;
+
+#if NEW_NR_NRST_OFF
+    context_ptr->new_nearest_near_comb_injection = 0;
+#endif
+
     if (picture_control_set_ptr->enc_mode == ENC_M0)
         context_ptr->nx4_4xn_parent_mv_injection = 1;
     else
         context_ptr->nx4_4xn_parent_mv_injection = 0;
+
+
+#if NX4_OFF
+    context_ptr->nx4_4xn_parent_mv_injection = 0;  
+#endif
 
     // Set warped motion injection
     // Level                Settings
@@ -1277,6 +1293,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->warped_motion_injection = 0;
     else
     context_ptr->warped_motion_injection = 1;
+
+#if WARP_OFF
+    context_ptr->warped_motion_injection = 0;
+#endif
 
     // Set unipred3x3 injection
     // Level                Settings
@@ -1296,6 +1316,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->unipred3x3_injection = 0;
 
+#if UNI3X3_OFF
+    context_ptr->unipred3x3_injection = 0;
+#endif
+
     // Set bipred3x3 injection
     // Level                Settings
     // 0                    OFF
@@ -1314,6 +1338,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->bipred3x3_injection = 0;
 
+#if BI3X3_OFF
+    context_ptr->bipred3x3_injection = 0;
+#endif
     // Level                Settings
     // 0                    Level 0: OFF
     // 1                    Level 1: 7x5 full-pel search + sub-pel refinement off
@@ -1330,6 +1357,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             context_ptr->predictive_me_level = 0;
     else
         context_ptr->predictive_me_level = 0;
+
+#if PRED_ME_OFF
+    context_ptr->predictive_me_level = 0;
+#endif
 
     // Derive md_staging_mode
     //
@@ -1483,6 +1514,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->trellis_quant_coeff_optimization = EB_TRUE;
     else
         context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
+
+#if RDOQ_OFF
+    context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
+#endif
+
 
     // Derive redundant block
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)

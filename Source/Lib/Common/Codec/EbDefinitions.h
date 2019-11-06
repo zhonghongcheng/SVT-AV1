@@ -32,21 +32,42 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
+#define  FIX__R2RS      1
+
 /************************ DEBUG **********************************/
-#define SB_64X64                     1 //0 //1
-#define NO_INTRA_IN_INTER            1
+  #define  CABAC_OFF         0
+  #define  IFS_OFF           1
+  #define  ONLY_32_WITH_NSQ  0 
+  #define  COMP_P_OFF        1 
+  #define  II_OFF            1
+  #define  FI_OFF            1
+  #define  OBMC_OFF          1
+  #define  NEW_NR_NRST_OFF   1
+  #define  NX4_OFF           1
+  #define  WARP_OFF          1
+  #define  UNI3X3_OFF        1
+  #define  BI3X3_OFF         1
+  #define  PRED_ME_OFF       1
+  #define  RDOQ_OFF          1
+  #define  GLOBAL_OFF        1
+
+
+#define SB_64X64                     0 //0 //1
+#define NO_INTRA_IN_INTER            0
 #define SHUT_ALL_FILTERING           1 // CDEF RESTORATION DLF
-#define NSQ_OFF                      1
-#define ATB_OFF                      1
+#define NSQ_OFF                      0
+#define ATB_OFF                      0
 #define TX_TYPE_OFF                  1
 
-#define QPS_QPM_OFF                             1 //0
-#define ALT_REF_OFF                             1 //0
+#define QPS_QPM_OFF                             0 //0
+#define ALT_REF_OFF                             0 //0
 #define ALL_8x8                                 0 //1 //0
-#define ALL_32x32                               1
-#define ONLY_ME                                 1
-#define NO_BIPED                                1
-#define NO_REDUD_BLOCK                          1
+#define ALL_32x32                               0//
+#define ONLY_ME                                 0
+#define NO_BIPED                                0
+#define NO_REDUD_BLOCK                          0
 /****************************************************************/
 #define FIX_ALTREF                   1 // Address ALTREF mismatch between rtime-m0-test and master: fixed actual_future_pics derivation, shut padding of the central frame, fixed end past frame index prior to window shrinking
 #define FIX_NEAREST_NEW              1 // Address NEAREST_NEW mismatch between rtime-m0-test and master: fixed injection and fixed settings
@@ -87,7 +108,7 @@ extern "C" {
 #define EIGHT_PEL_PREDICTIVE_ME           1
 #define COMP_INTERINTRA                   1 // InterIntra mode support
 
-#define ENHANCE_ATB                       1
+#define ENHANCE_ATB                       0//----------------------------------------------------------------------------------------
 
 #define RDOQ_CHROMA                       1
 
@@ -181,7 +202,7 @@ enum {
 #define ADJUST_NSQ_RANK_BASED_ON_NEIGH                  1
 #define COMBINE_MDC_NSQ_TABLE                           1
 #define ADD_SUPPORT_TO_SKIP_PART_N                      1
-#define ADD_MDC_REFINEMENT_LOOP                         1
+#define ADD_MDC_REFINEMENT_LOOP                         1//---------------
 #define ADD_MDC_FULL_COST                               1
 #define NSQ_TAB_SIZE                                    8
 #define MAX_MDC_LEVEL                                   8

@@ -981,6 +981,11 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
             picture_control_set_ptr->interpolation_search_level = IT_SEARCH_OFF;
 
+#if IFS_OFF
+        picture_control_set_ptr->interpolation_search_level = IT_SEARCH_OFF;
+#endif
+
+
     // Loop filter Level                            Settings
     // 0                                            OFF
     // 1                                            CU-BASED
@@ -1255,6 +1260,10 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->coeff_based_skip_atb = 0;
         else
             picture_control_set_ptr->coeff_based_skip_atb = 1;
+
+#if 0
+        picture_control_set_ptr->coeff_based_skip_atb = 0;
+#endif
 
         // Set Wedge mode      Settings
         // 0                 FULL: Full search
