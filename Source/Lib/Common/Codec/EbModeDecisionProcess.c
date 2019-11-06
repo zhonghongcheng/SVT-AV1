@@ -500,7 +500,7 @@ void reset_mode_decision(
     else
 #if WARP_UPDATE
         enable_wm = (MR_MODE ||
-#if TEST_OLD_M0M1_SET
+#if TEST_M0_WARP
         (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M1 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ||
 #else
         (picture_control_set_ptr->parent_pcs_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ||
@@ -524,7 +524,7 @@ void reset_mode_decision(
     // 3                                            OBMC @(MVP, PME ) + Opt NICs
     // 4                                            OBMC @(MVP, PME ) + Opt2 NICs
     if (sequence_control_set_ptr->static_config.enable_obmc) {
-#if TEST_NEW_M0M1_SET0
+#if TEST_M0_OBMC
         if (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M1)
 #else
         if (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M0)
