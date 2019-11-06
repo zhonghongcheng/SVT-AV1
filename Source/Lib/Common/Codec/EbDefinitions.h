@@ -88,6 +88,7 @@ extern "C" {
 #endif
 #define STAGE_2_COUNT_PRUNING_TH_S   1
 #define STAGE_2_COUNT_PRUNING_TH_C   1
+#define LESS_4_PARTITIONS            0
 
 #define INJECT_NEW_NEAR_NEAR_NEW     1   // Inject NEW_NEAR / NEAR_NEW inter prediction
 #define FILTER_INTRA_FLAG            1 // Filter intra prediction

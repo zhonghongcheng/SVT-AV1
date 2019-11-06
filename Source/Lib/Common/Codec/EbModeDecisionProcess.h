@@ -354,6 +354,10 @@ extern "C" {
 #if LESS_RECTANGULAR_CHECK_LEVEL
     uint32_t sq_to_h_v_weight_to_skip_a_b;
 #endif
+#if LESS_4_PARTITIONS
+    int partition_horz4_allowed;
+    int partition_vert4_allowed;
+#endif
     } ModeDecisionContext;
 
     typedef void(*EbAv1LambdaAssignFunc)(
