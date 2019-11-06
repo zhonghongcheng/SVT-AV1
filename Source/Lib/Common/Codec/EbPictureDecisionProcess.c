@@ -900,7 +900,7 @@ EbErrorType signal_derivation_multi_processes_oq(
     // 7                                     All
     if (MR_MODE || sc_content_detected || sequence_control_set_ptr->static_config.enable_hbd_mode_decision)
         picture_control_set_ptr->mdc_depth_level = MAX_MDC_LEVEL;
-#if TEST_PART_M0M1_SET
+#if TEST_M0_MDC_LEVEL
     else if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #else
     else if (picture_control_set_ptr->enc_mode == ENC_M0)
@@ -982,7 +982,7 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL7;
 #endif
 #if rtime_presets
-#if TEST_PART_M0M1_SET
+#if TEST_M0_NSQ_LEVEL
         else if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #else
         else if (picture_control_set_ptr->enc_mode <= ENC_M0)

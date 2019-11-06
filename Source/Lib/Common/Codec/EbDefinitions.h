@@ -38,10 +38,19 @@ extern "C" {
    is a result changed for P frames)
 */
 // Testing M0-M1 difference
-#define TEST_OLD_M0M1_SET            0
-#define TEST_NEW_M0M1_SET0           0
 #define TEST_NEW_M0M1_SET1           0
-#define TEST_PART_M0M1_SET           0
+#define TEST_M0_OBMC                 0
+#define TEST_M0_INTER_INTRA          0
+
+#define TEST_M0_NEW_NEAR_COMB        0
+#define TEST_M0_PRED_ME              0
+#define TEST_M0_SKIP_ANGLE_INTRA     0
+#define TEST_M0_PRUNE_REC_PART       0
+#define TEST_M0_WARP                 0
+#define TEST_M0_NSQ_TABLES           0
+#define TEST_M0_MDC_LEVEL            0
+#define TEST_M0_NSQ_LEVEL            0
+
 // Testing M1-M2 difference
 
 

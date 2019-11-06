@@ -1300,7 +1300,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->global_mv_injection = 0;
 #if FIX_NEAREST_NEW
-#if TEST_OLD_M0M1_SET
+#if TEST_M0_NEW_NEAR_COMB
     if (picture_control_set_ptr->enc_mode <= ENC_M1 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
 #else
     if (picture_control_set_ptr->enc_mode <= ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
@@ -1415,7 +1415,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #endif
 #if M0_tune
-#if TEST_OLD_M0M1_SET
+#if TEST_M0_PRED_ME
             context_ptr->predictive_me_level = (picture_control_set_ptr->enc_mode <= ENC_M1) ? 5 : 4;
 #else
             context_ptr->predictive_me_level = (picture_control_set_ptr->enc_mode <= ENC_M0)? 5: 4;
@@ -1632,7 +1632,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         else
 #if FIX_ESTIMATE_INTRA
 #if M0_tune
-#if TEST_OLD_M0M1_SET
+#if TEST_M0_SKIP_ANGLE_INTRA
             context_ptr->edge_based_skip_angle_intra = (picture_control_set_ptr->enc_mode <= ENC_M1) ? 0 : 1;
 #else
             context_ptr->edge_based_skip_angle_intra = (picture_control_set_ptr->enc_mode == ENC_M0) ? 0 : 1;
@@ -1649,7 +1649,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
     else
         context_ptr->edge_based_skip_angle_intra = 0;
-#if TEST_OLD_M0M1_SET
+#if TEST_M0_PRUNE_REC_PART
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode <= ENC_M1)
 #else
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode == ENC_M0)
