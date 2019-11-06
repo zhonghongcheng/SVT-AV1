@@ -1319,8 +1319,12 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             context_ptr->nx4_4xn_parent_mv_injection = 0;
     else
 #endif
-#if rtime_presets && !M2_NX4_4XN
+#if rtime_presets
+#if M2_NX4_4XN
+    if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#else
     if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
 #else
     if (picture_control_set_ptr->enc_mode == ENC_M0)
 #endif
@@ -1409,8 +1413,12 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
                 context_ptr->predictive_me_level = 0;
         else
 #endif
-#if rtime_presets && !M3_PRED_ME
+#if rtime_presets 
+#if M2_PRED_ME
+        if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#endif
 #else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #endif
@@ -1693,8 +1701,8 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             context_ptr->md_stage_2_count_th_s = 25;
         else
             context_ptr->md_stage_2_count_th_s = 15;
-#if M3_MD_STAGE
-    else if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#if M2_MD_STAGE
+    else if (picture_control_set_ptr->enc_mode <= ENC_M3)
 #else
     else if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #endif

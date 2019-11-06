@@ -208,8 +208,8 @@ EbErrorType signal_derivation_me_kernel_oq(
             EX_QP_MODE;
     }
 #if rtime_presets
-#if M3_HP_QP
-    else if (enc_mode <= ENC_M1) {
+#if M2_HP_QP
+    else if (enc_mode <= ENC_M3) {
 #else
     else if (enc_mode <= ENC_M2) {
 #endif
@@ -499,8 +499,8 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
             EX_QP_MODE;
     }
 #if rtime_presets
-#if M3_HP_QP
-    else if (enc_mode <= ENC_M1) {
+#if M2_HP_QP
+    else if (enc_mode <= ENC_M3) {
 #else
     else if (enc_mode <= ENC_M2) {
 #endif

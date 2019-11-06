@@ -53,24 +53,24 @@ extern "C" {
 
 // Testing M1-M2 difference
 
-#define M2_ATB                      0
-#define M2_MFMV                     0
-#define M2_NX4_4XN                  0
-#define M2_INTRAPRED                0
-#define M2_DEPTH                    0
-#define M2_NSQ                      0
-#define M2_COMPOUND                 0
-#define M2_HMEME                    0
-#define M2_REF_COUNT                0
+#define M1_ATB                      0
+#define M1_MFMV                     0
+#define M1_NX4_4XN                  0
+#define M1_INTRAPRED                0
+#define M1_DEPTH                    0
+#define M1_NSQ                      0
+#define M1_COMPOUND                 0
+#define M1_HMEME                    0
+#define M1_REF_COUNT                0
 
 // Testing M2-M3 difference
-#define M3_PRED_ME                   0
-#define M3_MD_STAGE                  0
-#define M3_HP_QP                     0
-#define M3_MDC                       0
-#define M3_NSQ                       0
-#define M3_TX_SEARCH_REDUCED_SET     0
-#define M3_INTRAPRED                 0
+#define M2_PRED_ME                   0
+#define M2_MD_STAGE                  0
+#define M2_HP_QP                     0
+#define M2_MDC                       0
+#define M2_NSQ                       0
+#define M2_TX_SEARCH_REDUCED_SET     0
+#define M2_INTRAPRED                 0
 
 #define PAL_SUP                      1
 #define PAL_CLASS                    1
