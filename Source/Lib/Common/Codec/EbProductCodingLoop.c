@@ -6265,6 +6265,8 @@ void move_cu_data_redund(
 #if FIX__R2RS
     dst_cu->segment_id= src_cu->segment_id;
     dst_cu->seg_id_predicted= src_cu->seg_id_predicted;
+    dst_cu->ref_qp = src_cu->ref_qp;
+    dst_cu->org_delta_qp = src_cu->org_delta_qp;
 #endif
 #if OBMC_FLAG
     dst_cu->interp_filters = src_cu->interp_filters;

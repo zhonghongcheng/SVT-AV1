@@ -37,29 +37,29 @@ extern "C" {
 #define  FIX__R2RS      1
 
 /************************ DEBUG **********************************/
-  #define  CABAC_OFF         0
-  #define  IFS_OFF           1
-  #define  ONLY_32_WITH_NSQ  0 
-  #define  COMP_P_OFF        1 
-  #define  II_OFF            1
-  #define  FI_OFF            1
-  #define  OBMC_OFF          1
-  #define  NEW_NR_NRST_OFF   1
-  #define  NX4_OFF           1
-  #define  WARP_OFF          1
-  #define  UNI3X3_OFF        1
-  #define  BI3X3_OFF         1
-  #define  PRED_ME_OFF       1
-  #define  RDOQ_OFF          1
-  #define  GLOBAL_OFF        1
+  #define  CABAC_OFF         0 //0
+  #define  IFS_OFF           0 //1
+  #define  ONLY_32_WITH_NSQ  0 //0 
+  #define  COMP_P_OFF        0 //1 
+  #define  II_OFF            0 //1
+  #define  FI_OFF            0 //1
+  #define  OBMC_OFF          0 //1
+  #define  NEW_NR_NRST_OFF   0 //1
+  #define  NX4_OFF           0 //1
+  #define  WARP_OFF          0 //1
+  #define  UNI3X3_OFF        0 //1
+  #define  BI3X3_OFF         0 //1
+  #define  PRED_ME_OFF       0 //1
+  #define  RDOQ_OFF          0 //1
+  #define  GLOBAL_OFF        0 //1
 
 
-#define SB_64X64                     0 //0 //1
-#define NO_INTRA_IN_INTER            0
-#define SHUT_ALL_FILTERING           1 // CDEF RESTORATION DLF
-#define NSQ_OFF                      0
-#define ATB_OFF                      0
-#define TX_TYPE_OFF                  1
+#define SB_64X64                     0 //0 //0 //1
+#define NO_INTRA_IN_INTER            0 //0
+#define SHUT_ALL_FILTERING           0 //1 // CDEF RESTORATION DLF
+#define NSQ_OFF                      0 //0
+#define ATB_OFF                      0 //0
+#define TX_TYPE_OFF                  0 //1
 
 #define QPS_QPM_OFF                             0 //0
 #define ALT_REF_OFF                             0 //0
@@ -108,7 +108,7 @@ extern "C" {
 #define EIGHT_PEL_PREDICTIVE_ME           1
 #define COMP_INTERINTRA                   1 // InterIntra mode support
 
-#define ENHANCE_ATB                       0//----------------------------------------------------------------------------------------
+#define ENHANCE_ATB                       1//----------------------------------------------------------------------------------------
 
 #define RDOQ_CHROMA                       1
 
