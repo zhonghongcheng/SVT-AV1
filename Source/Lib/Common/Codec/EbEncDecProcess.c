@@ -1320,7 +1320,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
 #endif
 #if rtime_presets
-#if M2_NX4_4XN
+#if M1_NX4_4XN
     if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #else
     if (picture_control_set_ptr->enc_mode <= ENC_M1)
