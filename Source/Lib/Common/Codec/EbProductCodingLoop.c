@@ -8910,22 +8910,6 @@ EB_EXTERN EbErrorType mode_decision_sb(
     }
 
 #if AUTO_MAX_PARTITION
-    uint8_t min_bwidth = 128;
-    uint8_t min_bheight = 128;
-    uint8_t max_bwidth = 0;
-    uint8_t max_bheight = 0;
-
-    for (uint32_t mdc_block_idx = 0; mdc_block_idx < leaf_count; mdc_block_idx++) {
-
-        const BlockGeom *blk_geom = context_ptr->blk_geom = get_blk_geom_mds(leaf_data_array[mdc_block_idx].mds_idx);
-
-        min_bwidth = (blk_geom->bwidth < min_bwidth) ? blk_geom->bwidth : min_bwidth;
-        min_bheight = (blk_geom->bheight < min_bheight) ? blk_geom->bheight : min_bheight;
-        max_bwidth = (blk_geom->bwidth > max_bwidth) ? blk_geom->bwidth : max_bwidth;
-        max_bheight = (blk_geom->bheight > max_bheight) ? blk_geom->bheight : max_bheight;
-
-    }
-
 #if USE_ADAPT_PRED
     picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion = ADAPT_PRED; // 
 #else
@@ -8943,9 +8927,6 @@ EB_EXTERN EbErrorType mode_decision_sb(
             max_bsize = MIN(av1_predict_max_partition(sequence_control_set_ptr, picture_control_set_ptr, features, input_picture_ptr, sb_origin_x, sb_origin_y), max_bsize);
         }
     }
-    max_bwidth = (MIN(block_size_wide[max_bsize], max_bwidth) > min_bwidth) ? MIN(block_size_wide[max_bsize], max_bwidth) : max_bwidth;
-    max_bheight = (MIN(block_size_high[max_bsize], max_bheight) > min_bheight) ? MIN(block_size_high[max_bsize], max_bheight) : max_bheight;
-
     //printf("%d\t%d\t%d\t%d\t%d\n", picture_control_set_ptr->picture_number, sb_origin_x, sb_origin_y, max_bwidth, max_bheight);
 #endif
 
@@ -9152,7 +9133,9 @@ EB_EXTERN EbErrorType mode_decision_sb(
                 skip_next_sq = 0;
 
 #if AUTO_MAX_PARTITION
-            if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[cu_ptr->mds_idx] && !skip_next_nsq && !skip_next_sq && context_ptr->blk_geom->bwidth <= max_bwidth && context_ptr->blk_geom->bheight <= max_bheight) {
+            EbBool auto_max_partition_block_skip = (context_ptr->blk_geom->bwidth > block_size_wide[max_bsize] || context_ptr->blk_geom->bheight > block_size_high[max_bsize]) && (mdcResultTbPtr->leaf_data_array[cuIdx].split_flag == EB_TRUE);
+
+            if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[cu_ptr->mds_idx] && !skip_next_nsq && !skip_next_sq && !auto_max_partition_block_skip) {
 #else
             if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[cu_ptr->mds_idx] && !skip_next_nsq && !skip_next_sq) {
 #endif
@@ -9168,7 +9151,7 @@ EB_EXTERN EbErrorType mode_decision_sb(
 
             }
 #if AUTO_MAX_PARTITION
-            else if (context_ptr->blk_geom->bwidth > max_bwidth || context_ptr->blk_geom->bheight > max_bheight) {
+            else if (auto_max_partition_block_skip) {
                 if (context_ptr->blk_geom->shape != PART_N)
                     context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost = (MAX_MODE_COST >> 4);
                 else
