@@ -73,6 +73,9 @@ extern "C" {
 #define M2_MDC                       1
 #define M2_NSQ                       1
 
+#define TEST_M0_WARP_M3              0
+#define M0_PRUNE_REC_PART_M3         0
+
 #define M2_MD_STAGE                  0
 #define M2_HP_QP                     0
 #define M2_TX_SEARCH_REDUCED_SET     0
