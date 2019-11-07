@@ -92,7 +92,7 @@ extern "C" {
 
 #define STAGE_1_COUNT_PRUNING_TH_S             1 // Refactor TH_S pruning 
 
-#define STAGE_1_COUNT_PRUNING_TH_C             1 // <-- to test: d_stage_1_count_th is now set to max
+#define STAGE_1_COUNT_PRUNING_TH_C             0 // <-- to test: d_stage_1_count_th is now set to max
 #define UNDO_INTRA_COST_CHECK_M1_BEYOND        0 // <-- to test: just enable the flag
 #define UNDO_CLASS_REST_CHECK_M1_BEYOND        0 // <-- to test: just enable the flag
 
