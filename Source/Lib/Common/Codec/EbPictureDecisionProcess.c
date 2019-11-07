@@ -948,9 +948,11 @@ EbErrorType signal_derivation_multi_processes_oq(
         picture_control_set_ptr->mdc_depth_level = 6;
         picture_control_set_ptr->adpative_ol_partitioning_level = 1;
     }
-    else {
+    else if (picture_control_set_ptr->enc_mode == ENC_M3){
+        picture_control_set_ptr->mdc_depth_level = 6;
+        picture_control_set_ptr->adpative_ol_partitioning_level = 1;
+    }else
         picture_control_set_ptr->adpative_ol_partitioning_level = 0;
-    }
 
 #endif
     // NSQ search Level                               Settings
