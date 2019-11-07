@@ -932,7 +932,19 @@ EbErrorType signal_derivation_multi_processes_oq(
     picture_control_set_ptr->mdc_depth_level = 6;
 #endif
 #endif
+#if MDC_ADAPTIVE_LEVEL
+    // Adaptive Ol  Level                    Settings
+    // 0                                     OFF
+    // 1                                     ON
 
+    if (MR_MODE || sc_content_detected) {
+        picture_control_set_ptr->adpative_ol_partitioning_level = 0;
+    }
+    else if (picture_control_set_ptr->enc_mode <= ENC_M1){
+        picture_control_set_ptr->mdc_depth_level = 6;
+        picture_control_set_ptr->adpative_ol_partitioning_level = 1;
+    }
+#endif
     // NSQ search Level                               Settings
     // NSQ_SEARCH_OFF                                 OFF
     // NSQ_SEARCH_LEVEL1                              Allow only NSQ Inter-NEAREST/NEAR/GLOBAL if parent SQ has no coeff + reordering nsq_table number and testing only 1 NSQ SHAPE
