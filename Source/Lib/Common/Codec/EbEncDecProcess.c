@@ -1662,7 +1662,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         else
 #if FIX_ESTIMATE_INTRA
 #if M0_tune
-#if TEST_M0_SKIP_ANGLE_INTRA
+#if TEST_M0_SKIP_ANGLE_INTRA_M3
+            context_ptr->edge_based_skip_angle_intra = (picture_control_set_ptr->enc_mode <= ENC_M3) ? 0 : 1;
+
+#elif TEST_M0_SKIP_ANGLE_INTRA
             context_ptr->edge_based_skip_angle_intra = (picture_control_set_ptr->enc_mode <= ENC_M1) ? 0 : 1;
 #else
             context_ptr->edge_based_skip_angle_intra = (picture_control_set_ptr->enc_mode == ENC_M0) ? 0 : 1;

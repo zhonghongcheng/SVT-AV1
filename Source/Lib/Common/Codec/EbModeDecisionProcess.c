@@ -526,7 +526,9 @@ void reset_mode_decision(
     // 3                                            OBMC @(MVP, PME ) + Opt NICs
     // 4                                            OBMC @(MVP, PME ) + Opt2 NICs
     if (sequence_control_set_ptr->static_config.enable_obmc) {
-#if TEST_M0_OBMC
+#if TEST_M0_OBMC_M3
+        if (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M3)
+#elif TEST_M0_OBMC
         if (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M1)
 #else
         if (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M0)
