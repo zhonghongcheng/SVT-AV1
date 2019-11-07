@@ -1743,7 +1743,12 @@ EbErrorType prediction_structure_group_ctor(
 
     predictionStructureGroupPtr->dctor = prediction_structure_group_dctor;
 #if rtime_presets
+#if M1_REF_COUNT
+    uint8_t ref_count_used = enc_mode <= ENC_M2 ? MAX_REF_IDX : enc_mode <= ENC_M3 ? 2 : 1;
+
+#else
     uint8_t ref_count_used = enc_mode <= ENC_M1 ? MAX_REF_IDX : enc_mode <= ENC_M3 ? 2 : 1;
+#endif
     if (ref_count_used > 0 && ref_count_used < MAX_REF_IDX) {
         for (int gop_i = 1; gop_i < 8; ++gop_i) {
             for (int i = ref_count_used; i < MAX_REF_IDX; ++i) {
