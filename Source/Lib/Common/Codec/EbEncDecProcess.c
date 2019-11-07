@@ -1701,7 +1701,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     if (MR_MODE)
         context_ptr->md_stage_1_count_th_c = (uint64_t)~0;
     else
-        context_ptr->md_stage_1_count_th_c = (uint64_t)~0;
+        context_ptr->md_stage_1_count_th_c = 50;
 
 #endif
 #if STAGE_2_COUNT_PRUNING_TH_S

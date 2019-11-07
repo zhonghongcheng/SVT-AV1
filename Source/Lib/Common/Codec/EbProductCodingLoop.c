@@ -8083,6 +8083,7 @@ void md_encode_block(
 #if STAGE_1_COUNT_PRUNING_TH_C
                     if ((((*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->fast_cost_ptr) - best_md_sage_0_cost) * 100) / best_md_sage_0_cost) > context_ptr->md_stage_1_count_th_c) {
                         context_ptr->md_stage_1_count[cand_class_it] = 0;
+                        context_ptr->md_stage_2_count[cand_class_it] = 0;
                     }
                     if (context_ptr->md_stage_1_count[cand_class_it])
 #endif
