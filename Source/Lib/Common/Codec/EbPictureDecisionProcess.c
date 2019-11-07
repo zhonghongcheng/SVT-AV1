@@ -996,7 +996,9 @@ EbErrorType signal_derivation_multi_processes_oq(
         else if (picture_control_set_ptr->enc_mode <= ENC_M0)
 #endif
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL6;
-#if M1_NSQ
+#if M1_NSQ_M3
+        else if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#elif M1_NSQ
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
 
 #else
@@ -1226,7 +1228,9 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->cdef_filter_mode = 4;
         else
 #if M0_tune
-#if TEST_NEW_M0M1_SET1
+#if TEST_M1_CDEF_FILTER
+            picture_control_set_ptr->cdef_filter_mode = 2;
+#elif TEST_NEW_M0M1_SET1
             picture_control_set_ptr->cdef_filter_mode = (picture_control_set_ptr->enc_mode <= ENC_M1) ? 5 : 2;
 #else
             picture_control_set_ptr->cdef_filter_mode = (picture_control_set_ptr->enc_mode <= ENC_M0)?5: 2;
@@ -1558,9 +1562,10 @@ EbErrorType signal_derivation_multi_processes_oq(
             if (picture_control_set_ptr->sc_content_detected)
                 picture_control_set_ptr->compound_mode = (picture_control_set_ptr->enc_mode <= ENC_M0) ? 2 : 0;
             else
-#if M1_COMPOUND
+#if M1_COMP_M3
+                picture_control_set_ptr->compound_mode = picture_control_set_ptr->enc_mode <= ENC_M3 ? 2 : 1;
+#elif M1_COMPOUND
                 picture_control_set_ptr->compound_mode = picture_control_set_ptr->enc_mode <= ENC_M2 ? 2 : 1;
-
 #else
                 picture_control_set_ptr->compound_mode = picture_control_set_ptr->enc_mode <= ENC_M1 ? 2 : 1;
 #endif

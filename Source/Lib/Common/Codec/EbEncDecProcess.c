@@ -1657,7 +1657,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
     else
         context_ptr->edge_based_skip_angle_intra = 0;
-#if TEST_M0_PRUNE_REC_PART
+#if TEST_M1_PRUNE_REC_PART
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#elif TEST_M0_PRUNE_REC_PART
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode <= ENC_M1)
 #else
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode == ENC_M0)
