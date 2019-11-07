@@ -1689,7 +1689,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
     // Derive distortion-based md_stage_0_count proning
 #if STAGE_1_COUNT_PRUNING_TH_S
-    if (MR_MODE)
+    if (MR_MODE || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
         context_ptr->md_stage_1_count_th_s = (uint64_t)~0;
     else
         context_ptr->md_stage_1_count_th_s = 75;

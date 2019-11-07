@@ -125,9 +125,8 @@ extern "C" {
 
 #define STAGE_1_COUNT_PRUNING_TH_S             1 // Refactor TH_S pruning 
 
+#define TUNED_TH_S                             1 
 #define STAGE_1_COUNT_PRUNING_TH_C             0 // <-- to test: d_stage_1_count_th is now set to max
-#define UNDO_INTRA_COST_CHECK_M1_BEYOND        0 // <-- to test: just enable the flag
-#define UNDO_CLASS_REST_CHECK_M1_BEYOND        0 // <-- to test: just enable the flag
 
 
 #define INJECT_NEW_NEAR_NEAR_NEW     1   // Inject NEW_NEAR / NEAR_NEW inter prediction
