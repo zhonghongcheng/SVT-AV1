@@ -1358,13 +1358,19 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             context_ptr->unipred3x3_injection = 0;
     else
 #if rtime_presets
+#if M3_UNI_3x3
+        if (picture_control_set_ptr->enc_mode <= ENC_M4)
+#else
      if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#endif
 #else
     if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #endif
         context_ptr->unipred3x3_injection = 1;
+#if !M3_UNI_3x3
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->unipred3x3_injection = 2;
+#endif
     else
         context_ptr->unipred3x3_injection = 0;
 
@@ -1385,13 +1391,19 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             context_ptr->bipred3x3_injection = 0;
     else
 #if rtime_presets
+#if M3_BIPRED_3x3
+    if (picture_control_set_ptr->enc_mode <= ENC_M4)
+#else
     if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#endif
 #else
     if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #endif
         context_ptr->bipred3x3_injection = 1;
+#if !M3_BIPRED_3x3
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->bipred3x3_injection = 2;
+#endif
     else
         context_ptr->bipred3x3_injection = 0;
 
@@ -1415,7 +1427,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
 #if rtime_presets 
 #if M2_PRED_ME
+#if M3_PRED_ME
+        if (picture_control_set_ptr->enc_mode <= ENC_M4)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#endif
 #else
         if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #endif
@@ -1431,10 +1447,12 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #else
             context_ptr->predictive_me_level = 4;
 #endif
+#if !M3_PRED_ME
         else if (picture_control_set_ptr->enc_mode <= ENC_M4)
             context_ptr->predictive_me_level = 2;
         else
             context_ptr->predictive_me_level = 0;
+#endif
     else
         context_ptr->predictive_me_level = 0;
 
@@ -1607,7 +1625,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
 #endif
 #if rtime_presets
+#if M3_TRELLIS
+    if (picture_control_set_ptr->enc_mode <= ENC_M4)
+#else
     if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#endif
 #else
     if (picture_control_set_ptr->enc_mode == ENC_M0)
 #endif
@@ -1729,7 +1751,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else if (picture_control_set_ptr->enc_mode <= ENC_M3)
         context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 7  : 5;
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
+#if M3_MD_SATGE_2_COUNT_TH_S
+        context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 7 : 5;
+#else
         context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 5  : 3;
+#endif
     else
         context_ptr->md_stage_2_count_th_s = (uint64_t)~0; // until tested
 #endif

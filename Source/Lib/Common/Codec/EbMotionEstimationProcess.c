@@ -261,7 +261,11 @@ EbErrorType signal_derivation_me_kernel_oq(
             context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH;
     else
 #if rtime_presets
+#if M3_ME_SEARCH_METHOD
+        context_ptr->me_context_ptr->me_search_method = (enc_mode <= ENC_M4) ?
+#else
         context_ptr->me_context_ptr->me_search_method = (enc_mode <= ENC_M3) ?
+#endif
 
 #else
         context_ptr->me_context_ptr->me_search_method = (enc_mode <= ENC_M1) ?
@@ -551,7 +555,11 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
             context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH;
     else
 #if rtime_presets
+#if M3_ME_SEARCH_METHOD
+        context_ptr->me_context_ptr->me_search_method = (enc_mode <= ENC_M4) ?
+#else
         context_ptr->me_context_ptr->me_search_method = (enc_mode <= ENC_M3) ?
+#endif
 
 #else
         context_ptr->me_context_ptr->me_search_method = (enc_mode <= ENC_M1) ?

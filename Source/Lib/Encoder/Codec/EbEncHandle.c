@@ -1978,7 +1978,11 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
 #endif
         sequence_control_set_ptr->static_config.super_block_size = 64;
     else
+#if M3_SB
+        sequence_control_set_ptr->static_config.super_block_size = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M4 && sequence_control_set_ptr->input_resolution >= INPUT_SIZE_1080i_RANGE) ? 128 : 64;
+#else
         sequence_control_set_ptr->static_config.super_block_size = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M3 && sequence_control_set_ptr->input_resolution >= INPUT_SIZE_1080i_RANGE) ? 128 : 64;
+#endif
 
     sequence_control_set_ptr->static_config.super_block_size = (sequence_control_set_ptr->static_config.rate_control_mode > 1) ? 64 : sequence_control_set_ptr->static_config.super_block_size;
    // sequence_control_set_ptr->static_config.hierarchical_levels = (sequence_control_set_ptr->static_config.rate_control_mode > 1) ? 3 : sequence_control_set_ptr->static_config.hierarchical_levels;
@@ -1996,7 +2000,12 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
     //0: MRP Mode 0 (4,3)
     //1: MRP Mode 1 (2,2)
 #if rtime_presets
+#if M3_MRP_MODE
+
+    sequence_control_set_ptr->mrp_mode = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode <= ENC_M4) ? 0 : 1;
+#else
     sequence_control_set_ptr->mrp_mode = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode <= ENC_M3) ? 0 : 1;
+#endif
 #else
     sequence_control_set_ptr->mrp_mode = (uint8_t) (sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 0 : 1;
 #endif
@@ -2022,7 +2031,11 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
     else
 #endif
 #if rtime_presets
+#if M3_DOWN_SAMPLING
+    if (sequence_control_set_ptr->static_config.enc_mode <= ENC_M4)
+#else
     if (sequence_control_set_ptr->static_config.enc_mode <= ENC_M3)
+#endif
 #else
     if (sequence_control_set_ptr->static_config.enc_mode == ENC_M0)
 #endif
