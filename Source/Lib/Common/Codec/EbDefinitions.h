@@ -57,7 +57,7 @@ extern "C" {
 
 // Testing M1-M2 difference
 
-#define M1_NSQ                      0
+#define M1_NSQ                      1
 #define M1_COMPOUND                 0
 #define M1_REF_COUNT                0
 
