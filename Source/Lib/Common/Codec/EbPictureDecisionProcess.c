@@ -1246,6 +1246,8 @@ EbErrorType signal_derivation_multi_processes_oq(
 #if M0_tune
 #if TEST_M1_CDEF_FILTER
             picture_control_set_ptr->cdef_filter_mode = 2;
+#elif TEST_M0_CDEF_FILTER_M2
+            picture_control_set_ptr->cdef_filter_mode = (picture_control_set_ptr->enc_mode <= ENC_M2) ? 5 : 2;
 #elif TEST_NEW_M0M1_SET1
             picture_control_set_ptr->cdef_filter_mode = (picture_control_set_ptr->enc_mode <= ENC_M1) ? 5 : 2;
 #else

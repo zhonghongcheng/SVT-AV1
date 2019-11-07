@@ -61,6 +61,10 @@ extern "C" {
 #define M1_COMPOUND                 0
 #define M1_REF_COUNT                0
 
+#define TEST_M0_PRUNE_REC_PART_M2   0
+#define TEST_M0_NSQ_TABLES_M2       0
+#define TEST_M0_CDEF_FILTER_M2      0
+
 #define M1_ATB                      0
 #define M1_MFMV                     0
 #define M1_NX4_4XN                  0
