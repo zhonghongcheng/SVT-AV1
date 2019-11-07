@@ -253,9 +253,9 @@ enum {
 #define NSQ_TAB_SIZE                                    8
 #define MAX_MDC_LEVEL                                   8
 #define SET_MDC_6                                       0   // MDC is ON by default; set this to 1 to turn MDC off by setting mdc to MAX_DEPTH_LEVEL
-#define MDC_ADAPTIVE_LEVEL                              0
-#define NEW_MDC_REFINEMENT                              0
-#define NEW_MDC_REFINEMENT_V2                           0
+#define MDC_ADAPTIVE_LEVEL                              1
+#define NEW_MDC_REFINEMENT                              1
+#define NEW_MDC_REFINEMENT_V2                           1
 #define MDC_ADAPTIVE_M1_ON_M0                           0
 #define CLEANUP_MDC1                                    1
 #else
