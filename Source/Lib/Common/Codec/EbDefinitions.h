@@ -69,9 +69,9 @@ extern "C" {
 #define M1_HMEME                    0
 
 // Testing M2-M3 difference
-#define M2_PRED_ME                   0
-#define M2_MDC                       0
-#define M2_NSQ                       0
+#define M2_PRED_ME                   1
+#define M2_MDC                       1
+#define M2_NSQ                       1
 
 #define M2_MD_STAGE                  0
 #define M2_HP_QP                     0
