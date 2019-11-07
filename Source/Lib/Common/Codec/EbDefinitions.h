@@ -89,6 +89,10 @@ extern "C" {
 #define STAGE_2_COUNT_PRUNING_TH_S   1
 #define STAGE_2_COUNT_PRUNING_TH_C   1
 #define LESS_4_PARTITIONS            0
+#define STAGE_1_COUNT_PRUNING_TH_S             1 // Refactor TH_S pruning 
+#define STAGE_1_COUNT_PRUNING_TH_C             0
+#define UNDO_INTRA_COST_CHECK_M1_BEYOND        0 
+#define UNDO_CLASS_REST_CHECK_M1_BEYOND        0 
 
 #define INJECT_NEW_NEAR_NEAR_NEW     1   // Inject NEW_NEAR / NEAR_NEW inter prediction
 #define FILTER_INTRA_FLAG            1 // Filter intra prediction

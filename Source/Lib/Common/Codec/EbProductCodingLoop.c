@@ -8031,6 +8031,7 @@ void md_encode_block(
                     buffer_start_idx,
                     buffer_count_for_curr_class, //how many cand buffers to sort. one of the buffers can have max cost.
                     context_ptr->cand_buff_indices[cand_class_it]);
+#if !STAGE_1_COUNT_PRUNING_TH_S
 #if REMOVE_MD_STAGE_1
                 // Distortion-based NIC proning to CLASS_1, CLASS_2, CLASS_3
                 if (cand_class_it == CAND_CLASS_1 || cand_class_it == CAND_CLASS_2 || cand_class_it == CAND_CLASS_3) {
@@ -8046,13 +8047,42 @@ void md_encode_block(
                     }
                 }
 #endif
+#endif
                 buffer_start_idx += buffer_count_for_curr_class;//for next iteration.
 
             }
+#if !STAGE_1_COUNT_PRUNING_TH_S
 #if REMOVE_MD_STAGE_1
             context_ptr->md_stage_1_total_count += context_ptr->md_stage_1_count[cand_class_it];
 #endif
+#endif
         }
+
+#if STAGE_1_COUNT_PRUNING_TH_S
+        for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
+
+            //number of next level candidates could not exceed number of curr level candidates
+            context_ptr->md_stage_1_count[cand_class_it] = MIN(context_ptr->md_stage_0_count[cand_class_it], context_ptr->md_stage_1_count[cand_class_it]);
+
+            if (context_ptr->md_stage_0_count[cand_class_it] > 0 && context_ptr->md_stage_1_count[cand_class_it] > 0) {
+                // Distortion-based NIC proning to CLASS_1, CLASS_2, CLASS_3
+                if (cand_class_it == CAND_CLASS_1 || cand_class_it == CAND_CLASS_2 || cand_class_it == CAND_CLASS_3) {
+                    uint32_t *cand_buff_indices = context_ptr->cand_buff_indices[cand_class_it];
+                    assert(context_ptr->md_stage_0_count[CAND_CLASS_0] > 0);
+                    if (context_ptr->md_stage_0_count[CAND_CLASS_0] > 0 && *(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->fast_cost_ptr) <
+                        *(context_ptr->candidate_buffer_ptr_array[context_ptr->cand_buff_indices[CAND_CLASS_0][0]]->fast_cost_ptr)) {
+                        uint32_t fast1_cand_count = 1;
+                        while (fast1_cand_count < context_ptr->md_stage_1_count[cand_class_it] && ((((*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[fast1_cand_count]]->fast_cost_ptr) - *(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->fast_cost_ptr)) * 100) / (*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->fast_cost_ptr))) < context_ptr->dist_base_md_stage_0_count_th)) {
+                            fast1_cand_count++;
+                        }
+                        context_ptr->md_stage_1_count[cand_class_it] = fast1_cand_count;
+                    }
+                }
+            }
+            context_ptr->md_stage_1_total_count += context_ptr->md_stage_1_count[cand_class_it];
+        }
+#endif
+
 #if !REMOVE_MD_STAGE_1
 #if SPEED_OPT
         //after completing stage0, we might shorten cand count for some classes.
