@@ -224,6 +224,7 @@ enum {
 #define MDC_ADAPTIVE_LEVEL                              0
 #define NEW_MDC_REFINEMENT                              0
 #define NEW_MDC_REFINEMENT_V2                           0
+#define MDC_ADAPTIVE_M1_ON_M0                           0
 #define CLEANUP_MDC1                                    1
 #else
 #define NSQ_TAB_SIZE                                    6
