@@ -57,9 +57,13 @@ extern "C" {
 
 // Testing M1-M2 difference
 
-#define M1_NSQ                      0
+#define M1_NSQ                      1
 #define M1_COMPOUND                 0
 #define M1_REF_COUNT                0
+
+#define TEST_M0_PRUNE_REC_PART_M2   0
+#define TEST_M0_NSQ_TABLES_M2       0
+#define TEST_M0_CDEF_FILTER_M2      0
 
 #define M1_ATB                      0
 #define M1_MFMV                     0
@@ -72,6 +76,9 @@ extern "C" {
 #define M2_PRED_ME                   1
 #define M2_MDC                       1
 #define M2_NSQ                       1
+
+#define TEST_M0_WARP_M3              0
+#define M0_PRUNE_REC_PART_M3         0
 
 #define M2_MD_STAGE                  0
 #define M2_HP_QP                     0
@@ -141,9 +148,8 @@ extern "C" {
 
 #define STAGE_1_COUNT_PRUNING_TH_S             1 // Refactor TH_S pruning 
 
+#define TUNED_TH_S                             1 
 #define STAGE_1_COUNT_PRUNING_TH_C             0 // <-- to test: d_stage_1_count_th is now set to max
-#define UNDO_INTRA_COST_CHECK_M1_BEYOND        0 // <-- to test: just enable the flag
-#define UNDO_CLASS_REST_CHECK_M1_BEYOND        0 // <-- to test: just enable the flag
 
 
 #define INJECT_NEW_NEAR_NEAR_NEW     1   // Inject NEW_NEAR / NEAR_NEW inter prediction
@@ -273,9 +279,9 @@ enum {
 #define NSQ_TAB_SIZE                                    8
 #define MAX_MDC_LEVEL                                   8
 #define SET_MDC_6                                       0   // MDC is ON by default; set this to 1 to turn MDC off by setting mdc to MAX_DEPTH_LEVEL
-#define MDC_ADAPTIVE_LEVEL                              0
-#define NEW_MDC_REFINEMENT                              0
-#define NEW_MDC_REFINEMENT_V2                           0
+#define MDC_ADAPTIVE_LEVEL                              1
+#define NEW_MDC_REFINEMENT                              1
+#define NEW_MDC_REFINEMENT_V2                           1
 #define MDC_ADAPTIVE_M1_ON_M0                           0
 #define CLEANUP_MDC1                                    1
 #else

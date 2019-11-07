@@ -1184,14 +1184,14 @@ uint64_t  mdc_tab[9][2][3] = {
 #else
     {{150,80,40},{150,80,40}},
 #endif
-    {{100,0,0},{150,50,0}},
-    {{100,0,0},{150,50,0}},
-    {{20,0,0},{100,50,0}},
-    {{150,0,0},{200,100,10}},
-    {{150,0,0},{150,80,10}},
-    {{150,0,0},{150,80,0}},
-    {{150,0,0},{150,80,0}},
-    {{150,0,0},{150,80,0}}
+    {{150,80,40},{150,80,40}},
+    {{150,80,40},{150,80,40}},
+    {{150,80,40},{150,80,40}},
+    {{150,80,40},{150,80,40}},
+    {{150,80,40},{150,80,40}},
+    {{150,80,40},{150,80,40}},
+    {{150,80,40},{150,80,40}},
+    {{150,80,40},{150,80,40}},
 };
 #endif
 // Update MDC refinement
@@ -1482,16 +1482,17 @@ void init_considered_block(
 #if MDC_ADAPTIVE_LEVEL
                 // Update MDC refinement
                 uint8_t adjusted_refinement_mode = depth_refinement_mode;
-                if (is_complete_sb && (context_ptr->local_cu_array[blk_index].early_split_flag == EB_FALSE))
-                    adjusted_refinement_mode = update_mdc_level(
-                        picture_control_set_ptr,
-                        sb_ptr,
-                        sb_index,
-                        sequence_control_set_ptr->seq_header.sb_size,
-                        blk_geom,
-                        sequence_control_set_ptr->input_resolution,
-                        picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag,
-                        picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level);
+                if (picture_control_set_ptr->parent_pcs_ptr->adpative_ol_partitioning_level)
+                    if (is_complete_sb && (context_ptr->local_cu_array[blk_index].early_split_flag == EB_FALSE))
+                        adjusted_refinement_mode = update_mdc_level(
+                            picture_control_set_ptr,
+                            sb_ptr,
+                            sb_index,
+                            sequence_control_set_ptr->seq_header.sb_size,
+                            blk_geom,
+                            sequence_control_set_ptr->input_resolution,
+                            picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag,
+                            picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level);
 
                 switch (adjusted_refinement_mode) {
 #else

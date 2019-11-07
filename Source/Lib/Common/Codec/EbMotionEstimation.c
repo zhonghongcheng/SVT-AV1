@@ -13909,7 +13909,7 @@ EbErrorType motion_estimate_lcu(
             : EB_FALSE;
 #if TEST_M0_NSQ_TABLES
     is_nsq_table_used = picture_control_set_ptr->enc_mode <= ENC_M1 ? EB_FALSE : is_nsq_table_used;
-#elif TEST_M1_NSQ_TABLES
+#elif TEST_M1_NSQ_TABLES || TEST_M0_NSQ_TABLES_M2
 
 #else
     is_nsq_table_used = picture_control_set_ptr->enc_mode == ENC_M0 ?  EB_FALSE : is_nsq_table_used;

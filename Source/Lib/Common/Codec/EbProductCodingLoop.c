@@ -8115,7 +8115,7 @@ void md_encode_block(
 
             if (context_ptr->md_stage_0_count[cand_class_it] > 0 && context_ptr->md_stage_1_count[cand_class_it] > 0) {
                 // Distortion-based NIC proning to CLASS_1, CLASS_2, CLASS_3
-#if !UNDO_CLASS_REST_CHECK_M1_BEYOND
+#if !TUNED_TH_S
                 if (cand_class_it == CAND_CLASS_1 || cand_class_it == CAND_CLASS_2 || cand_class_it == CAND_CLASS_3) 
 #endif
                 {
@@ -8128,7 +8128,7 @@ void md_encode_block(
                     if (context_ptr->md_stage_1_count[cand_class_it])
 #endif
 
-#if !UNDO_INTRA_COST_CHECK_M1_BEYOND
+#if !TUNED_TH_S
                     if (context_ptr->md_stage_0_count[CAND_CLASS_0] > 0 && *(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->fast_cost_ptr) <
                         *(context_ptr->candidate_buffer_ptr_array[context_ptr->cand_buff_indices[CAND_CLASS_0][0]]->fast_cost_ptr)) 
 #endif

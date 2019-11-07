@@ -1679,7 +1679,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
     else
         context_ptr->edge_based_skip_angle_intra = 0;
-#if TEST_M1_PRUNE_REC_PART
+#if M0_PRUNE_REC_PART_M3
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode <= ENC_M3)
+#elif TEST_M0_PRUNE_REC_PART_M2
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode <= ENC_M2)
+#elif TEST_M1_PRUNE_REC_PART
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
 #elif TEST_M0_PRUNE_REC_PART
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode <= ENC_M1)
@@ -1707,7 +1711,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
     // Derive distortion-based md_stage_0_count proning
 #if STAGE_1_COUNT_PRUNING_TH_S
-    if (MR_MODE)
+    if (MR_MODE || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
         context_ptr->md_stage_1_count_th_s = (uint64_t)~0;
     else
         context_ptr->md_stage_1_count_th_s = 75;

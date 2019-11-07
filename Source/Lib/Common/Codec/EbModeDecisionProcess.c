@@ -500,7 +500,9 @@ void reset_mode_decision(
     else
 #if WARP_UPDATE
         enable_wm = (MR_MODE ||
-#if TEST_M0_WARP
+#if TEST_M0_WARP_M3
+        (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M3 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ||
+#elif TEST_M0_WARP
         (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M1 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ||
 #else
         (picture_control_set_ptr->parent_pcs_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ||
