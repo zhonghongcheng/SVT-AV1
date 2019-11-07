@@ -1674,10 +1674,27 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->md_exit_th = 18;
 
     // Derive distortion-based md_stage_0_count proning
+#if STAGE_1_COUNT_PRUNING_TH_S
+    if (MR_MODE)
+        context_ptr->md_stage_1_count_th_s = (uint64_t)~0;
+    else
+        context_ptr->md_stage_1_count_th_s = 75;
+#else
     if (MR_MODE)
         context_ptr->dist_base_md_stage_0_count_th = (uint64_t)~0;
     else
         context_ptr->dist_base_md_stage_0_count_th = 75;
+#endif
+#endif
+
+#if STAGE_1_COUNT_PRUNING_TH_C
+    // TH_C(for class removal)
+    // Remove class if deviation to the best higher than TH_C
+    if (MR_MODE)
+        context_ptr->md_stage_1_count_th_c = (uint64_t)~0;
+    else
+        context_ptr->md_stage_1_count_th_c = (uint64_t)~0;
+
 #endif
 #if STAGE_2_COUNT_PRUNING_TH_S
     // TH_S(for candidate removal per class)
