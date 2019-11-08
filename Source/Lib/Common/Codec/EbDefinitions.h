@@ -154,7 +154,7 @@ extern "C" {
 #define STAGE_1_COUNT_PRUNING_TH_S             1 // Refactor TH_S pruning 
 
 #define TUNED_TH_S                             1 
-#define STAGE_1_COUNT_PRUNING_TH_C             0 // <-- to test: d_stage_1_count_th is now set to max
+#define STAGE_1_COUNT_PRUNING_TH_C             1 // <-- to test: d_stage_1_count_th is now set to max
 
 
 #define INJECT_NEW_NEAR_NEAR_NEW     1   // Inject NEW_NEAR / NEAR_NEW inter prediction

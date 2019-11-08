@@ -1729,10 +1729,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if STAGE_1_COUNT_PRUNING_TH_C
     // TH_C(for class removal)
     // Remove class if deviation to the best higher than TH_C
-    if (MR_MODE)
+    if (MR_MODE || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
         context_ptr->md_stage_1_count_th_c = (uint64_t)~0;
     else
-        context_ptr->md_stage_1_count_th_c = 50;
+        context_ptr->md_stage_1_count_th_c = 100;
 
 #endif
 #if STAGE_2_COUNT_PRUNING_TH_S
