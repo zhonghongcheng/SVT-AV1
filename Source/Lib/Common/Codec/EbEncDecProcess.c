@@ -1439,7 +1439,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #endif
 #if M0_tune
-#if TEST_M0_PRED_ME
+#if TEST_M0_PRED_ME_M3
+            context_ptr->predictive_me_level = (picture_control_set_ptr->enc_mode <= ENC_M3) ? 5 : 4;
+#elif TEST_M0_PRED_ME
             context_ptr->predictive_me_level = (picture_control_set_ptr->enc_mode <= ENC_M1) ? 5 : 4;
 #else
             context_ptr->predictive_me_level = (picture_control_set_ptr->enc_mode <= ENC_M0)? 5: 4;
