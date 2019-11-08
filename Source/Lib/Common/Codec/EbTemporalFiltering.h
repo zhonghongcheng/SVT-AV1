@@ -58,7 +58,7 @@
 #define THRES_DIFF_HIGH 12000
 
 #define OD_DIVU_DMAX (1024)
-#define AHD_TH_WEIGHT 50
+#define AHD_TH_WEIGHT 20
 
 int svt_av1_init_temporal_filtering(PictureParentControlSet **list_picture_control_set_ptr,
                                     PictureParentControlSet *picture_control_set_ptr_central,
