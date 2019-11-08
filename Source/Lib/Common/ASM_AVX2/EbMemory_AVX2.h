@@ -22,6 +22,11 @@ extern "C" {
     _mm256_set_m128i((hi), (lo))
 #endif
 
+#ifndef _mm256_cvtsi256_si32
+#define _mm256_cvtsi256_si32(a) \
+    _mm_cvtsi128_si32(_mm256_castsi256_si128(a))
+#endif
+
 static INLINE __m256i load_u8_4x4_avx2(const uint8_t *const src,
     const uint32_t stride)
 {
@@ -31,6 +36,13 @@ static INLINE __m256i load_u8_4x4_avx2(const uint8_t *const src,
     src23 = _mm_cvtsi32_si128(*(int32_t*)(src + 2 * stride));
     src23 = _mm_insert_epi32(src23, *(int32_t *)(src + 3 * stride), 1);
     return _mm256_setr_m128i(src01, src23);
+}
+
+static INLINE __m256i load_u8_8x2_avx2(const uint8_t *const src,
+    const ptrdiff_t stride) {
+    const __m128i s0 = _mm_loadl_epi64((__m128i *)src);
+    const __m128i s1 = _mm_loadl_epi64((__m128i *)(src + stride));
+    return _mm256_setr_m128i(s0, s1);
 }
 
 static INLINE __m256i load_u8_8x4_avx2(const uint8_t *const src,
@@ -88,8 +100,14 @@ static INLINE void storeu_u8_16x2_avx2(const __m256i src,
     storeu_8bit_16x2_avx2(src, dst, sizeof(*dst) * stride);
 }
 
+static INLINE void storeu_s16_8x2_avx2(const __m256i src,
+    int16_t *const dst,
+    const int32_t stride) {
+    storeu_8bit_16x2_avx2(src, dst, sizeof(*dst) * stride);
+}
+
 static INLINE void storeu_u16_8x2_avx2(const __m256i src,
-    ConvBufType *const dst,
+    uint16_t *const dst,
     const int32_t stride) {
     storeu_8bit_16x2_avx2(src, dst,  sizeof(*dst) * stride);
 }

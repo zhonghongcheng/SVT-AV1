@@ -15,7 +15,9 @@
 */
 
 #include <stdlib.h>
-
+#if TWO_PASS
+#include <stdio.h>
+#endif
 #include "EbEntropyCodingProcess.h"
 #include "EbEncDecResults.h"
 #include "EbEntropyCodingResults.h"
@@ -23,8 +25,6 @@
 #include "EbCabacContextModel.h"
 #define  AV1_MIN_TILE_SIZE_BYTES 1
 void eb_av1_reset_loop_restoration(PictureControlSet     *piCSetPtr);
-void eb_av1_tile_set_col(TileInfo *tile, PictureParentControlSet * pcs_ptr, int col);
-void eb_av1_tile_set_row(TileInfo *tile, PictureParentControlSet * pcs_ptr, int row);
 
 /******************************************************
  * Enc Dec Context Constructor
@@ -362,7 +362,27 @@ static EbBool UpdateEntropyCodingRows(
 
     return processNextRow;
 }
-
+#if TWO_PASS
+/******************************************************
+ * Write Stat to File
+ * write stat_struct per frame in the first pass
+ ******************************************************/
+void write_stat_to_file(
+    SequenceControlSet    *sequence_control_set_ptr,
+    stat_struct_t          stat_struct,
+    uint64_t               ref_poc)
+{
+    eb_block_on_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
+    int32_t fseek_return_value = fseek(sequence_control_set_ptr->static_config.output_stat_file, (long)ref_poc * sizeof(stat_struct_t), SEEK_SET);
+    if (fseek_return_value != 0)
+        printf("Error in fseek  returnVal %i\n", fseek_return_value);
+    fwrite(&stat_struct,
+        sizeof(stat_struct_t),
+        (size_t)1,
+        sequence_control_set_ptr->static_config.output_stat_file);
+    eb_release_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
+}
+#endif
 /******************************************************
  * Entropy Coding Kernel
  ******************************************************/
@@ -438,6 +458,10 @@ void* entropy_coding_kernel(void *input_ptr)
                     context_ptr->sb_origin_y = sb_origin_y;
                     if (sb_index == 0)
                         eb_av1_reset_loop_restoration(picture_control_set_ptr);
+#if PAL_SUP
+                    if (sb_index == 0)
+                        context_ptr->tok = picture_control_set_ptr->tile_tok[0][0];
+#endif
                     sb_ptr->total_bits = 0;
                     uint32_t prev_pos = sb_index ? picture_control_set_ptr->entropy_coder_ptr->ec_writer.ec.offs : 0;//residual_bc.pos
                     EbPictureBufferDesc *coeff_picture_ptr = sb_ptr->quantized_coeff;
@@ -484,9 +508,25 @@ void* entropy_coding_kernel(void *input_ptr)
                         picture_control_set_ptr->entropy_coding_pic_done = EB_TRUE;
 
                         encode_slice_finish(picture_control_set_ptr->entropy_coder_ptr);
-
+#if TWO_PASS
+                        // for Non Reference frames
+                        if (sequence_control_set_ptr->use_output_stat_file &&
+                            !picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
+                            write_stat_to_file(
+                                sequence_control_set_ptr,
+                                *picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr,
+                                picture_control_set_ptr->parent_pcs_ptr->picture_number);
+#endif
                         // Release the List 0 Reference Pictures
                         for (ref_idx = 0; ref_idx < picture_control_set_ptr->parent_pcs_ptr->ref_list0_count; ++ref_idx) {
+#if TWO_PASS
+                            if (sequence_control_set_ptr->use_output_stat_file &&
+                                picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx] != EB_NULL && picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx]->live_count == 1)
+                                write_stat_to_file(
+                                    sequence_control_set_ptr,
+                                    ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx]->object_ptr)->stat_struct,
+                                    ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx]->object_ptr)->ref_poc);
+#endif
                             if (picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx] != EB_NULL) {
 
                                 eb_release_object(picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx]);
@@ -495,6 +535,15 @@ void* entropy_coding_kernel(void *input_ptr)
 
                         // Release the List 1 Reference Pictures
                         for (ref_idx = 0; ref_idx < picture_control_set_ptr->parent_pcs_ptr->ref_list1_count; ++ref_idx) {
+#if TWO_PASS
+                            if (sequence_control_set_ptr->use_output_stat_file &&
+                                picture_control_set_ptr->ref_pic_ptr_array[1][ref_idx] != EB_NULL && picture_control_set_ptr->ref_pic_ptr_array[1][ref_idx]->live_count == 1)
+                                write_stat_to_file(
+                                    sequence_control_set_ptr,
+                                    ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[1][ref_idx]->object_ptr)->stat_struct,
+                                    ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[1][ref_idx]->object_ptr)->ref_poc);
+#endif
+
                             if (picture_control_set_ptr->ref_pic_ptr_array[1][ref_idx] != EB_NULL)
                                 eb_release_object(picture_control_set_ptr->ref_pic_ptr_array[1][ref_idx]);
                         }
@@ -526,7 +575,7 @@ void* entropy_coding_kernel(void *input_ptr)
              for (tile_row = 0; tile_row < tile_rows; tile_row++)
              {
                  TileInfo tile_info;
-                 eb_av1_tile_set_row(&tile_info, ppcs_ptr, tile_row);
+                 eb_av1_tile_set_row(&tile_info, &cm->tiles_info, cm->mi_rows, tile_row);
 
                  for (tile_col = 0; tile_col < tile_cols; tile_col++)
                  {
@@ -543,14 +592,22 @@ void* entropy_coding_kernel(void *input_ptr)
                          context_ptr,
                          picture_control_set_ptr,
                          sequence_control_set_ptr);
+#if PAL_SUP
+                     context_ptr->tok = picture_control_set_ptr->tile_tok[0][0];
+#endif
 
-                     eb_av1_tile_set_col(&tile_info, ppcs_ptr, tile_col);
+                     eb_av1_tile_set_col(&tile_info, &cm->tiles_info, cm->mi_cols, tile_col);
 
                      eb_av1_reset_loop_restoration(picture_control_set_ptr);
+                     int sb_size_log2 = sequence_control_set_ptr->seq_header.sb_size_log2;
 
-                     for (y_lcu_index = cm->tiles_info.tile_row_start_sb[tile_row]; y_lcu_index < (uint32_t)cm->tiles_info.tile_row_start_sb[tile_row + 1]; ++y_lcu_index)
+                     for ((y_lcu_index = cm->tiles_info.tile_row_start_mi[tile_row] >> sb_size_log2);
+                          (y_lcu_index < (uint32_t)cm->tiles_info.tile_row_start_mi[tile_row + 1] >> sb_size_log2);
+                          y_lcu_index++)
                      {
-                         for (x_lcu_index = cm->tiles_info.tile_col_start_sb[tile_col]; x_lcu_index < (uint32_t)cm->tiles_info.tile_col_start_sb[tile_col + 1]; ++x_lcu_index)
+                         for (x_lcu_index = (cm->tiles_info.tile_col_start_mi[tile_col] >> sb_size_log2);
+                              x_lcu_index < ((uint32_t)cm->tiles_info.tile_col_start_mi[tile_col + 1] >> sb_size_log2);
+                              x_lcu_index++)
                          {
                              int sb_index = (uint16_t)(x_lcu_index + y_lcu_index * picture_width_in_sb);
                              sb_ptr = picture_control_set_ptr->sb_ptr_array[sb_index];

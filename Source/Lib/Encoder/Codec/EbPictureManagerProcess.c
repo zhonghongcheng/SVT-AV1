@@ -20,9 +20,8 @@
 #include "EbPredictionStructure.h"
 #include "EbRateControlTasks.h"
 #include "EbSvtAv1ErrorCodes.h"
+#include "EbEntropyCoding.h"
 
-void eb_av1_tile_set_col(TileInfo *tile, PictureParentControlSet * pcs_ptr, int col);
-void eb_av1_tile_set_row(TileInfo *tile, PictureParentControlSet * pcs_ptr, int row);
 void set_tile_info(PictureParentControlSet * pcs_ptr);
 extern MvReferenceFrame svt_get_ref_frame_type(uint8_t list, uint8_t ref_idx);
 /************************************************
@@ -54,7 +53,12 @@ static void ConfigurePictureEdges(
 
     return;
 }
-
+#if TWO_PASS
+void write_stat_to_file(
+    SequenceControlSet    *sequence_control_set_ptr,
+    stat_struct_t          stat_struct,
+    uint64_t               ref_poc);
+#endif
 /************************************************
  * Picture Manager Context Constructor
  ************************************************/
@@ -695,18 +699,23 @@ void* picture_manager_kernel(void *input_ptr)
                         const int tile_cols = ppcs_ptr->av1_cm->tiles_info.tile_cols;
                         const int tile_rows = ppcs_ptr->av1_cm->tiles_info.tile_rows;
                         TileInfo tile_info;
+                        int sb_size_log2 = sequence_control_set_ptr->seq_header.sb_size_log2;
                         //Tile Loop
                         for (tile_row = 0; tile_row < tile_rows; tile_row++)
                         {
-                            eb_av1_tile_set_row(&tile_info, ppcs_ptr, tile_row);
+                            eb_av1_tile_set_row(&tile_info, &cm->tiles_info, cm->mi_rows, tile_row);
 
                             for (tile_col = 0; tile_col < tile_cols; tile_col++)
                             {
-                                eb_av1_tile_set_col(&tile_info, ppcs_ptr, tile_col);
+                                eb_av1_tile_set_col(&tile_info, &cm->tiles_info, cm->mi_cols, tile_col);
 
-                                for (y_lcu_index = cm->tiles_info.tile_row_start_sb[tile_row]; y_lcu_index < (uint32_t)cm->tiles_info.tile_row_start_sb[tile_row + 1]; ++y_lcu_index)
+                                for ((y_lcu_index = cm->tiles_info.tile_row_start_mi[tile_row] >> sb_size_log2);
+                                     (y_lcu_index < (uint32_t)cm->tiles_info.tile_row_start_mi[tile_row + 1] >> sb_size_log2);
+                                     y_lcu_index++)
                                 {
-                                    for (x_lcu_index = cm->tiles_info.tile_col_start_sb[tile_col]; x_lcu_index < (uint32_t)cm->tiles_info.tile_col_start_sb[tile_col + 1]; ++x_lcu_index)
+                                    for ((x_lcu_index = cm->tiles_info.tile_col_start_mi[tile_col] >> sb_size_log2);
+                                         (x_lcu_index < (uint32_t)cm->tiles_info.tile_col_start_mi[tile_col + 1] >> sb_size_log2);
+                                         x_lcu_index++)
                                     {
                                         int sb_index = (uint16_t)(x_lcu_index + y_lcu_index * picture_width_in_sb);
                                         ChildPictureControlSetPtr->sb_ptr_array[sb_index]->tile_info = tile_info;
@@ -739,7 +748,10 @@ void* picture_manager_kernel(void *input_ptr)
 
                         EB_MEMSET(ChildPictureControlSetPtr->ref_slice_type_array[REF_LIST_0], 0, REF_LIST_MAX_DEPTH * sizeof(EB_SLICE));
                         EB_MEMSET(ChildPictureControlSetPtr->ref_slice_type_array[REF_LIST_1], 0, REF_LIST_MAX_DEPTH * sizeof(EB_SLICE));
-
+#if TWO_PASS
+                        EB_MEMSET(ChildPictureControlSetPtr->ref_pic_referenced_area_avg_array[REF_LIST_0], 0, REF_LIST_MAX_DEPTH * sizeof(uint64_t));
+                        EB_MEMSET(ChildPictureControlSetPtr->ref_pic_referenced_area_avg_array[REF_LIST_1], 0, REF_LIST_MAX_DEPTH * sizeof(uint64_t));
+#endif
                         int8_t max_temporal_index = -1, ref_index = 0;
                         // Configure List0
                         if ((entryPictureControlSetPtr->slice_type == P_SLICE) || (entryPictureControlSetPtr->slice_type == B_SLICE)) {
@@ -771,6 +783,9 @@ void* picture_manager_kernel(void *input_ptr)
                                     ChildPictureControlSetPtr->ref_pic_ptr_array[REF_LIST_0][refIdx] = referenceEntryPtr->reference_object_ptr;
                                     ChildPictureControlSetPtr->ref_pic_qp_array[REF_LIST_0][refIdx] = (uint8_t)((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->qp;
                                     ChildPictureControlSetPtr->ref_slice_type_array[REF_LIST_0][refIdx] = ((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->slice_type;
+#if TWO_PASS
+                                    ChildPictureControlSetPtr->ref_pic_referenced_area_avg_array[REF_LIST_0][refIdx] = ((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->referenced_area_avg;
+#endif
                                     // Increment the Reference's liveCount by the number of tiles in the input picture
                                     eb_object_inc_live_count(
                                         referenceEntryPtr->reference_object_ptr,
@@ -820,7 +835,9 @@ void* picture_manager_kernel(void *input_ptr)
 
                                     ChildPictureControlSetPtr->ref_pic_qp_array[REF_LIST_1][refIdx] = (uint8_t)((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->qp;
                                     ChildPictureControlSetPtr->ref_slice_type_array[REF_LIST_1][refIdx] = ((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->slice_type;
-
+#if TWO_PASS
+                                    ChildPictureControlSetPtr->ref_pic_referenced_area_avg_array[REF_LIST_1][refIdx] = ((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->referenced_area_avg;
+#endif
                                     // Increment the Reference's liveCount by the number of tiles in the input picture
                                     eb_object_inc_live_count(
                                         referenceEntryPtr->reference_object_ptr,
@@ -905,6 +922,14 @@ void* picture_manager_kernel(void *input_ptr)
                     (referenceEntryPtr->reference_object_ptr))
                 {
                     // Release the nominal live_count value
+#if TWO_PASS
+                    if (sequence_control_set_ptr->use_output_stat_file &&
+                        referenceEntryPtr->reference_object_ptr->live_count == 1)
+                        write_stat_to_file(
+                            sequence_control_set_ptr,
+                            ((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->stat_struct,
+                            ((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->ref_poc);
+#endif
                     eb_release_object(referenceEntryPtr->reference_object_ptr);
                     referenceEntryPtr->reference_object_ptr = (EbObjectWrapper*)EB_NULL;
                     referenceEntryPtr->reference_available = EB_FALSE;

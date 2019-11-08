@@ -52,6 +52,12 @@ extern "C" {
         uint16_t                    y_count_non_zero_coeffs[4];// Store nonzero CoeffNum, per TU. If one TU, stored in 0, otherwise 4 tus stored in 0 to 3
     } MdEncPassCuData;
 
+#if PAL_SUP
+    typedef struct {
+        uint8_t best_palette_color_map[MAX_PALETTE_SQUARE];
+        int kmeans_data_buf[2 * MAX_PALETTE_SQUARE];
+    } PALETTE_BUFFER;
+#endif
     typedef struct MdCodingUnit
     {
         unsigned                    tested_cu_flag                  : 1;   //tells whether this CU is tested in MD.
@@ -148,7 +154,10 @@ extern "C" {
         PredictionUnit               *pu_ptr;
         const PredictionUnitStats    *pu_stats;
         MvUnit                        mv_unit;
-
+#if PAL_SUP
+        PALETTE_BUFFER            palette_buffer;
+        PaletteInfo              palette_cand_array[MAX_PAL_CAND];
+#endif
         // Entropy Coder
         EntropyCoder                 *coeff_est_entropy_coder_ptr;
         MdEncPassCuData               *md_ep_pipe_sb;
@@ -252,13 +261,27 @@ extern "C" {
         DECLARE_ALIGNED(32, int16_t, diff10[MAX_SB_SQUARE]);
     unsigned int prediction_mse ;
     EbBool      variance_ready;
+
+#if REMOVE_MD_STAGE_1
+    uint32_t                            cand_buff_indices[CAND_CLASS_TOTAL][MAX_NFL_BUFF];
+    uint8_t                             md_staging_mode;
+    uint8_t                             bypass_md_stage_1[CAND_CLASS_TOTAL];
+
+    uint32_t                            md_stage_0_count[CAND_CLASS_TOTAL];
+    uint32_t                            md_stage_1_count[CAND_CLASS_TOTAL];
+    uint32_t                            md_stage_2_count[CAND_CLASS_TOTAL];
+
+    uint32_t                            md_stage_1_total_count;
+    uint32_t                            md_stage_2_total_count;
+
+    uint8_t                             combine_class12; // 1:class1 and 2 are combined.
+#else
     MD_STAGE                            md_stage;
 
     uint32_t                            cand_buff_indices[CAND_CLASS_TOTAL][MAX_NFL_BUFF];
 
 
     uint8_t                             md_staging_mode;
-
     uint8_t                             bypass_stage1[CAND_CLASS_TOTAL];
     uint8_t                             bypass_stage2[CAND_CLASS_TOTAL];
 
@@ -269,14 +292,13 @@ extern "C" {
 
     uint32_t                            md_stage_2_total_count;
     uint32_t                            md_stage_3_total_count;
-
     uint8_t                             combine_class12; //1:class1 and 2 are combined.
-
+#endif
     CAND_CLASS                          target_class;
 
     // fast_loop_core signals
     EbBool                              md_staging_use_bilinear;
-    EbBool                              md_staging_interpolation_search;
+    EbBool                              md_staging_skip_interpolation_search;
     EbBool                              md_staging_skip_inter_chroma_pred;
 
     // full_loop_core signals
@@ -301,9 +323,31 @@ extern "C" {
     uint64_t                            md_exit_th;
     uint64_t                            dist_base_md_stage_0_count_th;
 #endif
+#if OBMC_FLAG
+    DECLARE_ALIGNED(16, uint8_t, obmc_buff_0[2 * MAX_MB_PLANE * MAX_SB_SQUARE]);
+    DECLARE_ALIGNED(16, uint8_t, obmc_buff_1[2 * MAX_MB_PLANE * MAX_SB_SQUARE]);
+    DECLARE_ALIGNED(16, int32_t, wsrc_buf[MAX_SB_SQUARE]);
+    DECLARE_ALIGNED(16, int32_t, mask_buf[MAX_SB_SQUARE]);
+    unsigned int pred_sse[REF_FRAMES];
+#endif
 #if ENHANCE_ATB
     uint8_t                            *above_txfm_context;
     uint8_t                            *left_txfm_context;
+#endif
+#if COMBINE_MDC_NSQ_TABLE
+    PART best_nsq_sahpe1;
+    PART best_nsq_sahpe2;
+    PART best_nsq_sahpe3;
+    PART best_nsq_sahpe4;
+    PART best_nsq_sahpe5;
+    PART best_nsq_sahpe6;
+    PART best_nsq_sahpe7;
+    PART best_nsq_sahpe8;
+#endif
+
+#if LESS_RECTANGULAR_CHECK_LEVEL
+    // square cost weighting for deciding if a/b shapes could be skipped
+    uint32_t sq_weight;
 #endif
     } ModeDecisionContext;
 
@@ -334,7 +378,11 @@ extern "C" {
         EbColorFormat              color_format,
         EbFifo                    *mode_decision_configuration_input_fifo_ptr,
         EbFifo                    *mode_decision_output_fifo_ptr,
-        EbBool                     enable_hbd_mode_decision);
+        EbBool                     enable_hbd_mode_decision
+#if PAL_SUP
+        ,uint8_t                 cfg_palette
+#endif
+    );
 
     extern void reset_mode_decision_neighbor_arrays(
         PictureControlSet *picture_control_set_ptr);

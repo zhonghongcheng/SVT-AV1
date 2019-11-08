@@ -70,6 +70,9 @@ extern "C" {
         EbBool                                 merge_flag;
         uint16_t                               count_non_zero_coeffs;
         uint8_t                                type;
+#if PAL_SUP
+        PaletteInfo                          palette_info;
+#endif
         // MD Rate Estimation Ptr
         MdRateEstimationContext             *md_rate_estimation_ptr; // 64 bits
         uint64_t                               fast_luma_rate;
@@ -98,6 +101,9 @@ extern "C" {
         int32_t                                angle_delta[PLANE_TYPES];
         EbBool                                 is_directional_mode_flag;
         EbBool                                 is_directional_chroma_mode_flag;
+#if FILTER_INTRA_FLAG
+        uint8_t                                filter_intra_mode;
+#endif
         uint32_t                               intra_chroma_mode; // AV1 mode, no need to convert
 
         // Index of the alpha Cb and alpha Cr combination

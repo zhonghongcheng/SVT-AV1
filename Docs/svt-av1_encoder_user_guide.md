@@ -114,6 +114,9 @@ The encoder parameters present in the `Sample.cfg` file are listed in this table
 | **QpFile** | -qp-file | any string | Null | Path to qp file |
 | **StatReport** | -stat-report | [0 - 1] | 0 | When set to 1, calculate and display PSNR values |
 | **StatFile** | -stat-file | any string | Null | Path to statistics file if specified and StatReport is set to 1, per picture statistics are outputted in the file|
+| **EncoderMode2p** | -enc-mode-2p | [0 - 8] | 8 | Encoder Preset [0,1,2,3,4,5,6,7,8] 0 = highest quality, 8 = highest speed. Passed to encoder's first pass to use the ME settings of the second pass to achieve better bdRate|
+| **InputStatFile** | -input-stat-file | any string | Null | Input stat file for second pass|
+| **OutputStatFile** | -output-stat-file | any string | Null | Output stat file for first pass|
 | **EncoderMode** | -enc-mode | [0 - 8] | 8 | Encoder Preset [0,1,2,3,4,5,6,7,8] 0 = highest quality, 8 = highest speed |
 | **EncoderBitDepth** | -bit-depth | [8 , 10] | 8 | specifies the bit depth of the input video |
 | **CompressedTenBitFormat** | -compressed-ten-bit-format | [0 - 1] | 0 | Offline packing of the 2bits: requires two bits packed input (0: OFF, 1: ON) |
@@ -127,6 +130,7 @@ The encoder parameters present in the `Sample.cfg` file are listed in this table
 | **HierarchicalLevels** | -hierarchical-levels | [3 – 4] | 4 | 0 : Flat4: 5-Level HierarchyMinigop Size = (2^HierarchicalLevels) (e.g. 3 == > 7B pyramid, 4 == > 15B Pyramid) |
 | **IntraPeriod** | -intra-period | [-2 - 255] | -2 | Distance Between Intra Frame inserted. -1 denotes no intra update. -2 denotes auto. |
 | **IntraRefreshType** | -irefresh-type | [1 – 2] | 1 | 1: CRA (Open GOP)2: IDR (Closed GOP) |
+| **TargetBitRate** | -tbr | [1 - 4294967295] | 7000000 | Target bitrate in bits per second when RateControlMode is set to 1, 2, or 3 |
 | **QP** | -q | [0 - 63] | 50 | Quantization parameter used when RateControl is set to 0 |
 | **RateControlMode** | -rc | [0 - 3] | 0 | 0 = CQP , 1 = ABR , 2 = ABR , 3 = CVBR |
 | **AdaptiveQuantization** | -adaptive-quantization | [0 - 2] | 0 | 0 = OFF , 1 = variance base using segments , 2 = Deltaq pred efficiency (default) |
@@ -160,7 +164,8 @@ The encoder parameters present in the `Sample.cfg` file are listed in this table
 | **TileRow** | -tile-rows | [0-6] | 0 | log2 of tile rows |
 | **TileCol** | -tile-columns | [0-6] | 0 | log2 of tile columns |
 | **UnrestrictedMotionVector** | -umv | [0-1] | 1 | Enables or disables unrestriced motion vectors, 0 = OFF(motion vectors are constrained within tile boundary), 1 = ON. For MCTS support, set -umv 0 |
-
+| **PaletteMode** | -palette | [0 - 6] | -1 | Enable Palette mode (-1: Auto Mode(ON at level6 when SC is detected), 0: OFF 1: ON Level 1, ...6: ON Level6 ) |
+| **SquareWeight** | -sqw | 0 for off and any whole number percentage | 100 | Weighting applied to square/h/v shape costs when deciding if a and b shapes could be skipped. Set to 100 for neutral weighting, lesser than 100 for faster encode and BD-Rate loss, and greater than 100 for slower encode and BD-Rate gain|
 ## Appendix A Encoder Parameters
 
 ### 1. Thread management parameters

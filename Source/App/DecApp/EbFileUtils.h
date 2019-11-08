@@ -65,7 +65,6 @@ typedef struct CLInput{
     struct Rational pixel_aspect_ratio;
     struct Rational framerate;
     EbColorFormat fmt;
-    EbBitDepth bit_depth;
     uint32_t   enable_md5;
     uint32_t  fps_frm;
     uint32_t  fps_summary;
@@ -76,7 +75,8 @@ typedef struct ObuDecInputContext {
     uint8_t *buffer;
     size_t buffer_capacity;
     size_t bytes_buffered;
-    int is_annexb;
+    uint32_t is_annexb;
+    uint64_t rem_tu_size;
 }ObuDecInputContext;
 
 typedef struct DecInputContext {

@@ -12,7 +12,17 @@
 static void mode_decision_context_dctor(EbPtr p)
 {
     ModeDecisionContext* obj = (ModeDecisionContext*)p;
-
+#if PAL_SUP
+    for (int cd = 0; cd < MAX_PAL_CAND; cd++)
+        if (obj->palette_cand_array[cd].color_idx_map)
+            EB_FREE_ARRAY(obj->palette_cand_array[cd].color_idx_map);
+    for (uint32_t candidateIndex = 0; candidateIndex < MODE_DECISION_CANDIDATE_MAX_COUNT; ++candidateIndex)
+        if (obj->fast_candidate_ptr_array[candidateIndex]->palette_info.color_idx_map)
+            EB_FREE_ARRAY(obj->fast_candidate_ptr_array[candidateIndex]->palette_info.color_idx_map);
+    for (uint32_t codedLeafIndex = 0; codedLeafIndex < BLOCK_MAX_COUNT_SB_128; ++codedLeafIndex)
+        if (obj->md_cu_arr_nsq[codedLeafIndex].palette_info.color_idx_map)
+            EB_FREE_ARRAY(obj->md_cu_arr_nsq[codedLeafIndex].palette_info.color_idx_map);
+#endif
     EB_FREE_ARRAY(obj->ref_best_ref_sq_table);
     EB_FREE_ARRAY(obj->ref_best_cost_sq_table);
 #if ENHANCE_ATB
@@ -31,7 +41,7 @@ static void mode_decision_context_dctor(EbPtr p)
 
 #if ENHANCE_ATB
     EB_FREE_ARRAY(obj->scratch_candidate_buffer->candidate_ptr);
-    EB_FREE_ARRAY(obj->scratch_candidate_buffer);
+    EB_DELETE(obj->scratch_candidate_buffer);
 #endif
 
     EB_DELETE(obj->trans_quant_buffers_ptr);
@@ -72,7 +82,11 @@ EbErrorType mode_decision_context_ctor(
     EbColorFormat         color_format,
     EbFifo                *mode_decision_configuration_input_fifo_ptr,
     EbFifo                *mode_decision_output_fifo_ptr,
-    EbBool                 enable_hbd_mode_decision )
+    EbBool                 enable_hbd_mode_decision
+#if PAL_SUP
+    ,uint8_t                 cfg_palette
+#endif
+)
 {
     uint32_t bufferIndex;
     uint32_t candidateIndex;
@@ -112,8 +126,21 @@ EbErrorType mode_decision_context_ctor(
     for (candidateIndex = 0; candidateIndex < MODE_DECISION_CANDIDATE_MAX_COUNT; ++candidateIndex) {
         context_ptr->fast_candidate_ptr_array[candidateIndex] = &context_ptr->fast_candidate_array[candidateIndex];
         context_ptr->fast_candidate_ptr_array[candidateIndex]->md_rate_estimation_ptr = context_ptr->md_rate_estimation_ptr;
+#if PAL_SUP
+        if (cfg_palette)
+            EB_MALLOC_ARRAY(context_ptr->fast_candidate_ptr_array[candidateIndex]->palette_info.color_idx_map, MAX_PALETTE_SQUARE);
+        else
+            context_ptr->fast_candidate_ptr_array[candidateIndex]->palette_info.color_idx_map = NULL;
+#endif
     }
 
+#if PAL_SUP
+    for (int cd = 0; cd < MAX_PAL_CAND; cd++)
+        if (cfg_palette)
+            EB_MALLOC_ARRAY(context_ptr->palette_cand_array[cd].color_idx_map, MAX_PALETTE_SQUARE);
+        else
+            context_ptr->palette_cand_array[cd].color_idx_map = NULL;
+#endif
     // Transform and Quantization Buffers
     EB_NEW(
         context_ptr->trans_quant_buffers_ptr,
@@ -139,14 +166,12 @@ EbErrorType mode_decision_context_ctor(
         );
     }
 #if ENHANCE_ATB
-    EB_MALLOC_ARRAY(context_ptr->scratch_candidate_buffer, 1);
-
     EB_NEW(
         context_ptr->scratch_candidate_buffer,
         mode_decision_scratch_candidate_buffer_ctor,
         context_ptr->hbd_mode_decision ? EB_10BIT : EB_8BIT);
 
-    EB_MALLOC_ARRAY(context_ptr->scratch_candidate_buffer->candidate_ptr, 1);
+    EB_ALLOC_PTR_ARRAY(context_ptr->scratch_candidate_buffer->candidate_ptr, 1);
 #endif
     context_ptr->md_cu_arr_nsq[0].av1xd = NULL;
     context_ptr->md_cu_arr_nsq[0].neigh_left_recon[0] = NULL;
@@ -182,7 +207,12 @@ EbErrorType mode_decision_context_ctor(
                 context_ptr->md_cu_arr_nsq[codedLeafIndex].neigh_top_recon[i] = context_ptr->md_cu_arr_nsq[0].neigh_top_recon[0] + offset;
             }
         }
-
+#if PAL_SUP
+        if (cfg_palette)
+            EB_MALLOC_ARRAY(context_ptr->md_cu_arr_nsq[codedLeafIndex].palette_info.color_idx_map, MAX_PALETTE_SQUARE);
+        else
+            context_ptr->md_cu_arr_nsq[codedLeafIndex].palette_info.color_idx_map = NULL;
+#endif
 #if NO_ENCDEC //SB128_TODO to upgrade
         {
             EbPictureBufferDescInitData initData;
@@ -448,8 +478,9 @@ void reset_mode_decision(
     // Reset Neighbor Arrays at start of new Segment / Picture
     if (segment_index == 0) {
         reset_mode_decision_neighbor_arrays(picture_control_set_ptr);
+#if !FIX_SETTINGS_RESET
     }
-
+#endif
 #if EIGHT_PEL_PREDICTIVE_ME
     picture_control_set_ptr->parent_pcs_ptr->frm_hdr.allow_high_precision_mv = picture_control_set_ptr->enc_mode == ENC_M0 &&
         (sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER) ? 1 : 0;
@@ -470,14 +501,42 @@ void reset_mode_decision(
 #else
         enable_wm = (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M5) || MR_MODE ? EB_TRUE : EB_FALSE;
 #endif
-
+#if !FIX_WM_SETTINGS
     enable_wm = picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index > 0 ? EB_FALSE : enable_wm;
-
+#endif
     frm_hdr->allow_warped_motion = enable_wm
         && !(frm_hdr->frame_type == KEY_FRAME || frm_hdr->frame_type == INTRA_ONLY_FRAME)
         && !frm_hdr->error_resilient_mode;
     frm_hdr->is_motion_mode_switchable = frm_hdr->allow_warped_motion;
+#if OBMC_FLAG
+    // OBMC Level                                   Settings
+    // 0                                            OFF
+    // 1                                            OBMC @(MVP, PME and ME) + 16 NICs
+    // 2                                            OBMC @(MVP, PME and ME) + Opt NICs
+    // 3                                            OBMC @(MVP, PME ) + Opt NICs
+    // 4                                            OBMC @(MVP, PME ) + Opt2 NICs
+    if (sequence_control_set_ptr->static_config.enable_obmc) {
+        if (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M0)
+            picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode =
+            picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0 && picture_control_set_ptr->slice_type != I_SLICE ? 2 : 0;
+        else
+            picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = 0;
 
+#if MR_MODE
+        picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode =
+            picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0 && picture_control_set_ptr->slice_type != I_SLICE ? 1 : 0;
+#endif
+    }
+    else
+        picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = 0;
+
+    frm_hdr->is_motion_mode_switchable =
+        frm_hdr->is_motion_mode_switchable || picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode;
+
+#endif
+#if FIX_SETTINGS_RESET
+    }
+#endif
     return;
 }
 

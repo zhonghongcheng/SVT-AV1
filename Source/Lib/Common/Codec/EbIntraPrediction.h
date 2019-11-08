@@ -133,6 +133,8 @@ int32_t intra_edge_filter_strength(int32_t bs0, int32_t bs1, int32_t delta, int3
     NEED_BOTTOMLEFT = 1 << 5,
 };
 
+int is_smooth(const BlockModeInfo *mbmi, int plane);
+
 extern const uint8_t extend_modes[INTRA_MODES];
 
 /* TODO: Need to harmonize with fun from EbAdaptiveMotionVectorPrediction.c */
@@ -299,19 +301,6 @@ void highbd_filter_intra_predictor(uint16_t *dst, ptrdiff_t stride,
         uint16_t          dx,              //output parameter, pointer to the prediction
         uint16_t          dy,              //output parameter, pointer to the prediction
         uint16_t          bd);
-
-    static EB_INTRA_NOANG_TYPE FUNC_TABLE IntraSmoothH_Av1_funcPtrArray[ASM_TYPE_TOTAL] = {
-        // NON_AVX2
-        ebav1_smooth_h_predictor,
-        // AVX2
-        ebav1_smooth_h_predictor,
-    };
-    static EB_INTRA_NOANG_TYPE FUNC_TABLE IntraSmoothV_Av1_funcPtrArray[ASM_TYPE_TOTAL] = {
-        // NON_AVX2
-        ebav1_smooth_v_predictor,
-        // AVX2
-        ebav1_smooth_v_predictor,
-    };
 
 typedef struct CflCtx {
         // Q3 reconstructed luma pixels (only Q2 is required, but Q3 is used to avoid
@@ -558,6 +547,9 @@ void eb_av1_predict_intra_block(
     PredictionMode mode,
     int32_t angle_delta,
     int32_t use_palette,
+#if PAL_SUP
+    PaletteInfo  *palette_info,
+#endif
     FilterIntraMode filter_intra_mode,
     uint8_t* topNeighArray,
     uint8_t* leftNeighArray,
@@ -584,6 +576,9 @@ void eb_av1_predict_intra_block_16bit(
     PredictionMode mode,
     int32_t angle_delta,
     int32_t use_palette,
+#if PAL_SUP
+    PaletteInfo  *palette_info,
+#endif
     FilterIntraMode filter_intra_mode,
     uint16_t* topNeighArray,
     uint16_t* leftNeighArray,

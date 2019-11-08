@@ -50,6 +50,12 @@ void av1_set_ref_frame(MvReferenceFrame *rf,
 #define S8  8*8
 #define S4  4*4
 
+static EB_AV1_INTER_PREDICTION_FUNC_PTR   av1_inter_prediction_function_table[2] =
+{
+    av1_inter_prediction,
+    av1_inter_prediction_hbd
+};
+
 typedef void(*EB_AV1_ENCODE_LOOP_FUNC_PTR)(
     PictureControlSet    *picture_control_set_ptr,
     EncDecContext       *context_ptr,
@@ -112,7 +118,7 @@ void residual_kernel(
             area_width,
             area_height);
     } else {
-        ResidualKernel(
+        residual_kernel8bit(
             &(input[input_offset]),
             input_stride,
             &(pred[pred_offset]),
@@ -495,7 +501,7 @@ static void Av1EncodeLoop(
     //**********************************
     if (component_mask == PICTURE_BUFFER_DESC_FULL_MASK || component_mask == PICTURE_BUFFER_DESC_LUMA_MASK)
     {
-        ResidualKernel(
+        residual_kernel8bit(
             input_samples->buffer_y + input_luma_offset,
             input_samples->stride_y,
             predSamples->buffer_y + pred_luma_offset,
@@ -704,7 +710,7 @@ static void Av1EncodeLoop(
         // Cb
         //**********************************
 
-        ResidualKernel(
+        residual_kernel8bit(
             input_samples->buffer_cb + input_cb_offset,
             input_samples->stride_cb,
             predSamples->buffer_cb + pred_cb_offset,
@@ -714,7 +720,7 @@ static void Av1EncodeLoop(
             context_ptr->blk_geom->tx_width_uv[cu_ptr->tx_depth][context_ptr->txb_itr],
             context_ptr->blk_geom->tx_height_uv[cu_ptr->tx_depth][context_ptr->txb_itr]);
 
-        ResidualKernel(
+        residual_kernel8bit(
             input_samples->buffer_cr + input_cr_offset,
             input_samples->stride_cr,
             predSamples->buffer_cr + pred_cr_offset,
@@ -1007,6 +1013,10 @@ static void Av1EncodeLoop16bit(
 
         if (cu_ptr->prediction_mode_flag == INTRA_MODE && cu_ptr->prediction_unit_array->intra_chroma_mode == UV_CFL_PRED) {
             EbPictureBufferDesc *reconSamples = predSamples16bit;
+#if ATB_10_BIT
+
+            uint32_t reconLumaOffset = (reconSamples->origin_y + round_origin_y) * reconSamples->stride_y + (reconSamples->origin_x + round_origin_x);
+#else
             uint32_t reconLumaOffset = (reconSamples->origin_y + origin_y)            * reconSamples->stride_y + (reconSamples->origin_x + origin_x);
             if (txb_ptr->y_has_coeff == EB_TRUE && cu_ptr->skip_flag == EB_FALSE) {
                 uint16_t     *predBuffer = ((uint16_t*)predSamples16bit->buffer_y) + pred_luma_offset;
@@ -1022,6 +1032,7 @@ static void Av1EncodeLoop16bit(
             }
             if (context_ptr->blk_geom->has_uv) {
                 reconLumaOffset = (reconSamples->origin_y + round_origin_y)            * reconSamples->stride_y + (reconSamples->origin_x + round_origin_x);
+#endif
             // Down sample Luma
             cfl_luma_subsampling_420_hbd_c(
                 ((uint16_t*)reconSamples->buffer_y) + reconLumaOffset,
@@ -1069,7 +1080,9 @@ static void Av1EncodeLoop16bit(
                 10,
                 context_ptr->blk_geom->tx_width_uv[cu_ptr->tx_depth][context_ptr->txb_itr],
                 context_ptr->blk_geom->tx_height_uv[cu_ptr->tx_depth][context_ptr->txb_itr]);
+#if !ATB_10_BIT
         }
+#endif
         }
 
         if (component_mask == PICTURE_BUFFER_DESC_FULL_MASK || component_mask == PICTURE_BUFFER_DESC_CHROMA_MASK) {
@@ -1349,8 +1362,9 @@ static void Av1EncodeGenerateRecon16bit(
     // Luma
     //**********************************
     if (component_mask & PICTURE_BUFFER_DESC_LUMA_MASK) {
+#if !ATB_10_BIT
         if (cu_ptr->prediction_mode_flag != INTRA_MODE || cu_ptr->prediction_unit_array->intra_chroma_mode != UV_CFL_PRED)
-
+#endif
         {
             pred_luma_offset = (predSamples->origin_y + origin_y)* predSamples->stride_y + (predSamples->origin_x + origin_x);
             if (txb_ptr->y_has_coeff == EB_TRUE && cu_ptr->skip_flag == EB_FALSE) {
@@ -1474,6 +1488,10 @@ void update_av1_mi_map(
     PictureControlSet *picture_control_set_ptr);
 
 void move_cu_data(
+#if PAL_SUP
+    PictureControlSet  *pcs,
+    EncDecContext      *context_ptr,
+#endif
     CodingUnit *src_cu,
     CodingUnit *dst_cu);
 
@@ -1558,18 +1576,37 @@ void perform_intra_coding_loop(
                 ED_STAGE,
                 context_ptr->blk_geom,
                 picture_control_set_ptr->parent_pcs_ptr->av1_cm,
+#if ATB_10_BIT
+                context_ptr->blk_geom->bwidth,
+                context_ptr->blk_geom->bheight,
+#else
                 context_ptr->blk_geom->tx_width[cu_ptr->tx_depth][context_ptr->txb_itr],
                 context_ptr->blk_geom->tx_height[cu_ptr->tx_depth][context_ptr->txb_itr],
+#endif
                 tx_size,
                 mode,
                 pu_ptr->angle_delta[PLANE_TYPE_Y],
+#if PAL_SUP
+                cu_ptr->palette_info.pmi.palette_size[0] > 0,
+                &cu_ptr->palette_info,
+#else
                 0,
+#endif
+#if FILTER_INTRA_FLAG
+                cu_ptr->filter_intra_mode,
+#else
                 FILTER_INTRA_MODES,
+#endif
                 topNeighArray + 1,
                 leftNeighArray + 1,
                 recon_buffer,
+#if ATB_10_BIT
+                context_ptr->blk_geom->tx_boff_x[cu_ptr->tx_depth][context_ptr->txb_itr] >> 2,
+                context_ptr->blk_geom->tx_boff_y[cu_ptr->tx_depth][context_ptr->txb_itr] >> 2,
+#else
                 0,
                 0,
+#endif
                 0,
                 context_ptr->blk_geom->bsize,
                 txb_origin_x,
@@ -1609,8 +1646,17 @@ void perform_intra_coding_loop(
                 tx_size,
                 mode,
                 pu_ptr->angle_delta[PLANE_TYPE_Y],
+#if PAL_SUP
+                cu_ptr->palette_info.pmi.palette_size[0] > 0,
+                &cu_ptr->palette_info,
+#else
                 0,
+#endif
+#if FILTER_INTRA_FLAG
+                cu_ptr->filter_intra_mode,
+#else
                 FILTER_INTRA_MODES,
+#endif
                 topNeighArray + 1,
                 leftNeighArray + 1,
                 recon_buffer,
@@ -1661,7 +1707,9 @@ void perform_intra_coding_loop(
             candidate_buffer->candidate_ptr->transform_type_uv = cu_ptr->transform_unit_array[context_ptr->txb_itr].transform_type[PLANE_TYPE_UV];
             candidate_buffer->candidate_ptr->type = cu_ptr->prediction_mode_flag;
             candidate_buffer->candidate_ptr->pred_mode = cu_ptr->pred_mode;
-
+#if FILTER_INTRA_FLAG
+            candidate_buffer->candidate_ptr->filter_intra_mode = cu_ptr->filter_intra_mode;
+#endif
             const uint32_t coeff1dOffset = context_ptr->coded_area_sb;
 
             av1_tu_estimate_coeff_bits(
@@ -1804,19 +1852,34 @@ void perform_intra_coding_loop(
                     ED_STAGE,
                     context_ptr->blk_geom,
                     picture_control_set_ptr->parent_pcs_ptr->av1_cm,
+#if ATB_10_BIT
+                    plane ? context_ptr->blk_geom->bwidth_uv : context_ptr->blk_geom->bwidth,
+                    plane ? context_ptr->blk_geom->bheight_uv : context_ptr->blk_geom->bheight,
+#else
                     plane ? context_ptr->blk_geom->bwidth_uv : context_ptr->blk_geom->tx_width[cu_ptr->tx_depth][context_ptr->txb_itr],
                     plane ? context_ptr->blk_geom->bheight_uv : context_ptr->blk_geom->tx_height[cu_ptr->tx_depth][context_ptr->txb_itr],
+#endif
                     tx_size,
                     mode,
                     plane ? pu_ptr->angle_delta[PLANE_TYPE_UV] : pu_ptr->angle_delta[PLANE_TYPE_Y],
+#if PAL_SUP
+                    0, //chroma
+                    &cu_ptr->palette_info,
+#else
                     0,
+#endif
                     FILTER_INTRA_MODES,
                     topNeighArray + 1,
                     leftNeighArray + 1,
                     recon_buffer,
+#if ATB_10_BIT
+                    plane ? 0 : context_ptr->blk_geom->tx_boff_x[cu_ptr->tx_depth][context_ptr->txb_itr] >> 2,
+                    plane ? 0 : context_ptr->blk_geom->tx_boff_y[cu_ptr->tx_depth][context_ptr->txb_itr] >> 2,
+#else
                     //int32_t dst_stride,
                     0,
                     0,
+#endif
                     plane,
                     context_ptr->blk_geom->bsize,
                     txb_origin_x,
@@ -1873,7 +1936,12 @@ void perform_intra_coding_loop(
                     tx_size,
                     mode,
                     plane ? pu_ptr->angle_delta[PLANE_TYPE_UV] : pu_ptr->angle_delta[PLANE_TYPE_Y],
+#if PAL_SUP
+                    0, //chroma
+                    &cu_ptr->palette_info,
+#else
                     0,
+#endif
                     FILTER_INTRA_MODES,
                     topNeighArray + 1,
                     leftNeighArray + 1,
@@ -1927,7 +1995,9 @@ void perform_intra_coding_loop(
             candidate_buffer->candidate_ptr->transform_type_uv = cu_ptr->transform_unit_array[context_ptr->txb_itr].transform_type[PLANE_TYPE_UV];
             candidate_buffer->candidate_ptr->type = cu_ptr->prediction_mode_flag;
             candidate_buffer->candidate_ptr->pred_mode = cu_ptr->pred_mode;
-
+#if FILTER_INTRA_FLAG
+            candidate_buffer->candidate_ptr->filter_intra_mode = cu_ptr->filter_intra_mode;
+#endif
             const uint32_t coeff1dOffset = context_ptr->coded_area_sb;
 
             av1_tu_estimate_coeff_bits(
@@ -2049,15 +2119,15 @@ void av1_copy_frame_mvs(PictureControlSet *picture_control_set_ptr, const Av1Com
             mv->mv.as_int = 0;
 
             for (int idx = 0; idx < 2; ++idx) {
-                MvReferenceFrame ref_frame = mi.ref_frame[idx];
+                MvReferenceFrame ref_frame = mi.block_mi.ref_frame[idx];
                 if (ref_frame > INTRA_FRAME) {
                     int8_t ref_idx = picture_control_set_ptr->ref_frame_side[ref_frame];
                     if (ref_idx) continue;
-                    if ((abs(mi.mv[idx].as_mv.row) > REFMVS_LIMIT) ||
-                        (abs(mi.mv[idx].as_mv.col) > REFMVS_LIMIT))
+                    if ((abs(mi.block_mi.mv[idx].as_mv.row) > REFMVS_LIMIT) ||
+                        (abs(mi.block_mi.mv[idx].as_mv.col) > REFMVS_LIMIT))
                         continue;
                     mv->ref_frame = ref_frame;
-                    mv->mv.as_int = mi.mv[idx].as_int;
+                    mv->mv.as_int = mi.block_mi.mv[idx].as_int;
                 }
             }
             mv++;
@@ -2184,8 +2254,7 @@ EB_EXTERN void av1_encode_pass(
                 (uint16_t *)context_ptr->input_sample16bit_buffer->buffer_y,
                 context_ptr->input_sample16bit_buffer->stride_y,
                 sb_width,
-                sb_height,
-                asm_type);
+                sb_height);
 
             compressed_pack_lcu(
                 inputPicture->buffer_cb + input_cb_offset,
@@ -2195,8 +2264,7 @@ EB_EXTERN void av1_encode_pass(
                 (uint16_t *)context_ptr->input_sample16bit_buffer->buffer_cb,
                 context_ptr->input_sample16bit_buffer->stride_cb,
                 sb_width >> 1,
-                sb_height >> 1,
-                asm_type);
+                sb_height >> 1);
 
             compressed_pack_lcu(
                 inputPicture->buffer_cr + input_cr_offset,
@@ -2206,8 +2274,7 @@ EB_EXTERN void av1_encode_pass(
                 (uint16_t *)context_ptr->input_sample16bit_buffer->buffer_cr,
                 context_ptr->input_sample16bit_buffer->stride_cr,
                 sb_width >> 1,
-                sb_height >> 1,
-                asm_type);
+                sb_height >> 1);
         }
         else {
             const uint32_t input_luma_offset = ((sb_origin_y + inputPicture->origin_y)         * inputPicture->stride_y) + (sb_origin_x + inputPicture->origin_x);
@@ -2285,7 +2352,9 @@ EB_EXTERN void av1_encode_pass(
                 picture_control_set_ptr,
                 LPF_PICK_FROM_Q);
 
-            eb_av1_loop_filter_frame_init(picture_control_set_ptr, 0, 3);
+            eb_av1_loop_filter_frame_init(
+                &picture_control_set_ptr->parent_pcs_ptr->frm_hdr,
+                &picture_control_set_ptr->parent_pcs_ptr->lf_info, 0, 3);
         }
     }
 #endif
@@ -2362,11 +2431,26 @@ EB_EXTERN void av1_encode_pass(
                     context_ptr->tot_intra_coded_area += blk_geom->bwidth* blk_geom->bheight;
                     if (picture_control_set_ptr->slice_type != I_SLICE)
                         context_ptr->intra_coded_area_sb[tbAddr] += blk_geom->bwidth* blk_geom->bheight;
+
+
+
+#if PAL_SUP
+                    if (sequence_control_set_ptr->static_config.encoder_bit_depth > EB_8BIT && picture_control_set_ptr->hbd_mode_decision==0 &&
+                        cu_ptr->palette_info.pmi.palette_size[0] > 0){
+                        //MD was done on 8bit, scale  palette colors to 10bit
+                        for (uint8_t col = 0; col < cu_ptr->palette_info.pmi.palette_size[0]; col++)
+                            cu_ptr->palette_info.pmi.palette_colors[col] *= 4;
+                    }
+#endif
                     // *Note - Transforms are the same size as predictions
                     // Partition Loop
                     context_ptr->txb_itr = 0;
                     // Transform partitioning path (INTRA Luma/Chroma)
+#if ATB_10_BIT
+                    if ( cu_ptr->av1xd->use_intrabc == 0) {
+#else
                     if (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT && cu_ptr->av1xd->use_intrabc == 0) {
+#endif
                         // Set the PU Loop Variables
                         pu_ptr = cu_ptr->prediction_unit_array;
                         // Generate Intra Luma Neighbor Modes
@@ -2465,8 +2549,9 @@ EB_EXTERN void av1_encode_pass(
                                    &context_ptr->md_context->cr_txb_skip_context,
                                    &context_ptr->md_context->cr_dc_sign_context);
                            }
-
+#if !ATB_10_BIT
                             if (cu_ptr->av1xd->use_intrabc)
+#endif
                             {
                                 MvReferenceFrame ref_frame = INTRA_FRAME;
                                 generate_av1_mvp_table(
@@ -2513,32 +2598,18 @@ EB_EXTERN void av1_encode_pass(
                                 if (is16bit)
                                     ref_pic_list0 = ((EbReferenceObject*)picture_control_set_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr->object_ptr)->reference_picture16bit;
 
-                                if (is16bit)
-                                    av1_inter_prediction_hbd(
-                                        picture_control_set_ptr,
-                                        cu_ptr->prediction_unit_array->ref_frame_type,
-                                        cu_ptr,
-                                        &context_ptr->mv_unit,
-                                        1,//intrabc
-                                        context_ptr->cu_origin_x,
-                                        context_ptr->cu_origin_y,
-                                        blk_geom->bwidth,
-                                        blk_geom->bheight,
-                                        ref_pic_list0,
-                                        0,
-                                        recon_buffer,
-                                        context_ptr->cu_origin_x,
-                                        context_ptr->cu_origin_y,
-                                        (uint8_t)sequence_control_set_ptr->static_config.encoder_bit_depth,
-                                        asm_type);
-                                else
-                                av1_inter_prediction(
+                                av1_inter_prediction_function_table[is16bit](
                                     picture_control_set_ptr,
                                     cu_ptr->interp_filters,
                                     cu_ptr,
                                     cu_ptr->prediction_unit_array->ref_frame_type,
                                     &context_ptr->mv_unit,
                                     1,// use_intrabc,
+#if OBMC_FLAG
+                                    SIMPLE_TRANSLATION,
+                                    0,
+                                    0,
+#endif
                                     1,
                                     &cu_ptr->interinter_comp,
 #if II_COMP_FLAG
@@ -2562,8 +2633,9 @@ EB_EXTERN void av1_encode_pass(
                                     context_ptr->cu_origin_x,
                                     context_ptr->cu_origin_y,
                                     EB_TRUE,
-                                    asm_type);
+                                    (uint8_t)sequence_control_set_ptr->static_config.encoder_bit_depth);
                             }
+#if !ATB_10_BIT
                             else
                             {
                                 if (is16bit) {
@@ -2615,8 +2687,18 @@ EB_EXTERN void av1_encode_pass(
                                         tx_size,
                                         mode,                                                       //PredictionMode mode,
                                         plane ? pu_ptr->angle_delta[PLANE_TYPE_UV] : pu_ptr->angle_delta[PLANE_TYPE_Y],
+#if PAL_SUP
+                                        plane ? 0    : cu_ptr->palette_info.pmi.palette_size[0] > 0,
+                                        plane ? NULL : &cu_ptr->palette_info,
+#else
                                         0,                                                          //int32_t use_palette,
+#endif
+
+#if FILTER_INTRA_FLAG
+                                        plane ? FILTER_INTRA_MODES : cu_ptr->filter_intra_mode,
+#else
                                         FILTER_INTRA_MODES,                                         //CHKN FilterIntraMode filter_intra_mode,
+#endif
                                         topNeighArray + 1,
                                         leftNeighArray + 1,
                                         recon_buffer,                                                //uint8_t *dst,
@@ -2690,7 +2772,12 @@ EB_EXTERN void av1_encode_pass(
                                         tx_size,
                                         mode,                                                       //PredictionMode mode,
                                         plane ? pu_ptr->angle_delta[PLANE_TYPE_UV] : pu_ptr->angle_delta[PLANE_TYPE_Y],
+#if PAL_SUP
+                                        1,
+                                        NULL, //coz we should not get here ?
+#else
                                         0,                                                          //int32_t use_palette,
+#endif
                                         FILTER_INTRA_MODES,                                         //CHKN FilterIntraMode filter_intra_mode,
                                         topNeighArray + 1,
                                         leftNeighArray + 1,
@@ -2709,7 +2796,7 @@ EB_EXTERN void av1_encode_pass(
                                 }
                                 }
                             }
-
+#endif
                             // Encode Transform Unit -INTRA-
                             {
                                 uint16_t             cb_qp = cu_ptr->qp;
@@ -2746,6 +2833,9 @@ EB_EXTERN void av1_encode_pass(
                                     candidate_buffer->candidate_ptr->type = cu_ptr->prediction_mode_flag;
                                     candidate_buffer->candidate_ptr->pred_mode = cu_ptr->pred_mode;
 
+#if FILTER_INTRA_FLAG
+                                    candidate_buffer->candidate_ptr->filter_intra_mode = cu_ptr->filter_intra_mode;
+#endif
                                     const uint32_t coeff1dOffset = context_ptr->coded_area_sb;
 
                                     av1_tu_estimate_coeff_bits(
@@ -3004,57 +3094,57 @@ EB_EXTERN void av1_encode_pass(
                         if (doMC &&
                             pu_ptr->motion_mode != WARPED_CAUSAL)
                         {
-                            if (is16bit) {
-                                av1_inter_prediction_hbd(
-                                    picture_control_set_ptr,
-                                    cu_ptr->prediction_unit_array->ref_frame_type,
-                                    cu_ptr,
-                                    &context_ptr->mv_unit,
-                                    0,// use_intrabc,
-                                    context_ptr->cu_origin_x,
-                                    context_ptr->cu_origin_y,
-                                    blk_geom->bwidth,
-                                    blk_geom->bheight,
-                                    cu_ptr->prediction_unit_array->ref_frame_index_l0 >= 0 ? refObj0->reference_picture16bit : (EbPictureBufferDesc*)EB_NULL,
-                                    cu_ptr->prediction_unit_array->ref_frame_index_l1 >= 0 ? refObj1->reference_picture16bit : (EbPictureBufferDesc*)EB_NULL,
-                                    recon_buffer,
-                                    context_ptr->cu_origin_x,
-                                    context_ptr->cu_origin_y,
-                                    (uint8_t)sequence_control_set_ptr->static_config.encoder_bit_depth,
-                                    asm_type);
-                            } else {
-                                av1_inter_prediction(
-                                    picture_control_set_ptr,
-                                    cu_ptr->interp_filters,
-                                    cu_ptr,
-                                    cu_ptr->prediction_unit_array->ref_frame_type,
-                                    &context_ptr->mv_unit,
-                                    0,//use_intrabc,
-                                    cu_ptr->compound_idx,
-                                    &cu_ptr->interinter_comp,
-#if II_COMP_FLAG
-                                    &sb_ptr->tile_info,
-                                    ep_luma_recon_neighbor_array,
-                                    ep_cb_recon_neighbor_array ,
-                                    ep_cr_recon_neighbor_array ,
-                                    cu_ptr->is_interintra_used,
-                                    cu_ptr->interintra_mode,
-                                    cu_ptr->use_wedge_interintra,
-                                    cu_ptr->interintra_wedge_index,
+                            EbPictureBufferDesc             *ref_pic_list0;
+                            EbPictureBufferDesc             *ref_pic_list1;
+
+                            if (!is16bit) {
+                                ref_pic_list0 = cu_ptr->prediction_unit_array->ref_frame_index_l0 >= 0 ? refObj0->reference_picture : (EbPictureBufferDesc*)EB_NULL;
+                                ref_pic_list1 = cu_ptr->prediction_unit_array->ref_frame_index_l1 >= 0 ? refObj1->reference_picture : (EbPictureBufferDesc*)EB_NULL;
+                            }
+                            else {
+                                ref_pic_list0  = cu_ptr->prediction_unit_array->ref_frame_index_l0 >= 0 ? refObj0->reference_picture16bit : (EbPictureBufferDesc*)EB_NULL;
+                                ref_pic_list1  = cu_ptr->prediction_unit_array->ref_frame_index_l1 >= 0 ? refObj1->reference_picture16bit : (EbPictureBufferDesc*)EB_NULL;
+                            }
+
+                            av1_inter_prediction_function_table[is16bit](
+                                picture_control_set_ptr,
+                                cu_ptr->interp_filters,
+                                cu_ptr,
+                                cu_ptr->prediction_unit_array->ref_frame_type,
+                                &context_ptr->mv_unit,
+                                0,//use_intrabc,
+#if OBMC_FLAG
+                                cu_ptr->prediction_unit_array->motion_mode,
+                                0,//use_precomputed_obmc,
+                                0,
+#endif
+#if INTER_INTER_HBD
+                                cu_ptr->compound_idx,
+                                &cu_ptr->interinter_comp,
+#endif
+#if INTER_INTRA_HBD
+                                &sb_ptr->tile_info,
+                                ep_luma_recon_neighbor_array,
+                                ep_cb_recon_neighbor_array ,
+                                ep_cr_recon_neighbor_array ,
+                                cu_ptr->is_interintra_used,
+                                cu_ptr->interintra_mode,
+                                cu_ptr->use_wedge_interintra,
+                                cu_ptr->interintra_wedge_index,
 
 #endif
-                                    context_ptr->cu_origin_x,
-                                    context_ptr->cu_origin_y,
-                                    blk_geom->bwidth,
-                                    blk_geom->bheight,
-                                    cu_ptr->prediction_unit_array->ref_frame_index_l0 >= 0 ? refObj0->reference_picture : (EbPictureBufferDesc*)EB_NULL,
-                                    cu_ptr->prediction_unit_array->ref_frame_index_l1 >= 0 ? refObj1->reference_picture : (EbPictureBufferDesc*)EB_NULL,
-                                    recon_buffer,
-                                    context_ptr->cu_origin_x,
-                                    context_ptr->cu_origin_y,
-                                    EB_TRUE,
-                                    asm_type);
-                            }
+                                context_ptr->cu_origin_x,
+                                context_ptr->cu_origin_y,
+                                blk_geom->bwidth,
+                                blk_geom->bheight,
+                                ref_pic_list0,
+                                ref_pic_list1,
+                                recon_buffer,
+                                context_ptr->cu_origin_x,
+                                context_ptr->cu_origin_y,
+                                EB_TRUE,
+                                (uint8_t)sequence_control_set_ptr->static_config.encoder_bit_depth);
+
                         }
                     }
 
@@ -3169,8 +3259,7 @@ EB_EXTERN void av1_encode_pass(
                                         eobs[context_ptr->txb_itr][0],
                                         0,
                                         0,
-                                        COMPONENT_LUMA,
-                                        asm_type);
+                                        COMPONENT_LUMA);
                                 TxSize  txSize = blk_geom->txsize[cu_ptr->tx_depth][context_ptr->txb_itr];
                                 int32_t shift = (MAX_TX_SCALE - av1_get_tx_scale(txSize)) * 2;
                                 yTuFullDistortion[DIST_CALC_RESIDUAL] = RIGHT_SIGNED_SHIFT(yTuFullDistortion[DIST_CALC_RESIDUAL], shift);
@@ -3265,7 +3354,9 @@ EB_EXTERN void av1_encode_pass(
                                     // Rate estimation function uses the values from CandidatePtr. The right values are copied from cu_ptr to CandidatePtr
                                     candidate_buffer->candidate_ptr->type = cu_ptr->prediction_mode_flag;
                                     candidate_buffer->candidate_ptr->pred_mode = cu_ptr->pred_mode;
-
+#if FILTER_INTRA_FLAG
+                                    candidate_buffer->candidate_ptr->filter_intra_mode = cu_ptr->filter_intra_mode;
+#endif
                                     const uint32_t coeff1dOffset = context_ptr->coded_area_sb;
 
                                     //CHKN add updating eobs[] after CBF decision
@@ -3466,7 +3557,9 @@ EB_EXTERN void av1_encode_pass(
                                 // Rate estimation function uses the values from CandidatePtr. The right values are copied from cu_ptr to CandidatePtr
                                 candidate_buffer->candidate_ptr->type = cu_ptr->prediction_mode_flag;
                                 candidate_buffer->candidate_ptr->pred_mode = cu_ptr->pred_mode;
-
+#if FILTER_INTRA_FLAG
+                                candidate_buffer->candidate_ptr->filter_intra_mode = cu_ptr->filter_intra_mode;
+#endif
                                 const uint32_t coeff1dOffset = context_ptr->coded_area_sb;
 
                                 av1_tu_estimate_coeff_bits(
@@ -3628,6 +3721,103 @@ EB_EXTERN void av1_encode_pass(
                             context_ptr->blk_geom->bheight_uv,
                             context_ptr->blk_geom->has_uv ? PICTURE_BUFFER_DESC_FULL_MASK : PICTURE_BUFFER_DESC_LUMA_MASK,
                             is16bit);
+#if TWO_PASS
+                    // Collect the referenced area per 64x64
+                    if (sequence_control_set_ptr->use_output_stat_file) {
+                        if (cu_ptr->prediction_unit_array->ref_frame_index_l0 >= 0) {
+                            eb_block_on_mutex(refObj0->referenced_area_mutex);
+                            {
+                                if (context_ptr->mv_unit.pred_direction == UNI_PRED_LIST_0 || context_ptr->mv_unit.pred_direction == BI_PRED) {
+                                    //List0-Y
+                                    uint16_t origin_x = MAX(0, (int16_t)context_ptr->cu_origin_x + (context_ptr->mv_unit.mv[REF_LIST_0].x >> 3));
+                                    uint16_t origin_y = MAX(0, (int16_t)context_ptr->cu_origin_y + (context_ptr->mv_unit.mv[REF_LIST_0].y >> 3));
+                                    uint16_t sb_origin_x = origin_x / context_ptr->sb_sz * context_ptr->sb_sz;
+                                    uint16_t sb_origin_y = origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
+                                    uint32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
+                                    uint16_t sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
+                                    uint16_t width, height, weight;
+                                    weight = 1 << (4 - picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index);
+
+                                    width = MIN(sb_origin_x + context_ptr->sb_sz, origin_x + blk_geom->bwidth) - origin_x;
+                                    height = MIN(sb_origin_y + context_ptr->sb_sz, origin_y + blk_geom->bheight) - origin_y;
+                                    refObj0->stat_struct.referenced_area[sb_index] += width * height*weight;
+
+                                    if (origin_x + blk_geom->bwidth > sb_origin_x + context_ptr->sb_sz) {
+                                        sb_origin_x = (origin_x / context_ptr->sb_sz + 1)* context_ptr->sb_sz;
+                                        sb_origin_y = origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
+                                        sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
+                                        width = origin_x + blk_geom->bwidth - MAX(sb_origin_x, origin_x);
+                                        height = MIN(sb_origin_y + context_ptr->sb_sz, origin_y + blk_geom->bheight) - origin_y;
+                                        refObj0->stat_struct.referenced_area[sb_index] += width * height*weight;
+                                    }
+                                    if (origin_y + blk_geom->bheight > sb_origin_y + context_ptr->sb_sz) {
+                                        sb_origin_x = (origin_x / context_ptr->sb_sz)* context_ptr->sb_sz;
+                                        sb_origin_y = (origin_y / context_ptr->sb_sz + 1) * context_ptr->sb_sz;
+                                        sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
+                                        width = MIN(sb_origin_x + context_ptr->sb_sz, origin_x + blk_geom->bwidth) - origin_x;
+                                        height = origin_y + blk_geom->bheight - MAX(sb_origin_y, origin_y);
+                                        refObj0->stat_struct.referenced_area[sb_index] += width * height*weight;
+                                    }
+                                    if (origin_x + blk_geom->bwidth > sb_origin_x + context_ptr->sb_sz &&
+                                        origin_y + blk_geom->bheight > sb_origin_y + context_ptr->sb_sz) {
+                                        sb_origin_x = (origin_x / context_ptr->sb_sz + 1)* context_ptr->sb_sz;
+                                        sb_origin_y = (origin_y / context_ptr->sb_sz + 1) * context_ptr->sb_sz;
+                                        sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
+                                        width = origin_x + blk_geom->bwidth - MAX(sb_origin_x, origin_x);
+                                        height = origin_y + blk_geom->bheight - MAX(sb_origin_y, origin_y);
+                                        refObj0->stat_struct.referenced_area[sb_index] += width * height*weight;
+                                    }
+                                }
+                            }
+                            eb_release_mutex(refObj0->referenced_area_mutex);
+                        }
+
+                        if (cu_ptr->prediction_unit_array->ref_frame_index_l1 >= 0) {
+                            eb_block_on_mutex(refObj1->referenced_area_mutex);
+                            if (context_ptr->mv_unit.pred_direction == UNI_PRED_LIST_1 || context_ptr->mv_unit.pred_direction == BI_PRED) {
+                                //List1-Y
+                                uint16_t origin_x = MAX(0, (int16_t)context_ptr->cu_origin_x + (context_ptr->mv_unit.mv[REF_LIST_1].x >> 3));
+                                uint16_t origin_y = MAX(0, (int16_t)context_ptr->cu_origin_y + (context_ptr->mv_unit.mv[REF_LIST_1].y >> 3));
+                                uint16_t sb_origin_x = origin_x / context_ptr->sb_sz * context_ptr->sb_sz;
+                                uint16_t sb_origin_y = origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
+                                uint32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
+                                uint16_t sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
+                                uint16_t width, height, weight;
+                                weight = 1 << (4 - picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index);
+
+                                width = MIN(sb_origin_x + context_ptr->sb_sz, origin_x + blk_geom->bwidth) - origin_x;
+                                height = MIN(sb_origin_y + context_ptr->sb_sz, origin_y + blk_geom->bheight) - origin_y;
+                                refObj1->stat_struct.referenced_area[sb_index] += width * height*weight;
+                                if (origin_x + blk_geom->bwidth > sb_origin_x + context_ptr->sb_sz) {
+                                    sb_origin_x = (origin_x / context_ptr->sb_sz + 1)* context_ptr->sb_sz;
+                                    sb_origin_y = origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
+                                    sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
+                                    width = origin_x + blk_geom->bwidth - MAX(sb_origin_x, origin_x);
+                                    height = MIN(sb_origin_y + context_ptr->sb_sz, origin_y + blk_geom->bheight) - origin_y;
+                                    refObj1->stat_struct.referenced_area[sb_index] += width * height*weight;
+                                }
+                                if (origin_y + blk_geom->bheight > sb_origin_y + context_ptr->sb_sz) {
+                                    sb_origin_x = (origin_x / context_ptr->sb_sz)* context_ptr->sb_sz;
+                                    sb_origin_y = (origin_y / context_ptr->sb_sz + 1) * context_ptr->sb_sz;
+                                    sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
+                                    width = MIN(sb_origin_x + context_ptr->sb_sz, origin_x + blk_geom->bwidth) - origin_x;
+                                    height = origin_y + blk_geom->bheight - MAX(sb_origin_y, origin_y);
+                                    refObj1->stat_struct.referenced_area[sb_index] += width * height*weight;
+                                }
+                                if (origin_x + blk_geom->bwidth > sb_origin_x + context_ptr->sb_sz &&
+                                    origin_y + blk_geom->bheight > sb_origin_y + context_ptr->sb_sz) {
+                                    sb_origin_x = (origin_x / context_ptr->sb_sz + 1)* context_ptr->sb_sz;
+                                    sb_origin_y = (origin_y / context_ptr->sb_sz + 1) * context_ptr->sb_sz;
+                                    sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
+                                    width = origin_x + blk_geom->bwidth - MAX(sb_origin_x, origin_x);
+                                    height = origin_y + blk_geom->bheight - MAX(sb_origin_y, origin_y);
+                                    refObj1->stat_struct.referenced_area[sb_index] += width * height*weight;
+                                }
+                            }
+                            eb_release_mutex(refObj1->referenced_area_mutex);
+                        }
+                    }
+#endif
                 }
                 else {
                     CHECK_REPORT_ERROR_NC(
@@ -3661,8 +3851,11 @@ EB_EXTERN void av1_encode_pass(
                     CodingUnit *src_cu = &context_ptr->md_context->md_cu_arr_nsq[d1_itr];
 
                     CodingUnit *dst_cu = &sb_ptr->final_cu_arr[final_cu_itr++];
-
+#if PAL_SUP
+                    move_cu_data(picture_control_set_ptr, context_ptr,src_cu, dst_cu);
+#else
                     move_cu_data(src_cu, dst_cu);
+#endif
                 }
                 if (sequence_control_set_ptr->mfmv_enabled && picture_control_set_ptr->slice_type != I_SLICE && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) {
                     uint32_t mi_stride = picture_control_set_ptr->mi_stride;

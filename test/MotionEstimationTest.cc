@@ -7,7 +7,6 @@
 #include "aom_dsp_rtcd.h"
 #include "EbDefinitions.h"
 #include "EbComputeSAD_AVX2.h"
-#include "EbComputeSAD_AVX512.h"
 #include "EbComputeSAD_C.h"
 #include "EbComputeSAD_SSE4_1.h"
 #include "EbMeSadCalculation.h"
@@ -15,7 +14,6 @@
 #include "EbUnitTest.h"
 #include "EbUnitTestUtility.h"
 
-static const int num_test = 28;
 static const int num_sad = 22;
 
 struct DistInfo {

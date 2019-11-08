@@ -29,7 +29,7 @@
 
 void *eb_aom_memset16(void *dest, int32_t val, size_t length);
 
-int32_t is_inter_block(const MbModeInfo *mbmi);
+int32_t is_inter_block(const BlockModeInfo *mbmi);
 
 // Some basic checks on weights for smooth predictor.
 #define sm_weights_sanity_checks(weights_w, weights_h, weights_scale, \
@@ -39,36 +39,32 @@ int32_t is_inter_block(const MbModeInfo *mbmi);
   assert(weights_scale - weights_w[bw - 1] < weights_scale);          \
   assert(weights_scale - weights_h[bh - 1] < weights_scale);          \
   assert(pred_scale < 31)  // ensures no overflow when calculating predictor.
-
-static PartitionType from_shape_to_part[] =
-{
-PARTITION_NONE,
-PARTITION_HORZ,
-PARTITION_VERT,
-PARTITION_HORZ_A,
-PARTITION_HORZ_B,
-PARTITION_VERT_A,
-PARTITION_VERT_B,
-PARTITION_HORZ_4,
-PARTITION_VERT_4,
-PARTITION_SPLIT
-};
-
 #define MIDRANGE_VALUE_8BIT    128
 #define MIDRANGE_VALUE_10BIT   512
-
-static int is_smooth(const MbModeInfo *mbmi, int plane) {
+static PartitionType from_shape_to_part[] = {
+    PARTITION_NONE,
+    PARTITION_HORZ,
+    PARTITION_VERT,
+    PARTITION_HORZ_A,
+    PARTITION_HORZ_B,
+    PARTITION_VERT_A,
+    PARTITION_VERT_B,
+    PARTITION_HORZ_4,
+    PARTITION_VERT_4,
+    PARTITION_SPLIT
+};
+int is_smooth(const BlockModeInfo *block_mi, int plane) {
     if (plane == 0) {
-        const PredictionMode mode = mbmi->mode;
+        const PredictionMode mode = block_mi->mode;
         return (mode == SMOOTH_PRED || mode == SMOOTH_V_PRED ||
             mode == SMOOTH_H_PRED);
     }
     else {
         // uv_mode is not set for inter blocks, so need to explicitly
         // detect that case.
-        if (is_inter_block(mbmi)) return 0;
+        if (is_inter_block(block_mi)) return 0;
 
-        const UvPredictionMode uv_mode = mbmi->uv_mode;
+        const UvPredictionMode uv_mode = block_mi->uv_mode;
         return (uv_mode == UV_SMOOTH_PRED || uv_mode == UV_SMOOTH_V_PRED ||
             uv_mode == UV_SMOOTH_H_PRED);
     }
@@ -80,14 +76,14 @@ static int get_filt_type(const MacroBlockD *xd, int plane) {
     if (plane == 0) {
         const MbModeInfo *ab = xd->above_mbmi;
         const MbModeInfo *le = xd->left_mbmi;
-        ab_sm = ab ? is_smooth(ab, plane) : 0;
-        le_sm = le ? is_smooth(le, plane) : 0;
+        ab_sm = ab ? is_smooth(&ab->block_mi, plane) : 0;
+        le_sm = le ? is_smooth(&le->block_mi, plane) : 0;
     }
     else {
         const MbModeInfo *ab = xd->chroma_above_mbmi;
         const MbModeInfo *le = xd->chroma_left_mbmi;
-        ab_sm = ab ? is_smooth(ab, plane) : 0;
-        le_sm = le ? is_smooth(le, plane) : 0;
+        ab_sm = ab ? is_smooth(&ab->block_mi, plane) : 0;
+        le_sm = le ? is_smooth(&le->block_mi, plane) : 0;
     }
 
     return (ab_sm || le_sm) ? 1 : 0;
@@ -3633,13 +3629,19 @@ static void build_intra_predictors(
             above_row[-1] = 128;
         left_col[-1] = above_row[-1];
     }
-
+#if FILTER_INTRA_FLAG
+  if (use_filter_intra) {
+    eb_av1_filter_intra_predictor(dst, dst_stride, tx_size, above_row, left_col,
+                               filter_intra_mode);
+    return;
+  }
+#else
     //    if (use_filter_intra) {
     ////        eb_av1_filter_intra_predictor(dst, dst_stride, tx_size, above_row, left_col,
     ////CHKN            filter_intra_mode);
     //        return;
     //    }
-
+#endif
     if (is_dr_mode) {
         int32_t upsample_above = 0;
         int32_t upsample_left = 0;
@@ -3825,13 +3827,20 @@ static void build_intra_predictors_high(
             above_row[-1] = (uint16_t)base;
         left_col[-1] = above_row[-1];
     }
+#if FILTER_INTRA_FLAG
+if (use_filter_intra) {
+    highbd_filter_intra_predictor(dst, dst_stride, tx_size, above_row, left_col,
+                               filter_intra_mode,10);
+    return;
+  }
+#else
     // not added yet
     //if (use_filter_intra) {
     //    highbd_filter_intra_predictor(dst, dst_stride, tx_size, above_row, left_col,
     //        filter_intra_mode, xd->bd);
     //    return;
     //}
-
+#endif
     if (is_dr_mode) {
         int32_t upsample_above = 0;
         int32_t upsample_left = 0;
@@ -3898,6 +3907,9 @@ void eb_av1_predict_intra_block(
     PredictionMode mode,
     int32_t angle_delta,
     int32_t use_palette,
+#if PAL_SUP
+    PaletteInfo  *palette_info,
+#endif
     FilterIntraMode filter_intra_mode,
     uint8_t* topNeighArray,
     uint8_t* leftNeighArray,
@@ -4030,6 +4042,23 @@ void eb_av1_predict_intra_block(
     const int32_t x = col_off << tx_size_wide_log2[0];
     const int32_t y = row_off << tx_size_high_log2[0];
 
+#if PAL_SUP
+    if (use_palette) {
+        int32_t r, c;
+
+         const uint8_t *const map = palette_info->color_idx_map;
+         const uint16_t *const palette =
+             palette_info->pmi.palette_colors + plane * PALETTE_MAX_SIZE;
+        for (r = 0; r < txhpx; ++r) {
+            for (c = 0; c < txwpx; ++c) {
+            dst[r * dst_stride + c] =
+                (uint8_t)palette[map[(r + y) * wpx + c + x]];
+            }
+        }
+        return;
+    }
+#else
+
     //if (use_palette) {
     //  int32_t r, c;
     //  const uint8_t *const map = xd->plane[plane != 0].color_index_map;
@@ -4052,7 +4081,7 @@ void eb_av1_predict_intra_block(
     //  }
     //  return;
     //}
-
+#endif
     //CHKN BlockSize bsize = mbmi->sb_type;
     struct MacroblockdPlane  pd_s;
     struct MacroblockdPlane * pd = &pd_s;
@@ -4138,6 +4167,9 @@ void eb_av1_predict_intra_block_16bit(
     PredictionMode mode,
     int32_t angle_delta,
     int32_t use_palette,
+#if PAL_SUP
+    PaletteInfo  *palette_info,
+#endif
     FilterIntraMode filter_intra_mode,
     uint16_t* topNeighArray,
     uint16_t* leftNeighArray,
@@ -4269,7 +4301,20 @@ void eb_av1_predict_intra_block_16bit(
     const int32_t txhpx = tx_size_high[tx_size];
     const int32_t x = col_off << tx_size_wide_log2[0];
     const int32_t y = row_off << tx_size_high_log2[0];
-
+#if PAL_SUP
+    if (use_palette) {
+        int32_t r, c;
+        const uint8_t *const map = palette_info->color_idx_map;
+        const uint16_t *const palette =
+            palette_info->pmi.palette_colors + plane * PALETTE_MAX_SIZE;
+        for (r = 0; r < txhpx; ++r) {
+            for (c = 0; c < txwpx; ++c) {
+                dst[r * dst_stride + c] = palette[map[(r + y) * wpx + c + x]];
+            }
+        }
+        return;
+    }
+#else
     //if (use_palette) {
     //  int32_t r, c;
     //  const uint8_t *const map = xd->plane[plane != 0].color_index_map;
@@ -4292,7 +4337,7 @@ void eb_av1_predict_intra_block_16bit(
     //  }
     //  return;
     //}
-
+#endif
     //CHKN BlockSize bsize = mbmi->sb_type;
 
     struct MacroblockdPlane  pd_s;
@@ -4464,8 +4509,17 @@ EbErrorType eb_av1_intra_prediction_cl(
                 plane ? tx_size_Chroma : tx_size,                                               //TxSize tx_size,
                 mode,                                                                           //PredictionMode mode,
                 plane ? candidate_buffer_ptr->candidate_ptr->angle_delta[PLANE_TYPE_UV] : candidate_buffer_ptr->candidate_ptr->angle_delta[PLANE_TYPE_Y],
+#if PAL_SUP
+                plane==0 ? (candidate_buffer_ptr->candidate_ptr->palette_info.pmi.palette_size[0]>0) : 0,
+                plane==0 ? &candidate_buffer_ptr->candidate_ptr->palette_info : NULL,    //MD
+#else
                 0,                                                                              //int32_t use_palette,
+#endif
+#if FILTER_INTRA_FLAG
+                plane ? FILTER_INTRA_MODES : candidate_buffer_ptr->candidate_ptr->filter_intra_mode,
+#else
                 FILTER_INTRA_MODES,                                                             //CHKN FilterIntraMode filter_intra_mode,
+#endif
                 topNeighArray + 1,
                 leftNeighArray + 1,
                 candidate_buffer_ptr->prediction_ptr,                                              //uint8_t *dst,
@@ -4536,8 +4590,17 @@ EbErrorType eb_av1_intra_prediction_cl(
                 plane ? tx_size_Chroma : tx_size,                                               //TxSize tx_size,
                 mode,                                                                           //PredictionMode mode,
                 plane ? candidate_buffer_ptr->candidate_ptr->angle_delta[PLANE_TYPE_UV] : candidate_buffer_ptr->candidate_ptr->angle_delta[PLANE_TYPE_Y],
+#if PAL_SUP
+                plane == 0 ? (candidate_buffer_ptr->candidate_ptr->palette_info.pmi.palette_size[0] > 0) : 0,
+                plane == 0 ? &candidate_buffer_ptr->candidate_ptr->palette_info : NULL,    //MD
+#else
                 0,                                                                              //int32_t use_palette,
+#endif
+#if FILTER_INTRA_FLAG
+                plane ? FILTER_INTRA_MODES : candidate_buffer_ptr->candidate_ptr->filter_intra_mode,
+#else
                 FILTER_INTRA_MODES,                                                             //CHKN FilterIntraMode filter_intra_mode,
+#endif
                 topNeighArray + 1,
                 leftNeighArray + 1,
                 candidate_buffer_ptr->prediction_ptr,                                              //uint8_t *dst,
@@ -4613,6 +4676,9 @@ EbErrorType  intra_luma_prediction_for_interintra(
             mode,                                                   //PredictionMode mode,
             0,                                                      //candidate_buffer_ptr->candidate_ptr->angle_delta[PLANE_TYPE_Y],
             0,                                                      //int32_t use_palette,
+#if PAL_SUP
+            NULL,  //Inter-Intra
+#endif
             FILTER_INTRA_MODES,                                     //CHKN FilterIntraMode filter_intra_mode,
             top_neigh_array + 1,
             left_neigh_array + 1,
@@ -4650,6 +4716,9 @@ EbErrorType  intra_luma_prediction_for_interintra(
             mode,                                                   //PredictionMode mode,
             0,                                                      //candidate_buffer_ptr->candidate_ptr->angle_delta[PLANE_TYPE_Y],
             0,                                                      //int32_t use_palette,
+#if PAL_SUP
+            NULL,  //Inter-Intra
+#endif
             FILTER_INTRA_MODES,                                     //CHKN FilterIntraMode filter_intra_mode,
             top_neigh_array + 1,
             left_neigh_array + 1,

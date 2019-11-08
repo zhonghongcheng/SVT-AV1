@@ -151,7 +151,7 @@ typedef struct ParseCtxt {
     /*!< Offset of first Chroma transform info from strat of SB pointer */
     uint16_t        first_chroma_tu_offset;
     /* TODO: Points to the cur ModeInfo_t in SB. Should be moved out */
-    ModeInfo_t      *cur_mode_info;
+    BlockModeInfo   *cur_mode_info;
     /* TODO: Points to the cur ModeInfo_t in SB. Should be moved out */
     int32_t         cur_mode_info_cnt;
     /* TODO: cur SB row idx. Should be moved out */
@@ -195,7 +195,8 @@ void parse_super_block(EbDecHandle *dec_handle, uint32_t blk_row,
 void svt_setup_motion_field(EbDecHandle *dec_handle);
 
 EbErrorType decode_obu(EbDecHandle *dec_handle_ptr, uint8_t *data, uint32_t data_size);
-EbErrorType decode_multiple_obu(EbDecHandle *dec_handle_ptr, uint8_t **data, size_t data_size);
+EbErrorType decode_multiple_obu(EbDecHandle *dec_handle_ptr, uint8_t **data,
+    size_t data_size, uint32_t is_annexb);
 
 static INLINE int allow_intrabc(const EbDecHandle *dec_handle) {
     return  (dec_handle->frame_header.frame_type == KEY_FRAME

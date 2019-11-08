@@ -160,6 +160,9 @@ EbErrorType CopyConfigurationParameters(
     callback_data->eb_enc_parameters.intra_refresh_type = config->intra_refresh_type;
     callback_data->eb_enc_parameters.base_layer_switch_mode = config->base_layer_switch_mode;
     callback_data->eb_enc_parameters.enc_mode = (EbBool)config->enc_mode;
+#if TWO_PASS_USE_2NDP_ME_IN_1STP
+    callback_data->eb_enc_parameters.snd_pass_enc_mode = (EbBool)config->snd_pass_enc_mode;
+#endif
     callback_data->eb_enc_parameters.frame_rate = config->frame_rate;
     callback_data->eb_enc_parameters.frame_rate_denominator = config->frame_rate_denominator;
     callback_data->eb_enc_parameters.frame_rate_numerator = config->frame_rate_numerator;
@@ -180,9 +183,15 @@ EbErrorType CopyConfigurationParameters(
     callback_data->eb_enc_parameters.enable_adaptive_quantization = (EbBool)config->enable_adaptive_quantization;
     callback_data->eb_enc_parameters.qp = config->qp;
     callback_data->eb_enc_parameters.use_qp_file = (EbBool)config->use_qp_file;
+#if TWO_PASS
+    callback_data->eb_enc_parameters.input_stat_file = config->input_stat_file;
+    callback_data->eb_enc_parameters.output_stat_file = config->output_stat_file;
+#endif
     callback_data->eb_enc_parameters.stat_report = (EbBool)config->stat_report;
     callback_data->eb_enc_parameters.disable_dlf_flag = (EbBool)config->disable_dlf_flag;
     callback_data->eb_enc_parameters.enable_warped_motion = (EbBool)config->enable_warped_motion;
+    callback_data->eb_enc_parameters.enable_obmc = (EbBool)config->enable_obmc;
+    callback_data->eb_enc_parameters.enable_filter_intra = (EbBool)config->enable_filter_intra;
     callback_data->eb_enc_parameters.use_default_me_hme = (EbBool)config->use_default_me_hme;
     callback_data->eb_enc_parameters.enable_hme_flag = (EbBool)config->enable_hme_flag;
     callback_data->eb_enc_parameters.enable_hme_level0_flag = (EbBool)config->enable_hme_level0_flag;
@@ -196,6 +205,7 @@ EbErrorType CopyConfigurationParameters(
     callback_data->eb_enc_parameters.hme_level0_total_search_area_height = config->hme_level0_total_search_area_height;
     callback_data->eb_enc_parameters.screen_content_mode = (EbBool)config->screen_content_mode;
     callback_data->eb_enc_parameters.enable_hbd_mode_decision = (EbBool)config->enable_hbd_mode_decision;
+    callback_data->eb_enc_parameters.enable_palette = config->enable_palette;
     callback_data->eb_enc_parameters.constrained_intra = (EbBool)config->constrained_intra;
     callback_data->eb_enc_parameters.channel_id = config->channel_id;
     callback_data->eb_enc_parameters.active_channel_count = config->active_channel_count;
@@ -232,6 +242,8 @@ EbErrorType CopyConfigurationParameters(
         callback_data->eb_enc_parameters.hme_level1_search_area_in_height_array[hmeRegionIndex] = config->hme_level1_search_area_in_height_array[hmeRegionIndex];
         callback_data->eb_enc_parameters.hme_level2_search_area_in_height_array[hmeRegionIndex] = config->hme_level2_search_area_in_height_array[hmeRegionIndex];
     }
+
+    callback_data->eb_enc_parameters.sq_weight = config->sq_weight;
 
     return return_error;
 }

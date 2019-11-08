@@ -196,8 +196,7 @@ const int32_t eb_cdef_sec_taps[2][2] = { { 2, 1 }, { 2, 1 } };
 void eb_cdef_filter_block_c(uint8_t *dst8, uint16_t *dst16, int32_t dstride,
     const uint16_t *in, int32_t pri_strength, int32_t sec_strength,
     int32_t dir, int32_t pri_damping, int32_t sec_damping, int32_t bsize,
-    /*AOM_UNUSED*/ int32_t max_unused, int32_t coeff_shift) {
-    (void)max_unused;
+    int32_t coeff_shift) {
     int32_t i, j, k;
     const int32_t s = CDEF_BSTRIDE;
     const int32_t *pri_taps = eb_cdef_pri_taps[(pri_strength >> coeff_shift) & 1];
@@ -341,7 +340,7 @@ void eb_cdef_filter_fb(uint8_t *dst8, uint16_t *dst16, int32_t dstride, uint16_t
                 &in[(by * CDEF_BSTRIDE << bsizey) + (bx << bsizex)],
                 (pli ? t : adjust_strength(t, var[by][bx])), s,
                 t ? dir[by][bx] : 0, pri_damping, sec_damping, bsize,
-                (256 << coeff_shift) - 1, coeff_shift);
+                coeff_shift);
         else
             eb_cdef_filter_block(
                 NULL,
@@ -350,8 +349,7 @@ void eb_cdef_filter_fb(uint8_t *dst8, uint16_t *dst16, int32_t dstride, uint16_t
                 dirinit ? 1 << bsizex : dstride,
                 &in[(by * CDEF_BSTRIDE << bsizey) + (bx << bsizex)],
                 (pli ? t : adjust_strength(t, var[by][bx])), s, t ? dir[by][bx] : 0,
-                pri_damping, sec_damping, bsize, (256 << coeff_shift) - 1,
-                coeff_shift);
+                pri_damping, sec_damping, bsize, coeff_shift);
     }
 }
 
@@ -368,7 +366,7 @@ int32_t eb_sb_all_skip(PictureControlSet   *picture_control_set_ptr, const Av1Co
         for (int32_t c = 0; c < maxc; c++) {
             skip =
                 skip &&
-                picture_control_set_ptr->mi_grid_base[(mi_row + r) * picture_control_set_ptr->mi_stride + mi_col + c]->mbmi.skip;
+                picture_control_set_ptr->mi_grid_base[(mi_row + r) * picture_control_set_ptr->mi_stride + mi_col + c]->mbmi.block_mi.skip;
             /// cm->mi_grid_visible[(mi_row + r) * cm->mi_stride + mi_col + c]->skip;
         }
     }
@@ -380,7 +378,7 @@ static int32_t is_8x8_block_skip(ModeInfo **grid, int32_t mi_row, int32_t mi_col
     int32_t is_skip = 1;
     for (int32_t r = 0; r < mi_size_high[BLOCK_8X8]; ++r)
         for (int32_t c = 0; c < mi_size_wide[BLOCK_8X8]; ++c)
-            is_skip &= (int32_t)(grid[(mi_row + r) * mi_stride + (mi_col + c)]->mbmi.skip);
+            is_skip &= (int32_t)(grid[(mi_row + r) * mi_stride + (mi_col + c)]->mbmi.block_mi.skip);
 
     return is_skip;
 }
@@ -1496,9 +1494,9 @@ void finish_cdef_search(
             const MbModeInfo *mbmi = &mi[0]->mbmi;
 
             if (((fbc & 1) &&
-                (mbmi->sb_type == BLOCK_128X128 || mbmi->sb_type == BLOCK_128X64)) ||
+                (mbmi->block_mi.sb_type == BLOCK_128X128 || mbmi->block_mi.sb_type == BLOCK_128X64)) ||
                 ((fbr & 1) &&
-                (mbmi->sb_type == BLOCK_128X128 || mbmi->sb_type == BLOCK_64X128)))
+                (mbmi->block_mi.sb_type == BLOCK_128X128 || mbmi->block_mi.sb_type == BLOCK_64X128)))
             {
                 continue;
             }
@@ -1565,7 +1563,7 @@ void finish_cdef_search(
         picture_control_set_ptr->mi_grid_base[sb_index[i]]->mbmi.cdef_strength = (int8_t)best_gi;
         //in case the fb is within a block=128x128 or 128x64, or 64x128, then we genrate param only for the first 64x64.
         //since our mi map deos not have the multi pointer single data assignment, we need to duplicate data.
-        BlockSize sb_type = picture_control_set_ptr->mi_grid_base[sb_index[i]]->mbmi.sb_type;
+        BlockSize sb_type = picture_control_set_ptr->mi_grid_base[sb_index[i]]->mbmi.block_mi.sb_type;
 
         switch (sb_type)
         {
@@ -1785,13 +1783,13 @@ void eb_av1_cdef_search(
             //    MI_SIZE_64X64 * fbc];
 
             if (((fbc & 1) &&
-                (mbmi->sb_type == BLOCK_128X128 || mbmi->sb_type == BLOCK_128X64)) ||
+                (mbmi->block_mi.sb_type == BLOCK_128X128 || mbmi->block_mi.sb_type == BLOCK_128X64)) ||
                 ((fbr & 1) &&
-                (mbmi->sb_type == BLOCK_128X128 || mbmi->sb_type == BLOCK_64X128)))
+                (mbmi->block_mi.sb_type == BLOCK_128X128 || mbmi->block_mi.sb_type == BLOCK_64X128)))
                 continue;
-            if (mbmi->sb_type == BLOCK_128X128 || mbmi->sb_type == BLOCK_128X64 ||
-                mbmi->sb_type == BLOCK_64X128)
-                bs = mbmi->sb_type;
+            if (mbmi->block_mi.sb_type == BLOCK_128X128 || mbmi->block_mi.sb_type == BLOCK_128X64 ||
+                mbmi->block_mi.sb_type == BLOCK_64X128)
+                bs = mbmi->block_mi.sb_type;
             if (bs == BLOCK_128X128 || bs == BLOCK_128X64) {
                 nhb = AOMMIN(MI_SIZE_128X128, cm->mi_cols - MI_SIZE_64X64 * fbc);
                 hb_step = 2;
@@ -1903,7 +1901,7 @@ void eb_av1_cdef_search(
         picture_control_set_ptr->mi_grid_base[sb_index[i]]->mbmi.cdef_strength = (int8_t)best_gi;
         //in case the fb is within a block=128x128 or 128x64, or 64x128, then we genrate param only for the first 64x64.
         //since our mi map deos not have the multi pointer single data assignment, we need to duplicate data.
-        BlockSize sb_type = picture_control_set_ptr->mi_grid_base[sb_index[i]]->mbmi.sb_type;
+        BlockSize sb_type = picture_control_set_ptr->mi_grid_base[sb_index[i]]->mbmi.block_mi.sb_type;
 
         if (sb_type == BLOCK_128X128)
         {
@@ -2123,13 +2121,13 @@ void av1_cdef_search16bit(
             //    MI_SIZE_64X64 * fbc];
 
             if (((fbc & 1) &&
-                (mbmi->sb_type == BLOCK_128X128 || mbmi->sb_type == BLOCK_128X64)) ||
+                (mbmi->block_mi.sb_type == BLOCK_128X128 || mbmi->block_mi.sb_type == BLOCK_128X64)) ||
                 ((fbr & 1) &&
-                (mbmi->sb_type == BLOCK_128X128 || mbmi->sb_type == BLOCK_64X128)))
+                (mbmi->block_mi.sb_type == BLOCK_128X128 || mbmi->block_mi.sb_type == BLOCK_64X128)))
                 continue;
-            if (mbmi->sb_type == BLOCK_128X128 || mbmi->sb_type == BLOCK_128X64 ||
-                mbmi->sb_type == BLOCK_64X128)
-                bs = mbmi->sb_type;
+            if (mbmi->block_mi.sb_type == BLOCK_128X128 || mbmi->block_mi.sb_type == BLOCK_128X64 ||
+                mbmi->block_mi.sb_type == BLOCK_64X128)
+                bs = mbmi->block_mi.sb_type;
             if (bs == BLOCK_128X128 || bs == BLOCK_128X64) {
                 nhb = AOMMIN(MI_SIZE_128X128, cm->mi_cols - MI_SIZE_64X64 * fbc);
                 hb_step = 2;
@@ -2240,7 +2238,7 @@ void av1_cdef_search16bit(
         picture_control_set_ptr->mi_grid_base[sb_index[i]]->mbmi.cdef_strength = (int8_t)best_gi;
         //in case the fb is within a block=128x128 or 128x64, or 64x128, then we genrate param only for the first 64x64.
         //since our mi map deos not have the multi pointer single data assignment, we need to duplicate data.
-        BlockSize sb_type = picture_control_set_ptr->mi_grid_base[sb_index[i]]->mbmi.sb_type;
+        BlockSize sb_type = picture_control_set_ptr->mi_grid_base[sb_index[i]]->mbmi.block_mi.sb_type;
 
         if (sb_type == BLOCK_128X128)
         {

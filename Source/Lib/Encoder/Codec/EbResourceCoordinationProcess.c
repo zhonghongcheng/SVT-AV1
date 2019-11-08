@@ -15,9 +15,8 @@
 #include "EbResourceCoordinationResults.h"
 #include "EbTransforms.h"
 #include "EbTime.h"
+#include "EbEntropyCoding.h"
 
-void eb_av1_tile_set_col(TileInfo *tile, PictureParentControlSet * pcs_ptr, int col);
-void eb_av1_tile_set_row(TileInfo *tile, PictureParentControlSet * pcs_ptr, int row);
 void set_tile_info(PictureParentControlSet * pcs_ptr);
 void resource_coordination_context_dctor(EbPtr p)
 {
@@ -91,8 +90,11 @@ EbErrorType signal_derivation_pre_analysis_oq(
     uint8_t input_resolution = sequence_control_set_ptr->input_resolution;
 
     // HME Flags updated @ signal_derivation_multi_processes_oq
+#if TWO_PASS_USE_2NDP_ME_IN_1STP
+    uint8_t  hme_me_level = sequence_control_set_ptr->use_output_stat_file ? picture_control_set_ptr->snd_pass_enc_mode : picture_control_set_ptr->enc_mode;
+#else
     uint8_t  hme_me_level = picture_control_set_ptr->enc_mode;
-
+#endif
     // Derive HME Flag
     if (sequence_control_set_ptr->static_config.use_default_me_hme) {
         picture_control_set_ptr->enable_hme_flag = enable_hme_flag[0][input_resolution][hme_me_level] || enable_hme_flag[1][input_resolution][hme_me_level];
@@ -529,6 +531,49 @@ static void CopyInputBuffer(
     if (src->p_buffer != NULL)
         copy_frame_buffer(sequenceControlSet, dst->p_buffer, src->p_buffer);
 }
+
+#if TWO_PASS
+/******************************************************
+ * Read Stat from File
+ * reads stat_struct_t per frame from the file and stores under picture_control_set_ptr
+ ******************************************************/
+static void read_stat_from_file(
+    PictureParentControlSet  *picture_control_set_ptr,
+    SequenceControlSet       *sequence_control_set_ptr)
+{
+    eb_block_on_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
+
+    int32_t fseek_return_value = fseek(sequence_control_set_ptr->static_config.input_stat_file, (long)picture_control_set_ptr->picture_number * sizeof(stat_struct_t), SEEK_SET);
+
+    if (fseek_return_value != 0) {
+        printf("Error in fseek  returnVal %i\n", (int)fseek_return_value);
+    }
+    size_t fread_return_value = fread(&picture_control_set_ptr->stat_struct,
+        (size_t)1,
+        sizeof(stat_struct_t),
+        sequence_control_set_ptr->static_config.input_stat_file);
+    if (fread_return_value != sizeof(stat_struct_t)) {
+        printf("Error in freed  returnVal %i\n", (int)fread_return_value);
+    }
+
+    uint64_t referenced_area_avg = 0;
+    uint64_t referenced_area_has_non_zero = 0;
+    for (int sb_addr = 0; sb_addr < sequence_control_set_ptr->sb_total_count; ++sb_addr) {
+        referenced_area_avg += (picture_control_set_ptr->stat_struct.referenced_area[sb_addr] / sequence_control_set_ptr->sb_params_array[sb_addr].width / sequence_control_set_ptr->sb_params_array[sb_addr].height);
+        referenced_area_has_non_zero += picture_control_set_ptr->stat_struct.referenced_area[sb_addr];
+    }
+    referenced_area_avg /= sequence_control_set_ptr->sb_total_count;
+#if TWO_PASS_IMPROVEMENT
+    // adjust the reference area based on the intra refresh
+    if (sequence_control_set_ptr->intra_period_length && sequence_control_set_ptr->intra_period_length < TWO_PASS_IR_THRSHLD)
+        referenced_area_avg = referenced_area_avg * (sequence_control_set_ptr->intra_period_length + 1) / TWO_PASS_IR_THRSHLD;
+#endif
+    picture_control_set_ptr->referenced_area_avg = referenced_area_avg;
+    picture_control_set_ptr->referenced_area_has_non_zero = referenced_area_has_non_zero ? 1 : 0;
+
+    eb_release_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
+}
+#endif
 /***************************************
  * ResourceCoordination Kernel
  ***************************************/
@@ -649,14 +694,38 @@ void* resource_coordination_kernel(void *input_ptr)
                     sequence_control_set_ptr->static_config.encoder_bit_depth == 8) ? EB_TRUE : EB_FALSE;
 
 #if II_COMP_FLAG
+#if INTER_INTRA_HBD
+            // Set inter-intra mode      Settings
+            // 0                 OFF
+            // 1                 ON
+            sequence_control_set_ptr->seq_header.enable_interintra_compound =  (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_10BIT &&
+                                                                                sequence_control_set_ptr->static_config.enable_hbd_mode_decision ) ? 0:
+                                                                                (sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;
+#else
             sequence_control_set_ptr->seq_header.enable_interintra_compound = (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_10BIT ) ? 0 :
                                                                               (sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;
+#endif
+#endif
+#if FILTER_INTRA_FLAG
+            // Set filter intra mode      Settings
+            // 0                 OFF
+            // 1                 ON
+            if (sequence_control_set_ptr->static_config.enable_filter_intra)
+                sequence_control_set_ptr->seq_header.enable_filter_intra        = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M2) ? 1 : 0;
+            else
+                sequence_control_set_ptr->seq_header.enable_filter_intra        =  0;
 #endif
             // Set compound mode      Settings
             // 0                 OFF: No compond mode search : AVG only
             // 1                 ON: full
+#if INTER_INTER_HBD
+            sequence_control_set_ptr->compound_mode = (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_10BIT &&
+                                                       sequence_control_set_ptr->static_config.enable_hbd_mode_decision ) ? 0:
+                                                      (sequence_control_set_ptr->static_config.enc_mode <= ENC_M4) ? 1 : 0;
+#else
             sequence_control_set_ptr->compound_mode = sequence_control_set_ptr->static_config.encoder_bit_depth == EB_10BIT ? 0 :
                 (sequence_control_set_ptr->static_config.enc_mode <= ENC_M4) ? 1 : 0;
+#endif
             if (sequence_control_set_ptr->compound_mode)
             {
                 sequence_control_set_ptr->seq_header.order_hint_info.enable_jnt_comp = 1; //DISTANCE
@@ -772,6 +841,12 @@ void* resource_coordination_kernel(void *input_ptr)
             }
             else
                 picture_control_set_ptr->enc_mode = (EbEncMode)sequence_control_set_ptr->static_config.enc_mode;
+#if TWO_PASS_USE_2NDP_ME_IN_1STP
+            //  If the mode of the second pass is not set from CLI, it is set to enc_mode
+            picture_control_set_ptr->snd_pass_enc_mode =
+                ( sequence_control_set_ptr->use_output_stat_file && sequence_control_set_ptr->static_config.snd_pass_enc_mode != MAX_ENC_PRESET + 1)?
+                (EbEncMode)sequence_control_set_ptr->static_config.snd_pass_enc_mode : picture_control_set_ptr->enc_mode;
+#endif
             aspectRatio = (sequence_control_set_ptr->seq_header.max_frame_width * 10) / sequence_control_set_ptr->seq_header.max_frame_height;
             aspectRatio = (aspectRatio <= ASPECT_RATIO_4_3) ? ASPECT_RATIO_CLASS_0 : (aspectRatio <= ASPECT_RATIO_16_9) ? ASPECT_RATIO_CLASS_1 : ASPECT_RATIO_CLASS_2;
 
@@ -817,7 +892,15 @@ void* resource_coordination_kernel(void *input_ptr)
             else
                 picture_control_set_ptr->picture_number = context_ptr->picture_number_array[instance_index];
             ResetPcsAv1(picture_control_set_ptr);
-
+#if TWO_PASS
+            if (sequence_control_set_ptr->use_input_stat_file && !end_of_sequence_flag)
+                read_stat_from_file(
+                    picture_control_set_ptr,
+                    sequence_control_set_ptr);
+            else {
+                memset(&picture_control_set_ptr->stat_struct, 0, sizeof(stat_struct_t));
+            }
+#endif
             sequence_control_set_ptr->encode_context_ptr->initial_picture = EB_FALSE;
 
             // Get Empty Reference Picture Object
@@ -866,18 +949,23 @@ void* resource_coordination_kernel(void *input_ptr)
                 const int tile_cols = cm->tiles_info.tile_cols;
                 const int tile_rows = cm->tiles_info.tile_rows;
                 TileInfo tile_info;
+                int sb_size_log2 = sequence_control_set_ptr->seq_header.sb_size_log2;
                 //Tile Loop
                 for (tile_row = 0; tile_row < tile_rows; tile_row++)
                 {
-                    eb_av1_tile_set_row(&tile_info, ppcs_ptr, tile_row);
+                    eb_av1_tile_set_row(&tile_info, &cm->tiles_info, cm->mi_rows, tile_row);
 
                     for (tile_col = 0; tile_col < tile_cols; tile_col++)
                     {
-                        eb_av1_tile_set_col(&tile_info, ppcs_ptr, tile_col);
+                        eb_av1_tile_set_col(&tile_info, &cm->tiles_info, cm->mi_cols, tile_col);
 
-                        for (y_lcu_index = cm->tiles_info.tile_row_start_sb[tile_row]; y_lcu_index < (uint32_t)cm->tiles_info.tile_row_start_sb[tile_row + 1]; ++y_lcu_index)
+                        for ((y_lcu_index = cm->tiles_info.tile_row_start_mi[tile_row] >> sb_size_log2);
+                             (y_lcu_index < (uint32_t)cm->tiles_info.tile_row_start_mi[tile_row + 1] >> sb_size_log2);
+                             y_lcu_index++)
                         {
-                            for (x_lcu_index = cm->tiles_info.tile_col_start_sb[tile_col]; x_lcu_index < (uint32_t)cm->tiles_info.tile_col_start_sb[tile_col + 1]; ++x_lcu_index)
+                            for ((x_lcu_index = cm->tiles_info.tile_col_start_mi[tile_col] >> sb_size_log2);
+                                 (x_lcu_index < (uint32_t)cm->tiles_info.tile_col_start_mi[tile_col + 1] >> sb_size_log2);
+                                 x_lcu_index++)
                             {
                                 int sb_index = (uint16_t)(x_lcu_index + y_lcu_index * picture_width_in_sb);
                                 sequence_control_set_ptr->sb_params_array[sb_index].tile_start_x = 4 * tile_info.mi_col_start;

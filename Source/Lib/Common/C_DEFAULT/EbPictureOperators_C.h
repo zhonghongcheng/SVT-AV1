@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-    void picture_average_kernel(
+    void picture_average_kernel_c(
         EbByte   src0,
         uint32_t   src0_stride,
         EbByte   src1,
@@ -19,6 +19,12 @@ extern "C" {
         uint32_t   dst_stride,
         uint32_t   area_width,
         uint32_t   area_height);
+
+    void picture_average_kernel_1line_c(
+        EbByte   src0,
+        EbByte   src1,
+        EbByte   dst,
+        uint32_t   areaWidth);
 
     void picture_copy_kernel(
         EbByte   src,
