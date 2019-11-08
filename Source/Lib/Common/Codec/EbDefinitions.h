@@ -82,7 +82,7 @@ extern "C" {
 #define TEST_M0_WARP_M3              0
 #define M0_PRUNE_REC_PART_M3         0
 #define TEST_M0_SKIP_ANGLE_INTRA_M3  0
-#define TEST_M0_OBMC_M3              0
+#define TEST_M0_OBMC_M3              1
 
 
 #define M2_MD_STAGE                  0
