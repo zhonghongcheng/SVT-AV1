@@ -2024,7 +2024,11 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
 
 #if sc_rtime_presets
     if (sequence_control_set_ptr->static_config.screen_content_mode == 1)
+#if M5_DOUNSAMPLING_ME
+        if (0) 
+#else
         if (sequence_control_set_ptr->static_config.enc_mode <= ENC_M4)
+#endif
             sequence_control_set_ptr->down_sampling_method_me_search = ME_FILTERED_DOWNSAMPLED;
         else
             sequence_control_set_ptr->down_sampling_method_me_search = ME_DECIMATED_DOWNSAMPLED;

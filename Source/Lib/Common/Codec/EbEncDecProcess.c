@@ -1260,6 +1260,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             context_ptr->decoupled_fast_loop_search_method = SSD_SEARCH;
         else
             context_ptr->decoupled_fast_loop_search_method = FULL_SAD_SEARCH;
+#if M5_DECOUPLE_FAST_LOOP
+    context_ptr->decoupled_fast_loop_search_method = FULL_SAD_SEARCH;
+#endif
 
     // Set the full loop escape level
     // Level                Settings
@@ -1374,6 +1377,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->unipred3x3_injection = 0;
 
+#if M5_UNIPRED_3X3_INJECTIION
+    context_ptr->unipred3x3_injection = 0;
+#endif
     // Set bipred3x3 injection
     // Level                Settings
     // 0                    OFF
@@ -1406,7 +1412,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
     else
         context_ptr->bipred3x3_injection = 0;
-
+#if M5_BIPRED_3X3_INJECTIION
+    context_ptr->bipred3x3_injection = 0;
+#endif
     // Level                Settings
     // 0                    Level 0: OFF
     // 1                    Level 1: 7x5 full-pel search + sub-pel refinement off
@@ -1458,6 +1466,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->predictive_me_level = 0;
 
+#if M5_PREDICTIVE_ME
+    context_ptr->predictive_me_level = 0;
+#endif
     // Derive md_staging_mode
     //
 #if REMOVE_MD_STAGE_1
@@ -1485,6 +1496,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->md_staging_mode = MD_STAGING_MODE_1;
     else
         context_ptr->md_staging_mode = MD_STAGING_MODE_0;
+#if M5_MD_STAGING
+     context_ptr->md_staging_mode = MD_STAGING_MODE_0;
+#endif
 #else
     // MD_STAGING_MODE_1
     //  _______________________________________________________________________________________________________________________________________________
@@ -1582,7 +1596,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #else
     context_ptr->combine_class12 = (picture_control_set_ptr->enc_mode == ENC_M0) ? 0 : 1;
 #endif
-
+#if M5_CLASSS_COMBINATION
+    context_ptr->combine_class12 = 1;
+#endif
     // Set interpolation filter search blk size
     // Level                Settings
     // 0                    ON for 8x8 and above
@@ -1592,7 +1608,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->interpolation_filter_search_blk_size = 0;
     else
         context_ptr->interpolation_filter_search_blk_size = 1;
-
+#if M5_INTERPOLATION_SEARCH
+    context_ptr->interpolation_filter_search_blk_size = 1;
+#endif
     // Set PF MD
     context_ptr->pf_md_mode = PF_OFF;
 
@@ -1612,6 +1630,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->spatial_sse_full_loop = EB_FALSE;
 
+#if M5_SPATIAL_SSE_FULL_LOOP
+    context_ptr->spatial_sse_full_loop = EB_FALSE;
+#endif
     if (context_ptr->chroma_level <= CHROMA_MODE_1)
         context_ptr->blk_skip_decision = EB_TRUE;
     else
@@ -1765,6 +1786,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->md_stage_2_count_th_s = (uint64_t)~0; // until tested
 #endif
+#if M5_MD_STAGING_2_COUNT_TH
+    context_ptr->md_stage_2_count_th_s = (uint64_t)~0;
+#endif
 #if STAGE_2_COUNT_PRUNING_TH_C
     // TH_C(for class removal)
     // Remove class if deviation to the best higher than TH_C
@@ -1776,7 +1800,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->md_stage_2_count_th_c = (uint64_t)~0;
 
 #endif
-
+#if M5_MD_STAGING_2_COUNT_TH
+    context_ptr->md_stage_2_count_th_c = (uint64_t)~0;
+#endif
 #if LESS_RECTANGULAR_CHECK_LEVEL
 
     // Weighting (expressed as a percentage) applied to 

@@ -777,6 +777,9 @@ EbErrorType signal_derivation_multi_processes_oq(
 
 #if TWO_PASS_USE_2NDP_ME_IN_1STP
     uint8_t enc_mode_hme = sequence_control_set_ptr->use_output_stat_file ? picture_control_set_ptr->snd_pass_enc_mode : picture_control_set_ptr->enc_mode;
+#if M5_EME
+    enc_mode_hme = sequence_control_set_ptr->use_output_stat_file ? picture_control_set_ptr->snd_pass_enc_mode : 5;
+#endif
     picture_control_set_ptr->enable_hme_flag = enable_hme_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][enc_mode_hme];
 
     picture_control_set_ptr->enable_hme_level0_flag = enable_hme_level0_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][enc_mode_hme];
@@ -1293,6 +1296,9 @@ EbErrorType signal_derivation_multi_processes_oq(
         cm->sg_filter_mode = 3;
     else
         cm->sg_filter_mode = 1;
+#if M5_SG_FILTER_MODE
+    cm->sg_filter_mode = 3;
+#endif
 
     // WN Level                                     Settings
     // 0                                            OFF
@@ -1342,6 +1348,16 @@ EbErrorType signal_derivation_multi_processes_oq(
     }
     else
         picture_control_set_ptr->tx_search_level = TX_SEARCH_ENC_DEC;
+
+#if M5_TX_SEARCH
+    if (sc_content_detected)
+        picture_control_set_ptr->tx_search_level = TX_SEARCH_FULL_LOOP;
+    else
+    if (picture_control_set_ptr->temporal_layer_index == 0)
+        picture_control_set_ptr->tx_search_level = TX_SEARCH_FULL_LOOP;
+    else
+        picture_control_set_ptr->tx_search_level = TX_SEARCH_ENC_DEC;
+#endif
 
     // Set tx search skip weights (MAX_MODE_COST: no skipping; 0: always skipping)
 #if rtime_presets
@@ -1631,6 +1647,7 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->prune_unipred_at_me = 0;
         else
             picture_control_set_ptr->prune_unipred_at_me = 1;
+
         //CHKN: Temporal MVP should be disabled for pictures beloning to 4L MiniGop preceeded by 5L miniGOP. in this case the RPS is wrong(known issue). check RPS construction for more info.
         if ((sequence_control_set_ptr->static_config.hierarchical_levels == 4 && picture_control_set_ptr->hierarchical_levels == 3) ||
             picture_control_set_ptr->slice_type == I_SLICE)

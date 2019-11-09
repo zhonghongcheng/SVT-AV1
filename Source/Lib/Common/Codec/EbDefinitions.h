@@ -120,6 +120,26 @@ extern "C" {
 #define M3_HMEME                    0
 #define DISABLE_NSQ_IN_MD           0
 
+#define M4_TO_M5                    0
+#if M4_TO_M5
+#define  M5_DECOUPLE_FAST_LOOP      0
+#define  M5_UNIPRED_3X3_INJECTIION  0
+#define  M5_BIPRED_3X3_INJECTIION   0
+#define  M5_PREDICTIVE_ME           0
+#define  M5_MD_STAGING              0
+#define  M5_CLASSS_COMBINATION      0
+#define  M5_INTERPOLATION_SEARCH    0
+#define  M5_SPATIAL_SSE_FULL_LOOP   0
+#define  M5_MD_STAGING_2_COUNT_TH   0
+#define  M5_MD_STAGING_COUNT        0
+#define  M5_SG_FILTER_MODE          0
+#define  M5_TX_SEARCH               0
+#define  M5_DOUNSAMPLING_ME         0
+#define  M5_COMPOUND                0
+#define  M5_EME                     0
+#define  M5_TF                      0
+#define  M5_ADP                     0
+#endif
 
 
 #define PAL_SUP                      1

@@ -102,6 +102,9 @@ void* set_me_hme_params_oq(
 #else
     uint8_t  hmeMeLevel =  picture_control_set_ptr->enc_mode; // OMK to be revised after new presets
 #endif
+#if M5_EME
+    hmeMeLevel = sequence_control_set_ptr->use_output_stat_file ? picture_control_set_ptr->snd_pass_enc_mode : 5;
+#endif
     // HME/ME default settings
     me_context_ptr->number_hme_search_region_in_width = 2;
     me_context_ptr->number_hme_search_region_in_height = 2;
@@ -154,6 +157,9 @@ EbErrorType signal_derivation_me_kernel_oq(
     EbErrorType return_error = EB_ErrorNone;
 
     uint8_t  enc_mode = sequence_control_set_ptr->use_output_stat_file ? picture_control_set_ptr->snd_pass_enc_mode : picture_control_set_ptr->enc_mode;
+#if M5_EME
+    enc_mode = sequence_control_set_ptr->use_output_stat_file ? picture_control_set_ptr->snd_pass_enc_mode : 5;
+#endif
     // Set ME/HME search regions
     if (sequence_control_set_ptr->static_config.use_default_me_hme)
         set_me_hme_params_oq(
@@ -391,7 +397,9 @@ void* tf_set_me_hme_params_oq(
 #else
     uint8_t  hmeMeLevel = picture_control_set_ptr->enc_mode; // OMK to be revised after new presets
 #endif
-
+#if M5_TF
+     hmeMeLevel = sequence_control_set_ptr->use_output_stat_file ? picture_control_set_ptr->snd_pass_enc_mode : 5;
+#endif
     // HME/ME default settings
     me_context_ptr->number_hme_search_region_in_width = 2;
     me_context_ptr->number_hme_search_region_in_height = 2;
@@ -444,6 +452,10 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
     EbErrorType return_error = EB_ErrorNone;
     uint8_t  enc_mode = sequence_control_set_ptr->use_output_stat_file ?
         picture_control_set_ptr->snd_pass_enc_mode : picture_control_set_ptr->enc_mode;
+#if M5_TF
+    enc_mode = sequence_control_set_ptr->use_output_stat_file ?
+        picture_control_set_ptr->snd_pass_enc_mode : 5;
+#endif
     // Set ME/HME search regions
     tf_set_me_hme_params_oq(
         context_ptr->me_context_ptr,
