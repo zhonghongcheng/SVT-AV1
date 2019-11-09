@@ -118,6 +118,7 @@ extern "C" {
 #define M3_SB                       0
 #define M3_FILTER_INTRA             0
 #define M3_HMEME                    0
+#define DISABLE_NSQ_IN_MD           0
 
 
 

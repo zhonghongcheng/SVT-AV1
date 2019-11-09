@@ -6692,7 +6692,11 @@ EbBool allowed_ns_cu(
     uint8_t                            is_complete_sb){
     EbBool  ret = 1;
     UNUSED(is_complete_sb);
-
+#if DISABLE_NSQ_IN_MD
+    if (context_ptr->blk_geom->shape != PART_N) {
+        return 0;   
+    }
+#endif
 #if COMBINE_MDC_NSQ_TABLE
 #if LESS_4_PARTITIONS
    if(context_ptr->blk_geom->shape == PART_H4 && context_ptr->partition_horz4_allowed == 0) 
