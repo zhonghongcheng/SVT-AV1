@@ -1716,7 +1716,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
     // Derive distortion-based md_stage_0_count proning
 #if STAGE_1_COUNT_PRUNING_TH_S
-    if (MR_MODE || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
+    if (MR_MODE || picture_control_set_ptr->enc_mode == ENC_M0 || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
         context_ptr->md_stage_1_count_th_s = (uint64_t)~0;
     else
         context_ptr->md_stage_1_count_th_s = 75;
@@ -1731,7 +1731,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if STAGE_1_COUNT_PRUNING_TH_C
     // TH_C(for class removal)
     // Remove class if deviation to the best higher than TH_C
-    if (MR_MODE || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
+    if (MR_MODE || picture_control_set_ptr->enc_mode == ENC_M0 || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
         context_ptr->md_stage_1_count_th_c = (uint64_t)~0;
     else
         context_ptr->md_stage_1_count_th_c = 100;
@@ -1740,17 +1740,14 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if STAGE_2_COUNT_PRUNING_TH_S
     // TH_S(for candidate removal per class)
     // Remove candidate if deviation to the best higher than TH_S
-    if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected) // <-- Hsan: M0 has already settings (to remove this check)
+    if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         context_ptr->md_stage_2_count_th_s = (uint64_t)~0;
 #if TEST_NEW_M0M1_SET1
     else if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #else
     else if (picture_control_set_ptr->enc_mode <= ENC_M0)
 #endif
-        if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
-            context_ptr->md_stage_2_count_th_s = 25;
-        else
-            context_ptr->md_stage_2_count_th_s = 15;
+        context_ptr->md_stage_2_count_th_s = 15;
 #if M2_MD_STAGE
     else if (picture_control_set_ptr->enc_mode <= ENC_M3)
 #else
@@ -1771,10 +1768,8 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if STAGE_2_COUNT_PRUNING_TH_C
     // TH_C(for class removal)
     // Remove class if deviation to the best higher than TH_C
-    if (MR_MODE)
+    if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected) 
         context_ptr->md_stage_2_count_th_c = (uint64_t)~0;
-    else if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
-        context_ptr->md_stage_2_count_th_c = 100;
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->md_stage_2_count_th_c = 25;
     else // to be tested for m5-m8
