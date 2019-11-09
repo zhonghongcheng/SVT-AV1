@@ -704,7 +704,9 @@ void* resource_coordination_kernel(void *input_ptr)
             // 1                 ON
             sequence_control_set_ptr->seq_header.enable_interintra_compound =  (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_10BIT &&
                                                                                 sequence_control_set_ptr->static_config.enable_hbd_mode_decision ) ? 0:
-#if TEST_M0_INTER_INTRA
+#if TEST_M0_INTER_INTRA_M3
+                                                                                (sequence_control_set_ptr->static_config.enc_mode <= ENC_M3) ? 1 : 0;
+#elif TEST_M0_INTER_INTRA
                                                                                 (sequence_control_set_ptr->static_config.enc_mode <= ENC_M1) ? 1 : 0;
 #else
                                                                                 (sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;

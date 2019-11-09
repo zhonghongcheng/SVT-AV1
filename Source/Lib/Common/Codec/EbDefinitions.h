@@ -54,8 +54,8 @@ extern "C" {
 #define TEST_M1_PRUNE_REC_PART       0
 #define TEST_M1_NSQ_TABLES           0
 #define TEST_M1_CDEF_FILTER          0
-#define TEST_M4_HME_ME               0 // this changes m0-m3 to use m4 settigns
-#define M3_HP_QP                     0
+#define TEST_M4_HME_ME               1 // this changes m0-m3 to use m4 settigns
+#define M3_HP_QP                     1
 
 // Testing M1-M2 difference
 
@@ -83,6 +83,9 @@ extern "C" {
 #define M0_PRUNE_REC_PART_M3         0
 #define TEST_M0_SKIP_ANGLE_INTRA_M3  0
 #define TEST_M0_OBMC_M3              1
+
+#define TEST_M0_INTER_INTRA_M3       0
+#define TEST_M0_PRED_ME_M3           0
 
 
 #define M2_MD_STAGE                  0
@@ -3457,7 +3460,7 @@ typedef struct stat_struct_t
 static const uint8_t enable_hme_flag[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
     {
 #if TEST_M4_HME_ME
-        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_576p_RANGE_OR_LOWER
+        {   0,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_576p_RANGE_OR_LOWER
         {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_720P_RANGE/INPUT_SIZE_1080i_RANGE
         {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_1080p_RANGE
         {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_4K_RANGE
@@ -3752,10 +3755,10 @@ static const uint16_t hme_level2_search_area_in_height_array_bottom[SC_MAX_LEVEL
 static const uint16_t search_area_width[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
     {
 #if TEST_M4_HME_ME
-        { 64,  64,  64,  64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
-        { 64,  64,  64,  64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
-        { 64,  64,  64,  64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
-        { 64,  64,  64,  64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
+        { 128,  64,  64,  64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
+        { 160,  64,  64,  64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
+        { 192,  64,  64,  64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
+        { 192,  64,  64,  64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
     } ,
 #elif M3_HMEME
         { 128,  128,  128,  128,   128,   64,   64,   64,   48,   16,   16,    16,   16 },
@@ -3780,10 +3783,10 @@ static const uint16_t search_area_width[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPP
 static const uint16_t search_area_height[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
     {
 #if TEST_M4_HME_ME
-        { 32,  32,  32,  32,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
-        { 32,  32,  32,  32,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
-        { 32,  32,  32,  32,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
-        { 32,  32,  32,  32,   32,   32,   32,   32,   16,    9,    9,     9,    9 }
+        { 128,  32,  32,  32,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        { 160,  32,  32,  32,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        { 192,  32,  32,  32,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        { 192,  32,  32,  32,   32,   32,   32,   32,   16,    9,    9,     9,    9 }
     } ,
 #elif M3_HMEME
         { 128,  128,  128,  128,   128,   32,   32,   32,   16,    9,    9,     9,    9 },
