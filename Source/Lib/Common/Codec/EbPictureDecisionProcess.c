@@ -1031,7 +1031,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
             picture_control_set_ptr->nsq_search_level = (picture_control_set_ptr->is_used_as_reference_flag) ? NSQ_SEARCH_LEVEL6 : NSQ_SEARCH_LEVEL3;
 #if M2_NSQ
-#if M3_PIC_DEPTH_NSQ
+#if M3_PIC_DEPTH_NSQ || MDC_M4
         else if (picture_control_set_ptr->enc_mode <= ENC_M4)
 #else
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
