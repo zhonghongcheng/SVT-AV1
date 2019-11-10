@@ -846,7 +846,7 @@ EbErrorType signal_derivation_multi_processes_oq(
             if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #endif
                 picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
-#if M3_NSQ_MDC_CANDIDATE_IN_M4 || M3_PIC_DEPTH_NSQ
+#if M3_NSQ_MDC_CANDIDATE_IN_M4 || M3_PIC_DEPTH_NSQ || MDC_M4
             else if (picture_control_set_ptr->enc_mode <= ENC_M4)
 #elif M3_NSQ_MDC_CANDIDATE
             else if (picture_control_set_ptr->enc_mode <= ENC_M3)
@@ -941,16 +941,21 @@ EbErrorType signal_derivation_multi_processes_oq(
     // Adaptive Ol  Level                    Settings
     // 0                                     OFF
     // 1                                     ON
-
-    if (MR_MODE || sc_content_detected) {
-        picture_control_set_ptr->adpative_ol_partitioning_level = 0;
+    if (picture_control_set_ptr->mdc_depth_level != MAX_MDC_LEVEL) {
+        if (MR_MODE || sc_content_detected) {
+            picture_control_set_ptr->adpative_ol_partitioning_level = 0;
+        }
+#if MDC_M4
+        else if (picture_control_set_ptr->enc_mode <= ENC_M4) {
+#else
+        else if (picture_control_set_ptr->enc_mode <= ENC_M3) {
+#endif
+            picture_control_set_ptr->mdc_depth_level = 6;
+            picture_control_set_ptr->adpative_ol_partitioning_level = 1;
+        }
+        else
+            picture_control_set_ptr->adpative_ol_partitioning_level = 0;
     }
-    else if (picture_control_set_ptr->enc_mode <= ENC_M3){
-        picture_control_set_ptr->mdc_depth_level = 6;
-        picture_control_set_ptr->adpative_ol_partitioning_level = 1;
-    }else
-        picture_control_set_ptr->adpative_ol_partitioning_level = 0;
-
 #endif
     // NSQ search Level                               Settings
     // NSQ_SEARCH_OFF                                 OFF

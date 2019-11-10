@@ -140,6 +140,7 @@ extern "C" {
 #define  M5_TF                      0
 #define  M5_ADP                     0
 #endif
+#define MDC_M4                      0
 
 
 #define PAL_SUP                      1
