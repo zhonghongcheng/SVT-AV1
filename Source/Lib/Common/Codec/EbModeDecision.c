@@ -5637,6 +5637,27 @@ uint32_t product_full_mode_decision(
             lowest_inter_total_dist[1] = buffer_ptr_array[candidateIndex]->total_dist[1];
         }
     }
+    if (lowest_inter_cost == 0xFFFFFFFFFFFFFFFFull) {
+        lowest_inter_cost           = lowest_intra_cost;
+        lowest_inter_cost           = lowest_intra_cost;
+        lowest_inter_total_rate     = lowest_intra_total_rate;
+        lowest_inter_total_dist[0]  = lowest_intra_total_dist[0];
+        lowest_inter_total_dist[1]  = lowest_intra_total_dist[1];
+    }
+    if (lowest_intra_cost == 0xFFFFFFFFFFFFFFFFull) {
+        lowest_intra_cost = lowest_inter_cost;
+        lowest_intra_cost = lowest_inter_cost;
+        lowest_intra_total_rate = lowest_inter_total_rate;
+        lowest_intra_total_dist[0] = lowest_inter_total_dist[0];
+        lowest_intra_total_dist[1] = lowest_inter_total_dist[1];
+    }
+    if (lowest_intra_cost < lowest_inter_cost) {
+        lowest_inter_cost = lowest_intra_cost;
+        lowest_inter_cost          = lowest_intra_cost;
+        lowest_inter_total_rate    = lowest_intra_total_rate;
+        lowest_inter_total_dist[0] = lowest_intra_total_dist[0];
+        lowest_inter_total_dist[1] = lowest_intra_total_dist[1];
+    }
     cu_ptr->lowest_intra_cost           = lowest_intra_cost;
     cu_ptr->lowest_intra_total_rate     = lowest_intra_total_rate;
     cu_ptr->lowest_intra_total_dist[0]  = lowest_intra_total_dist[0];

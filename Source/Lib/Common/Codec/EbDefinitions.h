@@ -3317,25 +3317,25 @@ typedef struct dep_stat_t {
     int64_t recrf_dist;
     int64_t srcrf_rate;
     int64_t recrf_rate;
-    int64_t mc_dep_delta;
+    //int64_t mc_dep_delta;
     int64_t mc_dep_rate;
     int64_t mc_dep_dist;
-    int64_t src_rdcost; //--> why different than Inter cost
-    int64_t rec_rdcost; //--> why different than Intra cost
+   // int64_t src_rdcost; //--> why different than Inter cost
+   // int64_t rec_rdcost; //--> why different than Intra cost
 //    int_mv mv;
-    int ref_frame_index;
+   // int ref_frame_index;
     double quant_ratio;
-    int64_t mc_count;
-    int64_t mc_saved;
+    int64_t mc_count; // not needed
+    int64_t mc_saved; // not needed
 
 } dept_stat_t;
 
 
 typedef struct stat_struct_t
 {
-    uint32_t                        referenced_area[MAX_NUMBER_OF_TREEBLOCKS_PER_PICTURE];
+    uint32_t                        referenced_area[600/*MAX_NUMBER_OF_TREEBLOCKS_PER_PICTURE*/];
 #if STAT_UPDATE
-    dept_stat_t                     cur_stat[MAX_NUMBER_OF_TREEBLOCKS_PER_PICTURE];
+    dept_stat_t                     cur_stat[600 /*MAX_NUMBER_OF_TREEBLOCKS_PER_PICTURE*/];
 #endif
 } stat_struct_t;
 #endif

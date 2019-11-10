@@ -1304,7 +1304,7 @@ AppExitConditionType ProcessOutputStreamBuffer(
             // Release the output buffer
             eb_svt_release_out_buffer(&headerPtr);
 
-#if DEADLOCK_DEBUG
+#if DEADLOCK_DEBUG || 1//STAT_UPDATE
             ++frame_count;
 #else
             //++frame_count;

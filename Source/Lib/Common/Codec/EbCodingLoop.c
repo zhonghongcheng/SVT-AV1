@@ -2084,7 +2084,7 @@ void av1_copy_frame_mvs(PictureControlSet *picture_control_set_ptr, const Av1Com
     }
 }
 #if STAT_UPDATE
-#define TPL_DEP_COST_SCALE_LOG2 4
+#define TPL_DEP_COST_SCALE_LOG2 0
 static int64_t delta_rate_cost(int64_t delta_rate, int64_t recrf_dist,
     int64_t srcrf_dist, int pix_num) {
     double beta = (double)srcrf_dist / recrf_dist;
@@ -2118,7 +2118,7 @@ static double iiratio_nonlinear(double iiratio) {
     double z = 8 * (iiratio - 0.5);
     double sigmoid = 1.0 / (1.0 + exp(-z));
     return sigmoid;
-    return iiratio * iiratio;
+    //return iiratio * iiratio;
 }
 #endif
 /*******************************************
@@ -2414,31 +2414,50 @@ EB_EXTERN void av1_encode_pass(
 #if STAT_UPDATE
                 // Collect the referenced area per 64x64
                 if (sequence_control_set_ptr->use_output_stat_file) {
-                    cu_ptr->cur_stat.inter_cost = cu_ptr->lowest_inter_cost;
-                    cu_ptr->cur_stat.intra_cost = cu_ptr->lowest_intra_cost;
-                    cu_ptr->cur_stat.srcrf_dist = cu_ptr->lowest_inter_total_dist[0];
-                    cu_ptr->cur_stat.recrf_dist = cu_ptr->lowest_intra_total_dist[0];
-                    cu_ptr->cur_stat.srcrf_rate = cu_ptr->lowest_inter_total_rate;
-                    cu_ptr->cur_stat.recrf_rate = cu_ptr->lowest_intra_total_rate;
-                    cu_ptr->cur_stat.quant_ratio = (double)cu_ptr->lowest_inter_total_dist[0] / (double)cu_ptr->lowest_inter_total_dist[1];
-                    cu_ptr->cur_stat.mc_flow = 0;// For now, only 1 level of propagation is considered
-                    cu_ptr->cur_stat.mc_dep_cost = cu_ptr->cur_stat.intra_cost + cu_ptr->cur_stat.mc_flow; // to update at the time of writing to file
-    //                    cu_ptr->cur_stat.cur_dep_dist = to do on the fly
-    //                        cu_ptr->cur_stat.recrf_dist - cu_ptr->cur_stat.srcrf_dist;
-     //                   cu_ptr->cur_stat.delta_rate = cu_ptr->cur_stat.recrf_rate - cu_ptr->cur_stat.srcrf_rate;
-    //
-                        //cu_ptr->cur_stat.mc_dep_delta = 0; // not used in first pass
-                    cu_ptr->cur_stat.mc_dep_rate = 0;
-                    cu_ptr->cur_stat.mc_dep_dist = 0;
-                    cu_ptr->cur_stat.mc_count = 0;
-                    cu_ptr->cur_stat.mc_saved = 0;
+                    dept_stat_t *cur_stats = &cu_ptr->cur_stat;
+                    int64_t weights[5] = { 10,10,10,10,10 };//{14, 32,45,50,60  };
 
-                    //// to update below
-                    //cu_ptr->cur_stat.mc_flow = 0;
-                    //cu_ptr->cur_stat.mc_dep_rate = 0;
-                    //cu_ptr->cur_stat.mc_dep_dist = 0;
-                    //cu_ptr->cur_stat.mc_count = 0;
-                    //cu_ptr->cur_stat.mc_saved = 0;
+                    int64_t weight = weights[picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index];
+                    if (picture_control_set_ptr->parent_pcs_ptr->slice_type == 2)
+                        weight = 10;
+                    cur_stats->inter_cost = (cu_ptr->lowest_inter_cost* 10/weight) << TPL_DEP_COST_SCALE_LOG2; //((cu_ptr->lowest_inter_total_dist[0] * weight) << RDDIV_BITS); //
+                    cur_stats->intra_cost = (cu_ptr->lowest_intra_cost* 10/weight) << TPL_DEP_COST_SCALE_LOG2; //((cu_ptr->lowest_intra_total_dist[0]* weight) << RDDIV_BITS);// 
+                    cur_stats->srcrf_dist = cu_ptr->lowest_inter_total_dist[0] << TPL_DEP_COST_SCALE_LOG2;
+                    cur_stats->recrf_dist = cu_ptr->lowest_intra_total_dist[0] << TPL_DEP_COST_SCALE_LOG2;
+                    cur_stats->srcrf_rate = cu_ptr->lowest_inter_total_rate << TPL_DEP_COST_SCALE_LOG2;
+                    cur_stats->recrf_rate = cu_ptr->lowest_intra_total_rate << TPL_DEP_COST_SCALE_LOG2;
+
+                    cur_stats->recrf_dist = AOMMAX(cur_stats->srcrf_dist, cur_stats->recrf_dist);
+                    cur_stats->recrf_rate = AOMMAX(cur_stats->srcrf_rate, cur_stats->recrf_rate);
+                  //  cur_stats->rec_rdcost = AOMMAX(cur_stats->rec_rdcost, cur_stats->src_rdcost);
+
+
+                    cur_stats->intra_cost = AOMMAX(1, cur_stats->intra_cost);
+                    cur_stats->inter_cost = AOMMAX(1, cur_stats->inter_cost);
+                    cur_stats->srcrf_dist = AOMMAX(1, cur_stats->srcrf_dist);
+                    cur_stats->recrf_dist = AOMMAX(1, cur_stats->recrf_dist);
+                    cur_stats->srcrf_rate = AOMMAX(1, cur_stats->srcrf_rate);
+                    cur_stats->recrf_rate = AOMMAX(1, cur_stats->recrf_rate);
+
+                    cur_stats->quant_ratio = (double)AOMMAX(1,cu_ptr->lowest_inter_total_dist[0]) / (double)AOMMAX(1,cu_ptr->lowest_inter_total_dist[1]);
+                    cur_stats->mc_flow = 0;// For now, only 1 level of propagation is considered
+                    cur_stats->mc_dep_cost = cu_ptr->cur_stat.intra_cost + cur_stats->mc_flow; // to update at the time of writing to file
+                    
+                    cur_stats->mc_dep_rate = 0;
+                    cur_stats->mc_dep_dist = 0;
+                    cur_stats->mc_count = 0;
+                    cur_stats->mc_saved = 0;
+
+
+                    dept_stat_t *des_stats = &picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr->cur_stat[tbAddr];
+                    des_stats->inter_cost += cur_stats->inter_cost;
+                    des_stats->intra_cost += cur_stats->intra_cost;
+                    des_stats->srcrf_dist += cur_stats->srcrf_dist;
+                    des_stats->recrf_dist += cur_stats->recrf_dist;
+                    des_stats->srcrf_rate += cur_stats->srcrf_rate;
+                    des_stats->recrf_rate += cur_stats->recrf_rate;
+
+
                 }
 #endif
                 if (cu_ptr->prediction_mode_flag == INTRA_MODE) {
@@ -3710,7 +3729,72 @@ EB_EXTERN void av1_encode_pass(
                             is16bit);
 #if TWO_PASS
                     // Collect the referenced area per 64x64
-                    if (sequence_control_set_ptr->use_output_stat_file) {
+                    if (sequence_control_set_ptr->use_output_stat_file && picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index <= 4) {
+#if STAT_UPDATE
+                        dept_stat_t *cur_stats = &cu_ptr->cur_stat;
+                        const int pix_num = blk_geom->bwidth * blk_geom->bheight;
+                        const double iiratio_nl = iiratio_nonlinear(
+                            (double)cur_stats->inter_cost / cur_stats->intra_cost);
+                        int64_t mc_flow =
+                            (int64_t)(cur_stats->quant_ratio * cur_stats->mc_dep_cost *
+                            (1.0 - iiratio_nl));
+                        //if (picture_control_set_ptr->parent_pcs_ptr->picture_number  == 16 && tbAddr == 10)
+                        //    printf("%d\t%.1f\t%.2f\t%.1f\t%.2f\t%.2f\t%dx%d\n",
+                        //        tbAddr,
+                        //        (double)mc_flow,
+                        //        (double)cur_stats->quant_ratio,
+                        //        (double)cur_stats->mc_dep_cost,
+                        //        (double)cur_stats->inter_cost / cur_stats->intra_cost,
+                        //        (double)(1.0 - iiratio_nl),
+                        //        context_ptr->blk_geom->bwidth,
+                        //        context_ptr->blk_geom->bheight);
+
+                        int64_t cur_dep_dist =
+                            cur_stats->recrf_dist - cur_stats->srcrf_dist;
+
+                        int64_t mc_dep_dist = (int64_t)(
+                            cur_stats->mc_dep_dist *
+                            ((double)(cur_stats->recrf_dist - cur_stats->srcrf_dist) /
+                                cur_stats->recrf_dist));
+
+
+
+                        int64_t delta_rate =
+                            cur_stats->recrf_rate - cur_stats->srcrf_rate;
+
+                        int64_t mc_dep_rate =
+                            delta_rate_cost(cur_stats->mc_dep_rate, cur_stats->recrf_dist,
+                                cur_stats->srcrf_dist, pix_num);
+
+                        int64_t mc_saved = cur_stats->intra_cost - cur_stats->inter_cost;
+                        int64_t weights[5] = { 1,1,1,1,1 };//{ 4,3,2,1,1 }; to be updated
+                        int64_t weight = weights[picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index];
+                        //int64_t weight =  1 << (4 - picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index);
+                        //if (picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index >= 2)
+                        //    //weight = 1 << (4 - picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index);
+                        //    weight = 1 << (4 - picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index);
+                        //else if (picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 1)
+                        //    weight = 4;
+                        //else if (picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0)
+                        //    weight = 8;
+                        ////else if (picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0)
+                        ////    weight = 36;
+                        if (context_ptr->mv_unit.pred_direction == BI_PRED) {
+                            mc_flow = mc_flow * weight/2;
+                            cur_dep_dist = cur_dep_dist * weight/2;
+                            mc_dep_dist = mc_dep_dist * weight/2;
+                            delta_rate = delta_rate * weight/2;
+                            mc_dep_rate = mc_dep_rate * weight/2;
+                        }
+                        else {
+                            mc_flow = mc_flow * weight;
+                            cur_dep_dist = cur_dep_dist * weight;
+                            mc_dep_dist = mc_dep_dist * weight;
+                            delta_rate = delta_rate * weight;
+                            mc_dep_rate = mc_dep_rate * weight;
+                        }
+                        int overlap_area;
+#endif
                         if (cu_ptr->prediction_unit_array->ref_frame_index_l0 >= 0) {
                             eb_block_on_mutex(refObj0->referenced_area_mutex);
                             {
@@ -3724,42 +3808,21 @@ EB_EXTERN void av1_encode_pass(
                                     uint16_t sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
                                     uint16_t width, height, weight;
                                     weight = 1 << (4 - picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index);
-
-#if STAT_UPDATE
-                                    const int pix_num = blk_geom->bwidth * blk_geom->bheight;
-                                    const double iiratio_nl = iiratio_nonlinear(
-                                        (double)cu_ptr->cur_stat.inter_cost / cu_ptr->cur_stat.intra_cost);
-                                    int64_t mc_flow =
-                                        (int64_t)(cu_ptr->cur_stat.quant_ratio * cu_ptr->cur_stat.mc_dep_cost *
-                                        (1.0 - iiratio_nl));
-                                    int64_t cur_dep_dist = 
-                                        cu_ptr->cur_stat.recrf_dist - cu_ptr->cur_stat.srcrf_dist;
-                                    
-                                    int64_t mc_dep_dist = (int64_t)(
-                                        cu_ptr->cur_stat.mc_dep_dist *
-                                        ((double)(cu_ptr->cur_stat.recrf_dist - cu_ptr->cur_stat.srcrf_dist) /
-                                            cu_ptr->cur_stat.recrf_dist));
-                                    
-                                    int64_t delta_rate = 
-                                        cu_ptr->cur_stat.recrf_rate - cu_ptr->cur_stat.srcrf_rate;
-
-                                    int64_t mc_dep_rate =
-                                        delta_rate_cost(cu_ptr->cur_stat.mc_dep_rate, cu_ptr->cur_stat.recrf_dist,
-                                            cu_ptr->cur_stat.srcrf_dist, pix_num);
-
-                                    int64_t mc_saved = cu_ptr->cur_stat.intra_cost - cu_ptr->cur_stat.inter_cost;
-                                        //// to update below
-                                        //cu_ptr->cur_stat.mc_flow = 0;
-                                        //cu_ptr->cur_stat.mc_dep_rate = 0;
-                                        //cu_ptr->cur_stat.mc_dep_dist = 0;
-                                        //cu_ptr->cur_stat.mc_count = 0;
-                                        //cu_ptr->cur_stat.mc_saved = 0;
-#endif
-
-
                                     width = MIN(sb_origin_x + context_ptr->sb_sz, origin_x + blk_geom->bwidth) - origin_x;
                                     height = MIN(sb_origin_y + context_ptr->sb_sz, origin_y + blk_geom->bheight) - origin_y;
                                     refObj0->stat_struct.referenced_area[sb_index] += width * height*weight;
+#if STAT_UPDATE
+                                    dept_stat_t *des_stats = &refObj0->stat_struct.cur_stat[sb_index];
+
+                                    overlap_area = width * height;
+                                    des_stats->mc_flow += mc_flow * overlap_area / pix_num;
+                                    des_stats->mc_count += overlap_area << TPL_DEP_COST_SCALE_LOG2;
+                                    des_stats->mc_saved += (mc_saved * overlap_area) / pix_num;
+                                    des_stats->mc_dep_dist +=
+                                        ((cur_dep_dist + mc_dep_dist) * overlap_area) / pix_num;
+                                    des_stats->mc_dep_rate +=
+                                        ((delta_rate + mc_dep_rate) * overlap_area) / pix_num;
+#endif
 
                                     if (origin_x + blk_geom->bwidth > sb_origin_x + context_ptr->sb_sz) {
                                         sb_origin_x = (origin_x / context_ptr->sb_sz + 1)* context_ptr->sb_sz;
@@ -3768,6 +3831,18 @@ EB_EXTERN void av1_encode_pass(
                                         width = origin_x + blk_geom->bwidth - MAX(sb_origin_x, origin_x);
                                         height = MIN(sb_origin_y + context_ptr->sb_sz, origin_y + blk_geom->bheight) - origin_y;
                                         refObj0->stat_struct.referenced_area[sb_index] += width * height*weight;
+#if STAT_UPDATE
+                                        des_stats = &refObj0->stat_struct.cur_stat[sb_index];
+                                        overlap_area = width * height;
+                                        des_stats->mc_flow += mc_flow * overlap_area / pix_num;
+                                        des_stats->mc_count += overlap_area << TPL_DEP_COST_SCALE_LOG2;
+                                        des_stats->mc_saved += (mc_saved * overlap_area) / pix_num;
+                                        des_stats->mc_dep_dist +=
+                                            ((cur_dep_dist + mc_dep_dist) * overlap_area) / pix_num;
+                                        des_stats->mc_dep_rate +=
+                                            ((delta_rate + mc_dep_rate) * overlap_area) / pix_num;
+#endif
+
                                     }
                                     if (origin_y + blk_geom->bheight > sb_origin_y + context_ptr->sb_sz) {
                                         sb_origin_x = (origin_x / context_ptr->sb_sz)* context_ptr->sb_sz;
@@ -3776,6 +3851,17 @@ EB_EXTERN void av1_encode_pass(
                                         width = MIN(sb_origin_x + context_ptr->sb_sz, origin_x + blk_geom->bwidth) - origin_x;
                                         height = origin_y + blk_geom->bheight - MAX(sb_origin_y, origin_y);
                                         refObj0->stat_struct.referenced_area[sb_index] += width * height*weight;
+#if STAT_UPDATE
+                                        des_stats = &refObj0->stat_struct.cur_stat[sb_index];
+                                        overlap_area = width * height;
+                                        des_stats->mc_flow += mc_flow * overlap_area / pix_num;
+                                        des_stats->mc_count += overlap_area << TPL_DEP_COST_SCALE_LOG2;
+                                        des_stats->mc_saved += (mc_saved * overlap_area) / pix_num;
+                                        des_stats->mc_dep_dist +=
+                                            ((cur_dep_dist + mc_dep_dist) * overlap_area) / pix_num;
+                                        des_stats->mc_dep_rate +=
+                                            ((delta_rate + mc_dep_rate) * overlap_area) / pix_num;
+#endif
                                     }
                                     if (origin_x + blk_geom->bwidth > sb_origin_x + context_ptr->sb_sz &&
                                         origin_y + blk_geom->bheight > sb_origin_y + context_ptr->sb_sz) {
@@ -3785,6 +3871,17 @@ EB_EXTERN void av1_encode_pass(
                                         width = origin_x + blk_geom->bwidth - MAX(sb_origin_x, origin_x);
                                         height = origin_y + blk_geom->bheight - MAX(sb_origin_y, origin_y);
                                         refObj0->stat_struct.referenced_area[sb_index] += width * height*weight;
+#if STAT_UPDATE
+                                        des_stats = &refObj0->stat_struct.cur_stat[sb_index];
+                                        overlap_area = width * height;
+                                        des_stats->mc_flow += mc_flow * overlap_area / pix_num;
+                                        des_stats->mc_count += overlap_area << TPL_DEP_COST_SCALE_LOG2;
+                                        des_stats->mc_saved += (mc_saved * overlap_area) / pix_num;
+                                        des_stats->mc_dep_dist +=
+                                            ((cur_dep_dist + mc_dep_dist) * overlap_area) / pix_num;
+                                        des_stats->mc_dep_rate +=
+                                            ((delta_rate + mc_dep_rate) * overlap_area) / pix_num;
+#endif
                                     }
                                 }
                             }
@@ -3807,6 +3904,17 @@ EB_EXTERN void av1_encode_pass(
                                 width = MIN(sb_origin_x + context_ptr->sb_sz, origin_x + blk_geom->bwidth) - origin_x;
                                 height = MIN(sb_origin_y + context_ptr->sb_sz, origin_y + blk_geom->bheight) - origin_y;
                                 refObj1->stat_struct.referenced_area[sb_index] += width * height*weight;
+#if STAT_UPDATE
+                                dept_stat_t *des_stats = &refObj1->stat_struct.cur_stat[sb_index];
+                                overlap_area = width * height;
+                                des_stats->mc_flow += mc_flow * overlap_area / pix_num;
+                                des_stats->mc_count += overlap_area << TPL_DEP_COST_SCALE_LOG2;
+                                des_stats->mc_saved += (mc_saved * overlap_area) / pix_num;
+                                des_stats->mc_dep_dist +=
+                                    ((cur_dep_dist + mc_dep_dist) * overlap_area) / pix_num;
+                                des_stats->mc_dep_rate +=
+                                    ((delta_rate + mc_dep_rate) * overlap_area) / pix_num;
+#endif
                                 if (origin_x + blk_geom->bwidth > sb_origin_x + context_ptr->sb_sz) {
                                     sb_origin_x = (origin_x / context_ptr->sb_sz + 1)* context_ptr->sb_sz;
                                     sb_origin_y = origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
@@ -3814,6 +3922,17 @@ EB_EXTERN void av1_encode_pass(
                                     width = origin_x + blk_geom->bwidth - MAX(sb_origin_x, origin_x);
                                     height = MIN(sb_origin_y + context_ptr->sb_sz, origin_y + blk_geom->bheight) - origin_y;
                                     refObj1->stat_struct.referenced_area[sb_index] += width * height*weight;
+#if STAT_UPDATE
+                                    des_stats = &refObj1->stat_struct.cur_stat[sb_index];
+                                    overlap_area = width * height;
+                                    des_stats->mc_flow += mc_flow * overlap_area / pix_num;
+                                    des_stats->mc_count += overlap_area << TPL_DEP_COST_SCALE_LOG2;
+                                    des_stats->mc_saved += (mc_saved * overlap_area) / pix_num;
+                                    des_stats->mc_dep_dist +=
+                                        ((cur_dep_dist + mc_dep_dist) * overlap_area) / pix_num;
+                                    des_stats->mc_dep_rate +=
+                                        ((delta_rate + mc_dep_rate) * overlap_area) / pix_num;
+#endif
                                 }
                                 if (origin_y + blk_geom->bheight > sb_origin_y + context_ptr->sb_sz) {
                                     sb_origin_x = (origin_x / context_ptr->sb_sz)* context_ptr->sb_sz;
@@ -3822,6 +3941,17 @@ EB_EXTERN void av1_encode_pass(
                                     width = MIN(sb_origin_x + context_ptr->sb_sz, origin_x + blk_geom->bwidth) - origin_x;
                                     height = origin_y + blk_geom->bheight - MAX(sb_origin_y, origin_y);
                                     refObj1->stat_struct.referenced_area[sb_index] += width * height*weight;
+#if STAT_UPDATE
+                                    des_stats = &refObj1->stat_struct.cur_stat[sb_index];
+                                    overlap_area = width * height;
+                                    des_stats->mc_flow += mc_flow * overlap_area / pix_num;
+                                    des_stats->mc_count += overlap_area << TPL_DEP_COST_SCALE_LOG2;
+                                    des_stats->mc_saved += (mc_saved * overlap_area) / pix_num;
+                                    des_stats->mc_dep_dist +=
+                                        ((cur_dep_dist + mc_dep_dist) * overlap_area) / pix_num;
+                                    des_stats->mc_dep_rate +=
+                                        ((delta_rate + mc_dep_rate) * overlap_area) / pix_num;
+#endif
                                 }
                                 if (origin_x + blk_geom->bwidth > sb_origin_x + context_ptr->sb_sz &&
                                     origin_y + blk_geom->bheight > sb_origin_y + context_ptr->sb_sz) {
@@ -3831,6 +3961,17 @@ EB_EXTERN void av1_encode_pass(
                                     width = origin_x + blk_geom->bwidth - MAX(sb_origin_x, origin_x);
                                     height = origin_y + blk_geom->bheight - MAX(sb_origin_y, origin_y);
                                     refObj1->stat_struct.referenced_area[sb_index] += width * height*weight;
+#if STAT_UPDATE
+                                    des_stats = &refObj1->stat_struct.cur_stat[sb_index];
+                                    overlap_area = width * height;
+                                    des_stats->mc_flow += mc_flow * overlap_area / pix_num;
+                                    des_stats->mc_count += overlap_area << TPL_DEP_COST_SCALE_LOG2;
+                                    des_stats->mc_saved += (mc_saved * overlap_area) / pix_num;
+                                    des_stats->mc_dep_dist +=
+                                        ((cur_dep_dist + mc_dep_dist) * overlap_area) / pix_num;
+                                    des_stats->mc_dep_rate +=
+                                        ((delta_rate + mc_dep_rate) * overlap_area) / pix_num;
+#endif
                                 }
                             }
                             eb_release_mutex(refObj1->referenced_area_mutex);

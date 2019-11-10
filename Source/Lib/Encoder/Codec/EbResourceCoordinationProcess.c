@@ -533,6 +533,22 @@ static void CopyInputBuffer(
 }
 
 #if TWO_PASS
+#if STAT_UPDATE
+static int get_kf_boost_from_r0(double r0, int frames_to_key) {
+    double factor = sqrt((double)frames_to_key);
+    factor = AOMMIN(factor, 10.0);
+    factor = AOMMAX(factor, 4.0);
+    const int boost = (int)rint((75.0 + 14.0 * factor) / r0);
+    return boost;
+}
+static int get_gfu_boost_from_r0(double r0, int frames_to_key) {
+    double factor = sqrt((double)frames_to_key);
+    factor = AOMMIN(factor, 10.0);
+    factor = AOMMAX(factor, 4.0);
+    const int boost = (int)rint((200.0 + 10.0 * factor) / r0);
+    return boost;
+}
+#endif
 /******************************************************
  * Read Stat from File
  * reads stat_struct_t per frame from the file and stores under picture_control_set_ptr
@@ -555,6 +571,55 @@ static void read_stat_from_file(
     if (fread_return_value != sizeof(stat_struct_t)) {
         printf("Error in freed  returnVal %i\n", (int)fread_return_value);
     }
+
+
+#if STAT_UPDATE
+    stat_struct_t          stat_struct = picture_control_set_ptr->stat_struct;
+    int64_t mc_dep_cost_base = 0, intra_cost_base = 0;
+
+    int64_t recrf_dist_base = 0, mc_dep_rate_base = 0, mc_dep_dist_base = 0;
+    int64_t weight = 16;// 1 << (4 - picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index);
+    for (int sb_addr = 0; sb_addr < sequence_control_set_ptr->sb_total_count; ++sb_addr) {
+
+       // stat_struct.cur_stat[sb_addr].intra_cost *= 16;
+        stat_struct.cur_stat[sb_addr].mc_dep_cost = stat_struct.cur_stat[sb_addr].intra_cost + stat_struct.cur_stat[sb_addr].mc_flow;
+        intra_cost_base += stat_struct.cur_stat[sb_addr].intra_cost;
+        mc_dep_cost_base += stat_struct.cur_stat[sb_addr].mc_dep_cost;
+        recrf_dist_base += stat_struct.cur_stat[sb_addr].recrf_dist;
+        mc_dep_rate_base += stat_struct.cur_stat[sb_addr].mc_dep_rate;
+        mc_dep_dist_base += stat_struct.cur_stat[sb_addr].mc_dep_dist;
+        //if (picture_control_set_ptr->picture_number == 0) {
+        //    printf("\nindex:%d\t%.0f\t%.0f\t%.0f\t%.0f\t%.0f\t%.0f\t%.2f\n",
+        //        sb_addr,
+        //        (double)stat_struct.cur_stat[sb_addr].intra_cost,
+        //        (double)stat_struct.cur_stat[sb_addr].mc_dep_cost,
+        //        (double)stat_struct.cur_stat[sb_addr].recrf_dist,
+        //        (double)stat_struct.cur_stat[sb_addr].mc_dep_rate,
+        //        (double)stat_struct.cur_stat[sb_addr].mc_dep_dist,
+        //        (double)stat_struct.cur_stat[sb_addr].mc_flow,
+        //        (double)stat_struct.cur_stat[sb_addr].intra_cost / (double)stat_struct.cur_stat[sb_addr].mc_dep_cost
+        //    );
+        //}
+    }
+    double r0 = (double)intra_cost_base / mc_dep_cost_base;
+    const int kf_boost =
+        get_kf_boost_from_r0(r0, 60);
+    const int gfu_boost =
+        get_gfu_boost_from_r0(r0, 60);
+    if (picture_control_set_ptr->picture_number % 16 == 0) {
+        printf("\nPOC:%d\t%.0f\t%.0f\t%.0f\t%.0f\t%.0f\t%.3f\t %d\t %d\n",
+            picture_control_set_ptr->picture_number,
+            (double)intra_cost_base,
+            (double)mc_dep_cost_base,
+            (double)recrf_dist_base,
+            (double)mc_dep_rate_base,
+            (double)mc_dep_dist_base,
+            r0,
+            kf_boost,
+            gfu_boost);
+    }
+    picture_control_set_ptr->r0 = r0;
+#endif
 
     uint64_t referenced_area_avg = 0;
     uint64_t referenced_area_has_non_zero = 0;

@@ -14291,6 +14291,9 @@ extern "C" {
         struct stat_struct_t                 stat_struct; // stat_struct used in the second pass
         uint64_t                             referenced_area_avg; // average referenced area per frame
         uint8_t                              referenced_area_has_non_zero;
+#if STAT_UPDATE
+        double                               r0;
+#endif
 #endif
 #if PREDICT_NSQ_SHAPE
         uint8_t                                mdc_depth_level;

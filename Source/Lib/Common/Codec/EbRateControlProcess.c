@@ -3670,6 +3670,32 @@ static int get_gf_high_motion_quality(int q, AomBitDepth bit_depth) {
     return arfgf_high_motion_minq[q];
 }
 #if TWO_PASS
+#if STAT_UPDATE
+static int get_kf_boost_from_r0(double r0, int frames_to_key) {
+    double factor = sqrt((double)frames_to_key);
+    factor = AOMMIN(factor, 10.0);
+    factor = AOMMAX(factor, 4.0);
+    const int boost = (int)rint((75.0 + 14.0 * factor) / r0);
+    return boost;
+}
+static int get_gfu_boost_from_r0(double r0, int frames_to_key) {
+    double factor = sqrt((double)frames_to_key);
+    factor = AOMMIN(factor, 10.0);
+    factor = AOMMAX(factor, 4.0);
+    const int boost = (int)rint((200.0 + 10.0 * factor) / r0);
+    return boost;
+}
+
+int combine_prior_with_tpl_boost(int prior_boost, int tpl_boost,
+    int frames_to_key) {
+    double factor = sqrt((double)frames_to_key);
+    factor = AOMMIN(factor, 12.0);
+    factor = AOMMAX(factor, 4.0);
+    factor -= 4.0;
+    int boost = (int)((factor * prior_boost + (8.0 - factor) * tpl_boost) / 8.0);
+    return boost;
+}
+#endif
 /******************************************************
  * adaptive_qindex_calc_two_pass
  * assigns the q_index per frame using average reference area per frame.
@@ -3721,6 +3747,18 @@ static int adaptive_qindex_calc_two_pass(
             referenced_area_avg = 0;
         // cross multiplication to derive kf_boost from referenced area; kf_boost range is [kf_low,kf_high], and referenced range [0,referenced_area_max]
         rc->kf_boost = (int)((referenced_area_avg  * (kf_high - kf_low)) / referenced_area_max) + kf_low;
+#if STAT_UPDATE
+        int new_kf_boost = 
+            get_kf_boost_from_r0(picture_control_set_ptr->parent_pcs_ptr->r0, 60);
+
+        printf("old kf boost %d new kf boost %d [%d]\t",
+            rc->kf_boost, new_kf_boost, 60);
+
+
+        rc->kf_boost = combine_prior_with_tpl_boost(
+            rc->kf_boost, new_kf_boost, 60);
+        printf("updated kf boost %d \n", rc->kf_boost);
+#endif
         // Baseline value derived from cpi->active_worst_quality and kf boost.
         active_best_quality =
             get_kf_active_quality(rc, active_worst_quality, bit_depth);
@@ -3752,6 +3790,19 @@ static int adaptive_qindex_calc_two_pass(
             ((int)referenced_area_avg - (int)picture_control_set_ptr->ref_pic_referenced_area_avg_array[0][0] >= REF_AREA_DIF_THRESHOLD
             && referenced_area_avg > 20 && picture_control_set_ptr->ref_pic_referenced_area_avg_array[0][0] <= 20) ? (float_t)1.3 : (float_t)1;
         rc->gfu_boost = (int)(((referenced_area_avg)  * (gf_high - gf_low)) / referenced_area_max) + gf_low;
+#if 0 //STAT_UPDATE
+        int frames_to_key = 60 - picture_control_set_ptr->parent_pcs_ptr->picture_number + 15;
+        int new_gfu_boost =
+            get_gfu_boost_from_r0(picture_control_set_ptr->parent_pcs_ptr->r0, frames_to_key);
+        if(picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0)
+            printf("old gfu boost %d new gfu boost %d [%d]\t", rc->gfu_boost,
+                new_gfu_boost, frames_to_key);
+
+         rc->gfu_boost = combine_prior_with_tpl_boost(
+             rc->gfu_boost, new_gfu_boost, frames_to_key);
+         if (picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0)
+            printf("updated gfu boost %d \n", rc->gfu_boost);
+#endif
         q = active_worst_quality;
 
         // non ref frame or repeated frames with re-encode
@@ -3766,10 +3817,12 @@ static int adaptive_qindex_calc_two_pass(
                 const int boost = min_boost - active_best_quality;
 
                 active_best_quality = min_boost - (int)(boost * rc->arf_boost_factor);
+#if 1 //!STAT_UPDATE
                 if (picture_control_set_ptr->parent_pcs_ptr->sad_me / picture_control_set_ptr->sb_total_count / 256 < ME_SAD_LOW_THRESHOLD1)
                     active_best_quality = active_best_quality * 130 / 100;
                 else if (picture_control_set_ptr->parent_pcs_ptr->sad_me / picture_control_set_ptr->sb_total_count / 256 < ME_SAD_LOW_THRESHOLD2)
                     active_best_quality = active_best_quality * 115 / 100;
+#endif
             }
             else
                 active_best_quality = rc->arf_q;
@@ -3900,6 +3953,29 @@ static int adaptive_qindex_calc(
     return q;
 }
 #if TWO_PASS
+#if STAT_UPDATE
+extern int16_t eb_av1_dc_quant_QTX(int32_t qindex, int32_t delta, AomBitDepth bit_depth);
+
+int av1_get_deltaq_offset(AomBitDepth bit_depth, int qindex, double beta) {
+    assert(beta > 0.0);
+    int q = eb_av1_dc_quant_QTX(qindex, 0, bit_depth);
+    int newq = (int)rint(q / sqrt(beta));
+    int orig_qindex = qindex;
+    if (newq < q) {
+        do {
+            qindex--;
+            q = eb_av1_dc_quant_QTX(qindex, 0, bit_depth);
+        } while (newq < q && qindex > 0);
+    }
+    else {
+        do {
+            qindex++;
+            q = eb_av1_dc_quant_QTX(qindex, 0, bit_depth);
+        } while (newq > q && qindex < MAXQ);
+    }
+    return qindex - orig_qindex;
+}
+#endif
 /******************************************************
  * sb_qp_derivation_two_pass
  * Calculates the QP per SB based on the referenced area
@@ -3944,6 +4020,9 @@ static void sb_qp_derivation_two_pass(
             int delta_qp = 0;
             uint16_t variance_sb;
             uint32_t referenced_area_sb, me_distortion;
+#if STAT_UPDATE
+            int64_t intra_cost = 0, mc_dep_cost = 0;
+#endif
 
             if (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128) {
                 uint32_t me_sb_x = (sb_ptr->origin_x / me_sb_size);
@@ -3975,16 +4054,56 @@ static void sb_qp_derivation_two_pass(
                         picture_control_set_ptr->parent_pcs_ptr->rc_me_distortion[me_sb_addr_2] +
                         picture_control_set_ptr->parent_pcs_ptr->rc_me_distortion[me_sb_addr_3] + 2) >> 2;
                 me_distortion >>= 8;
+
+#if STAT_UPDATE
+                intra_cost = 
+                    (picture_control_set_ptr->parent_pcs_ptr->stat_struct.cur_stat[me_sb_addr_0].intra_cost +
+                        picture_control_set_ptr->parent_pcs_ptr->stat_struct.cur_stat[me_sb_addr_1].intra_cost +
+                        picture_control_set_ptr->parent_pcs_ptr-> stat_struct.cur_stat[me_sb_addr_2].intra_cost +
+                        picture_control_set_ptr->parent_pcs_ptr->stat_struct.cur_stat[me_sb_addr_3].intra_cost + 2) >> 2;
+                mc_dep_cost =
+                    (picture_control_set_ptr->parent_pcs_ptr->stat_struct.cur_stat[me_sb_addr_0].mc_dep_cost +
+                        picture_control_set_ptr->parent_pcs_ptr->stat_struct.cur_stat[me_sb_addr_1].mc_dep_cost +
+                        picture_control_set_ptr->parent_pcs_ptr->stat_struct.cur_stat[me_sb_addr_2].mc_dep_cost +
+                        picture_control_set_ptr->parent_pcs_ptr->stat_struct.cur_stat[me_sb_addr_3].mc_dep_cost + 2) >> 2;
+#endif
             }
             else {
                 variance_sb = picture_control_set_ptr->parent_pcs_ptr->variance[sb_addr][ME_TIER_ZERO_PU_64x64];
                 referenced_area_sb = picture_control_set_ptr->parent_pcs_ptr->stat_struct.referenced_area[sb_addr]
                     / sequence_control_set_ptr->sb_params_array[sb_addr].width / sequence_control_set_ptr->sb_params_array[sb_addr].height;
                 me_distortion = picture_control_set_ptr->parent_pcs_ptr->rc_me_distortion[sb_addr] >> 8;
+
+#if STAT_UPDATE
+                intra_cost =
+                    picture_control_set_ptr->parent_pcs_ptr->stat_struct.cur_stat[sb_addr].intra_cost;
+                mc_dep_cost =
+                    picture_control_set_ptr->parent_pcs_ptr->stat_struct.cur_stat[sb_addr].mc_dep_cost;
+#endif
             }
             delta_qp = 0;
 
+#if  0// STAT_UPDATE
+            if (picture_control_set_ptr->slice_type == 2/*picture_control_set_ptr->temporal_layer_index == 0*/) {
+                const double r0 = picture_control_set_ptr->parent_pcs_ptr->r0;
+                const double rk = (double)intra_cost / mc_dep_cost;
+                double beta = (r0 / rk);
+                assert(beta > 0.0);
+                int offset = (7 * av1_get_deltaq_offset(8, picture_control_set_ptr->parent_pcs_ptr->frm_hdr.quantization_params.base_q_idx, beta)) / 8;
+
+
+                aom_clear_system_state();
+                
+                offset = AOMMIN(offset, picture_control_set_ptr->parent_pcs_ptr->frm_hdr.delta_q_params.delta_q_res * 9*2 - 1);
+                offset = AOMMAX(offset, -picture_control_set_ptr->parent_pcs_ptr->frm_hdr.delta_q_params.delta_q_res * 9*2 + 1);
+                delta_qp = offset>>2;
+                printf("[%d]: %ld\t%ld\tbeta %g offset %d\n"/*, pyr_lev_from_top,
+       cpi->gf_group.pyramid_height*/, sb_addr, intra_cost, mc_dep_cost, beta, offset);
+            }
+
+#else
             if (picture_control_set_ptr->slice_type == 2) {
+
                 referenced_area_sb = MIN(REF_AREA_MED_THRESHOLD + REF_AREA_LOW_THRESHOLD, referenced_area_sb);
                 if (referenced_area_sb >= REF_AREA_MED_THRESHOLD)
                     delta_qp = -(max_delta_qp * ((int)referenced_area_sb - REF_AREA_MED_THRESHOLD) / (REF_AREA_MED_THRESHOLD));
@@ -4000,6 +4119,8 @@ static void sb_qp_derivation_two_pass(
                 else if (referenced_area_sb > MAX_REF_AREA_NONI_LOW_RES && me_distortion > ME_SAD_HIGH_THRESHOLD)
                     delta_qp = -max_delta_qp >> 2;
             }
+#endif
+
 
             if (picture_control_set_ptr->slice_type == 2)
                 sb_ptr->qp = CLIP3(
@@ -4284,6 +4405,11 @@ void* rate_control_kernel(void *input_ptr)
                                 &rc,
                                 qindex);
                     }
+#if 0 //STAT_UPDATE
+                    else if (sequence_control_set_ptr->use_output_stat_file) {
+                        new_qindex = (int32_t)(qindex);
+                    }
+#endif
                     else if (picture_control_set_ptr->slice_type == I_SLICE) {
                         const int32_t delta_qindex = eb_av1_compute_qdelta(
                             q_val,
