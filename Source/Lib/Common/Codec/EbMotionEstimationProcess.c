@@ -398,7 +398,8 @@ void* tf_set_me_hme_params_oq(
     uint8_t  hmeMeLevel = picture_control_set_ptr->enc_mode; // OMK to be revised after new presets
 #endif
 #if M5_TF
-     hmeMeLevel = sequence_control_set_ptr->use_output_stat_file ? picture_control_set_ptr->snd_pass_enc_mode : 5;
+    // Hsan: to update lookup tables; 4th column to use 5th column then to remove this line of code
+     hmeMeLevel = (hmeMeLevel == 4) ? 5 : hmeMeLevel;
 #endif
     // HME/ME default settings
     me_context_ptr->number_hme_search_region_in_width = 2;
@@ -453,8 +454,8 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
     uint8_t  enc_mode = sequence_control_set_ptr->use_output_stat_file ?
         picture_control_set_ptr->snd_pass_enc_mode : picture_control_set_ptr->enc_mode;
 #if M5_TF
-    enc_mode = sequence_control_set_ptr->use_output_stat_file ?
-        picture_control_set_ptr->snd_pass_enc_mode : 5;
+    // Hsan: to update the derivation of the signals below then to remove this line of code
+    enc_mode = (enc_mode == 4) ? 5 : enc_mode;
 #endif
     // Set ME/HME search regions
     tf_set_me_hme_params_oq(

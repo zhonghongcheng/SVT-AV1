@@ -1297,15 +1297,16 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
             cm->sg_filter_mode = 0;
     else
+#if M5_SG_FILTER_MODE
+    if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#else
     if (picture_control_set_ptr->enc_mode <= ENC_M4)
+#endif
         cm->sg_filter_mode = 4;
     else if (picture_control_set_ptr->enc_mode <= ENC_M6)
         cm->sg_filter_mode = 3;
     else
         cm->sg_filter_mode = 1;
-#if M5_SG_FILTER_MODE
-    cm->sg_filter_mode = 3;
-#endif
 
     // WN Level                                     Settings
     // 0                                            OFF

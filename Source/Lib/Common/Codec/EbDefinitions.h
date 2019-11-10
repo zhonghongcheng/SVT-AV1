@@ -97,6 +97,7 @@ extern "C" {
 #define M1_REF_COUNT_M3              0
 #define M1_COMP_M3                   0
 
+#define UPGRADE_M4_SETTINGS          0
 //testing M3-M4 differences
 
 #define M3_UNI_3x3                  0
@@ -105,7 +106,11 @@ extern "C" {
 #define M3_TRELLIS                  0
 #define M3_MD_SATGE_2_COUNT_TH_S    0
 #define M3_QFP                      0
+#if UPGRADE_M4_SETTINGS
+#define M3_ME_SEARCH_METHOD         1
+#else
 #define M3_ME_SEARCH_METHOD         0
+#endif
 #define M3_PIC_DEPTH_NSQ            0
 #define M3_MDC                      0
 #define M3_INTERPOLATION            0
@@ -114,13 +119,20 @@ extern "C" {
 #define M3_MD_STAGE_1               0
 #define M3_MD_STAGE_2               0
 #define M3_MRP_MODE                 0
+
+#if UPGRADE_M4_SETTINGS
+#define M3_DOWN_SAMPLING            1
+#define M3_SB                       1
+#define M3_FILTER_INTRA             1
+#else
 #define M3_DOWN_SAMPLING            0
 #define M3_SB                       0
 #define M3_FILTER_INTRA             0
+#endif
 #define M3_HMEME                    0
 #define DISABLE_NSQ_IN_MD           0
 
-#define M4_TO_M5                    0
+#define M4_TO_M5                    1
 #if M4_TO_M5
 #define  M5_DECOUPLE_FAST_LOOP      0
 #define  M5_UNIPRED_3X3_INJECTIION  0
@@ -135,12 +147,17 @@ extern "C" {
 #define  M5_MD_STAGING_2_COUNT_TH_S 0
 #define  M5_MD_STAGING_2_COUNT_TH_C 0
 #define  M5_MD_STAGING_COUNT        0
-#define  M5_SG_FILTER_MODE          0
 #define  M5_TX_SEARCH               0
 #define  M5_DOUNSAMPLING_ME         0
 #define  M5_COMPOUND                0
 #define  M5_EME                     0
+#if UPGRADE_M4_SETTINGS
+#define  M5_SG_FILTER_MODE          1
+#define  M5_TF                      1
+#else
+#define  M5_SG_FILTER_MODE          0
 #define  M5_TF                      0
+#endif
 #define  M5_ADP                     0
 #endif
 #define MDC_M4                      0
