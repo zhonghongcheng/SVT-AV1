@@ -130,7 +130,10 @@ extern "C" {
 #define  M5_CLASSS_COMBINATION      0
 #define  M5_INTERPOLATION_SEARCH    0
 #define  M5_SPATIAL_SSE_FULL_LOOP   0
-#define  M5_MD_STAGING_2_COUNT_TH   0
+#define  M5_MD_STAGING_1_COUNT_TH_S 0
+#define  M5_MD_STAGING_1_COUNT_TH_C 0
+#define  M5_MD_STAGING_2_COUNT_TH_S 0
+#define  M5_MD_STAGING_2_COUNT_TH_C 0
 #define  M5_MD_STAGING_COUNT        0
 #define  M5_SG_FILTER_MODE          0
 #define  M5_TX_SEARCH               0
