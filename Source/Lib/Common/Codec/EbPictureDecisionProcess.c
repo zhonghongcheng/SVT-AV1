@@ -941,7 +941,7 @@ EbErrorType signal_derivation_multi_processes_oq(
     // Adaptive Ol  Level                    Settings
     // 0                                     OFF
     // 1                                     ON
-    if (picture_control_set_ptr->mdc_depth_level != MAX_MDC_LEVEL) {
+
         if (MR_MODE || sc_content_detected) {
             picture_control_set_ptr->adpative_ol_partitioning_level = 0;
         }
@@ -950,12 +950,14 @@ EbErrorType signal_derivation_multi_processes_oq(
 #else
         else if (picture_control_set_ptr->enc_mode <= ENC_M3) {
 #endif
-            picture_control_set_ptr->mdc_depth_level = 6;
+
             picture_control_set_ptr->adpative_ol_partitioning_level = 1;
         }
         else
             picture_control_set_ptr->adpative_ol_partitioning_level = 0;
-    }
+
+        if(picture_control_set_ptr->adpative_ol_partitioning_level)
+            picture_control_set_ptr->mdc_depth_level = 6;
 #endif
     // NSQ search Level                               Settings
     // NSQ_SEARCH_OFF                                 OFF
