@@ -1364,7 +1364,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if M3_UNI_3x3
         if (picture_control_set_ptr->enc_mode <= ENC_M4)
 #else
+#if SHIFT_M4_TO_M3_NON_SC
+     if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#else
      if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#endif
 #endif
 #else
     if (picture_control_set_ptr->enc_mode <= ENC_M1)
@@ -1400,7 +1404,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if M3_BIPRED_3x3
     if (picture_control_set_ptr->enc_mode <= ENC_M4)
 #else
+#if SHIFT_M4_TO_M3_NON_SC
+    if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#else
     if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#endif
 #endif
 #else
     if (picture_control_set_ptr->enc_mode <= ENC_M1)
@@ -1438,7 +1446,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if M3_PRED_ME
         if (picture_control_set_ptr->enc_mode <= ENC_M4)
 #else
+#if SHIFT_M4_TO_M3_NON_SC
+        if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#endif
 #endif
 #else
         if (picture_control_set_ptr->enc_mode <= ENC_M2)
@@ -1651,7 +1663,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if M3_TRELLIS
     if (picture_control_set_ptr->enc_mode <= ENC_M4)
 #else
+#if SHIFT_M4_TO_M3_NON_SC
+    if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#else
     if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#endif
 #endif
 #else
     if (picture_control_set_ptr->enc_mode == ENC_M0)
@@ -1783,8 +1799,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #endif
         context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 15 : 12;
+#if !SHIFT_M4_TO_M3_NON_SC
     else if (picture_control_set_ptr->enc_mode <= ENC_M3)
         context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 7  : 5;
+#endif
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
 #if M3_MD_SATGE_2_COUNT_TH_S
         context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 7 : 5;

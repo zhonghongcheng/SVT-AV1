@@ -1781,9 +1781,9 @@ void set_md_stage_counts(
             context_ptr->md_stage_2_count[CAND_CLASS_6] = is_base ? 5 : is_ref ? 3 : 2;
 
         }
+
         else
 #endif
-
             if (picture_control_set_ptr->enc_mode == ENC_M3) {
 
                 // Stage 1 Cand Count
@@ -1905,6 +1905,7 @@ void set_md_stage_counts(
 #endif
 #endif
             }
+
 #endif
 #if M5_MD_STAGING_COUNT
     }
