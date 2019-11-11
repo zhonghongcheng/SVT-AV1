@@ -58,7 +58,7 @@ extern "C" {
 #define M3_HP_QP                     1
 
 // Testing M1-M2 difference
-#define MDC_OFF_M2_NSQ_L            0 // MDC up to M1 only
+#define MDC_OFF_M2_NSQ_L            1 // MDC up to M1 only
 #define M1_NSQ                      1
 #define M1_COMPOUND                 0
 #define M1_REF_COUNT                0
