@@ -947,6 +947,8 @@ EbErrorType signal_derivation_multi_processes_oq(
         }
 #if MDC_M4
         else if (picture_control_set_ptr->enc_mode <= ENC_M4) {
+#elif MDC_OFF_M2_NSQ_L
+        else if (picture_control_set_ptr->enc_mode <= ENC_M1) {
 #else
         else if (picture_control_set_ptr->enc_mode <= ENC_M3) {
 #endif
@@ -1025,7 +1027,7 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL6;
 #if M1_NSQ_M3
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
-#elif M1_NSQ
+#elif M1_NSQ && !MDC_OFF_M2_NSQ_L
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
 
 #else

@@ -54,17 +54,19 @@ extern "C" {
 #define TEST_M1_PRUNE_REC_PART       0
 #define TEST_M1_NSQ_TABLES           0
 #define TEST_M1_CDEF_FILTER          0
-#define TEST_M4_HME_ME               1 // this changes m0-m3 to use m4 settigns
+#define TEST_M4_HME_ME               1 // this changes m1-m3 to use m4 settigns
 #define M3_HP_QP                     1
 
 // Testing M1-M2 difference
-
+#define MDC_OFF_M2_NSQ_L            0 // MDC up to M1 only
 #define M1_NSQ                      1
 #define M1_COMPOUND                 0
 #define M1_REF_COUNT                0
 
 #define TEST_M0_PRUNE_REC_PART_M2   0
+#if !MDC_OFF_M2_NSQ_L
 #define TEST_M0_NSQ_TABLES_M2       1
+#endif
 #define TEST_M0_CDEF_FILTER_M2      0
 
 #define M1_ATB                      0
@@ -97,7 +99,8 @@ extern "C" {
 #define M1_REF_COUNT_M3              0
 #define M1_COMP_M3                   0
 
-#define UPGRADE_M4_SETTINGS          0
+#define UPGRADE_M4_SETTINGS          1
+
 //testing M3-M4 differences
 
 #define M3_UNI_3x3                  0
