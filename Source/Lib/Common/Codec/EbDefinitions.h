@@ -85,6 +85,7 @@ extern "C" {
 #define M0_PRUNE_REC_PART_M3         0
 #define TEST_M0_SKIP_ANGLE_INTRA_M3  0
 #define TEST_M0_OBMC_M3              1
+#define TEST_M0_OBMC_M4              0
 
 #define TEST_M0_INTER_INTRA_M3       0
 #define TEST_M0_PRED_ME_M3           0
