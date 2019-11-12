@@ -3229,8 +3229,11 @@ enum {
 #define LOW_QPS_COMP_THRESHOLD         40
 #define HIGH_FILTERED_THRESHOLD     (4<<8) // 8 bit precision
 #define LOW_FILTERED_THRESHOLD      (2<<8) // 8 bit precision
+#if NO_LAD
+#define QPS_SW_THRESH          100
+#else
 #define QPS_SW_THRESH          8
-
+#endif
 #if TWO_PASS
 #if TWO_PASS_IMPROVEMENT
 #define MAX_REF_AREA_I                 50 // Max ref area for I slice
@@ -3751,14 +3754,19 @@ static int adaptive_qindex_calc_two_pass(
         referenced_area_max = sequence_control_set_ptr->input_resolution < 2 ? MAX_REF_AREA_NONI_LOW_RES :
             ((int)referenced_area_avg - (int)picture_control_set_ptr->ref_pic_referenced_area_avg_array[0][0] >= REF_AREA_DIF_THRESHOLD) ?
             MAX_REF_AREA_NONI_LOW_RES : MAX_REF_AREA_NONI;
-
+#if ACT_A3_QPS_B_CLIPPING_OFF
         // Clip the complexity of highly complex pictures to maximum.
         if (picture_control_set_ptr->parent_pcs_ptr->qp_scaling_average_complexity > HIGH_QPS_COMP_THRESHOLD)
             referenced_area_avg = 0;
-
+#endif
+#if ACT_A2_QPS_B_BOOST_OFF
+        rc->arf_boost_factor =
+             (float_t)1;
+#else
         rc->arf_boost_factor =
             ((int)referenced_area_avg - (int)picture_control_set_ptr->ref_pic_referenced_area_avg_array[0][0] >= REF_AREA_DIF_THRESHOLD
             && referenced_area_avg > 20 && picture_control_set_ptr->ref_pic_referenced_area_avg_array[0][0] <= 20) ? (float_t)1.3 : (float_t)1;
+#endif
         rc->gfu_boost = (int)(((referenced_area_avg)  * (gf_high - gf_low)) / referenced_area_max) + gf_low;
         q = active_worst_quality;
 
@@ -3774,10 +3782,12 @@ static int adaptive_qindex_calc_two_pass(
                 const int boost = min_boost - active_best_quality;
 
                 active_best_quality = min_boost - (int)(boost * rc->arf_boost_factor);
+#if !ACT_A1_QPS_B_ME_BASED_OFF
                 if (picture_control_set_ptr->parent_pcs_ptr->sad_me / picture_control_set_ptr->sb_total_count / 256 < ME_SAD_LOW_THRESHOLD1)
                     active_best_quality = active_best_quality * 130 / 100;
                 else if (picture_control_set_ptr->parent_pcs_ptr->sad_me / picture_control_set_ptr->sb_total_count / 256 < ME_SAD_LOW_THRESHOLD2)
                     active_best_quality = active_best_quality * 115 / 100;
+#endif
             }
             else
                 active_best_quality = rc->arf_q;
@@ -3921,7 +3931,11 @@ static void sb_qp_derivation_two_pass(
     uint32_t                  sb_addr;
 
     picture_control_set_ptr->parent_pcs_ptr->average_qp = 0;
+#if ACT_B1_QPM_B_OFF
+    if (sequence_control_set_ptr->use_input_stat_file && picture_control_set_ptr->slice_type == I_SLICE)
+#else
     if (sequence_control_set_ptr->use_input_stat_file && picture_control_set_ptr->temporal_layer_index <= 0)
+#endif
         picture_control_set_ptr->parent_pcs_ptr->frm_hdr.delta_q_params.delta_q_present = 1;
     else
         picture_control_set_ptr->parent_pcs_ptr->frm_hdr.delta_q_params.delta_q_present = 0;
@@ -3993,14 +4007,19 @@ static void sb_qp_derivation_two_pass(
             delta_qp = 0;
 
             if (picture_control_set_ptr->slice_type == 2) {
+#if !ACT_B4_QPM_I_NEG_OFF
                 referenced_area_sb = MIN(REF_AREA_MED_THRESHOLD + REF_AREA_LOW_THRESHOLD, referenced_area_sb);
                 if (referenced_area_sb >= REF_AREA_MED_THRESHOLD)
                     delta_qp = -(max_delta_qp * ((int)referenced_area_sb - REF_AREA_MED_THRESHOLD) / (REF_AREA_MED_THRESHOLD));
+#endif
+#if !ACT_B3_QPM_I_POS_OFF
                 else
                     delta_qp = max_delta_qp;
-
+#endif
+#if !ACT_B2_QPM_VAR_OFF
                 if (delta_qp < 0 && variance_sb < IS_COMPLEX_LCU_FLAT_VARIANCE_TH)
                     delta_qp = 0;
+#endif
             }
             else if (picture_control_set_ptr->temporal_layer_index == 0) {
                 if (referenced_area_sb < REF_AREA_LOW_THRESHOLD)
@@ -4280,7 +4299,12 @@ void* rate_control_kernel(void *input_ptr)
                     // if there are need enough pictures in the LAD/SlidingWindow, the adaptive QP scaling is not used
 #if TWO_PASS
                     int32_t new_qindex;
+#if ACT_A4_QPS_B_OFF
+                    if (!sequence_control_set_ptr->use_output_stat_file && picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH && 
+                        picture_control_set_ptr->slice_type == I_SLICE) {
+#else
                     if (!sequence_control_set_ptr->use_output_stat_file && picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH) {
+#endif
                         // Content adaptive qp assignment
                         if(sequence_control_set_ptr->use_input_stat_file && !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected &&
                             picture_control_set_ptr->parent_pcs_ptr->referenced_area_has_non_zero)
@@ -4444,8 +4468,12 @@ void* rate_control_kernel(void *input_ptr)
                 }
             }
 #if TWO_PASS
+#if ACT_B_QPM_OFF
+            if (0)
+#else
             if (sequence_control_set_ptr->static_config.enable_adaptive_quantization == 2 && picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH &&
                 !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && !sequence_control_set_ptr->use_output_stat_file)
+#endif
                 if(sequence_control_set_ptr->use_input_stat_file && picture_control_set_ptr->parent_pcs_ptr->referenced_area_has_non_zero)
                     sb_qp_derivation_two_pass(picture_control_set_ptr);
                 else
