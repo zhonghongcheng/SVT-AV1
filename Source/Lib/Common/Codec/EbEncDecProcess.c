@@ -1805,16 +1805,16 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #else
     else if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #endif
-        context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 15 : 12;
+        context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution <= INPUT_SIZE_1080i_RANGE ? 15 : 12;
 #if !SHIFT_M4_TO_M3
     else if (picture_control_set_ptr->enc_mode <= ENC_M3)
-        context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 7  : 5;
+        context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution <= INPUT_SIZE_1080i_RANGE ? 7  : 5;
 #endif
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
 #if M3_MD_SATGE_2_COUNT_TH_S
-        context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 7 : 5;
+        context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution <= INPUT_SIZE_1080i_RANGE ? 7 : 5;
 #else
-        context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 5  : 3;
+        context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution <= INPUT_SIZE_1080i_RANGE ? 5  : 3;
 #endif
     else
         context_ptr->md_stage_2_count_th_s = (uint64_t)~0; // until tested
