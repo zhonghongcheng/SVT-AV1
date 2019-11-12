@@ -1401,7 +1401,7 @@ int32_t av1_quantize_inv_quantize(
 #if M3_QFP
     EbBool perform_quantize_fp = picture_control_set_ptr->enc_mode <= ENC_M4 ? EB_TRUE : EB_FALSE;
 #else
-#if SHIFT_M4_TO_M3_NON_SC
+#if SHIFT_M4_TO_M3
     EbBool perform_quantize_fp = picture_control_set_ptr->enc_mode <= ENC_M2 ? EB_TRUE : EB_FALSE;
 #else
     EbBool perform_quantize_fp = picture_control_set_ptr->enc_mode <= ENC_M3 ? EB_TRUE : EB_FALSE;

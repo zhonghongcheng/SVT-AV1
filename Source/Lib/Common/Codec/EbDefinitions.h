@@ -101,8 +101,7 @@ extern "C" {
 #define M1_COMP_M3                   0
 
 #define UPGRADE_M4_SETTINGS          1
-#define SHIFT_M4_TO_M3_NON_SC        1
-
+#define SHIFT_M4_TO_M3               1
 //testing M3-M4 differences
 
 #define M3_UNI_3x3                  0
