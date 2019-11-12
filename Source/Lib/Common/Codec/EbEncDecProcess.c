@@ -1316,7 +1316,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->new_nearest_near_comb_injection = 0;
 #if sc_rtime_presets
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if SHIFT_M4_TO_M3
+        if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#endif
             context_ptr->nx4_4xn_parent_mv_injection = 1;
         else
             context_ptr->nx4_4xn_parent_mv_injection = 0;
@@ -1353,8 +1357,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
             context_ptr->unipred3x3_injection = 1;
 #if sc_rtime_presets
-
+#if SHIFT_M4_TO_M3
+        else if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#else
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#endif
             context_ptr->unipred3x3_injection = 2;
 #endif
         else
@@ -1364,7 +1371,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if M3_UNI_3x3
         if (picture_control_set_ptr->enc_mode <= ENC_M4)
 #else
-#if SHIFT_M4_TO_M3_NON_SC
+#if SHIFT_M4_TO_M3
      if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #else
      if (picture_control_set_ptr->enc_mode <= ENC_M3)
@@ -1404,7 +1411,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if M3_BIPRED_3x3
     if (picture_control_set_ptr->enc_mode <= ENC_M4)
 #else
-#if SHIFT_M4_TO_M3_NON_SC
+#if SHIFT_M4_TO_M3
     if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #else
     if (picture_control_set_ptr->enc_mode <= ENC_M3)
@@ -1446,7 +1453,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if M3_PRED_ME
         if (picture_control_set_ptr->enc_mode <= ENC_M4)
 #else
-#if SHIFT_M4_TO_M3_NON_SC
+#if SHIFT_M4_TO_M3
         if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #else
         if (picture_control_set_ptr->enc_mode <= ENC_M3)
@@ -1663,7 +1670,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if M3_TRELLIS
     if (picture_control_set_ptr->enc_mode <= ENC_M4)
 #else
-#if SHIFT_M4_TO_M3_NON_SC
+#if SHIFT_M4_TO_M3
     if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #else
     if (picture_control_set_ptr->enc_mode <= ENC_M3)
@@ -1799,7 +1806,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #endif
         context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 15 : 12;
-#if !SHIFT_M4_TO_M3_NON_SC
+#if !SHIFT_M4_TO_M3
     else if (picture_control_set_ptr->enc_mode <= ENC_M3)
         context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 7  : 5;
 #endif

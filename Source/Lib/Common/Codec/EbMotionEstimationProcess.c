@@ -399,7 +399,7 @@ void* tf_set_me_hme_params_oq(
 #endif
 #if M5_TF
     // Hsan: to update lookup tables; 4th column to use 5th column then to remove this line of code
-#if SHIFT_M4_TO_M3_NON_SC
+#if SHIFT_M4_TO_M3
     hmeMeLevel = (hmeMeLevel == 3 || hmeMeLevel == 4) ? 5 : hmeMeLevel;
 #else
     hmeMeLevel = (hmeMeLevel == 4) ? 5 : hmeMeLevel;
@@ -459,7 +459,7 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
         picture_control_set_ptr->snd_pass_enc_mode : picture_control_set_ptr->enc_mode;
 #if M5_TF
     // Hsan: to update the derivation of the signals below then to remove this line of code
-#if SHIFT_M4_TO_M3_NON_SC
+#if SHIFT_M4_TO_M3
     enc_mode = (enc_mode == 3 || enc_mode == 4) ? 5 : enc_mode;
 #else
     enc_mode = (enc_mode == 4) ? 5 : enc_mode;

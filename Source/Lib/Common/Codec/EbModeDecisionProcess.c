@@ -529,7 +529,7 @@ void reset_mode_decision(
 #if TEST_M0_OBMC_M4
         if (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M4)
 #elif TEST_M0_OBMC_M3
-#if SHIFT_M4_TO_M3_NON_SC
+#if SHIFT_M4_TO_M3
         if (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M2)
 #else
         if (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M3)
