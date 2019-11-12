@@ -1397,7 +1397,19 @@ int32_t av1_quantize_inv_quantize(
     perform_rdoq = perform_rdoq && !picture_control_set_ptr->hbd_mode_decision && !bit_increment;
 
     // Hsan: set to FALSE until adding x86 quantize_fp
+#if rtime_presets
+#if M3_QFP
+    EbBool perform_quantize_fp = picture_control_set_ptr->enc_mode <= ENC_M4 ? EB_TRUE : EB_FALSE;
+#else
+#if SHIFT_M4_TO_M3_NON_SC
+    EbBool perform_quantize_fp = picture_control_set_ptr->enc_mode <= ENC_M2 ? EB_TRUE : EB_FALSE;
+#else
+    EbBool perform_quantize_fp = picture_control_set_ptr->enc_mode <= ENC_M3 ? EB_TRUE : EB_FALSE;
+#endif
+#endif
+#else
     EbBool perform_quantize_fp = picture_control_set_ptr->enc_mode == ENC_M0 ? EB_TRUE: EB_FALSE;
+#endif
 
     if (perform_rdoq && perform_quantize_fp && !is_inter)
         eb_av1_quantize_fp_facade(
@@ -2397,7 +2409,9 @@ void encode_pass_tx_search_hbd(
         EntropyCoder  *coeff_est_entropy_coder_ptr = picture_control_set_ptr->coeff_est_entropy_coder_ptr;
         candidate_buffer->candidate_ptr->type = cu_ptr->prediction_mode_flag;
         candidate_buffer->candidate_ptr->pred_mode = cu_ptr->pred_mode;
-
+#if FILTER_INTRA_FLAG
+        candidate_buffer->candidate_ptr->filter_intra_mode = cu_ptr->filter_intra_mode;
+#endif
         const uint32_t coeff1dOffset = context_ptr->coded_area_sb;
 
         av1_tu_estimate_coeff_bits(

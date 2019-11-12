@@ -1733,6 +1733,7 @@ EbErrorType prediction_structure_group_ctor(
     PredictionStructureGroup   *predictionStructureGroupPtr,
     uint8_t          enc_mode,
     uint32_t                         baseLayerSwitchMode)
+
 {
     uint32_t          predStructIndex = 0;
     uint32_t          refIdx;
@@ -1741,7 +1742,37 @@ EbErrorType prediction_structure_group_ctor(
     uint32_t          numberOfReferences;
 
     predictionStructureGroupPtr->dctor = prediction_structure_group_dctor;
+#if rtime_presets
+#if   M1_REF_COUNT_M3
+    uint8_t ref_count_used = enc_mode <= ENC_M3 ? MAX_REF_IDX : enc_mode <= ENC_M3 ? 2 : 1;
+#elif M1_REF_COUNT
+    uint8_t ref_count_used = enc_mode <= ENC_M2 ? MAX_REF_IDX : enc_mode <= ENC_M3 ? 2 : 1;
+#elif M3_REF_COUNT
+    uint8_t ref_count_used = enc_mode <= ENC_M1 ? MAX_REF_IDX : enc_mode <= ENC_M4 ? 2 : 1;
+#else
+#if SHIFT_M4_TO_M3_NON_SC
+    uint8_t ref_count_used = enc_mode <= ENC_M1 ? MAX_REF_IDX : enc_mode <= ENC_M2 ? 2 : 1;
+#else
+    uint8_t ref_count_used = enc_mode <= ENC_M1 ? MAX_REF_IDX : enc_mode <= ENC_M3 ? 2 : 1;
+#endif
+#endif
+    if (ref_count_used > 0 && ref_count_used < MAX_REF_IDX) {
+        for (int gop_i = 1; gop_i < 8; ++gop_i) {
+            for (int i = ref_count_used; i < MAX_REF_IDX; ++i) {
+                four_level_hierarchical_pred_struct[gop_i].ref_list0[i] = 0;
+                four_level_hierarchical_pred_struct[gop_i].ref_list1[i] = 0;
+            }
+        }
 
+        for (int gop_i = 1; gop_i < 16; ++gop_i) {
+            for (int i = ref_count_used; i < MAX_REF_IDX; ++i) {
+                five_level_hierarchical_pred_struct[gop_i].ref_list0[i] = 0;
+                five_level_hierarchical_pred_struct[gop_i].ref_list1[i] = 0;
+            }
+        }
+    }
+
+#else
     if (enc_mode > ENC_M0) {
         for (int gop_i = 1; gop_i < 8; ++gop_i) {
             for (int i = 1; i < 4; ++i) {
@@ -1757,7 +1788,7 @@ EbErrorType prediction_structure_group_ctor(
             }
         }
     }
-
+#endif
     // Count the number of Prediction Structures
     while ((PredictionStructureConfigArray[predStructIndex].entry_array != 0) && (PredictionStructureConfigArray[predStructIndex].entry_count != 0)) {
         // Get Random Access + P for temporal ID 0

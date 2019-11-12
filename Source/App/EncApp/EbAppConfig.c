@@ -95,6 +95,7 @@
 #define ENABLE_OVERLAYS                 "-enable-overlays"
 // --- end: ALTREF_FILTERING_SUPPORT
 #define HBD_MD_ENABLE_TOKEN             "-hbd-md"
+#define PALETTE_TOKEN                   "-palette"
 #define CONSTRAINED_INTRA_ENABLE_TOKEN  "-constrd-intra"
 #define HDR_INPUT_TOKEN                 "-hdr"
 #define RATE_CONTROL_ENABLE_TOKEN       "-rc"
@@ -277,6 +278,7 @@ static void SetAltRefNFrames                    (const char *value, EbConfig *cf
 static void SetEnableOverlays                   (const char *value, EbConfig *cfg) { cfg->enable_overlays = (EbBool)strtoul(value, NULL, 0); };
 // --- end: ALTREF_FILTERING_SUPPORT
 static void SetEnableHBDModeDecision            (const char *value, EbConfig *cfg) {cfg->enable_hbd_mode_decision = (EbBool)strtoul(value, NULL, 0);};
+static void SetEnablePalette                    (const char *value, EbConfig *cfg) { cfg->enable_palette = (int32_t)strtoul(value, NULL, 0); };
 static void SetEnableConstrainedIntra           (const char *value, EbConfig *cfg) {cfg->constrained_intra                                             = (EbBool)strtoul(value, NULL, 0);};
 static void SetHighDynamicRangeInput            (const char *value, EbConfig *cfg) {cfg->high_dynamic_range_input            = strtol(value,  NULL, 0);};
 static void SetProfile                          (const char *value, EbConfig *cfg) {cfg->profile                          = strtol(value,  NULL, 0);};
@@ -399,6 +401,7 @@ config_entry_t config_entry[] = {
     // MD Parameters
     { SINGLE_INPUT, SCREEN_CONTENT_TOKEN, "ScreenContentMode", SetScreenContentMode},
     { SINGLE_INPUT, HBD_MD_ENABLE_TOKEN, "HighBitDepthModeDecision", SetEnableHBDModeDecision },
+    { SINGLE_INPUT, PALETTE_TOKEN, "PaletteMode", SetEnablePalette },
     { SINGLE_INPUT, CONSTRAINED_INTRA_ENABLE_TOKEN, "ConstrainedIntra", SetEnableConstrainedIntra},
     // Thread Management
     { SINGLE_INPUT, THREAD_MGMNT, "logicalProcessors", SetLogicalProcessors },
@@ -531,6 +534,7 @@ void eb_config_ctor(EbConfig *config_ptr)
     config_ptr->hme_level2_search_area_in_height_array[1]  = 1;
     config_ptr->screen_content_mode                  = 2;
     config_ptr->enable_hbd_mode_decision             = EB_TRUE;
+    config_ptr->enable_palette                       = -1;
     config_ptr->constrained_intra                    = 0;
     config_ptr->film_grain_denoise_strength          = 0;
 
@@ -941,6 +945,12 @@ static EbErrorType VerifySettings(EbConfig *config, uint32_t channelNumber)
     // HBD mode decision
     if (config->enable_hbd_mode_decision != 0 && config->enable_hbd_mode_decision != 1) {
         fprintf(config->error_log_file, "Error instance %u: Invalid HBD mode decision flag [0 - 1], your input: %d\n", channelNumber + 1, config->target_socket);
+        return_error = EB_ErrorBadParameter;
+    }
+
+    // palette
+    if (config->enable_palette < (int32_t)(-1) || config->enable_palette >6) {
+        fprintf(config->error_log_file, "Error instance %u: Invalid Palette Mode [0 .. 6], your input: %i\n", channelNumber + 1, config->enable_palette);
         return_error = EB_ErrorBadParameter;
     }
 

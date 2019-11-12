@@ -1196,6 +1196,24 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
                 CHROMA_MODE_2 :
                 CHROMA_MODE_3;
     else
+#if rtime_presets
+
+        if (MR_MODE) 
+            context_ptr->chroma_level = CHROMA_MODE_0;
+        else
+            if (picture_control_set_ptr->enc_mode <= ENC_M5 && picture_control_set_ptr->temporal_layer_index == 0)
+
+
+                context_ptr->chroma_level = CHROMA_MODE_0;
+            else
+                if (picture_control_set_ptr->enc_mode <= ENC_M5)
+                    context_ptr->chroma_level = CHROMA_MODE_1;
+                else
+                    context_ptr->chroma_level = (sequence_control_set_ptr->encoder_bit_depth == EB_8BIT) ?
+                    CHROMA_MODE_2 :
+                    CHROMA_MODE_3;
+
+#else
     if (MR_MODE)
         context_ptr->chroma_level = CHROMA_MODE_0;
     else
@@ -1208,14 +1226,18 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->chroma_level = (sequence_control_set_ptr->encoder_bit_depth == EB_8BIT) ?
             CHROMA_MODE_2 :
             CHROMA_MODE_3 ;
-
+#endif
     // Set fast loop method
     // 1 fast loop: SSD_SEARCH not supported
     // Level                Settings
     //  0                   Collapsed fast loop
     //  1                   Decoupled fast loops ( intra/inter)
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if sc_rtime_presets
+        if (picture_control_set_ptr->enc_mode <= ENC_M5)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
             context_ptr->decouple_intra_inter_fast_loop = 0;
         else
             context_ptr->decouple_intra_inter_fast_loop = 1;
@@ -1225,7 +1247,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // Set the search method when decoupled fast loop is used
     // Hsan: FULL_SAD_SEARCH not supported
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if sc_rtime_presets
+        if (picture_control_set_ptr->enc_mode <= ENC_M5)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
             context_ptr->decoupled_fast_loop_search_method = SSD_SEARCH;
         else
             context_ptr->decoupled_fast_loop_search_method = FULL_SAD_SEARCH;
@@ -1234,6 +1260,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             context_ptr->decoupled_fast_loop_search_method = SSD_SEARCH;
         else
             context_ptr->decoupled_fast_loop_search_method = FULL_SAD_SEARCH;
+#if M5_DECOUPLE_FAST_LOOP
+    context_ptr->decoupled_fast_loop_search_method = FULL_SAD_SEARCH;
+#endif
 
     // Set the full loop escape level
     // Level                Settings
@@ -1241,7 +1270,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 1                    On but only INTRA
     // 2                    On both INTRA and INTER
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if sc_rtime_presets
+        if (picture_control_set_ptr->enc_mode <= ENC_M5)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
             context_ptr->full_loop_escape = 0;
         else
             context_ptr->full_loop_escape = 2;
@@ -1256,7 +1289,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 0                    Injection off (Hsan: but not derivation as used by MV ref derivation)
     // 1                    On
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if sc_rtime_presets
+        if (picture_control_set_ptr->enc_mode <= ENC_M5)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
             context_ptr->global_mv_injection = 1;
         else
             context_ptr->global_mv_injection = 0;
@@ -1266,14 +1303,34 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->global_mv_injection = 0;
 #if FIX_NEAREST_NEW
+#if TEST_M0_NEW_NEAR_COMB
+    if (picture_control_set_ptr->enc_mode <= ENC_M1 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
+#else
     if (picture_control_set_ptr->enc_mode <= ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
+#endif
 #else
     if (picture_control_set_ptr->enc_mode == ENC_M0)
 #endif
         context_ptr->new_nearest_near_comb_injection = 1;
     else
         context_ptr->new_nearest_near_comb_injection = 0;
+#if sc_rtime_presets
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        if (picture_control_set_ptr->enc_mode <= ENC_M3)
+            context_ptr->nx4_4xn_parent_mv_injection = 1;
+        else
+            context_ptr->nx4_4xn_parent_mv_injection = 0;
+    else
+#endif
+#if rtime_presets
+#if M1_NX4_4XN
+    if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#else
+    if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
+#else
     if (picture_control_set_ptr->enc_mode == ENC_M0)
+#endif
         context_ptr->nx4_4xn_parent_mv_injection = 1;
     else
         context_ptr->nx4_4xn_parent_mv_injection = 0;
@@ -1295,34 +1352,77 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
             context_ptr->unipred3x3_injection = 1;
+#if sc_rtime_presets
+
+        else if (picture_control_set_ptr->enc_mode <= ENC_M3)
+            context_ptr->unipred3x3_injection = 2;
+#endif
         else
             context_ptr->unipred3x3_injection = 0;
     else
+#if rtime_presets
+#if M3_UNI_3x3
+        if (picture_control_set_ptr->enc_mode <= ENC_M4)
+#else
+#if SHIFT_M4_TO_M3_NON_SC
+     if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#else
+     if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#endif
+#endif
+#else
     if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
         context_ptr->unipred3x3_injection = 1;
+#if !M3_UNI_3x3
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->unipred3x3_injection = 2;
+#endif
     else
         context_ptr->unipred3x3_injection = 0;
 
+#if M5_UNIPRED_3X3_INJECTIION
+    context_ptr->unipred3x3_injection = 0;
+#endif
     // Set bipred3x3 injection
     // Level                Settings
     // 0                    OFF
     // 1                    ON FULL
     // 2                    Reduced set
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if sc_rtime_presets
+
+        if (picture_control_set_ptr->enc_mode <= ENC_M4)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
             context_ptr->bipred3x3_injection = 1;
         else
             context_ptr->bipred3x3_injection = 0;
     else
+#if rtime_presets
+#if M3_BIPRED_3x3
+    if (picture_control_set_ptr->enc_mode <= ENC_M4)
+#else
+#if SHIFT_M4_TO_M3_NON_SC
+    if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#else
+    if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#endif
+#endif
+#else
     if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
         context_ptr->bipred3x3_injection = 1;
+#if !M3_BIPRED_3x3
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->bipred3x3_injection = 2;
+#endif
     else
         context_ptr->bipred3x3_injection = 0;
-
+#if M5_BIPRED_3X3_INJECTIION
+    context_ptr->bipred3x3_injection = 0;
+#endif
     // Level                Settings
     // 0                    Level 0: OFF
     // 1                    Level 1: 7x5 full-pel search + sub-pel refinement off
@@ -1331,21 +1431,87 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 4                    Level 4: 7x5 full-pel search +  (H + V + D) sub-pel refinement = 8 half-pel + 8 quarter-pel = 16 positions + pred_me_distortion to pa_me_distortion deviation on
     // 5                    Level 5: 7x5 full-pel search +  (H + V + D) sub-pel refinement = 8 half-pel + 8 quarter-pel = 16 positions + pred_me_distortion to pa_me_distortion deviation off
     if (picture_control_set_ptr->slice_type != I_SLICE)
+#if sc_rtime_presets
+        if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+            if (picture_control_set_ptr->enc_mode <= ENC_M1)
+                context_ptr->predictive_me_level = 4;
+            else if (picture_control_set_ptr->enc_mode <= ENC_M4)
+                context_ptr->predictive_me_level = 2;
+            else
+                context_ptr->predictive_me_level = 0;
+        else
+#endif
+#if rtime_presets 
+#if M2_PRED_ME
+#if M3_PRED_ME
+        if (picture_control_set_ptr->enc_mode <= ENC_M4)
+#else
+#if SHIFT_M4_TO_M3_NON_SC
+        if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#else
+        if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#endif
+#endif
+#else
+        if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#endif
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
 #if M0_tune
+#if TEST_M0_PRED_ME_M3
+            context_ptr->predictive_me_level = (picture_control_set_ptr->enc_mode <= ENC_M3) ? 5 : 4;
+#elif TEST_M0_PRED_ME
+            context_ptr->predictive_me_level = (picture_control_set_ptr->enc_mode <= ENC_M1) ? 5 : 4;
+#else
             context_ptr->predictive_me_level = (picture_control_set_ptr->enc_mode <= ENC_M0)? 5: 4;
+#endif
 #else
             context_ptr->predictive_me_level = 4;
 #endif
+#if !M3_PRED_ME
         else if (picture_control_set_ptr->enc_mode <= ENC_M4)
             context_ptr->predictive_me_level = 2;
         else
             context_ptr->predictive_me_level = 0;
+#endif
     else
         context_ptr->predictive_me_level = 0;
 
+#if M5_PREDICTIVE_ME
+    context_ptr->predictive_me_level = 0;
+#endif
     // Derive md_staging_mode
     //
+#if REMOVE_MD_STAGE_1
+    // MD_STAGING_MODE_0
+    // Default Parameters
+    //
+    // MD_STAGING_MODE_1
+    //  __________________________________________________________________________________________________________________
+    // |        | md_stage_0                  | md_stage_2                     | md_stage_3                              |
+    // |________|_____________________________|________________________________|_________________________________________|
+    // |CLASS_0 |Prediction for Luma & Chroma |T, Q, Q-1, T-1 for Luma Only    |T, Q, Q-1, T-1 or Luma & Chroma          |
+    // |CLASS_6 |                             |No RDOQ                         |RDOQ                                     |
+    // |        |                             |No Tx Type Search               |Tx Type Search                           |
+    // |        |                             |No Tx Size Search               |Tx Size Search                           |
+    // |        |                             |                                |CFL vs. Independent                      |
+    // |________|_____________________________|________________________________|_________________________________________|
+    // |CLASS_1 |Prediction for Luma Only     |T, Q, Q-1, T-1 for Luma Only    |T, Q, Q-1, T-1 for Luma & Chroma         |
+    // |CLASS_2 |No Interpolation Search      |No RDOQ                         |RDOQ                                     |
+    // |CLASS_3 |Bilinear Interpolation       |No Tx Type Search               |Tx Type Search                           |
+    // |CLASS_4 |                             |No Tx Size Search               |Tx Size Search                           |
+    // |CLASS_5 |                             |Interpolation Search            |                                         |
+    // |________|_____________________________|________________________________|_________________________________________|
+
+    if (picture_control_set_ptr->enc_mode <= ENC_M4)
+        context_ptr->md_staging_mode = MD_STAGING_MODE_1;
+    else
+        context_ptr->md_staging_mode = MD_STAGING_MODE_0;
+#if M5_MD_STAGING
+     context_ptr->md_staging_mode = MD_STAGING_MODE_0;
+#endif
+#else
     // MD_STAGING_MODE_1
     //  _______________________________________________________________________________________________________________________________________________
     // |        | md_stage_0                  | md_stage_1                  | md_stage_2                     | md_stage_3                              |
@@ -1430,12 +1596,21 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->md_staging_mode = MD_STAGING_MODE_3;
     else
         context_ptr->md_staging_mode = MD_STAGING_MODE_0; // Default structure = fast loop + full loop = md_stage_0 + md_stage_3
-
+#endif
     // Combine MD Class1&2
     // 0                    OFF
     // 1                    ON
-    context_ptr->combine_class12 = (picture_control_set_ptr->enc_mode == ENC_M0) ? 0 : 1;
 
+#if M3_M0_NIC
+    context_ptr->combine_class12 = (picture_control_set_ptr->enc_mode <= ENC_M4) ? 0 : 1;
+#elif rtime_presets
+    context_ptr->combine_class12 = (picture_control_set_ptr->enc_mode <= ENC_M1) ? 0 : 1;
+#else
+    context_ptr->combine_class12 = (picture_control_set_ptr->enc_mode == ENC_M0) ? 0 : 1;
+#endif
+#if M5_CLASSS_COMBINATION
+    context_ptr->combine_class12 = 1;
+#endif
     // Set interpolation filter search blk size
     // Level                Settings
     // 0                    ON for 8x8 and above
@@ -1445,13 +1620,19 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->interpolation_filter_search_blk_size = 0;
     else
         context_ptr->interpolation_filter_search_blk_size = 1;
-
+#if M5_INTERPOLATION_SEARCH
+    context_ptr->interpolation_filter_search_blk_size = 1;
+#endif
     // Set PF MD
     context_ptr->pf_md_mode = PF_OFF;
 
     // Derive Spatial SSE Flag
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if sc_rtime_presets
+        if (picture_control_set_ptr->enc_mode <= ENC_M4)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M6)
+#endif
             context_ptr->spatial_sse_full_loop = EB_TRUE;
         else
             context_ptr->spatial_sse_full_loop = EB_FALSE;
@@ -1461,19 +1642,47 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->spatial_sse_full_loop = EB_FALSE;
 
+#if M5_SPATIAL_SSE_FULL_LOOP
+    context_ptr->spatial_sse_full_loop = EB_FALSE;
+#endif
     if (context_ptr->chroma_level <= CHROMA_MODE_1)
         context_ptr->blk_skip_decision = EB_TRUE;
     else
         context_ptr->blk_skip_decision = EB_FALSE;
     // Derive Trellis Quant Coeff Optimization Flag
+#if sc_rtime_presets
+
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        if (picture_control_set_ptr->enc_mode <= ENC_M2)
+            context_ptr->trellis_quant_coeff_optimization = EB_TRUE;
+        else
+            context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
+    else
+#endif
+#if rtime_presets
+#if M3_TRELLIS
+    if (picture_control_set_ptr->enc_mode <= ENC_M4)
+#else
+#if SHIFT_M4_TO_M3_NON_SC
+    if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#else
+    if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#endif
+#endif
+#else
     if (picture_control_set_ptr->enc_mode == ENC_M0)
+#endif
         context_ptr->trellis_quant_coeff_optimization = EB_TRUE;
     else
         context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
 
     // Derive redundant block
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if sc_rtime_presets
+        if (picture_control_set_ptr->enc_mode <= ENC_M8)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
             context_ptr->redundant_blk = EB_TRUE;
         else
             context_ptr->redundant_blk = EB_FALSE;
@@ -1492,16 +1701,37 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         else
 #if FIX_ESTIMATE_INTRA
 #if M0_tune
+#if TEST_M0_SKIP_ANGLE_INTRA_M3
+            context_ptr->edge_based_skip_angle_intra = (picture_control_set_ptr->enc_mode <= ENC_M3) ? 0 : 1;
+
+#elif TEST_M0_SKIP_ANGLE_INTRA
+            context_ptr->edge_based_skip_angle_intra = (picture_control_set_ptr->enc_mode <= ENC_M1) ? 0 : 1;
+#else
             context_ptr->edge_based_skip_angle_intra = (picture_control_set_ptr->enc_mode == ENC_M0) ? 0 : 1;
+#endif
+#else
+#if rtime_presets
+            context_ptr->edge_based_skip_angle_intra = ((picture_control_set_ptr->enc_mode > ENC_M3) || (picture_control_set_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0)) ? 0 : 1;
 #else
             context_ptr->edge_based_skip_angle_intra = (picture_control_set_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0) ? 0 : 1;
+#endif
 #endif
 #else
             context_ptr->edge_based_skip_angle_intra = 1;
 #endif
     else
         context_ptr->edge_based_skip_angle_intra = 0;
+#if M0_PRUNE_REC_PART_M3
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode <= ENC_M3)
+#elif TEST_M0_PRUNE_REC_PART_M2
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode <= ENC_M2)
+#elif TEST_M1_PRUNE_REC_PART
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#elif TEST_M0_PRUNE_REC_PART
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode <= ENC_M1)
+#else
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode == ENC_M0)
+#endif
         context_ptr->prune_ref_frame_for_rec_partitions = 0;
     else
         context_ptr->prune_ref_frame_for_rec_partitions = 1;
@@ -1516,22 +1746,120 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // Derive MD Exit TH
     if (MR_MODE)
         context_ptr->md_exit_th = 0;
+    else if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        context_ptr->md_exit_th = 10;
     else
-        context_ptr->md_exit_th = (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected) ? 10 : 18;
+        context_ptr->md_exit_th = 18;
 
     // Derive distortion-based md_stage_0_count proning
+#if STAGE_1_COUNT_PRUNING_TH_S
+    if (MR_MODE || picture_control_set_ptr->enc_mode == ENC_M0 || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
+        context_ptr->md_stage_1_count_th_s = (uint64_t)~0;
+    else if (picture_control_set_ptr->enc_mode <= ENC_M4)
+        context_ptr->md_stage_1_count_th_s = 75;
+    else // to be tested for m5-m8
+        context_ptr->md_stage_1_count_th_s = (uint64_t)~0;
+#else
     if (MR_MODE)
         context_ptr->dist_base_md_stage_0_count_th = (uint64_t)~0;
     else
         context_ptr->dist_base_md_stage_0_count_th = 75;
 #endif
+#endif
+#if M5_MD_STAGING_1_COUNT_TH_S
+    context_ptr->md_stage_1_count_th_s = (uint64_t)~0;
+#endif
+#if STAGE_1_COUNT_PRUNING_TH_C
+    // TH_C(for class removal)
+    // Remove class if deviation to the best higher than TH_C
+    if (MR_MODE || picture_control_set_ptr->enc_mode == ENC_M0 || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
+        context_ptr->md_stage_1_count_th_c = (uint64_t)~0;
+    else if (picture_control_set_ptr->enc_mode <= ENC_M4)
+        context_ptr->md_stage_1_count_th_c = 100;
+    else // to be tested for m5-m8
+        context_ptr->md_stage_1_count_th_c = (uint64_t)~0;
+#endif
+#if M5_MD_STAGING_1_COUNT_TH_C
+    context_ptr->md_stage_1_count_th_c = (uint64_t)~0;
+#endif
+#if STAGE_2_COUNT_PRUNING_TH_S
+    // TH_S(for candidate removal per class)
+    // Remove candidate if deviation to the best higher than TH_S
+    if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        context_ptr->md_stage_2_count_th_s = (uint64_t)~0;
+#if TEST_NEW_M0M1_SET1
+    else if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#else
+    else if (picture_control_set_ptr->enc_mode <= ENC_M0)
+#endif
+        context_ptr->md_stage_2_count_th_s = 15;
+#if M2_MD_STAGE
+    else if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#else
+    else if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#endif
+        context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 15 : 12;
+#if !SHIFT_M4_TO_M3_NON_SC
+    else if (picture_control_set_ptr->enc_mode <= ENC_M3)
+        context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 7  : 5;
+#endif
+    else if (picture_control_set_ptr->enc_mode <= ENC_M4)
+#if M3_MD_SATGE_2_COUNT_TH_S
+        context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 7 : 5;
+#else
+        context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution == INPUT_SIZE_1080i_RANGE ? 5  : 3;
+#endif
+    else
+        context_ptr->md_stage_2_count_th_s = (uint64_t)~0; // until tested
+#endif
+#if M5_MD_STAGING_2_COUNT_TH_S
+    context_ptr->md_stage_2_count_th_s = (uint64_t)~0;
+#endif
+#if STAGE_2_COUNT_PRUNING_TH_C
+    // TH_C(for class removal)
+    // Remove class if deviation to the best higher than TH_C
+    if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected) 
+        context_ptr->md_stage_2_count_th_c = (uint64_t)~0;
+    else if (picture_control_set_ptr->enc_mode <= ENC_M4)
+        context_ptr->md_stage_2_count_th_c = 25;
+    else // to be tested for m5-m8
+        context_ptr->md_stage_2_count_th_c = (uint64_t)~0;
+
+#endif
+#if M5_MD_STAGING_2_COUNT_TH_C
+    context_ptr->md_stage_2_count_th_c = (uint64_t)~0;
+#endif
+#if LESS_RECTANGULAR_CHECK_LEVEL
+
+    // Weighting (expressed as a percentage) applied to 
+    // square shape costs for determining if a and b 
+    // shapes should be skipped. Namely:
+    // skip HA and HB if h_cost > (weighted sq_cost)
+    // skip VA and VB if v_cost > (weighted sq_cost)
+
+    if (MR_MODE)
+        context_ptr->sq_to_h_v_weight_to_skip_a_b = (uint32_t)~0;
+#if RECT_THRESH
+    else if (picture_control_set_ptr->enc_mode <= ENC_M0)
+        context_ptr->sq_to_h_v_weight_to_skip_a_b = 100;
+    else if (picture_control_set_ptr->enc_mode <= ENC_M1)
+        context_ptr->sq_to_h_v_weight_to_skip_a_b = 95;
+    else
+        context_ptr->sq_to_h_v_weight_to_skip_a_b = 90;
+#else
+    else
+        context_ptr->sq_to_h_v_weight_to_skip_a_b = 100;
+#endif
+#endif
+
 
     return return_error;
 }
-
+#if! PAL_SUP
 void move_cu_data(
     CodingUnit *src_cu,
     CodingUnit *dst_cu);
+#endif
 
 void av1_estimate_syntax_rate___partial(
     MdRateEstimationContext        *md_rate_estimation_array,

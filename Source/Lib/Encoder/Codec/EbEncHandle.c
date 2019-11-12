@@ -1978,7 +1978,11 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
 #endif
         sequence_control_set_ptr->static_config.super_block_size = 64;
     else
+#if M3_SB
+        sequence_control_set_ptr->static_config.super_block_size = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M4 && sequence_control_set_ptr->input_resolution >= INPUT_SIZE_1080i_RANGE) ? 128 : 64;
+#else
         sequence_control_set_ptr->static_config.super_block_size = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M3 && sequence_control_set_ptr->input_resolution >= INPUT_SIZE_1080i_RANGE) ? 128 : 64;
+#endif
 
     sequence_control_set_ptr->static_config.super_block_size = (sequence_control_set_ptr->static_config.rate_control_mode > 1) ? 64 : sequence_control_set_ptr->static_config.super_block_size;
    // sequence_control_set_ptr->static_config.hierarchical_levels = (sequence_control_set_ptr->static_config.rate_control_mode > 1) ? 3 : sequence_control_set_ptr->static_config.hierarchical_levels;
@@ -1995,7 +1999,20 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
 
     //0: MRP Mode 0 (4,3)
     //1: MRP Mode 1 (2,2)
+#if rtime_presets
+#if M3_MRP_MODE
+
+    sequence_control_set_ptr->mrp_mode = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode <= ENC_M4) ? 0 : 1;
+#else
+#if SHIFT_M4_TO_M3_NON_SC
+    sequence_control_set_ptr->mrp_mode = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode <= ENC_M2) ? 0 : 1;
+#else
+    sequence_control_set_ptr->mrp_mode = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode <= ENC_M3) ? 0 : 1;
+#endif
+#endif
+#else
     sequence_control_set_ptr->mrp_mode = (uint8_t) (sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 0 : 1;
+#endif
 
     //0: ON
     //1: OFF
@@ -2008,7 +2025,28 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
     // Set down-sampling method     Settings
     // 0                            0: filtering
     // 1                            1: decimation
+
+#if sc_rtime_presets
+    if (sequence_control_set_ptr->static_config.screen_content_mode == 1)
+#if M5_DOUNSAMPLING_ME
+        if (0) 
+#else
+        if (sequence_control_set_ptr->static_config.enc_mode <= ENC_M4)
+#endif
+            sequence_control_set_ptr->down_sampling_method_me_search = ME_FILTERED_DOWNSAMPLED;
+        else
+            sequence_control_set_ptr->down_sampling_method_me_search = ME_DECIMATED_DOWNSAMPLED;
+    else
+#endif
+#if rtime_presets
+#if M3_DOWN_SAMPLING
+    if (sequence_control_set_ptr->static_config.enc_mode <= ENC_M4)
+#else
+    if (sequence_control_set_ptr->static_config.enc_mode <= ENC_M3)
+#endif
+#else
     if (sequence_control_set_ptr->static_config.enc_mode == ENC_M0)
+#endif
         sequence_control_set_ptr->down_sampling_method_me_search = ME_FILTERED_DOWNSAMPLED;
     else
         sequence_control_set_ptr->down_sampling_method_me_search = ME_DECIMATED_DOWNSAMPLED;
@@ -2016,12 +2054,28 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
     // Set over_boundary_block_mode     Settings
     // 0                            0: not allowed
     // 1                            1: allowed
-    if (sequence_control_set_ptr->static_config.enc_mode == ENC_M0)
+#if rtime_presets
+    if (sequence_control_set_ptr->static_config.enc_mode <= ENC_M5)
+#else
+    if (sequence_control_set_ptr->static_config.enc_mode <= ENC_M0)
+#endif
         sequence_control_set_ptr->over_boundary_block_mode = 1;
     else
         sequence_control_set_ptr->over_boundary_block_mode = 0;
-
+#if rtime_presets
+#if sc_rtime_presets
+    if (sequence_control_set_ptr->static_config.screen_content_mode == 1)
+        sequence_control_set_ptr->mfmv_enabled = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;
+    else
+#endif
+#if M1_MFMV
+        sequence_control_set_ptr->mfmv_enabled = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode <= ENC_M2) ? 1 : 0;
+#else
+    sequence_control_set_ptr->mfmv_enabled = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode <= ENC_M1) ? 1 : 0;
+#endif
+#else
     sequence_control_set_ptr->mfmv_enabled = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;
+#endif
 
     // Set hbd_mode_decision OFF for high encode modes or bitdepth < 10
     if (sequence_control_set_ptr->static_config.enc_mode > ENC_M0 || sequence_control_set_ptr->static_config.encoder_bit_depth < 10)
@@ -2147,7 +2201,7 @@ void CopyApiFromApp(
     // MD Parameters
     sequence_control_set_ptr->static_config.enable_hbd_mode_decision = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->encoder_bit_depth > 8 ? ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enable_hbd_mode_decision : 0;
     sequence_control_set_ptr->static_config.constrained_intra = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->constrained_intra;
-
+    sequence_control_set_ptr->static_config.enable_palette = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enable_palette;
     // Adaptive Loop Filter
     sequence_control_set_ptr->static_config.tile_rows = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->tile_rows;
     sequence_control_set_ptr->static_config.tile_columns = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->tile_columns;
@@ -2656,7 +2710,7 @@ EbErrorType eb_svt_enc_init_parameter(
     config_ptr->hme_level2_search_area_in_height_array[1] = 1;
     config_ptr->enable_hbd_mode_decision = EB_TRUE;
     config_ptr->constrained_intra = EB_FALSE;
-
+    config_ptr->enable_palette = -1;
     // Bitstream options
     //config_ptr->codeVpsSpsPps = 0;
     //config_ptr->codeEosNal = 0;

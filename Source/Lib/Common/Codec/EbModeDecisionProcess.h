@@ -156,6 +156,7 @@ extern "C" {
         MvUnit                        mv_unit;
 #if PAL_SUP
         PALETTE_BUFFER            palette_buffer;
+        PaletteInfo              palette_cand_array[MAX_PAL_CAND];
 #endif
         // Entropy Coder
         EntropyCoder                 *coeff_est_entropy_coder_ptr;
@@ -260,13 +261,27 @@ extern "C" {
         DECLARE_ALIGNED(32, int16_t, diff10[MAX_SB_SQUARE]);
     unsigned int prediction_mse ;
     EbBool      variance_ready;
+
+#if REMOVE_MD_STAGE_1
+    uint32_t                            cand_buff_indices[CAND_CLASS_TOTAL][MAX_NFL_BUFF];
+    uint8_t                             md_staging_mode;
+    uint8_t                             bypass_md_stage_1[CAND_CLASS_TOTAL];
+
+    uint32_t                            md_stage_0_count[CAND_CLASS_TOTAL];
+    uint32_t                            md_stage_1_count[CAND_CLASS_TOTAL];
+    uint32_t                            md_stage_2_count[CAND_CLASS_TOTAL];
+
+    uint32_t                            md_stage_1_total_count;
+    uint32_t                            md_stage_2_total_count;
+
+    uint8_t                             combine_class12; // 1:class1 and 2 are combined.
+#else
     MD_STAGE                            md_stage;
 
     uint32_t                            cand_buff_indices[CAND_CLASS_TOTAL][MAX_NFL_BUFF];
 
 
     uint8_t                             md_staging_mode;
-
     uint8_t                             bypass_stage1[CAND_CLASS_TOTAL];
     uint8_t                             bypass_stage2[CAND_CLASS_TOTAL];
 
@@ -277,9 +292,8 @@ extern "C" {
 
     uint32_t                            md_stage_2_total_count;
     uint32_t                            md_stage_3_total_count;
-
     uint8_t                             combine_class12; //1:class1 and 2 are combined.
-
+#endif
     CAND_CLASS                          target_class;
 
     // fast_loop_core signals
@@ -307,7 +321,20 @@ extern "C" {
     unsigned int                        source_variance; // input block variance
     unsigned int                        inter_inter_wedge_variance_th;
     uint64_t                            md_exit_th;
+#if STAGE_1_COUNT_PRUNING_TH_S
+    uint64_t                            md_stage_1_count_th_s; // THs (for candidate removal per class) 
+#else
     uint64_t                            dist_base_md_stage_0_count_th;
+#endif
+#if STAGE_1_COUNT_PRUNING_TH_C
+    uint64_t                            md_stage_1_count_th_c; // THc (for class removal)
+#endif
+#endif
+#if STAGE_2_COUNT_PRUNING_TH_S
+    uint64_t                            md_stage_2_count_th_s; // THs (for candidate removal per class) 
+#endif
+#if STAGE_2_COUNT_PRUNING_TH_C
+    uint64_t                            md_stage_2_count_th_c; // THc (for class removal)
 #endif
 #if OBMC_FLAG
     DECLARE_ALIGNED(16, uint8_t, obmc_buff_0[2 * MAX_MB_PLANE * MAX_SB_SQUARE]);
@@ -329,6 +356,14 @@ extern "C" {
     PART best_nsq_sahpe6;
     PART best_nsq_sahpe7;
     PART best_nsq_sahpe8;
+#endif
+
+#if LESS_RECTANGULAR_CHECK_LEVEL
+    uint32_t sq_to_h_v_weight_to_skip_a_b;
+#endif
+#if LESS_4_PARTITIONS
+    int partition_horz4_allowed;
+    int partition_vert4_allowed;
 #endif
     } ModeDecisionContext;
 

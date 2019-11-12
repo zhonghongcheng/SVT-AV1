@@ -13,6 +13,9 @@ static void mode_decision_context_dctor(EbPtr p)
 {
     ModeDecisionContext* obj = (ModeDecisionContext*)p;
 #if PAL_SUP
+    for (int cd = 0; cd < MAX_PAL_CAND; cd++)
+        if (obj->palette_cand_array[cd].color_idx_map)
+            EB_FREE_ARRAY(obj->palette_cand_array[cd].color_idx_map);
     for (uint32_t candidateIndex = 0; candidateIndex < MODE_DECISION_CANDIDATE_MAX_COUNT; ++candidateIndex)
         if (obj->fast_candidate_ptr_array[candidateIndex]->palette_info.color_idx_map)
             EB_FREE_ARRAY(obj->fast_candidate_ptr_array[candidateIndex]->palette_info.color_idx_map);
@@ -131,6 +134,13 @@ EbErrorType mode_decision_context_ctor(
 #endif
     }
 
+#if PAL_SUP
+    for (int cd = 0; cd < MAX_PAL_CAND; cd++)
+        if (cfg_palette)
+            EB_MALLOC_ARRAY(context_ptr->palette_cand_array[cd].color_idx_map, MAX_PALETTE_SQUARE);
+        else
+            context_ptr->palette_cand_array[cd].color_idx_map = NULL;
+#endif
     // Transform and Quantization Buffers
     EB_NEW(
         context_ptr->trans_quant_buffers_ptr,
@@ -490,7 +500,13 @@ void reset_mode_decision(
     else
 #if WARP_UPDATE
         enable_wm = (MR_MODE ||
+#if TEST_M0_WARP_M3
+        (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M3 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ||
+#elif TEST_M0_WARP
+        (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M1 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ||
+#else
         (picture_control_set_ptr->parent_pcs_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ||
+#endif
         (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M5 && picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0)) ? EB_TRUE : EB_FALSE;
 #else
         enable_wm = (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M5) || MR_MODE ? EB_TRUE : EB_FALSE;
@@ -510,8 +526,23 @@ void reset_mode_decision(
     // 3                                            OBMC @(MVP, PME ) + Opt NICs
     // 4                                            OBMC @(MVP, PME ) + Opt2 NICs
     if (sequence_control_set_ptr->static_config.enable_obmc) {
+#if TEST_M0_OBMC_M4
+        if (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M4)
+#elif TEST_M0_OBMC_M3
+#if SHIFT_M4_TO_M3_NON_SC
+        if (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M2)
+#else
+        if (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M3)
+#endif
+#elif TEST_M0_OBMC
+        if (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M1)
+#else
         if (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M0)
+#endif
             picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode =
+#if TEST_M0_OBMC_M4
+            picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag &&
+#endif
             picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0 && picture_control_set_ptr->slice_type != I_SLICE ? 2 : 0;
         else
             picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = 0;

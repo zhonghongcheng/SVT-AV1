@@ -32,6 +32,13 @@
 #include "aom_dsp_rtcd.h"
 #include "EbCodingLoop.h"
 
+#if AUTO_MAX_PARTITION || LESS_4_PARTITIONS
+#include "EbMotionEstimation.h"
+#include "aom_dsp_rtcd.h"
+#include "partition_model_weights.h"
+#include "ml.h"
+#endif
+
 #define PREDICTIVE_ME_MAX_MVP_CANIDATES  4
 #define PREDICTIVE_ME_DEVIATION_TH      50
 #define FULL_PEL_REF_WINDOW_WIDTH        7
@@ -55,6 +62,11 @@ static INLINE int is_interintra_allowed_bsize(const BlockSize bsize) {
 void precompute_intra_pred_for_inter_intra(
     PictureControlSet            *picture_control_set_ptr,
     ModeDecisionContext          *context_ptr);
+#endif
+
+#if PAL_SUP
+int svt_av1_allow_palette(int allow_palette,
+    BlockSize sb_type);
 #endif
 /*******************************************
 * set Penalize Skip Flag
@@ -1568,7 +1580,362 @@ void fast_loop_core(
         context_ptr->intra_luma_left_mode,
         context_ptr->intra_luma_top_mode);
 }
+#if REMOVE_MD_STAGE_1
+void set_md_stage_counts(
+    PictureControlSet       *picture_control_set_ptr,
+    ModeDecisionContext     *context_ptr,
+    uint32_t                 fastCandidateTotalCount)
+{
+    SequenceControlSet* scs = (SequenceControlSet*)(picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr);
 
+    // Step 1: derive bypass_stage1 flags
+    if (context_ptr->md_staging_mode == MD_STAGING_MODE_1)
+        memset(context_ptr->bypass_md_stage_1, EB_FALSE, CAND_CLASS_TOTAL);
+    else
+        memset(context_ptr->bypass_md_stage_1, EB_TRUE, CAND_CLASS_TOTAL);
+
+    // Step 2: set md_stage count
+    context_ptr->md_stage_1_count[CAND_CLASS_0] = (picture_control_set_ptr->slice_type == I_SLICE) ? fastCandidateTotalCount : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTRA_NFL : (INTRA_NFL >> 1);
+    context_ptr->md_stage_1_count[CAND_CLASS_1] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_NEW_NFL : (INTER_NEW_NFL >> 1);
+    context_ptr->md_stage_1_count[CAND_CLASS_2] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
+    context_ptr->md_stage_1_count[CAND_CLASS_3] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_PRED_NFL : (INTER_PRED_NFL >> 1);
+#if II_COMP_FLAG
+    context_ptr->md_stage_1_count[CAND_CLASS_4] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 14 : 6;
+#endif
+#if OBMC_FLAG
+    context_ptr->md_stage_1_count[CAND_CLASS_5] = 16;
+#endif
+#if FILTER_INTRA_FLAG
+    context_ptr->md_stage_1_count[CAND_CLASS_6] = (picture_control_set_ptr->temporal_layer_index == 0) ? 10 : 5;
+#endif
+#if PAL_CLASS
+    context_ptr->md_stage_1_count[CAND_CLASS_7] = 12;
+#endif
+    if (context_ptr->combine_class12) {
+        context_ptr->md_stage_1_count[CAND_CLASS_1] = context_ptr->md_stage_1_count[CAND_CLASS_1] * 2;
+    }
+
+#if rtime_presets
+    if (picture_control_set_ptr->enc_mode >= ENC_M3) {
+#else
+    if (picture_control_set_ptr->enc_mode >= ENC_M2) {
+#endif
+        context_ptr->md_stage_1_count[CAND_CLASS_1] = context_ptr->md_stage_1_count[CAND_CLASS_1] / 2;
+        context_ptr->md_stage_1_count[CAND_CLASS_2] = context_ptr->md_stage_1_count[CAND_CLASS_2] / 2;
+        context_ptr->md_stage_1_count[CAND_CLASS_3] = context_ptr->md_stage_1_count[CAND_CLASS_3] / 2;
+    }
+
+    context_ptr->md_stage_2_count[CAND_CLASS_0] = (picture_control_set_ptr->slice_type == I_SLICE) ? 10 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? ((scs->input_resolution >= INPUT_SIZE_1080i_RANGE) ? 7 : 10) : 4;
+#if FILTER_INTRA_FLAG
+    context_ptr->md_stage_2_count[CAND_CLASS_6] = (picture_control_set_ptr->temporal_layer_index == 0) ? 5 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 3 : 2;
+#endif
+#if PAL_CLASS
+    if (picture_control_set_ptr->parent_pcs_ptr->palette_mode == 1)
+        context_ptr->md_stage_2_count[CAND_CLASS_7] =
+        (picture_control_set_ptr->temporal_layer_index == 0) ? 7 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 4;
+    else if (picture_control_set_ptr->parent_pcs_ptr->palette_mode == 2 || picture_control_set_ptr->parent_pcs_ptr->palette_mode == 3)
+        context_ptr->md_stage_2_count[CAND_CLASS_7] =
+        (picture_control_set_ptr->temporal_layer_index == 0) ? 7 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 2 : 2;
+    else if (picture_control_set_ptr->parent_pcs_ptr->palette_mode == 4 || picture_control_set_ptr->parent_pcs_ptr->palette_mode == 5)
+        context_ptr->md_stage_2_count[CAND_CLASS_7] =
+        (picture_control_set_ptr->temporal_layer_index == 0) ? 4 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 2 : 1;
+    else
+        context_ptr->md_stage_2_count[CAND_CLASS_7] =
+        (picture_control_set_ptr->temporal_layer_index == 0) ? 2 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 1 : 1;
+#endif
+#if REMOVE_MD_STAGE_1
+    context_ptr->md_stage_2_count[CAND_CLASS_1] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 6 : 3;
+    context_ptr->md_stage_2_count[CAND_CLASS_2] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 6 : 3;
+    context_ptr->md_stage_2_count[CAND_CLASS_3] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 6 : 3;
+#else
+    context_ptr->md_stage_2_count[CAND_CLASS_1] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 3 : 1;
+    context_ptr->md_stage_2_count[CAND_CLASS_2] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 3 : 1;
+    context_ptr->md_stage_2_count[CAND_CLASS_3] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 3 : 1;
+#endif
+#if II_COMP_FLAG
+    context_ptr->md_stage_2_count[CAND_CLASS_4] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 12 : 4;// 14 : 4;
+#endif
+#if OBMC_FLAG
+    if (picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode == 1)
+        context_ptr->md_stage_2_count[CAND_CLASS_5] = 14;
+    else if (picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode <= 3)
+        context_ptr->md_stage_2_count[CAND_CLASS_5] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 12 : 4;
+    else
+        context_ptr->md_stage_2_count[CAND_CLASS_5] = (picture_control_set_ptr->temporal_layer_index == 0) ? 12 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 8 : 4;
+#endif
+
+    if (context_ptr->combine_class12) {
+        context_ptr->md_stage_2_count[CAND_CLASS_1] = context_ptr->md_stage_2_count[CAND_CLASS_1] * 2;
+    }
+
+    if (!context_ptr->combine_class12 && picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_control_set_ptr->enc_mode == ENC_M0) {
+        context_ptr->md_stage_2_count[CAND_CLASS_0] = (picture_control_set_ptr->slice_type == I_SLICE) ? 10 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 8 : 4;
+#if REMOVE_MD_STAGE_1
+        context_ptr->md_stage_2_count[CAND_CLASS_1] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 12 : 6;
+        context_ptr->md_stage_2_count[CAND_CLASS_2] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 12 : 6;
+        context_ptr->md_stage_2_count[CAND_CLASS_3] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 12 : 6;
+#else
+        context_ptr->md_stage_2_count[CAND_CLASS_1] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 8 : 4;
+        context_ptr->md_stage_2_count[CAND_CLASS_2] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 8 : 4;
+        context_ptr->md_stage_2_count[CAND_CLASS_3] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 8 : 4;
+#endif
+    }
+
+    if (picture_control_set_ptr->enc_mode >= ENC_M1)
+        context_ptr->md_stage_2_count[CAND_CLASS_0] = (picture_control_set_ptr->slice_type == I_SLICE) ? 10 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 1;
+
+#if rtime_presets
+#if M5_MD_STAGING_COUNT
+    if (0) {
+#else
+    if (picture_control_set_ptr->enc_mode >= ENC_M3 && picture_control_set_ptr->enc_mode <= ENC_M4) {
+#endif
+#else
+    if (picture_control_set_ptr->enc_mode >= ENC_M2 && picture_control_set_ptr->enc_mode <= ENC_M4) {
+#endif
+        context_ptr->md_stage_2_count[CAND_CLASS_1] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 2;
+        context_ptr->md_stage_2_count[CAND_CLASS_2] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 2 : 1;
+        if (!context_ptr->combine_class12) {
+            context_ptr->md_stage_2_count[CAND_CLASS_1] = context_ptr->md_stage_2_count[CAND_CLASS_1] / 2;
+            context_ptr->md_stage_2_count[CAND_CLASS_3] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 2 : 1;
+        }
+    }
+#if M5_MD_STAGING_COUNT
+    else if (picture_control_set_ptr->enc_mode >= ENC_M4) {
+#else
+    else if (picture_control_set_ptr->enc_mode >= ENC_M5) {
+#endif
+        if (picture_control_set_ptr->enc_mode <= ENC_M6) {
+            context_ptr->md_stage_1_count[CAND_CLASS_0] = (picture_control_set_ptr->slice_type == I_SLICE) ? 8 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 3 : 1;
+
+            if (context_ptr->combine_class12) {
+                context_ptr->md_stage_1_count[CAND_CLASS_1] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 5 : 3;
+                context_ptr->md_stage_1_count[CAND_CLASS_2] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 1 : 1;
+
+            }
+            else {
+
+                context_ptr->md_stage_1_count[CAND_CLASS_1] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 2 : 1;
+                context_ptr->md_stage_1_count[CAND_CLASS_2] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 2 : 1;
+                context_ptr->md_stage_1_count[CAND_CLASS_3] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 1 : 1;
+            }
+
+            context_ptr->md_stage_2_count[CAND_CLASS_0] = context_ptr->md_stage_1_count[CAND_CLASS_0];
+            context_ptr->md_stage_2_count[CAND_CLASS_1] = context_ptr->md_stage_1_count[CAND_CLASS_1];
+            context_ptr->md_stage_2_count[CAND_CLASS_2] = context_ptr->md_stage_1_count[CAND_CLASS_2];
+            if (!context_ptr->combine_class12)
+                context_ptr->md_stage_2_count[CAND_CLASS_3] = context_ptr->md_stage_1_count[CAND_CLASS_3];
+        }
+        else {
+            context_ptr->md_stage_1_count[CAND_CLASS_0] = (picture_control_set_ptr->slice_type == I_SLICE) ? 6 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 2 : 1;
+            if (context_ptr->combine_class12) {
+                context_ptr->md_stage_1_count[CAND_CLASS_1] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 2;
+                context_ptr->md_stage_1_count[CAND_CLASS_2] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 1 : 1;
+
+            }
+            else {
+
+                context_ptr->md_stage_1_count[CAND_CLASS_1] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 2 : 1;
+                context_ptr->md_stage_1_count[CAND_CLASS_2] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 2 : 1;
+                context_ptr->md_stage_1_count[CAND_CLASS_3] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 1 : 1;
+            }
+            context_ptr->md_stage_2_count[CAND_CLASS_0] = context_ptr->md_stage_1_count[CAND_CLASS_0];
+            context_ptr->md_stage_2_count[CAND_CLASS_1] = context_ptr->md_stage_1_count[CAND_CLASS_1];
+            context_ptr->md_stage_2_count[CAND_CLASS_2] = context_ptr->md_stage_1_count[CAND_CLASS_2];
+            if (!context_ptr->combine_class12)
+                context_ptr->md_stage_2_count[CAND_CLASS_3] = context_ptr->md_stage_1_count[CAND_CLASS_3];
+        }
+    }
+
+#if M4_TUNE
+    uint8_t is_ref = picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag;
+    uint8_t is_base = (picture_control_set_ptr->temporal_layer_index == 0) ? 1 : 0;
+    uint8_t is_intra = (picture_control_set_ptr->slice_type == I_SLICE) ? 1 : 0;
+    uint8_t obmc_m = picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode;
+#if PAL_CLASS
+    uint8_t pal_m = picture_control_set_ptr->parent_pcs_ptr->palette_mode;
+#endif
+#if M5_MD_STAGING_COUNT
+    if (0) {
+#endif
+#if M3_M0_NIC
+        if (picture_control_set_ptr->enc_mode <= ENC_M4) {
+            context_ptr->md_stage_1_count[CAND_CLASS_0] = is_intra ? fastCandidateTotalCount : is_ref ? 16 : 8;
+            context_ptr->md_stage_1_count[CAND_CLASS_1] = is_intra ? 0 : is_ref ? 16 : 8;
+            context_ptr->md_stage_1_count[CAND_CLASS_2] = is_intra ? 0 : is_ref ? 16 : 8;
+            context_ptr->md_stage_1_count[CAND_CLASS_3] = is_intra ? 0 : is_ref ? 16 : 8;
+            context_ptr->md_stage_1_count[CAND_CLASS_4] = is_intra ? 0 : is_ref ? 14 : 6;
+            context_ptr->md_stage_1_count[CAND_CLASS_5] = 16;
+            context_ptr->md_stage_1_count[CAND_CLASS_6] = is_base ? 10 : 5;
+#if PAL_CLASS
+            context_ptr->md_stage_1_count[CAND_CLASS_7] = 14;
+#endif
+
+
+            // Stage 2 Cand Count
+            context_ptr->md_stage_2_count[CAND_CLASS_0] = is_intra ? 10 : is_ref ? 10 : 4;
+            context_ptr->md_stage_2_count[CAND_CLASS_1] = is_intra ? 0 : is_ref ? 6 : 3;
+            context_ptr->md_stage_2_count[CAND_CLASS_2] = is_intra ? 0 : is_ref ? 6 : 3;
+            context_ptr->md_stage_2_count[CAND_CLASS_3] = is_intra ? 0 : is_ref ? 6 : 3;
+            context_ptr->md_stage_2_count[CAND_CLASS_4] = is_intra ? 0 : is_ref ? 12 : 4;
+            context_ptr->md_stage_2_count[CAND_CLASS_6] = is_base ? 5 : is_ref ? 3 : 2;
+
+        }
+
+        else
+#endif
+            if (picture_control_set_ptr->enc_mode == ENC_M3) {
+
+                // Stage 1 Cand Count
+                context_ptr->md_stage_1_count[CAND_CLASS_0] = is_intra ? fastCandidateTotalCount : is_ref ? 16 : 8;
+                context_ptr->md_stage_1_count[CAND_CLASS_1] = is_intra ? 0 : is_ref ? 16 : 8;
+                context_ptr->md_stage_1_count[CAND_CLASS_2] = 0;
+                context_ptr->md_stage_1_count[CAND_CLASS_3] = is_intra ? 0 : is_ref ? 8 : 4;
+                context_ptr->md_stage_1_count[CAND_CLASS_4] = is_intra ? 0 : is_ref ? 14 : 6;
+                context_ptr->md_stage_1_count[CAND_CLASS_5] = 16;
+                context_ptr->md_stage_1_count[CAND_CLASS_6] = is_base ? 10 : 5;
+#if PAL_CLASS
+                context_ptr->md_stage_1_count[CAND_CLASS_7] = 14;
+#endif
+
+                // Stage 2 Cand Count
+                context_ptr->md_stage_2_count[CAND_CLASS_0] = is_intra ? 8 : is_ref ? 3 : 1;
+                context_ptr->md_stage_2_count[CAND_CLASS_1] = is_intra ? 0 : is_ref ? 2 : 1;
+                context_ptr->md_stage_2_count[CAND_CLASS_2] = 0;
+                context_ptr->md_stage_2_count[CAND_CLASS_3] = is_intra ? 0 : is_ref ? 2 : 1;
+                context_ptr->md_stage_2_count[CAND_CLASS_4] = is_intra ? 0 : is_ref ? 12 : 4;
+
+                if (obmc_m == 1)
+                    context_ptr->md_stage_2_count[CAND_CLASS_5] = 14;
+                else if (obmc_m <= 3)
+                    context_ptr->md_stage_2_count[CAND_CLASS_5] = is_ref ? 12 : 4;
+                else
+                    context_ptr->md_stage_2_count[CAND_CLASS_5] = is_base ? 12 : is_ref ? 8 : 4;
+
+                context_ptr->md_stage_2_count[CAND_CLASS_6] = is_intra ? 4 : is_ref ? 4 : 4;
+#if PAL_CLASS
+                if (pal_m == 1)
+                    context_ptr->md_stage_2_count[CAND_CLASS_7] = is_base ? 7 : is_ref ? 4 : 4;
+                else if (pal_m == 2 || pal_m == 3)
+                    context_ptr->md_stage_2_count[CAND_CLASS_7] = is_base ? 7 : is_ref ? 2 : 2;
+                else if (pal_m == 4 || pal_m == 5)
+                    context_ptr->md_stage_2_count[CAND_CLASS_7] = is_base ? 4 : is_ref ? 2 : 1;
+                else
+                    context_ptr->md_stage_2_count[CAND_CLASS_7] = is_base ? 2 : is_ref ? 1 : 1;
+#endif
+
+            }
+            else if (picture_control_set_ptr->enc_mode == ENC_M4) {
+#if M3_MD_STAGE_1
+                // Stage 1 Cand Count
+                context_ptr->md_stage_1_count[CAND_CLASS_0] = is_intra ? fastCandidateTotalCount : is_ref ? 16 : 8;
+                context_ptr->md_stage_1_count[CAND_CLASS_1] = is_intra ? 0 : is_ref ? 16 : 8;
+                context_ptr->md_stage_1_count[CAND_CLASS_2] = 0;
+                context_ptr->md_stage_1_count[CAND_CLASS_3] = is_intra ? 0 : is_ref ? 8 : 4;
+                context_ptr->md_stage_1_count[CAND_CLASS_4] = is_intra ? 0 : is_ref ? 14 : 6;
+                context_ptr->md_stage_1_count[CAND_CLASS_5] = 16;
+                context_ptr->md_stage_1_count[CAND_CLASS_6] = is_base ? 10 : 5;
+#if PAL_CLASS
+                context_ptr->md_stage_1_count[CAND_CLASS_7] = 14;
+#endif
+#else
+                // Stage 1 Cand Count
+                context_ptr->md_stage_1_count[CAND_CLASS_0] = is_intra ? fastCandidateTotalCount : is_ref ? 16 : 8;
+                context_ptr->md_stage_1_count[CAND_CLASS_1] = is_intra ? 0 : is_ref ? 16 : 8;
+                context_ptr->md_stage_1_count[CAND_CLASS_2] = 0;
+                context_ptr->md_stage_1_count[CAND_CLASS_3] = is_intra ? 0 : is_ref ? 8 : 4;
+                context_ptr->md_stage_1_count[CAND_CLASS_4] = is_intra ? 0 : is_ref ? 14 : 6;
+                context_ptr->md_stage_1_count[CAND_CLASS_5] = 16;
+                context_ptr->md_stage_1_count[CAND_CLASS_6] = is_base ? 10 : 5;
+#if PAL_CLASS
+                context_ptr->md_stage_1_count[CAND_CLASS_7] = 14;
+#endif
+#endif
+#if M3_MD_STAGE_2
+                // Stage 2 Cand Count
+                context_ptr->md_stage_2_count[CAND_CLASS_0] = is_intra ? 8 : is_ref ? 3 : 1;
+                context_ptr->md_stage_2_count[CAND_CLASS_1] = is_intra ? 0 : is_ref ? 2 : 1;
+                context_ptr->md_stage_2_count[CAND_CLASS_2] = 0;
+                context_ptr->md_stage_2_count[CAND_CLASS_3] = is_intra ? 0 : is_ref ? 2 : 1;
+                context_ptr->md_stage_2_count[CAND_CLASS_4] = is_intra ? 0 : is_ref ? 12 : 4;
+
+                if (obmc_m == 1)
+                    context_ptr->md_stage_2_count[CAND_CLASS_5] = 14;
+                else if (obmc_m <= 3)
+                    context_ptr->md_stage_2_count[CAND_CLASS_5] = is_ref ? 12 : 4;
+                else
+                    context_ptr->md_stage_2_count[CAND_CLASS_5] = is_base ? 12 : is_ref ? 8 : 4;
+
+                context_ptr->md_stage_2_count[CAND_CLASS_6] = is_intra ? 4 : is_ref ? 4 : 4;
+#if PAL_CLASS
+                if (pal_m == 1)
+                    context_ptr->md_stage_2_count[CAND_CLASS_7] = is_base ? 7 : is_ref ? 4 : 4;
+                else if (pal_m == 2 || pal_m == 3)
+                    context_ptr->md_stage_2_count[CAND_CLASS_7] = is_base ? 7 : is_ref ? 2 : 2;
+                else if (pal_m == 4 || pal_m == 5)
+                    context_ptr->md_stage_2_count[CAND_CLASS_7] = is_base ? 4 : is_ref ? 2 : 1;
+                else
+                    context_ptr->md_stage_2_count[CAND_CLASS_7] = is_base ? 2 : is_ref ? 1 : 1;
+#endif
+#else
+                // Stage 2 Cand Count
+                context_ptr->md_stage_2_count[CAND_CLASS_0] = is_intra ? 7 : is_ref ? 2 : 1;
+                context_ptr->md_stage_2_count[CAND_CLASS_1] = is_intra ? 0 : is_ref ? 2 : 1;
+                context_ptr->md_stage_2_count[CAND_CLASS_2] = 0;
+                context_ptr->md_stage_2_count[CAND_CLASS_3] = is_intra ? 0 : 1;
+                context_ptr->md_stage_2_count[CAND_CLASS_4] = is_intra ? 0 : is_ref ? 12 : 4;
+
+                if (obmc_m == 1)
+                    context_ptr->md_stage_2_count[CAND_CLASS_5] = 14;
+                else if (obmc_m <= 3)
+                    context_ptr->md_stage_2_count[CAND_CLASS_5] = is_ref ? 12 : 4;
+                else
+                    context_ptr->md_stage_2_count[CAND_CLASS_5] = is_base ? 12 : is_ref ? 8 : 4;
+
+                context_ptr->md_stage_2_count[CAND_CLASS_6] = is_intra ? 4 : is_ref ? 4 : 4;
+#if PAL_CLASS
+                if (pal_m == 1)
+                    context_ptr->md_stage_2_count[CAND_CLASS_7] = is_base ? 7 : is_ref ? 4 : 4;
+                else if (pal_m == 2 || pal_m == 3)
+                    context_ptr->md_stage_2_count[CAND_CLASS_7] = is_base ? 7 : is_ref ? 2 : 2;
+                else if (pal_m == 4 || pal_m == 5)
+                    context_ptr->md_stage_2_count[CAND_CLASS_7] = is_base ? 4 : is_ref ? 2 : 1;
+                else
+                    context_ptr->md_stage_2_count[CAND_CLASS_7] = is_base ? 2 : is_ref ? 1 : 1;
+#endif
+#endif
+            }
+
+#endif
+#if M5_MD_STAGING_COUNT
+    }
+#endif
+
+    // Step 3: update count for md_stage_1 and d_stage_2 if bypassed (no NIC setting should be done beyond this point)
+    context_ptr->md_stage_2_count[CAND_CLASS_0] = context_ptr->bypass_md_stage_1[CAND_CLASS_0] ? context_ptr->md_stage_1_count[CAND_CLASS_0] : context_ptr->md_stage_2_count[CAND_CLASS_0];
+    context_ptr->md_stage_2_count[CAND_CLASS_1] = context_ptr->bypass_md_stage_1[CAND_CLASS_1] ? context_ptr->md_stage_1_count[CAND_CLASS_1] : context_ptr->md_stage_2_count[CAND_CLASS_1];
+    context_ptr->md_stage_2_count[CAND_CLASS_2] = context_ptr->bypass_md_stage_1[CAND_CLASS_2] ? context_ptr->md_stage_1_count[CAND_CLASS_2] : context_ptr->md_stage_2_count[CAND_CLASS_2];
+    context_ptr->md_stage_2_count[CAND_CLASS_3] = context_ptr->bypass_md_stage_1[CAND_CLASS_3] ? context_ptr->md_stage_1_count[CAND_CLASS_3] : context_ptr->md_stage_2_count[CAND_CLASS_3];
+    context_ptr->md_stage_2_count[CAND_CLASS_4] = context_ptr->bypass_md_stage_1[CAND_CLASS_4] ? context_ptr->md_stage_1_count[CAND_CLASS_4] : context_ptr->md_stage_2_count[CAND_CLASS_4];
+    context_ptr->md_stage_2_count[CAND_CLASS_5] = context_ptr->bypass_md_stage_1[CAND_CLASS_5] ? context_ptr->md_stage_1_count[CAND_CLASS_5] : context_ptr->md_stage_2_count[CAND_CLASS_5];
+    context_ptr->md_stage_2_count[CAND_CLASS_6] = context_ptr->bypass_md_stage_1[CAND_CLASS_6] ? context_ptr->md_stage_1_count[CAND_CLASS_6] : context_ptr->md_stage_2_count[CAND_CLASS_6];
+
+
+#if PAL_CLASS
+    //TODO: use actual number of stages on the setting section and update using the following logic.
+    // stage1_cand_count[CAND_CLASS_i] = bypass_stage1 ? stage2_cand_count[CAND_CLASS_i] : stage1_cand_count[CAND_CLASS_i];
+    context_ptr->md_stage_2_count[CAND_CLASS_7] = context_ptr->bypass_md_stage_1[CAND_CLASS_7] ? context_ptr->md_stage_1_count[CAND_CLASS_7] : context_ptr->md_stage_2_count[CAND_CLASS_7];
+#endif
+
+
+#if !rtime_presets
+    // Step 4: zero-out count for CAND_CLASS_3 if CAND_CLASS_1 and CAND_CLASS_2 are merged (i.e. shift to the left)
+    if (context_ptr->combine_class12)
+        context_ptr->md_stage_1_count[CAND_CLASS_3] = context_ptr->md_stage_2_count[CAND_CLASS_3] = 0;
+#endif
+
+}
+#else
 void set_md_stage_counts(
     PictureControlSet       *picture_control_set_ptr,
     ModeDecisionContext     *context_ptr,
@@ -1685,7 +2052,11 @@ void set_md_stage_counts(
 #if OBMC_FLAG
     context_ptr->md_stage_2_count[CAND_CLASS_5] =  (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : 16;
 #endif
+#if rtime_presets
+    if (picture_control_set_ptr->enc_mode >= ENC_M3) {
+#else
     if (picture_control_set_ptr->enc_mode >= ENC_M2) {
+#endif
         context_ptr->md_stage_2_count[CAND_CLASS_1] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 12 : 3;
         context_ptr->md_stage_2_count[CAND_CLASS_2] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 2;
         if (!context_ptr->combine_class12) {
@@ -1705,16 +2076,16 @@ void set_md_stage_counts(
 #endif
 #if PAL_CLASS
     if (picture_control_set_ptr->parent_pcs_ptr->palette_mode == 1)
-        context_ptr->md_stage_3_count[CAND_CLASS_7] =// context_ptr->bypass_stage2[CAND_CLASS_7] ? context_ptr->md_stage_2_count[CAND_CLASS_7] :
+        context_ptr->md_stage_3_count[CAND_CLASS_7] =
         (picture_control_set_ptr->temporal_layer_index == 0) ? 7 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 4;
     else if (picture_control_set_ptr->parent_pcs_ptr->palette_mode == 2 || picture_control_set_ptr->parent_pcs_ptr->palette_mode == 3)
-        context_ptr->md_stage_3_count[CAND_CLASS_7] =// context_ptr->bypass_stage2[CAND_CLASS_7] ? context_ptr->md_stage_2_count[CAND_CLASS_7] :
+        context_ptr->md_stage_3_count[CAND_CLASS_7] =
         (picture_control_set_ptr->temporal_layer_index == 0) ? 7 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 2 : 2;
     else if (picture_control_set_ptr->parent_pcs_ptr->palette_mode == 4 || picture_control_set_ptr->parent_pcs_ptr->palette_mode == 5)
-        context_ptr->md_stage_3_count[CAND_CLASS_7] =// context_ptr->bypass_stage2[CAND_CLASS_7] ? context_ptr->md_stage_2_count[CAND_CLASS_7] :
+        context_ptr->md_stage_3_count[CAND_CLASS_7] =
         (picture_control_set_ptr->temporal_layer_index == 0) ? 4 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 2 : 1;
     else
-        context_ptr->md_stage_3_count[CAND_CLASS_7] = //context_ptr->bypass_stage2[CAND_CLASS_7] ? context_ptr->md_stage_2_count[CAND_CLASS_7] :
+        context_ptr->md_stage_3_count[CAND_CLASS_7] =
         (picture_control_set_ptr->temporal_layer_index == 0) ? 2 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 1 : 1;
 #endif
 
@@ -1750,8 +2121,11 @@ void set_md_stage_counts(
         context_ptr->md_stage_3_count[CAND_CLASS_2] = (picture_control_set_ptr->slice_type == I_SLICE) ?  0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ?  8 : 4;
         context_ptr->md_stage_3_count[CAND_CLASS_3] = (picture_control_set_ptr->slice_type == I_SLICE) ?  0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ?  8 : 4;
     }
-
+#if rtime_presets
+    if (picture_control_set_ptr->enc_mode >= ENC_M3 && picture_control_set_ptr->enc_mode <= ENC_M4) {
+#else
     if (picture_control_set_ptr->enc_mode >= ENC_M2 && picture_control_set_ptr->enc_mode <= ENC_M4) {
+#endif
         context_ptr->md_stage_3_count[CAND_CLASS_1] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 2;
         context_ptr->md_stage_3_count[CAND_CLASS_2] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 2 : 1;
 
@@ -1829,7 +2203,7 @@ void set_md_stage_counts(
     context_ptr->md_stage_3_count[CAND_CLASS_1] = context_ptr->bypass_stage2[CAND_CLASS_1] ? context_ptr->md_stage_2_count[CAND_CLASS_1] : context_ptr->md_stage_3_count[CAND_CLASS_1];
     context_ptr->md_stage_3_count[CAND_CLASS_2] = context_ptr->bypass_stage2[CAND_CLASS_2] ? context_ptr->md_stage_2_count[CAND_CLASS_2] : context_ptr->md_stage_3_count[CAND_CLASS_2];
     context_ptr->md_stage_3_count[CAND_CLASS_3] = context_ptr->bypass_stage2[CAND_CLASS_3] ? context_ptr->md_stage_2_count[CAND_CLASS_3] : context_ptr->md_stage_3_count[CAND_CLASS_3];
-
+   //TODO: use actual number of stages on the setting section and update using the following logic.
    // stage2_cand_count[CAND_CLASS_i] = bypass_stage2 ? stage3_cand_count[CAND_CLASS_i] : stage2_cand_count[CAND_CLASS_i];
    // stage1_cand_count[CAND_CLASS_i] = bypass_stage1 ? stage2_cand_count[CAND_CLASS_i] : stage1_cand_count[CAND_CLASS_i];
 
@@ -1843,7 +2217,7 @@ void set_md_stage_counts(
     if (context_ptr->combine_class12)
         context_ptr->md_stage_1_count[CAND_CLASS_3] = context_ptr->md_stage_2_count[CAND_CLASS_3] = context_ptr->md_stage_3_count[CAND_CLASS_3] = 0;
 }
-
+#endif
 void sort_stage0_fast_candidates(
     struct ModeDecisionContext   *context_ptr,
     uint32_t                      input_buffer_start_idx,
@@ -2094,7 +2468,11 @@ void sort_stage1_fast_candidates(
         cand_buff_indices, num_of_cand_to_sort);
 }
 #endif
+#if REMOVE_MD_STAGE_1
+void sort_stage1_candidates(
+#else
 void sort_stage2_candidates(
+#endif
     struct ModeDecisionContext   *context_ptr,
     uint32_t                      num_of_cand_to_sort,
     uint32_t                     *cand_buff_indices)
@@ -2111,8 +2489,11 @@ void sort_stage2_candidates(
         }
     }
 }
-
+#if REMOVE_MD_STAGE_1
+void construct_best_sorted_arrays_md_stage_1(
+#else
 void construct_best_sorted_arrays_md_stage_2(
+#endif
     struct ModeDecisionContext   *context_ptr,
     ModeDecisionCandidateBuffer **buffer_ptr_array,
     uint32_t                      *best_candidate_index_array,
@@ -2123,12 +2504,20 @@ void construct_best_sorted_arrays_md_stage_2(
     //best = union from all classes
     uint32_t best_candi = 0;
     for (CAND_CLASS class_i = CAND_CLASS_0; class_i < CAND_CLASS_TOTAL; class_i++)
+#if REMOVE_MD_STAGE_1
+        for (uint32_t candi = 0; candi < context_ptr->md_stage_1_count[class_i]; candi++)
+#else
         for (uint32_t candi = 0; candi < context_ptr->md_stage_2_count[class_i]; candi++)
+#endif
             sorted_candidate_index_array[best_candi++] = context_ptr->cand_buff_indices[class_i][candi];
 
+#if REMOVE_MD_STAGE_1
+    assert(best_candi == context_ptr->md_stage_1_total_count);
+    uint32_t fullReconCandidateCount = context_ptr->md_stage_1_total_count;
+#else
     assert(best_candi == context_ptr->md_stage_2_total_count);
-
     uint32_t fullReconCandidateCount = context_ptr->md_stage_2_total_count;
+#endif
 
     //sort best: inter, then intra
     uint32_t i, id;
@@ -2153,8 +2542,11 @@ void construct_best_sorted_arrays_md_stage_2(
     *ref_fast_cost = *(buffer_ptr_array[sorted_candidate_index_array[0]]->fast_cost_ptr);
 }
 
-
+#if REMOVE_MD_STAGE_1
+void construct_best_sorted_arrays_md_stage_2(
+#else
 void construct_best_sorted_arrays_md_stage_3(
+#endif
     struct ModeDecisionContext   *context_ptr,
     ModeDecisionCandidateBuffer **buffer_ptr_array,
     uint32_t                      *best_candidate_index_array,
@@ -2164,13 +2556,20 @@ void construct_best_sorted_arrays_md_stage_3(
     //best = union from all classes
     uint32_t best_candi = 0;
     for (CAND_CLASS class_i = CAND_CLASS_0; class_i < CAND_CLASS_TOTAL; class_i++)
+#if REMOVE_MD_STAGE_1
+        for (uint32_t candi = 0; candi < context_ptr->md_stage_2_count[class_i]; candi++)
+#else
         for (uint32_t candi = 0; candi < context_ptr->md_stage_3_count[class_i]; candi++)
+#endif
             sorted_candidate_index_array[best_candi++] = context_ptr->cand_buff_indices[class_i][candi];
 
+#if REMOVE_MD_STAGE_1
+    assert(best_candi == context_ptr->md_stage_2_total_count);
+    uint32_t fullReconCandidateCount = context_ptr->md_stage_2_total_count;
+#else
     assert(best_candi == context_ptr->md_stage_3_total_count);
-
     uint32_t fullReconCandidateCount = context_ptr->md_stage_3_total_count;
-
+#endif
     //sort best: inter, then intra
     uint32_t i, id;
     uint32_t id_inter = 0;
@@ -2220,21 +2619,27 @@ void md_stage_0(
 
 
     // Set MD Staging fast_loop_core settings
-
+#if REMOVE_MD_STAGE_1
+    context_ptr->md_staging_skip_interpolation_search = (context_ptr->md_staging_mode == MD_STAGING_MODE_1) ? EB_TRUE : picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? EB_FALSE : EB_TRUE;
+#else
     context_ptr->md_staging_skip_interpolation_search = (context_ptr->md_staging_mode) ? EB_TRUE : picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? EB_FALSE : EB_TRUE;
+#endif
 #if FILTER_INTRA_FLAG
-#if PAL_CLASS
-    context_ptr->md_staging_skip_inter_chroma_pred =
-        (context_ptr->md_staging_mode && context_ptr->md_stage == MD_STAGE_0 && context_ptr->target_class != CAND_CLASS_0 && context_ptr->target_class != CAND_CLASS_7)
-        ? EB_TRUE : EB_FALSE;
+#if REMOVE_MD_STAGE_1 && PAL_CLASS
+    context_ptr->md_staging_skip_inter_chroma_pred = (context_ptr->md_staging_mode == MD_STAGING_MODE_1 && context_ptr->target_class != CAND_CLASS_0 && context_ptr->target_class != CAND_CLASS_6 && context_ptr->target_class != CAND_CLASS_7) ? EB_TRUE : EB_FALSE;
+#elif REMOVE_MD_STAGE_1
+    context_ptr->md_staging_skip_inter_chroma_pred = (context_ptr->md_staging_mode == MD_STAGING_MODE_1 && context_ptr->target_class != CAND_CLASS_0 && context_ptr->target_class != CAND_CLASS_6) ? EB_TRUE : EB_FALSE;
 #else
     context_ptr->md_staging_skip_inter_chroma_pred = (context_ptr->md_staging_mode && context_ptr->md_stage == MD_STAGE_0 && context_ptr->target_class != CAND_CLASS_0 && context_ptr->target_class != CAND_CLASS_6) ? EB_TRUE : EB_FALSE;
 #endif
 #else
     context_ptr->md_staging_skip_inter_chroma_pred = (context_ptr->md_staging_mode && context_ptr->md_stage == MD_STAGE_0 && context_ptr->target_class != CAND_CLASS_0) ? EB_TRUE : EB_FALSE;
 #endif
+#if REMOVE_MD_STAGE_1
+    context_ptr->md_staging_use_bilinear = (context_ptr->md_staging_mode == MD_STAGING_MODE_1) ? EB_TRUE : EB_FALSE;
+#else
     context_ptr->md_staging_use_bilinear = (context_ptr->md_staging_mode) ? EB_TRUE : EB_FALSE;
-
+#endif
     // 1st fast loop: src-to-src
     fastLoopCandidateIndex = fast_candidate_end_index;
     while (fastLoopCandidateIndex >= fast_candidate_start_index)
@@ -2345,7 +2750,7 @@ void md_stage_0(
         MAX_CU_COST :
         *(candidate_buffer_ptr_array_base[highestCostIndex]->fast_cost_ptr);
 }
-
+#if !REMOVE_MD_STAGE_1
 void md_stage_1(
     PictureControlSet            *picture_control_set_ptr,
     ModeDecisionContext          *context_ptr,
@@ -2394,7 +2799,7 @@ void md_stage_1(
         }
     }
 }
-
+#endif
 void predictive_me_full_pel_search(
     const SequenceControlSet *sequence_control_set_ptr,
     PictureControlSet        *picture_control_set_ptr,
@@ -5568,10 +5973,14 @@ void full_loop_core(
         candidate_ptr->skip_flag = EB_FALSE;
 
         if (candidate_ptr->type != INTRA_MODE) {
+#if REMOVE_MD_STAGE_1
+            if (context_ptr->md_staging_skip_full_pred == EB_FALSE) {
+#else
             if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level > IT_SEARCH_OFF)
                 if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level == IT_SEARCH_FULL_LOOP || context_ptr->md_staging_skip_full_pred == EB_FALSE) {
                     context_ptr->md_staging_skip_interpolation_search = EB_FALSE;
                     context_ptr->md_staging_skip_inter_chroma_pred = EB_FALSE;
+#endif
                     ProductPredictionFunTable[candidate_ptr->type](
                         context_ptr,
                         picture_control_set_ptr,
@@ -5842,8 +6251,11 @@ void full_loop_core(
         candidate_buffer->y_coeff_bits = y_coeff_bits;
         candidate_ptr->full_distortion = (uint32_t)(y_full_distortion[0]);
 }
-
+#if REMOVE_MD_STAGE_1
+void md_stage_1(
+#else
 void md_stage_2(
+#endif
     PictureControlSet     *picture_control_set_ptr,
     LargestCodingUnit     *sb_ptr,
     CodingUnit            *cu_ptr,
@@ -5865,28 +6277,37 @@ void md_stage_2(
     uint32_t candidateIndex;
 
     // Set MD Staging full_loop_core settings
+#if !REMOVE_MD_STAGE_1
     context_ptr->md_staging_skip_full_pred = EB_TRUE;
+#endif
     context_ptr->md_staging_skip_atb = EB_TRUE;
     context_ptr->md_staging_tx_search = 0;
 #if FILTER_INTRA_FLAG
-#if PAL_CLASS
-    context_ptr->md_staging_skip_full_chroma = context_ptr->target_class == CAND_CLASS_7 ||
-        context_ptr->target_class == CAND_CLASS_0 || context_ptr->target_class == CAND_CLASS_6 || context_ptr->md_staging_mode == MD_STAGING_MODE_3;
+#if REMOVE_MD_STAGE_1
+    context_ptr->md_staging_skip_full_chroma = EB_TRUE;
 #else
     context_ptr->md_staging_skip_full_chroma =  context_ptr->target_class == CAND_CLASS_0 || context_ptr->target_class == CAND_CLASS_6 || context_ptr->md_staging_mode == MD_STAGING_MODE_3;
 #endif
 #else
     context_ptr->md_staging_skip_full_chroma = context_ptr->target_class == CAND_CLASS_0 || context_ptr->md_staging_mode == MD_STAGING_MODE_3;
 #endif
+#if REMOVE_MD_STAGE_1
+    context_ptr->md_staging_skip_rdoq = EB_TRUE;
+    for (fullLoopCandidateIndex = 0; fullLoopCandidateIndex < context_ptr->md_stage_1_count[context_ptr->target_class]; ++fullLoopCandidateIndex) {
+#else
     context_ptr->md_staging_skip_rdoq = (context_ptr->md_staging_mode == MD_STAGING_MODE_2 || context_ptr->md_staging_mode == MD_STAGING_MODE_3);
-
     for (fullLoopCandidateIndex = 0; fullLoopCandidateIndex < context_ptr->md_stage_2_count[context_ptr->target_class]; ++fullLoopCandidateIndex) {
-
+#endif
         candidateIndex = context_ptr->cand_buff_indices[context_ptr->target_class][fullLoopCandidateIndex];
         candidate_buffer = candidate_buffer_ptr_array[candidateIndex];
         candidate_ptr = candidate_buffer->candidate_ptr;
 
-
+#if REMOVE_MD_STAGE_1
+        context_ptr->md_staging_skip_full_pred = EB_FALSE;
+        context_ptr->md_staging_skip_interpolation_search = EB_FALSE;
+        context_ptr->md_staging_skip_inter_chroma_pred = EB_TRUE;
+        candidate_buffer->candidate_ptr->interp_filters = 0;
+#endif
         full_loop_core(
             picture_control_set_ptr,
             sb_ptr,
@@ -5903,8 +6324,11 @@ void md_stage_2(
             asm_type);
     }
 }
-
+#if REMOVE_MD_STAGE_1
+void md_stage_2(
+#else
 void md_stage_3(
+#endif
     PictureControlSet     *picture_control_set_ptr,
     LargestCodingUnit     *sb_ptr,
     CodingUnit            *cu_ptr,
@@ -5935,7 +6359,13 @@ void md_stage_3(
         candidate_ptr = candidate_buffer->candidate_ptr;
 
         // Set MD Staging full_loop_core settings
+#if REMOVE_MD_STAGE_1
+        context_ptr->md_staging_skip_full_pred = (context_ptr->md_staging_mode == MD_STAGING_MODE_0 && picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level != IT_SEARCH_FULL_LOOP);
+        context_ptr->md_staging_skip_interpolation_search = (context_ptr->md_staging_mode == MD_STAGING_MODE_1 || picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level != IT_SEARCH_FULL_LOOP);
+        context_ptr->md_staging_skip_inter_chroma_pred = EB_FALSE;
+#else
         context_ptr->md_staging_skip_full_pred = (context_ptr->md_staging_mode == MD_STAGING_MODE_3) ? EB_FALSE: EB_TRUE;
+#endif
         context_ptr->md_staging_skip_atb = context_ptr->coeff_based_skip_atb;
 #if FILTER_INTRA_FLAG
 #if PAL_CLASS
@@ -5953,7 +6383,11 @@ void md_stage_3(
 
         if (picture_control_set_ptr->slice_type != I_SLICE) {
             if ((candidate_ptr->type == INTRA_MODE || context_ptr->full_loop_escape == 2) && best_inter_luma_zero_coeff == 0) {
+#if REMOVE_MD_STAGE_1
+                context_ptr->md_stage_2_total_count = fullLoopCandidateIndex;
+#else
                 context_ptr->md_stage_3_total_count = fullLoopCandidateIndex;
+#endif
                 return;
             }
         }
@@ -5988,13 +6422,23 @@ void md_stage_3(
 }
 
 void move_cu_data(
+#if PAL_SUP
+    PictureControlSet* pcs,
+    EncDecContext      *context_ptr,
+#endif
     CodingUnit *src_cu,
     CodingUnit *dst_cu)
 {
-#if PAL_SUP
-    dst_cu->palette_info.color_idx_map = (uint8_t *)malloc(MAX_PALETTE_SQUARE);
-    memcpy(dst_cu->palette_info.color_idx_map, src_cu->palette_info.color_idx_map, MAX_PALETTE_SQUARE);
-    memcpy(&dst_cu->palette_info.pmi, &src_cu->palette_info.pmi, sizeof(PALETTE_MODE_INFO));
+#if PAL_SUP  
+        memcpy(&dst_cu->palette_info.pmi, &src_cu->palette_info.pmi, sizeof(PaletteModeInfo));
+        if (svt_av1_allow_palette(pcs->parent_pcs_ptr->palette_mode, context_ptr->blk_geom->bsize)){
+            dst_cu->palette_info.color_idx_map = (uint8_t *)malloc(MAX_PALETTE_SQUARE);          
+            assert(dst_cu->palette_info.color_idx_map != NULL && "palette:Not-Enough-Memory");
+            if(dst_cu->palette_info.color_idx_map != NULL)
+                 memcpy(dst_cu->palette_info.color_idx_map, src_cu->palette_info.color_idx_map, MAX_PALETTE_SQUARE);   
+            else
+                printf("ERROR palette:Not-Enough-Memory\n");
+        }
 #endif
 #if OBMC_FLAG
     dst_cu->interp_filters = src_cu->interp_filters;
@@ -6110,12 +6554,22 @@ void move_cu_data(
 #endif
 }
 void move_cu_data_redund(
+#if PAL_SUP
+    PictureControlSet     *pcs,
+    ModeDecisionContext   *context_ptr,
+#endif
     CodingUnit *src_cu,
     CodingUnit *dst_cu){
 
-#if PAL_SUP
-    memcpy(dst_cu->palette_info.color_idx_map, src_cu->palette_info.color_idx_map, MAX_PALETTE_SQUARE);
-    memcpy(&dst_cu->palette_info.pmi, &src_cu->palette_info.pmi, sizeof(PALETTE_MODE_INFO));
+    dst_cu->segment_id = src_cu->segment_id;
+    dst_cu->seg_id_predicted = src_cu->seg_id_predicted;
+    dst_cu->ref_qp = src_cu->ref_qp;
+    dst_cu->org_delta_qp = src_cu->org_delta_qp;
+#if PAL_SUP 
+    memcpy(&dst_cu->palette_info.pmi, &src_cu->palette_info.pmi, sizeof(PaletteModeInfo));
+    if (svt_av1_allow_palette(pcs->parent_pcs_ptr->palette_mode, context_ptr->blk_geom->bsize))
+        memcpy(dst_cu->palette_info.color_idx_map, src_cu->palette_info.color_idx_map, MAX_PALETTE_SQUARE);
+  
 #endif
 #if OBMC_FLAG
     dst_cu->interp_filters = src_cu->interp_filters;
@@ -6253,8 +6707,19 @@ EbBool allowed_ns_cu(
     uint8_t                            is_complete_sb){
     EbBool  ret = 1;
     UNUSED(is_complete_sb);
-
+#if DISABLE_NSQ_IN_MD
+    if (context_ptr->blk_geom->shape != PART_N) {
+        return 0;   
+    }
+#endif
 #if COMBINE_MDC_NSQ_TABLE
+#if LESS_4_PARTITIONS
+   if(context_ptr->blk_geom->shape == PART_H4 && context_ptr->partition_horz4_allowed == 0) 
+       ret = 0;
+   else if (context_ptr->blk_geom->shape == PART_V4 && context_ptr->partition_vert4_allowed == 0)
+       ret = 0;
+   else
+#endif
     if (is_nsq_table_used) {
         if (mdc_depth_level == MAX_MDC_LEVEL) {
             if (context_ptr->blk_geom->shape != PART_N) {
@@ -6970,6 +7435,8 @@ void  order_nsq_table(
     context_ptr->nsq_table[3] = PART_HB;
     context_ptr->nsq_table[4] = PART_VA;
     context_ptr->nsq_table[5] = PART_VB;
+    context_ptr->nsq_table[6] = PART_H4;
+    context_ptr->nsq_table[7] = PART_V4;
 
     if (isCompoundEnabled == 0) me_part_1 = me_part_0;
 
@@ -7335,6 +7802,7 @@ void search_best_independent_uv_mode(
     context_ptr->uv_search_path = EB_FALSE;
 }
 #if SPEED_OPT
+#if !REMOVE_MD_STAGE_1
 void inter_class_decision_count_1(
     struct ModeDecisionContext   *context_ptr
 )
@@ -7354,6 +7822,7 @@ void inter_class_decision_count_1(
         }
     }
 }
+#endif
 extern aom_variance_fn_ptr_t mefn_ptr[BlockSizeS_ALL];
 unsigned int eb_av1_get_sby_perpixel_variance(const aom_variance_fn_ptr_t *fn_ptr, const uint8_t *src, int stride, BlockSize bs);
 #endif
@@ -7391,8 +7860,13 @@ void md_encode_block(
         picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL) ? EB_TRUE : EB_FALSE;
-		
+#if TEST_M0_NSQ_TABLES
+    is_nsq_table_used = picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode <= ENC_M1 ? EB_FALSE : is_nsq_table_used;
+#elif TEST_M1_NSQ_TABLES
+
+#else
     is_nsq_table_used = picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode == ENC_M0 ? EB_FALSE : is_nsq_table_used;
+#endif
 #if ADJUST_NSQ_RANK_BASED_ON_NEIGH
     if (is_nsq_table_used) {
         if (context_ptr->blk_geom->shape == PART_N) {
@@ -7421,7 +7895,7 @@ void md_encode_block(
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL) ? EB_TRUE : EB_FALSE;
 
-	is_nsq_table_used = picture_control_set_ptr->enc_mode == ENC_M0 ?  EB_FALSE : is_nsq_table_used;
+    is_nsq_table_used = picture_control_set_ptr->enc_mode == ENC_M0 ?  EB_FALSE : is_nsq_table_used;
     if (is_nsq_table_used) {
         if (context_ptr->blk_geom->shape == PART_N) {
             order_nsq_table(
@@ -7565,10 +8039,18 @@ void md_encode_block(
         uint32_t buffer_start_idx = 0;
         uint32_t buffer_count_for_curr_class;
         uint32_t buffer_total_count = 0;
+#if REMOVE_MD_STAGE_1
+        context_ptr->md_stage_1_total_count = 0;
+        context_ptr->md_stage_2_total_count = 0;
+#else
         context_ptr->md_stage_2_total_count = 0;
         context_ptr->md_stage_3_total_count = 0;
 
         context_ptr->md_stage = MD_STAGE_0;
+#endif
+#if STAGE_1_COUNT_PRUNING_TH_C
+        uint64_t best_md_sage_0_cost = (uint64_t)~0;
+#endif
         for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
 
             //number of next level candidates could not exceed number of curr level candidates
@@ -7612,15 +8094,82 @@ void md_encode_block(
                     buffer_count_for_curr_class, //how many cand buffers to sort. one of the buffers can have max cost.
                     context_ptr->cand_buff_indices[cand_class_it]);
 
+#if STAGE_1_COUNT_PRUNING_TH_C
+                uint32_t *cand_buff_indices = context_ptr->cand_buff_indices[cand_class_it];
+                best_md_sage_0_cost = MIN((*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->fast_cost_ptr)), best_md_sage_0_cost);
+#endif
+
+#if !STAGE_1_COUNT_PRUNING_TH_S
+#if REMOVE_MD_STAGE_1
+                // Distortion-based NIC proning to CLASS_1, CLASS_2, CLASS_3
+                if (cand_class_it == CAND_CLASS_1 || cand_class_it == CAND_CLASS_2 || cand_class_it == CAND_CLASS_3) {
+                    uint32_t *cand_buff_indices = context_ptr->cand_buff_indices[cand_class_it];
+                    assert(context_ptr->md_stage_0_count[CAND_CLASS_0] > 0);
+                    if (context_ptr->md_stage_0_count[CAND_CLASS_0] > 0 && *(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->fast_cost_ptr) < 
+                        *(context_ptr->candidate_buffer_ptr_array[context_ptr->cand_buff_indices[CAND_CLASS_0][0]]->fast_cost_ptr)) {
+                        uint32_t fast1_cand_count = 1;
+                        while (fast1_cand_count < context_ptr->md_stage_1_count[cand_class_it] && ((((*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[fast1_cand_count]]->fast_cost_ptr) - *(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->fast_cost_ptr)) * 100) / (*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->fast_cost_ptr))) < context_ptr->dist_base_md_stage_0_count_th)) {
+                            fast1_cand_count++;
+                        }
+                        context_ptr->md_stage_1_count[cand_class_it] = fast1_cand_count;
+                    }
+                }
+#endif
+#endif
                 buffer_start_idx += buffer_count_for_curr_class;//for next iteration.
 
             }
+#if !STAGE_1_COUNT_PRUNING_TH_S
+#if REMOVE_MD_STAGE_1
+            context_ptr->md_stage_1_total_count += context_ptr->md_stage_1_count[cand_class_it];
+#endif
+#endif
         }
 
+#if STAGE_1_COUNT_PRUNING_TH_S
+        for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
+
+            //number of next level candidates could not exceed number of curr level candidates
+            context_ptr->md_stage_1_count[cand_class_it] = MIN(context_ptr->md_stage_0_count[cand_class_it], context_ptr->md_stage_1_count[cand_class_it]);
+
+            if (context_ptr->md_stage_0_count[cand_class_it] > 0 && context_ptr->md_stage_1_count[cand_class_it] > 0) {
+                // Distortion-based NIC proning to CLASS_1, CLASS_2, CLASS_3
+#if !TUNED_TH_S
+                if (cand_class_it == CAND_CLASS_1 || cand_class_it == CAND_CLASS_2 || cand_class_it == CAND_CLASS_3) 
+#endif
+                {
+                    uint32_t *cand_buff_indices = context_ptr->cand_buff_indices[cand_class_it];
+#if STAGE_1_COUNT_PRUNING_TH_C
+                    if ((((*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->fast_cost_ptr) - best_md_sage_0_cost) * 100) / best_md_sage_0_cost) > context_ptr->md_stage_1_count_th_c) {
+                        context_ptr->md_stage_1_count[cand_class_it] = 0;
+                        context_ptr->md_stage_2_count[cand_class_it] = 0;
+                    }
+                    if (context_ptr->md_stage_1_count[cand_class_it])
+#endif
+
+#if !TUNED_TH_S
+                    if (context_ptr->md_stage_0_count[CAND_CLASS_0] > 0 && *(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->fast_cost_ptr) <
+                        *(context_ptr->candidate_buffer_ptr_array[context_ptr->cand_buff_indices[CAND_CLASS_0][0]]->fast_cost_ptr)) 
+#endif
+                    {
+                        uint32_t fast1_cand_count = 1;
+                        while (fast1_cand_count < context_ptr->md_stage_1_count[cand_class_it] && ((((*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[fast1_cand_count]]->fast_cost_ptr) - *(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->fast_cost_ptr)) * 100) / (*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->fast_cost_ptr))) < context_ptr->md_stage_1_count_th_s)) {
+                            fast1_cand_count++;
+                        }
+                        context_ptr->md_stage_1_count[cand_class_it] = fast1_cand_count;
+                    }
+                }
+            }
+            context_ptr->md_stage_1_total_count += context_ptr->md_stage_1_count[cand_class_it];
+        }
+#endif
+
+#if !REMOVE_MD_STAGE_1
 #if SPEED_OPT
         //after completing stage0, we might shorten cand count for some classes.
         inter_class_decision_count_1(context_ptr);
 #endif
+
         context_ptr->md_stage = MD_STAGE_1;
         for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
 
@@ -7653,12 +8202,16 @@ void md_encode_block(
                     context_ptr->cand_buff_indices[cand_class_it]);
             }
         }
-
+#endif
         memset(context_ptr->best_candidate_index_array, 0xFFFFFFFF, MAX_NFL_BUFF * sizeof(uint32_t));
         memset(context_ptr->sorted_candidate_index_array, 0xFFFFFFFF, MAX_NFL * sizeof(uint32_t));
 
         uint64_t ref_fast_cost = MAX_MODE_COST;
+#if REMOVE_MD_STAGE_1
+        construct_best_sorted_arrays_md_stage_1(
+#else
         construct_best_sorted_arrays_md_stage_2(
+#endif
             context_ptr,
             candidate_buffer_ptr_array,
             context_ptr->best_candidate_index_array,
@@ -7667,17 +8220,32 @@ void md_encode_block(
 
 
         // 1st Full-Loop
+#if STAGE_2_COUNT_PRUNING_TH_C
+        uint64_t best_md_sage_1_cost = (uint64_t)~0;
+#endif
+#if REMOVE_MD_STAGE_1
+        for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
+            //number of next level candidates could not exceed number of curr level candidates
+            context_ptr->md_stage_2_count[cand_class_it] = MIN(context_ptr->md_stage_1_count[cand_class_it], context_ptr->md_stage_2_count[cand_class_it]);
+#if !STAGE_2_COUNT_PRUNING_TH_S && !STAGE_2_COUNT_PRUNING_TH_C
+            context_ptr->md_stage_2_total_count += context_ptr->md_stage_2_count[cand_class_it];
+#endif
+            if (context_ptr->bypass_md_stage_1[cand_class_it] == EB_FALSE && context_ptr->md_stage_1_count[cand_class_it] > 0 && context_ptr->md_stage_2_count[cand_class_it] > 0) {
+#else
         context_ptr->md_stage = MD_STAGE_2;
         for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
-
             //number of next level candidates could not exceed number of curr level candidates
             context_ptr->md_stage_3_count[cand_class_it] = MIN(context_ptr->md_stage_2_count[cand_class_it], context_ptr->md_stage_3_count[cand_class_it]);
             context_ptr->md_stage_3_total_count += context_ptr->md_stage_3_count[cand_class_it];
 
             if (context_ptr->bypass_stage2[cand_class_it] == EB_FALSE && context_ptr->md_stage_2_count[cand_class_it] > 0 && context_ptr->md_stage_3_count[cand_class_it] > 0) {
-
+#endif
                 context_ptr->target_class = cand_class_it;
+#if REMOVE_MD_STAGE_1
+                md_stage_1(
+#else
                 md_stage_2(
+#endif
                     picture_control_set_ptr,
                     context_ptr->sb_ptr,
                     cu_ptr,
@@ -7693,25 +8261,72 @@ void md_encode_block(
                 // Sort the candidates of the target class based on the 1st full loop cost
 
                 //sort the new set of candidates
+#if REMOVE_MD_STAGE_1
+                if (context_ptr->md_stage_1_count[cand_class_it])
+                    sort_stage1_candidates(
+                        context_ptr,
+                        context_ptr->md_stage_1_count[cand_class_it],
+                        context_ptr->cand_buff_indices[cand_class_it]);
+#else
                 if (context_ptr->md_stage_2_count[cand_class_it])
                     sort_stage2_candidates(
                         context_ptr,
                         context_ptr->md_stage_2_count[cand_class_it],
                         context_ptr->cand_buff_indices[cand_class_it]);
+#endif
+
+#if STAGE_2_COUNT_PRUNING_TH_C
+                uint32_t *cand_buff_indices = context_ptr->cand_buff_indices[cand_class_it];
+                best_md_sage_1_cost = MIN((*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->full_cost_ptr)), best_md_sage_1_cost);
+#endif
             }
         }
+
+#if STAGE_2_COUNT_PRUNING_TH_S || STAGE_2_COUNT_PRUNING_TH_C
+        for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
+
+            if (context_ptr->bypass_md_stage_1[cand_class_it] == EB_FALSE && context_ptr->md_stage_1_count[cand_class_it] > 0 && context_ptr->md_stage_2_count[cand_class_it] > 0) {
+                uint32_t *cand_buff_indices = context_ptr->cand_buff_indices[cand_class_it];
+#if STAGE_2_COUNT_PRUNING_TH_C
+                if ((((*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->full_cost_ptr) - best_md_sage_1_cost) * 100) / best_md_sage_1_cost) > context_ptr->md_stage_2_count_th_c) {
+                    context_ptr->md_stage_2_count[cand_class_it] = 0;
+                }
+#endif
+#if STAGE_2_COUNT_PRUNING_TH_S
+                // Remove outliers from the list; prone if cost-to-best deviation bigger than  context_ptr->cost_dev_based_md_stage_2_count_prooning
+                if (context_ptr->md_stage_2_count[cand_class_it]) {
+                    uint32_t md_stage_2_count = 1;
+                    while (md_stage_2_count < context_ptr->md_stage_2_count[cand_class_it] && ((((*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[md_stage_2_count]]->full_cost_ptr) - *(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->full_cost_ptr)) * 100) / (*(context_ptr->candidate_buffer_ptr_array[cand_buff_indices[0]]->full_cost_ptr))) < context_ptr->md_stage_2_count_th_s)) {
+                        md_stage_2_count++;
+                    }
+                    context_ptr->md_stage_2_count[cand_class_it] = md_stage_2_count;
+                }
+#endif
+            }
+            context_ptr->md_stage_2_total_count += context_ptr->md_stage_2_count[cand_class_it];
+        }
+#endif
+#if REMOVE_MD_STAGE_1
+        assert(context_ptr->md_stage_2_total_count <= MAX_NFL);
+        assert(context_ptr->md_stage_2_total_count > 0);
+        construct_best_sorted_arrays_md_stage_2(
+#else
         assert(context_ptr->md_stage_3_total_count <= MAX_NFL);
         assert(context_ptr->md_stage_3_total_count > 0);
-
         construct_best_sorted_arrays_md_stage_3(
+#endif
             context_ptr,
             candidate_buffer_ptr_array,
             context_ptr->best_candidate_index_array,
             context_ptr->sorted_candidate_index_array);
 
         // 2nd Full-Loop
+#if REMOVE_MD_STAGE_1
+        md_stage_2(
+#else
         context_ptr->md_stage = MD_STAGE_3;
         md_stage_3(
+#endif
             picture_control_set_ptr,
             context_ptr->sb_ptr,
             cu_ptr,
@@ -7721,7 +8336,11 @@ void md_encode_block(
             inputCbOriginIndex,
             cuOriginIndex,
             cuChromaOriginIndex,
+#if REMOVE_MD_STAGE_1
+            context_ptr->md_stage_2_total_count,
+#else
             context_ptr->md_stage_3_total_count,
+#endif
             ref_fast_cost,
             asm_type); // fullCandidateTotalCount to number of buffers to process
 
@@ -7730,7 +8349,11 @@ void md_encode_block(
             context_ptr,
             cu_ptr,
             candidate_buffer_ptr_array,
+#if REMOVE_MD_STAGE_1
+            context_ptr->md_stage_2_total_count,
+#else
             context_ptr->md_stage_3_total_count,
+#endif
             (context_ptr->full_loop_escape == 2) ? context_ptr->sorted_candidate_index_array : context_ptr->best_candidate_index_array,
             context_ptr->prune_ref_frame_for_rec_partitions,
             &best_intra_mode);
@@ -7905,6 +8528,602 @@ void md_encode_block(
         cu_ptr->prediction_unit_array->ref_frame_type = 0;
     }
 }
+#if LESS_4_PARTITIONS
+#define INT_MAX       2147483647    // maximum (signed) int value
+static INLINE int get_unsigned_bits(unsigned int num_values) {
+    return num_values > 0 ? get_msb(num_values) + 1 : 0;
+}
+
+struct NN_CONFIG;
+typedef struct NN_CONFIG NN_CONFIG;
+#define FEATURES 18
+#define LABELS 4
+// Use a ML model to predict if horz4 and vert4 should be considered.
+void av1_ml_prune_4_partition(
+    ModeDecisionContext *context_ptr,
+    EbPictureBufferDesc *input_picture_ptr,
+    uint16_t sb_origin_x,
+    uint16_t sb_origin_y,
+    BlockSize *sq_bsize,
+    unsigned int *sq_source_variance,
+    int64_t *horz_rd,
+    int64_t *vert_rd,
+    int64_t *split_rd,
+    int64_t *best_rd,
+    float *part_ctx) {
+
+    if (*best_rd >= 1000000000) return;
+
+    const NN_CONFIG *nn_config = NULL;
+
+    switch (*sq_bsize) {
+    case BLOCK_16X16: nn_config = &av1_4_partition_nnconfig_16; break;
+    case BLOCK_32X32: nn_config = &av1_4_partition_nnconfig_32; break;
+    case BLOCK_64X64: nn_config = &av1_4_partition_nnconfig_64; break;
+    default: assert(0 && "Unexpected bsize.");
+    }
+    if (!nn_config) return;
+
+    aom_clear_system_state();
+
+    // Generate features.
+    float features[FEATURES];
+    int feature_index = 0;
+    features[feature_index++] = (float)*part_ctx;
+    features[feature_index++] = (float)get_unsigned_bits(*sq_source_variance);
+
+    const int rdcost = (int)AOMMIN(INT_MAX, *best_rd);
+
+    int sub_block_rdcost[8] = { 0 };
+    int rd_index = 0;
+
+    for (int i = 0; i < 2; ++i) {
+        if (horz_rd[i] > 0 && horz_rd[i] < 1000000000)
+            sub_block_rdcost[rd_index] = (int)horz_rd[i];
+        ++rd_index;
+    }
+    for (int i = 0; i < 2; ++i) {
+        if (vert_rd[i] > 0 && vert_rd[i] < 1000000000)
+            sub_block_rdcost[rd_index] = (int)vert_rd[i];
+        ++rd_index;
+    }
+    for (int i = 0; i < 4; ++i) {
+        if (split_rd[i] > 0 && split_rd[i] < 1000000000)
+            sub_block_rdcost[rd_index] = (int)split_rd[i];
+        ++rd_index;
+    }
+
+    for (int i = 0; i < 8; ++i) {
+        // Ratio between the sub-block RD and the whole-block RD.
+        float rd_ratio = 1.0f;
+
+        if (sub_block_rdcost[i] > 0 && sub_block_rdcost[i] < rdcost)
+            rd_ratio = (float)sub_block_rdcost[i] / (float)rdcost;
+
+        features[feature_index++] = rd_ratio;
+    }
+
+    // Get variance of the 1:4 and 4:1 sub-blocks.
+    unsigned int horz_4_source_var[4] = { 0 };
+    unsigned int vert_4_source_var[4] = { 0 };
+    const BlockGeom *blk_geom;
+    uint32_t input_origin_index;
+    aom_variance_fn_ptr_t *fn_ptr;
+    {
+        for (int i = 0; i < 4; ++i) {
+            // Get variance of the 1:4
+            blk_geom = get_blk_geom_mds(context_ptr->cu_ptr->mds_idx + 1 + i);
+            input_origin_index = ((sb_origin_y + blk_geom->origin_y) + input_picture_ptr->origin_y) * input_picture_ptr->stride_y + ((sb_origin_x + blk_geom->origin_x) + input_picture_ptr->origin_x);
+            fn_ptr = &mefn_ptr[blk_geom->bsize];
+            horz_4_source_var[i] = eb_av1_get_sby_perpixel_variance(fn_ptr, (input_picture_ptr->buffer_y + input_origin_index), input_picture_ptr->stride_y, blk_geom->bsize);
+            // Get variance of the 4:1
+            blk_geom = get_blk_geom_mds(context_ptr->cu_ptr->mds_idx + 5 + i);
+            input_origin_index = ((sb_origin_y + blk_geom->origin_y) + input_picture_ptr->origin_y) * input_picture_ptr->stride_y + ((sb_origin_x + blk_geom->origin_x) + input_picture_ptr->origin_x);
+            fn_ptr = &mefn_ptr[blk_geom->bsize];
+            vert_4_source_var[i] = eb_av1_get_sby_perpixel_variance(fn_ptr, (input_picture_ptr->buffer_y + input_origin_index), input_picture_ptr->stride_y, blk_geom->bsize);
+        }
+    }
+
+    const float denom = (float)(*sq_source_variance + 1);
+    const float low_b = 0.1f;
+    const float high_b = 10.0f;
+    for (int i = 0; i < 4; ++i) {
+        // Ratio between the 4:1 sub-block variance and the whole-block variance.
+        float var_ratio = (float)(horz_4_source_var[i] + 1) / denom;
+        if (var_ratio < low_b) var_ratio = low_b;
+        if (var_ratio > high_b) var_ratio = high_b;
+        features[feature_index++] = var_ratio;
+    }
+    for (int i = 0; i < 4; ++i) {
+        // Ratio between the 1:4 sub-block RD and the whole-block RD.
+        float var_ratio = (float)(vert_4_source_var[i] + 1) / denom;
+        if (var_ratio < low_b) var_ratio = low_b;
+        if (var_ratio > high_b) var_ratio = high_b;
+        features[feature_index++] = var_ratio;
+    }
+    assert(feature_index == FEATURES);
+
+    // Calculate scores using the NN model.
+    float score[LABELS] = { 0.0f };
+    av1_nn_predict(features, nn_config, 1, score);
+    aom_clear_system_state();
+    int int_score[LABELS];
+    int max_score = -1000;
+    for (int i = 0; i < LABELS; ++i) {
+        int_score[i] = (int)(100 * score[i]);
+        max_score = AOMMAX(int_score[i], max_score);
+    }
+
+    // Make decisions based on the model scores.
+    int thresh = max_score;
+    switch (*sq_bsize) {
+    case BLOCK_16X16: thresh -= 500; break;
+    case BLOCK_32X32: thresh -= 500; break;
+    case BLOCK_64X64: thresh -= 200; break;
+    default: break;
+    }
+    context_ptr->partition_horz4_allowed = 0;
+    context_ptr->partition_vert4_allowed = 0;
+    for (int i = 0; i < LABELS; ++i) {
+        if (int_score[i] >= thresh) {
+            if ((i >> 0) & 1) context_ptr->partition_horz4_allowed = 1;
+            if ((i >> 1) & 1) context_ptr->partition_vert4_allowed = 1;
+        }
+    }
+
+}
+#undef FEATURES
+#undef LABELS
+#endif
+#if LESS_RECTANGULAR_CHECK_LEVEL
+#if LESS_4_PARTITIONS
+void update_skip_next_nsq(
+#else
+void update_skip_next_nsq_for_a_b_shapes(
+#endif
+    ModeDecisionContext *context_ptr,
+    uint64_t *sq_cost, 
+    uint64_t *h_cost,
+    uint64_t *v_cost, 
+#if LESS_4_PARTITIONS
+    int *skip_next_nsq,
+    BlockSize *sq_bsize,
+    unsigned int *sq_source_variance,
+    int64_t *horz_rd,
+    int64_t *vert_rd,
+    int64_t *split_rd,
+    int64_t *best_rd,
+    float *part_ctx,
+    EbPictureBufferDesc *input_picture_ptr,
+    uint16_t sb_origin_x,
+    uint16_t sb_origin_y) {
+#else
+    int *skip_next_nsq) {
+#endif
+    switch (context_ptr->blk_geom->d1i)
+    {
+
+    // NS
+    case 0:
+        *sq_cost = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+        *h_cost = 0;
+        *v_cost = 0;
+#if LESS_4_PARTITIONS
+        *sq_bsize = context_ptr->blk_geom->bsize;
+        const uint32_t input_origin_index = ((sb_origin_y + context_ptr->blk_geom->origin_y) + input_picture_ptr->origin_y) * input_picture_ptr->stride_y + ((sb_origin_x + context_ptr->blk_geom->origin_x) + input_picture_ptr->origin_x);
+        const aom_variance_fn_ptr_t *fn_ptr = &mefn_ptr[context_ptr->blk_geom->bsize];
+        *sq_source_variance = eb_av1_get_sby_perpixel_variance(fn_ptr, (input_picture_ptr->buffer_y + input_origin_index), input_picture_ptr->stride_y, context_ptr->blk_geom->bsize);
+        *best_rd = *sq_cost;
+        *part_ctx = 0;
+#endif
+        break;
+
+    // H
+    case 1:
+        *h_cost = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+#if LESS_4_PARTITIONS
+        horz_rd[0] = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+#endif
+        break;
+    case 2:
+        *h_cost += context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+#if LESS_4_PARTITIONS
+        horz_rd[1] = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+        if ((horz_rd[0] + horz_rd[1]) < *best_rd) {
+            *best_rd = horz_rd[0] + horz_rd[1];
+            *part_ctx = 1;
+        }
+#endif
+        break;
+
+    // V
+    case 3:
+        *v_cost = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+#if LESS_4_PARTITIONS
+        vert_rd[0] = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+#endif
+        break;
+    case 4:
+        *v_cost += context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+#if LESS_4_PARTITIONS
+        vert_rd[1] = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+        if ((vert_rd[0] + vert_rd[1]) < *best_rd) {
+            *best_rd = vert_rd[0] + vert_rd[1];
+            *part_ctx = 2;
+        }
+#endif
+        *skip_next_nsq = (*h_cost > ((*sq_cost * context_ptr->sq_to_h_v_weight_to_skip_a_b) / 100)) ? 1 : *skip_next_nsq;
+        break;
+
+    // HA
+    case 5:
+        *skip_next_nsq = (*h_cost > ((*sq_cost * context_ptr->sq_to_h_v_weight_to_skip_a_b) / 100)) ? 1 : *skip_next_nsq;
+#if LESS_4_PARTITIONS
+        split_rd[0] = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost; 
+#endif
+        break;
+    case 6:
+        *skip_next_nsq = (*h_cost > ((*sq_cost * context_ptr->sq_to_h_v_weight_to_skip_a_b) / 100)) ? 1 : *skip_next_nsq;
+#if LESS_4_PARTITIONS
+        split_rd[1] = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost; 
+#endif
+        break;
+    case 7:
+        *skip_next_nsq = (*h_cost > ((*sq_cost * context_ptr->sq_to_h_v_weight_to_skip_a_b) / 100)) ? 1 : *skip_next_nsq;
+        break;
+
+    // HB
+    case 8:
+        *skip_next_nsq = (*h_cost > ((*sq_cost * context_ptr->sq_to_h_v_weight_to_skip_a_b) / 100)) ? 1 : *skip_next_nsq;
+        break;
+    case 9:
+        *skip_next_nsq = (*h_cost > ((*sq_cost * context_ptr->sq_to_h_v_weight_to_skip_a_b) / 100)) ? 1 : *skip_next_nsq;
+#if LESS_4_PARTITIONS
+        split_rd[2] = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost; 
+#endif
+        break;
+    case 10:
+        *skip_next_nsq = (*v_cost > ((*sq_cost * context_ptr->sq_to_h_v_weight_to_skip_a_b) / 100)) ? 1 : *skip_next_nsq;
+#if LESS_4_PARTITIONS
+        split_rd[3] = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+        if ((split_rd[0] + split_rd[1] + split_rd[2] + split_rd[3]) < *best_rd) {
+            *best_rd = split_rd[0] + split_rd[1] + split_rd[2] + split_rd[3];
+            *part_ctx = 3;
+        }
+#endif
+        break;
+    // VA
+    case 11:
+        *skip_next_nsq = (*v_cost > ((*sq_cost * context_ptr->sq_to_h_v_weight_to_skip_a_b) / 100)) ? 1 : *skip_next_nsq;
+        break;
+    case 12:
+        *skip_next_nsq = (*v_cost > ((*sq_cost * context_ptr->sq_to_h_v_weight_to_skip_a_b) / 100)) ? 1 : *skip_next_nsq;
+        break;
+    case 13:
+        *skip_next_nsq = (*v_cost > ((*sq_cost * context_ptr->sq_to_h_v_weight_to_skip_a_b) / 100)) ? 1 : *skip_next_nsq;
+        break;
+    // VB
+    case 14:
+        *skip_next_nsq = (*v_cost > ((*sq_cost * context_ptr->sq_to_h_v_weight_to_skip_a_b) / 100)) ? 1 : *skip_next_nsq;
+        break;
+    case 15:
+        *skip_next_nsq = (*v_cost > ((*sq_cost * context_ptr->sq_to_h_v_weight_to_skip_a_b) / 100)) ? 1 : *skip_next_nsq;
+        break;
+#if LESS_4_PARTITIONS
+    case 16:
+        if (((*sq_bsize) == BLOCK_16X16) || ((*sq_bsize) == BLOCK_32X32) || ((*sq_bsize) == BLOCK_64X64))
+            av1_ml_prune_4_partition(
+                context_ptr,
+                input_picture_ptr,
+                sb_origin_x,
+                sb_origin_y,
+                sq_bsize,
+                sq_source_variance,
+                horz_rd,
+                vert_rd,
+                split_rd,
+                best_rd,
+                part_ctx);
+        break;
+#endif
+    }
+}
+#endif
+
+#if AUTO_MAX_PARTITION
+#define FLT_MAX          3.402823466e+38F        // max value
+#define FEATURE_SIZE_MAX_MIN_PART_PRED 13
+
+uint32_t mds_idx_16x16[64] = {
+
+     67 ,  128, 336, 397,1168,1229,1437,1498,
+     189,  250, 458, 519,1290,1351,1559,1620,
+     605,  666, 874, 935,1706,1767,1975,2036,
+     727,  788, 996,1057,1828,1889,2097,2158,
+    2269, 2330,2538,2599,3370,3431,3639,3700,
+    2391, 2452,2660,2721,3492,3553,3761,3822,
+    2807, 2868,3076,3137,3908,3969,4177,4238,
+    2929, 2990,3198,3259,4030,4091,4299,4360
+
+};
+
+static EB_AV1_INTER_PREDICTION_FUNC_PTR   av1_inter_prediction_function_table[2] =
+{
+    av1_inter_prediction,
+    av1_inter_prediction_hbd
+};
+
+void av1_get_max_min_partition_features(
+    SequenceControlSet  *sequence_control_set_ptr,
+    PictureControlSet   *picture_control_set_ptr,
+    ModeDecisionContext *context_ptr,
+    float               *features,
+    EbPictureBufferDesc *input_picture_ptr,
+    uint16_t             sb_origin_x,
+    uint16_t             sb_origin_y) {
+#if 0
+    AV1_COMMON *const cm = &cpi->common;
+    MACROBLOCKD *xd = &x->e_mbd;
+    const BLOCK_SIZE sb_size = cm->seq_params.sb_size;
+
+    assert(sb_size == BLOCK_128X128);
+#endif
+    int f_idx = 0;
+#if 1
+    uint32_t qIndex = picture_control_set_ptr->parent_pcs_ptr->frm_hdr.quantization_params.base_q_idx;
+    const int dc_q = eb_av1_dc_quant_QTX(qIndex, 0, sequence_control_set_ptr->static_config.encoder_bit_depth) >> (sequence_control_set_ptr->static_config.encoder_bit_depth - 8);
+#else
+    const int dc_q = av1_dc_quant_QTX(x->qindex, 0, xd->bd) >> (xd->bd - 8);
+#endif
+    aom_clear_system_state();
+    const float log_q_sq = logf(1.0f + (float)(dc_q * dc_q) / 256.0f);
+
+    // Perform full-pixel single motion search in Y plane of 16x16 mbs in the sb
+    float sum_mv_row_sq = 0;
+    float sum_mv_row = 0;
+    float min_abs_mv_row = FLT_MAX;
+    float max_abs_mv_row = 0;
+
+    float sum_mv_col_sq = 0;
+    float sum_mv_col = 0;
+    float min_abs_mv_col = FLT_MAX;
+    float max_abs_mv_col = 0;
+
+    float sum_log_sse_sq = 0;
+    float sum_log_sse = 0;
+    float min_log_sse = FLT_MAX;
+    float max_log_sse = 0;
+
+    // 16x16 motion search results
+    for (uint32_t index = 0; index < 64; index++)
+    {
+
+        float mv_col;
+        float mv_row;
+        unsigned int sse = 0;
+
+        uint32_t blk_idx_mds = mds_idx_16x16[index];
+        const BlockGeom * blk_geom = get_blk_geom_mds(blk_idx_mds);
+
+        uint32_t me_sb_size = sequence_control_set_ptr->sb_sz;
+        uint32_t me_pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / me_sb_size;
+
+        const uint32_t cu_origin_x = sb_origin_x + blk_geom->origin_x;
+        const uint32_t cu_origin_y = sb_origin_y + blk_geom->origin_y;
+
+        uint32_t me_sb_x = (cu_origin_x / me_sb_size);
+        uint32_t me_sb_y = (cu_origin_y / me_sb_size);
+        uint32_t me_sb_addr = me_sb_x + me_sb_y * me_pic_width_in_sb;
+        uint32_t geom_offset_x = (me_sb_x & 0x1) * me_sb_size;
+        uint32_t geom_offset_y = (me_sb_y & 0x1) * me_sb_size;
+        uint32_t me_block_offset = get_me_info_index(picture_control_set_ptr->parent_pcs_ptr->max_number_of_pus_per_sb, blk_geom, geom_offset_x, geom_offset_y);
+
+        const MeLcuResults *me_results = picture_control_set_ptr->parent_pcs_ptr->me_results[me_sb_addr];
+        uint8_t total_me_cnt = me_results->total_me_candidate_index[me_block_offset];
+        const MeCandidate *me_block_results = me_results->me_candidate[me_block_offset];
+
+
+
+        for (uint8_t me_candidate_index = 0; me_candidate_index < total_me_cnt; ++me_candidate_index)
+        {
+            const MeCandidate *me_block_results_ptr = &me_block_results[me_candidate_index];
+            const uint8_t inter_direction = me_block_results_ptr->direction;
+            const uint8_t list0_ref_index = me_block_results_ptr->ref_idx_l0;
+            const uint8_t list1_ref_index = me_block_results_ptr->ref_idx_l1;
+
+            if (inter_direction == 0 && list0_ref_index == 0) {
+
+                EbAsm asm_type = sequence_control_set_ptr->encode_context_ptr->asm_type;
+
+                ModeDecisionCandidateBuffer *candidate_buffer = &(context_ptr->candidate_buffer_ptr_array[0][0]);
+                candidate_buffer->candidate_ptr = &(context_ptr->fast_candidate_array[0]);
+                ModeDecisionCandidate *candidate_ptr = candidate_buffer->candidate_ptr;
+                EbPictureBufferDesc   *prediction_ptr = candidate_buffer->prediction_ptr;
+
+                const InterpFilters interp_filters = av1_make_interp_filters(EIGHTTAP_REGULAR, EIGHTTAP_REGULAR);
+
+                EbBool is_highbd = (sequence_control_set_ptr->static_config.encoder_bit_depth == 8) ? (uint8_t)EB_FALSE : (uint8_t)EB_TRUE;
+
+                CodingUnit cu_ptr;
+                MacroBlockD av1xd;
+                cu_ptr.av1xd = &av1xd;
+                uint32_t mirow = cu_origin_y >> MI_SIZE_LOG2;
+                uint32_t micol = cu_origin_x >> MI_SIZE_LOG2;
+                cu_ptr.mds_idx = blk_idx_mds;
+
+                const int32_t bw = mi_size_wide[BLOCK_16X16];
+                const int32_t bh = mi_size_high[BLOCK_16X16];
+                cu_ptr.av1xd->mb_to_top_edge = -(int32_t)((mirow * MI_SIZE) * 8);
+                cu_ptr.av1xd->mb_to_bottom_edge = ((picture_control_set_ptr->parent_pcs_ptr->av1_cm->mi_rows - bw - mirow) * MI_SIZE) * 8;
+                cu_ptr.av1xd->mb_to_left_edge = -(int32_t)((micol * MI_SIZE) * 8);
+                cu_ptr.av1xd->mb_to_right_edge = ((picture_control_set_ptr->parent_pcs_ptr->av1_cm->mi_cols - bh - micol) * MI_SIZE) * 8;
+
+                MvUnit   mv_unit;
+                mv_unit.pred_direction = UNI_PRED_LIST_0;
+                mv_unit.mv->x = me_results->me_mv_array[me_block_offset][list0_ref_index].x_mv << 1;
+                mv_unit.mv->y = me_results->me_mv_array[me_block_offset][list0_ref_index].y_mv << 1;
+
+                av1_inter_prediction_function_table[is_highbd](
+                    NULL,  //picture_control_set_ptr,
+                    (uint32_t)interp_filters,
+                    &cu_ptr,
+                    0,//ref_frame_type,
+                    &mv_unit,
+                    0,//use_intrabc,
+#if OBMC_FLAG
+                    SIMPLE_TRANSLATION,
+                    0,
+                    0,
+#endif
+                    1,//compound_idx not used
+                    NULL,// interinter_comp not used
+#if II_COMP_FLAG
+                    NULL,
+                    NULL,
+                    NULL,
+                    NULL,
+                    0,
+                    0,
+                    0,
+                    0,
+#endif
+                    cu_origin_x,
+                    cu_origin_y,
+                    blk_geom->bwidth,
+                    blk_geom->bheight,
+                    !is_highbd ? ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[0][0]->object_ptr)->reference_picture : ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[0][0]->object_ptr)->reference_picture16bit, // use last = [List 0][Ref Index 0]
+                    NULL,//ref_pic_list1,
+                    prediction_ptr,
+                    blk_geom->origin_x,
+                    blk_geom->origin_y,
+                    0,//perform_chroma,
+                    (uint8_t)sequence_control_set_ptr->static_config.encoder_bit_depth);
+
+                const aom_variance_fn_ptr_t *fn_ptr = &mefn_ptr[blk_geom->bsize];
+
+                const uint32_t input_origin_index = (cu_origin_y + input_picture_ptr->origin_y) * input_picture_ptr->stride_y + (cu_origin_x + input_picture_ptr->origin_x);
+                const uint32_t cu_origin_index = blk_geom->origin_x + blk_geom->origin_y * SB_STRIDE_Y;
+                fn_ptr->vf((input_picture_ptr->buffer_y + input_origin_index), input_picture_ptr->stride_y, (prediction_ptr->buffer_y + cu_origin_index), prediction_ptr->stride_y, &sse);
+
+                mv_col = (float)(candidate_ptr->motion_vector_xl0 >> 3);
+                mv_row = (float)(candidate_ptr->motion_vector_yl0 >> 3);
+
+                break;
+            }
+        }
+
+        const float log_sse = logf(1.0f + (float)sse);
+        const float abs_mv_row = fabsf(mv_row);
+        const float abs_mv_col = fabsf(mv_col);
+
+        sum_mv_row_sq += mv_row * mv_row;
+        sum_mv_row += mv_row;
+        sum_mv_col_sq += mv_col * mv_col;
+        sum_mv_col += mv_col;
+
+        if (abs_mv_row < min_abs_mv_row) min_abs_mv_row = abs_mv_row;
+        if (abs_mv_row > max_abs_mv_row) max_abs_mv_row = abs_mv_row;
+        if (abs_mv_col < min_abs_mv_col) min_abs_mv_col = abs_mv_col;
+        if (abs_mv_col > max_abs_mv_col) max_abs_mv_col = abs_mv_col;
+
+        sum_log_sse_sq += log_sse * log_sse;
+        sum_log_sse += log_sse;
+        if (log_sse < min_log_sse) min_log_sse = log_sse;
+        if (log_sse > max_log_sse) max_log_sse = log_sse;
+    }
+
+    aom_clear_system_state();
+    const float avg_mv_row = sum_mv_row / 64.0f;
+    const float var_mv_row = sum_mv_row_sq / 64.0f - avg_mv_row * avg_mv_row;
+
+    const float avg_mv_col = sum_mv_col / 64.0f;
+    const float var_mv_col = sum_mv_col_sq / 64.0f - avg_mv_col * avg_mv_col;
+
+    const float avg_log_sse = sum_log_sse / 64.0f;
+    const float var_log_sse = sum_log_sse_sq / 64.0f - avg_log_sse * avg_log_sse;
+
+    features[f_idx++] = avg_log_sse;
+    features[f_idx++] = avg_mv_col;
+    features[f_idx++] = avg_mv_row;
+    features[f_idx++] = log_q_sq;
+    features[f_idx++] = max_abs_mv_col;
+    features[f_idx++] = max_abs_mv_row;
+    features[f_idx++] = max_log_sse;
+    features[f_idx++] = min_abs_mv_col;
+    features[f_idx++] = min_abs_mv_row;
+    features[f_idx++] = min_log_sse;
+    features[f_idx++] = var_log_sse;
+    features[f_idx++] = var_mv_col;
+    features[f_idx++] = var_mv_row;
+
+    assert(f_idx == FEATURE_SIZE_MAX_MIN_PART_PRED);
+}
+
+#define MAX_NUM_CLASSES_MAX_MIN_PART_PRED 4
+BlockSize av1_predict_max_partition(
+    SequenceControlSet  *sequence_control_set_ptr,
+    PictureControlSet   *picture_control_set_ptr,
+    const float         *features,
+    EbPictureBufferDesc *input_picture_ptr,
+    uint16_t             sb_origin_x,
+    uint16_t             sb_origin_y) {
+
+    float scores[MAX_NUM_CLASSES_MAX_MIN_PART_PRED] = { 0.0f },
+        probs[MAX_NUM_CLASSES_MAX_MIN_PART_PRED] = { 0.0f };
+
+    const NN_CONFIG *nn_config = &av1_max_part_pred_nn_config;
+
+    assert(picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion != NOT_IN_USE);
+
+    aom_clear_system_state();
+    av1_nn_predict(features, nn_config, 1, scores);
+    av1_nn_softmax(scores, probs, MAX_NUM_CLASSES_MAX_MIN_PART_PRED);
+
+    int result = MAX_NUM_CLASSES_MAX_MIN_PART_PRED - 1;
+
+    if (picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion == DIRECT_PRED) {
+        result = 0;
+        float max_prob = probs[0];
+        for (int i = 1; i < MAX_NUM_CLASSES_MAX_MIN_PART_PRED; ++i) {
+            if (probs[i] > max_prob) {
+                max_prob = probs[i];
+                result = i;
+            }
+        }
+    }
+    else if (picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion ==
+        RELAXED_PRED) {
+        for (result = MAX_NUM_CLASSES_MAX_MIN_PART_PRED - 1; result >= 0;
+            --result) {
+            if (result < MAX_NUM_CLASSES_MAX_MIN_PART_PRED - 1) {
+                probs[result] += probs[result + 1];
+            }
+            if (probs[result] > 0.2) break;
+        }
+    }
+    else if (picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion == ADAPT_PRED) {
+
+        const uint32_t input_origin_index = (sb_origin_y + input_picture_ptr->origin_y) * input_picture_ptr->stride_y + (sb_origin_x + input_picture_ptr->origin_x);
+        const aom_variance_fn_ptr_t *fn_ptr = &mefn_ptr[BLOCK_128X128];
+        const unsigned int source_variance = eb_av1_get_sby_perpixel_variance(fn_ptr, (input_picture_ptr->buffer_y + input_origin_index), input_picture_ptr->stride_y, BLOCK_128X128);
+
+        if (source_variance > 16) {
+            const double thresh = source_variance < 128 ? 0.05 : 0.1;
+            for (result = MAX_NUM_CLASSES_MAX_MIN_PART_PRED - 1; result >= 0;
+                --result) {
+                if (result < MAX_NUM_CLASSES_MAX_MIN_PART_PRED - 1) {
+                    probs[result] += probs[result + 1];
+                }
+                if (probs[result] > thresh) break;
+            }
+        }
+
+    }
+
+    return (BlockSize)((result + 2) * 3);
+}
+
+#endif
 
 EB_EXTERN EbErrorType mode_decision_sb(
     SequenceControlSet                *sequence_control_set_ptr,
@@ -8021,8 +9240,46 @@ EB_EXTERN EbErrorType mode_decision_sb(
         input_picture_ptr = picture_control_set_ptr->input_frame16bit;
     }
 
+#if AUTO_MAX_PARTITION
+#if USE_ADAPT_PRED
+    picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion = ADAPT_PRED; // 
+#else
+    picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion = DIRECT_PRED;//RELAXED_PRED;// ADAPT_PRED; // 
+#endif
+    BlockSize max_bsize = BLOCK_128X128;
+
+    if (picture_control_set_ptr->slice_type != I_SLICE && sequence_control_set_ptr->static_config.super_block_size == 128) {
+        if ((sb_origin_x + sequence_control_set_ptr->static_config.super_block_size) < picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header.max_frame_width &&
+            (sb_origin_y + sequence_control_set_ptr->static_config.super_block_size) < picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header.max_frame_height) {
+
+            float features[FEATURE_SIZE_MAX_MIN_PART_PRED] = { 0.0f };
+
+            av1_get_max_min_partition_features(sequence_control_set_ptr, picture_control_set_ptr, context_ptr, features, input_picture_ptr, sb_origin_x, sb_origin_y);
+            max_bsize = MIN(av1_predict_max_partition(sequence_control_set_ptr, picture_control_set_ptr, features, input_picture_ptr, sb_origin_x, sb_origin_y), max_bsize);
+        }
+    }
+    //printf("%d\t%d\t%d\t%d\t%d\n", picture_control_set_ptr->picture_number, sb_origin_x, sb_origin_y, max_bwidth, max_bheight);
+#endif
+
     //CU Loop
     cuIdx = 0;  //index over mdc array
+
+#if LESS_RECTANGULAR_CHECK_LEVEL
+    uint64_t sq_cost = 0;
+    uint64_t h_cost;
+    uint64_t v_cost;
+#endif
+
+
+#if LESS_4_PARTITIONS
+    BlockSize sq_bsize = BLOCK_128X128;
+    unsigned int sq_source_variance = 0;
+    int64_t horz_rd[2] = { 0 };
+    int64_t vert_rd[2] = { 0 };
+    int64_t split_rd[4] = { 0 };
+    int64_t best_rd = 0;
+    float part_ctx = 0;
+#endif
 
     uint32_t blk_idx_mds = 0;
     uint32_t  d1_blocks_accumlated = 0;
@@ -8123,8 +9380,12 @@ EB_EXTERN EbErrorType mode_decision_sb(
             // Copy results
             CodingUnit *src_cu = &context_ptr->md_cu_arr_nsq[redundant_blk_mds];
             CodingUnit *dst_cu = cu_ptr;
-
+#if PAL_SUP
+         
+            move_cu_data_redund(picture_control_set_ptr, context_ptr,src_cu, dst_cu);
+#else
             move_cu_data_redund(src_cu, dst_cu);
+#endif
             memcpy(&context_ptr->md_local_cu_unit[cu_ptr->mds_idx], &context_ptr->md_local_cu_unit[redundant_blk_mds], sizeof(MdCodingUnit));
 
             if (!context_ptr->hbd_mode_decision) {
@@ -8145,21 +9406,14 @@ EB_EXTERN EbErrorType mode_decision_sb(
             }
 
             memcpy(&context_ptr->md_ep_pipe_sb[cu_ptr->mds_idx], &context_ptr->md_ep_pipe_sb[redundant_blk_mds], sizeof(MdEncPassCuData));
-#if ADD_SUPPORT_TO_SKIP_PART_N
-            if (d1_block_itr == 0) {
-                uint8_t sq_index = LOG2F(context_ptr->blk_geom->sq_size) - 2;
-                context_ptr->parent_sq_type[sq_index] = src_cu->prediction_mode_flag;
-                context_ptr->parent_sq_has_coeff[sq_index] = src_cu->block_has_coeff;
-                context_ptr->parent_sq_pred_mode[sq_index] = src_cu->pred_mode;
-            }
-#else
+
             if (context_ptr->blk_geom->shape == PART_N) {
                 uint8_t sq_index = LOG2F(context_ptr->blk_geom->sq_size) - 2;
                 context_ptr->parent_sq_type[sq_index] = src_cu->prediction_mode_flag;
                 context_ptr->parent_sq_has_coeff[sq_index] = src_cu->block_has_coeff;
                 context_ptr->parent_sq_pred_mode[sq_index] = src_cu->pred_mode;
             }
-#endif
+
         }
         else
 #if FIX_SKIP_REDUNDANT_BLOCK
@@ -8213,7 +9467,13 @@ EB_EXTERN EbErrorType mode_decision_sb(
             if (cu_ptr->mds_idx >= next_non_skip_blk_idx_mds && skip_next_sq == 1)
                 skip_next_sq = 0;
 
+#if AUTO_MAX_PARTITION
+            EbBool auto_max_partition_block_skip = (context_ptr->blk_geom->bwidth > block_size_wide[max_bsize] || context_ptr->blk_geom->bheight > block_size_high[max_bsize]) && (mdcResultTbPtr->leaf_data_array[cuIdx].split_flag == EB_TRUE);
+
+            if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[cu_ptr->mds_idx] && !skip_next_nsq && !skip_next_sq && !auto_max_partition_block_skip) {
+#else
             if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[cu_ptr->mds_idx] && !skip_next_nsq && !skip_next_sq) {
+#endif
                 md_encode_block(
                     sequence_control_set_ptr,
                     picture_control_set_ptr,
@@ -8225,6 +9485,14 @@ EB_EXTERN EbErrorType mode_decision_sb(
                     bestcandidate_buffers);
 
             }
+#if AUTO_MAX_PARTITION
+            else if (auto_max_partition_block_skip) {
+                if (context_ptr->blk_geom->shape != PART_N)
+                    context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost = (MAX_MODE_COST >> 4);
+                else
+                    context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost = (MAX_MODE_COST >> 10);
+            }
+#endif
             else if (skip_next_sq) {
                 context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost = (MAX_MODE_COST >> 10);
             }
@@ -8268,6 +9536,30 @@ EB_EXTERN EbErrorType mode_decision_sb(
                 skip_next_nsq = 1;
         }
 
+#if LESS_RECTANGULAR_CHECK_LEVEL
+        if (context_ptr->sq_to_h_v_weight_to_skip_a_b != (uint32_t)~0 && blk_geom->bsize > BLOCK_8X8)
+#if LESS_4_PARTITIONS
+            update_skip_next_nsq(
+                context_ptr,
+                &sq_cost,
+                &h_cost,
+                &v_cost,
+                &skip_next_nsq,
+                &sq_bsize,
+                &sq_source_variance,
+                horz_rd,
+                vert_rd,
+                split_rd,
+                &best_rd,
+                &part_ctx,
+                input_picture_ptr,
+                sb_origin_x,
+                sb_origin_y);
+#else
+            update_skip_next_nsq_for_a_b_shapes(context_ptr, &sq_cost, &h_cost, &v_cost, &skip_next_nsq);
+#endif
+#endif
+
         if (blk_geom->shape != PART_N) {
             if (blk_geom->nsi + 1 < blk_geom->totns)
                 md_update_all_neighbour_arrays(
@@ -8308,7 +9600,10 @@ EB_EXTERN EbErrorType mode_decision_sb(
             d1_block_itr = 0;
             d1_first_block = 1;
 #endif
-            context_ptr->coeff_based_skip_atb = picture_control_set_ptr->parent_pcs_ptr->coeff_based_skip_atb && context_ptr->md_cu_arr_nsq[lastCuIndex_mds].block_has_coeff == 0 ? 1 : 0;
+            context_ptr->coeff_based_skip_atb = picture_control_set_ptr->parent_pcs_ptr->coeff_based_skip_atb &&
+                context_ptr->md_local_cu_unit[lastCuIndex_mds].avail_blk_flag &&
+                context_ptr->md_cu_arr_nsq[lastCuIndex_mds].block_has_coeff == 0 ? 1 : 0;
+
             if (context_ptr->md_cu_arr_nsq[lastCuIndex_mds].split_flag == EB_FALSE)
             {
                 md_update_all_neighbour_arrays_multiple(
