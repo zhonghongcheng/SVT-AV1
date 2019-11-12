@@ -259,7 +259,7 @@ int32_t read_y4m_frame_delimiter(EbConfig *cfg){
         return EB_ErrorNone;
     }
 
-    if (EB_STRCMP((const char*)bufferY4Mheader, "FRAME\n") != 0) {
+    if (EB_STRCMP((const char*)bufferY4Mheader, "FRAME\n") != 0 && EB_STRCMP((const char*)bufferY4Mheader, "FRAME\r\n") != 0) {
         fprintf(cfg->error_log_file, "Failed to read proper y4m frame delimeter. Read broken.\n");
         return EB_ErrorBadParameter;
     }
