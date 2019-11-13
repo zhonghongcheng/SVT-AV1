@@ -2072,6 +2072,9 @@ void CopyApiFromApp(
     sequence_control_set_ptr->static_config.output_stat_file = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->output_stat_file;
     sequence_control_set_ptr->use_input_stat_file = sequence_control_set_ptr->static_config.input_stat_file ? 1 : 0;
     sequence_control_set_ptr->use_output_stat_file = sequence_control_set_ptr->static_config.output_stat_file ? 1 : 0;
+#if STAT_UPDATE_SW
+    sequence_control_set_ptr->static_config.slide_win_length = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->slide_win_length;
+#endif
 #endif
     // Deblock Filter
     sequence_control_set_ptr->static_config.disable_dlf_flag = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->disable_dlf_flag;
@@ -2593,6 +2596,9 @@ EbErrorType eb_svt_enc_init_parameter(
     config_ptr->min_qp_allowed = 10;
     config_ptr->base_layer_switch_mode = 0;
     config_ptr->enc_mode = MAX_ENC_PRESET;
+#if STAT_UPDATE_SW
+    config_ptr->slide_win_length = 40;
+#endif
 #if TWO_PASS_USE_2NDP_ME_IN_1STP
     config_ptr->snd_pass_enc_mode = MAX_ENC_PRESET + 1;
 #endif

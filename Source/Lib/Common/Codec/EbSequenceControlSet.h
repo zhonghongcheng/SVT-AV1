@@ -220,6 +220,15 @@ extern "C" {
 #if TWO_PASS
         EbBool                                  use_input_stat_file;
         EbBool                                  use_output_stat_file;
+#if STAT_UPDATE_SW
+        stat_ref_info_t                         *stat_ref_info[STAT_LA_LENGTH];
+        dept_stat_t                             *stat_sw[STAT_LA_LENGTH];
+        uint64_t                                progagate_poc[STAT_LA_LENGTH];
+        uint64_t                                stat_queue_head_index;
+        EbBool                                  stat_queue[STAT_LA_LENGTH];
+        EbHandle                                stat_info_mutex;
+        EbHandle                                stat_queue_mutex;
+#endif
 #endif
     } SequenceControlSet;
 

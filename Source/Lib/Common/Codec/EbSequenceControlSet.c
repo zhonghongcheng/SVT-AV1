@@ -13,6 +13,16 @@ static void eb_sequence_control_set_dctor(EbPtr p)
     SequenceControlSet *obj = (SequenceControlSet*)p;
     EB_FREE_ARRAY(obj->sb_params_array);
     EB_FREE_ARRAY(obj->sb_geom);
+#if STAT_UPDATE_SW
+    for (uint16_t sw_index = 0; sw_index < STAT_LA_LENGTH; sw_index++)
+    {
+        EB_FREE_ARRAY(obj->stat_ref_info[sw_index]);
+        EB_FREE_ARRAY(obj->stat_sw[sw_index]);
+    }
+    EB_DESTROY_MUTEX(obj->stat_info_mutex);
+    EB_DESTROY_MUTEX(obj->stat_queue_mutex);
+#endif
+
 }
 
 /**************************************************************************************************
@@ -440,6 +450,27 @@ extern EbErrorType sb_params_init(
                 EB_TRUE;
         }
     }
+#if STAT_UPDATE_SW
+    if(sequence_control_set_ptr->use_output_stat_file)
+        printf("pass0 sqcs input slide_win_length=%d\n", sequence_control_set_ptr->static_config.slide_win_length);
+    sequence_control_set_ptr->stat_queue_head_index = 0;
+    for (uint16_t sw_index = 0; sw_index < STAT_LA_LENGTH; sw_index++)
+    {
+        uint16_t   pictureBlockWidth  = pictureLcuWidth;
+        uint16_t   pictureBlockHeight = pictureLcuHeight;
+        EB_FREE_ARRAY(sequence_control_set_ptr->stat_ref_info[sw_index]);
+        EB_MALLOC_ARRAY(sequence_control_set_ptr->stat_ref_info[sw_index], pictureBlockWidth * pictureBlockHeight + 100);
+        EB_FREE_ARRAY(sequence_control_set_ptr->stat_sw[sw_index]);
+        EB_MALLOC_ARRAY(sequence_control_set_ptr->stat_sw[sw_index], pictureBlockWidth * pictureBlockHeight + 100);
+        for(int i = 0; i < (pictureBlockWidth * pictureBlockHeight + 100); i++) {
+            memset(&(sequence_control_set_ptr->stat_ref_info[sw_index][i]), 0, sizeof(stat_ref_info_t));
+            memset(&(sequence_control_set_ptr->stat_sw[sw_index][i]), 0, sizeof(dept_stat_t));
+        }
+        sequence_control_set_ptr->stat_queue[sw_index] = EB_FALSE;
+    }
+    EB_CREATE_MUTEX(sequence_control_set_ptr->stat_info_mutex);
+    EB_CREATE_MUTEX(sequence_control_set_ptr->stat_queue_mutex);
+#endif
 
     sequence_control_set_ptr->picture_width_in_sb = pictureLcuWidth;
     sequence_control_set_ptr->picture_height_in_sb = pictureLcuHeight;

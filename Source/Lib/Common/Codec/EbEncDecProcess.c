@@ -1128,6 +1128,9 @@ void PadRefAndSetFlags(
     referenceObject->slice_type = picture_control_set_ptr->parent_pcs_ptr->slice_type;
 #if TWO_PASS
     referenceObject->referenced_area_avg = picture_control_set_ptr->parent_pcs_ptr->referenced_area_avg;
+#if STAT_UPDATE_SW
+    referenceObject->decode_order = picture_control_set_ptr->parent_pcs_ptr->decode_order;
+#endif
 #endif
 }
 

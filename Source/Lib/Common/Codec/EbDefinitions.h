@@ -34,6 +34,7 @@ extern "C" {
 #endif
 
 #define STAT_UPDATE                  1
+#define STAT_UPDATE_SW               0
 
 #define FIX_ALTREF                   1 // Address ALTREF mismatch between rtime-m0-test and master: fixed actual_future_pics derivation, shut padding of the central frame, fixed end past frame index prior to window shrinking
 #define FIX_NEAREST_NEW              1 // Address NEAREST_NEW mismatch between rtime-m0-test and master: fixed injection and fixed settings
@@ -3330,6 +3331,17 @@ typedef struct dep_stat_t {
 
 } dept_stat_t;
 
+#if STAT_UPDATE_SW
+#define STAT_LA_LENGTH 100
+#define MAX_SB_CNT 256
+typedef struct stat_ref_info_t
+{
+    uint16_t                        ref_sb_cnt;
+    uint16_t                        ref_sb_decode_order[MAX_SB_CNT];
+    uint16_t                        ref_sb_index[MAX_SB_CNT];
+    uint32_t                        referenced_area[MAX_SB_CNT];    // temporal for recover referenced_area
+} stat_ref_info_t;
+#endif
 
 typedef struct stat_struct_t
 {

@@ -372,6 +372,86 @@ static int get_kf_boost_from_r0(double r0, int frames_to_key) {
     return boost;
 }
 #endif
+
+#if STAT_UPDATE_SW
+/******************************************************
+ * Write Stat Info to File
+ ******************************************************/
+void write_stat_info_to_file(
+    SequenceControlSet    *sequence_control_set_ptr,
+    uint64_t               stat_queue_head_index,
+    uint32_t               slide_win_length)
+{
+    eb_block_on_mutex(sequence_control_set_ptr->stat_info_mutex);
+    uint64_t decode_order = stat_queue_head_index + slide_win_length;
+    unsigned int pic_width_in_block  = (uint8_t)((sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz);
+    unsigned int pic_height_in_block = (uint8_t)((sequence_control_set_ptr->seq_header.max_frame_height + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz);
+    unsigned int block_total_count = pic_width_in_block * pic_height_in_block;
+    dept_stat_t *propagate_dept_stat[slide_win_length];
+    stat_struct_t stat_struct;
+
+    memset(&stat_struct, 0, sizeof(stat_struct));
+    // build propagate dept_stat_t
+    for(int frame = 0; frame < slide_win_length; frame++) {
+        EB_MALLOC_ARRAY(propagate_dept_stat[frame], block_total_count+100);
+        for(int i = 0; i < (block_total_count+100); i++)
+            memset(&(propagate_dept_stat[frame][i]), 0, sizeof(dept_stat_t));
+    }
+
+    for(int frame=0; frame < slide_win_length; frame++) {
+        stat_ref_info_t *stat_ref_info = sequence_control_set_ptr->stat_ref_info[(decode_order - frame) % STAT_LA_LENGTH]
+;
+        dept_stat_t *propagate_dept_stat_ptr = propagate_dept_stat[slide_win_length - frame - 1];
+        for(int block_index=0; block_index < block_total_count; block_index++) {
+            for(int sb_index=0; sb_index < stat_ref_info[block_index].ref_sb_cnt; sb_index++) {
+                uint32_t ref_decode_order = stat_ref_info[block_index].ref_sb_decode_order[sb_index];
+                if(ref_decode_order > stat_queue_head_index && ref_decode_order <= decode_order)
+                {
+                    dept_stat_t *ref_propagate_dept_stat_ptr = propagate_dept_stat[ref_decode_order - stat_queue_head_index - 1];
+                    //assert(stat_ref_info[block_index].ref_sb_index[sb_index]<block_total_count);
+                    ref_propagate_dept_stat_ptr[stat_ref_info[block_index].ref_sb_index[sb_index]].mc_flow = propagate_dept_stat_ptr[block_index].mc_flow;
+                    // to be continued
+                }
+            }
+        }
+    }
+
+    // calculate new referenced_area for frame before slide window
+    int32_t ref_poc = sequence_control_set_ptr->progagate_poc[stat_queue_head_index] ;
+    //printf("write_stat_info_to_file write poc=%d, decode_order=%d, curr_poc=%d\n", ref_poc, stat_queue_head_index, picture_control_set_ptr->parent_pcs_ptr->picture_number);
+
+    for(int frame=0; frame < slide_win_length; frame++) {
+        int32_t curr_decode_order = (decode_order - frame) % STAT_LA_LENGTH;
+        stat_ref_info_t *stat_ref_info = sequence_control_set_ptr->stat_ref_info[curr_decode_order];
+        assert((curr_decode_order-stat_queue_head_index-1)>=0 && (curr_decode_order-stat_queue_head_index-1)<slide_win_length);
+        for(int block_index=0; block_index < block_total_count; block_index++) {
+            for(int sb_index=0; sb_index < stat_ref_info[block_index].ref_sb_cnt; sb_index++) {
+                uint32_t head_decode_order = stat_ref_info[block_index].ref_sb_decode_order[sb_index];
+                if(head_decode_order == stat_queue_head_index) {
+                    stat_struct.referenced_area[stat_ref_info[block_index].ref_sb_index[sb_index]] += (uint32_t)(stat_ref_info[block_index].referenced_area[sb_index]);
+                    // to be continued
+                    //stat_struct.cur_stat[stat_ref_info[block_index].ref_sb_index[sb_index]] = propagate_dept_stat[frame];
+                }
+            }
+        }
+    }
+    for(int frame=0; frame < slide_win_length; frame++)
+        EB_FREE_ARRAY(propagate_dept_stat[frame]);
+    eb_release_mutex(sequence_control_set_ptr->stat_info_mutex);
+
+    eb_block_on_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
+    int32_t fseek_return_value = fseek(sequence_control_set_ptr->static_config.output_stat_file, (long)ref_poc * sizeof(stat_struct_t), SEEK_SET);
+    if (fseek_return_value != 0)
+        printf("Error in fseek  returnVal %i\n", fseek_return_value);
+
+    fwrite(&stat_struct,
+        sizeof(stat_struct_t),
+        (size_t)1,
+        sequence_control_set_ptr->static_config.output_stat_file);
+    eb_release_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
+}
+
+#else
 /******************************************************
  * Write Stat to File
  * write stat_struct per frame in the first pass
@@ -435,6 +515,7 @@ void write_stat_to_file(
         sequence_control_set_ptr->static_config.output_stat_file);
     eb_release_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
 }
+#endif
 #endif
 /******************************************************
  * Entropy Coding Kernel
@@ -558,6 +639,40 @@ void* entropy_coding_kernel(void *input_ptr)
 
                         encode_slice_finish(picture_control_set_ptr->entropy_coder_ptr);
 #if TWO_PASS
+#if STAT_UPDATE_SW
+                        if (sequence_control_set_ptr->use_output_stat_file) {
+                            EbBool is_ready = EB_TRUE;
+                            uint32_t slide_win_length = sequence_control_set_ptr->static_config.slide_win_length;
+                            uint32_t stat_queue_head_index = 0;
+
+                            eb_block_on_mutex(sequence_control_set_ptr->stat_queue_mutex);
+                            stat_queue_head_index = sequence_control_set_ptr->stat_queue_head_index;
+                            sequence_control_set_ptr->stat_queue[picture_control_set_ptr->parent_pcs_ptr->decode_order] = EB_TRUE;
+                            if((stat_queue_head_index + slide_win_length + 1) >= sequence_control_set_ptr->static_config.frames_to_be_encoded)
+                                slide_win_length = sequence_control_set_ptr->static_config.frames_to_be_encoded - stat_queue_head_index - 1;
+                            for(int frame = stat_queue_head_index; frame <= (stat_queue_head_index + slide_win_length); frame++) {
+                                if(!sequence_control_set_ptr->stat_queue[frame])
+                                    is_ready = EB_FALSE;
+                            }
+                            while(is_ready) {
+                                //printf("kelvin ---> slide_win_length=%d, stat_queue_head_index=%d\n", slide_win_length, stat_queue_head_index);
+                                write_stat_info_to_file(sequence_control_set_ptr,
+                                        stat_queue_head_index,
+                                        slide_win_length);
+                                stat_queue_head_index++;
+                                if((stat_queue_head_index + slide_win_length + 1) >= sequence_control_set_ptr->static_config.frames_to_be_encoded)
+                                    slide_win_length = sequence_control_set_ptr->static_config.frames_to_be_encoded - stat_queue_head_index - 1;
+                                for(int frame = stat_queue_head_index; frame <= (stat_queue_head_index + slide_win_length); frame++) {
+                                    if(!sequence_control_set_ptr->stat_queue[frame])
+                                        is_ready = EB_FALSE;
+                                }
+                                if(stat_queue_head_index == sequence_control_set_ptr->static_config.frames_to_be_encoded)
+                                    is_ready = EB_FALSE;
+                                sequence_control_set_ptr->stat_queue_head_index = stat_queue_head_index;
+                            }
+                            eb_release_mutex(sequence_control_set_ptr->stat_queue_mutex);
+                        }
+#else
                         // for Non Reference frames
                         if (sequence_control_set_ptr->use_output_stat_file &&
                             !picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
@@ -566,15 +681,19 @@ void* entropy_coding_kernel(void *input_ptr)
                                 *picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr,
                                 picture_control_set_ptr->parent_pcs_ptr->picture_number);
 #endif
+#endif
                         // Release the List 0 Reference Pictures
                         for (ref_idx = 0; ref_idx < picture_control_set_ptr->parent_pcs_ptr->ref_list0_count; ++ref_idx) {
 #if TWO_PASS
+#if STAT_UPDATE_SW
+#else
                             if (sequence_control_set_ptr->use_output_stat_file &&
                                 picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx] != EB_NULL && picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx]->live_count == 1)
                                 write_stat_to_file(
                                     sequence_control_set_ptr,
                                     ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx]->object_ptr)->stat_struct,
                                     ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx]->object_ptr)->ref_poc);
+#endif
 #endif
                             if (picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx] != EB_NULL) {
 
@@ -585,12 +704,15 @@ void* entropy_coding_kernel(void *input_ptr)
                         // Release the List 1 Reference Pictures
                         for (ref_idx = 0; ref_idx < picture_control_set_ptr->parent_pcs_ptr->ref_list1_count; ++ref_idx) {
 #if TWO_PASS
+#if STAT_UPDATE_SW
+#else
                             if (sequence_control_set_ptr->use_output_stat_file &&
                                 picture_control_set_ptr->ref_pic_ptr_array[1][ref_idx] != EB_NULL && picture_control_set_ptr->ref_pic_ptr_array[1][ref_idx]->live_count == 1)
                                 write_stat_to_file(
                                     sequence_control_set_ptr,
                                     ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[1][ref_idx]->object_ptr)->stat_struct,
                                     ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[1][ref_idx]->object_ptr)->ref_poc);
+#endif
 #endif
 
                             if (picture_control_set_ptr->ref_pic_ptr_array[1][ref_idx] != EB_NULL)

@@ -19,6 +19,7 @@ extern "C" {
 #define TILES    1
 #define TWO_PASS_USE_2NDP_ME_IN_1STP                1
 #define TWO_PASS                                    1
+#define STAT_UPDATE_SW                              0
 #define ALT_REF_OVERLAY_APP                         1
     //***HME***
 #define EB_HME_SEARCH_AREA_COLUMN_MAX_COUNT         2
@@ -196,6 +197,10 @@ typedef struct EbSvtAv1EncConfiguration
     FILE                    *input_stat_file;
     /* output stats file */
     FILE                    *output_stat_file;
+#if 1 //STAT_UPDATE_SW
+    /* Slide window length for 2pass */
+    uint32_t                 slide_win_length;
+#endif
 #endif
     /* Enable picture QP scaling between hierarchical levels
     *

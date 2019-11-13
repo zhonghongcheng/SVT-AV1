@@ -179,6 +179,9 @@ typedef struct EbConfig
     FILE                    *output_stat_file;
     EbBool                  use_input_stat_file;
     EbBool                  use_output_stat_file;
+#if STAT_UPDATE_SW
+    uint32_t                slide_win_length;
+#endif
 #endif
     EbBool                  y4m_input;
     unsigned char           y4m_buf[9];
