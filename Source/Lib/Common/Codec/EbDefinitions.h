@@ -33,16 +33,17 @@
 extern "C" {
 #endif
 #define NO_LAD  0 // no Look ahead for 1 pass. only on for single pass
-#define ACT_B1_QPM_B_OFF 0 //Action B1: turn QPM off for non I base layer (only active for I).
-#define ACT_B2_QPM_VAR_OFF 0 // Action B2: Turn OFF variance based actions (for I slice).
-#define ACT_B3_QPM_I_POS_OFF 0 // Action B3: Turn QPM actions that increase the QP off (for I slice).
-#define ACT_B4_QPM_I_NEG_OFF 0 // Action B4: Turn QPM actions that decrease the QP off (for I slice).
+#define ACT_B1_QPM_B_OFF 1 //Action B1: turn QPM off for non I base layer (only active for I).
+#define ACT_B2_QPM_VAR_OFF 1 // Action B2: Turn OFF variance based actions (for I slice).
+#define ACT_B3_QPM_I_POS_OFF 1 // Action B3: Turn QPM actions that increase the QP off (for I slice).
+#define ACT_B4_QPM_I_NEG_OFF 1 // Action B4: Turn QPM actions that decrease the QP off (for I slice).
 #define ACT_B_QPM_OFF 1
 
-#define ACT_A1_QPS_B_ME_BASED_OFF 0 //Action A1: turn QPS ME realted actions off for non I base layer
-#define ACT_A2_QPS_B_BOOST_OFF 0 //Action A2: turn QPS boost factor off for non I base layer
-#define ACT_A3_QPS_B_CLIPPING_OFF  0 //Action A3: turn QPS clipping off for non I base layer
+#define ACT_A1_QPS_B_ME_BASED_OFF 1 //Action A1: turn QPS ME realted actions off for non I base layer
+#define ACT_A2_QPS_B_BOOST_OFF 1 //Action A2: turn QPS boost factor off for non I base layer
+#define ACT_A3_QPS_B_CLIPPING_OFF  1 //Action A3: turn QPS clipping off for non I base layer
 #define ACT_A4_QPS_B_OFF 1 //Action A4: turn adaptive QPS off for non I base layer
+#define ACT_A5_QPS_I_OFF 1 //Action A5: turn adaptive QPS off for I
 
     
 /* Note: shutting the macro PAL_SUP will not give SS as pcs->palette_mode = 0

@@ -4299,7 +4299,11 @@ void* rate_control_kernel(void *input_ptr)
                     // if there are need enough pictures in the LAD/SlidingWindow, the adaptive QP scaling is not used
 #if TWO_PASS
                     int32_t new_qindex;
-#if ACT_A4_QPS_B_OFF
+#if ACT_A5_QPS_I_OFF
+                    if (!sequence_control_set_ptr->use_output_stat_file && picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH &&
+                        0) {
+
+#elif ACT_A4_QPS_B_OFF
                     if (!sequence_control_set_ptr->use_output_stat_file && picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH && 
                         picture_control_set_ptr->slice_type == I_SLICE) {
 #else
