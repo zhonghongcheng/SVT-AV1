@@ -1465,6 +1465,9 @@ void init_considered_block(
         printf("not supported mdc_depth_level");
         break;
     }
+#if PRED_ONLY
+    depth_refinement_mode = Pred;
+#endif
     while (blk_index < sequence_control_set_ptr->max_block_cnt) {
         const BlockGeom * blk_geom = get_blk_geom_mds(blk_index);
         tot_d1_blocks =
@@ -1493,7 +1496,9 @@ void init_considered_block(
                             sequence_control_set_ptr->input_resolution,
                             picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag,
                             picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level);
-
+#if PRED_ONLY
+                adjusted_refinement_mode = Pred;
+#endif
                 switch (adjusted_refinement_mode) {
 #else
                 switch (depth_refinement_mode) {
