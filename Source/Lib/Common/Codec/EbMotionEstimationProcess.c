@@ -473,9 +473,17 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
         sequence_control_set_ptr->input_resolution);
 
     if (picture_control_set_ptr->sc_content_detected)
+#if M1_FRACT_SEARCH
+        if (enc_mode <= ENC_M2)
+#else
         if (enc_mode <= ENC_M1)
+#endif
 #if M0_tune || sc_rtime_presets
+#if M0_FRACT_SEARCH
+            context_ptr->me_context_ptr->fractional_search_method = (enc_mode <= ENC_M1) ? FULL_SAD_SEARCH : SSD_SEARCH;
+#else
             context_ptr->me_context_ptr->fractional_search_method = (enc_mode == ENC_M0) ? FULL_SAD_SEARCH : SSD_SEARCH;
+#endif
 #else
             context_ptr->me_context_ptr->fractional_search_method = SSD_SEARCH;
 #endif

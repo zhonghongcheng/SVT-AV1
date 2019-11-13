@@ -37,6 +37,30 @@ extern "C" {
    rate estimation is changed for I frame + enabled sc for P (rate estimation
    is a result changed for P frames)
 */
+
+//SC M0-M1 //
+#define M0_FRACT_SEARCH             0
+#define M0_NSQ_LEVEL                0
+#define M0_INTRA_PRED               0
+#define M0_COMPOUND_MODE            0
+#define M0_MD_STAGE_2_COUNT            0
+#define M0_MFMV                     0
+
+//SC M1-M2 //
+#define M1_UNI_3x3_INJEC            0
+#define M1_PRED_ME                  0
+#define M1_FRACT_SEARCH             0
+#define M1_NSQ_LEVEL                0
+#define M1_LOOP_FILTER              0
+
+
+    //SC M2-M3//
+#define M2_TRELLIS                  0
+#define M2_PIC_DEPTH                0
+#define M2_NSQ_LEVEL                0
+#define M2_INTRA_PRED               0
+
+
 // Testing M0-M1 difference
 #define TEST_NEW_M0M1_SET1           0
 #define TEST_M0_OBMC                 0

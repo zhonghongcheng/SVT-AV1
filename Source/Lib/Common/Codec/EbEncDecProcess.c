@@ -1354,10 +1354,14 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 1                    ON FULL
     // 2                    Reduced set
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if M1_UNI_3x3_INJEC
+        if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
             context_ptr->unipred3x3_injection = 1;
 #if sc_rtime_presets
-#if SHIFT_M4_TO_M3
+#if SHIFT_M4_TO_M3 
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #else
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
@@ -1440,7 +1444,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     if (picture_control_set_ptr->slice_type != I_SLICE)
 #if sc_rtime_presets
         if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if M1_PRED_ME
+            if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#else
             if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
                 context_ptr->predictive_me_level = 4;
             else if (picture_control_set_ptr->enc_mode <= ENC_M4)
                 context_ptr->predictive_me_level = 2;
@@ -1660,7 +1668,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if sc_rtime_presets
 
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if M2_TRELLIS
+        if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#endif
             context_ptr->trellis_quant_coeff_optimization = EB_TRUE;
         else
             context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
