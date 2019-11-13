@@ -33,7 +33,7 @@
 extern "C" {
 #endif
 
-
+#define  FIX__R2R_CFL      1
 #define  FIX__R2RS      1
 
 /************************ DEBUG **********************************/

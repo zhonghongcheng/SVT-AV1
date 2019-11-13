@@ -3504,6 +3504,10 @@ static void CflPrediction(
     uint32_t                     cuChromaOriginIndex,
     EbAsm                    asm_type)
 {
+
+    uint32_t tot_q3 = 0, tot_pred = 0;
+
+
     if (context_ptr->blk_geom->has_uv) {
     // 1: recon the Luma
     AV1PerformInverseTransformReconLuma(
@@ -3563,6 +3567,37 @@ static void CflPrediction(
 
         assert(chroma_height * CFL_BUF_LINE + chroma_width <=
             CFL_BUF_SQUARE);
+
+#if 0
+
+        if (picture_control_set_ptr->picture_number == 16 && context_ptr->cu_origin_x == 532 && context_ptr->cu_origin_y == 900 && context_ptr->blk_geom->bsize == BLOCK_4X4)
+        {
+            const int16_t *pred_buf_q3 = context_ptr->pred_buf_q3;
+            uint8_t *pred = &(candidate_buffer->prediction_ptr->buffer_cb[cuChromaOriginIndex]);
+            int32_t pred_stride = candidate_buffer->prediction_ptr->stride_cb;
+            int32_t alpha_q3= alpha_q3_cb;
+         
+            printf("alpha=%i\n", alpha_q3);
+
+            for (int32_t j = 0; j < chroma_height; j++) {
+                for (int32_t i = 0; i < chroma_width; i++) {
+                    uint8_t dst = (uint8_t)clip_pixel_highbd(
+                        get_scaled_luma_q0(alpha_q3, pred_buf_q3[i]) + (int16_t)pred[i], 8);
+
+                    tot_q3 += pred_buf_q3[i];
+                    tot_pred += pred[i];
+                    printf("(%i,%i:%i) ", pred_buf_q3[i], pred[i],dst);
+                    
+                }  
+                printf("\n", alpha_q3);
+                pred += pred_stride;
+                pred_buf_q3 += CFL_BUF_LINE;
+            }
+
+
+        }
+#endif
+
 
         if (!context_ptr->hbd_mode_decision) {
             eb_cfl_predict_lbd(
@@ -3644,6 +3679,14 @@ static void CflPrediction(
         // Alphas = 0, Preds are the same as DC. Switch to DC mode
         candidate_buffer->candidate_ptr->intra_chroma_mode = UV_DC_PRED;
     }
+
+#if 0
+    if (picture_control_set_ptr->picture_number == 16 && context_ptr->cu_origin_x == 532 && context_ptr->cu_origin_y == 900 && context_ptr->blk_geom->bsize == BLOCK_4X4)
+        printf("cfla %i %i %i [%i %i]\n", candidate_buffer->candidate_ptr->pred_mode, candidate_buffer->candidate_ptr->cfl_alpha_idx, candidate_buffer->candidate_ptr->cfl_alpha_signs,  tot_q3 , tot_pred);
+    // if (picture_control_set_ptr->picture_number == 16 && context_ptr->cu_origin_x == 540 && context_ptr->cu_origin_y == 908 && context_ptr->blk_geom->bsize == BLOCK_4X4)
+    //     printf("cflb %i %i %i\n", candidate_buffer->candidate_ptr->pred_mode, candidate_buffer->candidate_ptr->cfl_alpha_idx, candidate_buffer->candidate_ptr->cfl_alpha_signs);
+#endif
+
     }
 }
 uint8_t get_skip_tx_search_flag(
@@ -5836,6 +5879,10 @@ void full_loop_core(
 
         //CHROMA
 
+        uint32_t tot_pred_cb = 0;
+        uint32_t tot_pred_cr = 0;
+
+
         cbFullDistortion[DIST_CALC_RESIDUAL] = 0;
         crFullDistortion[DIST_CALC_RESIDUAL] = 0;
         cbFullDistortion[DIST_CALC_PREDICTION] = 0;
@@ -5897,6 +5944,51 @@ void full_loop_core(
                     cuChromaOriginIndex,
                     asm_type);
             }
+
+ #if 0        
+            if (context_ptr->md_staging_skip_full_chroma == EB_FALSE) {
+                if (picture_control_set_ptr->picture_number == 16 && context_ptr->cu_origin_x == 532 && context_ptr->cu_origin_y == 900 && context_ptr->blk_geom->bsize == BLOCK_4X4)
+                {
+                    
+                    uint8_t  *pred = &candidate_buffer->prediction_ptr->buffer_cb[cuChromaOriginIndex];
+                    uint32_t  pred_stride = candidate_buffer->prediction_ptr->stride_cb;
+
+                    uint32_t  columnIndex;
+                    uint32_t  row_index = 0;
+                    while (row_index < context_ptr->blk_geom->bheight_uv) {
+                        columnIndex = 0;
+                        while (columnIndex < context_ptr->blk_geom->bwidth_uv) {
+                            tot_pred_cb += pred[columnIndex];
+                            ++columnIndex;
+                        }
+                        pred += pred_stride;
+                        ++row_index;
+                    }
+                }
+            }
+           
+            if (context_ptr->md_staging_skip_full_chroma == EB_FALSE) {
+                if (picture_control_set_ptr->picture_number == 16 && context_ptr->cu_origin_x == 532 && context_ptr->cu_origin_y == 900 && context_ptr->blk_geom->bsize == BLOCK_4X4)
+                {
+
+                    uint8_t  *pred = &candidate_buffer->prediction_ptr->buffer_cr[cuChromaOriginIndex];
+                    uint32_t  pred_stride = candidate_buffer->prediction_ptr->stride_cr;
+
+                    uint32_t  columnIndex;
+                    uint32_t  row_index = 0;
+                    while (row_index < context_ptr->blk_geom->bheight_uv) {
+                        columnIndex = 0;
+                        while (columnIndex < context_ptr->blk_geom->bwidth_uv) {
+                            tot_pred_cr += pred[columnIndex];
+                            ++columnIndex;
+                        }
+                        pred += pred_stride;
+                        ++row_index;
+                    }
+                }
+            }
+#endif
+
             if (context_ptr->blk_geom->has_uv && context_ptr->chroma_level <= CHROMA_MODE_1) {
                 full_loop_r(
                     sb_ptr,
@@ -5964,6 +6056,17 @@ void full_loop_core(
             &cb_coeff_bits,
             &cr_coeff_bits,
             context_ptr->blk_geom->bsize);
+
+#if 0
+        if (context_ptr->md_staging_skip_full_chroma == EB_FALSE) {
+            if (picture_control_set_ptr->picture_number == 16 && context_ptr->cu_origin_x == 532 && context_ptr->cu_origin_y == 900 && context_ptr->blk_geom->bsize == BLOCK_4X4)
+                printf("fca %i %I64u %i (%I64u %I64u %I64u) (%I64u %I64u %I64u) (%i %i)\n", candidate_buffer->candidate_ptr->pred_mode, *candidate_buffer->full_cost_ptr, candidate_buffer->candidate_ptr->intra_chroma_mode,
+                    y_coeff_bits, cb_coeff_bits, cr_coeff_bits , y_full_distortion[DIST_CALC_RESIDUAL],cbFullDistortion[DIST_CALC_RESIDUAL], crFullDistortion[DIST_CALC_RESIDUAL],
+                    tot_pred_cb,tot_pred_cr);
+          //  if (picture_control_set_ptr->picture_number == 16 && context_ptr->cu_origin_x == 540 && context_ptr->cu_origin_y == 908 && context_ptr->blk_geom->bsize == BLOCK_4X4)
+          //      printf("fcb %i %I64u\n", candidate_buffer->candidate_ptr->pred_mode, *candidate_buffer->full_cost_ptr);
+        }
+#endif
 
         candidate_buffer->cb_distortion[DIST_CALC_RESIDUAL] = cbFullDistortion[DIST_CALC_RESIDUAL];
         candidate_buffer->cb_distortion[DIST_CALC_PREDICTION] = cbFullDistortion[DIST_CALC_PREDICTION];
@@ -6439,10 +6542,7 @@ EbBool allowed_ns_cu(
 #endif
 
 #if 0
-    ret = 1;
-    if (context_ptr->sb_ptr->index==57)
-        ret = 1;
-    else if( context_ptr->blk_geom->sq_size != 16)
+    if( context_ptr->blk_geom->shape != PART_N)
         ret = 0;
 #endif
 
@@ -8022,7 +8122,11 @@ void md_encode_block(
             context_ptr->blk_geom,
             asm_type);
 
+#if FIX__R2R_CFL
+        if (!context_ptr->blk_geom->has_uv ) {
+#else
         if (!context_ptr->blk_geom->has_uv && candidate_buffer->candidate_ptr->type == INTRA_MODE && candidate_buffer->candidate_ptr->intra_chroma_mode == UV_CFL_PRED) {
+#endif
             // Store the luma data for 4x* and *x4 blocks to be used for CFL
             EbPictureBufferDesc  *recon_ptr = candidate_buffer->recon_ptr;
             uint32_t rec_luma_offset = context_ptr->blk_geom->origin_x + context_ptr->blk_geom->origin_y * recon_ptr->stride_y;
