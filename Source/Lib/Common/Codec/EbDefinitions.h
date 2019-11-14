@@ -62,6 +62,8 @@ extern "C" {
 #define M1_FRACT_SEARCH             0
 #define M1_NSQ_LEVEL                0
 #define M1_LOOP_FILTER              0
+#define M1_NO_SC_ATB                0
+#define M1_NO_SC_REF_COUNT          0
 
 
     //SC M2-M3//
@@ -69,6 +71,9 @@ extern "C" {
 #define M2_PIC_DEPTH                0
 #define M2_NSQ_LEVEL                0
 #define M2_INTRA_PRED               0
+#define M2_NO_SC_REF_COUNT          0
+#define M2_NO_SC_MD_STAGE           0
+#define M2_NO_SC_MRP_MODE           0
 
 
 // Testing M0-M1 difference

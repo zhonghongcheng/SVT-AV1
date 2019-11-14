@@ -1830,7 +1830,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else if (picture_control_set_ptr->enc_mode <= ENC_M0)
 #endif
         context_ptr->md_stage_2_count_th_s = 15;
-#if M2_MD_STAGE
+#if M2_MD_STAGE || M2_NO_SC_MD_STAGE
     else if (picture_control_set_ptr->enc_mode <= ENC_M3)
 #else
     else if (picture_control_set_ptr->enc_mode <= ENC_M2)
