@@ -38,13 +38,23 @@ extern "C" {
    is a result changed for P frames)
 */
 
+ //SC M0 features //
+#define M0_NON_SC_OBMC              0
+#define M0_RTIME_SC_HP              0
+
 //SC M0-M1 //
 #define M0_FRACT_SEARCH             0
 #define M0_NSQ_LEVEL                0
 #define M0_INTRA_PRED               0
 #define M0_COMPOUND_MODE            0
-#define M0_MD_STAGE_2_COUNT            0
+#define M0_MD_STAGE_2_COUNT         0
 #define M0_MFMV                     0
+#define M0_PALETTE                  0
+    //non sc diff
+#define M0_NEW_NEAREST              0
+#define M0_EDGE_SKIP_INTRA          0
+#define M0_MD_STAGE_1               0
+#define M0_INTRA_INTER_CMPD         0
 
 //SC M1-M2 //
 #define M1_UNI_3x3_INJEC            0

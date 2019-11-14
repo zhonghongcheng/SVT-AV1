@@ -1306,7 +1306,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if TEST_M0_NEW_NEAR_COMB
     if (picture_control_set_ptr->enc_mode <= ENC_M1 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
 #else
+#if M0_NEW_NEAREST
+    if (picture_control_set_ptr->enc_mode <= ENC_M1 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
+#else
     if (picture_control_set_ptr->enc_mode <= ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
+#endif
 #endif
 #else
     if (picture_control_set_ptr->enc_mode == ENC_M0)
@@ -1726,7 +1730,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #elif TEST_M0_SKIP_ANGLE_INTRA
             context_ptr->edge_based_skip_angle_intra = (picture_control_set_ptr->enc_mode <= ENC_M1) ? 0 : 1;
 #else
+#if M0_EDGE_SKIP_INTRA
+            context_ptr->edge_based_skip_angle_intra = (picture_control_set_ptr->enc_mode <= ENC_M1) ? 0 : 1;
+#else
             context_ptr->edge_based_skip_angle_intra = (picture_control_set_ptr->enc_mode == ENC_M0) ? 0 : 1;
+#endif
 #endif
 #else
 #if rtime_presets
@@ -1772,7 +1780,12 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
     // Derive distortion-based md_stage_0_count proning
 #if STAGE_1_COUNT_PRUNING_TH_S
+#if M0_MD_STAGE_1
+
+    if (MR_MODE || picture_control_set_ptr->enc_mode <= ENC_M1 || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
+#else
     if (MR_MODE || picture_control_set_ptr->enc_mode == ENC_M0 || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
+#endif
         context_ptr->md_stage_1_count_th_s = (uint64_t)~0;
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->md_stage_1_count_th_s = 75;
@@ -1791,7 +1804,12 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if STAGE_1_COUNT_PRUNING_TH_C
     // TH_C(for class removal)
     // Remove class if deviation to the best higher than TH_C
+#if M0_MD_STAGE_1
+
+    if (MR_MODE || picture_control_set_ptr->enc_mode <= ENC_M1 || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
+#else
     if (MR_MODE || picture_control_set_ptr->enc_mode == ENC_M0 || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
+#endif
         context_ptr->md_stage_1_count_th_c = (uint64_t)~0;
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->md_stage_1_count_th_c = 100;

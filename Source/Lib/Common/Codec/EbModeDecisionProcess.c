@@ -543,7 +543,11 @@ void reset_mode_decision(
 #if TEST_M0_OBMC_M4
             picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag &&
 #endif
+#if M0_NON_SC_OBMC
+             picture_control_set_ptr->slice_type != I_SLICE ? 2 : 0;
+#else
             picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0 && picture_control_set_ptr->slice_type != I_SLICE ? 2 : 0;
+#endif
         else
             picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = 0;
 
