@@ -4656,7 +4656,19 @@ static uint64_t tx_size_bits(
     }
     return bits;
 }
-
+#if  TILE_ATB_FIX
+ void set_mi_row_col(
+    PictureControlSet       *picture_control_set_ptr,
+    MacroBlockD             *xd,
+    TileInfo *              tile,
+    int                     mi_row,
+    int                     bh,
+    int                     mi_col,
+    int                     bw,
+    uint32_t                mi_stride,
+    int                     mi_rows,
+    int                     mi_cols);
+#else
 static INLINE void set_mi_row_col(
     PictureControlSet       *picture_control_set_ptr,
     MacroBlockD             *xd,
@@ -4706,6 +4718,7 @@ static INLINE void set_mi_row_col(
     if (xd->n8_w > xd->n8_h)
         if (mi_row & (xd->n8_w - 1)) xd->is_sec_rect = 1;
 }
+#endif
 
 
 uint64_t estimate_tx_size_bits(
@@ -7717,6 +7730,15 @@ void md_encode_block(
         const aom_variance_fn_ptr_t *fn_ptr = &mefn_ptr[context_ptr->blk_geom->bsize];
         context_ptr->source_variance = eb_av1_get_sby_perpixel_variance(fn_ptr, (input_picture_ptr->buffer_y + inputOriginIndex), input_picture_ptr->stride_y, context_ptr->blk_geom->bsize);
 #endif
+
+
+#if TILE_ATB_FIX       
+        cu_ptr->av1xd->tile.mi_col_start = context_ptr->sb_ptr->tile_info.mi_col_start;
+        cu_ptr->av1xd->tile.mi_col_end = context_ptr->sb_ptr->tile_info.mi_col_end;
+        cu_ptr->av1xd->tile.mi_row_start = context_ptr->sb_ptr->tile_info.mi_row_start;
+        cu_ptr->av1xd->tile.mi_row_end = context_ptr->sb_ptr->tile_info.mi_row_end;
+#endif
+
 
         ProductCodingLoopInitFastLoop(
             context_ptr,
