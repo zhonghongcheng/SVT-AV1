@@ -222,7 +222,8 @@ extern "C" {
         EbBool                                  use_output_stat_file;
 #if STAT_UPDATE_SW
         stat_ref_info_t                         *stat_ref_info[STAT_LA_LENGTH];
-        dept_stat_t                             *stat_sw[STAT_LA_LENGTH];
+        stat_static_t                           *stat_static[STAT_LA_LENGTH];
+        uint16_t                                temporal_weight[STAT_LA_LENGTH];
         uint64_t                                progagate_poc[STAT_LA_LENGTH];
         uint64_t                                stat_queue_head_index;
         EbBool                                  stat_queue[STAT_LA_LENGTH];

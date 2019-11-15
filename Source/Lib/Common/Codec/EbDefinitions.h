@@ -3339,8 +3339,41 @@ typedef struct stat_ref_info_t
     uint16_t                        ref_sb_cnt;
     uint16_t                        ref_sb_decode_order[MAX_SB_CNT];
     uint16_t                        ref_sb_index[MAX_SB_CNT];
-    uint32_t                        referenced_area[MAX_SB_CNT];    // temporal for recover referenced_area
+    uint32_t                        referenced_area[MAX_SB_CNT];
+    int32_t                         overlap_area[MAX_SB_CNT];
+    int64_t                         mc_flow[MAX_SB_CNT];
+    int32_t                         pix_num[MAX_SB_CNT];
+    double                          quant_ratio[MAX_SB_CNT];
+    int64_t                         intra_cost[MAX_SB_CNT];
+    double                          iiratio_nl[MAX_SB_CNT];
+    EbBool                          is_bipred[MAX_SB_CNT];
+    //int64_t                         mc_count[MAX_SB_CNT];
+    int64_t                         mc_saved[MAX_SB_CNT];
+    int64_t                         cur_dep_dist[MAX_SB_CNT];
+    int64_t                         mc_dep_dist[MAX_SB_CNT];
+    int64_t                         delta_rate[MAX_SB_CNT];
+    int64_t                         mc_dep_rate[MAX_SB_CNT];
+
 } stat_ref_info_t;
+
+typedef struct stat_static_t {
+    int64_t intra_cost;
+    int64_t inter_cost;
+    int64_t srcrf_dist;
+    int64_t recrf_dist;
+    int64_t srcrf_rate;
+    int64_t recrf_rate;
+} stat_static_t;
+
+typedef struct dept_stat_ppg_t {
+    int64_t mc_flow;
+    int64_t mc_dep_cost;
+    int64_t mc_dep_rate;
+    int64_t mc_dep_dist;
+    int64_t mc_count; // not needed
+    int64_t mc_saved; // not needed
+    double  quant_ratio;
+} dept_stat_ppg_t;
 #endif
 
 typedef struct stat_struct_t

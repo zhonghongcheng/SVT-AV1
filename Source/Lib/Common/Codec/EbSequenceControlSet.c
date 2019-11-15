@@ -17,7 +17,7 @@ static void eb_sequence_control_set_dctor(EbPtr p)
     for (uint16_t sw_index = 0; sw_index < STAT_LA_LENGTH; sw_index++)
     {
         EB_FREE_ARRAY(obj->stat_ref_info[sw_index]);
-        EB_FREE_ARRAY(obj->stat_sw[sw_index]);
+        EB_FREE_ARRAY(obj->stat_static[sw_index]);
     }
     EB_DESTROY_MUTEX(obj->stat_info_mutex);
     EB_DESTROY_MUTEX(obj->stat_queue_mutex);
@@ -460,12 +460,13 @@ extern EbErrorType sb_params_init(
         uint16_t   pictureBlockHeight = pictureLcuHeight;
         EB_FREE_ARRAY(sequence_control_set_ptr->stat_ref_info[sw_index]);
         EB_MALLOC_ARRAY(sequence_control_set_ptr->stat_ref_info[sw_index], pictureBlockWidth * pictureBlockHeight + 100);
-        EB_FREE_ARRAY(sequence_control_set_ptr->stat_sw[sw_index]);
-        EB_MALLOC_ARRAY(sequence_control_set_ptr->stat_sw[sw_index], pictureBlockWidth * pictureBlockHeight + 100);
+        EB_FREE_ARRAY(sequence_control_set_ptr->stat_static[sw_index]);
+        EB_MALLOC_ARRAY(sequence_control_set_ptr->stat_static[sw_index], pictureBlockWidth * pictureBlockHeight + 100);
         for(int i = 0; i < (pictureBlockWidth * pictureBlockHeight + 100); i++) {
             memset(&(sequence_control_set_ptr->stat_ref_info[sw_index][i]), 0, sizeof(stat_ref_info_t));
-            memset(&(sequence_control_set_ptr->stat_sw[sw_index][i]), 0, sizeof(dept_stat_t));
+            memset(&(sequence_control_set_ptr->stat_static[sw_index][i]), 0, sizeof(stat_static_t));
         }
+        sequence_control_set_ptr->temporal_weight[sw_index] = 0;
         sequence_control_set_ptr->stat_queue[sw_index] = EB_FALSE;
     }
     EB_CREATE_MUTEX(sequence_control_set_ptr->stat_info_mutex);

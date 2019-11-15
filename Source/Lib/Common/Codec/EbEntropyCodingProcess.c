@@ -374,6 +374,7 @@ static int get_kf_boost_from_r0(double r0, int frames_to_key) {
 #endif
 
 #if STAT_UPDATE_SW
+#define TPL_DEP_COST_SCALE_LOG2 0
 /******************************************************
  * Write Stat Info to File
  ******************************************************/
@@ -387,29 +388,40 @@ void write_stat_info_to_file(
     unsigned int pic_width_in_block  = (uint8_t)((sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz);
     unsigned int pic_height_in_block = (uint8_t)((sequence_control_set_ptr->seq_header.max_frame_height + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz);
     unsigned int block_total_count = pic_width_in_block * pic_height_in_block;
-    dept_stat_t *propagate_dept_stat[slide_win_length];
+    dept_stat_ppg_t *dept_stat_propagate[slide_win_length];
     stat_struct_t stat_struct;
 
     memset(&stat_struct, 0, sizeof(stat_struct));
-    // build propagate dept_stat_t
+    // build propagate dept_stat_ppg_t
     for(int frame = 0; frame < slide_win_length; frame++) {
-        EB_MALLOC_ARRAY(propagate_dept_stat[frame], block_total_count+100);
+        EB_MALLOC_ARRAY(dept_stat_propagate[frame], block_total_count+100);
         for(int i = 0; i < (block_total_count+100); i++)
-            memset(&(propagate_dept_stat[frame][i]), 0, sizeof(dept_stat_t));
+            memset(&(dept_stat_propagate[frame][i]), 0, sizeof(dept_stat_ppg_t));
     }
 
     for(int frame=0; frame < slide_win_length; frame++) {
-        stat_ref_info_t *stat_ref_info = sequence_control_set_ptr->stat_ref_info[(decode_order - frame) % STAT_LA_LENGTH]
-;
-        dept_stat_t *propagate_dept_stat_ptr = propagate_dept_stat[slide_win_length - frame - 1];
+        stat_ref_info_t *fstat_ref_info = sequence_control_set_ptr->stat_ref_info[(decode_order - frame) % STAT_LA_LENGTH];
+        dept_stat_ppg_t *dept_stat_propagate_ptr = dept_stat_propagate[slide_win_length - frame - 1];
+        uint16_t temporal_weight = sequence_control_set_ptr->temporal_weight[(decode_order - frame) % STAT_LA_LENGTH];
         for(int block_index=0; block_index < block_total_count; block_index++) {
-            for(int sb_index=0; sb_index < stat_ref_info[block_index].ref_sb_cnt; sb_index++) {
-                uint32_t ref_decode_order = stat_ref_info[block_index].ref_sb_decode_order[sb_index];
+            for(int sb_index=0; sb_index < fstat_ref_info[block_index].ref_sb_cnt; sb_index++) {
+                uint32_t ref_decode_order = fstat_ref_info[block_index].ref_sb_decode_order[sb_index];
                 if(ref_decode_order > stat_queue_head_index && ref_decode_order <= decode_order)
                 {
-                    dept_stat_t *ref_propagate_dept_stat_ptr = propagate_dept_stat[ref_decode_order - stat_queue_head_index - 1];
-                    //assert(stat_ref_info[block_index].ref_sb_index[sb_index]<block_total_count);
-                    ref_propagate_dept_stat_ptr[stat_ref_info[block_index].ref_sb_index[sb_index]].mc_flow = propagate_dept_stat_ptr[block_index].mc_flow;
+                    dept_stat_ppg_t *ref_dept_stat_propagate_ptr = dept_stat_propagate[ref_decode_order - stat_queue_head_index - 1];
+                    //assert(fstat_ref_info[block_index].ref_sb_index[sb_index]<block_total_count);
+                    stat_ref_info_t *stat_ref_info = &(fstat_ref_info[block_index]);
+                    int32_t overlap_area = stat_ref_info->overlap_area[sb_index];
+                    int32_t pix_num      = stat_ref_info->pix_num[sb_index];
+                    int64_t mc_flow = dept_stat_propagate_ptr[block_index].mc_flow * overlap_area / (64*64);
+                    int64_t mc_dep_cost = stat_ref_info->intra_cost[sb_index] + stat_ref_info->mc_flow[sb_index]; 
+                    mc_flow = (int64_t)(stat_ref_info->quant_ratio[sb_index] * mc_dep_cost * (1.0 - stat_ref_info->iiratio_nl[sb_index]));
+                    mc_flow = mc_flow * temporal_weight / (stat_ref_info->is_bipred[sb_index] ? 2 : 1 );
+                    mc_flow = mc_flow * overlap_area / pix_num;
+                    ref_dept_stat_propagate_ptr[stat_ref_info->ref_sb_index[sb_index]].mc_flow += mc_flow;
+                    ref_dept_stat_propagate_ptr[stat_ref_info->ref_sb_index[sb_index]].mc_dep_cost += mc_dep_cost;
+                    ref_dept_stat_propagate_ptr[stat_ref_info->ref_sb_index[sb_index]].mc_count += (overlap_area << TPL_DEP_COST_SCALE_LOG2);
+                    ref_dept_stat_propagate_ptr[stat_ref_info->ref_sb_index[sb_index]].mc_saved += (stat_ref_info->mc_saved[sb_index] * overlap_area) / pix_num;
                     // to be continued
                 }
             }
@@ -422,21 +434,36 @@ void write_stat_info_to_file(
 
     for(int frame=0; frame < slide_win_length; frame++) {
         int32_t curr_decode_order = (decode_order - frame) % STAT_LA_LENGTH;
-        stat_ref_info_t *stat_ref_info = sequence_control_set_ptr->stat_ref_info[curr_decode_order];
+        stat_ref_info_t *fstat_ref_info = sequence_control_set_ptr->stat_ref_info[curr_decode_order];
         assert((curr_decode_order-stat_queue_head_index-1)>=0 && (curr_decode_order-stat_queue_head_index-1)<slide_win_length);
         for(int block_index=0; block_index < block_total_count; block_index++) {
-            for(int sb_index=0; sb_index < stat_ref_info[block_index].ref_sb_cnt; sb_index++) {
-                uint32_t head_decode_order = stat_ref_info[block_index].ref_sb_decode_order[sb_index];
+            for(int sb_index=0; sb_index < fstat_ref_info[block_index].ref_sb_cnt; sb_index++) {
+                uint32_t head_decode_order = fstat_ref_info[block_index].ref_sb_decode_order[sb_index];
                 if(head_decode_order == stat_queue_head_index) {
-                    stat_struct.referenced_area[stat_ref_info[block_index].ref_sb_index[sb_index]] += (uint32_t)(stat_ref_info[block_index].referenced_area[sb_index]);
+                    stat_ref_info_t *stat_ref_info = &(fstat_ref_info[block_index]);
+                    stat_struct.referenced_area[stat_ref_info->ref_sb_index[sb_index]] += (uint32_t)(stat_ref_info->referenced_area[sb_index]);
+                    stat_struct.cur_stat[stat_ref_info->ref_sb_index[sb_index]].mc_flow += dept_stat_propagate[frame][block_index].mc_flow;
+                    stat_struct.cur_stat[stat_ref_info->ref_sb_index[sb_index]].mc_dep_cost += dept_stat_propagate[frame][block_index].mc_dep_cost;
+                    stat_struct.cur_stat[stat_ref_info->ref_sb_index[sb_index]].mc_count += dept_stat_propagate[frame][block_index].mc_count;
+                    stat_struct.cur_stat[stat_ref_info->ref_sb_index[sb_index]].mc_saved += dept_stat_propagate[frame][block_index].mc_saved;
                     // to be continued
-                    //stat_struct.cur_stat[stat_ref_info[block_index].ref_sb_index[sb_index]] = propagate_dept_stat[frame];
                 }
             }
         }
     }
+
+    stat_static_t *stat_static = sequence_control_set_ptr->stat_static[stat_queue_head_index];
+    for(int block_index=0; block_index < block_total_count; block_index++) {
+        stat_struct.cur_stat[block_index].intra_cost = stat_static[block_index].intra_cost;
+        stat_struct.cur_stat[block_index].inter_cost = stat_static[block_index].inter_cost;
+        stat_struct.cur_stat[block_index].srcrf_dist = stat_static[block_index].srcrf_dist;
+        stat_struct.cur_stat[block_index].recrf_dist = stat_static[block_index].recrf_dist;
+        stat_struct.cur_stat[block_index].srcrf_rate = stat_static[block_index].srcrf_rate;
+        stat_struct.cur_stat[block_index].recrf_rate = stat_static[block_index].recrf_rate;
+    }
+
     for(int frame=0; frame < slide_win_length; frame++)
-        EB_FREE_ARRAY(propagate_dept_stat[frame]);
+        EB_FREE_ARRAY(dept_stat_propagate[frame]);
     eb_release_mutex(sequence_control_set_ptr->stat_info_mutex);
 
     eb_block_on_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
