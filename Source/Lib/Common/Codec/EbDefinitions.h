@@ -32,7 +32,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+#define EIGHT_PEL_FIX 0 // Improve the 8th pel
+#define HIGH_PRECISION_MV_QTHRESH 150
 /* Note: shutting the macro PAL_SUP will not give SS as pcs->palette_mode = 0
    rate estimation is changed for I frame + enabled sc for P (rate estimation
    is a result changed for P frames)
