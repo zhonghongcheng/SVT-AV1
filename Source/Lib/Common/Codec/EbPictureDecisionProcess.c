@@ -1551,6 +1551,8 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->intra_pred_mode = 0;
 #if M2_INTRA_PRED
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#elif M3_INTRA_PRED
+        else if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #else
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #endif

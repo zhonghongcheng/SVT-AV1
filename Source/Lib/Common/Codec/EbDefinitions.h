@@ -41,6 +41,8 @@ extern "C" {
  //SC M0 features //
 #define M0_NON_SC_OBMC              0
 #define M0_RTIME_SC_HP              0
+#define M1_NEW_NEAREST              0
+#define M1_MFMV                     0
 
 //SC M0-M1 //
 #define M0_FRACT_SEARCH             0
@@ -55,6 +57,8 @@ extern "C" {
 #define M0_EDGE_SKIP_INTRA          0
 #define M0_MD_STAGE_1               0
 #define M0_INTRA_INTER_CMPD         0
+#define M2_SC_PRED_ME               0
+#define M2_UNI_3x3                  0
 
 //SC M1-M2 //
 #define M1_UNI_3x3_INJEC            0
@@ -64,6 +68,8 @@ extern "C" {
 #define M1_LOOP_FILTER              0
 #define M1_NO_SC_ATB                0
 #define M1_NO_SC_REF_COUNT          0
+#define M3_NO_SC_REF_COUNT          0
+#define M3_INTRA_PRED               0
 
 
     //SC M2-M3//

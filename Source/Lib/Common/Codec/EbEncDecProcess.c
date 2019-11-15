@@ -1360,6 +1360,8 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
 #if M1_UNI_3x3_INJEC
         if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#elif M2_UNI_3x3
+        if (picture_control_set_ptr->enc_mode <= ENC_M0)
 #else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #endif
@@ -1450,6 +1452,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
 #if M1_PRED_ME
             if (picture_control_set_ptr->enc_mode <= ENC_M2)
+
+#elif M2_SC_PRED_ME
+            if (picture_control_set_ptr->enc_mode <= ENC_M0)
 #else
             if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #endif
