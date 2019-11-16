@@ -218,7 +218,10 @@ extern "C" {
 #endif
 
 #define PRED_ONLY                              1 
-#define PRED_PLUS_REFINEMENT                   0
+#define PRED_PLUS_REFINEMENT                   1
+#if PRED_PLUS_REFINEMENT
+#define REF_OPTION_0                           1 
+#endif
 #define SHUT_FILTERING                         0 // CDEF RESTORATION DLF
 /**************************************************/
 #define INJECT_NEW_NEAR_NEAR_NEW     1   // Inject NEW_NEAR / NEAR_NEW inter prediction
