@@ -2153,8 +2153,11 @@ void CopyApiFromApp(
     sequence_control_set_ptr->use_output_stat_file = sequence_control_set_ptr->static_config.output_stat_file ? 1 : 0;
 #endif
     // Deblock Filter
+#if SHUT_FILTERING
+    sequence_control_set_ptr->static_config.disable_dlf_flag = 1;//
+#else
     sequence_control_set_ptr->static_config.disable_dlf_flag = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->disable_dlf_flag;
-
+#endif
     // Local Warped Motion
     sequence_control_set_ptr->static_config.enable_warped_motion = EB_TRUE;
 

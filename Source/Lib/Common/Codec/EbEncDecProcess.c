@@ -3277,6 +3277,8 @@ void* enc_dec_kernel(void *input_ptr)
                         context_ptr->md_context,
                         sb_index);
 #endif
+#endif
+#if MULTI_PASS_PD
                     // 2nd PD Pass EncDec Kernel Signal(s) derivation
                     context_ptr->md_context->is_final_pd_pass = EB_TRUE;
                     signal_derivation_enc_dec_kernel_oq(
