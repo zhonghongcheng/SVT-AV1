@@ -32,8 +32,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#define EIGHT_PEL_FIX 0 // Improve the 8th pel
-#define HIGH_PRECISION_MV_QTHRESH 150
+
 /* Note: shutting the macro PAL_SUP will not give SS as pcs->palette_mode = 0
    rate estimation is changed for I frame + enabled sc for P (rate estimation
    is a result changed for P frames)
@@ -205,9 +204,23 @@ extern "C" {
 
 #define TUNED_TH_S                             1 
 #define STAGE_1_COUNT_PRUNING_TH_C             1 // <-- to test: d_stage_1_count_th is now set to max
-#define PRED_ONLY                              0 
+/**************************************************/
+#define SHUT_MDC                               1
+#define MULTI_PASS_PREP                        1
+#if MULTI_PASS_PREP
+#define MULTI_PASS_PREP_0                      1 // move 1/16th, warp, settings to picture decision process
+#endif
+#if MULTI_PASS_PREP
+#define MULTI_PASS_PD                          1
+#if MULTI_PASS_PD
+#define SHUT_MVP                               1
+#endif
+#endif
 
+#define PRED_ONLY                              1 
+#define PRED_PLUS_REFINEMENT                   1
 
+/**************************************************/
 #define INJECT_NEW_NEAR_NEAR_NEW     1   // Inject NEW_NEAR / NEAR_NEW inter prediction
 #define FILTER_INTRA_FLAG            1 // Filter intra prediction
 

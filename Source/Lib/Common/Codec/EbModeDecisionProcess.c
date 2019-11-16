@@ -481,15 +481,11 @@ void reset_mode_decision(
 #if !FIX_SETTINGS_RESET
     }
 #endif
+
+#if !MULTI_PASS_PREP_0
 #if EIGHT_PEL_PREDICTIVE_ME
 #if M0_tune
-#if EIGHT_PEL_FIX
-    picture_control_set_ptr->parent_pcs_ptr->frm_hdr.allow_high_precision_mv =
-        picture_control_set_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->frm_hdr.quantization_params.base_q_idx < HIGH_PRECISION_MV_QTHRESH  &&
-        (sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER) ? 1 : 0;
-#else
     picture_control_set_ptr->parent_pcs_ptr->frm_hdr.allow_high_precision_mv = 0;
-#endif
 #else
     picture_control_set_ptr->parent_pcs_ptr->frm_hdr.allow_high_precision_mv = picture_control_set_ptr->enc_mode == ENC_M0 &&
         (sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER) ? 1 : 0;
@@ -565,9 +561,11 @@ void reset_mode_decision(
         frm_hdr->is_motion_mode_switchable || picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode;
 
 #endif
+#endif
 #if FIX_SETTINGS_RESET
     }
 #endif
+
     return;
 }
 

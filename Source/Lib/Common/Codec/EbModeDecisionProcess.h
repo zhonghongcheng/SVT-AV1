@@ -365,6 +365,10 @@ extern "C" {
     int partition_horz4_allowed;
     int partition_vert4_allowed;
 #endif
+#if MULTI_PASS_PD
+    // Signal to control initial and final pass PD setting(s)
+    EbBool is_final_pd_pass;
+#endif
     } ModeDecisionContext;
 
     typedef void(*EbAv1LambdaAssignFunc)(

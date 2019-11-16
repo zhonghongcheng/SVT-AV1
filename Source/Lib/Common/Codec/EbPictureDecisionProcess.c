@@ -896,6 +896,9 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->pic_depth_mode = PIC_SB_SWITCH_DEPTH_MODE;
 
 #endif
+#if SHUT_MDC // test all blocks (up to 4421 blocks)
+        picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
+#endif
         if (picture_control_set_ptr->pic_depth_mode < PIC_SQ_DEPTH_MODE)
             assert(sequence_control_set_ptr->nsq_present == 1 && "use nsq_present 1");
 
@@ -976,6 +979,9 @@ EbErrorType signal_derivation_multi_processes_oq(
 
         if(picture_control_set_ptr->adpative_ol_partitioning_level)
             picture_control_set_ptr->mdc_depth_level = 6;
+#endif
+#if SHUT_MDC // no mdc
+        picture_control_set_ptr->mdc_depth_level = MAX_MDC_LEVEL; // Not tuned yet.
 #endif
     // NSQ search Level                               Settings
     // NSQ_SEARCH_OFF                                 OFF
@@ -1710,6 +1716,91 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->frm_hdr.use_ref_frame_mvs = 0;
         else
             picture_control_set_ptr->frm_hdr.use_ref_frame_mvs = sequence_control_set_ptr->mfmv_enabled;
+
+
+
+
+
+#if MULTI_PASS_PREP_0
+#if EIGHT_PEL_PREDICTIVE_ME
+#if M0_tune
+        picture_control_set_ptr->frm_hdr.allow_high_precision_mv = 0;
+#else
+        picture_control_set_ptr->frm_hdr.allow_high_precision_mv = picture_control_set_ptr->enc_mode == ENC_M0 &&
+            (sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER) ? 1 : 0;
+#endif
+#else
+#if EIGTH_PEL_MV
+        picture_control_set_ptr->allow_high_precision_mv = picture_control_set_ptr->enc_mode == ENC_M0 &&
+            (picture_control_set_ptr->is_pan || picture_control_set_ptr->is_tilt) ? 1 : 0;
+#endif
+#endif
+        EbBool enable_wm;
+        if (picture_control_set_ptr->sc_content_detected)
+            enable_wm = EB_FALSE;
+        else
+#if WARP_UPDATE
+            enable_wm = (MR_MODE ||
+#if TEST_M0_WARP_M3
+            (picture_control_set_ptr->enc_mode <= ENC_M3 && picture_control_set_ptr->is_used_as_reference_flag) ||
+#elif TEST_M0_WARP
+            (picture_control_set_ptr->enc_mode <= ENC_M1 && picture_control_set_ptr->is_used_as_reference_flag) ||
+#else
+                (picture_control_set_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->is_used_as_reference_flag) ||
+#endif
+                (picture_control_set_ptr->enc_mode <= ENC_M5 && picture_control_set_ptr->temporal_layer_index == 0)) ? EB_TRUE : EB_FALSE;
+#else
+            enable_wm = (picture_control_set_ptr->enc_mode <= ENC_M5) || MR_MODE ? EB_TRUE : EB_FALSE;
+#endif
+#if !FIX_WM_SETTINGS
+        enable_wm = picture_control_set_ptr->temporal_layer_index > 0 ? EB_FALSE : enable_wm;
+#endif
+        frm_hdr->allow_warped_motion = enable_wm
+            && !(frm_hdr->frame_type == KEY_FRAME || frm_hdr->frame_type == INTRA_ONLY_FRAME)
+            && !frm_hdr->error_resilient_mode;
+        frm_hdr->is_motion_mode_switchable = frm_hdr->allow_warped_motion;
+#if OBMC_FLAG
+        // OBMC Level                                   Settings
+        // 0                                            OFF
+        // 1                                            OBMC @(MVP, PME and ME) + 16 NICs
+        // 2                                            OBMC @(MVP, PME and ME) + Opt NICs
+        // 3                                            OBMC @(MVP, PME ) + Opt NICs
+        // 4                                            OBMC @(MVP, PME ) + Opt2 NICs
+        if (sequence_control_set_ptr->static_config.enable_obmc) {
+#if TEST_M0_OBMC_M4
+            if (picture_control_set_ptr->enc_mode <= ENC_M4)
+#elif TEST_M0_OBMC_M3
+#if SHIFT_M4_TO_M3
+            if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#else
+            if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#endif
+#elif TEST_M0_OBMC
+            if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#else
+            if (picture_control_set_ptr->enc_mode <= ENC_M0)
+#endif
+                picture_control_set_ptr->pic_obmc_mode =
+#if TEST_M0_OBMC_M4
+                picture_control_set_ptr->is_used_as_reference_flag &&
+#endif
+                picture_control_set_ptr->sc_content_detected == 0 && picture_control_set_ptr->slice_type != I_SLICE ? 2 : 0;
+            else
+                picture_control_set_ptr->pic_obmc_mode = 0;
+
+#if MR_MODE
+            picture_control_set_ptr->pic_obmc_mode =
+                picture_control_set_ptr->sc_content_detected == 0 && picture_control_set_ptr->slice_type != I_SLICE ? 1 : 0;
+#endif
+        }
+        else
+            picture_control_set_ptr->pic_obmc_mode = 0;
+
+        frm_hdr->is_motion_mode_switchable =
+            frm_hdr->is_motion_mode_switchable || picture_control_set_ptr->pic_obmc_mode;
+
+#endif
+#endif
     return return_error;
 }
 
@@ -4080,7 +4171,7 @@ void* picture_decision_kernel(void *input_ptr)
                                             break;
                                     }
                                     picture_control_set_ptr->future_altref_nframes = pic_itr - index_center;
-                                    printf("\nPOC %d\t PAST %d\t FUTURE %d\n", picture_control_set_ptr->picture_number, picture_control_set_ptr->past_altref_nframes, picture_control_set_ptr->future_altref_nframes);
+                                    //printf("\nPOC %d\t PAST %d\t FUTURE %d\n", picture_control_set_ptr->picture_number, picture_control_set_ptr->past_altref_nframes, picture_control_set_ptr->future_altref_nframes);
                                 }
                                 else
                                 {
@@ -4219,7 +4310,7 @@ void* picture_decision_kernel(void *input_ptr)
                                         break;
                                 }
                                 picture_control_set_ptr->future_altref_nframes = pic_itr - index_center;
-                                printf("\nPOC %d\t PAST %d\t FUTURE %d\n", picture_control_set_ptr->picture_number, picture_control_set_ptr->past_altref_nframes, picture_control_set_ptr->future_altref_nframes);
+                                //printf("\nPOC %d\t PAST %d\t FUTURE %d\n", picture_control_set_ptr->picture_number, picture_control_set_ptr->past_altref_nframes, picture_control_set_ptr->future_altref_nframes);
 
                                 // adjust the temporal filtering pcs buffer to remove unused past pictures
                                 if(actual_past_pics != num_past_pics) {

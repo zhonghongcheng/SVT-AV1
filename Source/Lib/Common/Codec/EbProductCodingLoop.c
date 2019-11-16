@@ -1589,7 +1589,11 @@ void set_md_stage_counts(
     SequenceControlSet* scs = (SequenceControlSet*)(picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr);
 
     // Step 1: derive bypass_stage1 flags
+#if MULTI_PASS_PD // Shut md-staging if 1st pass
+    if (context_ptr->md_staging_mode == MD_STAGING_MODE_1 && context_ptr->is_final_pd_pass)
+#else
     if (context_ptr->md_staging_mode == MD_STAGING_MODE_1)
+#endif
         memset(context_ptr->bypass_md_stage_1, EB_FALSE, CAND_CLASS_TOTAL);
     else
         memset(context_ptr->bypass_md_stage_1, EB_TRUE, CAND_CLASS_TOTAL);
@@ -1911,6 +1915,17 @@ void set_md_stage_counts(
     }
 #endif
 
+#if MULTI_PASS_PD // Shut md-staging if 1st pass
+    if (!context_ptr->is_final_pd_pass) {     
+        context_ptr->md_stage_1_count[CAND_CLASS_0] = 1;
+        context_ptr->md_stage_1_count[CAND_CLASS_1] = 1;
+        context_ptr->md_stage_1_count[CAND_CLASS_2] = 1;
+        context_ptr->md_stage_1_count[CAND_CLASS_3] = 1;
+        context_ptr->md_stage_1_count[CAND_CLASS_4] = 1;
+        context_ptr->md_stage_1_count[CAND_CLASS_5] = 1;
+        context_ptr->md_stage_1_count[CAND_CLASS_6] = 1;
+    }
+#endif
     // Step 3: update count for md_stage_1 and d_stage_2 if bypassed (no NIC setting should be done beyond this point)
     context_ptr->md_stage_2_count[CAND_CLASS_0] = context_ptr->bypass_md_stage_1[CAND_CLASS_0] ? context_ptr->md_stage_1_count[CAND_CLASS_0] : context_ptr->md_stage_2_count[CAND_CLASS_0];
     context_ptr->md_stage_2_count[CAND_CLASS_1] = context_ptr->bypass_md_stage_1[CAND_CLASS_1] ? context_ptr->md_stage_1_count[CAND_CLASS_1] : context_ptr->md_stage_2_count[CAND_CLASS_1];
@@ -2620,13 +2635,21 @@ void md_stage_0(
 
     // Set MD Staging fast_loop_core settings
 #if REMOVE_MD_STAGE_1
+#if MULTI_PASS_PD // Shut interpolation search if 1st pass
+    context_ptr->md_staging_skip_interpolation_search = (context_ptr->md_staging_mode == MD_STAGING_MODE_1 || !context_ptr->is_final_pd_pass) ? EB_TRUE : picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? EB_FALSE : EB_TRUE;
+#else
     context_ptr->md_staging_skip_interpolation_search = (context_ptr->md_staging_mode == MD_STAGING_MODE_1) ? EB_TRUE : picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? EB_FALSE : EB_TRUE;
+#endif
 #else
     context_ptr->md_staging_skip_interpolation_search = (context_ptr->md_staging_mode) ? EB_TRUE : picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? EB_FALSE : EB_TRUE;
 #endif
 #if FILTER_INTRA_FLAG
 #if REMOVE_MD_STAGE_1 && PAL_CLASS
+#if MULTI_PASS_PD // Shut chroma pred if 1st pass
+    context_ptr->md_staging_skip_inter_chroma_pred = ((context_ptr->md_staging_mode == MD_STAGING_MODE_1 && context_ptr->target_class != CAND_CLASS_0 && context_ptr->target_class != CAND_CLASS_6 && context_ptr->target_class != CAND_CLASS_7) || !context_ptr->is_final_pd_pass) ? EB_TRUE : EB_FALSE;
+#else
     context_ptr->md_staging_skip_inter_chroma_pred = (context_ptr->md_staging_mode == MD_STAGING_MODE_1 && context_ptr->target_class != CAND_CLASS_0 && context_ptr->target_class != CAND_CLASS_6 && context_ptr->target_class != CAND_CLASS_7) ? EB_TRUE : EB_FALSE;
+#endif
 #elif REMOVE_MD_STAGE_1
     context_ptr->md_staging_skip_inter_chroma_pred = (context_ptr->md_staging_mode == MD_STAGING_MODE_1 && context_ptr->target_class != CAND_CLASS_0 && context_ptr->target_class != CAND_CLASS_6) ? EB_TRUE : EB_FALSE;
 #else
@@ -6360,16 +6383,28 @@ void md_stage_3(
 
         // Set MD Staging full_loop_core settings
 #if REMOVE_MD_STAGE_1
+#if MULTI_PASS_PD // Shut pred @ full loop if 1st pass
+        context_ptr->md_staging_skip_full_pred = (context_ptr->md_staging_mode == MD_STAGING_MODE_0 && picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level != IT_SEARCH_FULL_LOOP) || !context_ptr->is_final_pd_pass;
+#else
         context_ptr->md_staging_skip_full_pred = (context_ptr->md_staging_mode == MD_STAGING_MODE_0 && picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level != IT_SEARCH_FULL_LOOP);
+#endif
         context_ptr->md_staging_skip_interpolation_search = (context_ptr->md_staging_mode == MD_STAGING_MODE_1 || picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level != IT_SEARCH_FULL_LOOP);
         context_ptr->md_staging_skip_inter_chroma_pred = EB_FALSE;
 #else
         context_ptr->md_staging_skip_full_pred = (context_ptr->md_staging_mode == MD_STAGING_MODE_3) ? EB_FALSE: EB_TRUE;
 #endif
+#if MULTI_PASS_PD // Shut tx size search if 1st pass
+        context_ptr->md_staging_skip_atb = context_ptr->is_final_pd_pass ? context_ptr->coeff_based_skip_atb : EB_TRUE;
+#else
         context_ptr->md_staging_skip_atb = context_ptr->coeff_based_skip_atb;
+#endif
 #if FILTER_INTRA_FLAG
 #if PAL_CLASS
         context_ptr->md_staging_tx_search =
+#if MULTI_PASS_PD // Shut Tx Search
+            (!context_ptr->is_final_pd_pass) ?
+            0 :
+#endif
             (candidate_ptr->cand_class == CAND_CLASS_0 || candidate_ptr->cand_class == CAND_CLASS_6 || candidate_ptr->cand_class == CAND_CLASS_7)
             ? 2 : 1;
 #else
@@ -6378,9 +6413,13 @@ void md_stage_3(
 #else
         context_ptr->md_staging_tx_search = candidate_ptr->cand_class == CAND_CLASS_0 ? 2 : 1;
 #endif
+#if MULTI_PASS_PD // shut chroma and RDOQ if 1st pass
+        context_ptr->md_staging_skip_full_chroma = context_ptr->is_final_pd_pass ? EB_FALSE : EB_TRUE;
+        context_ptr->md_staging_skip_rdoq = context_ptr->is_final_pd_pass ? EB_FALSE : EB_TRUE;
+#else
         context_ptr->md_staging_skip_full_chroma = EB_FALSE;
         context_ptr->md_staging_skip_rdoq = EB_FALSE;
-
+#endif
         if (picture_control_set_ptr->slice_type != I_SLICE) {
             if ((candidate_ptr->type == INTRA_MODE || context_ptr->full_loop_escape == 2) && best_inter_luma_zero_coeff == 0) {
 #if REMOVE_MD_STAGE_1
@@ -7943,6 +7982,9 @@ void md_encode_block(
         // Initialize uv_search_path
         context_ptr->uv_search_path = EB_FALSE;
         // Search the best independent intra chroma mode
+#if MULTI_PASS_PD // Shut independent chroma search if 1st pass
+        if (context_ptr->is_final_pd_pass) 
+#endif
         if (context_ptr->chroma_level == CHROMA_MODE_0) {
             if (context_ptr->blk_geom->sq_size < 128) {
                 if (context_ptr->blk_geom->has_uv) {
@@ -8003,6 +8045,9 @@ void md_encode_block(
                 picture_control_set_ptr);
 
         // Perform ME search around the best MVP
+#if MULTI_PASS_PD // Shut predictive if 1st pass
+        if (context_ptr->is_final_pd_pass)
+#endif
         if (context_ptr->predictive_me_level)
             predictive_me_search(
                 picture_control_set_ptr,
@@ -8013,7 +8058,11 @@ void md_encode_block(
 
 #if II_COMP_FLAG
         //for every CU, perform Luma DC/V/H/S intra prediction to be used later in inter-intra search
+#if MULTI_PASS_PD // Shut inter-intra
+        int allow_ii = (context_ptr->is_final_pd_pass) ? is_interintra_allowed_bsize(context_ptr->blk_geom->bsize) : 0;
+#else
         int allow_ii = is_interintra_allowed_bsize(context_ptr->blk_geom->bsize);
+#endif
         if (picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra && allow_ii)
             precompute_intra_pred_for_inter_intra(
                 picture_control_set_ptr,
@@ -8395,6 +8444,9 @@ void md_encode_block(
             context_ptr->parent_sq_pred_mode[sq_index] = candidate_buffer->candidate_ptr->pred_mode;
         }
 
+#if MULTI_PASS_PD // Shut inverse transform
+        if (context_ptr->is_final_pd_pass)
+#endif
         AV1PerformInverseTransformRecon(
             picture_control_set_ptr,
             context_ptr,
@@ -9287,6 +9339,14 @@ EB_EXTERN EbErrorType mode_decision_sb(
     int skip_next_sq = 0;
     uint32_t next_non_skip_blk_idx_mds = 0;
     uint8_t skip_sub_blocks;
+#if PRED_PLUS_REFINEMENT
+    int64_t depth_cost[NUMBER_OF_DEPTH] = { -1,-1,-1,-1,-1,-1 };
+    uint8_t  depth_table[NUMBER_OF_DEPTH] = { 0, 1, 2 , 3 ,4 ,5 };
+    uint64_t nsq_cost[NUMBER_OF_SHAPES] = { MAX_CU_COST, MAX_CU_COST,MAX_CU_COST,MAX_CU_COST,MAX_CU_COST,
+        MAX_CU_COST, MAX_CU_COST,MAX_CU_COST,MAX_CU_COST,MAX_CU_COST };
+    PART nsq_shape_table[NUMBER_OF_SHAPES] = { PART_N, PART_H, PART_V, PART_HA, PART_HB,
+        PART_VA, PART_VB, PART_H4, PART_V4, PART_S };
+#endif
     do {
         skip_sub_blocks = 0;
         blk_idx_mds = leaf_data_array[cuIdx].mds_idx;
@@ -9512,7 +9572,11 @@ EB_EXTERN EbErrorType mode_decision_sb(
         skip_next_nsq = 0;
 #if ADD_SUPPORT_TO_SKIP_PART_N
         if (blk_geom->nsi + 1 == blk_geom->totns) {
+#if PRED_PLUS_REFINEMENT
+            nsq_cost[context_ptr->blk_geom->shape] = d1_non_square_block_decision(context_ptr, d1_block_itr);
+#else
             d1_non_square_block_decision(context_ptr, d1_block_itr);
+#endif
             d1_block_itr++;
         }
 #else
@@ -9528,6 +9592,9 @@ EB_EXTERN EbErrorType mode_decision_sb(
             uint32_t first_blk_idx = context_ptr->cu_ptr->mds_idx - (blk_geom->nsi);//index of first block in this partition
             for (int blk_it = 0; blk_it < blk_geom->nsi + 1; blk_it++)
                 tot_cost += context_ptr->md_local_cu_unit[first_blk_idx + blk_it].cost;
+#if PRED_PLUS_REFINEMENT
+            nsq_cost[context_ptr->blk_geom->shape] = tot_cost;
+#endif
 #if SPEED_OPT
             if ((tot_cost + tot_cost * (blk_geom->totns - (blk_geom->nsi + 1))* context_ptr->md_exit_th / (blk_geom->nsi + 1) / 100) > context_ptr->md_local_cu_unit[context_ptr->blk_geom->sqi_mds].cost)
 #else
@@ -9586,6 +9653,22 @@ EB_EXTERN EbErrorType mode_decision_sb(
 
         if (d1_blocks_accumlated == leafDataPtr->tot_d1_blocks)
         {
+#if PRED_PLUS_REFINEMENT
+            //Sorting
+            {
+                uint32_t i, j, index;
+                for (i = 0; i < NUMBER_OF_SHAPES - 1; ++i) {
+                    for (j = i + 1; j < NUMBER_OF_SHAPES; ++j) {
+                        if (nsq_cost[nsq_shape_table[j]] < nsq_cost[nsq_shape_table[i]]) {
+                            index = nsq_shape_table[i];
+                            nsq_shape_table[i] = nsq_shape_table[j];
+                            nsq_shape_table[j] = index;
+                        }
+                    }
+                }
+                depth_cost[sequence_control_set_ptr->static_config.super_block_size == 128 ? context_ptr->blk_geom->depth : context_ptr->blk_geom->depth + 1] += nsq_cost[nsq_shape_table[0]];
+            }
+#endif
             uint32_t  lastCuIndex_mds = d2_inter_depth_block_decision(
                 context_ptr,
                 blk_geom->sqi_mds,//input is parent square
@@ -9633,9 +9716,16 @@ EB_EXTERN EbErrorType mode_decision_sb(
             cuIdx++;
     } while (cuIdx < leaf_count);// End of CU loop
 
+#if PRED_PLUS_REFINEMENT
+    if (sequence_control_set_ptr->seq_header.sb_size == BLOCK_64X64)
+        depth_cost[0] = MAX_CU_COST;
+    for (uint8_t depth_idx = 0; depth_idx < NUMBER_OF_DEPTH; depth_idx++) {
+        sb_ptr->depth_cost[depth_idx] = depth_cost[depth_idx] < 0 ? MAX_MODE_COST : depth_cost[depth_idx];
+    }
+#endif
+
     return return_error;
 }
-
 /*******************************************
 * Compute4x4SAD_Default
 *   Unoptimized 4x4 SAD

@@ -18,10 +18,6 @@
 
 #include "EbDefinitions.h"
 #include "EbMdRateEstimation.h"
-#if EIGHT_PEL_FIX
-#include "EbSequenceControlSet.h"
-#endif
-
 
 #include "EbBitstreamUnit.h"
 
@@ -375,26 +371,16 @@ void av1_estimate_mv_rate(
     nmvcost[1] = &md_rate_estimation_array->nmv_costs[1][MV_MAX];
     nmvcost_hp[0] = &md_rate_estimation_array->nmv_costs_hp[0][MV_MAX];
     nmvcost_hp[1] = &md_rate_estimation_array->nmv_costs_hp[1][MV_MAX];
-#if EIGHT_PEL_FIX
-    struct SequenceControlSet          *sequence_control_set_ptr = picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr;
-    frm_hdr->allow_high_precision_mv =
-        picture_control_set_ptr->enc_mode == ENC_M0 && frm_hdr->quantization_params.base_q_idx <  HIGH_PRECISION_MV_QTHRESH  &&
-        (sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER) ? 1 : 0;
-#endif
+
     eb_av1_build_nmv_cost_table(
         md_rate_estimation_array->nmv_vec_cost,//out
         frm_hdr->allow_high_precision_mv ? nmvcost_hp : nmvcost, //out
         nmv_ctx,
         frm_hdr->allow_high_precision_mv);
-#if  EIGHT_PEL_FIX
-    md_rate_estimation_array->nmvcoststack[0] = frm_hdr->allow_high_precision_mv ?
-        &md_rate_estimation_array->nmv_costs_hp[0][MV_MAX] : &md_rate_estimation_array->nmv_costs[0][MV_MAX];
-    md_rate_estimation_array->nmvcoststack[1] = frm_hdr->allow_high_precision_mv ?
-        &md_rate_estimation_array->nmv_costs_hp[1][MV_MAX] : &md_rate_estimation_array->nmv_costs[1][MV_MAX];
-#else
+
     md_rate_estimation_array->nmvcoststack[0] = &md_rate_estimation_array->nmv_costs[0][MV_MAX];
     md_rate_estimation_array->nmvcoststack[1] = &md_rate_estimation_array->nmv_costs[1][MV_MAX];
-#endif
+
     if (frm_hdr->allow_intrabc) {
         int32_t *dvcost[2] = { &md_rate_estimation_array->dv_cost[0][MV_MAX], &md_rate_estimation_array->dv_cost[1][MV_MAX] };
         eb_av1_build_nmv_cost_table(md_rate_estimation_array->dv_joint_cost, dvcost, &picture_control_set_ptr->coeff_est_entropy_coder_ptr->fc->ndvc,
