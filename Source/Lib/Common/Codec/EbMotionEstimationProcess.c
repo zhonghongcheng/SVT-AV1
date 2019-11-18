@@ -186,7 +186,7 @@ EbErrorType signal_derivation_me_kernel_oq(
 
     // Set the default settings of subpel
     if (picture_control_set_ptr->sc_content_detected)
-        if (enc_mode <= ENC_M1)
+        if (enc_mode <= ENC_M5)
             context_ptr->me_context_ptr->use_subpel_flag = 1;
         else
             context_ptr->me_context_ptr->use_subpel_flag = 0;
@@ -234,12 +234,12 @@ EbErrorType signal_derivation_me_kernel_oq(
         context_ptr->me_context_ptr->hme_search_method = FULL_SAD_SEARCH;
     // ME Search Method
     if (picture_control_set_ptr->sc_content_detected)
-        if (enc_mode <= ENC_M3)
+        if (enc_mode <= ENC_M5)
             context_ptr->me_context_ptr->me_search_method = FULL_SAD_SEARCH;
         else
             context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH;
     else
-        context_ptr->me_context_ptr->me_search_method = (enc_mode <= ENC_M1) ?
+        context_ptr->me_context_ptr->me_search_method = (enc_mode <= ENC_M4) ?
         FULL_SAD_SEARCH :
         SUB_SAD_SEARCH;
 
@@ -438,6 +438,9 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
     EbErrorType return_error = EB_ErrorNone;
     uint8_t  enc_mode = sequence_control_set_ptr->use_output_stat_file ?
         picture_control_set_ptr->snd_pass_enc_mode : picture_control_set_ptr->enc_mode;
+
+    enc_mode = (enc_mode == 3 || enc_mode == 4) ? 5 : enc_mode;
+
     // Set ME/HME search regions
     tf_set_me_hme_params_oq(
         context_ptr->me_context_ptr,
@@ -447,7 +450,7 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
 
     if (picture_control_set_ptr->sc_content_detected)
         if (enc_mode <= ENC_M1)
-            context_ptr->me_context_ptr->fractional_search_method = SSD_SEARCH;
+            context_ptr->me_context_ptr->fractional_search_method = (enc_mode == ENC_M0) ? FULL_SAD_SEARCH : SSD_SEARCH;
         else
             context_ptr->me_context_ptr->fractional_search_method = SUB_SAD_SEARCH;
     else
@@ -456,7 +459,7 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
         else
             context_ptr->me_context_ptr->fractional_search_method = FULL_SAD_SEARCH;
     if (picture_control_set_ptr->sc_content_detected)
-        if (enc_mode <= ENC_M1)
+        if (enc_mode <= ENC_M5)
             context_ptr->me_context_ptr->fractional_search64x64 = EB_TRUE;
         else
             context_ptr->me_context_ptr->fractional_search64x64 = EB_FALSE;
@@ -471,7 +474,7 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
 
     // Set the default settings of subpel
     if (picture_control_set_ptr->sc_content_detected)
-        if (enc_mode <= ENC_M1)
+        if (enc_mode <= ENC_M5)
             context_ptr->me_context_ptr->use_subpel_flag = 1;
         else
             context_ptr->me_context_ptr->use_subpel_flag = 0;
@@ -518,12 +521,12 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
         context_ptr->me_context_ptr->hme_search_method = FULL_SAD_SEARCH;
     // ME Search Method
     if (picture_control_set_ptr->sc_content_detected)
-        if (enc_mode <= ENC_M3)
+        if (enc_mode <= ENC_M5)
             context_ptr->me_context_ptr->me_search_method = FULL_SAD_SEARCH;
         else
             context_ptr->me_context_ptr->me_search_method = SUB_SAD_SEARCH;
     else
-        context_ptr->me_context_ptr->me_search_method = (enc_mode <= ENC_M1) ?
+        context_ptr->me_context_ptr->me_search_method = (enc_mode <= ENC_M5) ?
         FULL_SAD_SEARCH :
         SUB_SAD_SEARCH;
     return return_error;
