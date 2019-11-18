@@ -8179,6 +8179,9 @@ void md_encode_block(
         }
 
 #if STAGE_1_COUNT_PRUNING_TH_S
+#if SHUT_FAST_COST
+        if(context_ptr->md_stage_1_count_th_c != (uint64_t)~0 || context_ptr->md_stage_1_count_th_s != (uint64_t)~0)
+#endif
         for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
 
             //number of next level candidates could not exceed number of curr level candidates
@@ -8335,6 +8338,9 @@ void md_encode_block(
         }
 
 #if STAGE_2_COUNT_PRUNING_TH_S || STAGE_2_COUNT_PRUNING_TH_C
+#if SHUT_FAST_COST
+        if (context_ptr->md_stage_2_count_th_c != (uint64_t)~0 || context_ptr->md_stage_2_count_th_s != (uint64_t)~0)
+#endif
         for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
 
             if (context_ptr->bypass_md_stage_1[cand_class_it] == EB_FALSE && context_ptr->md_stage_1_count[cand_class_it] > 0 && context_ptr->md_stage_2_count[cand_class_it] > 0) {

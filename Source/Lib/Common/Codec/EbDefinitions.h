@@ -205,7 +205,7 @@ extern "C" {
 #define TUNED_TH_S                             1 
 #define STAGE_1_COUNT_PRUNING_TH_C             1 // <-- to test: d_stage_1_count_th is now set to max
 /**************************************************/
-#if 0 // w/o
+#if 1 // w/o
 #define SHUT_MDC                               1
 #define MULTI_PASS_PREP                        1
 #if MULTI_PASS_PREP
