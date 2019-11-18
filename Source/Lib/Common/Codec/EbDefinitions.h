@@ -217,19 +217,12 @@ extern "C" {
 #define SHUT_MVP                               1
 #endif
 #endif
-
 #define PRED_ONLY                              1 
 #define PRED_PLUS_REFINEMENT                   1
 #if PRED_PLUS_REFINEMENT
-#define REF_OPTION_0                           1
 #define DEEP_REFINEMENT                        1
 #define NOW_ACT                                0
-
-#define JUST_FOR_TESTING                       0
-#define REF_OPTION_1                           0
-#define FROM_NEW_TO_NEAREST                    0
 #define LETS_INJECT_DC                         0
-#define ONLY_COEF_RATE_FAST_RATE               0
 #define SHUT_FAST_COST                         1
 #endif
 #endif

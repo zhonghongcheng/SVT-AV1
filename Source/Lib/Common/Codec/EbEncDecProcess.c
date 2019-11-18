@@ -1945,16 +1945,11 @@ uint64_t  pd_level_tab[9][2][5] = {
 #else
 uint64_t  pd_level_tab[9][2][3] = {
 #endif
-#if REF_OPTION_0
 #if NOW_ACT
     {{300,200,100,100,100},{300,200,100,100,100}},
 #else
     {{600,500,400},{600,500,400}},
 #endif
-#else
-    {{150,80,40},{150,80,40}},
-#endif
-
     {{150,80,40},{150,80,40}},
     {{100,20,0},{150,50,0}},
     {{100, 20, 0},{150,50,0}},
@@ -2130,7 +2125,7 @@ static void init_considered_block(
     LargestCodingUnit  *sb_ptr = picture_control_set_ptr->sb_ptr_array[sb_index];
 
     SbParams *sb_params = &sequence_control_set_ptr->sb_params_array[sb_index];
-    uint8_t  is_complete_sb = sb_params->is_complete_sb;
+
     uint32_t tot_d1_blocks, block_1d_idx;
     EbBool split_flag;
 
@@ -2157,7 +2152,7 @@ static void init_considered_block(
                 int8_t e_depth = 0;
 
 
-                if (is_complete_sb && (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE))
+                if (sb_params->is_complete_sb && (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE))
                     derive_start_end_depth(
                         picture_control_set_ptr,
                         sb_ptr,

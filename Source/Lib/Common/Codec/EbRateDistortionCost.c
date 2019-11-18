@@ -2197,13 +2197,6 @@ EbErrorType Av1FullCost(
 
     EbErrorType return_error = EB_ErrorNone;
 
-#if ONLY_COEF_RATE_FAST_RATE
-    if (!context_ptr->is_final_pd_pass) {
-        // Assign full cost
-        *(candidate_buffer_ptr->full_cost_ptr) = RDCOST(lambda, (candidate_buffer_ptr->candidate_ptr->fast_luma_rate + *y_coeff_bits), y_distortion[0]);
-        return return_error;
-    }
-#endif
     // Luma and chroma rate
     uint64_t lumaRate = 0;
     uint64_t chromaRate = 0;

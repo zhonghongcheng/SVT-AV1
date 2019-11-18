@@ -3414,12 +3414,7 @@ void inject_new_candidates(
 
                 candidateArray[canTotalCnt].inter_mode = NEWMV;
                 candidateArray[canTotalCnt].pred_mode = NEWMV;
-#if FROM_NEW_TO_NEAREST // from_new_to_nearest
-                if (!context_ptr->is_final_pd_pass) {
-                    candidateArray[canTotalCnt].inter_mode = NEARESTMV;
-                    candidateArray[canTotalCnt].pred_mode = NEARESTMV;
-                }
-#endif
+
                 candidateArray[canTotalCnt].motion_mode = SIMPLE_TRANSLATION;
 
                 candidateArray[canTotalCnt].is_compound = 0;
@@ -3561,12 +3556,7 @@ void inject_new_candidates(
 
                     candidateArray[canTotalCnt].inter_mode = NEWMV;
                     candidateArray[canTotalCnt].pred_mode = NEWMV;
-#if FROM_NEW_TO_NEAREST // from_new_to_nearest
-                    if (!context_ptr->is_final_pd_pass) {
-                        candidateArray[canTotalCnt].inter_mode = NEARESTMV;
-                        candidateArray[canTotalCnt].pred_mode = NEARESTMV;
-                    }
-#endif
+
                     candidateArray[canTotalCnt].motion_mode = SIMPLE_TRANSLATION;
 
                     candidateArray[canTotalCnt].is_compound = 0;
@@ -3716,12 +3706,7 @@ void inject_new_candidates(
 
                         candidateArray[canTotalCnt].inter_mode = NEW_NEWMV;
                         candidateArray[canTotalCnt].pred_mode = NEW_NEWMV;
-#if FROM_NEW_TO_NEAREST // from_new_to_nearest
-                        if (!context_ptr->is_final_pd_pass) {
-                            candidateArray[canTotalCnt].inter_mode = NEARESTMV;
-                            candidateArray[canTotalCnt].pred_mode = NEARESTMV;
-                        }
-#endif
+
                         candidateArray[canTotalCnt].motion_mode = SIMPLE_TRANSLATION;
                         candidateArray[canTotalCnt].is_compound = 1;
 #if II_COMP_FLAG
