@@ -8457,7 +8457,7 @@ void md_encode_block(
             context_ptr->parent_sq_pred_mode[sq_index] = candidate_buffer->candidate_ptr->pred_mode;
         }
 
-#if MULTI_PASS_PD // Shut inverse transform
+#if MULTI_PASS_PD && !LETS_INJECT_DC// Shut inverse transform
         if (context_ptr->is_final_pd_pass)
 #endif
         AV1PerformInverseTransformRecon(

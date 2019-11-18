@@ -56,8 +56,10 @@ extern "C" {
 #define SEGMENT_START_IDX(index, pic_size_in_lcu, num_of_seg) (((index) * (pic_size_in_lcu)) / (num_of_seg))
 #define SEGMENT_END_IDX(index, pic_size_in_lcu, num_of_seg)   ((((index)+1) * (pic_size_in_lcu)) / (num_of_seg))
 
-// BDP OFF
 #define MD_NEIGHBOR_ARRAY_INDEX                0
+#if MULTI_PASS_PD
+#define MULTI_STAGE_PD_NEIGHBOR_ARRAY_INDEX    4
+#endif
 #if MULTI_PASS_PD
 #define NEIGHBOR_ARRAY_TOTAL_COUNT             5
 #else

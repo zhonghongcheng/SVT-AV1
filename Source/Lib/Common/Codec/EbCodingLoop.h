@@ -60,16 +60,6 @@ extern "C" {
         SsMeContext                       *ss_mecontext,
         ModeDecisionContext               *context_ptr);
 
-    //extern EbErrorType _1st_pass_pd(
-    //    SequenceControlSet                *sequence_control_set_ptr,
-    //    PictureControlSet                 *picture_control_set_ptr,
-    //    const MdcLcuData * const           mdcResultTbPtr,
-    //    LargestCodingUnit                 *sb_ptr,
-    //    uint16_t                             sb_origin_x,
-    //    uint16_t                             sb_origin_y,
-    //    uint32_t                             lcuAddr,
-    //    SsMeContext                       *ss_mecontext,
-    //    ModeDecisionContext               *context_ptr);
 #if MULTI_PASS_PD
     extern void copy_neighbour_arrays(
         PictureControlSet   *picture_control_set_ptr,

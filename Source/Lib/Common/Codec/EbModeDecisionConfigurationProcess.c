@@ -1219,80 +1219,30 @@ uint8_t update_mdc_level(
     int8_t depthp1 = depth + 1 <= end_depth ? depth + 1 : depth;
     int8_t depthp2 = depth + 2 <= end_depth ? depth + 2 : depth + 1 <= end_depth ? depth + 1 : depth;
     int8_t depthp3 = depth + 3 <= end_depth ? depth + 3 : depth + 2 <= end_depth ? depth + 2 : depth + 1 <= end_depth ? depth + 1 : depth;
-
     uint8_t depthm1 = depth - 1 >= start_depth ? depth - 1 : depth;
     uint8_t depthm2 = depth - 2 >= start_depth ? depth - 2 : depth - 1 >= start_depth ? depth - 1 : depth;
     uint8_t depthm3 = depth - 3 >= start_depth ? depth - 3 : depth - 2 >= start_depth ? depth - 2 : depth - 1 >= start_depth ? depth - 1 : depth;
-
-
     adjusted_depth_level = 13;
 #if NEW_MDC_REFINEMENT_V2
     uint64_t max_distance = 0xFFFFFFFFFFFFFFFF;
     uint64_t mth01 = mdc_tab[encode_mode][0][0];
     uint64_t mth02 = mdc_tab[encode_mode][0][1];
     uint64_t mth03 = mdc_tab[encode_mode][0][2];
-
     uint64_t pth01 = mdc_tab[encode_mode][1][0];
     uint64_t pth02 = mdc_tab[encode_mode][1][1];
     uint64_t pth03 = mdc_tab[encode_mode][1][2];
-
-#if REF_OPTION_0
-    uint64_t dist_001 =
-        sb_ptr->depth_cost[depth] == 0 ?
-            max_distance :
-            sb_ptr->depth_cost[depthp1] <= sb_ptr->depth_cost[depth] ?
-                0 :
-                (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthp1]) * 100) / sb_ptr->depth_cost[depth];
-
-    uint64_t dist_100 = 
-        sb_ptr->depth_cost[depth] == 0 ?
-            max_distance :
-            sb_ptr->depth_cost[depthm1] <= sb_ptr->depth_cost[depth] ?
-                0 :
-                (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthm1]) * 100) / sb_ptr->depth_cost[depth];
-
-    uint64_t dist_002 =
-        sb_ptr->depth_cost[depth] == 0 ?
-            max_distance :
-            sb_ptr->depth_cost[depthp2] <= sb_ptr->depth_cost[depth] ?
-                0 :
-                (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthp2]) * 100) / sb_ptr->depth_cost[depth];
-
-    uint64_t dist_200 = 
-        sb_ptr->depth_cost[depth] == 0 ?
-            max_distance :
-            sb_ptr->depth_cost[depthm2] <= sb_ptr->depth_cost[depth] ?
-                0 :
-                (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthm2]) * 100) / sb_ptr->depth_cost[depth];
-
-    uint64_t dist_003 = 
-        sb_ptr->depth_cost[depth] == 0 ?
-            max_distance :
-            sb_ptr->depth_cost[depthp3] <= sb_ptr->depth_cost[depth] ?
-                0 :
-                (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthp3]) * 100) / sb_ptr->depth_cost[depth];
-
-    uint64_t dist_300 = 
-        sb_ptr->depth_cost[depth] == 0 ?
-            max_distance :
-                sb_ptr->depth_cost[depthm3] <= sb_ptr->depth_cost[depth] ?
-                0 :
-                (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthm3]) * 100) / sb_ptr->depth_cost[depth];
-
-#else
     uint64_t dist_001 = sb_ptr->depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthp1]) * 100) / sb_ptr->depth_cost[depth] : max_distance;
     uint64_t dist_100 = sb_ptr->depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthm1]) * 100) / sb_ptr->depth_cost[depth] : max_distance;
     uint64_t dist_002 = sb_ptr->depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthp2]) * 100) / sb_ptr->depth_cost[depth] : max_distance;
     uint64_t dist_200 = sb_ptr->depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthm2]) * 100) / sb_ptr->depth_cost[depth] : max_distance;
     uint64_t dist_003 = sb_ptr->depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthp3]) * 100) / sb_ptr->depth_cost[depth] : max_distance;
     uint64_t dist_300 = sb_ptr->depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthm3]) * 100) / sb_ptr->depth_cost[depth] : max_distance;
-#endif
+
     /*printf("%d\t%d\t%d\t%d\t%d\t%d\t%d\n",sb_ptr->depth_cost[depthp3],sb_ptr->depth_cost[depthp2],sb_ptr->depth_cost[depthp1],sb_ptr->depth_cost[depth],sb_ptr->depth_cost[depthp1],sb_ptr->depth_cost[depthp2],sb_ptr->depth_cost[depthp3]);
     printf("%d\t%d\t%d\t%d\t%d\t%d\n",sb_ptr->depth_cost[depthp3],sb_ptr->depth_cost[depthp2],sb_ptr->depth_cost[depthp1],sb_ptr->depth_cost[depth],sb_ptr->depth_cost[depthp1],sb_ptr->depth_cost[depthp2],sb_ptr->depth_cost[depthp3]);*/
 
     int8_t s_depth = -3;
     int8_t e_depth = 3;
-
     if (dist_300 < mth03)
         s_depth = -3;
     else if (dist_200 < mth02)
