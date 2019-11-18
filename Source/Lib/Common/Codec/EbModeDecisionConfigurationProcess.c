@@ -1182,11 +1182,7 @@ uint64_t  mdc_tab[9][2][3] = {
 #if MDC_ADAPTIVE_M1_ON_M0
     {{100,0,0},{150,50,0}},
 #else
- #if REF_OPTION_0
-    {{300,200,100},{300,200,100}},
-#else
     {{150,80,40},{150,80,40}},
-#endif
 #endif
     {{150,80,40},{150,80,40}},
     {{100,20,0},{150,50,0}},
@@ -1223,18 +1219,23 @@ uint8_t update_mdc_level(
     int8_t depthp1 = depth + 1 <= end_depth ? depth + 1 : depth;
     int8_t depthp2 = depth + 2 <= end_depth ? depth + 2 : depth + 1 <= end_depth ? depth + 1 : depth;
     int8_t depthp3 = depth + 3 <= end_depth ? depth + 3 : depth + 2 <= end_depth ? depth + 2 : depth + 1 <= end_depth ? depth + 1 : depth;
+
     uint8_t depthm1 = depth - 1 >= start_depth ? depth - 1 : depth;
     uint8_t depthm2 = depth - 2 >= start_depth ? depth - 2 : depth - 1 >= start_depth ? depth - 1 : depth;
     uint8_t depthm3 = depth - 3 >= start_depth ? depth - 3 : depth - 2 >= start_depth ? depth - 2 : depth - 1 >= start_depth ? depth - 1 : depth;
+
+
     adjusted_depth_level = 13;
 #if NEW_MDC_REFINEMENT_V2
     uint64_t max_distance = 0xFFFFFFFFFFFFFFFF;
     uint64_t mth01 = mdc_tab[encode_mode][0][0];
     uint64_t mth02 = mdc_tab[encode_mode][0][1];
     uint64_t mth03 = mdc_tab[encode_mode][0][2];
+
     uint64_t pth01 = mdc_tab[encode_mode][1][0];
     uint64_t pth02 = mdc_tab[encode_mode][1][1];
     uint64_t pth03 = mdc_tab[encode_mode][1][2];
+
 #if REF_OPTION_0
     uint64_t dist_001 =
         sb_ptr->depth_cost[depth] == 0 ?
@@ -1291,6 +1292,7 @@ uint8_t update_mdc_level(
 
     int8_t s_depth = -3;
     int8_t e_depth = 3;
+
     if (dist_300 < mth03)
         s_depth = -3;
     else if (dist_200 < mth02)

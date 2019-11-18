@@ -3411,8 +3411,15 @@ void inject_new_candidates(
                 candidateArray[canTotalCnt].use_intrabc = 0;
                 candidateArray[canTotalCnt].merge_flag = EB_FALSE;
                 candidateArray[canTotalCnt].prediction_direction[0] = (EbPredDirection)0;
+
                 candidateArray[canTotalCnt].inter_mode = NEWMV;
                 candidateArray[canTotalCnt].pred_mode = NEWMV;
+#if FROM_NEW_TO_NEAREST // from_new_to_nearest
+                if (!context_ptr->is_final_pd_pass) {
+                    candidateArray[canTotalCnt].inter_mode = NEARESTMV;
+                    candidateArray[canTotalCnt].pred_mode = NEARESTMV;
+                }
+#endif
                 candidateArray[canTotalCnt].motion_mode = SIMPLE_TRANSLATION;
 
                 candidateArray[canTotalCnt].is_compound = 0;
@@ -3554,6 +3561,12 @@ void inject_new_candidates(
 
                     candidateArray[canTotalCnt].inter_mode = NEWMV;
                     candidateArray[canTotalCnt].pred_mode = NEWMV;
+#if FROM_NEW_TO_NEAREST // from_new_to_nearest
+                    if (!context_ptr->is_final_pd_pass) {
+                        candidateArray[canTotalCnt].inter_mode = NEARESTMV;
+                        candidateArray[canTotalCnt].pred_mode = NEARESTMV;
+                    }
+#endif
                     candidateArray[canTotalCnt].motion_mode = SIMPLE_TRANSLATION;
 
                     candidateArray[canTotalCnt].is_compound = 0;
@@ -3703,6 +3716,12 @@ void inject_new_candidates(
 
                         candidateArray[canTotalCnt].inter_mode = NEW_NEWMV;
                         candidateArray[canTotalCnt].pred_mode = NEW_NEWMV;
+#if FROM_NEW_TO_NEAREST // from_new_to_nearest
+                        if (!context_ptr->is_final_pd_pass) {
+                            candidateArray[canTotalCnt].inter_mode = NEARESTMV;
+                            candidateArray[canTotalCnt].pred_mode = NEARESTMV;
+                        }
+#endif
                         candidateArray[canTotalCnt].motion_mode = SIMPLE_TRANSLATION;
                         candidateArray[canTotalCnt].is_compound = 1;
 #if II_COMP_FLAG
@@ -5145,7 +5164,11 @@ void  inject_intra_candidates(
 #endif
     uint8_t                     intra_mode_start = DC_PRED;
 #if PAETH_HBD
+#if LETS_INJECT_DC
+    uint8_t                     intra_mode_end = (context_ptr->is_final_pd_pass) ? PAETH_PRED : DC_PRED;
+#else
     uint8_t                     intra_mode_end   =  PAETH_PRED;
+#endif
 #else
     uint8_t                     intra_mode_end   = is16bit ? SMOOTH_H_PRED : PAETH_PRED;
 #endif
@@ -5598,10 +5621,20 @@ EbErrorType generate_md_stage_0_cand(
                     context_ptr->parent_sq_has_coeff[sq_index] != 0 ? inject_intra_candidate : 0;
         }
     }
+#if MULTI_PASS_PD // Shut intra test if 1st pass
+   }
+#endif
+#if MULTI_PASS_PD && !LETS_INJECT_DC// Shut intra test if 1st pass
+   if (context_ptr->is_final_pd_pass) {
+#endif
     //----------------------
     // Intra
     if (context_ptr->blk_geom->sq_size < 128) {
+#if LETS_INJECT_DC
+        if (context_ptr->is_final_pd_pass && picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode >= 5 && context_ptr->blk_geom->sq_size > 4 && context_ptr->blk_geom->shape == PART_N)
+#else
         if (picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode >= 5 && context_ptr->blk_geom->sq_size > 4 && context_ptr->blk_geom->shape == PART_N)
+#endif
             inject_intra_candidates_ois(
                 picture_control_set_ptr,
                 context_ptr,
@@ -5616,6 +5649,12 @@ EbErrorType generate_md_stage_0_cand(
                 sb_ptr,
                 &canTotalCnt);
     }
+#if MULTI_PASS_PD && !LETS_INJECT_DC// Shut intra test if 1st pass
+    }
+#endif
+#if MULTI_PASS_PD // Shut intra test if 1st pass
+    if (context_ptr->is_final_pd_pass) {
+#endif
 #if FILTER_INTRA_FLAG
        if (picture_control_set_ptr->pic_filter_intra_mode > 0 && av1_filter_intra_allowed_bsize(sequence_control_set_ptr->seq_header.enable_filter_intra, context_ptr->blk_geom->bsize))
             inject_filter_intra_candidates(

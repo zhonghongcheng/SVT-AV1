@@ -897,6 +897,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 
 #endif
 #if SHUT_MDC // test all blocks (up to 4421 blocks)
+        if(!sequence_control_set_ptr->use_output_stat_file)
         picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
 #endif
         if (picture_control_set_ptr->pic_depth_mode < PIC_SQ_DEPTH_MODE)
@@ -981,6 +982,7 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->mdc_depth_level = 6;
 #endif
 #if SHUT_MDC // no mdc
+        if (!sequence_control_set_ptr->use_output_stat_file)
         picture_control_set_ptr->mdc_depth_level = MAX_MDC_LEVEL; // Not tuned yet.
 #endif
     // NSQ search Level                               Settings
