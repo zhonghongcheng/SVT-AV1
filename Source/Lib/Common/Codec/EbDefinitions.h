@@ -205,6 +205,7 @@ extern "C" {
 #define TUNED_TH_S                             1 
 #define STAGE_1_COUNT_PRUNING_TH_C             1 // <-- to test: d_stage_1_count_th is now set to max
 /**************************************************/
+#if 0 // w/o
 #define SHUT_MDC                               1
 #define MULTI_PASS_PREP                        1
 #if MULTI_PASS_PREP
@@ -230,6 +231,8 @@ extern "C" {
 #define FROM_NEW_TO_NEAREST                    0
 #define LETS_INJECT_DC                         0
 #define ONLY_COEF_RATE_FAST_RATE               0
+#define SHUT_FAST_COST                         1
+#endif
 #endif
 #define SHUT_FILTERING                         0 // CDEF RESTORATION DLF
 /**************************************************/

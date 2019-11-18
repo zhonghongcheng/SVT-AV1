@@ -13784,9 +13784,7 @@ extern "C" {
 
         // Mode Decision Config
         MdcLcuData                         *mdc_sb_array;
-#if 0//MULTI_PASS_PD
-        MdcLcuData                         *mpmd_sb_array;
-#endif
+
         // Error Resilience
         EbBool                                constrained_intra_flag;
 

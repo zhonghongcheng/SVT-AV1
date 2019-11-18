@@ -1562,7 +1562,10 @@ void fast_loop_core(
     }
     else
         chromaFastDistortion = 0;
-    // Fast Cost
+#if SHUT_FAST_COST
+    *(candidate_buffer->fast_cost_ptr) = 0;
+    if(context_ptr->is_final_pd_pass)
+#endif
     *(candidate_buffer->fast_cost_ptr) = Av1ProductFastCostFuncTable[candidate_ptr->type](
         cu_ptr,
         candidate_buffer->candidate_ptr,

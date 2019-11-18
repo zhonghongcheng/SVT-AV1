@@ -3229,7 +3229,7 @@ enum {
 #define LOW_QPS_COMP_THRESHOLD         40
 #define HIGH_FILTERED_THRESHOLD     (4<<8) // 8 bit precision
 #define LOW_FILTERED_THRESHOLD      (2<<8) // 8 bit precision
-#if 0//rtime_presets
+#if rtime_presets
 #define QPS_SW_THRESH          100
 #else
 #define QPS_SW_THRESH          8

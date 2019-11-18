@@ -2039,25 +2039,6 @@ void copy_mdc_array_data(
         blk_index++;
     }
 }
-#if 0//MULTI_PASS_PD
-void init_split_flags(
-    SequenceControlSet  *sequence_control_set_ptr,
-    PictureControlSet   *picture_control_set_ptr,
-    uint32_t            sb_index) {
-    MdcLcuData *cu_ptr = &picture_control_set_ptr->mpmd_sb_array[sb_index];
-    MdcLcuData *mdc_cu_ptr = &picture_control_set_ptr->mdc_sb_array[sb_index];
-    uint32_t  blk_index = 0;
-    copy_mdc_array_data(sequence_control_set_ptr->max_block_cnt, mdc_cu_ptr, cu_ptr);
-    while (blk_index < sequence_control_set_ptr->max_block_cnt) {
-        const BlockGeom * blk_geom = get_blk_geom_mds(blk_index);
-        cu_ptr->leaf_data_array[blk_index].consider_block = 0;
-        cu_ptr->leaf_data_array[blk_index].split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
-        cu_ptr->leaf_data_array[blk_index].refined_split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
-        blk_index++;
-    }
-}
-#endif
-
 
 /*************NEW****************/
 static void forward_considered_blocks(
