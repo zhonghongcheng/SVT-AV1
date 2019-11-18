@@ -225,7 +225,6 @@ extern "C" {
 #define DEEP_REFINEMENT                        1
 #define NOW_ACT                                0
 
-#define JUST_TESTING                           0
 #define JUST_FOR_TESTING                       0
 #define REF_OPTION_1                           0
 #define FROM_NEW_TO_NEAREST                    0

@@ -2104,20 +2104,14 @@ uint64_t  pd_level_tab[9][2][3] = {
     {{100, 20, 0},{150,50,0}},
     {{100, 20, 0},{150,50,0}}
 };
-// Update MDC refinement
-#if DEEP_REFINEMENT
-void update_pd_level(
-#else
-uint8_t update_pd_level(
-#endif
+
+void derive_start_end_depth(
     PictureControlSet  *picture_control_set_ptr,
     LargestCodingUnit  *sb_ptr,
     uint32_t sb_index,
     uint32_t sb_size,
-#if DEEP_REFINEMENT
     int8_t *s_depth,
     int8_t *e_depth,
-#endif
     const BlockGeom * blk_geom,
     EbInputResolution input_resolution,
     uint8_t is_used_as_reference_flag,
@@ -2134,14 +2128,14 @@ uint8_t update_pd_level(
     int8_t depthp1 = depth + 1 <= end_depth ? depth + 1 : depth;
     int8_t depthp2 = depth + 2 <= end_depth ? depth + 2 : depth + 1 <= end_depth ? depth + 1 : depth;
     int8_t depthp3 = depth + 3 <= end_depth ? depth + 3 : depth + 2 <= end_depth ? depth + 2 : depth + 1 <= end_depth ? depth + 1 : depth;
-#if DEEP_REFINEMENT
+#if NOW_ACT
     int8_t depthp4 = depth + 4 <= end_depth ? depth + 4 : depth + 3 <= end_depth ? depth + 3 : depth + 2 <= end_depth ? depth + 2 : depth + 1 <= end_depth ? depth + 1 : depth;
     int8_t depthp5 = depth + 5 <= end_depth ? depth + 5 : depth + 4 <= end_depth ? depth + 4 : depth + 3 <= end_depth ? depth + 3 : depth + 2 <= end_depth ? depth + 2 : depth + 1 <= end_depth ? depth + 1 : depth;
 #endif
     uint8_t depthm1 = depth - 1 >= start_depth ? depth - 1 : depth;
     uint8_t depthm2 = depth - 2 >= start_depth ? depth - 2 : depth - 1 >= start_depth ? depth - 1 : depth;
     uint8_t depthm3 = depth - 3 >= start_depth ? depth - 3 : depth - 2 >= start_depth ? depth - 2 : depth - 1 >= start_depth ? depth - 1 : depth;
-#if DEEP_REFINEMENT
+#if NOW_ACT
     uint8_t depthm4 = depth - 4 >= start_depth ? depth - 4 : depth - 4 >= start_depth ? depth - 3 : depth - 2 >= start_depth ? depth - 2 : depth - 1 >= start_depth ? depth - 1 : depth;
     uint8_t depthm5 = depth - 5 >= start_depth ? depth - 5 : depth - 4 >= start_depth ? depth - 4 : depth - 4 >= start_depth ? depth - 3 : depth - 2 >= start_depth ? depth - 2 : depth - 1 >= start_depth ? depth - 1 : depth;
 #endif
@@ -2163,7 +2157,7 @@ uint8_t update_pd_level(
     uint64_t pth04 = pd_level_tab[encode_mode][1][3];
     uint64_t pth05 = pd_level_tab[encode_mode][1][4];
 #endif
-#if REF_OPTION_0
+
     uint64_t dist_001 =
         sb_ptr->depth_cost[depth] == 0 ?
         max_distance :
@@ -2236,19 +2230,7 @@ uint8_t update_pd_level(
         (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthm5]) * 100) / sb_ptr->depth_cost[depth];
 
 #endif
-#else
-    uint64_t dist_001 = sb_ptr->depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthp1]) * 100) / sb_ptr->depth_cost[depth] : max_distance;
-    uint64_t dist_100 = sb_ptr->depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthm1]) * 100) / sb_ptr->depth_cost[depth] : max_distance;
-    uint64_t dist_002 = sb_ptr->depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthp2]) * 100) / sb_ptr->depth_cost[depth] : max_distance;
-    uint64_t dist_200 = sb_ptr->depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthm2]) * 100) / sb_ptr->depth_cost[depth] : max_distance;
-    uint64_t dist_003 = sb_ptr->depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthp3]) * 100) / sb_ptr->depth_cost[depth] : max_distance;
-    uint64_t dist_300 = sb_ptr->depth_cost[depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthm3]) * 100) / sb_ptr->depth_cost[depth] : max_distance;
-#endif
-    /*printf("%d\t%d\t%d\t%d\t%d\t%d\t%d\n",sb_ptr->depth_cost[depthp3],sb_ptr->depth_cost[depthp2],sb_ptr->depth_cost[depthp1],sb_ptr->depth_cost[depth],sb_ptr->depth_cost[depthp1],sb_ptr->depth_cost[depthp2],sb_ptr->depth_cost[depthp3]);
-    printf("%d\t%d\t%d\t%d\t%d\t%d\n",sb_ptr->depth_cost[depthp3],sb_ptr->depth_cost[depthp2],sb_ptr->depth_cost[depthp1],sb_ptr->depth_cost[depth],sb_ptr->depth_cost[depthp1],sb_ptr->depth_cost[depthp2],sb_ptr->depth_cost[depthp3]);*/
 
-
-#if DEEP_REFINEMENT
 #if NOW_ACT
      if (dist_500 < mth05)
          *s_depth = -5;
@@ -2279,131 +2261,14 @@ uint8_t update_pd_level(
         *e_depth = 1;
     else
         *e_depth = 0;
-#if JUST_TESTING
-
-        *s_depth = -3; 
-        *e_depth = 0;
-#endif
-#else
-    int8_t s_depth = -3;
-    int8_t e_depth = 3;
-        if (dist_300 < mth03)
-            s_depth = -3;
-        else if (dist_200 < mth02)
-            s_depth = -2;
-        else if (dist_100 < mth01)
-            s_depth = -1;
-        else
-            s_depth = 0;
-        if (dist_003 < pth03)
-            e_depth = 3;
-        else if (dist_002 < pth02)
-            e_depth = 2;
-        else if (dist_001 < pth01)
-            e_depth = 1;
-        else
-            e_depth = 0;
-
-    if (s_depth == 0 && e_depth == 0)
-        adjusted_depth_level = 0; // Pred only
-    else if (s_depth == -1 && e_depth == 0)
-        adjusted_depth_level = 8; // Pred -1
-    else if (s_depth == -2 && e_depth == 0)
-        adjusted_depth_level = 9; // Pred -2
-    else if (s_depth == -3 && e_depth == 0)
-        adjusted_depth_level = 14; // Pred -3
-    else if (s_depth == -3 && e_depth == 1)
-        adjusted_depth_level = 15; // Pred -3 + 1
-    else if (s_depth == -2 && e_depth == 1)
-        adjusted_depth_level = 10; // Pred -2 + 1
-    else if (s_depth == -1 && e_depth == 1)
-        adjusted_depth_level = 4; // Pred -1 + 1
-    else if (s_depth == 0 && e_depth == 1)
-        adjusted_depth_level = 1; // Pred + 1
-    else if (s_depth == -3 && e_depth == 2)
-        adjusted_depth_level = 12; // Pred -3 + 1
-    else if (s_depth == -2 && e_depth == 2)
-        adjusted_depth_level = 11; // Pred -3 + 1
-    else if (s_depth == -1 && e_depth == 2)
-        adjusted_depth_level = 5; // Pred -3 + 1
-    else if (s_depth == 0 && e_depth == 2)
-        adjusted_depth_level = 2; // Pred + 2
-    else if (s_depth == -3 && e_depth == 3)
-        adjusted_depth_level = 13; // Pred -3 + 3
-    else if (s_depth == -2 && e_depth == 3)
-        adjusted_depth_level = 7; // Pred -2 + 3
-    else if (s_depth == -1 && e_depth == 3)
-        adjusted_depth_level = 6; // Pred -1 + 3
-    else if (s_depth == 0 && e_depth == 3)
-        adjusted_depth_level = 3; // Pred + 3
-    else
-        printf("Error: unvalid s_depth && e_depth");
-
-    switch (adjusted_depth_level) {
-    case 0:
-        depth_refinement_mode = Pred;
-        break;
-    case 1:
-        depth_refinement_mode = Predp1;
-        break;
-    case 2:
-        depth_refinement_mode = Predp2;
-        break;
-    case 3:
-        depth_refinement_mode = Predp3;
-        break;
-    case 4:
-        depth_refinement_mode = Predm1p1;
-        break;
-    case 5:
-        depth_refinement_mode = Predm1p2;
-        break;
-    case 6:
-        depth_refinement_mode = Predm1p3;
-        break;
-    case 7:
-        depth_refinement_mode = Predm2p3;
-        break;
-    case 8:
-        depth_refinement_mode = Predm1;
-        break;
-    case 9:
-        depth_refinement_mode = Predm2;
-        break;
-    case 10:
-        depth_refinement_mode = Predm2p1;
-        break;
-    case 11:
-        depth_refinement_mode = Predm2p2;
-        break;
-    case 12:
-        depth_refinement_mode = Predm3p2;
-        break;
-    case 13:
-        depth_refinement_mode = Predm3p3;
-        break;
-    case 14:
-        depth_refinement_mode = Predm3;
-        break;
-    case 15:
-        depth_refinement_mode = Predm3p1;
-        break;
-    default:
-        printf("Not supported refined mdc_depth_level");
-        break;
-    }
-    return depth_refinement_mode;
-#endif
 }
 
 static void init_considered_block(
     SequenceControlSet  *sequence_control_set_ptr,
     PictureControlSet   *picture_control_set_ptr,
     ModeDecisionContext *context_ptr,
-#if REF_OPTION_1
-    uint32_t depth_refinement_mode,
-#endif
     uint32_t             sb_index) {
+
     MdcLcuData *resultsPtr = &picture_control_set_ptr->mdc_sb_array[sb_index];
     resultsPtr->leaf_count = 0;
     uint32_t  blk_index = 0;
@@ -2414,92 +2279,52 @@ static void init_considered_block(
     uint8_t  is_complete_sb = sb_params->is_complete_sb;
     uint32_t tot_d1_blocks, block_1d_idx;
     EbBool split_flag;
-#if !REF_OPTION_1
-    uint32_t depth_refinement_mode = AllD;
-    switch (picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level) {
-    case 0:
-        depth_refinement_mode = is_complete_sb ? Pred : AllD;
-        break;
-    case 1:
-        depth_refinement_mode = is_complete_sb ? Predp1 : AllD;
-        break;
-    case 2:
-        depth_refinement_mode = is_complete_sb ? Predp2 : AllD;
-        break;
-    case 3:
-        depth_refinement_mode = is_complete_sb ? Predp3 : AllD;
-        break;
-    case 4:
-        depth_refinement_mode = is_complete_sb ? Predm1p1 : AllD;
-        break;
-    case 5:
-        depth_refinement_mode = is_complete_sb ? Predm1p2 : AllD;
-        break;
-    case 6:
-        depth_refinement_mode = is_complete_sb ? Predm1p3 : AllD;
-        break;
-    case 7:
-        depth_refinement_mode = is_complete_sb ? Predm2p3 : AllD;
-        break;
-    case MAX_MDC_LEVEL:
-        depth_refinement_mode = AllD;
-        break;
-    default:
-        printf("not supported mdc_depth_level");
-        break;
-    }
 
-#if PRED_ONLY
-    depth_refinement_mode = Pred;
-#endif
-#endif
+    int8_t ref_mode = 0; // 0: adaptive, 1: exclusive
+
     while (blk_index < sequence_control_set_ptr->max_block_cnt) {
         const BlockGeom * blk_geom = get_blk_geom_mds(blk_index);
         tot_d1_blocks =
             blk_geom->sq_size == 128 ? 17 :
             blk_geom->sq_size > 8 ? 25 :
             blk_geom->sq_size == 8 ? 5 : 1;
+
         //if the parent square is inside inject this block
         uint8_t is_blk_allowed = picture_control_set_ptr->slice_type != I_SLICE ? 1 : (blk_geom->sq_size < 128) ? 1 : 0;
-        if (depth_refinement_mode == AllD)
+        if (ref_mode)
             split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
         else
             split_flag = context_ptr->md_cu_arr_nsq[blk_index].split_flag;
+
         if (sequence_control_set_ptr->sb_geom[sb_index].block_is_inside_md_scan[blk_index] && is_blk_allowed) {
             if (blk_geom->shape == PART_N) {
 
-                // Update MDC refinement
-                uint8_t adjusted_refinement_mode = depth_refinement_mode;
-#if DEEP_REFINEMENT
                 int8_t s_depth = 0;
                 int8_t e_depth = 0;
-#endif
-                if (picture_control_set_ptr->parent_pcs_ptr->adpative_ol_partitioning_level)
-                    if (is_complete_sb && (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE))
-#if DEEP_REFINEMENT
-                        update_pd_level(
-#else
-                        adjusted_refinement_mode = update_pd_level(
-#endif
-                            picture_control_set_ptr,
-                            sb_ptr,
-                            sb_index,
-                            sequence_control_set_ptr->seq_header.sb_size,
-#if DEEP_REFINEMENT
-                            &s_depth,
-                            &e_depth,
-#endif
-                            blk_geom,
-                            sequence_control_set_ptr->input_resolution,
-                            picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag,
-                            picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level);
-#if DEEP_REFINEMENT
+
+
+                if (is_complete_sb && (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE))
+                    derive_start_end_depth(
+                        picture_control_set_ptr,
+                        sb_ptr,
+                        sb_index,
+                        sequence_control_set_ptr->seq_header.sb_size,
+                        &s_depth,
+                        &e_depth,
+                        blk_geom,
+                        sequence_control_set_ptr->input_resolution,
+                        picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag,
+                        picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level);
 
                 if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
-                    for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {         
+
+                    // Add current pred depth block(s)
+                    for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
                         resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
                         resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
                     }
+
+                    // Add block indices of upper depth(s)
                     if (s_depth != 0) {
                         set_parent_to_be_considered(
                             resultsPtr,
@@ -2512,367 +2337,20 @@ static void init_considered_block(
                             resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
                         }
                     }
-                    if(e_depth != 0) 
-                    set_child_to_be_considered(
-                        resultsPtr,
-                        blk_index,
-                        sequence_control_set_ptr->seq_header.sb_size,
-                        e_depth);
-                }
 
-#else
-#if PRED_ONLY && !PRED_PLUS_REFINEMENT
-                adjusted_refinement_mode = Pred;
-#endif
-                switch (adjusted_refinement_mode) {
-
-                case Pred:
-                    // Set predicted block to be considered
-                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            // NADER - FORCE SHAPE
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-                    }
-                    break;
-                case Predp1:
-                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
+                    // Add block indices of lower depth(s)
+                    if (e_depth != 0)
                         set_child_to_be_considered(
                             resultsPtr,
                             blk_index,
                             sequence_control_set_ptr->seq_header.sb_size,
-                            1);
-                    }
-                    break;
-                case Predp2:
-                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-                        set_child_to_be_considered(
-                            resultsPtr,
-                            blk_index,
-                            sequence_control_set_ptr->seq_header.sb_size,
-                            2);
-                    }
-                    break;
-                case Predp3:
-                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-                        set_child_to_be_considered(
-                            resultsPtr,
-                            blk_index,
-                            sequence_control_set_ptr->seq_header.sb_size,
-                            3);
-                    }
-                    break;
-                case Predm1p2:
-                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-
-                        set_parent_to_be_considered(
-                            resultsPtr,
-                            blk_index,
-                            sequence_control_set_ptr->seq_header.sb_size,
-                            -1);
-
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-                        set_child_to_be_considered(
-                            resultsPtr,
-                            blk_index,
-                            sequence_control_set_ptr->seq_header.sb_size,
-                            2);
-                    }
-                    break;
-                case Predm1p3:
-                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-
-                        set_parent_to_be_considered(
-                            resultsPtr,
-                            blk_index,
-                            sequence_control_set_ptr->seq_header.sb_size,
-                            -1);
-
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-                        set_child_to_be_considered(
-                            resultsPtr,
-                            blk_index,
-                            sequence_control_set_ptr->seq_header.sb_size,
-                            3);
-                    }
-                    break;
-                case Predm2p3:
-                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-
-                        set_parent_to_be_considered(
-                            resultsPtr,
-                            blk_index,
-                            sequence_control_set_ptr->seq_header.sb_size,
-                            -2);
-
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-                        set_child_to_be_considered(
-                            resultsPtr,
-                            blk_index,
-                            sequence_control_set_ptr->seq_header.sb_size,
-                            3);
-                    }
-                    break;
-                case Predm1:
-                    // Set predicted block to be considered
-                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-
-                        set_parent_to_be_considered(
-                            resultsPtr,
-                            blk_index,
-                            sequence_control_set_ptr->seq_header.sb_size,
-                            -1);
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-
-                    }
-                    break;
-                case Predm2:
-                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-
-                        set_parent_to_be_considered(
-                            resultsPtr,
-                            blk_index,
-                            sequence_control_set_ptr->seq_header.sb_size,
-                            -2);
-
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-                    }
-                    break;
-                case Predm1p1:
-                    // Set predicted block to be considered
-                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-
-                        set_parent_to_be_considered(
-                            resultsPtr,
-                            blk_index,
-                            sequence_control_set_ptr->seq_header.sb_size,
-                            -1);
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-                        set_child_to_be_considered(
-                            resultsPtr,
-                            blk_index,
-                            sequence_control_set_ptr->seq_header.sb_size,
-                            1);
-
-                    }
-                    break;
-                case Predm2p1:
-                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-
-                        set_parent_to_be_considered(
-                            resultsPtr,
-                            blk_index,
-                            sequence_control_set_ptr->seq_header.sb_size,
-                            -2);
-
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-                        set_child_to_be_considered(
-                            resultsPtr,
-                            blk_index,
-                            sequence_control_set_ptr->seq_header.sb_size,
-                            1);
-                    }
-                    break;
-                case Predm2p2:
-                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-
-                        set_parent_to_be_considered(
-                            resultsPtr,
-                            blk_index,
-                            sequence_control_set_ptr->seq_header.sb_size,
-                            -2);
-
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-                        set_child_to_be_considered(
-                            resultsPtr,
-                            blk_index,
-                            sequence_control_set_ptr->seq_header.sb_size,
-                            2);
-                    }
-                    break;
-                case Predm3p2:
-                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-
-                        set_parent_to_be_considered(
-                            resultsPtr,
-                            blk_index,
-                            sequence_control_set_ptr->seq_header.sb_size,
-                            -3);
-
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-                        set_child_to_be_considered(
-                            resultsPtr,
-                            blk_index,
-                            sequence_control_set_ptr->seq_header.sb_size,
-                            2);
-                    }
-                    break;
-                case Predm3p3:
-                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-
-                        set_parent_to_be_considered(
-                            resultsPtr,
-                            blk_index,
-                            sequence_control_set_ptr->seq_header.sb_size,
-                            -3);
-
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-                        set_child_to_be_considered(
-                            resultsPtr,
-                            blk_index,
-                            sequence_control_set_ptr->seq_header.sb_size,
-                            3);
-                    }
-                    break;
-                case Predm3p1:
-                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-
-                        set_parent_to_be_considered(
-                            resultsPtr,
-                            blk_index,
-                            sequence_control_set_ptr->seq_header.sb_size,
-                            -3);
-
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-                        set_child_to_be_considered(
-                            resultsPtr,
-                            blk_index,
-                            sequence_control_set_ptr->seq_header.sb_size,
-                            1);
-                    }
-                    break;
-                case Predm3:
-                    if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-
-                        set_parent_to_be_considered(
-                            resultsPtr,
-                            blk_index,
-                            sequence_control_set_ptr->seq_header.sb_size,
-                            -3);
-
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                            resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_FALSE;
-                        }
-                        set_child_to_be_considered(
-                            resultsPtr,
-                            blk_index,
-                            sequence_control_set_ptr->seq_header.sb_size,
-                            1);
-                    }
-                    break;
-
-                case AllD:
-                    // Set all block to be considered
-                    for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-                        resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
-                        resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
-                    }
-                    break;
-                default:
-                    printf("Error! invalid mdc_refinement_mode\n");
-                    break;
-                }
-#endif
+                            e_depth);
                 }
             }
-        blk_index += split_flag ? d1_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth] : ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
         }
+        blk_index += split_flag ? d1_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth] : ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
     }
+}
 #if 0//MULTI_PASS_PD
     void reset_local_cu_cost(ModeDecisionContext * context_ptr) {
         for (uint64_t cu_idx = 0; cu_idx < BLOCK_MAX_COUNT_SB_128; cu_idx++) {
@@ -3242,42 +2720,12 @@ void* enc_dec_kernel(void *input_ptr)
                             mdc_cu_ptr->leaf_data_array[blk_index].refined_split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
                             blk_index++;
                         }
-#if REF_OPTION_1
-                        uint32_t depth_refinement_mode = Pred;// AllD;
 
-                        int8_t start_depth = (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128) ? 0 : 1;
-                        int8_t end_depth = 5;
-
-                        uint64_t depth_cost_sum = 0;
-                        for (int8_t depth = start_depth; depth < end_depth; depth++) {
-                            depth_cost_sum += sb_ptr->depth_cost[depth];
-                        
-                        }
-
-                        uint64_t depth_cost_average = (depth_cost_sum / (end_depth - start_depth + 1));
-                            
-                        uint64_t depth_cost_error_sum = 0;
-                        for (int8_t depth = start_depth; depth < end_depth; depth++) {
-                            depth_cost_error_sum += (ABS(sb_ptr->depth_cost[depth] - depth_cost_average) * ABS(sb_ptr->depth_cost[depth] - depth_cost_average));
-
-                        }
-                        uint64_t varaince = depth_cost_error_sum / ((end_depth - start_depth + 1) - 1);
-
-                        printf("%d\t%d\t%d\n", picture_control_set_ptr->picture_number, sb_index, varaince);
-
-                        if(varaince < 100)
-                            depth_refinement_mode = AllD;
-
-
-#endif
                         // PD0 -> PD1; up to 4421 block(s) -> less block(s)
                         init_considered_block(
                             sequence_control_set_ptr,
                             picture_control_set_ptr,
                             context_ptr->md_context,
-#if REF_OPTION_1
-                            depth_refinement_mode,
-#endif
                             sb_index);
 
                         // Re-generate final pass input
