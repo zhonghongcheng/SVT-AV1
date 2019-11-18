@@ -1581,8 +1581,10 @@ void fast_loop_core(
         context_ptr->intra_luma_top_mode);
 
 #if SHUT_FAST_COST
-    if (!context_ptr->is_final_pd_pass)
-        *(candidate_buffer->fast_cost_ptr) = 0;
+    if (!context_ptr->is_final_pd_pass) {
+        candidate_ptr->fast_luma_rate = 0;
+        candidate_ptr->fast_chroma_rate = 0;
+    }
 #endif
 }
 #if REMOVE_MD_STAGE_1
