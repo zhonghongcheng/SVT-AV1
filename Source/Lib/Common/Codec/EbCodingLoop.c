@@ -3853,7 +3853,6 @@ EB_EXTERN void av1_encode_pass(
                                     stat_ref_info[curr_sb_index].ref_sb_decode_order[sb_cnt] = refObj0->decode_order;
                                     stat_ref_info[curr_sb_index].referenced_area[sb_cnt]     = width * height * weight;
                                     stat_ref_info[curr_sb_index].overlap_area[sb_cnt]        = overlap_area;
-                                    stat_ref_info[curr_sb_index].mc_flow[sb_cnt]             = cur_stats->mc_flow;
                                     stat_ref_info[curr_sb_index].pix_num[sb_cnt]             = pix_num;
                                     stat_ref_info[curr_sb_index].quant_ratio[sb_cnt]         = cur_stats->quant_ratio;
                                     stat_ref_info[curr_sb_index].intra_cost[sb_cnt]          = cur_stats->intra_cost;
@@ -3898,7 +3897,6 @@ EB_EXTERN void av1_encode_pass(
                                         stat_ref_info[curr_sb_index].ref_sb_decode_order[sb_cnt] = refObj0->decode_order;
                                         stat_ref_info[curr_sb_index].referenced_area[sb_cnt]     = width * height * weight;
                                         stat_ref_info[curr_sb_index].overlap_area[sb_cnt]        = overlap_area;
-                                        stat_ref_info[curr_sb_index].mc_flow[sb_cnt]             = cur_stats->mc_flow;
                                         stat_ref_info[curr_sb_index].pix_num[sb_cnt]             = pix_num;
                                         stat_ref_info[curr_sb_index].quant_ratio[sb_cnt]         = cur_stats->quant_ratio;
                                         stat_ref_info[curr_sb_index].intra_cost[sb_cnt]          = cur_stats->intra_cost;
@@ -3944,7 +3942,6 @@ EB_EXTERN void av1_encode_pass(
                                         stat_ref_info[curr_sb_index].ref_sb_decode_order[sb_cnt] = refObj0->decode_order;
                                         stat_ref_info[curr_sb_index].referenced_area[sb_cnt]     = width * height * weight;
                                         stat_ref_info[curr_sb_index].overlap_area[sb_cnt]        = overlap_area;
-                                        stat_ref_info[curr_sb_index].mc_flow[sb_cnt]             = cur_stats->mc_flow;
                                         stat_ref_info[curr_sb_index].pix_num[sb_cnt]             = pix_num;
                                         stat_ref_info[curr_sb_index].quant_ratio[sb_cnt]         = cur_stats->quant_ratio;
                                         stat_ref_info[curr_sb_index].intra_cost[sb_cnt]          = cur_stats->intra_cost;
@@ -3990,7 +3987,6 @@ EB_EXTERN void av1_encode_pass(
                                         stat_ref_info[curr_sb_index].ref_sb_decode_order[sb_cnt] = refObj0->decode_order;
                                         stat_ref_info[curr_sb_index].referenced_area[sb_cnt]     = width * height * weight;
                                         stat_ref_info[curr_sb_index].overlap_area[sb_cnt]        = overlap_area;
-                                        stat_ref_info[curr_sb_index].mc_flow[sb_cnt]             = cur_stats->mc_flow;
                                         stat_ref_info[curr_sb_index].pix_num[sb_cnt]             = pix_num;
                                         stat_ref_info[curr_sb_index].quant_ratio[sb_cnt]         = cur_stats->quant_ratio;
                                         stat_ref_info[curr_sb_index].intra_cost[sb_cnt]          = cur_stats->intra_cost;
@@ -4049,7 +4045,6 @@ EB_EXTERN void av1_encode_pass(
                                 stat_ref_info[curr_sb_index].ref_sb_decode_order[sb_cnt] = refObj1->decode_order;
                                 stat_ref_info[curr_sb_index].referenced_area[sb_cnt]     = width * height * weight;
                                 stat_ref_info[curr_sb_index].overlap_area[sb_cnt]        = overlap_area;
-                                stat_ref_info[curr_sb_index].mc_flow[sb_cnt]             = cur_stats->mc_flow;
                                 stat_ref_info[curr_sb_index].pix_num[sb_cnt]             = pix_num;
                                 stat_ref_info[curr_sb_index].quant_ratio[sb_cnt]         = cur_stats->quant_ratio;
                                 stat_ref_info[curr_sb_index].intra_cost[sb_cnt]          = cur_stats->intra_cost;
@@ -4093,7 +4088,6 @@ EB_EXTERN void av1_encode_pass(
                                     stat_ref_info[curr_sb_index].ref_sb_decode_order[sb_cnt] = refObj1->decode_order;
                                     stat_ref_info[curr_sb_index].referenced_area[sb_cnt]     = width * height * weight;
                                     stat_ref_info[curr_sb_index].overlap_area[sb_cnt]        = overlap_area;
-                                    stat_ref_info[curr_sb_index].mc_flow[sb_cnt]             = cur_stats->mc_flow;
                                     stat_ref_info[curr_sb_index].pix_num[sb_cnt]             = pix_num;
                                     stat_ref_info[curr_sb_index].quant_ratio[sb_cnt]         = cur_stats->quant_ratio;
                                     stat_ref_info[curr_sb_index].intra_cost[sb_cnt]          = cur_stats->intra_cost;
@@ -4138,7 +4132,6 @@ EB_EXTERN void av1_encode_pass(
                                     stat_ref_info[curr_sb_index].ref_sb_decode_order[sb_cnt] = refObj1->decode_order;
                                     stat_ref_info[curr_sb_index].referenced_area[sb_cnt]     = width * height * weight;
                                     stat_ref_info[curr_sb_index].overlap_area[sb_cnt]        = overlap_area;
-                                    stat_ref_info[curr_sb_index].mc_flow[sb_cnt]             = cur_stats->mc_flow;
                                     stat_ref_info[curr_sb_index].pix_num[sb_cnt]             = pix_num;
                                     stat_ref_info[curr_sb_index].quant_ratio[sb_cnt]         = cur_stats->quant_ratio;
                                     stat_ref_info[curr_sb_index].intra_cost[sb_cnt]          = cur_stats->intra_cost;
@@ -4184,7 +4177,6 @@ EB_EXTERN void av1_encode_pass(
                                     stat_ref_info[curr_sb_index].ref_sb_decode_order[sb_cnt] = refObj1->decode_order;
                                     stat_ref_info[curr_sb_index].referenced_area[sb_cnt]     = width * height * weight;
                                     stat_ref_info[curr_sb_index].overlap_area[sb_cnt]        = overlap_area;
-                                    stat_ref_info[curr_sb_index].mc_flow[sb_cnt]             = cur_stats->mc_flow;
                                     stat_ref_info[curr_sb_index].pix_num[sb_cnt]             = pix_num;
                                     stat_ref_info[curr_sb_index].quant_ratio[sb_cnt]         = cur_stats->quant_ratio;
                                     stat_ref_info[curr_sb_index].intra_cost[sb_cnt]          = cur_stats->intra_cost;

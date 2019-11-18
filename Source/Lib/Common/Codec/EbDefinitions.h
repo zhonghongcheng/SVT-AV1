@@ -3341,7 +3341,6 @@ typedef struct stat_ref_info_t
     uint16_t                        ref_sb_index[MAX_SB_CNT];
     uint32_t                        referenced_area[MAX_SB_CNT];
     int32_t                         overlap_area[MAX_SB_CNT];
-    int64_t                         mc_flow[MAX_SB_CNT];
     int32_t                         pix_num[MAX_SB_CNT];
     double                          quant_ratio[MAX_SB_CNT];
     int64_t                         intra_cost[MAX_SB_CNT];
@@ -3372,7 +3371,6 @@ typedef struct dept_stat_ppg_t {
     int64_t mc_dep_dist;
     int64_t mc_count; // not needed
     int64_t mc_saved; // not needed
-    double  quant_ratio;
 } dept_stat_ppg_t;
 #endif
 
