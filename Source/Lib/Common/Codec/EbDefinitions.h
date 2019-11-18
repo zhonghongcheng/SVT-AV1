@@ -36,6 +36,7 @@ extern "C" {
 
 #define IFS_8BIT_MD                  1
 #define QPS_QPM_OFF                  0
+#define NO_THREAD_PIN                1 // when -lp 1 threads are not pinned to cpu 0
 
 /* Note: shutting the macro PAL_SUP will not give SS as pcs->palette_mode = 0
    rate estimation is changed for I frame + enabled sc for P (rate estimation

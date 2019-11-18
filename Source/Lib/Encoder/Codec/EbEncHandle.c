@@ -237,6 +237,12 @@ void EbSetThreadManagementParameters(EbSvtAv1EncConfiguration *config_ptr)
     }
 #elif defined(__linux__)
     uint32_t num_logical_processors = GetNumProcessors();
+#if NO_THREAD_PIN
+    if (config_ptr->logical_processors == 1) {
+        pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &group_affinity);
+    }
+    else {
+#endif
     CPU_ZERO(&group_affinity);
 
     if (num_groups == 1) {
@@ -276,6 +282,9 @@ void EbSetThreadManagementParameters(EbSvtAv1EncConfiguration *config_ptr)
             }
         }
     }
+#if NO_THREAD_PIN
+    }
+#endif
 #else
     UNUSED(config_ptr);
 #endif
