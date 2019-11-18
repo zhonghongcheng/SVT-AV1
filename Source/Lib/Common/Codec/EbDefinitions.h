@@ -46,29 +46,42 @@ extern "C" {
 
 //SC M0-M1 //
 #define M0_FRACT_SEARCH             0
+#define M0_PALETTE                  0
+#define M2_SC_PRED_ME               0
+#define M2_UNI_3x3                  0
+
+#define M2_SC_NSQ_LEVEL             0
+#define M2_SC_LOOP_FILTER           0
+#define M2_NON_SC_REF_COUNT         0
+#define M1_NON_SC_OBMC              0
+#define M1_NON_SC_MD_STAGE_S_2      0
+#define M1_NON_SC_MD_STAGE_C_2      0
+
+
 #define M0_NSQ_LEVEL                0
 #define M0_INTRA_PRED               0
 #define M0_COMPOUND_MODE            0
 #define M0_MD_STAGE_2_COUNT         0
 #define M0_MFMV                     0
-#define M0_PALETTE                  0
+
     //non sc diff
 #define M0_NEW_NEAREST              0
 #define M0_EDGE_SKIP_INTRA          0
 #define M0_MD_STAGE_1               0
 #define M0_INTRA_INTER_CMPD         0
-#define M2_SC_PRED_ME               0
-#define M2_UNI_3x3                  0
+
+
 
 //SC M1-M2 //
+#define M1_LOOP_FILTER              0
+#define M1_NO_SC_ATB                0
+#define M3_NO_SC_REF_COUNT          0
+
 #define M1_UNI_3x3_INJEC            0
 #define M1_PRED_ME                  0
 #define M1_FRACT_SEARCH             0
 #define M1_NSQ_LEVEL                0
-#define M1_LOOP_FILTER              0
-#define M1_NO_SC_ATB                0
 #define M1_NO_SC_REF_COUNT          0
-#define M3_NO_SC_REF_COUNT          0
 #define M3_INTRA_PRED               0
 
 

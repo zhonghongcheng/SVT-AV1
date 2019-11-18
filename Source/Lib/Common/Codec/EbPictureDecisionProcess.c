@@ -1009,9 +1009,11 @@ EbErrorType signal_derivation_multi_processes_oq(
 
             if (picture_control_set_ptr->enc_mode == ENC_M0)
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL6;
+#if !M2_SC_NSQ_LEVEL
             else if (picture_control_set_ptr->enc_mode <= ENC_M1)
                 picture_control_set_ptr->nsq_search_level = (picture_control_set_ptr->is_used_as_reference_flag) ?
                 NSQ_SEARCH_LEVEL6 : NSQ_SEARCH_LEVEL3;
+#endif
             else if (picture_control_set_ptr->enc_mode <= ENC_M2)
                 if (picture_control_set_ptr->is_used_as_reference_flag)
                     picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL5;
@@ -1274,6 +1276,9 @@ EbErrorType signal_derivation_multi_processes_oq(
 #if sc_rtime_presets
 #if M1_LOOP_FILTER
         if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#elif M2_SC_LOOP_FILTER
+        if (picture_control_set_ptr->enc_mode <= ENC_M0)
+
 #else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #endif
@@ -1643,16 +1648,23 @@ EbErrorType signal_derivation_multi_processes_oq(
         // Set atb mode      Settings
         // 0                 OFF: no transform partitioning
         // 1                 ON for INTRA blocks
+
+        
+#if M1_NO_SC_ATB
+      if (picture_control_set_ptr->sc_content_detected)
+                if (picture_control_set_ptr->enc_mode <= ENC_M2 && sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
+                    picture_control_set_ptr->atb_mode = (MR_MODE || picture_control_set_ptr->temporal_layer_index == 0) ? 1 : 0;
+                else
+                    picture_control_set_ptr->atb_mode = 0;
+      else
+#endif
 #if M1_ATB
         if (picture_control_set_ptr->enc_mode <= ENC_M2 && sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
 
 #else
-#if M1_NO_SC_ATB
-        if (picture_control_set_ptr->enc_mode <= ENC_M2 && sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
-#else
         if (picture_control_set_ptr->enc_mode <= ENC_M1 && sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
 #endif
-#endif
+
 
 #if SPEED_OPT
             picture_control_set_ptr->atb_mode = (MR_MODE || picture_control_set_ptr->temporal_layer_index == 0) ? 1 : 0;

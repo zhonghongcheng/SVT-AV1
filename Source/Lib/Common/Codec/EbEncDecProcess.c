@@ -1827,7 +1827,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if STAGE_2_COUNT_PRUNING_TH_S
     // TH_S(for candidate removal per class)
     // Remove candidate if deviation to the best higher than TH_S
+#if M1_NON_SC_MD_STAGE_S_2
+    if (MR_MODE)
+#else
     if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#endif
         context_ptr->md_stage_2_count_th_s = (uint64_t)~0;
 #if TEST_NEW_M0M1_SET1
     else if (picture_control_set_ptr->enc_mode <= ENC_M1)
@@ -1860,7 +1864,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if STAGE_2_COUNT_PRUNING_TH_C
     // TH_C(for class removal)
     // Remove class if deviation to the best higher than TH_C
+#if M1_NON_SC_MD_STAGE_C_2
+    if (MR_MODE )
+#else
     if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected) 
+#endif
         context_ptr->md_stage_2_count_th_c = (uint64_t)~0;
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->md_stage_2_count_th_c = 25;
