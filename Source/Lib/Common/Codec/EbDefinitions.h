@@ -36,7 +36,7 @@ extern "C" {
 #define ACT_B1_QPM_B_OFF 0 //Action B1: turn QPM off for non I base layer (only active for I).
 #define ACT_B2_QPM_VAR_OFF 0 // Action B2: Turn OFF variance based actions (for I slice).
 #define ACT_B3_QPM_I_POS_OFF 0 // Action B3: Turn QPM actions that increase the QP off (for I slice).
-#define ACT_B4_QPM_I_NEG_OFF 0 // Action B4: Turn QPM actions that decrease the QP off (for I slice).
+#define ACT_B4_QPM_I_NEG_OFF0 // Action B4: Turn QPM actions that decrease the QP off (for I slice).
 #define ACT_B_QPM_OFF 0
 
 #define ACT_A1_QPS_B_ME_BASED_OFF 0 //Action A1: turn QPS ME realted actions off for non I base layer
@@ -45,7 +45,7 @@ extern "C" {
 #define ACT_A4_QPS_B_OFF 0 //Action A4: turn adaptive QPS off for non I base layer
 #define ACT_A5_QPS_I_OFF 0 //Action A5: turn adaptive QPS off for I
 
-    
+#define FIRST_PASS_STAT_FIX 1    
 /* Note: shutting the macro PAL_SUP will not give SS as pcs->palette_mode = 0
    rate estimation is changed for I frame + enabled sc for P (rate estimation
    is a result changed for P frames)

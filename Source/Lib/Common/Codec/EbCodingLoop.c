@@ -3733,6 +3733,10 @@ EB_EXTERN void av1_encode_pass(
                                     uint16_t origin_y = MAX(0, (int16_t)context_ptr->cu_origin_y + (context_ptr->mv_unit.mv[REF_LIST_0].y >> 3));
                                     uint16_t sb_origin_x = origin_x / context_ptr->sb_sz * context_ptr->sb_sz;
                                     uint16_t sb_origin_y = origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
+#if FIRST_PASS_STAT_FIX
+                                    uint16_t sb_origin_x_org = origin_x / context_ptr->sb_sz * context_ptr->sb_sz;
+                                    uint16_t sb_origin_y_org = origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
+#endif
                                     uint32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
                                     uint16_t sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
                                     uint16_t width, height, weight;
@@ -3741,8 +3745,11 @@ EB_EXTERN void av1_encode_pass(
                                     width = MIN(sb_origin_x + context_ptr->sb_sz, origin_x + blk_geom->bwidth) - origin_x;
                                     height = MIN(sb_origin_y + context_ptr->sb_sz, origin_y + blk_geom->bheight) - origin_y;
                                     refObj0->stat_struct.referenced_area[sb_index] += width * height*weight;
-
+#if FIRST_PASS_STAT_FIX
+                                    if (origin_x + blk_geom->bwidth > sb_origin_x_org + context_ptr->sb_sz) {
+#else
                                     if (origin_x + blk_geom->bwidth > sb_origin_x + context_ptr->sb_sz) {
+#endif
                                         sb_origin_x = (origin_x / context_ptr->sb_sz + 1)* context_ptr->sb_sz;
                                         sb_origin_y = origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
                                         sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
@@ -3750,7 +3757,11 @@ EB_EXTERN void av1_encode_pass(
                                         height = MIN(sb_origin_y + context_ptr->sb_sz, origin_y + blk_geom->bheight) - origin_y;
                                         refObj0->stat_struct.referenced_area[sb_index] += width * height*weight;
                                     }
+#if FIRST_PASS_STAT_FIX
+                                    if (origin_y + blk_geom->bheight > sb_origin_y_org + context_ptr->sb_sz) {
+#else
                                     if (origin_y + blk_geom->bheight > sb_origin_y + context_ptr->sb_sz) {
+#endif
                                         sb_origin_x = (origin_x / context_ptr->sb_sz)* context_ptr->sb_sz;
                                         sb_origin_y = (origin_y / context_ptr->sb_sz + 1) * context_ptr->sb_sz;
                                         sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
@@ -3758,8 +3769,13 @@ EB_EXTERN void av1_encode_pass(
                                         height = origin_y + blk_geom->bheight - MAX(sb_origin_y, origin_y);
                                         refObj0->stat_struct.referenced_area[sb_index] += width * height*weight;
                                     }
+#if FIRST_PASS_STAT_FIX
+                                    if (origin_x + blk_geom->bwidth > sb_origin_x_org + context_ptr->sb_sz &&
+                                        origin_y + blk_geom->bheight > sb_origin_y_org + context_ptr->sb_sz) {
+#else
                                     if (origin_x + blk_geom->bwidth > sb_origin_x + context_ptr->sb_sz &&
                                         origin_y + blk_geom->bheight > sb_origin_y + context_ptr->sb_sz) {
+#endif
                                         sb_origin_x = (origin_x / context_ptr->sb_sz + 1)* context_ptr->sb_sz;
                                         sb_origin_y = (origin_y / context_ptr->sb_sz + 1) * context_ptr->sb_sz;
                                         sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
@@ -3780,6 +3796,10 @@ EB_EXTERN void av1_encode_pass(
                                 uint16_t origin_y = MAX(0, (int16_t)context_ptr->cu_origin_y + (context_ptr->mv_unit.mv[REF_LIST_1].y >> 3));
                                 uint16_t sb_origin_x = origin_x / context_ptr->sb_sz * context_ptr->sb_sz;
                                 uint16_t sb_origin_y = origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
+#if FIRST_PASS_STAT_FIX
+                                uint16_t sb_origin_x_org = origin_x / context_ptr->sb_sz * context_ptr->sb_sz;
+                                uint16_t sb_origin_y_org = origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
+#endif
                                 uint32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
                                 uint16_t sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
                                 uint16_t width, height, weight;
@@ -3788,7 +3808,11 @@ EB_EXTERN void av1_encode_pass(
                                 width = MIN(sb_origin_x + context_ptr->sb_sz, origin_x + blk_geom->bwidth) - origin_x;
                                 height = MIN(sb_origin_y + context_ptr->sb_sz, origin_y + blk_geom->bheight) - origin_y;
                                 refObj1->stat_struct.referenced_area[sb_index] += width * height*weight;
+#if FIRST_PASS_STAT_FIX
+                                if (origin_x + blk_geom->bwidth > sb_origin_x_org + context_ptr->sb_sz) {
+#else
                                 if (origin_x + blk_geom->bwidth > sb_origin_x + context_ptr->sb_sz) {
+#endif
                                     sb_origin_x = (origin_x / context_ptr->sb_sz + 1)* context_ptr->sb_sz;
                                     sb_origin_y = origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
                                     sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
@@ -3796,7 +3820,11 @@ EB_EXTERN void av1_encode_pass(
                                     height = MIN(sb_origin_y + context_ptr->sb_sz, origin_y + blk_geom->bheight) - origin_y;
                                     refObj1->stat_struct.referenced_area[sb_index] += width * height*weight;
                                 }
+#if FIRST_PASS_STAT_FIX
+                                if (origin_y + blk_geom->bheight > sb_origin_y_org + context_ptr->sb_sz) {
+#else
                                 if (origin_y + blk_geom->bheight > sb_origin_y + context_ptr->sb_sz) {
+#endif
                                     sb_origin_x = (origin_x / context_ptr->sb_sz)* context_ptr->sb_sz;
                                     sb_origin_y = (origin_y / context_ptr->sb_sz + 1) * context_ptr->sb_sz;
                                     sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
@@ -3804,8 +3832,13 @@ EB_EXTERN void av1_encode_pass(
                                     height = origin_y + blk_geom->bheight - MAX(sb_origin_y, origin_y);
                                     refObj1->stat_struct.referenced_area[sb_index] += width * height*weight;
                                 }
+#if FIRST_PASS_STAT_FIX
+                                if (origin_x + blk_geom->bwidth > sb_origin_x_org + context_ptr->sb_sz &&
+                                    origin_y + blk_geom->bheight > sb_origin_y_org + context_ptr->sb_sz) {
+#else
                                 if (origin_x + blk_geom->bwidth > sb_origin_x + context_ptr->sb_sz &&
                                     origin_y + blk_geom->bheight > sb_origin_y + context_ptr->sb_sz) {
+#endif
                                     sb_origin_x = (origin_x / context_ptr->sb_sz + 1)* context_ptr->sb_sz;
                                     sb_origin_y = (origin_y / context_ptr->sb_sz + 1) * context_ptr->sb_sz;
                                     sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
