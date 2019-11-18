@@ -400,6 +400,14 @@ EbErrorType load_default_buffer_configuration_settings(
                     core_count, sequence_control_set_ptr->input_resolution);
     if (return_ppcs == -1)
         return EB_ErrorInsufficientResources;
+
+    if (core_count == SINGLE_CORE_COUNT){
+        encDecSegH  = 1;
+        encDecSegW  = 1;
+        meSegH      = 1;
+        meSegW      = 1;
+    }
+
     uint32_t input_pic = (uint32_t)return_ppcs;
     sequence_control_set_ptr->input_buffer_fifo_init_count = input_pic + SCD_LAD + sequence_control_set_ptr->static_config.look_ahead_distance;
     sequence_control_set_ptr->output_stream_buffer_fifo_init_count =
@@ -443,8 +451,8 @@ EbErrorType load_default_buffer_configuration_settings(
     uint32_t unit_size                                  = 256;
     uint32_t rest_seg_w                                 = MAX((sequence_control_set_ptr->max_input_luma_width /2 + (unit_size >> 1)) / unit_size, 1);
     uint32_t rest_seg_h                                 = MAX((sequence_control_set_ptr->max_input_luma_height/2 + (unit_size >> 1)) / unit_size, 1);
-    sequence_control_set_ptr->rest_segment_column_count = MIN(rest_seg_w,6);
-    sequence_control_set_ptr->rest_segment_row_count    = MIN(rest_seg_h,4);
+    sequence_control_set_ptr->rest_segment_column_count = core_count == SINGLE_CORE_COUNT ? 1 : MIN(rest_seg_w,6);
+    sequence_control_set_ptr->rest_segment_row_count    = core_count == SINGLE_CORE_COUNT ? 1 : MIN(rest_seg_h,4);
 
     sequence_control_set_ptr->tf_segment_column_count = meSegW;//1;//
     sequence_control_set_ptr->tf_segment_row_count =  meSegH;//1;//
@@ -486,7 +494,7 @@ EbErrorType load_default_buffer_configuration_settings(
     sequence_control_set_ptr->total_process_init_count                    = 0;
     if (core_count > 1){
         sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->picture_analysis_process_init_count            = MAX(MIN(15, core_count >> 1), core_count / 6));
-        sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->motion_estimation_process_init_count =  MAX(MIN(20, core_count >> 1), core_count / 3));//1);//
+        sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->motion_estimation_process_init_count           =  MAX(MIN(20, core_count >> 1), core_count / 3));//1);//
         sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->source_based_operations_process_init_count     = MAX(MIN(3, core_count >> 1), core_count / 12));
         sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->mode_decision_configuration_process_init_count = MAX(MIN(3, core_count >> 1), core_count / 12));
         sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->enc_dec_process_init_count                     = MAX(MIN(40, core_count >> 1), core_count));
@@ -2731,7 +2739,7 @@ EbErrorType eb_svt_enc_init_parameter(
 
     return return_error;
 }
-//#define DEBUG_BUFFERS
+#define DEBUG_BUFFERS
 static void print_lib_params(
     SequenceControlSet* scs) {
     EbSvtAv1EncConfiguration*   config = &scs->static_config;
