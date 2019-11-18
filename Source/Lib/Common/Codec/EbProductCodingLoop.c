@@ -1562,10 +1562,7 @@ void fast_loop_core(
     }
     else
         chromaFastDistortion = 0;
-#if SHUT_FAST_COST
-    *(candidate_buffer->fast_cost_ptr) = 0;
-    if(context_ptr->is_final_pd_pass)
-#endif
+
     *(candidate_buffer->fast_cost_ptr) = Av1ProductFastCostFuncTable[candidate_ptr->type](
         cu_ptr,
         candidate_buffer->candidate_ptr,
@@ -1582,6 +1579,11 @@ void fast_loop_core(
         1,
         context_ptr->intra_luma_left_mode,
         context_ptr->intra_luma_top_mode);
+
+#if SHUT_FAST_COST
+    if (!context_ptr->is_final_pd_pass)
+        *(candidate_buffer->fast_cost_ptr) = 0;
+#endif
 }
 #if REMOVE_MD_STAGE_1
 void set_md_stage_counts(
@@ -8179,14 +8181,13 @@ void md_encode_block(
         }
 
 #if STAGE_1_COUNT_PRUNING_TH_S
-#if SHUT_FAST_COST
-        if(context_ptr->md_stage_1_count_th_c != (uint64_t)~0 || context_ptr->md_stage_1_count_th_s != (uint64_t)~0)
-#endif
         for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
 
             //number of next level candidates could not exceed number of curr level candidates
             context_ptr->md_stage_1_count[cand_class_it] = MIN(context_ptr->md_stage_0_count[cand_class_it], context_ptr->md_stage_1_count[cand_class_it]);
-
+#if SHUT_FAST_COST
+            if (context_ptr->md_stage_1_count_th_c != (uint64_t)~0 || context_ptr->md_stage_1_count_th_s != (uint64_t)~0)
+#endif
             if (context_ptr->md_stage_0_count[cand_class_it] > 0 && context_ptr->md_stage_1_count[cand_class_it] > 0) {
                 // Distortion-based NIC proning to CLASS_1, CLASS_2, CLASS_3
 #if !TUNED_TH_S
@@ -8338,11 +8339,12 @@ void md_encode_block(
         }
 
 #if STAGE_2_COUNT_PRUNING_TH_S || STAGE_2_COUNT_PRUNING_TH_C
-#if SHUT_FAST_COST
-        if (context_ptr->md_stage_2_count_th_c != (uint64_t)~0 || context_ptr->md_stage_2_count_th_s != (uint64_t)~0)
-#endif
+
         for (cand_class_it = CAND_CLASS_0; cand_class_it < CAND_CLASS_TOTAL; cand_class_it++) {
 
+#if SHUT_FAST_COST
+            if (context_ptr->md_stage_2_count_th_c != (uint64_t)~0 || context_ptr->md_stage_2_count_th_s != (uint64_t)~0)
+#endif
             if (context_ptr->bypass_md_stage_1[cand_class_it] == EB_FALSE && context_ptr->md_stage_1_count[cand_class_it] > 0 && context_ptr->md_stage_2_count[cand_class_it] > 0) {
                 uint32_t *cand_buff_indices = context_ptr->cand_buff_indices[cand_class_it];
 #if STAGE_2_COUNT_PRUNING_TH_C
