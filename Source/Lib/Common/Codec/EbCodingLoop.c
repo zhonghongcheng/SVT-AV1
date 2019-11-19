@@ -2423,6 +2423,8 @@ EB_EXTERN void av1_encode_pass(
                         eb_block_on_mutex(sequence_control_set_ptr->stat_info_mutex);
                         //printf("kelvin ---> codingloop decode_order=%d, sequence_control_set_ptr->stat_queue[decode_order]=%d, poc=%d, weight=%d\n", picture_control_set_ptr->parent_pcs_ptr->decode_order, sequence_control_set_ptr->stat_queue[picture_control_set_ptr->parent_pcs_ptr->decode_order], picture_control_set_ptr->parent_pcs_ptr->picture_number, 1 << (4 - picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index));
                         sequence_control_set_ptr->progagate_poc[picture_control_set_ptr->parent_pcs_ptr->decode_order % STAT_LA_LENGTH] = picture_control_set_ptr->parent_pcs_ptr->picture_number % STAT_LA_LENGTH;
+                        int64_t weights[5] = { 1,1,1,1,1 };//{ 4,3,2,1,1 }; to be updated
+                        int64_t weight = weights[picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index];
                         sequence_control_set_ptr->temporal_weight[picture_control_set_ptr->parent_pcs_ptr->decode_order % STAT_LA_LENGTH] = weight;
                         eb_release_mutex(sequence_control_set_ptr->stat_info_mutex);
                     }

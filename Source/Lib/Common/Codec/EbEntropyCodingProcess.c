@@ -433,6 +433,8 @@ void write_stat_info_to_file(
     //printf("write_stat_info_to_file write poc=%d, decode_order=%d, curr_poc=%d\n", ref_poc, stat_queue_head_index, picture_control_set_ptr->parent_pcs_ptr->picture_number);
 
     for(int frame=0; frame < slide_win_length; frame++) {
+        dept_stat_ppg_t *dept_stat_propagate_ptr = dept_stat_propagate[slide_win_length - frame - 1];
+        uint16_t temporal_weight = sequence_control_set_ptr->temporal_weight[(decode_order - frame) % STAT_LA_LENGTH];
         int32_t curr_decode_order = (decode_order - frame) % STAT_LA_LENGTH;
         stat_ref_info_t *fstat_ref_info = sequence_control_set_ptr->stat_ref_info[curr_decode_order];
         assert((curr_decode_order-stat_queue_head_index-1)>=0 && (curr_decode_order-stat_queue_head_index-1)<slide_win_length);
@@ -441,10 +443,17 @@ void write_stat_info_to_file(
                 uint32_t head_decode_order = fstat_ref_info[block_index].ref_sb_decode_order[sb_index];
                 if(head_decode_order == stat_queue_head_index) {
                     stat_ref_info_t *stat_ref_info = &(fstat_ref_info[block_index]);
+                    int32_t overlap_area = stat_ref_info->overlap_area[sb_index];
+                    int32_t pix_num      = stat_ref_info->pix_num[sb_index];
+                    int64_t mc_flow = 0;//dept_stat_propagate_ptr[block_index].mc_flow * overlap_area / (64*64);
+                    int64_t mc_dep_cost = stat_ref_info->intra_cost[sb_index] + mc_flow;
+                    mc_flow = (int64_t)(stat_ref_info->quant_ratio[sb_index] * mc_dep_cost * (1.0 - stat_ref_info->iiratio_nl[sb_index]));
+                    mc_flow = mc_flow * temporal_weight / (stat_ref_info->is_bipred[sb_index] ? 2 : 1 );
+                    mc_flow = mc_flow * overlap_area / pix_num;
                     stat_struct.referenced_area[stat_ref_info->ref_sb_index[sb_index]] += (uint32_t)(stat_ref_info->referenced_area[sb_index]);
-                    stat_struct.cur_stat[stat_ref_info->ref_sb_index[sb_index]].mc_flow += dept_stat_propagate[frame][block_index].mc_flow;
-                    stat_struct.cur_stat[stat_ref_info->ref_sb_index[sb_index]].mc_count += dept_stat_propagate[frame][block_index].mc_count;
-                    stat_struct.cur_stat[stat_ref_info->ref_sb_index[sb_index]].mc_saved += dept_stat_propagate[frame][block_index].mc_saved;
+                    stat_struct.cur_stat[stat_ref_info->ref_sb_index[sb_index]].mc_flow += mc_flow;
+                    stat_struct.cur_stat[stat_ref_info->ref_sb_index[sb_index]].mc_count += (overlap_area << TPL_DEP_COST_SCALE_LOG2);
+                    stat_struct.cur_stat[stat_ref_info->ref_sb_index[sb_index]].mc_saved += (dept_stat_propagate_ptr[block_index].mc_saved * overlap_area) / pix_num;
                     // to be continued
                 }
             }
