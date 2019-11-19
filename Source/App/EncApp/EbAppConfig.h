@@ -247,6 +247,11 @@ typedef struct EbConfig
     EbBool                  enable_warped_motion;
 
     /****************************************
+     * Global Motion
+     ****************************************/
+    EbBool                  enable_global_motion;
+
+    /****************************************
      * OBMC
      ****************************************/
     EbBool                  enable_obmc;
@@ -295,10 +300,11 @@ typedef struct EbConfig
      * MD Parameters
      ****************************************/
     EbBool                  constrained_intra;
-    EbBool                  enable_hbd_mode_decision;
+    int8_t                  enable_hbd_mode_decision;
     int32_t                  enable_palette;
     int32_t                  tile_columns;
     int32_t                  tile_rows;
+    int32_t                  olpd_refinement;   // Open Loop Partitioning Decision Refinement
 
     /****************************************
      * Rate Control
@@ -369,6 +375,12 @@ typedef struct EbConfig
 
     // square cost weighting for deciding if a/b shapes could be skipped
     uint32_t                 sq_weight;
+
+    // inter/intra class pruning costs before MD stage 1/2
+    uint64_t                 md_stage_1_class_prune_th;
+    uint64_t                 md_stage_1_cand_prune_th;
+    uint64_t                 md_stage_2_class_prune_th;
+    uint64_t                 md_stage_2_cand_prune_th;
 
 } EbConfig;
 

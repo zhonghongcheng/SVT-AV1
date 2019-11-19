@@ -178,7 +178,7 @@ extern "C" {
         uint16_t                        pu_height;
         EbPfMode                        pf_md_mode;
         EbBool                          cu_use_ref_src_flag;
-        EbBool                          hbd_mode_decision;
+        uint8_t                         hbd_mode_decision;
         uint16_t                        qp_index;
         uint64_t                        three_quad_energy;
 #if ENHANCE_ATB
@@ -321,7 +321,16 @@ extern "C" {
     unsigned int                        source_variance; // input block variance
     unsigned int                        inter_inter_wedge_variance_th;
     uint64_t                            md_exit_th;
+#if INTER_INTRA_CLASS_PRUNING
+    uint64_t                            md_stage_1_cand_prune_th;
+    uint64_t                            md_stage_1_class_prune_th;
+#else
     uint64_t                            dist_base_md_stage_0_count_th;
+#endif
+#endif
+#if INTER_INTRA_CLASS_PRUNING
+    uint64_t                            md_stage_2_cand_prune_th;
+    uint64_t                            md_stage_2_class_prune_th;
 #endif
 #if OBMC_FLAG
     DECLARE_ALIGNED(16, uint8_t, obmc_buff_0[2 * MAX_MB_PLANE * MAX_SB_SQUARE]);
@@ -378,7 +387,7 @@ extern "C" {
         EbColorFormat              color_format,
         EbFifo                    *mode_decision_configuration_input_fifo_ptr,
         EbFifo                    *mode_decision_output_fifo_ptr,
-        EbBool                     enable_hbd_mode_decision
+        uint8_t                    enable_hbd_mode_decision
 #if PAL_SUP
         ,uint8_t                 cfg_palette
 #endif
@@ -439,8 +448,7 @@ extern "C" {
         ModeDecisionContext           *context_ptr,
         EbPictureBufferDesc           *input_picture_ptr,
         uint32_t                         inputCbOriginIndex,
-        uint32_t                         cuChromaOriginIndex,
-        EbAsm                            asm_type);
+        uint32_t                         cuChromaOriginIndex);
 
 #ifdef __cplusplus
 }

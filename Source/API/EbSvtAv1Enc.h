@@ -225,6 +225,11 @@ typedef struct EbSvtAv1EncConfiguration
     * Default is 0. */
     EbBool                   enable_warped_motion;
 
+    /* Global motion
+    *
+    * Default is 1. */
+    EbBool                   enable_global_motion;
+
     /* OBMC
     *
     * Default is 1. */
@@ -265,15 +270,24 @@ typedef struct EbSvtAv1EncConfiguration
     uint32_t                 search_area_height;
 
     // MD Parameters
-    /* Enable the use of HBD (10-bit) at the mode decision step
-    *
-    * Default is 0. */
-    EbBool                   enable_hbd_mode_decision;
+    /* Enable the use of HBD (10-bit) for 10 bit content at the mode decision step
+     *
+     * 0 = 8bit mode decision
+     * 1 = 10bit mode decision
+     * 2 = Auto: 8bit & 10bit mode decision
+     *
+    * Default is 1. */
+    uint8_t                   enable_hbd_mode_decision;
 
     /* Palette Mode
     *
     * Default is -1. */
     int32_t                   enable_palette;
+
+    /* Open Loop Partitioning Decision refinement
+    *
+    * Default is -1. */
+    int32_t                   olpd_refinement;
 
     /* Enable the use of Constrained Intra, which yields sending two picture
      * parameter sets in the elementary streams .
@@ -462,6 +476,12 @@ typedef struct EbSvtAv1EncConfiguration
     EbBool                   enable_overlays;
 
     uint32_t                     sq_weight;
+
+    uint64_t                 md_stage_1_class_prune_th;
+    uint64_t                 md_stage_1_cand_prune_th;
+    uint64_t                 md_stage_2_class_prune_th;
+    uint64_t                 md_stage_2_cand_prune_th;
+
 } EbSvtAv1EncConfiguration;
 
     /* STEP 1: Call the library to construct a Component Handle.

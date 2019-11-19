@@ -1846,16 +1846,13 @@ EB_API EbErrorType eb_deinit_handle(
         return_error = eb_av1_enc_component_de_init(svt_enc_component);
 
         free(svt_enc_component);
+#if  defined(__linux__)
+        EB_FREE(lp_group);
+#endif
         eb_decrease_component_count();
     }
     else
         return_error = EB_ErrorInvalidComponent;
-
-    #if  defined(__linux__)
-        if(lp_group != NULL) {
-            EB_FREE(lp_group);
-        }
-    #endif
     return return_error;
 }
 
@@ -2103,6 +2100,9 @@ void CopyApiFromApp(
     // Local Warped Motion
     sequence_control_set_ptr->static_config.enable_warped_motion = EB_TRUE;
 
+    // Global motion
+    sequence_control_set_ptr->static_config.enable_global_motion = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enable_global_motion;
+
     // OBMC
     sequence_control_set_ptr->static_config.enable_obmc = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enable_obmc;
 
@@ -2147,6 +2147,7 @@ void CopyApiFromApp(
     sequence_control_set_ptr->static_config.enable_hbd_mode_decision = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->encoder_bit_depth > 8 ? ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enable_hbd_mode_decision : 0;
     sequence_control_set_ptr->static_config.constrained_intra = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->constrained_intra;
     sequence_control_set_ptr->static_config.enable_palette = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enable_palette;
+    sequence_control_set_ptr->static_config.olpd_refinement = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->olpd_refinement;
     // Adaptive Loop Filter
     sequence_control_set_ptr->static_config.tile_rows = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->tile_rows;
     sequence_control_set_ptr->static_config.tile_columns = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->tile_columns;
@@ -2230,6 +2231,11 @@ void CopyApiFromApp(
     sequence_control_set_ptr->static_config.enable_overlays = pComponentParameterStructure->enable_overlays;
 
     sequence_control_set_ptr->static_config.sq_weight = pComponentParameterStructure->sq_weight;
+
+    sequence_control_set_ptr->static_config.md_stage_1_cand_prune_th = pComponentParameterStructure->md_stage_1_cand_prune_th;
+    sequence_control_set_ptr->static_config.md_stage_1_class_prune_th = pComponentParameterStructure->md_stage_1_class_prune_th;
+    sequence_control_set_ptr->static_config.md_stage_2_cand_prune_th = pComponentParameterStructure->md_stage_2_cand_prune_th;
+    sequence_control_set_ptr->static_config.md_stage_2_class_prune_th = pComponentParameterStructure->md_stage_2_class_prune_th;
 
     return;
 }
@@ -2584,6 +2590,15 @@ static EbErrorType VerifySettings(
         SVT_LOG( "Error instance %u: Invalid Palette Mode [0 .. 6], your input: %i\n", channelNumber + 1, config->enable_palette);
         return_error = EB_ErrorBadParameter;
     }
+    // mdc refinement
+    if (config->olpd_refinement < (int32_t)(-1) || config->olpd_refinement > 1) {
+        SVT_LOG("Error instance %u: Invalid OLPD Refinement Mode [0 .. 1], your input: %i\n", channelNumber + 1, config->olpd_refinement);
+        return_error = EB_ErrorBadParameter;
+    }
+    else if (config->olpd_refinement == 1 && config->enc_mode >= ENC_M1) {
+        SVT_LOG("Error instance %u: Invalid OLPD Refinement mode for M%d [0], your input: %i\n", channelNumber + 1, config->enc_mode, config->olpd_refinement);
+        return_error = EB_ErrorBadParameter;
+    }
 
     return return_error;
 }
@@ -2633,6 +2648,7 @@ EbErrorType eb_svt_enc_init_parameter(
     config_ptr->pred_structure = EB_PRED_RANDOM_ACCESS;
     config_ptr->disable_dlf_flag = EB_FALSE;
     config_ptr->enable_warped_motion = EB_TRUE;
+    config_ptr->enable_global_motion = EB_TRUE;
     config_ptr->enable_obmc = EB_TRUE;
     config_ptr->enable_filter_intra = EB_TRUE;
     config_ptr->in_loop_me_flag = EB_TRUE;
@@ -2660,9 +2676,10 @@ EbErrorType eb_svt_enc_init_parameter(
     config_ptr->hme_level2_search_area_in_width_array[1] = 1;
     config_ptr->hme_level2_search_area_in_height_array[0] = 1;
     config_ptr->hme_level2_search_area_in_height_array[1] = 1;
-    config_ptr->enable_hbd_mode_decision = EB_TRUE;
+    config_ptr->enable_hbd_mode_decision = 1;
     config_ptr->constrained_intra = EB_FALSE;
     config_ptr->enable_palette = -1;
+    config_ptr->olpd_refinement = -1;
     // Bitstream options
     //config_ptr->codeVpsSpsPps = 0;
     //config_ptr->codeEosNal = 0;
@@ -2706,6 +2723,11 @@ EbErrorType eb_svt_enc_init_parameter(
     config_ptr->enable_overlays = EB_FALSE;
 
     config_ptr->sq_weight = 100;
+
+    config_ptr->md_stage_1_cand_prune_th = 75;
+    config_ptr->md_stage_1_class_prune_th = 100;
+    config_ptr->md_stage_2_cand_prune_th = 15;
+    config_ptr->md_stage_2_class_prune_th = 25;
 
     return return_error;
 }
@@ -3072,8 +3094,7 @@ static EbErrorType CopyFrameBuffer(
             input_picture_ptr->buffer_bit_inc_y + lumaBufferOffset,
             input_picture_ptr->stride_bit_inc_y,
             lumaWidth,
-            lumaHeight,
-            config->asm_type);
+            lumaHeight);
 
         un_pack2d(
             (uint16_t*)(inputPtr->cb + chromaOffset),
@@ -3083,8 +3104,7 @@ static EbErrorType CopyFrameBuffer(
             input_picture_ptr->buffer_bit_inc_cb + chromaBufferOffset,
             input_picture_ptr->stride_bit_inc_cb,
             chromaWidth,
-            (lumaHeight >> 1),
-            config->asm_type);
+            (lumaHeight >> 1));
 
         un_pack2d(
             (uint16_t*)(inputPtr->cr + chromaOffset),
@@ -3094,8 +3114,7 @@ static EbErrorType CopyFrameBuffer(
             input_picture_ptr->buffer_bit_inc_cr + chromaBufferOffset,
             input_picture_ptr->stride_bit_inc_cr,
             chromaWidth,
-            (lumaHeight >> 1),
-            config->asm_type);
+            (lumaHeight >> 1));
     }
     return return_error;
 }

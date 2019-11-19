@@ -1309,8 +1309,7 @@ uint32_t get_compound_mode_rate(
         else {
 
             assert(picture_control_set_ptr->parent_pcs_ptr->frm_hdr.reference_mode != SINGLE_REFERENCE &&
-                is_inter_compound_mode(candidate_ptr->pred_mode ) &&
-                candidate_ptr->motion_mode == SIMPLE_TRANSLATION);
+                is_inter_compound_mode(candidate_ptr->pred_mode ));
             assert(masked_compound_used);
             // compound_diffwtd, wedge
             assert(candidate_ptr->interinter_comp.type == COMPOUND_WEDGE ||
@@ -1625,7 +1624,7 @@ uint64_t mdc_av1_inter_fast_cost(
 #endif
 #if TWO_PASS_IMPROVEMENT
 /* two_pass_cost_update
- * This function adds some biases for distortion and rate. 
+ * This function adds some biases for distortion and rate.
  * The function is used in the first pass only and for the purpose of data collection */
 void two_pass_cost_update(
     PictureControlSet     *picture_control_set_ptr,
@@ -2092,10 +2091,8 @@ EbErrorType av1_tu_estimate_coeff_bits(
     TxSize                              txsize_uv,
     TxType                              tx_type,
     TxType                              tx_type_uv,
-    COMPONENT_TYPE                      component_type,
-    EbAsm                               asm_type)
+    COMPONENT_TYPE                      component_type)
 {
-    (void)asm_type;
     (void)entropy_coder_ptr;
     EbErrorType return_error = EB_ErrorNone;
 
@@ -2319,7 +2316,7 @@ EbErrorType Av1FullCost(
             candidate_buffer_ptr->candidate_ptr,
             &rate,
             &totalDistortion);
-#else        
+#else
         MvReferenceFrame ref_type[2];
         av1_set_ref_frame(ref_type, candidate_buffer_ptr->candidate_ptr->ref_frame_type);
         if ((candidate_buffer_ptr->candidate_ptr->is_compound && (ref_type[0] != LAST_FRAME || ref_type[1] != BWDREF_FRAME)) ||

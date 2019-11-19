@@ -24,13 +24,17 @@
 #include "EbTemporalFiltering_sse4.h"
 #include "EbComputeSAD.h"
 #include "EbMotionEstimation.h"
-#include "EbMeSadCalculation_SSE2.h"
 #include "EbPictureOperators.h"
 #include "EbPackUnPack_C.h"
 #include "EbPackUnPack_SSE2.h"
 #include "EbPackUnPack_AVX2.h"
 #include "EbMcp_SSE2.h"
-
+#include "EbAvcStyleMcp_SSSE3.h"
+#include "EbComputeMean_SSE2.h"
+#include "EbCombinedAveragingSAD_Intrinsic_AVX2.h"
+#include "EbComputeMean.h"
+#include "EbHmCode.h"
+#include "EbMeSadCalculation.h"
 
  /**************************************
  * Instruction Set Support
@@ -168,6 +172,7 @@ do { ptr = c;\
 
 #define SET_SSE2(ptr, c, sse2) SET_FUNCTIONS(ptr, c, 0, 0, sse2, 0, 0, 0, 0, 0, 0, 0)
 #define SET_SSE2_AVX2(ptr, c, sse2, avx2) SET_FUNCTIONS(ptr, c, 0, 0, sse2, 0, 0, 0, 0, 0, avx2, 0)
+#define SET_SSSE3(ptr, c, ssse3) SET_FUNCTIONS(ptr, c, 0, 0, 0, 0, ssse3, 0, 0, 0, 0, 0)
 #define SET_SSE41(ptr, c, sse4_1) SET_FUNCTIONS(ptr, c, 0, 0, 0, 0, 0, sse4_1, 0, 0, 0, 0)
 #define SET_SSE41(ptr, c, sse4_1) SET_FUNCTIONS(ptr, c, 0, 0, 0, 0, 0, sse4_1, 0, 0, 0, 0)
 #define SET_SSE41_AVX2(ptr, c, sse4_1, avx2) SET_FUNCTIONS(ptr, c, 0, 0, 0, 0, 0, sse4_1, 0, 0, avx2, 0)
@@ -481,8 +486,8 @@ void setup_rtcd_internal(EbAsm asm_type)
     if (flags & HAS_AVX2) eb_av1_highbd_dr_prediction_z2 = eb_av1_highbd_dr_prediction_z2_avx2;
     eb_av1_highbd_dr_prediction_z3 = eb_av1_highbd_dr_prediction_z3_c;
     if (flags & HAS_AVX2) eb_av1_highbd_dr_prediction_z3 = eb_av1_highbd_dr_prediction_z3_avx2;
-    //av1_get_nz_map_contexts = eb_av1_get_nz_map_contexts_c;
-    /*if (flags & HAS_SSE2)*/ eb_av1_get_nz_map_contexts = eb_av1_get_nz_map_contexts_sse2;
+    eb_av1_get_nz_map_contexts = eb_av1_get_nz_map_contexts_c;
+    if (flags & HAS_SSE2) eb_av1_get_nz_map_contexts = eb_av1_get_nz_map_contexts_sse2;
 
 #if II_COMP_FLAG
     aom_blend_a64_mask = aom_blend_a64_mask_c;
@@ -1746,6 +1751,10 @@ void setup_rtcd_internal(EbAsm asm_type)
                           sad_loop_kernel_sse4_1_intrin,
                           sad_loop_kernel_avx2_intrin,
                           sad_loop_kernel_avx512_intrin);
+    SET_SSE41_AVX2(sad_loop_kernel_hme_l0,
+                   sad_loop_kernel_c,
+                   sad_loop_kernel_sse4_1_hme_l0_intrin,
+                   sad_loop_kernel_avx2_hme_l0_intrin);
     SET_AVX2(noise_extract_luma_weak,
              noise_extract_luma_weak_c,
              noise_extract_luma_weak_avx2_intrin);
@@ -1793,7 +1802,7 @@ void setup_rtcd_internal(EbAsm asm_type)
              ext_eight_sad_calculation_32x32_64x64_c,
              ext_eight_sad_calculation_32x32_64x64_avx2);
     SET_AVX2(eb_sad_kernel4x4,
-             fast_loop_nx_m_sad_kernel,
+             fast_loop_nxm_sad_kernel,
              eb_compute4x_m_sad_avx2_intrin);
     SET_AVX2(sum_residual8bit,
              sum_residual_c,
@@ -1824,7 +1833,7 @@ void setup_rtcd_internal(EbAsm asm_type)
              picture_average_kernel_c,
              picture_average_kernel_sse2_intrin);
     SET_SSE2(picture_average_kernel1_line,
-             picture_average_kernel1_line_sse2_intrin, //Add C
+             picture_average_kernel1_line_c,
              picture_average_kernel1_line_sse2_intrin);
     SET_SSE41_AVX2(get_eight_horizontal_search_point_results_8x8_16x16_pu,
                    get_eight_horizontal_search_point_results_8x8_16x16_pu_c,
@@ -1835,11 +1844,44 @@ void setup_rtcd_internal(EbAsm asm_type)
                    get_eight_horizontal_search_point_results_32x32_64x64_pu_sse41_intrin,
                    get_eight_horizontal_search_point_results_32x32_64x64_pu_avx2_intrin);
     SET_SSE2(initialize_buffer_32bits,
-             initialize_buffer_32bits_sse2_intrin, //Add C
+             initialize_buffer_32bits_c,
              initialize_buffer_32bits_sse2_intrin);
     SET_SSE41(compute8x8_satd_u8,
-              compute8x8_satd_u8_sse4, //Add C
+              compute8x8_satd_u8_c,
               compute8x8_satd_u8_sse4);
+    SET_AVX2(nxm_sad_kernel_sub_sampled,
+             nxm_sad_kernel_helper_c,
+             nxm_sad_kernel_sub_sampled_helper_avx2);
+    SET_AVX2(nxm_sad_kernel,
+             nxm_sad_kernel_helper_c,
+             nxm_sad_kernel_helper_avx2);
+    SET_AVX2(nxm_sad_avg_kernel,
+             nxm_sad_avg_kernel_helper_c,
+             nxm_sad_avg_kernel_helper_avx2);
+    SET_SSSE3(avc_style_luma_interpolation_filter,
+              avc_style_luma_interpolation_filter_helper_ssse3, //Add C
+              avc_style_luma_interpolation_filter_helper_ssse3);
+    SET_SSE2_AVX2(compute_mean_8x8,
+                  compute_mean8x8_sse2_intrin, //Add C
+                  compute_mean8x8_sse2_intrin,
+                  compute_mean8x8_avx2_intrin);
+    SET_SSE2(compute_mean_square_values_8x8,
+             compute_mean_of_squared_values8x8_sse2_intrin, //Add C
+             compute_mean_of_squared_values8x8_sse2_intrin);
+    SET_SSE2_AVX2(pack2d_16_bit_src_mul4,
+                  eb_enc_msb_pack2_d,
+                  eb_enc_msb_pack2d_sse2_intrin,
+                  eb_enc_msb_pack2d_avx2_intrin_al);
+    SET_SSE2(un_pack2d_16_bit_src_mul4,
+             eb_enc_msb_un_pack2_d,
+             eb_enc_msb_un_pack2d_sse2_intrin);
+    SET_SSE2(picture_addition,
+             picture_addition_sse2, //Add C
+             picture_addition_sse2);
+    SET_SSE2_AVX2(compute_interm_var_four8x8,
+             compute_interm_var_four8x8_c,
+             compute_interm_var_four8x8_helper_sse2,
+             compute_interm_var_four8x8_avx2_intrin);
 
 }
 

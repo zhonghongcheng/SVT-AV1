@@ -132,7 +132,8 @@ extern "C" {
         MotionMode                            motion_mode;
         uint16_t                               num_proj_ref;
         EbBool                                 local_warp_valid;
-        EbWarpedMotionParams                   wm_params;
+        EbWarpedMotionParams                   wm_params_l0;
+        EbWarpedMotionParams                   wm_params_l1;
         uint8_t                                tx_depth;
         InterInterCompoundData                 interinter_comp;
         uint8_t                                compound_idx;
@@ -153,8 +154,7 @@ extern "C" {
     typedef EbErrorType(*EbPredictionFunc)(
         struct ModeDecisionContext           *context_ptr,
         PictureControlSet                    *picture_control_set_ptr,
-        struct ModeDecisionCandidateBuffer   *candidate_buffer_ptr,
-        EbAsm                                   asm_type);
+        struct ModeDecisionCandidateBuffer   *candidate_buffer_ptr);
     typedef uint64_t(*EbFastCostFunc)(
         CodingUnit                           *cu_ptr,
         struct ModeDecisionCandidate         *candidate_buffer,

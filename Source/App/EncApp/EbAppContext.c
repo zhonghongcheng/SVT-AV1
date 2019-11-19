@@ -190,6 +190,7 @@ EbErrorType CopyConfigurationParameters(
     callback_data->eb_enc_parameters.stat_report = (EbBool)config->stat_report;
     callback_data->eb_enc_parameters.disable_dlf_flag = (EbBool)config->disable_dlf_flag;
     callback_data->eb_enc_parameters.enable_warped_motion = (EbBool)config->enable_warped_motion;
+    callback_data->eb_enc_parameters.enable_global_motion = (EbBool)config->enable_global_motion;
     callback_data->eb_enc_parameters.enable_obmc = (EbBool)config->enable_obmc;
     callback_data->eb_enc_parameters.enable_filter_intra = (EbBool)config->enable_filter_intra;
     callback_data->eb_enc_parameters.use_default_me_hme = (EbBool)config->use_default_me_hme;
@@ -206,6 +207,7 @@ EbErrorType CopyConfigurationParameters(
     callback_data->eb_enc_parameters.screen_content_mode = (EbBool)config->screen_content_mode;
     callback_data->eb_enc_parameters.enable_hbd_mode_decision = (EbBool)config->enable_hbd_mode_decision;
     callback_data->eb_enc_parameters.enable_palette = config->enable_palette;
+    callback_data->eb_enc_parameters.olpd_refinement = config->olpd_refinement;
     callback_data->eb_enc_parameters.constrained_intra = (EbBool)config->constrained_intra;
     callback_data->eb_enc_parameters.channel_id = config->channel_id;
     callback_data->eb_enc_parameters.active_channel_count = config->active_channel_count;
@@ -244,6 +246,11 @@ EbErrorType CopyConfigurationParameters(
     }
 
     callback_data->eb_enc_parameters.sq_weight = config->sq_weight;
+
+    callback_data->eb_enc_parameters.md_stage_1_cand_prune_th = config->md_stage_1_cand_prune_th;
+    callback_data->eb_enc_parameters.md_stage_1_class_prune_th = config->md_stage_1_class_prune_th;
+    callback_data->eb_enc_parameters.md_stage_2_cand_prune_th = config->md_stage_2_cand_prune_th;
+    callback_data->eb_enc_parameters.md_stage_2_class_prune_th = config->md_stage_2_class_prune_th;
 
     return return_error;
 }

@@ -33,8 +33,7 @@ void uni_pred_averaging(
         uint32_t              refBufferFullList0Stride,
         uint8_t               *firstRefTempDst,
         uint8_t               **comp_blk_ptr,
-        uint32_t              *comp_blk_ptr_stride,
-        EbAsm                 asm_type);
+        uint32_t              *comp_blk_ptr_stride);
 
 void interpolate_search_region_AVC_chroma(
         MeContext               *context_ptr,
@@ -47,8 +46,7 @@ void interpolate_search_region_AVC_chroma(
         uint32_t                interpolated_full_stride_ch,
         uint32_t                search_area_width,
         uint32_t                search_area_height,
-        uint32_t                input_bit_depth,
-        EbAsm                   asm_type);
+        uint32_t                input_bit_depth);
 
     extern EbErrorType motion_estimate_lcu(
         PictureParentControlSet   *picture_control_set_ptr,
@@ -58,12 +56,6 @@ void interpolate_search_region_AVC_chroma(
         MeContext                 *context_ptr,
         EbPictureBufferDesc       *input_ptr);
 
-    extern EbErrorType OpenLoopIntraCandidateSearchLcu(
-        PictureParentControlSet   *picture_control_set_ptr,
-        uint32_t                       sb_index,
-        MotionEstimationContext_t   *context_ptr,
-        EbPictureBufferDesc       *input_ptr,
-        EbAsm                       asm_type);
     extern void decimation_2d(
         uint8_t                   *input_samples,
         uint32_t                   input_stride,
@@ -86,8 +78,7 @@ void interpolate_search_region_AVC_chroma(
         PictureParentControlSet   *picture_control_set_ptr,
         uint32_t                       sb_index,
         MotionEstimationContext_t   *context_ptr,
-        EbPictureBufferDesc       *input_ptr,
-        EbAsm                       asm_type);
+        EbPictureBufferDesc       *input_ptr);
 
     int8_t sort_3_elements(uint32_t a, uint32_t b, uint32_t c);
 #define a_b_c  0
@@ -1631,12 +1622,11 @@ void interpolate_search_region_AVC_chroma(
         int16_t y_search_area_origin,  // input parameter, search area origin in
                                        // the vertical direction, used to point
                                        // to reference samples
-        uint32_t integer_mv,           // input parameter, integer MV
 #if OPTIMISED_EX_SUBPEL
         uint32_t search_area_height,  // input parameter, search area height
         uint32_t search_area_width,  // input parameter, search area width
 #endif
-        EbAsm asm_type);
+        uint32_t integer_mv);         // input parameter, integer MV
 
 #ifdef __cplusplus
 }

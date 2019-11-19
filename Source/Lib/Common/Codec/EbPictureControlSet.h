@@ -13796,7 +13796,8 @@ extern "C" {
         NeighborArrayUnit                  *md_tx_depth_1_luma_recon_neighbor_array[NEIGHBOR_ARRAY_TOTAL_COUNT];
         NeighborArrayUnit                  *md_cb_recon_neighbor_array[NEIGHBOR_ARRAY_TOTAL_COUNT];
         NeighborArrayUnit                  *md_cr_recon_neighbor_array[NEIGHBOR_ARRAY_TOTAL_COUNT];
-        EbBool                             hbd_mode_decision;
+
+        uint8_t                             hbd_mode_decision;
         NeighborArrayUnit                  *md_luma_recon_neighbor_array16bit[NEIGHBOR_ARRAY_TOTAL_COUNT];
         NeighborArrayUnit                  *md_tx_depth_1_luma_recon_neighbor_array16bit[NEIGHBOR_ARRAY_TOTAL_COUNT];
         NeighborArrayUnit                  *md_cb_recon_neighbor_array16bit[NEIGHBOR_ARRAY_TOTAL_COUNT];
@@ -14099,6 +14100,10 @@ extern "C" {
         MeLcuResults                        **me_results;
         uint32_t                             *rc_me_distortion;
 
+        // Global motion estimation results
+        EbBool                                is_global_motion[MAX_NUM_OF_REF_PIC_LIST][REF_LIST_MAX_DEPTH];
+        EbWarpedMotionParams                  global_motion_estimation[MAX_NUM_OF_REF_PIC_LIST][REF_LIST_MAX_DEPTH];
+
         // Motion Estimation Distortion and OIS Historgram
         uint16_t                             *me_distortion_histogram;
         uint16_t                             *ois_distortion_histogram;
@@ -14298,8 +14303,11 @@ extern "C" {
         uint64_t                             referenced_area_avg; // average referenced area per frame
         uint8_t                              referenced_area_has_non_zero;
 #endif
-#if PREDICT_NSQ_SHAPE
+#if PREDICT_NSQ_SHAPE && !MDC_ADAPTIVE_LEVEL
         uint8_t                                mdc_depth_level;
+#endif
+#if MDC_ADAPTIVE_LEVEL
+        uint8_t                                enable_adaptive_ol_partitioning;
 #endif
     } PictureParentControlSet;
 
@@ -14327,7 +14335,7 @@ extern "C" {
         uint16_t                           enc_dec_segment_row;
         EbEncMode                          enc_mode;
         uint8_t                            speed_control;
-        EbBool                             hbd_mode_decision;
+        uint8_t                            hbd_mode_decision;
         uint16_t                           film_grain_noise_level;
         EbBool                             ext_block_flag;
         EbBool                             in_loop_me_flag;

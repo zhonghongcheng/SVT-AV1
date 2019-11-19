@@ -26,6 +26,7 @@
 #include "EbEntropyCodingProcess.h"
 #include "EbSegmentation.h"
 #include "EbCommonUtils.h"
+#include "EbAdaptiveMotionVectorPrediction.h"
 
 #include "aom_dsp_rtcd.h"
 
@@ -1658,6 +1659,7 @@ static void write_motion_mode(
     PictureControlSet      *picture_control_set_ptr)
 {
     const PredictionMode mode = cu_ptr->prediction_unit_array[0].inter_mode;
+
     MotionMode last_motion_mode_allowed =
         motion_mode_allowed(picture_control_set_ptr, cu_ptr, bsize, rf0, rf1, mode);
 
@@ -3976,15 +3978,10 @@ static void write_global_motion_params(const EbWarpedMotionParams *params,
     struct AomWriteBitBuffer *wb,
     int32_t allow_hp) {
     const TransformationType type = params->wmtype;
-    assert(type == TRANSLATION || type == IDENTITY);
     eb_aom_wb_write_bit(wb, type != IDENTITY);
     if (type != IDENTITY) {
-#if GLOBAL_TRANS_TYPES > 4
-        eb_aom_wb_write_literal(wb, type - 1, GLOBAL_TYPE_BITS);
-#else
         eb_aom_wb_write_bit(wb, type == ROTZOOM);
         if (type != ROTZOOM) eb_aom_wb_write_bit(wb, type == TRANSLATION);
-#endif  // GLOBAL_TRANS_TYPES > 4
     }
 
     if (type >= ROTZOOM) {
@@ -6708,7 +6705,7 @@ assert(bsize < BlockSizeS_ALL);
 
 #if PAL_SUP
     if (svt_av1_allow_palette(picture_control_set_ptr->parent_pcs_ptr->palette_mode, blk_geom->bsize)) {
-        assert(cu_ptr->palette_info.color_idx_map != NULL && "free palette:Null");     
+        assert(cu_ptr->palette_info.color_idx_map != NULL && "free palette:Null");
         free(cu_ptr->palette_info.color_idx_map);
         cu_ptr->palette_info.color_idx_map = NULL;
     }

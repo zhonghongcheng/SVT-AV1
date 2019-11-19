@@ -20,6 +20,7 @@
 #include "emmintrin.h"
 
 #include "EbTemporalFiltering.h"
+#include "EbGlobalMotionEstimation.h"
 
 /* --32x32-
 |00||01|
@@ -51,8 +52,7 @@ EbErrorType CheckZeroZeroCenter(
     uint32_t                       sb_width,
     uint32_t                       sb_height,
     int16_t                       *x_search_center,
-    int16_t                       *y_search_center,
-    EbAsm                       asm_type);
+    int16_t                       *y_search_center);
 
 /************************************************
  * Set ME/HME Params from Config
@@ -242,6 +242,18 @@ EbErrorType signal_derivation_me_kernel_oq(
         context_ptr->me_context_ptr->me_search_method = (enc_mode <= ENC_M1) ?
         FULL_SAD_SEARCH :
         SUB_SAD_SEARCH;
+
+    if (sequence_control_set_ptr->static_config.enable_global_motion == EB_TRUE)
+    {
+        if (enc_mode == ENC_M0
+            && sequence_control_set_ptr->encoder_bit_depth == EB_8BIT)
+            context_ptr->me_context_ptr->compute_global_motion = EB_TRUE;
+        else
+            context_ptr->me_context_ptr->compute_global_motion = EB_FALSE;
+    }
+    else
+        context_ptr->me_context_ptr->compute_global_motion = EB_FALSE;
+
     return return_error;
 };
 #else
@@ -342,6 +354,18 @@ EbErrorType signal_derivation_me_kernel_oq(
     context_ptr->me_context_ptr->me_search_method = (picture_control_set_ptr->enc_mode <= ENC_M1) ?
         FULL_SAD_SEARCH :
         SUB_SAD_SEARCH;
+
+    if (sequence_control_set_ptr->static_config.enable_global_warped_motion == EB_TRUE)
+    {
+        if (enc_mode == ENC_M0
+            && sequence_control_set_ptr->encoder_bit_depth == EB_8BIT)
+            context_ptr->me_context_ptr->compute_global_motion = EB_TRUE;
+        else
+            context_ptr->me_context_ptr->compute_global_motion = EB_FALSE;
+    }
+    else
+        context_ptr->me_context_ptr->compute_global_motion = EB_FALSE;
+
     return return_error;
 };
 #endif
@@ -651,8 +675,6 @@ EbErrorType ComputeDecimatedZzSad(
     uint32_t                         yLcuEndIndex) {
     EbErrorType return_error = EB_ErrorNone;
 
-    EbAsm asm_type = sequence_control_set_ptr->encode_context_ptr->asm_type;
-
     PictureParentControlSet    *previous_picture_control_set_wrapper_ptr = ((PictureParentControlSet*)picture_control_set_ptr->previous_picture_control_set_wrapper_ptr->object_ptr);
     EbPictureBufferDesc        *previousInputPictureFull = previous_picture_control_set_wrapper_ptr->enhanced_picture_ptr;
 
@@ -709,9 +731,8 @@ EbErrorType ComputeDecimatedZzSad(
                     context_ptr->me_context_ptr->sixteenth_sb_buffer_stride,
                     4);
 
-                if (asm_type >= ASM_NON_AVX2 && asm_type < ASM_TYPE_TOTAL)
                     // ZZ SAD between 1/16 current & 1/16 collocated
-                    decimatedLcuCollocatedSad = nxm_sad_kernel_func_ptr_array[asm_type][2](
+                    decimatedLcuCollocatedSad = nxm_sad_kernel(
                         &(sixteenth_decimated_picture_ptr->buffer_y[blkDisplacementDecimated]),
                         sixteenth_decimated_picture_ptr->stride_y,
                         context_ptr->me_context_ptr->sixteenth_sb_buffer,
@@ -788,7 +809,6 @@ void* motion_estimation_kernel(void *input_ptr)
 
     uint32_t                      intra_sad_interval_index;
 
-    EbAsm                      asm_type;
     for (;;) {
         // Get Input Full Object
         eb_get_full_object(
@@ -812,7 +832,6 @@ void* motion_estimation_kernel(void *input_ptr)
 
         input_picture_ptr = picture_control_set_ptr->enhanced_picture_ptr;
 
-        asm_type = sequence_control_set_ptr->encode_context_ptr->asm_type;
         context_ptr->me_context_ptr->me_alt_ref = inputResultsPtr->task_type == 1 ? EB_TRUE : EB_FALSE;
 
         // Lambda Assignement
@@ -832,12 +851,22 @@ void* motion_estimation_kernel(void *input_ptr)
         }
         if (inputResultsPtr->task_type == 0)
         {
-
             // ME Kernel Signal(s) derivation
             signal_derivation_me_kernel_oq(
                 sequence_control_set_ptr,
                 picture_control_set_ptr,
                 context_ptr);
+
+#if GLOBAL_WARPED_MOTION
+            // Global motion estimation
+            // Compute only for the first fragment.
+            // TODO: create an other kernel ?
+            if (context_ptr->me_context_ptr->compute_global_motion
+                && inputResultsPtr->segment_index == 0)
+                global_motion_estimation(picture_control_set_ptr,
+                                         context_ptr->me_context_ptr,
+                                         input_picture_ptr);
+#endif
 
             // Segments
             segment_index = inputResultsPtr->segment_index;
@@ -942,8 +971,7 @@ void* motion_estimation_kernel(void *input_ptr)
                             picture_control_set_ptr,
                             sb_index,
                             context_ptr,
-                            input_picture_ptr,
-                            asm_type);
+                            input_picture_ptr);
                     }
                 }
             }

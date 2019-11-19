@@ -763,7 +763,12 @@ int32_t mdc_av1_quantize_inv_quantize(
     MacroblockPlane candidate_plane;
     const QmVal *qMatrix = picture_control_set_ptr->parent_pcs_ptr->gqmatrix[NUM_QM_LEVELS - 1][0][txsize];
     const QmVal *iqMatrix = picture_control_set_ptr->parent_pcs_ptr->giqmatrix[NUM_QM_LEVELS - 1][0][txsize];
+#if ADD_DELTA_QP_SUPPORT && MDC_ADAPTIVE_LEVEL
+    //NM - Assuming 1 segment.
+    uint32_t qIndex = picture_control_set_ptr->parent_pcs_ptr->frm_hdr.delta_q_params.delta_q_present ? quantizer_to_qindex[qp] : picture_control_set_ptr->parent_pcs_ptr->frm_hdr.quantization_params.base_q_idx;
+#else
     uint32_t qIndex = picture_control_set_ptr->parent_pcs_ptr->delta_q_present_flag ? quantizer_to_qindex[qp] : picture_control_set_ptr->parent_pcs_ptr->base_qindex;
+#endif
     if (component_type == COMPONENT_LUMA) {
         candidate_plane.quant_QTX = picture_control_set_ptr->parent_pcs_ptr->quantsMd.y_quant[qIndex];
         candidate_plane.quant_fp_QTX = picture_control_set_ptr->parent_pcs_ptr->quantsMd.y_quant_fp[qIndex];
@@ -890,13 +895,11 @@ void mdc_full_loop(
     uint32_t                          tu_origin_index;
     uint64_t                          y_full_cost;
     SequenceControlSet                *sequence_control_set_ptr = (SequenceControlSet*)picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr;
-    EbAsm                             asm_type = sequence_control_set_ptr->encode_context_ptr->asm_type;
     uint64_t                          y_tu_coeff_bits;
     uint64_t                          tu_full_distortion[3][DIST_CALC_TOTAL];
     context_ptr->three_quad_energy = 0;
     uint32_t  txb_1d_offset = 0;
     uint32_t txb_itr = 0;
-    assert(asm_type >= 0 && asm_type < ASM_TYPE_TOTAL);
     uint8_t  tx_depth = candidate_buffer->candidate_ptr->tx_depth;
     uint16_t txb_count = context_ptr->blk_geom->txb_count[tx_depth];
     for (txb_itr = 0; txb_itr < txb_count; txb_itr++) {
@@ -918,7 +921,6 @@ void mdc_full_loop(
             context_ptr->transform_inner_array_ptr,
             0,
             candidate_buffer->candidate_ptr->transform_type[txb_itr],
-            asm_type,
             PLANE_TYPE_Y,
             DEFAULT_SHAPE);
 
@@ -973,8 +975,7 @@ void mdc_full_loop(
                     0,
                     0,
                     PICTURE_BUFFER_DESC_Y_FLAG,
-                    0,
-                    asm_type);
+                    0);
 
             }
 
@@ -1069,8 +1070,7 @@ void av1_set_ref_frame(MvReferenceFrame *rf, int8_t ref_frame_type);
 EbErrorType mdc_inter_pu_prediction_av1(
     ModeDecisionConfigurationContext     *context_ptr,
     PictureControlSet                    *picture_control_set_ptr,
-    ModeDecisionCandidateBuffer          *candidate_buffer_ptr,
-    EbAsm                                 asm_type)
+    ModeDecisionCandidateBuffer          *candidate_buffer_ptr)
 {
     EbErrorType           return_error = EB_ErrorNone;
     EbPictureBufferDesc  *ref_pic_list0;
@@ -1143,8 +1143,12 @@ EbErrorType mdc_inter_pu_prediction_av1(
         candidate_buffer_ptr->prediction_ptr,
         context_ptr->blk_geom->origin_x,
         context_ptr->blk_geom->origin_y,
-        0,
-        asm_type); // No chroma
+        0, // No chroma
+#if MDC_ADAPTIVE_LEVEL
+        8); //bit_depth 0
+#else
+        0); //bit_depth 0
+#endif
 
     return return_error;
 }
@@ -1180,7 +1184,7 @@ uint64_t mdc_av1_full_cost(
     return full_cost;
 }
 #endif
-EB_EXTERN EbErrorType nsq_prediction_shape(
+EB_EXTERN EbErrorType open_loop_partitioning_sb(
     SequenceControlSet                *sequence_control_set_ptr,
     PictureControlSet                 *picture_control_set_ptr,
     ModeDecisionConfigurationContext  *context_ptr,
@@ -1213,6 +1217,11 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
     context_ptr->coeff_est_entropy_coder_ptr = picture_control_set_ptr->coeff_est_entropy_coder_ptr;
 #endif
     uint64_t tot_me_sb;
+#if MDC_ADAPTIVE_LEVEL
+    LargestCodingUnit  *sb_ptr = picture_control_set_ptr->sb_ptr_array[sb_index];
+    uint64_t depth_cost[NUMBER_OF_DEPTH] = { 0 };
+    uint8_t depth_table[NUMBER_OF_DEPTH] = { 0, 1, 2 , 3 ,4 ,5 };
+#endif
     do {
         EbMdcLeafData * leaf_data_ptr = &mdc_result_tb_ptr->leaf_data_array[cuIdx];
         blk_idx_mds = leaf_data_array[cuIdx].mds_idx;
@@ -1241,7 +1250,6 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
         const uint32_t       input_origin_index = (context_ptr->cu_origin_y + input_picture_ptr->origin_y) * input_picture_ptr->stride_y + (context_ptr->cu_origin_x + input_picture_ptr->origin_x);
         const uint32_t       cu_origin_index = blk_geom->origin_x + blk_geom->origin_y * SB_STRIDE_Y;
         context_ptr->candidate_buffer->candidate_ptr = &context_ptr->fast_candidate_array[0];
-        EbAsm asm_type = sequence_control_set_ptr->encode_context_ptr->asm_type;
         cu_ptr->best_d1_blk = blk_idx_mds;
 #endif
         if (picture_control_set_ptr->slice_type != I_SLICE) {
@@ -1462,8 +1470,7 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
             mdc_inter_pu_prediction_av1(
                 context_ptr,
                 picture_control_set_ptr,
-                context_ptr->candidate_buffer,
-                asm_type);
+                context_ptr->candidate_buffer);
 
             //Y Residual
             residual_kernel8bit(
@@ -1546,6 +1553,9 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
                     }
                 }
             }
+#if MDC_ADAPTIVE_LEVEL
+            depth_cost[get_depth(context_ptr->blk_geom->sq_size)] += nsq_cost[nsq_shape_table[0]];
+#endif
             // Assign ranking # to each block
             for (leaf_idx = start_idx; leaf_idx < end_idx; leaf_idx++) {
                 EbMdcLeafData * current_depth_leaf_data = &mdc_result_tb_ptr->leaf_data_array[leaf_idx];
@@ -1578,6 +1588,27 @@ EB_EXTERN EbErrorType nsq_prediction_shape(
         }
         cuIdx++;
     } while (cuIdx < leaf_count);// End of CU loop
+#if MDC_ADAPTIVE_LEVEL
+    if (sequence_control_set_ptr->seq_header.sb_size == BLOCK_64X64)
+        depth_cost[0] = MAX_CU_COST;
+    //Sorting
+    {
+        uint32_t i, j, index;
+        for (i = 0; i < NUMBER_OF_DEPTH - 1; ++i) {
+            for (j = i + 1; j < NUMBER_OF_DEPTH; ++j) {
+                if (depth_cost[depth_table[j]] < depth_cost[depth_table[i]]) {
+                    index = depth_table[i];
+                    depth_table[i] = depth_table[j];
+                    depth_table[j] = index;
+                }
+            }
+        }
+    }
+    for (uint8_t depth_idx = 0; depth_idx < NUMBER_OF_DEPTH; depth_idx++) {
+        sb_ptr->depth_ranking[depth_idx] = find_depth_index(depth_idx, depth_table);
+        sb_ptr->depth_cost[depth_idx] = depth_cost[depth_idx];
+    }
+#endif
     return return_error;
 }
 #endif
