@@ -884,7 +884,7 @@ uint8_t check_ref_beackout(
     uint8_t ref_cnt = 0;
     uint8_t allowed_nsq_ref_th = (uint8_t)PRUNE_REC_TH;
 #if MULTI_PASS_PD // Shut inter skip if 1st pass
-    if (context_ptr->is_final_pd_pass)
+    if (context_ptr->pd_pass == EB_TRUE)
 #endif
     if (context_ptr->prune_ref_frame_for_rec_partitions) {
         if (shape != PART_N) {
@@ -3336,7 +3336,7 @@ void inject_new_candidates(
     MD_COMP_TYPE compound_types_to_try = picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;
     MD_COMP_TYPE cur_type; //NN
 #if MULTI_PASS_PD // Shut inter-inter compound if 1st pass (i.e. keep avg only)
-    MD_COMP_TYPE tot_comp_types = (picture_control_set_ptr->parent_pcs_ptr->compound_mode == 1 || !context_ptr->is_final_pd_pass)? MD_COMP_AVG :
+    MD_COMP_TYPE tot_comp_types = (picture_control_set_ptr->parent_pcs_ptr->compound_mode == 1 || context_ptr->pd_pass == EB_FALSE)? MD_COMP_AVG :
 #else
     MD_COMP_TYPE tot_comp_types = picture_control_set_ptr->parent_pcs_ptr->compound_mode == 1 ? MD_COMP_AVG :
 #endif
@@ -3390,14 +3390,14 @@ void inject_new_candidates(
 
             uint8_t inter_type;
 #if MULTI_PASS_PD // Shut inter/intra 
-            uint8_t is_ii_allowed = context_ptr->is_final_pd_pass ? svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, NEWMV, rf) : 0;
+            uint8_t is_ii_allowed = context_ptr->pd_pass == EB_TRUE ? svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, NEWMV, rf) : 0;
 #else
             uint8_t is_ii_allowed = svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, NEWMV, rf);
 #endif
             uint8_t tot_inter_types = is_ii_allowed ? II_COUNT : 1;
 #if OBMC_FLAG
 #if MULTI_PASS_PD // Shut OBMC if 1st pass
-            uint8_t is_obmc_allowed = context_ptr->is_final_pd_pass ? (obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL) : 0;
+            uint8_t is_obmc_allowed = context_ptr->pd_pass == EB_TRUE ? (obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL) : 0;
 #else
              uint8_t is_obmc_allowed =  obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL;
 #endif
@@ -3499,7 +3499,7 @@ void inject_new_candidates(
                 context_ptr->injected_ref_type_l0_array[context_ptr->injected_mv_count_l0] = to_inject_ref_type;
                 ++context_ptr->injected_mv_count_l0;
 #if MULTI_PASS_PD // Test 1 inter only if 1st pass
-                if (!context_ptr->is_final_pd_pass)
+                if (context_ptr->pd_pass == EB_FALSE)
                     break;
 #endif
             }
@@ -3532,14 +3532,14 @@ void inject_new_candidates(
 
             uint8_t inter_type;
 #if MULTI_PASS_PD // Shut inter/intra 
-            uint8_t is_ii_allowed = context_ptr->is_final_pd_pass ? svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, NEWMV, rf) : 0;
+            uint8_t is_ii_allowed = context_ptr->pd_pass == EB_TRUE ? svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, NEWMV, rf) : 0;
 #else
             uint8_t is_ii_allowed = svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, NEWMV, rf);
 #endif
             uint8_t tot_inter_types = is_ii_allowed ? II_COUNT : 1;
 #if OBMC_FLAG
 #if MULTI_PASS_PD // Shut OBMC if 1st pass
-            uint8_t is_obmc_allowed = context_ptr->is_final_pd_pass ? (obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL) : 0;
+            uint8_t is_obmc_allowed = context_ptr->pd_pass == EB_TRUE ? (obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL) : 0;
 #else
             uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL;
 #endif
@@ -3641,7 +3641,7 @@ void inject_new_candidates(
                     context_ptr->injected_ref_type_l1_array[context_ptr->injected_mv_count_l1] = to_inject_ref_type;
                     ++context_ptr->injected_mv_count_l1;
 #if MULTI_PASS_PD // Test 1 inter only if 1st pass
-                    if (!context_ptr->is_final_pd_pass)
+                    if (context_ptr->pd_pass == EB_FALSE)
                         break;
 #endif
                 }
@@ -3757,7 +3757,7 @@ void inject_new_candidates(
                         context_ptr->injected_ref_type_bipred_array[context_ptr->injected_mv_count_bipred] = to_inject_ref_type;
                         ++context_ptr->injected_mv_count_bipred;
 #if MULTI_PASS_PD // Test 1 inter only if 1st pass
-                        if (!context_ptr->is_final_pd_pass)
+                        if (context_ptr->pd_pass == EB_FALSE)
                             break;
 #endif
                         }
@@ -4125,7 +4125,7 @@ void  inject_inter_candidates(
     uint8_t sq_index = LOG2F(context_ptr->blk_geom->sq_size) - 2;
     uint8_t inject_newmv_candidate = 1;
 #if MULTI_PASS_PD // Shut coef-based inter skip if 1st pass
-    if (context_ptr->is_final_pd_pass)
+    if (context_ptr->pd_pass == EB_TRUE)
 #endif
     if (picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL) {
@@ -4164,7 +4164,7 @@ void  inject_inter_candidates(
         mi_col);
 
 #if MULTI_PASS_PD // Shut OBMC, COMB, .. if 1st pass
-    if (context_ptr->is_final_pd_pass) {
+    if (context_ptr->pd_pass == EB_TRUE) {
 #endif
 #if OBMC_FLAG
     uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, context_ptr->blk_geom->bsize, LAST_FRAME, -1, NEWMV) == OBMC_CAUSAL;
@@ -4226,7 +4226,7 @@ void  inject_inter_candidates(
             &canTotalCnt);
 
 #if MULTI_PASS_PD // Shut nx4 and 4xn if 1st pass
-        if (context_ptr->is_final_pd_pass)
+        if (context_ptr->pd_pass == EB_TRUE)
 #endif
         if (context_ptr->nx4_4xn_parent_mv_injection) {
             // If Nx4 or 4xN the inject the MV of the aprent block
@@ -4279,7 +4279,7 @@ void  inject_inter_candidates(
         }
     }
 #if MULTI_PASS_PD // Shut global mv if 1st pass
-    if (context_ptr->is_final_pd_pass)
+    if (context_ptr->pd_pass == EB_TRUE)
 #endif
     if (context_ptr->global_mv_injection) {
         /**************
@@ -4460,7 +4460,7 @@ void  inject_inter_candidates(
 
     // Warped Motion
 #if MULTI_PASS_PD // Shut Warped if 1st pass
-    if (context_ptr->is_final_pd_pass)
+    if (context_ptr->pd_pass == EB_TRUE)
 #endif
     if (frm_hdr->allow_warped_motion &&
         has_overlappable_candidates(context_ptr->cu_ptr) &&
@@ -4478,7 +4478,7 @@ void  inject_inter_candidates(
             close_loop_me_index);
     }
 #if MULTI_PASS_PD // Shut bipred 3x3 and unipred 3x3 if 1st pass
-    if (context_ptr->is_final_pd_pass)
+    if (context_ptr->pd_pass == EB_TRUE)
 #endif
     if (inject_newmv_candidate) {
         if (isCompoundEnabled) {
@@ -4559,7 +4559,7 @@ void  inject_inter_candidates(
             }
 #endif
 #if MULTI_PASS_PD // Shut pred me if 1 st pass
-        if (context_ptr->is_final_pd_pass)
+        if (context_ptr->pd_pass == EB_TRUE)
 #endif
         if (context_ptr->predictive_me_level)
             inject_predictive_me_candidates(
@@ -5150,7 +5150,7 @@ void  inject_intra_candidates(
     uint8_t                     intra_mode_start = DC_PRED;
 #if PAETH_HBD
 #if LETS_INJECT_DC
-    uint8_t                     intra_mode_end = (context_ptr->is_final_pd_pass) ? PAETH_PRED : DC_PRED;
+    uint8_t                     intra_mode_end = (context_ptr->pd_pass == EB_TRUE) ? PAETH_PRED : DC_PRED;
 #else
     uint8_t                     intra_mode_end   =  PAETH_PRED;
 #endif
@@ -5596,7 +5596,7 @@ EbErrorType generate_md_stage_0_cand(
     uint8_t inject_intra_candidate = 1;
     uint8_t inject_inter_candidate = 1;
 #if MULTI_PASS_PD // Shut intra test if 1st pass
-   if(context_ptr->is_final_pd_pass) {
+   if(context_ptr->pd_pass == EB_TRUE) {
 #endif
     if (slice_type != I_SLICE) {
         if (picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
@@ -5610,13 +5610,13 @@ EbErrorType generate_md_stage_0_cand(
    }
 #endif
 #if MULTI_PASS_PD && !LETS_INJECT_DC// Shut intra test if 1st pass
-   if (context_ptr->is_final_pd_pass) {
+   if (context_ptr->pd_pass == EB_TRUE) {
 #endif
     //----------------------
     // Intra
     if (context_ptr->blk_geom->sq_size < 128) {
 #if LETS_INJECT_DC
-        if (context_ptr->is_final_pd_pass && picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode >= 5 && context_ptr->blk_geom->sq_size > 4 && context_ptr->blk_geom->shape == PART_N)
+        if (context_ptr->pd_pass && picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode >= 5 && context_ptr->blk_geom->sq_size > 4 && context_ptr->blk_geom->shape == PART_N)
 #else
         if (picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode >= 5 && context_ptr->blk_geom->sq_size > 4 && context_ptr->blk_geom->shape == PART_N)
 #endif
@@ -5638,7 +5638,7 @@ EbErrorType generate_md_stage_0_cand(
     }
 #endif
 #if MULTI_PASS_PD // Shut intra test if 1st pass
-    if (context_ptr->is_final_pd_pass) {
+    if (context_ptr->pd_pass == EB_TRUE) {
 #endif
 #if FILTER_INTRA_FLAG
        if (picture_control_set_ptr->pic_filter_intra_mode > 0 && av1_filter_intra_allowed_bsize(sequence_control_set_ptr->seq_header.enable_filter_intra, context_ptr->blk_geom->bsize))

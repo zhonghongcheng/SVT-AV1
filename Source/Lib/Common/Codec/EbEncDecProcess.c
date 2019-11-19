@@ -1638,7 +1638,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // Derive Spatial SSE Flag
 
 #if MULTI_PASS_PD // Shut spatial SSE @ full loop
-    if (!context_ptr->is_final_pd_pass)
+    if (context_ptr->pd_pass == EB_FALSE)
         context_ptr->spatial_sse_full_loop = EB_FALSE;
     else
 #endif
@@ -1693,7 +1693,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
     // Derive redundant block
 #if MULTI_PASS_PD // Shut redundant_blk
-    if (!context_ptr->is_final_pd_pass)
+    if (context_ptr->pd_pass == EB_FALSE)
         context_ptr->redundant_blk = EB_FALSE;
     else
 #endif
@@ -1714,7 +1714,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     if (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
 #if FIX_ESTIMATE_INTRA
 #if LETS_INJECT_DC
-        if (MR_MODE || !context_ptr->is_final_pd_pass)
+        if (MR_MODE || context_ptr->pd_pass == EB_FALSE)
 #else
         if (MR_MODE)
 #endif
@@ -1769,7 +1769,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
     // Derive MD Exit TH
 #if MULTI_PASS_PD // Shut md_exit_th
-    if (!context_ptr->is_final_pd_pass)
+    if (context_ptr->pd_pass == EB_FALSE)
         context_ptr->md_exit_th = 0;
     else
 #endif
@@ -1867,7 +1867,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // skip VA and VB if v_cost > (weighted sq_cost)
 
 #if MULTI_PASS_PD // Shut sq_to_h_v_weight_to_skip_a_b
-    if (!context_ptr->is_final_pd_pass)
+    if (context_ptr->pd_pass == EB_FALSE)
         context_ptr->sq_to_h_v_weight_to_skip_a_b = (uint32_t)~0;
     else
 #endif
@@ -2423,7 +2423,7 @@ void* enc_dec_kernel(void *input_ptr)
                             sb_origin_y);
 
                         // 1st PD Pass EncDec Kernel Signal(s) derivation
-                        context_ptr->md_context->is_final_pd_pass = EB_FALSE;
+                        context_ptr->md_context->pd_pass = EB_FALSE;
                         signal_derivation_enc_dec_kernel_oq(
                             sequence_control_set_ptr,
                             picture_control_set_ptr,
@@ -2476,7 +2476,7 @@ void* enc_dec_kernel(void *input_ptr)
 #endif
 #if MULTI_PASS_PD
                     // 2nd PD Pass EncDec Kernel Signal(s) derivation
-                    context_ptr->md_context->is_final_pd_pass = EB_TRUE;
+                    context_ptr->md_context->pd_pass = EB_TRUE;
                     signal_derivation_enc_dec_kernel_oq(
                         sequence_control_set_ptr,
                         picture_control_set_ptr,
