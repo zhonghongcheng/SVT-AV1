@@ -207,6 +207,12 @@ void EbSetThreadManagementParameters(EbSvtAv1EncConfiguration *config_ptr)
     uint32_t num_logical_processors = GetNumProcessors();
     // For system with a single processor group(no more than 64 logic processors all together)
     // Affinity of the thread can be set to one or more logical processors
+#if NO_THREAD_PIN
+    if (config_ptr->logical_processors == 1) {
+        group_affinity.Mask = GetAffinityMask(num_logical_processors);
+    }
+    else {
+#endif
     if (num_groups == 1) {
         uint32_t lps = config_ptr->logical_processors == 0 ? num_logical_processors :
             config_ptr->logical_processors < num_logical_processors ? config_ptr->logical_processors : num_logical_processors;
@@ -235,6 +241,9 @@ void EbSetThreadManagementParameters(EbSvtAv1EncConfiguration *config_ptr)
             }
         }
     }
+#if NO_THREAD_PIN
+    }
+#endif
 #elif defined(__linux__)
     uint32_t num_logical_processors = GetNumProcessors();
 #if NO_THREAD_PIN
