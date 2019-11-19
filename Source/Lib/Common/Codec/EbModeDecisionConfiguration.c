@@ -1602,7 +1602,11 @@ EB_EXTERN EbErrorType open_loop_partitioning_sb(
     }
     for (uint8_t depth_idx = 0; depth_idx < NUMBER_OF_DEPTH; depth_idx++) {
         sb_ptr->depth_ranking[depth_idx] = find_depth_index(depth_idx, depth_table);
+#if SKIP_DEPTH_BASED_ON_DEPTH_RANK
+        sb_ptr->depth_cost[depth_idx] = depth_cost[depth_table[depth_idx]];
+#else
         sb_ptr->depth_cost[depth_idx] = depth_cost[depth_idx];
+#endif
     }
 #endif
     return return_error;
