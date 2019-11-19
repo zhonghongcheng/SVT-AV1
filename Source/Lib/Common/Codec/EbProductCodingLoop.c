@@ -1580,8 +1580,8 @@ void fast_loop_core(
         context_ptr->intra_luma_left_mode,
         context_ptr->intra_luma_top_mode);
 
-#if SHUT_FAST_COST 
-    if (context_ptr->pd_pass == PD_PASS_0) {
+#if SHUT_FAST_COST
+    if (!context_ptr->is_final_pd_pass) {
         candidate_ptr->fast_luma_rate = 0;
         candidate_ptr->fast_chroma_rate = 0;
     }
@@ -1597,7 +1597,7 @@ void set_md_stage_counts(
 
     // Step 1: derive bypass_stage1 flags
 #if MULTI_PASS_PD // Shut md-staging if 1st pass
-    if (context_ptr->md_staging_mode == MD_STAGING_MODE_1 && context_ptr->pd_pass == PD_PASS_2)
+    if (context_ptr->md_staging_mode == MD_STAGING_MODE_1 && context_ptr->is_final_pd_pass)
 #else
     if (context_ptr->md_staging_mode == MD_STAGING_MODE_1)
 #endif
@@ -1923,7 +1923,7 @@ void set_md_stage_counts(
 #endif
 
 #if MULTI_PASS_PD // Shut md-staging if 1st pass
-    if (context_ptr->pd_pass == PD_PASS_0 || context_ptr->pd_pass == PD_PASS_1) {
+    if (!context_ptr->is_final_pd_pass) {     
         context_ptr->md_stage_1_count[CAND_CLASS_0] = 1;
         context_ptr->md_stage_1_count[CAND_CLASS_1] = 1;
         context_ptr->md_stage_1_count[CAND_CLASS_2] = 1;
@@ -2643,7 +2643,7 @@ void md_stage_0(
     // Set MD Staging fast_loop_core settings
 #if REMOVE_MD_STAGE_1
 #if MULTI_PASS_PD // Shut interpolation search if 1st pass
-    context_ptr->md_staging_skip_interpolation_search = (context_ptr->md_staging_mode == MD_STAGING_MODE_1 || context_ptr->pd_pass == PD_PASS_0 || context_ptr->pd_pass == PD_PASS_1) ? EB_TRUE : picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? EB_FALSE : EB_TRUE;
+    context_ptr->md_staging_skip_interpolation_search = (context_ptr->md_staging_mode == MD_STAGING_MODE_1 || !context_ptr->is_final_pd_pass) ? EB_TRUE : picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? EB_FALSE : EB_TRUE;
 #else
     context_ptr->md_staging_skip_interpolation_search = (context_ptr->md_staging_mode == MD_STAGING_MODE_1) ? EB_TRUE : picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level >= IT_SEARCH_FAST_LOOP_UV_BLIND ? EB_FALSE : EB_TRUE;
 #endif
@@ -2653,7 +2653,7 @@ void md_stage_0(
 #if FILTER_INTRA_FLAG
 #if REMOVE_MD_STAGE_1 && PAL_CLASS
 #if MULTI_PASS_PD // Shut chroma pred if 1st pass
-    context_ptr->md_staging_skip_inter_chroma_pred = ((context_ptr->md_staging_mode == MD_STAGING_MODE_1 && context_ptr->target_class != CAND_CLASS_0 && context_ptr->target_class != CAND_CLASS_6 && context_ptr->target_class != CAND_CLASS_7) || (context_ptr->pd_pass == MD_STAGE_0)) ? EB_TRUE : EB_FALSE;
+    context_ptr->md_staging_skip_inter_chroma_pred = ((context_ptr->md_staging_mode == MD_STAGING_MODE_1 && context_ptr->target_class != CAND_CLASS_0 && context_ptr->target_class != CAND_CLASS_6 && context_ptr->target_class != CAND_CLASS_7) || !context_ptr->is_final_pd_pass) ? EB_TRUE : EB_FALSE;
 #else
     context_ptr->md_staging_skip_inter_chroma_pred = (context_ptr->md_staging_mode == MD_STAGING_MODE_1 && context_ptr->target_class != CAND_CLASS_0 && context_ptr->target_class != CAND_CLASS_6 && context_ptr->target_class != CAND_CLASS_7) ? EB_TRUE : EB_FALSE;
 #endif
@@ -6391,7 +6391,7 @@ void md_stage_3(
         // Set MD Staging full_loop_core settings
 #if REMOVE_MD_STAGE_1
 #if MULTI_PASS_PD // Shut pred @ full loop if 1st pass
-        context_ptr->md_staging_skip_full_pred = (context_ptr->md_staging_mode == MD_STAGING_MODE_0 && picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level != IT_SEARCH_FULL_LOOP) || context_ptr->pd_pass == PD_PASS_0 || context_ptr->pd_pass == PD_PASS_1;
+        context_ptr->md_staging_skip_full_pred = (context_ptr->md_staging_mode == MD_STAGING_MODE_0 && picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level != IT_SEARCH_FULL_LOOP) || !context_ptr->is_final_pd_pass;
 #else
         context_ptr->md_staging_skip_full_pred = (context_ptr->md_staging_mode == MD_STAGING_MODE_0 && picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level != IT_SEARCH_FULL_LOOP);
 #endif
@@ -6401,7 +6401,7 @@ void md_stage_3(
         context_ptr->md_staging_skip_full_pred = (context_ptr->md_staging_mode == MD_STAGING_MODE_3) ? EB_FALSE: EB_TRUE;
 #endif
 #if MULTI_PASS_PD // Shut tx size search if 1st pass
-        context_ptr->md_staging_skip_atb = (context_ptr->pd_pass == PD_PASS_2) ? context_ptr->coeff_based_skip_atb : EB_TRUE;
+        context_ptr->md_staging_skip_atb = context_ptr->is_final_pd_pass ? context_ptr->coeff_based_skip_atb : EB_TRUE;
 #else
         context_ptr->md_staging_skip_atb = context_ptr->coeff_based_skip_atb;
 #endif
@@ -6409,7 +6409,7 @@ void md_stage_3(
 #if PAL_CLASS
         context_ptr->md_staging_tx_search =
 #if MULTI_PASS_PD // Shut Tx Search
-            (context_ptr->pd_pass == PD_PASS_0) ?
+            (!context_ptr->is_final_pd_pass) ?
             0 :
 #endif
             (candidate_ptr->cand_class == CAND_CLASS_0 || candidate_ptr->cand_class == CAND_CLASS_6 || candidate_ptr->cand_class == CAND_CLASS_7)
@@ -6421,8 +6421,8 @@ void md_stage_3(
         context_ptr->md_staging_tx_search = candidate_ptr->cand_class == CAND_CLASS_0 ? 2 : 1;
 #endif
 #if MULTI_PASS_PD // shut chroma and RDOQ if 1st pass
-        context_ptr->md_staging_skip_full_chroma = (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2) ? EB_FALSE : EB_TRUE;
-        context_ptr->md_staging_skip_rdoq = (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2) ? EB_FALSE : EB_TRUE;
+        context_ptr->md_staging_skip_full_chroma = context_ptr->is_final_pd_pass ? EB_FALSE : EB_TRUE;
+        context_ptr->md_staging_skip_rdoq = context_ptr->is_final_pd_pass ? EB_FALSE : EB_TRUE;
 #else
         context_ptr->md_staging_skip_full_chroma = EB_FALSE;
         context_ptr->md_staging_skip_rdoq = EB_FALSE;
@@ -7989,6 +7989,9 @@ void md_encode_block(
         // Initialize uv_search_path
         context_ptr->uv_search_path = EB_FALSE;
         // Search the best independent intra chroma mode
+#if MULTI_PASS_PD // Shut independent chroma search if 1st pass
+        if (context_ptr->is_final_pd_pass) 
+#endif
         if (context_ptr->chroma_level == CHROMA_MODE_0) {
             if (context_ptr->blk_geom->sq_size < 128) {
                 if (context_ptr->blk_geom->has_uv) {
@@ -8049,6 +8052,9 @@ void md_encode_block(
                 picture_control_set_ptr);
 
         // Perform ME search around the best MVP
+#if MULTI_PASS_PD // Shut predictive if 1st pass
+        if (context_ptr->is_final_pd_pass)
+#endif
         if (context_ptr->predictive_me_level)
             predictive_me_search(
                 picture_control_set_ptr,
@@ -8060,7 +8066,7 @@ void md_encode_block(
 #if II_COMP_FLAG
         //for every CU, perform Luma DC/V/H/S intra prediction to be used later in inter-intra search
 #if MULTI_PASS_PD // Shut inter-intra
-        int allow_ii = (context_ptr->pd_pass == PD_PASS_2) ? is_interintra_allowed_bsize(context_ptr->blk_geom->bsize) : 0;
+        int allow_ii = (context_ptr->is_final_pd_pass) ? is_interintra_allowed_bsize(context_ptr->blk_geom->bsize) : 0;
 #else
         int allow_ii = is_interintra_allowed_bsize(context_ptr->blk_geom->bsize);
 #endif
@@ -8452,7 +8458,7 @@ void md_encode_block(
         }
 
 #if MULTI_PASS_PD && !LETS_INJECT_DC// Shut inverse transform
-        if (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2)
+        if (context_ptr->is_final_pd_pass)
 #endif
         AV1PerformInverseTransformRecon(
             picture_control_set_ptr,

@@ -702,17 +702,6 @@ static INLINE unsigned int negative_to_zero(int value) {
 #endif
 #endif /* ATTRIBUTE_PACKED */
 
-
-#if MULTI_PASS_PD
-typedef enum PD_PASS {
-    PD_PASS_0,
-    PD_PASS_1,
-    PD_PASS_2,
-    PD_PASS_TOTAL,
-} PD_PASS;
-
-#endif
-
 typedef enum CAND_CLASS {
     CAND_CLASS_0,
     CAND_CLASS_1,
