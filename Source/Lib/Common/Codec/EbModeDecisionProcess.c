@@ -542,6 +542,10 @@ void reset_mode_decision(
     picture_control_set_ptr->parent_pcs_ptr->allow_high_precision_mv = picture_control_set_ptr->enc_mode == ENC_M0 &&
         (picture_control_set_ptr->parent_pcs_ptr->is_pan || picture_control_set_ptr->parent_pcs_ptr->is_tilt) ? 1 : 0;
 #endif
+
+#if DISABLE_EIGTH_PEL_MV
+    picture_control_set_ptr->parent_pcs_ptr->allow_high_precision_mv = 0;
+#endif
 #endif
     EbBool enable_wm;
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)

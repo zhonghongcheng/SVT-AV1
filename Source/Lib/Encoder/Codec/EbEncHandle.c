@@ -2018,6 +2018,9 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
         sequence_control_set_ptr->over_boundary_block_mode = 0;
 
     sequence_control_set_ptr->mfmv_enabled = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;
+#if DISABLE_MRP
+    sequence_control_set_ptr->mfmv_enabled = 0;
+#endif
 
     // Set hbd_mode_decision OFF for high encode modes or bitdepth < 10
     if (sequence_control_set_ptr->static_config.enc_mode > ENC_M0 || sequence_control_set_ptr->static_config.encoder_bit_depth < 10)

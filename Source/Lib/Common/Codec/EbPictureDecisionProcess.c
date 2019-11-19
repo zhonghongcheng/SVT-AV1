@@ -949,6 +949,12 @@ EbErrorType signal_derivation_multi_processes_oq(
         if (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE) picture_control_set_ptr->pic_depth_mode = PIC_SQ_DEPTH_MODE;
     if (picture_control_set_ptr->pic_depth_mode > PIC_SQ_DEPTH_MODE)
         assert(picture_control_set_ptr->nsq_search_level == NSQ_SEARCH_OFF);
+
+#if DISABLE_NSQ_SEARCH
+    picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
+#endif
+
+
     // Interpolation search Level                     Settings
     // 0                                              OFF
     // 1                                              Interpolation search at inter-depth
@@ -974,6 +980,10 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->interpolation_search_level = IT_SEARCH_OFF;
         else
             picture_control_set_ptr->interpolation_search_level = IT_SEARCH_OFF;
+
+#if DISABLE_INTERPOLATION_FILTER_SEARCH
+        picture_control_set_ptr->interpolation_search_level = IT_SEARCH_OFF;
+#endif
 
     // Loop filter Level                            Settings
     // 0                                            OFF
@@ -1052,6 +1062,10 @@ EbErrorType signal_derivation_multi_processes_oq(
     }
     else
         picture_control_set_ptr->loop_filter_mode = 0;
+
+#if DISABLE_DEBLOCKING_FILTER
+    picture_control_set_ptr->loop_filter_mode = 0;
+#endif
     // CDEF Level                                   Settings
     // 0                                            OFF
     // 1                                            1 step refinement
@@ -1095,6 +1109,13 @@ EbErrorType signal_derivation_multi_processes_oq(
     else
         cm->sg_filter_mode = 1;
 
+#if DISABLE_SGSPR_FILTER
+    cm->sg_filter_mode = 0;
+#endif
+#if DISABLE_CDEF_FILTER
+    picture_control_set_ptr->cdef_filter_mode = 0;
+#endif
+
     // WN Level                                     Settings
     // 0                                            OFF
     // 1                                            3-Tap luma/ 3-Tap chroma
@@ -1114,6 +1135,10 @@ EbErrorType signal_derivation_multi_processes_oq(
         cm->wn_filter_mode = 2;
     else
         cm->wn_filter_mode = 0;
+
+#ifdef DISABLE_WN_FILTER
+    cm->wn_filter_mode = 0;
+#endif
 
     // Tx_search Level                                Settings
     // 0                                              OFF
@@ -1140,6 +1165,9 @@ EbErrorType signal_derivation_multi_processes_oq(
     else
         picture_control_set_ptr->tx_search_level = TX_SEARCH_ENC_DEC;
 
+#if DISABLE_TX_SEARCH
+    picture_control_set_ptr->tx_search_level = TX_SEARCH_OFF;
+#endif
     // Set tx search skip weights (MAX_MODE_COST: no skipping; 0: always skipping)
     if (picture_control_set_ptr->tx_search_level == TX_SEARCH_ENC_DEC)
         picture_control_set_ptr->tx_weight = MAX_MODE_COST;
@@ -1268,6 +1296,10 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
             picture_control_set_ptr->atb_mode = 0;
 
+#if DISABLE_ATB
+        picture_control_set_ptr->atb_mode = 0;
+#endif
+
         // Set skip atb                          Settings
         // 0                                     OFF
         // 1                                     ON
@@ -1288,6 +1320,10 @@ EbErrorType signal_derivation_multi_processes_oq(
         // 3                 Fast: Mode 1 & Mode 2
 
         picture_control_set_ptr->wedge_mode = 0;
+
+#if DISABLE_WEDGE_MODE
+        picture_control_set_ptr->wedge_mode = 0;
+#endif
 
 #if II_COMP_FLAG
         // inter intra pred                      Settings
@@ -1310,6 +1346,10 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->compound_types_to_try = picture_control_set_ptr->compound_mode == 1 ? MD_COMP_DIFF0 : MD_COMP_WEDGE;
         else
             picture_control_set_ptr->compound_types_to_try = MD_COMP_AVG;
+
+#if DISABLE_COMPOUND_MODE
+        picture_control_set_ptr->compound_mode = 0;
+#endif
 
         // Set frame end cdf update mode      Settings
         // 0                                     OFF

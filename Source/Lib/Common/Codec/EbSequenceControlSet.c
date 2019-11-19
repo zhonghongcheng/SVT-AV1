@@ -163,7 +163,12 @@ EbErrorType eb_sequence_control_set_ctor(
 #endif
 
     sequence_control_set_ptr->film_grain_random_seed = 7391;
+
+#if DISABLE_MRP
+    sequence_control_set_ptr->reference_count = 1;
+#else
     sequence_control_set_ptr->reference_count = 4;
+#endif
 
     return EB_ErrorNone;
 }
