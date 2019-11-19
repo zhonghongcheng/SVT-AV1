@@ -1187,6 +1187,17 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // CHROMA_MODE_1  1     Fast chroma search @ MD
     // CHROMA_MODE_2  2     Chroma blind @ MD + CFL @ EP
     // CHROMA_MODE_3  3     Chroma blind @ MD + no CFL @ EP
+#if 0//MULTI_PASS_PD // Shut independent chroma search if 1st pass
+    if (context_ptr->pd_pass == PD_PASS_0)
+        context_ptr->chroma_level = CHROMA_MODE_2; // or CHROMA_MODE_3 
+    else if (context_ptr->pd_pass == PD_PASS_1) {
+        if (picture_control_set_ptr->temporal_layer_index == 0)
+            context_ptr->chroma_level = CHROMA_MODE_0;
+        else
+            context_ptr->chroma_level = CHROMA_MODE_1;
+    }
+    else
+#endif
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         if (picture_control_set_ptr->enc_mode <= ENC_M6)
             context_ptr->chroma_level = CHROMA_MODE_1;
@@ -1290,6 +1301,15 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // Level                Settings
     // 0                    Injection off (Hsan: but not derivation as used by MV ref derivation)
     // 1                    On
+#if MULTI_PASS_PD // Shut global mv if 1st pass
+    if (context_ptr->pd_pass == PD_PASS_0) {
+        context_ptr->global_mv_injection = 0;
+    }
+    else if (context_ptr->pd_pass == PD_PASS_1) {
+        context_ptr->global_mv_injection = 1;
+    }
+    else
+#endif
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
 #if sc_rtime_presets
         if (picture_control_set_ptr->enc_mode <= ENC_M5)
@@ -1304,6 +1324,13 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->global_mv_injection = 1;
     else
         context_ptr->global_mv_injection = 0;
+
+
+#if MULTI_PASS_PD // Shut nx4 and 4xn if 1st pass
+    if (context_ptr->pd_pass == PD_PASS_0 || context_ptr->pd_pass == PD_PASS_1)
+        context_ptr->new_nearest_near_comb_injection = 0;
+    else
+#endif
 #if FIX_NEAREST_NEW
 #if TEST_M0_NEW_NEAR_COMB
     if (picture_control_set_ptr->enc_mode <= ENC_M1 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
@@ -1316,6 +1343,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->new_nearest_near_comb_injection = 1;
     else
         context_ptr->new_nearest_near_comb_injection = 0;
+#if MULTI_PASS_PD // Shut nx4 and 4xn if 1st pass
+    if (context_ptr->pd_pass == PD_PASS_0 || context_ptr->pd_pass == PD_PASS_1)
+        context_ptr->nx4_4xn_parent_mv_injection = 0;
+    else
+#endif
 #if sc_rtime_presets
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
 #if SHIFT_M4_TO_M3
@@ -1441,6 +1473,13 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 5                    Level 5: 7x5 full-pel search +  (H + V + D) sub-pel refinement = 8 half-pel + 8 quarter-pel = 16 positions + pred_me_distortion to pa_me_distortion deviation off
     if (picture_control_set_ptr->slice_type != I_SLICE)
 #if sc_rtime_presets
+#if MULTI_PASS_PD // Shut predictive if 1st pass
+        if (context_ptr->pd_pass == PD_PASS_0)
+            context_ptr->predictive_me_level = 0;
+        else if (context_ptr->pd_pass == PD_PASS_1)
+            context_ptr->predictive_me_level = 2;
+        else
+#endif
         if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
             if (picture_control_set_ptr->enc_mode <= ENC_M1)
                 context_ptr->predictive_me_level = 4;
@@ -1640,6 +1679,8 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if MULTI_PASS_PD // Shut spatial SSE @ full loop
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->spatial_sse_full_loop = EB_FALSE;
+    else if (context_ptr->pd_pass == PD_PASS_1)
+        context_ptr->spatial_sse_full_loop = EB_TRUE;
     else
 #endif
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
@@ -1666,7 +1707,13 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->blk_skip_decision = EB_FALSE;
     // Derive Trellis Quant Coeff Optimization Flag
 #if sc_rtime_presets
-
+#if MULTI_PASS_PD // Shut spatial SSE @ full loop
+    if (context_ptr->pd_pass == PD_PASS_0)
+        context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
+    else if (context_ptr->pd_pass == PD_PASS_1)
+        context_ptr->trellis_quant_coeff_optimization = EB_TRUE;
+    else
+#endif
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         if (picture_control_set_ptr->enc_mode <= ENC_M2)
             context_ptr->trellis_quant_coeff_optimization = EB_TRUE;
@@ -1695,6 +1742,8 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if MULTI_PASS_PD // Shut redundant_blk
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->redundant_blk = EB_FALSE;
+    else if (context_ptr->pd_pass == PD_PASS_1)
+        context_ptr->redundant_blk = EB_TRUE;
     else
 #endif
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
@@ -1745,6 +1794,13 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
     else
         context_ptr->edge_based_skip_angle_intra = 0;
+#if MULTI_PASS_PD // Shut spatial SSE @ full loop
+    if (context_ptr->pd_pass == PD_PASS_0)
+        context_ptr->prune_ref_frame_for_rec_partitions = 0;
+    else if (context_ptr->pd_pass == PD_PASS_1)
+        context_ptr->prune_ref_frame_for_rec_partitions = 1;
+    else
+#endif
 #if M0_PRUNE_REC_PART_M3
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode <= ENC_M3)
 #elif TEST_M0_PRUNE_REC_PART_M2
@@ -1771,6 +1827,8 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if MULTI_PASS_PD // Shut md_exit_th
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->md_exit_th = 0;
+    else if (context_ptr->pd_pass == PD_PASS_1)
+        context_ptr->md_exit_th = 18;
     else
 #endif
     if (MR_MODE)
@@ -1869,6 +1927,8 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if MULTI_PASS_PD // Shut sq_to_h_v_weight_to_skip_a_b
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->sq_to_h_v_weight_to_skip_a_b = (uint32_t)~0;
+    else if (context_ptr->pd_pass == PD_PASS_1)
+        context_ptr->sq_to_h_v_weight_to_skip_a_b = 100;
     else
 #endif
     if (MR_MODE)
