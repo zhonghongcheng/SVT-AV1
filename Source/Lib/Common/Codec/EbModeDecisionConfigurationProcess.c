@@ -1183,7 +1183,12 @@ void init_considered_block(
     uint32_t  blk_index = 0;
     uint32_t  parent_depth_idx_mds, sparent_depth_idx_mds, child_block_idx_1, child_block_idx_2, child_block_idx_3, child_block_idx_4;
     SbParams *sb_params = &sequence_control_set_ptr->sb_params_array[sb_index];
+
+#if 1
+    uint32_t is_complete_sb = sequence_control_set_ptr->sb_geom[sb_index].is_complete_sb;
+#else
     uint8_t  is_complete_sb = sb_params->is_complete_sb;
+#endif
     uint32_t tot_d1_blocks, block_1d_idx;
     EbBool split_flag;
     uint32_t depth_refinement_mode = AllD;

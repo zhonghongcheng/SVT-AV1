@@ -2961,6 +2961,10 @@ EbBool merge_1D_inter_block(
     EbBool merge_blocks = EB_FALSE;
     CodingUnit  *parent_cu_ptr = &context_ptr->md_cu_arr_nsq[sq_idx];
     CodingUnit  *child_cu_ptr = &context_ptr->md_cu_arr_nsq[nsq_idx];
+
+
+   
+        
     int parent_diriction = parent_cu_ptr->prediction_unit_array[0].inter_pred_direction_index;
     int parent_mv_l0 = parent_cu_ptr->prediction_unit_array[0].mv[REF_LIST_0].mv_union;
     int parent_mv_l1 = parent_cu_ptr->prediction_unit_array[0].mv[REF_LIST_1].mv_union;
@@ -3008,7 +3012,10 @@ void  d1_non_square_block_decision(
     {
         tot_cost += context_ptr->md_local_cu_unit[first_blk_idx + blk_it].cost;
         if (context_ptr->blk_geom->sqi_mds != first_blk_idx + blk_it)
-            merge_block_cnt += merge_1D_inter_block(context_ptr, context_ptr->blk_geom->sqi_mds, first_blk_idx + blk_it);
+#if FIX__R2R_SPLITRATE
+            if(context_ptr->md_local_cu_unit[context_ptr->blk_geom->sqi_mds].avail_blk_flag)
+#endif
+               merge_block_cnt += merge_1D_inter_block(context_ptr, context_ptr->blk_geom->sqi_mds, first_blk_idx + blk_it);
     }
     if (context_ptr->blk_geom->bsize > BLOCK_4X4) {
         uint64_t split_cost = 0;
@@ -3099,6 +3106,10 @@ void   compute_depth_costs(
     else
         *above_depth_cost = MAX_MODE_COST;
     if (context_ptr->blk_geom->bsize > BLOCK_4X4) {
+
+#if FIX__R2R_SPLITRATE
+        if (context_ptr->md_local_cu_unit[curr_depth_blk0_mds].tested_cu_flag)
+#endif
         if (context_ptr->md_cu_arr_nsq[curr_depth_blk0_mds].mdc_split_flag == 0)
             av1_split_flag_rate(
                 sequence_control_set_ptr,
@@ -3110,7 +3121,10 @@ void   compute_depth_costs(
                 context_ptr->full_lambda,
                 context_ptr->md_rate_estimation_ptr,
                 sequence_control_set_ptr->max_sb_depth);
-
+   
+#if FIX__R2R_SPLITRATE
+        if (context_ptr->md_local_cu_unit[curr_depth_blk1_mds].tested_cu_flag)
+#endif
         if (context_ptr->md_cu_arr_nsq[curr_depth_blk1_mds].mdc_split_flag == 0)
             av1_split_flag_rate(
                 sequence_control_set_ptr,
@@ -3123,6 +3137,9 @@ void   compute_depth_costs(
                 context_ptr->md_rate_estimation_ptr,
                 sequence_control_set_ptr->max_sb_depth);
 
+#if FIX__R2R_SPLITRATE
+        if (context_ptr->md_local_cu_unit[curr_depth_blk2_mds].tested_cu_flag)
+#endif
         if (context_ptr->md_cu_arr_nsq[curr_depth_blk2_mds].mdc_split_flag == 0)
             av1_split_flag_rate(
                 sequence_control_set_ptr,
@@ -3135,6 +3152,9 @@ void   compute_depth_costs(
                 context_ptr->md_rate_estimation_ptr,
                 sequence_control_set_ptr->max_sb_depth);
 
+#if FIX__R2R_SPLITRATE
+        if (context_ptr->md_local_cu_unit[curr_depth_blk3_mds].tested_cu_flag)
+#endif
         if (context_ptr->md_cu_arr_nsq[curr_depth_blk3_mds].mdc_split_flag == 0)
             av1_split_flag_rate(
                 sequence_control_set_ptr,
@@ -3237,6 +3257,9 @@ void   compute_depth_costs_md_skip(
         uint32_t curr_depth_cur_blk_mds = context_ptr->blk_geom->sqi_mds - i * step;
         uint64_t       curr_non_split_rate_blk = 0;
         if (context_ptr->blk_geom->bsize > BLOCK_4X4) {
+#if FIX__R2R_SPLITRATE
+           if( context_ptr->md_local_cu_unit[curr_depth_cur_blk_mds].tested_cu_flag)
+#endif
             if (context_ptr->md_cu_arr_nsq[curr_depth_cur_blk_mds].mdc_split_flag == 0)
                 av1_split_flag_rate(
                     sequence_control_set_ptr,

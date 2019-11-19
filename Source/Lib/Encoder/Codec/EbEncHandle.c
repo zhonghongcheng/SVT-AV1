@@ -487,7 +487,7 @@ EbErrorType load_default_buffer_configuration_settings(
     sequence_control_set_ptr->total_process_init_count                    = 0;
     if (core_count > 1){
         sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->picture_analysis_process_init_count            = MAX(MIN(15, core_count >> 1), core_count / 6));
-        sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->motion_estimation_process_init_count =  MAX(MIN(20, core_count >> 1), core_count / 3));//1);//
+        sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->motion_estimation_process_init_count =  MAX(MIN(20, core_count >> 1), core_count / 3));//1);//1);//1);//
         sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->source_based_operations_process_init_count     = MAX(MIN(3, core_count >> 1), core_count / 12));
         sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->mode_decision_configuration_process_init_count = MAX(MIN(3, core_count >> 1), core_count / 12));
         sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->enc_dec_process_init_count                     = MAX(MIN(40, core_count >> 1), core_count)); //=   TTK  1); //
@@ -1975,7 +1975,9 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
     //0: MRP Mode 0 (4,3)
     //1: MRP Mode 1 (2,2)
     sequence_control_set_ptr->mrp_mode = (uint8_t) (sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 0 : 1;
-
+#if MRP_OFF
+    sequence_control_set_ptr->mrp_mode = 0;
+#endif
     //0: ON
     //1: OFF
     sequence_control_set_ptr->cdf_mode = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode <= ENC_M6) ? 0 : 1;
@@ -2078,7 +2080,7 @@ void CopyApiFromApp(
     sequence_control_set_ptr->use_output_stat_file = sequence_control_set_ptr->static_config.output_stat_file ? 1 : 0;
 #endif
     // Deblock Filter
-#if SHUT_ALL_FILTERING
+#if 1//SHUT_ALL_FILTERING
     sequence_control_set_ptr->static_config.disable_dlf_flag = 1;//
 #else
     sequence_control_set_ptr->static_config.disable_dlf_flag = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->disable_dlf_flag;
