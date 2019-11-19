@@ -367,7 +367,7 @@ extern "C" {
 #endif
 #if MULTI_PASS_PD
     // Signal to control initial and final pass PD setting(s)
-    EbBool pd_pass;
+    PD_PASS pd_pass;
 #endif
     } ModeDecisionContext;
 
