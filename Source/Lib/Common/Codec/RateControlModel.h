@@ -8,7 +8,7 @@
 
 #include "EbSequenceControlSet.h"
 #include "RateControlGopInfo.h"
-#include "EbObject.h"
+//#include "EbObject.h"
 
 /*
  * @struct Holds a prediction model for a sequence

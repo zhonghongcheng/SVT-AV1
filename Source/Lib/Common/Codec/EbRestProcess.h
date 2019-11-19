@@ -12,8 +12,7 @@
 #include "EbPictureBufferDesc.h"
 #include "EbSequenceControlSet.h"
 #include "EbUtility.h"
-#include "EbPsnr.h"
-#include "EbPictureControlSet.h"
+//#include "EbPsnr.h"
 #include "EbObject.h"
 
 /**************************************
