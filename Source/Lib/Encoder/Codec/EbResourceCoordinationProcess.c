@@ -712,6 +712,8 @@ void* resource_coordination_kernel(void *input_ptr)
 #if M0_INTRA_INTER_CMPD
 
                                                                                 (sequence_control_set_ptr->static_config.enc_mode <= ENC_M1) ? 1 : 0;
+#elif M0_CANDIDATE_SC
+                                                                                (sequence_control_set_ptr->static_config.enc_mode == ENC_M0 && sequence_control_set_ptr->static_config.screen_content_mode == 0) ? 1 : 0;
 #else
                                                                                 (sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;
 #endif

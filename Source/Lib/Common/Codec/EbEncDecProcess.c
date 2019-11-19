@@ -1302,6 +1302,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->global_mv_injection = 1;
     else
         context_ptr->global_mv_injection = 0;
+#if M0_CANDIDATE_SC
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        context_ptr->new_nearest_near_comb_injection = 0;
+    else
+#endif
 #if FIX_NEAREST_NEW
 #if TEST_M0_NEW_NEAR_COMB
     if (picture_control_set_ptr->enc_mode <= ENC_M1 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
@@ -1362,6 +1367,8 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #elif M2_UNI_3x3
         if (picture_control_set_ptr->enc_mode <= ENC_M0)
+#elif M0_CANDIDATE_SC
+        if (0)
 #else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #endif
@@ -1455,6 +1462,8 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
 #elif M2_SC_PRED_ME
             if (picture_control_set_ptr->enc_mode <= ENC_M0)
+#elif M0_CANDIDATE_SC
+            if (0)
 #else
             if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #endif
@@ -1720,6 +1729,12 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->redundant_blk = EB_FALSE;
     if (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
+#if M0_CANDIDATE_SC
+        if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+            context_ptr->edge_based_skip_angle_intra = 1;
+        else
+
+#endif
 #if FIX_ESTIMATE_INTRA
         if (MR_MODE)
 #else
@@ -1788,6 +1803,8 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if M0_MD_STAGE_1
 
     if (MR_MODE || picture_control_set_ptr->enc_mode <= ENC_M1 || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
+#elif M0_CANDIDATE_SC
+    if (MR_MODE || (picture_control_set_ptr->enc_mode == ENC_M0 && (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0)) || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
 #else
     if (MR_MODE || picture_control_set_ptr->enc_mode == ENC_M0 || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
 #endif
@@ -1812,6 +1829,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if M0_MD_STAGE_1
 
     if (MR_MODE || picture_control_set_ptr->enc_mode <= ENC_M1 || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
+#elif M0_CANDIDATE_SC
+    if (MR_MODE || (picture_control_set_ptr->enc_mode == ENC_M0 && (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0)) || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
+
 #else
     if (MR_MODE || picture_control_set_ptr->enc_mode == ENC_M0 || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
 #endif
@@ -1864,7 +1884,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if STAGE_2_COUNT_PRUNING_TH_C
     // TH_C(for class removal)
     // Remove class if deviation to the best higher than TH_C
-#if M1_NON_SC_MD_STAGE_C_2
+#if M1_NON_SC_MD_STAGE_C_2 ||M0_CANDIDATE_SC_1
     if (MR_MODE )
 #else
     if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected) 
