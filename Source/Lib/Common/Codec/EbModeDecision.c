@@ -1329,7 +1329,11 @@ void Bipred3x3CandidatesInjection(
 #if FIX_COMPOUND
     BlockSize bsize = context_ptr->blk_geom->bsize;                       // bloc size
     MD_COMP_TYPE compound_types_to_try = picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;
+#if MULTI_PASS_PD // Shut inter-inter compound if 1st pass (i.e. keep avg only)
+    MD_COMP_TYPE tot_comp_types = (picture_control_set_ptr->parent_pcs_ptr->compound_mode == 1 || context_ptr->pd_pass == PD_PASS_0 || context_ptr->pd_pass == PD_PASS_1) ? MD_COMP_AVG :
+#else
     MD_COMP_TYPE tot_comp_types = picture_control_set_ptr->parent_pcs_ptr->compound_mode == 1 ? MD_COMP_AVG :
+#endif
         (bsize >= BLOCK_8X8 && bsize <= BLOCK_32X32) ? compound_types_to_try :
         (compound_types_to_try == MD_COMP_WEDGE) ? MD_COMP_DIFF0 :
         picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;
@@ -2012,7 +2016,12 @@ void inject_mvp_candidates_II(
 #if FIX_COMPOUND
     BlockSize bsize = context_ptr->blk_geom->bsize;                       // bloc size
     MD_COMP_TYPE compound_types_to_try = picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;
+#if MULTI_PASS_PD // Shut inter-inter compound if 1st pass (i.e. keep avg only)
+    MD_COMP_TYPE tot_comp_types = (context_ptr->pd_pass == PD_PASS_0 || context_ptr->pd_pass == PD_PASS_1) ? MD_COMP_AVG :
+        (bsize >= BLOCK_8X8 && bsize <= BLOCK_32X32) ? compound_types_to_try :
+#else
     MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize <= BLOCK_32X32) ? compound_types_to_try :
+#endif
         (compound_types_to_try == MD_COMP_WEDGE) ? MD_COMP_DIFF0 :
         picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;//MD_COMP_DIST;// MD_COMP_AVG;//
 #else
@@ -2473,7 +2482,12 @@ void inject_new_nearest_new_comb_candidates(
 #if FIX_COMPOUND
     BlockSize bsize = context_ptr->blk_geom->bsize;                       // bloc size
     MD_COMP_TYPE compound_types_to_try = picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;
+#if MULTI_PASS_PD // Shut inter-inter compound if 1st pass (i.e. keep avg only)
+    MD_COMP_TYPE tot_comp_types = (context_ptr->pd_pass == PD_PASS_0 || context_ptr->pd_pass == PD_PASS_1) ? MD_COMP_AVG :
+        (bsize >= BLOCK_8X8 && bsize <= BLOCK_32X32) ? compound_types_to_try :
+#else
     MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize <= BLOCK_32X32) ? compound_types_to_try :
+#endif
         (compound_types_to_try == MD_COMP_WEDGE) ? MD_COMP_DIFF0 :
         picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;//MD_COMP_DIST;// MD_COMP_AVG;//
 #else
@@ -3416,7 +3430,7 @@ void inject_new_candidates(
     MD_COMP_TYPE compound_types_to_try = picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;
     MD_COMP_TYPE cur_type; //NN
 #if MULTI_PASS_PD // Shut inter-inter compound if 1st pass (i.e. keep avg only)
-    MD_COMP_TYPE tot_comp_types = (picture_control_set_ptr->parent_pcs_ptr->compound_mode == 1 || context_ptr->pd_pass == PD_PASS_0)? MD_COMP_AVG :
+    MD_COMP_TYPE tot_comp_types = (picture_control_set_ptr->parent_pcs_ptr->compound_mode == 1 || context_ptr->pd_pass == PD_PASS_0 || context_ptr->pd_pass == PD_PASS_1) ? MD_COMP_AVG :
 #else
     MD_COMP_TYPE tot_comp_types = picture_control_set_ptr->parent_pcs_ptr->compound_mode == 1 ? MD_COMP_AVG :
 #endif
@@ -3867,7 +3881,12 @@ void inject_new_candidates(
             BlockSize bsize = context_ptr->blk_geom->bsize;                       // bloc size
             MD_COMP_TYPE compound_types_to_try = picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;
             MD_COMP_TYPE cur_type; //BIP 3x3 MiSize >= BLOCK_8X8 && MiSize <= BLOCK_32X32)
+#if MULTI_PASS_PD // Shut inter-inter compound if 1st pass (i.e. keep avg only)
+            MD_COMP_TYPE tot_comp_types = (context_ptr->pd_pass == PD_PASS_0 || context_ptr->pd_pass == PD_PASS_1) ? MD_COMP_AVG :
+                (bsize >= BLOCK_8X8 && bsize <= BLOCK_32X32) ? compound_types_to_try :
+#else
             MD_COMP_TYPE tot_comp_types = (bsize >= BLOCK_8X8 && bsize <= BLOCK_32X32) ? compound_types_to_try :
+#endif
                 (compound_types_to_try == MD_COMP_WEDGE) ? MD_COMP_DIFF0 :
                 picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;//MD_COMP_DIST;// MD_COMP_AVG;//
 #else
@@ -4227,7 +4246,11 @@ void  inject_inter_candidates(
     BlockSize bsize = context_ptr->blk_geom->bsize;                       // bloc size
     MD_COMP_TYPE compound_types_to_try = picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;
     MD_COMP_TYPE cur_type; //GG
+#if MULTI_PASS_PD // Shut inter-inter compound if 1st pass (i.e. keep avg only)
+    MD_COMP_TYPE tot_comp_types = (picture_control_set_ptr->parent_pcs_ptr->compound_mode == 1 || context_ptr->pd_pass == PD_PASS_0 || context_ptr->pd_pass == PD_PASS_1) ? MD_COMP_AVG :
+#else
     MD_COMP_TYPE tot_comp_types = picture_control_set_ptr->parent_pcs_ptr->compound_mode == 1 ? MD_COMP_AVG :
+#endif
         (bsize >= BLOCK_8X8 && bsize <= BLOCK_32X32) ? compound_types_to_try :
         (compound_types_to_try == MD_COMP_WEDGE) ? MD_COMP_DIFF0 :
         picture_control_set_ptr->parent_pcs_ptr->compound_types_to_try;
