@@ -1396,7 +1396,7 @@ int32_t av1_quantize_inv_quantize(
     perform_rdoq = perform_rdoq && !picture_control_set_ptr->hbd_mode_decision && !bit_increment;
 
     // Hsan: set to FALSE until adding x86 quantize_fp
-    EbBool perform_quantize_fp = picture_control_set_ptr->enc_mode == ENC_M0 ? EB_TRUE: EB_FALSE;
+    EbBool perform_quantize_fp = picture_control_set_ptr->enc_mode == ENC_M2 ? EB_TRUE: EB_FALSE;
 
     if (perform_rdoq && perform_quantize_fp && !is_inter)
         eb_av1_quantize_fp_facade(

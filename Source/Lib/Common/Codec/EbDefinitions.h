@@ -46,6 +46,8 @@ extern "C" {
 #define PAL_CLASS   1
 #endif
 
+#define PRESET_UPDATE                0
+
 #define LESS_RECTANGULAR_CHECK_LEVEL 1 // Shortcut to skip a/b shapes depending on SQ/H/V shape costs
 
 #define INTER_INTRA_CLASS_PRUNING    1
