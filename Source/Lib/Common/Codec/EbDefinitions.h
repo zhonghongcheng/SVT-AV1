@@ -211,6 +211,7 @@ extern "C" {
 #if MULTI_PASS_PREP
 #define MULTI_PASS_PREP_0                      1 // move 1/16th, warp, settings to picture decision process
 #define MULTI_PASS_PREP_1                      1 // context as input to obmc_motion_mode_allowed
+#define MULTI_PASS_PREP_2                      1 // context as input to svt_is_interintra_allowed
 #endif
 #if MULTI_PASS_PREP
 #define MULTI_PASS_PD                          1

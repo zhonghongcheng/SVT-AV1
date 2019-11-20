@@ -631,6 +631,9 @@ uint64_t av1_intra_fast_cost(
     const BlockGeom         *blk_geom,
     uint32_t                 miRow,
     uint32_t                 miCol,
+#if MULTI_PASS_PREP_2
+    PD_PASS                  pd_pass,
+#endif
     uint8_t                 md_pass,
     uint32_t                 left_neighbor_mode,
     uint32_t                 top_neighbor_mode)
@@ -643,7 +646,9 @@ uint64_t av1_intra_fast_cost(
     UNUSED(left_neighbor_mode);
     UNUSED(top_neighbor_mode);
     UNUSED(md_pass);
-
+#if MULTI_PASS_PREP_2
+    UNUSED(pd_pass);
+#endif
     FrameHeader *frm_hdr = &picture_control_set_ptr->parent_pcs_ptr->frm_hdr;
     if (av1_allow_intrabc(picture_control_set_ptr->parent_pcs_ptr->av1_cm) && candidate_ptr->use_intrabc) {
         uint64_t lumaSad = (LUMA_WEIGHT * luma_distortion) << AV1_COST_PRECISION;
@@ -1336,6 +1341,9 @@ uint32_t get_compound_mode_rate(
     #if II_COMP_FLAG
 int is_interintra_wedge_used(BlockSize sb_type);
 int svt_is_interintra_allowed(
+#if MULTI_PASS_PREP_2
+    PD_PASS pd_pass,
+#endif
     uint8_t enable_inter_intra,
     BlockSize sb_type,
     PredictionMode mode,
@@ -1637,7 +1645,10 @@ uint64_t av1_inter_fast_cost(
     const BlockGeom         *blk_geom,
     uint32_t                 miRow,
     uint32_t                 miCol,
-    uint8_t                 md_pass,
+#if MULTI_PASS_PREP_2
+    PD_PASS                  pd_pass,
+#endif
+    uint8_t                  md_pass,
     uint32_t                 left_neighbor_mode,
     uint32_t                 top_neighbor_mode)
 
@@ -1847,7 +1858,11 @@ uint64_t av1_inter_fast_cost(
         // inter intra mode rate
         if (picture_control_set_ptr->parent_pcs_ptr->frm_hdr.reference_mode != COMPOUND_REFERENCE &&
             picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header.enable_interintra_compound &&
+#if MULTI_PASS_PREP_2
+            svt_is_interintra_allowed(PD_PASS_2, picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, blk_geom->bsize, candidate_ptr->inter_mode, rf)) {
+#else
             svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra,blk_geom->bsize, candidate_ptr->inter_mode, rf)) {
+#endif
             const int interintra = candidate_ptr->is_interintra_used;
             const int bsize_group = size_group_lookup[blk_geom->bsize];
 

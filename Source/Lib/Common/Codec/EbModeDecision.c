@@ -73,12 +73,18 @@ static INLINE int is_interintra_allowed_ref(const MvReferenceFrame rf[2]) {
 
 
 int svt_is_interintra_allowed(
+#if MULTI_PASS_PREP_2
+    PD_PASS pd_pass,
+#endif
     uint8_t enable_inter_intra,
     BlockSize sb_type,
     PredictionMode mode,
     MvReferenceFrame ref_frame[2])
 {
     return
+#if MULTI_PASS_PREP_2
+        pd_pass == PD_PASS_2 &&
+#endif
         enable_inter_intra &&
         is_interintra_allowed_bsize((const BlockSize)sb_type) &&
         is_interintra_allowed_mode(mode)  &&
@@ -2040,7 +2046,11 @@ void inject_mvp_candidates_II(
         if (inj_mv) {
 #if II_COMP_FLAG // NEARESTMV
             uint8_t inter_type;
+#if MULTI_PASS_PREP_2
+            uint8_t is_ii_allowed = svt_is_interintra_allowed(context_ptr->pd_pass,picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, NEARESTMV, rf);
+#else
             uint8_t is_ii_allowed = svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, NEARESTMV, rf);
+#endif
             uint8_t tot_inter_types = is_ii_allowed ? II_COUNT : 1;
 #if OBMC_FLAG
 #if MULTI_PASS_PREP_1
@@ -2164,7 +2174,11 @@ void inject_mvp_candidates_II(
             if (inj_mv) {
 #if II_COMP_FLAG // NEARMV
             uint8_t inter_type;
+#if MULTI_PASS_PREP_2
+            uint8_t is_ii_allowed = svt_is_interintra_allowed(context_ptr->pd_pass, picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, NEARMV, rf);
+#else
             uint8_t is_ii_allowed = svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, NEARMV, rf);
+#endif
             uint8_t tot_inter_types = is_ii_allowed ? II_COUNT : 1;
 #if OBMC_FLAG
 #if MULTI_PASS_PREP_1
@@ -3456,7 +3470,7 @@ void inject_new_candidates(
 
             uint8_t inter_type;
 #if MULTI_PASS_PD // Shut inter/intra 
-            uint8_t is_ii_allowed = context_ptr->pd_pass == PD_PASS_2 ? svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, NEWMV, rf) : 0;
+            uint8_t is_ii_allowed = svt_is_interintra_allowed(context_ptr->pd_pass, picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, NEWMV, rf);
 #else
             uint8_t is_ii_allowed = svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, NEWMV, rf);
 #endif
@@ -3599,7 +3613,7 @@ void inject_new_candidates(
 
             uint8_t inter_type;
 #if MULTI_PASS_PD // Shut inter/intra 
-            uint8_t is_ii_allowed = context_ptr->pd_pass == PD_PASS_2 ? svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, NEWMV, rf) : 0;
+            uint8_t is_ii_allowed = svt_is_interintra_allowed(context_ptr->pd_pass, picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, NEWMV, rf);
 #else
             uint8_t is_ii_allowed = svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, NEWMV, rf);
 #endif
@@ -4257,7 +4271,7 @@ void  inject_inter_candidates(
 
     uint32_t refIt;
 #if MULTI_PASS_PD // Shut OBMC, COMB, .. if 1st pass
-    if (context_ptr->pd_pass == PD_PASS_2) {
+    if (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2) {
 #endif
     //all of ref pairs: (1)single-ref List0  (2)single-ref List1  (3)compound Bi-Dir List0-List1  (4)compound Uni-Dir List0-List0  (5)compound Uni-Dir List1-List1
 #if LETS_1_NEAREST
@@ -4386,7 +4400,11 @@ void  inject_inter_candidates(
              rf[1] = -1;
 
             uint8_t inter_type;
+#if MULTI_PASS_PREP_2
+            uint8_t is_ii_allowed = svt_is_interintra_allowed(context_ptr->pd_pass, picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, GLOBALMV, rf);
+#else
             uint8_t is_ii_allowed = svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, GLOBALMV, rf);
+#endif
             uint8_t tot_inter_types = is_ii_allowed ? II_COUNT : 1;
             //uint8_t is_obmc_allowed =  obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL;
             //tot_inter_types = is_obmc_allowed ? tot_inter_types+1 : tot_inter_types;

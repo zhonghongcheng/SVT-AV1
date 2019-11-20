@@ -1576,6 +1576,9 @@ void fast_loop_core(
         context_ptr->blk_geom,
         context_ptr->cu_origin_y >> MI_SIZE_LOG2,
         context_ptr->cu_origin_x >> MI_SIZE_LOG2,
+#if MULTI_PASS_PREP_2
+        context_ptr->pd_pass,
+#endif
         1,
         context_ptr->intra_luma_left_mode,
         context_ptr->intra_luma_top_mode);
@@ -2695,6 +2698,9 @@ void md_stage_0(
                     context_ptr->blk_geom,
                     context_ptr->cu_origin_y >> MI_SIZE_LOG2,
                     context_ptr->cu_origin_x >> MI_SIZE_LOG2,
+#if MULTI_PASS_PREP_2
+                    context_ptr->pd_pass,
+#endif
                     1,
                     context_ptr->intra_luma_left_mode,
                     context_ptr->intra_luma_top_mode);
@@ -7817,6 +7823,9 @@ void search_best_independent_uv_mode(
                         context_ptr->blk_geom,
                         context_ptr->cu_origin_y >> MI_SIZE_LOG2,
                         context_ptr->cu_origin_x >> MI_SIZE_LOG2,
+#if MULTI_PASS_PREP_2
+                        context_ptr->pd_pass,
+#endif
                         1,
                         context_ptr->intra_luma_left_mode,
                         context_ptr->intra_luma_top_mode);
