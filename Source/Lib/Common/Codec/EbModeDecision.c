@@ -4123,7 +4123,7 @@ void  inject_inter_candidates(
     uint8_t sq_index = LOG2F(context_ptr->blk_geom->sq_size) - 2;
     uint8_t inject_newmv_candidate = 1;
 #if MULTI_PASS_PD // Shut coef-based inter skip if 1st pass
-    if (context_ptr->pd_pass == PD_PASS_2)
+    if (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2)
 #endif
     if (picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL) {
@@ -4223,9 +4223,6 @@ void  inject_inter_candidates(
             context_ptr->me_block_offset,
             &canTotalCnt);
 
-#if MULTI_PASS_PD // Shut nx4 and 4xn if 1st pass
-        if (context_ptr->pd_pass == PD_PASS_2)
-#endif
         if (context_ptr->nx4_4xn_parent_mv_injection) {
             // If Nx4 or 4xN the inject the MV of the aprent block
 
@@ -4276,9 +4273,7 @@ void  inject_inter_candidates(
             }
         }
     }
-#if MULTI_PASS_PD // Shut global mv if 1st pass
-    if (context_ptr->pd_pass == PD_PASS_2)
-#endif
+
     if (context_ptr->global_mv_injection) {
         /**************
          GLOBALMV L0
@@ -4458,7 +4453,7 @@ void  inject_inter_candidates(
 
     // Warped Motion
 #if MULTI_PASS_PD // Shut Warped if 1st pass
-    if (context_ptr->pd_pass == PD_PASS_2)
+    if ((context_ptr->pd_pass == PD_PASS_1 && picture_control_set_ptr->temporal_layer_index == 0) || context_ptr->pd_pass == PD_PASS_2)
 #endif
     if (frm_hdr->allow_warped_motion &&
         has_overlappable_candidates(context_ptr->cu_ptr) &&
@@ -5593,8 +5588,8 @@ EbErrorType generate_md_stage_0_cand(
     uint8_t sq_index = LOG2F(context_ptr->blk_geom->sq_size) - 2;
     uint8_t inject_intra_candidate = 1;
     uint8_t inject_inter_candidate = 1;
-#if MULTI_PASS_PD // Shut intra test if 1st pass
-   if(context_ptr->pd_pass == PD_PASS_2) {
+#if MULTI_PASS_PD // Shut coef-based inter skip if 1st pass
+    if (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2) {
 #endif
     if (slice_type != I_SLICE) {
         if (picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&

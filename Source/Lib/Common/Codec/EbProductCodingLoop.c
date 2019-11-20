@@ -6420,13 +6420,10 @@ void md_stage_3(
 #else
         context_ptr->md_staging_tx_search = candidate_ptr->cand_class == CAND_CLASS_0 ? 2 : 1;
 #endif
-#if MULTI_PASS_PD // shut chroma and RDOQ if 1st pass
-        context_ptr->md_staging_skip_full_chroma = context_ptr->pd_pass == PD_PASS_2 ? EB_FALSE : EB_TRUE;
-        context_ptr->md_staging_skip_rdoq = context_ptr->pd_pass == PD_PASS_2 ? EB_FALSE : EB_TRUE;
-#else
+
         context_ptr->md_staging_skip_full_chroma = EB_FALSE;
         context_ptr->md_staging_skip_rdoq = EB_FALSE;
-#endif
+
         if (picture_control_set_ptr->slice_type != I_SLICE) {
             if ((candidate_ptr->type == INTRA_MODE || context_ptr->full_loop_escape == 2) && best_inter_luma_zero_coeff == 0) {
 #if REMOVE_MD_STAGE_1
