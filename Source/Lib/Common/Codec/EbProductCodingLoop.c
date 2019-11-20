@@ -7989,9 +7989,6 @@ void md_encode_block(
         // Initialize uv_search_path
         context_ptr->uv_search_path = EB_FALSE;
         // Search the best independent intra chroma mode
-#if MULTI_PASS_PD // Shut independent chroma search if 1st pass
-        if (context_ptr->pd_pass == PD_PASS_2) 
-#endif
         if (context_ptr->chroma_level == CHROMA_MODE_0) {
             if (context_ptr->blk_geom->sq_size < 128) {
                 if (context_ptr->blk_geom->has_uv) {
@@ -8052,9 +8049,6 @@ void md_encode_block(
                 picture_control_set_ptr);
 
         // Perform ME search around the best MVP
-#if MULTI_PASS_PD // Shut predictive if 1st pass
-        if (context_ptr->pd_pass == PD_PASS_2)
-#endif
         if (context_ptr->predictive_me_level)
             predictive_me_search(
                 picture_control_set_ptr,
@@ -8458,7 +8452,7 @@ void md_encode_block(
         }
 
 #if MULTI_PASS_PD && !LETS_INJECT_DC// Shut inverse transform
-        if (context_ptr->pd_pass == PD_PASS_2)
+        if (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2)
 #endif
         AV1PerformInverseTransformRecon(
             picture_control_set_ptr,

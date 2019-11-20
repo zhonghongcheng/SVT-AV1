@@ -883,9 +883,7 @@ uint8_t check_ref_beackout(
     uint8_t skip_candidate = 0;
     uint8_t ref_cnt = 0;
     uint8_t allowed_nsq_ref_th = (uint8_t)PRUNE_REC_TH;
-#if MULTI_PASS_PD // Shut inter skip if 1st pass
-    if (context_ptr->pd_pass == PD_PASS_2)
-#endif
+
     if (context_ptr->prune_ref_frame_for_rec_partitions) {
         if (shape != PART_N) {
             uint8_t ref_idx;
@@ -5638,7 +5636,7 @@ EbErrorType generate_md_stage_0_cand(
     }
 #endif
 #if MULTI_PASS_PD // Shut intra test if 1st pass
-    if (context_ptr->pd_pass == PD_PASS_2) {
+    if ((context_ptr->pd_pass == PD_PASS_1 && picture_control_set_ptr->temporal_layer_index == 0) || context_ptr->pd_pass == PD_PASS_2) {
 #endif
 #if FILTER_INTRA_FLAG
        if (picture_control_set_ptr->pic_filter_intra_mode > 0 && av1_filter_intra_allowed_bsize(sequence_control_set_ptr->seq_header.enable_filter_intra, context_ptr->blk_geom->bsize))
@@ -5648,6 +5646,12 @@ EbErrorType generate_md_stage_0_cand(
                 &canTotalCnt);
 
 #endif
+#if MULTI_PASS_PD // Shut intra test if 1st pass
+       }
+#endif
+#if MULTI_PASS_PD // Shut intra test if 1st pass
+    if (context_ptr->pd_pass == PD_PASS_2) {
+#endif
     if (frm_hdr->allow_intrabc)
         inject_intra_bc_candidates(
             picture_control_set_ptr,
@@ -5656,7 +5660,12 @@ EbErrorType generate_md_stage_0_cand(
             context_ptr->cu_ptr,
             &canTotalCnt
         );
-
+#if MULTI_PASS_PD // Shut intra test if 1st pass
+    }
+#endif
+#if MULTI_PASS_PD // Shut intra test if 1st pass
+    if (context_ptr->pd_pass == PD_PASS_2) {
+#endif
 #if PAL_SUP
     //can be removed later if need be
     for (uint16_t i = 0; i < canTotalCnt; i++) {
