@@ -445,15 +445,16 @@ void write_stat_info_to_file(
                     stat_ref_info_t *stat_ref_info = &(fstat_ref_info[block_index]);
                     int32_t overlap_area = stat_ref_info->overlap_area[sb_index];
                     int32_t pix_num      = stat_ref_info->pix_num[sb_index];
-                    int64_t mc_flow = 0;//dept_stat_propagate_ptr[block_index].mc_flow * overlap_area / (64*64);
+                    int64_t mc_flow = dept_stat_propagate_ptr[block_index].mc_flow * overlap_area / (64*64);
                     int64_t mc_dep_cost = stat_ref_info->intra_cost[sb_index] + mc_flow;
+                    int64_t mc_saved = stat_ref_info->mc_saved[sb_index];//dept_stat_propagate_ptr[block_index].mc_saved;
                     mc_flow = (int64_t)(stat_ref_info->quant_ratio[sb_index] * mc_dep_cost * (1.0 - stat_ref_info->iiratio_nl[sb_index]));
                     mc_flow = mc_flow * temporal_weight / (stat_ref_info->is_bipred[sb_index] ? 2 : 1 );
                     mc_flow = mc_flow * overlap_area / pix_num;
                     stat_struct.referenced_area[stat_ref_info->ref_sb_index[sb_index]] += (uint32_t)(stat_ref_info->referenced_area[sb_index]);
                     stat_struct.cur_stat[stat_ref_info->ref_sb_index[sb_index]].mc_flow += mc_flow;
                     stat_struct.cur_stat[stat_ref_info->ref_sb_index[sb_index]].mc_count += (overlap_area << TPL_DEP_COST_SCALE_LOG2);
-                    stat_struct.cur_stat[stat_ref_info->ref_sb_index[sb_index]].mc_saved += (dept_stat_propagate_ptr[block_index].mc_saved * overlap_area) / pix_num;
+                    stat_struct.cur_stat[stat_ref_info->ref_sb_index[sb_index]].mc_saved += (mc_saved * overlap_area) / pix_num;
                     // to be continued
                 }
             }
