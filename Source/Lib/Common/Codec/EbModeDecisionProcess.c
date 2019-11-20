@@ -505,7 +505,7 @@ void reset_mode_decision(
         enable_wm = EB_FALSE;
     else
 #if WARP_UPDATE
-        enable_wm = (MR_MODE ||
+        enable_wm = (MR_MODE || NADER_SET2 || MR_WARP ||
 #if TEST_M0_WARP_M3
         (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M3 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ||
 #elif TEST_M0_WARP
@@ -553,7 +553,7 @@ void reset_mode_decision(
         else
             picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = 0;
 
-#if MR_MODE
+#if MR_MODE || NADER_SET2 || MR_OBMC
         picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode =
             picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0 && picture_control_set_ptr->slice_type != I_SLICE ? 1 : 0;
 #endif

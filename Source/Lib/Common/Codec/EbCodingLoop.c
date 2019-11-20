@@ -3283,6 +3283,9 @@ EB_EXTERN void av1_encode_pass(
                                         count_non_zero_coeffs,
                                         yTuFullDistortion,
                                         &y_tu_coeff_bits,
+#if DISABLE_INTRA_SKIP
+                                        1,// is_inter,
+#endif
                                         component_mask);
 
                                 else {

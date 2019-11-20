@@ -32,8 +32,30 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#define EIGHT_PEL_FIX 0 // Improve the 8th pel
+
+#define EIGHT_PEL_FIX 1 // Improve the 8th pel
 #define HIGH_PRECISION_MV_QTHRESH 150
+#define NADER_SET1                        0 
+#define MR_CHROMA                         0 // To check speed
+#define MR_WEDGE                          0 // To check speed
+#define MR_MD_EXIT                        0 // To check speed
+#define MR_MD_THS                         0 // To check speed
+#define MR_MD_THC                         0 // To check speed
+#define MR_MD_SKIP__AB                    0 // To check speed
+#define NADER_SET2                        0
+#define MR_WARP                           0 // To check speed
+#define MR_OBMC                           0 // To check speed
+#define MR_QPEL                           0 
+#define MR_MDC                            0 // To check speed
+#define MR_NSQ                            0 // To check speed
+#define MR_INTRA                          0 // To check speed
+#define MR_ATB                            0 // To check speed
+#define DISABLE_RED_CU                    0 // To check speed
+#define DISABLE_SKIP_INTER_INJECTION      0 // To check speed
+#define DOUBLE_ME_PRED_SR                 0
+#define SET_128X128                       0
+#define DOUBLE_NIC_OBMC                   0
+#define DISABLE_INTRA_SKIP                0
 /* Note: shutting the macro PAL_SUP will not give SS as pcs->palette_mode = 0
    rate estimation is changed for I frame + enabled sc for P (rate estimation
    is a result changed for P frames)

@@ -911,7 +911,7 @@ EbErrorType signal_derivation_multi_processes_oq(
     // 5                                     pred - 1 + 2
     // 6                                     pred - 1 + 3
     // 7                                     All
-    if (MR_MODE || sc_content_detected || sequence_control_set_ptr->static_config.enable_hbd_mode_decision)
+    if (MR_MODE || sc_content_detected || sequence_control_set_ptr->static_config.enable_hbd_mode_decision || NADER_SET2 || MR_MDC)
         picture_control_set_ptr->mdc_depth_level = MAX_MDC_LEVEL;
 #if TEST_M0_MDC_LEVEL
     else if (picture_control_set_ptr->enc_mode <= ENC_M1)
@@ -958,7 +958,7 @@ EbErrorType signal_derivation_multi_processes_oq(
     // 0                                     OFF
     // 1                                     ON
 
-        if (MR_MODE || sc_content_detected) {
+        if (MR_MODE || sc_content_detected || NADER_SET2 || MR_MDC) {
             picture_control_set_ptr->adpative_ol_partitioning_level = 0;
         }
 #if MDC_M4
@@ -987,7 +987,7 @@ EbErrorType signal_derivation_multi_processes_oq(
     // NSQ_SEARCH_LEVEL6                              Allow only NSQ Inter-NEAREST/NEAR/GLOBAL if parent SQ has no coeff + reordering nsq_table number and testing only 6 NSQ SHAPE
     // NSQ_SEARCH_FULL                                Allow NSQ Intra-FULL and Inter-FULL
 
-        if (MR_MODE)
+        if (MR_MODE || NADER_SET2 || MR_NSQ)
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_FULL;
         else if (sc_content_detected)
 #if sc_rtime_presets
@@ -1584,7 +1584,7 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->intra_pred_mode = 4;
     }
 
-    if (MR_MODE)
+    if (MR_MODE || MR_INTRA)
         picture_control_set_ptr->intra_pred_mode = 0;
 
     // Skip sub blk based on neighbors depth        Settings
@@ -1615,7 +1615,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
 
 #if SPEED_OPT
-            picture_control_set_ptr->atb_mode = (MR_MODE || picture_control_set_ptr->temporal_layer_index == 0) ? 1 : 0;
+            picture_control_set_ptr->atb_mode = (MR_MODE || picture_control_set_ptr->temporal_layer_index == 0 || MR_ATB) ? 1 : 0;
 #else
             picture_control_set_ptr->atb_mode = 1;
 #endif
@@ -1627,7 +1627,7 @@ EbErrorType signal_derivation_multi_processes_oq(
         // 1                                     ON
 
 #if SPEED_OPT
-        if (MR_MODE || picture_control_set_ptr->sc_content_detected)
+        if (MR_MODE || picture_control_set_ptr->sc_content_detected || MR_ATB)
 #else
         if (MR_MODE || picture_control_set_ptr->enc_mode == ENC_M0 || picture_control_set_ptr->sc_content_detected)
 #endif

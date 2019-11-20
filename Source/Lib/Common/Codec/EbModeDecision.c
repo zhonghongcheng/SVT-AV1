@@ -5210,7 +5210,7 @@ void  inject_intra_candidates(
         disable_angle_prediction    = 0;
         angleDeltaCandidateCount = disable_angle_refinement ? 1: angleDeltaCandidateCount;
     }
-#if MR_MODE
+#if MR_MODE || NADER_SET2 || MR_INTRA
     disable_z2_prediction       = 0;
     disable_angle_refinement    = 0;
     disable_angle_prediction    = 0;

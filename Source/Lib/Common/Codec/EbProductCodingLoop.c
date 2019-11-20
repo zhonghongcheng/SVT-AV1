@@ -41,8 +41,13 @@
 
 #define PREDICTIVE_ME_MAX_MVP_CANIDATES  4
 #define PREDICTIVE_ME_DEVIATION_TH      50
+#if DOUBLE_ME_PRED_SR
+#define FULL_PEL_REF_WINDOW_WIDTH        15
+#define FULL_PEL_REF_WINDOW_HEIGHT       15
+#else
 #define FULL_PEL_REF_WINDOW_WIDTH        7
 #define FULL_PEL_REF_WINDOW_HEIGHT       5
+#endif
 #define HALF_PEL_REF_WINDOW              3
 #define QUARTER_PEL_REF_WINDOW           3
 #if EIGHT_PEL_PREDICTIVE_ME
@@ -1605,6 +1610,9 @@ void set_md_stage_counts(
 #if OBMC_FLAG
     context_ptr->md_stage_1_count[CAND_CLASS_5] = 16;
 #endif
+#if DOUBLE_NIC_OBMC
+    context_ptr->md_stage_1_count[CAND_CLASS_5] = 32;
+#endif
 #if FILTER_INTRA_FLAG
     context_ptr->md_stage_1_count[CAND_CLASS_6] = (picture_control_set_ptr->temporal_layer_index == 0) ? 10 : 5;
 #endif
@@ -1662,6 +1670,9 @@ void set_md_stage_counts(
         context_ptr->md_stage_2_count[CAND_CLASS_5] = (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 12 : 4;
     else
         context_ptr->md_stage_2_count[CAND_CLASS_5] = (picture_control_set_ptr->temporal_layer_index == 0) ? 12 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 8 : 4;
+#if DOUBLE_NIC_OBMC
+    context_ptr->md_stage_2_count[CAND_CLASS_5] = 24;
+#endif
 #endif
 
     if (context_ptr->combine_class12) {
@@ -8388,9 +8399,13 @@ void md_encode_block(
         if (context_ptr->blk_geom->shape == PART_N) {
             context_ptr->parent_sq_type[sq_index] = candidate_buffer->candidate_ptr->type;
 
+#if DISABLE_SKIP_INTER_INJECTION
+            context_ptr->parent_sq_has_coeff[sq_index] = 1;
+#else
             context_ptr->parent_sq_has_coeff[sq_index] = (candidate_buffer->candidate_ptr->y_has_coeff ||
                 candidate_buffer->candidate_ptr->u_has_coeff ||
                 candidate_buffer->candidate_ptr->v_has_coeff) ? 1 : 0;
+#endif
 
             context_ptr->parent_sq_pred_mode[sq_index] = candidate_buffer->candidate_ptr->pred_mode;
         }
@@ -9374,8 +9389,11 @@ EB_EXTERN EbErrorType mode_decision_sb(
         uint16_t redundant_blk_mds;
         if (all_cu_init)
             check_redundant_block(blk_geom, context_ptr, &redundant_blk_avail, &redundant_blk_mds);
-
+#if DISABLE_RED_CU
+        if(0)
+#else
         if (redundant_blk_avail && context_ptr->redundant_blk)
+#endif
         {
             // Copy results
             CodingUnit *src_cu = &context_ptr->md_cu_arr_nsq[redundant_blk_mds];

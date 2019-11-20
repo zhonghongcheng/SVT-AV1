@@ -1198,7 +1198,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
 #if rtime_presets
 
-        if (MR_MODE) 
+        if (MR_MODE || NADER_SET1 || MR_CHROMA) 
             context_ptr->chroma_level = CHROMA_MODE_0;
         else
             if (picture_control_set_ptr->enc_mode <= ENC_M5 && picture_control_set_ptr->temporal_layer_index == 0)
@@ -1745,13 +1745,13 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
 #if SPEED_OPT
     // Derive INTER/INTER WEDGE variance TH
-    if (MR_MODE)
+    if (MR_MODE || NADER_SET1 || MR_WEDGE)
         context_ptr->inter_inter_wedge_variance_th = 0;
     else
         context_ptr->inter_inter_wedge_variance_th = 100;
 
     // Derive MD Exit TH
-    if (MR_MODE)
+    if (MR_MODE || NADER_SET1 || MR_MD_EXIT)
         context_ptr->md_exit_th = 0;
     else if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         context_ptr->md_exit_th = 10;
@@ -1792,7 +1792,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if STAGE_2_COUNT_PRUNING_TH_S
     // TH_S(for candidate removal per class)
     // Remove candidate if deviation to the best higher than TH_S
-    if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+    if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || NADER_SET1 || MR_MD_THS)
         context_ptr->md_stage_2_count_th_s = (uint64_t)~0;
 #if TEST_NEW_M0M1_SET1
     else if (picture_control_set_ptr->enc_mode <= ENC_M1)
@@ -1825,7 +1825,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if STAGE_2_COUNT_PRUNING_TH_C
     // TH_C(for class removal)
     // Remove class if deviation to the best higher than TH_C
-    if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected) 
+    if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || NADER_SET1 || MR_MD_THC) 
         context_ptr->md_stage_2_count_th_c = (uint64_t)~0;
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->md_stage_2_count_th_c = 25;
@@ -1844,7 +1844,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // skip HA and HB if h_cost > (weighted sq_cost)
     // skip VA and VB if v_cost > (weighted sq_cost)
 
-    if (MR_MODE)
+    if (MR_MODE || NADER_SET1 || MR_MD_SKIP__AB)
         context_ptr->sq_to_h_v_weight_to_skip_a_b = (uint32_t)~0;
 #if RECT_THRESH
     else if (picture_control_set_ptr->enc_mode <= ENC_M0)

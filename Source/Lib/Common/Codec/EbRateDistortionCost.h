@@ -156,6 +156,9 @@ extern "C" {
         uint32_t        *count_non_zero_coeffs,
         uint64_t         y_tu_distortion[DIST_CALC_TOTAL],
         uint64_t        *y_tu_coeff_bits,
+#if DISABLE_INTRA_SKIP
+        uint8_t         is_inter,
+#endif
         uint32_t         component_mask);
 
     extern uint64_t av1_intra_fast_cost(

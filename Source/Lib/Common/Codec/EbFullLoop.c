@@ -1395,6 +1395,9 @@ int32_t av1_quantize_inv_quantize(
     EbBool perform_rdoq = ((md_context->md_staging_skip_rdoq == EB_FALSE || is_encode_pass) && md_context->trellis_quant_coeff_optimization && component_type == COMPONENT_LUMA && !is_intra_bc);
 #endif
     perform_rdoq = perform_rdoq && !picture_control_set_ptr->hbd_mode_decision && !bit_increment;
+#if DISABLE_INTRA_SKIP
+    perform_rdoq = is_inter ? 0 : perform_rdoq;
+#endif
 
     // Hsan: set to FALSE until adding x86 quantize_fp
 #if rtime_presets

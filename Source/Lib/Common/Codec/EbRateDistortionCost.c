@@ -3003,6 +3003,9 @@ EbErrorType av1_encode_tu_calc_cost(
     uint32_t                   *count_non_zero_coeffs,
     uint64_t                    y_tu_distortion[DIST_CALC_TOTAL],
     uint64_t                   *y_tu_coeff_bits,
+#if DISABLE_INTRA_SKIP
+    uint8_t                     is_inter,
+#endif
     uint32_t                    component_mask
 )
 {
@@ -3056,7 +3059,11 @@ EbErrorType av1_encode_tu_calc_cost(
 
         yZeroCbfRate = yZeroCbfLumaFlagBitsNum;
         TransformUnit       *txb_ptr = &cu_ptr->transform_unit_array[context_ptr->txb_itr];
+#if 0//DISABLE_INTRA_SKIP
+        if (txb_ptr->transform_type[PLANE_TYPE_Y] != DCT_DCT || !is_inter) {
+#else
         if (txb_ptr->transform_type[PLANE_TYPE_Y] != DCT_DCT) {
+#endif
             yZeroCbfCost = 0xFFFFFFFFFFFFFFFFull;
         }
         else
