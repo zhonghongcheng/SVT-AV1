@@ -97,6 +97,49 @@ int svt_is_interintra_allowed(
 #define II_COUNT                3
 #endif
 #if OBMC_FLAG
+#if MULTI_PASS_PREP_1
+static INLINE int is_inter_mode(PredictionMode mode)
+{
+    return mode >= SINGLE_INTER_MODE_START && mode < SINGLE_INTER_MODE_END;
+}
+MotionMode obmc_motion_mode_allowed(
+    const PictureControlSet    *picture_control_set_ptr,
+    struct ModeDecisionContext *context_ptr,
+    const BlockSize            bsize,
+    MvReferenceFrame           rf0,
+    MvReferenceFrame           rf1,
+    PredictionMode             mode)
+{
+
+    if (context_ptr->pd_pass == PD_PASS_0 || context_ptr->pd_pass == PD_PASS_1 || !picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode)
+        return SIMPLE_TRANSLATION;
+
+    FrameHeader *frm_hdr = &picture_control_set_ptr->parent_pcs_ptr->frm_hdr;
+
+    if (!frm_hdr->is_motion_mode_switchable)
+        return SIMPLE_TRANSLATION;
+
+    if (frm_hdr->force_integer_mv == 0) {
+        const TransformationType gm_type =
+            picture_control_set_ptr->parent_pcs_ptr->global_motion[rf0].wmtype;
+        if (is_global_mv_block(mode, bsize, gm_type))
+            return SIMPLE_TRANSLATION;
+    }
+
+    if (is_motion_variation_allowed_bsize(bsize) &&
+        is_inter_mode(mode) &&
+        rf1 != INTRA_FRAME &&
+        !(rf1 > INTRA_FRAME)) // is_motion_variation_allowed_compound
+    {
+        if (!has_overlappable_candidates(context_ptr->cu_ptr)) // check_num_overlappable_neighbors
+            return SIMPLE_TRANSLATION;
+
+        return OBMC_CAUSAL;
+    }
+    else
+        return SIMPLE_TRANSLATION;
+}
+#else
 MotionMode obmc_motion_mode_allowed(
     const PictureControlSet       *picture_control_set_ptr,
     const CodingUnit              *cu_ptr,
@@ -104,7 +147,7 @@ MotionMode obmc_motion_mode_allowed(
     MvReferenceFrame                rf0,
     MvReferenceFrame                rf1,
     PredictionMode                  mode);
-
+#endif
 void precompute_obmc_data(
     PictureControlSet            *picture_control_set_ptr,
     ModeDecisionContext          *context_ptr);
@@ -2000,7 +2043,11 @@ void inject_mvp_candidates_II(
             uint8_t is_ii_allowed = svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, NEARESTMV, rf);
             uint8_t tot_inter_types = is_ii_allowed ? II_COUNT : 1;
 #if OBMC_FLAG
+#if MULTI_PASS_PREP_1
+            uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr, bsize, rf[0], rf[1], NEARESTMV) == OBMC_CAUSAL;
+#else
             uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEARESTMV) == OBMC_CAUSAL;
+#endif
             tot_inter_types = is_obmc_allowed ? tot_inter_types + 1 : tot_inter_types;
 #endif
             for (inter_type = 0; inter_type < tot_inter_types; inter_type++)
@@ -2120,7 +2167,11 @@ void inject_mvp_candidates_II(
             uint8_t is_ii_allowed = svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, NEARMV, rf);
             uint8_t tot_inter_types = is_ii_allowed ? II_COUNT : 1;
 #if OBMC_FLAG
+#if MULTI_PASS_PREP_1
+            uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr, bsize, rf[0], rf[1], NEARMV) == OBMC_CAUSAL;
+#else
             uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEARMV) == OBMC_CAUSAL;
+#endif
             tot_inter_types = is_obmc_allowed ? tot_inter_types+1 : tot_inter_types;
 #endif
 
@@ -3411,10 +3462,11 @@ void inject_new_candidates(
 #endif
             uint8_t tot_inter_types = is_ii_allowed ? II_COUNT : 1;
 #if OBMC_FLAG
-#if MULTI_PASS_PD // Shut OBMC if 1st pass
-            uint8_t is_obmc_allowed = context_ptr->pd_pass == PD_PASS_2 ? (obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL) : 0;
+
+#if MULTI_PASS_PREP_1
+            uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL;
 #else
-             uint8_t is_obmc_allowed =  obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL;
+            uint8_t is_obmc_allowed =  obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL;
 #endif
              tot_inter_types = is_obmc_allowed && picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode <= 2 ? tot_inter_types+1 : tot_inter_types;
 #endif
@@ -3553,8 +3605,8 @@ void inject_new_candidates(
 #endif
             uint8_t tot_inter_types = is_ii_allowed ? II_COUNT : 1;
 #if OBMC_FLAG
-#if MULTI_PASS_PD // Shut OBMC if 1st pass
-            uint8_t is_obmc_allowed = context_ptr->pd_pass == PD_PASS_2 ? (obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL) : 0;
+#if MULTI_PASS_PREP_1
+            uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL;
 #else
             uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL;
 #endif
@@ -3834,7 +3886,11 @@ void inject_new_candidates(
                             uint8_t inter_type;
                             uint8_t is_ii_allowed = 0;// svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, NEWMV, rf);
                             uint8_t tot_inter_types = is_ii_allowed ? II_COUNT : 1;
+#if MULTI_PASS_PREP_1
+                            uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL;
+#else
                             uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL;
+#endif
                             tot_inter_types = is_obmc_allowed ? tot_inter_types + 1 : tot_inter_types;
                             for (inter_type = 0; inter_type < tot_inter_types; inter_type++)
                             {
@@ -3929,7 +3985,11 @@ void inject_new_candidates(
                                 uint8_t inter_type;
                                 uint8_t is_ii_allowed = 0;// svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, bsize, NEWMV, rf);
                                 uint8_t tot_inter_types = is_ii_allowed ? II_COUNT : 1;
+#if MULTI_PASS_PREP_1
+                                uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL;
+#else
                                 uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, bsize, rf[0], rf[1], NEWMV) == OBMC_CAUSAL;
+#endif
                                 tot_inter_types = is_obmc_allowed ? tot_inter_types + 1 : tot_inter_types;
                                 for (inter_type = 0; inter_type < tot_inter_types; inter_type++)
                                 {
@@ -4178,18 +4238,17 @@ void  inject_inter_candidates(
         mi_row,
         mi_col);
 
-#if MULTI_PASS_PD // Shut OBMC, COMB, .. if 1st pass
-    if (context_ptr->pd_pass == PD_PASS_2) {
-#endif
+
 #if OBMC_FLAG
+#if MULTI_PASS_PREP_1
+    uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr, context_ptr->blk_geom->bsize, LAST_FRAME, -1, NEWMV) == OBMC_CAUSAL;
+#else
     uint8_t is_obmc_allowed = obmc_motion_mode_allowed(picture_control_set_ptr, context_ptr->cu_ptr, context_ptr->blk_geom->bsize, LAST_FRAME, -1, NEWMV) == OBMC_CAUSAL;
+#endif
     if (is_obmc_allowed)
         precompute_obmc_data(
             picture_control_set_ptr,
             context_ptr);
-#endif
-#if MULTI_PASS_PD // Shut OBMC, COMB, .. if 1st pass
-    }
 #endif
 
     /**************
