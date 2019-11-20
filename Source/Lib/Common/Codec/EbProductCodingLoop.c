@@ -1596,11 +1596,7 @@ void set_md_stage_counts(
     SequenceControlSet* scs = (SequenceControlSet*)(picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr);
 
     // Step 1: derive bypass_stage1 flags
-#if MULTI_PASS_PD // Shut md-staging if 1st pass
-    if (context_ptr->md_staging_mode == MD_STAGING_MODE_1 && context_ptr->pd_pass == PD_PASS_2)
-#else
     if (context_ptr->md_staging_mode == MD_STAGING_MODE_1)
-#endif
         memset(context_ptr->bypass_md_stage_1, EB_FALSE, CAND_CLASS_TOTAL);
     else
         memset(context_ptr->bypass_md_stage_1, EB_TRUE, CAND_CLASS_TOTAL);

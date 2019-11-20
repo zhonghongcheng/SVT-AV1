@@ -1583,7 +1583,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // |CLASS_4 |                             |No Tx Size Search               |Tx Size Search                           |
     // |CLASS_5 |                             |Interpolation Search            |                                         |
     // |________|_____________________________|________________________________|_________________________________________|
-#if 0//MULTI_PASS_PD 
+#if MULTI_PASS_PD 
     if (context_ptr->pd_pass == PD_PASS_0) {
         context_ptr->md_staging_mode = MD_STAGING_MODE_0;
     }
