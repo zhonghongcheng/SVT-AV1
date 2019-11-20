@@ -1283,7 +1283,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 1                    On but only INTRA
     // 2                    On both INTRA and INTER
 #if MULTI_PASS_PD
-    if (context_ptr->pd_pass == PD_PASS_0)
+    if (context_ptr->pd_pass == PD_PASS_0 || context_ptr->pd_pass == PD_PASS_1)
         context_ptr->full_loop_escape = 0;
     else
 #endif
@@ -1767,7 +1767,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
     else if (context_ptr->pd_pass == PD_PASS_1)
-        context_ptr->trellis_quant_coeff_optimization = EB_TRUE;
+        context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
     else
 #endif
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)

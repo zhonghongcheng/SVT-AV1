@@ -4584,7 +4584,7 @@ void  inject_inter_candidates(
         }
 
     // Warped Motion
-#if MULTI_PASS_PD // Shut Warped if 1st pass
+#if MULTI_PASS_PD // Shut Warped if 1st pass (could be removed)
     if ((context_ptr->pd_pass == PD_PASS_1 && picture_control_set_ptr->temporal_layer_index == 0) || context_ptr->pd_pass == PD_PASS_2)
 #endif
     if (frm_hdr->allow_warped_motion &&
