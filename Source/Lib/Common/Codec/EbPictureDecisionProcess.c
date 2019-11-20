@@ -1014,7 +1014,7 @@ EbErrorType signal_derivation_multi_processes_oq(
             if (picture_control_set_ptr->enc_mode == ENC_M0)
 #endif
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL6;
-#if !M2_SC_NSQ_LEVEL
+#if !M2_SC_NSQ_LEVEL && !M1_CANDIDATE_SC
             else if (picture_control_set_ptr->enc_mode <= ENC_M1)
                 picture_control_set_ptr->nsq_search_level = (picture_control_set_ptr->is_used_as_reference_flag) ?
                 NSQ_SEARCH_LEVEL6 : NSQ_SEARCH_LEVEL3;
@@ -1290,6 +1290,8 @@ EbErrorType signal_derivation_multi_processes_oq(
 
 #elif M0_CANDIDATE_SC
         if (0)
+#elif M1_CANDIDATE_SC
+        if (picture_control_set_ptr->enc_mode <= ENC_M0)
 #else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #endif
@@ -1573,7 +1575,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 #if M2_INTRA_PRED
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
 #elif M3_INTRA_PRED
-        else if (picture_control_set_ptr->enc_mode <= ENC_M1)
+        else if (picture_control_set_ptr->enc_mode <= ENC_M0)
 #else
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #endif
@@ -1666,9 +1668,14 @@ EbErrorType signal_derivation_multi_processes_oq(
         // 1                 ON for INTRA blocks
 
         
-#if M1_NO_SC_ATB
+#if M1_NO_SC_ATB || M1_CANDIDATE_SC
       if (picture_control_set_ptr->sc_content_detected)
+#if M1_CANDIDATE_SC
+                if (picture_control_set_ptr->enc_mode <= ENC_M1 && sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
+
+#else
                 if (picture_control_set_ptr->enc_mode <= ENC_M2 && sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
+#endif
                     picture_control_set_ptr->atb_mode = (MR_MODE || picture_control_set_ptr->temporal_layer_index == 0) ? 1 : 0;
                 else
                     picture_control_set_ptr->atb_mode = 0;

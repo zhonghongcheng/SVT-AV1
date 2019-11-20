@@ -41,6 +41,7 @@ extern "C" {
 
 #define M0_CANDIDATE_SC             0
 #define M0_CANDIDATE_SC_1           0
+#define M1_CANDIDATE_SC             0
  //SC M0 features //
 #define M0_NON_SC_OBMC              0
 #define M0_RTIME_SC_HP              0
@@ -80,15 +81,15 @@ extern "C" {
 #define M1_NO_SC_ATB                0
 #define M3_NO_SC_REF_COUNT          0
 
-#define M2_NO_SC_OBMC               0
-#define M0_PALETTE_IN_M2            0
+#define M2_NO_SC_OBMC 0
+
 #define M2_NON_SC_MD_STAGE_S_2      0
-#define M2_NON_SC_MD_STAGE_C_2      0
+
 #define M3_SC_4xN                   0
-#define M3_SC_UNIPRED_3x3           0
+
 #define M3_SC_TRELLIS               0
 #define M3_SC_NSQ_DEPTH             0
-#define M3_INTRA_PRED               0
+
 
 #define M1_UNI_3x3_INJEC            0
 #define M1_PRED_ME                  0
@@ -96,7 +97,10 @@ extern "C" {
 #define M1_NSQ_LEVEL                0
 #define M1_NO_SC_REF_COUNT          0
 
-
+#define M0_PALETTE_IN_M2            0
+#define M2_NON_SC_MD_STAGE_C_2      0
+#define M3_SC_UNIPRED_3x3           0
+#define M3_INTRA_PRED               0
 
     //SC M2-M3//
 #define M2_TRELLIS                  0

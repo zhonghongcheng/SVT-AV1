@@ -2007,9 +2007,16 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
 #if SHIFT_M4_TO_M3 && !M2_NO_SC_MRP_MODE
 
 #if M3_NO_SC_REF_COUNT
+
     sequence_control_set_ptr->mrp_mode = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode <= ENC_M1) ? 0 : 1;
+
+#else
+#if 0// M1_CANDIDATE_SC
+    sequence_control_set_ptr->mrp_mode = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode <= ENC_M0) ? 0 : 1;
+
 #else
     sequence_control_set_ptr->mrp_mode = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode <= ENC_M2) ? 0 : 1;
+#endif
 #endif
 #else
     sequence_control_set_ptr->mrp_mode = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode <= ENC_M3) ? 0 : 1;

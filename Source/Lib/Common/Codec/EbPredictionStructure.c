@@ -1742,6 +1742,9 @@ EbErrorType prediction_structure_group_ctor(
     uint32_t          numberOfReferences;
 
     predictionStructureGroupPtr->dctor = prediction_structure_group_dctor;
+
+
+    
 #if rtime_presets
 #if   M1_REF_COUNT_M3
     uint8_t ref_count_used = enc_mode <= ENC_M3 ? MAX_REF_IDX : enc_mode <= ENC_M3 ? 2 : 1;
@@ -1754,9 +1757,20 @@ EbErrorType prediction_structure_group_ctor(
 #else
 #if SHIFT_M4_TO_M3
 #if M3_NO_SC_REF_COUNT
+
     uint8_t ref_count_used = enc_mode <= ENC_M1 ? MAX_REF_IDX : 1;
+
+#else
+
+#if 0//M1_CANDIDATE_SC
+    uint8_t ref_count_used;
+   // if (1 )/*(picture_control_set_ptr->sc_content_detected)*/
+         ref_count_used = enc_mode <= ENC_M0 ? MAX_REF_IDX : 1;
+    //else
+    //     ref_count_used = enc_mode <= ENC_M1 ? MAX_REF_IDX : enc_mode <= ENC_M2 ? 2 : 1;
 #else
     uint8_t ref_count_used = enc_mode <= ENC_M1 ? MAX_REF_IDX : enc_mode <= ENC_M2 ? 2 : 1;
+#endif
 #endif
 #else
     uint8_t ref_count_used = enc_mode <= ENC_M1 ? MAX_REF_IDX : enc_mode <= ENC_M3 ? 2 : 1;

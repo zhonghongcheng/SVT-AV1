@@ -1372,13 +1372,15 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         if (picture_control_set_ptr->enc_mode <= ENC_M0)
 #elif M0_CANDIDATE_SC
         if (0)
+#elif M1_CANDIDATE_SC
+        if (picture_control_set_ptr->enc_mode <= ENC_M0)
 #else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #endif
             context_ptr->unipred3x3_injection = 1;
 #if sc_rtime_presets
 #if M3_SC_UNIPRED_3x3
-        else if (picture_control_set_ptr->enc_mode <= ENC_M1)
+        else if (picture_control_set_ptr->enc_mode <= ENC_M0)
 #elif SHIFT_M4_TO_M3 
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #else
@@ -1469,6 +1471,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             if (picture_control_set_ptr->enc_mode <= ENC_M0)
 #elif M0_CANDIDATE_SC
             if (0)
+#elif M1_CANDIDATE_SC
+            if (picture_control_set_ptr->enc_mode <= ENC_M0)
+
 #else
             if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #endif

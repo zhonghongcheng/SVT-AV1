@@ -480,6 +480,8 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
     if (picture_control_set_ptr->sc_content_detected)
 #if M1_FRACT_SEARCH
         if (enc_mode <= ENC_M2)
+#elif M1_CANDIDATE_SC
+        if (enc_mode <= ENC_M0)
 #else
         if (enc_mode <= ENC_M1)
 #endif
