@@ -1282,6 +1282,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 0                    Off
     // 1                    On but only INTRA
     // 2                    On both INTRA and INTER
+#if MULTI_PASS_PD
+    if (context_ptr->pd_pass == PD_PASS_0)
+        context_ptr->full_loop_escape = 0;
+    else
+#endif
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
 #if sc_rtime_presets
         if (picture_control_set_ptr->enc_mode <= ENC_M5)
@@ -1377,6 +1382,15 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // Level                Settings
     // 0                    OFF
     // 1                    On
+#if MULTI_PASS_PD 
+    if (context_ptr->pd_pass == PD_PASS_0) {
+        context_ptr->warped_motion_injection = 0;
+    }
+    else if (context_ptr->pd_pass == PD_PASS_1) {
+        context_ptr->warped_motion_injection = 1;
+    }
+    else
+#endif
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         context_ptr->warped_motion_injection = 0;
     else
@@ -1387,6 +1401,15 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 0                    OFF
     // 1                    ON FULL
     // 2                    Reduced set
+#if MULTI_PASS_PD 
+    if (context_ptr->pd_pass == PD_PASS_0) {
+        context_ptr->unipred3x3_injection = 0;
+    }
+    else if (context_ptr->pd_pass == PD_PASS_1) {
+        context_ptr->unipred3x3_injection = 2;
+    }
+    else
+#endif
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
             context_ptr->unipred3x3_injection = 1;
@@ -1430,6 +1453,15 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 0                    OFF
     // 1                    ON FULL
     // 2                    Reduced set
+#if MULTI_PASS_PD 
+    if (context_ptr->pd_pass == PD_PASS_0) {
+        context_ptr->bipred3x3_injection = 0;
+    }
+    else if (context_ptr->pd_pass == PD_PASS_1) {
+        context_ptr->bipred3x3_injection = 2;
+    }
+    else
+#endif
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
 #if sc_rtime_presets
 
@@ -1551,7 +1583,15 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // |CLASS_4 |                             |No Tx Size Search               |Tx Size Search                           |
     // |CLASS_5 |                             |Interpolation Search            |                                         |
     // |________|_____________________________|________________________________|_________________________________________|
-
+#if 0//MULTI_PASS_PD 
+    if (context_ptr->pd_pass == PD_PASS_0) {
+        context_ptr->md_staging_mode = MD_STAGING_MODE_0;
+    }
+    else if (context_ptr->pd_pass == PD_PASS_1) {
+        context_ptr->md_staging_mode = MD_STAGING_MODE_1;
+    }
+    else
+#endif
     if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->md_staging_mode = MD_STAGING_MODE_1;
     else
@@ -1650,6 +1690,12 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 1                    ON
 
 #if M3_M0_NIC
+#if MULTI_PASS_PD 
+    if (context_ptr->pd_pass == PD_PASS_0 || context_ptr->pd_pass == PD_PASS_1) {
+        context_ptr->combine_class12 = 0;
+    }
+    else
+#endif
     context_ptr->combine_class12 = (picture_control_set_ptr->enc_mode <= ENC_M4) ? 0 : 1;
 #elif rtime_presets
     context_ptr->combine_class12 = (picture_control_set_ptr->enc_mode <= ENC_M1) ? 0 : 1;
@@ -1659,11 +1705,17 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if M5_CLASSS_COMBINATION
     context_ptr->combine_class12 = 1;
 #endif
-    // Set interpolation filter search blk sizecontext_ptr->pd_pass == EB_FALSE
+    // Set interpolation filter search blk size
     // Level                Settings
     // 0                    ON for 8x8 and above
     // 1                    ON for 16x16 and above
     // 2                    ON for 32x32 and above
+#if MULTI_PASS_PD 
+    if (context_ptr->pd_pass == PD_PASS_0 || context_ptr->pd_pass == PD_PASS_1) {
+        context_ptr->interpolation_filter_search_blk_size = 0;
+    }
+    else
+#endif
     if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->interpolation_filter_search_blk_size = 0;
     else
@@ -1760,6 +1812,14 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->redundant_blk = EB_TRUE;
     else
         context_ptr->redundant_blk = EB_FALSE;
+
+#if MULTI_PASS_PD 
+    if (context_ptr->pd_pass == PD_PASS_0)
+        context_ptr->edge_based_skip_angle_intra = 0;
+    else if (context_ptr->pd_pass == PD_PASS_1)
+        context_ptr->edge_based_skip_angle_intra = 1;
+    else
+#endif
     if (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
 #if FIX_ESTIMATE_INTRA
 #if LETS_INJECT_DC
@@ -1840,6 +1900,13 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
     // Derive distortion-based md_stage_0_count proning
 #if STAGE_1_COUNT_PRUNING_TH_S
+#if MULTI_PASS_PD 
+    if (context_ptr->pd_pass == PD_PASS_0)
+        context_ptr->md_stage_1_count_th_s = (uint64_t)~0;
+    else if (context_ptr->pd_pass == PD_PASS_1)
+        context_ptr->md_stage_1_count_th_s = 75;
+    else
+#endif
     if (MR_MODE || picture_control_set_ptr->enc_mode == ENC_M0 || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
         context_ptr->md_stage_1_count_th_s = (uint64_t)~0;
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
@@ -1859,6 +1926,13 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if STAGE_1_COUNT_PRUNING_TH_C
     // TH_C(for class removal)
     // Remove class if deviation to the best higher than TH_C
+#if MULTI_PASS_PD 
+    if (context_ptr->pd_pass == PD_PASS_0)
+        context_ptr->md_stage_1_count_th_c = (uint64_t)~0;
+    else if (context_ptr->pd_pass == PD_PASS_1)
+        context_ptr->md_stage_1_count_th_c = 100;
+    else
+#endif
     if (MR_MODE || picture_control_set_ptr->enc_mode == ENC_M0 || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
         context_ptr->md_stage_1_count_th_c = (uint64_t)~0;
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
@@ -1872,6 +1946,13 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if STAGE_2_COUNT_PRUNING_TH_S
     // TH_S(for candidate removal per class)
     // Remove candidate if deviation to the best higher than TH_S
+#if MULTI_PASS_PD 
+    if (context_ptr->pd_pass == PD_PASS_0)
+        context_ptr->md_stage_2_count_th_s = (uint64_t)~0;
+    else if (context_ptr->pd_pass == PD_PASS_1)
+        context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution <= INPUT_SIZE_1080i_RANGE ? 5 : 3;
+    else
+#endif
     if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         context_ptr->md_stage_2_count_th_s = (uint64_t)~0;
 #if TEST_NEW_M0M1_SET1
@@ -1905,6 +1986,13 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if STAGE_2_COUNT_PRUNING_TH_C
     // TH_C(for class removal)
     // Remove class if deviation to the best higher than TH_C
+#if MULTI_PASS_PD 
+    if (context_ptr->pd_pass == PD_PASS_0)
+        context_ptr->md_stage_2_count_th_c = (uint64_t)~0;
+    else if (context_ptr->pd_pass == PD_PASS_1)
+        context_ptr->md_stage_2_count_th_c = 25;
+    else
+#endif
     if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected) 
         context_ptr->md_stage_2_count_th_c = (uint64_t)~0;
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
