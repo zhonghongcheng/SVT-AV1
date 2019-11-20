@@ -2590,18 +2590,32 @@ void* enc_dec_kernel(void *input_ptr)
                             picture_control_set_ptr,
                             context_ptr->md_context);
 
-                        mode_decision_sb(
-                            sequence_control_set_ptr,
-                            picture_control_set_ptr,
-                            mdcPtr,
-                            sb_ptr,
-                            sb_origin_x,
-                            sb_origin_y,
-                            sb_index,
-                            context_ptr->ss_mecontext,
-                            context_ptr->md_context);
+                        // input is mdc_cu_ptr coming frrom MDc but since MDC off so we are testing all (up to 4421)
+                        {
+                            // iterate
+                            mode_decision_sb( // is an MDC like PD0
+                                sequence_control_set_ptr,
+                                picture_control_set_ptr,
+                                mdcPtr,
+                                sb_ptr,
+                                sb_origin_x,
+                                sb_origin_y,
+                                sb_index,
+                                context_ptr->ss_mecontext,
+                                context_ptr->md_context);
 
-                       // Reset mdc array ( mdc output will not be used beting this point) - why rest ?
+                            // store the outputted block indices somewhere tab_i
+                            // remove  the outputted block indices  from  mdc_cu_ptr and shift and update what ever should be updated
+                            // the iterate
+                        }
+                        // after 2 iteractions i expect tab_1 and tab_2
+                        // then i would like to merge tab_1 and tab_2 into context_ptr->md_cu_arr_nsq
+
+
+
+                       // output is context_ptr->md_cu_arr_nsq  = pred (up to 4421)
+
+                       // Reset mdc_cu_ptr ( mdc output will not be used beting this point) - why rest ?
                         blk_index = 0;
                         while (blk_index < sequence_control_set_ptr->max_block_cnt) {
                             const BlockGeom * blk_geom = get_blk_geom_mds(blk_index);
@@ -2611,7 +2625,7 @@ void* enc_dec_kernel(void *input_ptr)
                             blk_index++;
                         }
                         
-                        // PD0 -> PD1; up to 4421 block(s) -> less block(s)
+                        // input is context_ptr->md_cu_arr_nsq  = pred (up to 4421)
                         init_considered_block(
                             sequence_control_set_ptr,
                             picture_control_set_ptr,
@@ -2623,7 +2637,9 @@ void* enc_dec_kernel(void *input_ptr)
                             sequence_control_set_ptr,
                             picture_control_set_ptr,
                             sb_index);
-                        
+
+                        // output is mdc_cu_ptr : PRED + added blocks after ref
+
                         copy_neighbour_arrays(
                             picture_control_set_ptr,
                             context_ptr->md_context,
