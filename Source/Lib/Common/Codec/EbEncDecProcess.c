@@ -1730,7 +1730,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
 #if MULTI_PASS_PD // Shut spatial SSE @ full loop
     if (context_ptr->pd_pass == PD_PASS_0)
+#if LETS_USE_SPATIAL_SSE
+        context_ptr->spatial_sse_full_loop = EB_TRUE;
+#else
         context_ptr->spatial_sse_full_loop = EB_FALSE;
+#endif
     else if (context_ptr->pd_pass == PD_PASS_1)
         context_ptr->spatial_sse_full_loop = EB_TRUE;
     else
@@ -2096,7 +2100,7 @@ uint64_t  pd_level_tab[9][2][3] = {
 #if NOW_ACT
     {{300,200,100,100,100},{300,200,100,100,100}},
 #else
-    {{150,10,10},{150,10,10}},
+    {{140,25,15},{140,25,15}},
 #endif
     {{150,80,40},{150,80,40}},
     {{100,20,0},{150,50,0}},
@@ -2309,6 +2313,9 @@ static void init_considered_block(
                         &s_depth,
                         &e_depth,
                         blk_geom);
+
+                //s_depth = 0;
+                //e_depth = 0;
 
                 if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
 

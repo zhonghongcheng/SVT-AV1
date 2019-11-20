@@ -368,6 +368,7 @@ extern "C" {
 #if MULTI_PASS_PD
     // Signal to control initial and final pass PD setting(s)
     PD_PASS pd_pass;
+    EbBool nearest_injected;
 #endif
     } ModeDecisionContext;
 

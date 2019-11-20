@@ -223,6 +223,9 @@ extern "C" {
 #define DEEP_REFINEMENT                        1
 #define NOW_ACT                                0
 #define LETS_INJECT_DC                         0
+#define LETS_USE_SPATIAL_SSE                   0
+#define LETS_1_NEAREST                         0
+
 #define SHUT_FAST_COST                         1
 #endif
 #endif

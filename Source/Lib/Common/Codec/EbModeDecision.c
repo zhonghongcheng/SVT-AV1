@@ -2074,6 +2074,15 @@ void inject_mvp_candidates_II(
             }
 #endif
             INCRMENT_CAND_TOTAL_COUNT(canIdx);
+
+#if LETS_1_NEAREST
+            if (context_ptr->pd_pass == PD_PASS_0) {
+                *candTotCnt = canIdx;
+                context_ptr->nearest_injected = 1;
+                return;
+            }
+#endif
+
 #if II_COMP_FLAG
             }
 #endif
@@ -2268,6 +2277,14 @@ void inject_mvp_candidates_II(
                     &candidateArray[canIdx],
                     cur_type);
                 INCRMENT_CAND_TOTAL_COUNT(canIdx);
+
+#if LETS_1_NEAREST
+                if (context_ptr->pd_pass == PD_PASS_0) {
+                    *candTotCnt = canIdx;
+                    context_ptr->nearest_injected = 1;
+                    return;
+                }
+#endif
                 }
             }
 
@@ -4171,12 +4188,22 @@ void  inject_inter_candidates(
             picture_control_set_ptr,
             context_ptr);
 #endif
+#if MULTI_PASS_PD // Shut OBMC, COMB, .. if 1st pass
+    }
+#endif
+
     /**************
          MVP
     ************* */
 
     uint32_t refIt;
+#if MULTI_PASS_PD // Shut OBMC, COMB, .. if 1st pass
+    if (context_ptr->pd_pass == PD_PASS_2) {
+#endif
     //all of ref pairs: (1)single-ref List0  (2)single-ref List1  (3)compound Bi-Dir List0-List1  (4)compound Uni-Dir List0-List0  (5)compound Uni-Dir List1-List1
+#if LETS_1_NEAREST
+    context_ptr->nearest_injected = 0;
+#endif
     for (refIt = 0; refIt < picture_control_set_ptr->parent_pcs_ptr->tot_ref_frame_types; ++refIt) {
         MvReferenceFrame ref_frame_pair = picture_control_set_ptr->parent_pcs_ptr->ref_frame_type_arr[refIt];
         inject_mvp_candidates_II(
@@ -4185,8 +4212,15 @@ void  inject_inter_candidates(
             context_ptr->cu_ptr,
             ref_frame_pair,
             &canTotalCnt);
-    }
 
+#if LETS_1_NEAREST
+        if (context_ptr->nearest_injected)
+            break;
+#endif
+    }
+#if MULTI_PASS_PD // Shut OBMC, COMB, .. if 1st pass
+    }
+#endif
     //----------------------
     //    NEAREST_NEWMV, NEW_NEARESTMV, NEAR_NEWMV, NEW_NEARMV.
     //----------------------
@@ -4205,9 +4239,7 @@ void  inject_inter_candidates(
             }
         }
     }
-#if MULTI_PASS_PD // Shut OBMC, COMB, .. if 1st pass
-    }
-#endif
+
     if (inject_newmv_candidate) {
 
         inject_new_candidates(
