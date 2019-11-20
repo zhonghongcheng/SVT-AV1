@@ -1181,13 +1181,45 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     ModeDecisionContext   *context_ptr) {
     EbErrorType return_error = EB_ErrorNone;
 
+#if MULTI_PASS_PREP_3
+    // Interpolation search Level                     Settings
+    // 0                                              OFF
+    // 1                                              Interpolation search at inter-depth
+    // 2                                              Interpolation search at full loop
+    // 3                                              Chroma blind interpolation search at fast loop
+    // 4                                              Interpolation search at fast loop
+#if MULTI_PASS_PD 
+    if (context_ptr->pd_pass == PD_PASS_0)
+        context_ptr->interpolation_search_level = IT_SEARCH_OFF;
+    else if (context_ptr->pd_pass == PD_PASS_1) {
+        if (picture_control_set_ptr->temporal_layer_index == 0)
+            context_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;
+        else
+            context_ptr->interpolation_search_level = IT_SEARCH_OFF;
+    }
+    else
+#endif
+    if (MR_MODE)
+        context_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP;
+    else if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        context_ptr->interpolation_search_level = IT_SEARCH_OFF;
+    else if (picture_control_set_ptr->enc_mode <= ENC_M2)
+        context_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;
+    else if (picture_control_set_ptr->enc_mode <= ENC_M7)
+        if (picture_control_set_ptr->temporal_layer_index == 0)
+            context_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;
+        else
+            context_ptr->interpolation_search_level = IT_SEARCH_OFF;
+    else
+        context_ptr->interpolation_search_level = IT_SEARCH_OFF;
+#endif
     // Set Chroma Mode
     // Level                Settings
     // CHROMA_MODE_0  0     Full chroma search @ MD
     // CHROMA_MODE_1  1     Fast chroma search @ MD
     // CHROMA_MODE_2  2     Chroma blind @ MD + CFL @ EP
     // CHROMA_MODE_3  3     Chroma blind @ MD + no CFL @ EP
-#if MULTI_PASS_PD // PHASE_0_TEST shut independent chroma search if 1st pass
+#if MULTI_PASS_PD 
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->chroma_level = CHROMA_MODE_2; // or CHROMA_MODE_3 
     else if (context_ptr->pd_pass == PD_PASS_1) {

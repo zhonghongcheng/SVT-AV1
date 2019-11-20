@@ -212,6 +212,7 @@ extern "C" {
 #define MULTI_PASS_PREP_0                      1 // move 1/16th, warp, settings to picture decision process
 #define MULTI_PASS_PREP_1                      1 // context as input to obmc_motion_mode_allowed
 #define MULTI_PASS_PREP_2                      1 // context as input to svt_is_interintra_allowed
+#define MULTI_PASS_PREP_3                      1 // moved interpolation_search_level to context
 #endif
 #if MULTI_PASS_PREP
 #define MULTI_PASS_PD                          1
@@ -802,11 +803,17 @@ typedef enum TxSearchLevel
 
 typedef enum InterpolationSearchLevel
 {
+#if MULTI_PASS_PREP_3
+    IT_SEARCH_OFF,
+    IT_SEARCH_FAST_LOOP_UV_BLIND,
+    IT_SEARCH_FAST_LOOP,
+#else
     IT_SEARCH_OFF,
     IT_SEARCH_INTER_DEPTH,
     IT_SEARCH_FULL_LOOP,
     IT_SEARCH_FAST_LOOP_UV_BLIND,
     IT_SEARCH_FAST_LOOP,
+#endif
 } InterpolationSearchLevel;
 
 typedef enum NsqSearchLevel

@@ -14268,7 +14268,9 @@ extern "C" {
         uint8_t                               tx_search_level;
         uint64_t                              tx_weight;
         uint8_t                               tx_search_reduced_set;
+#if !MULTI_PASS_PREP_3
         uint8_t                               interpolation_search_level;
+#endif
         uint8_t                               nsq_search_level;
 #if PAL_SUP
         uint8_t                               palette_mode;

@@ -6883,8 +6883,12 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
     int64_t *const skip_sse_sb)
 {
     const Av1Common *cm = picture_control_set_ptr->parent_pcs_ptr->av1_cm;//&cpi->common;
+#if MULTI_PASS_PREP_3
+    EbBool use_uv = (md_context_ptr->blk_geom->has_uv && md_context_ptr->chroma_level <= CHROMA_MODE_1 &&  md_context_ptr->interpolation_search_level != IT_SEARCH_FAST_LOOP_UV_BLIND) ? EB_TRUE : EB_FALSE;
+#else
     EbBool use_uv = (md_context_ptr->blk_geom->has_uv && md_context_ptr->chroma_level <= CHROMA_MODE_1 &&
         picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level != IT_SEARCH_FAST_LOOP_UV_BLIND) ? EB_TRUE : EB_FALSE;
+#endif
     const int32_t num_planes = use_uv ? MAX_MB_PLANE : 1;
 
     int32_t i;
@@ -6967,9 +6971,12 @@ static const int32_t filter_sets[DUAL_FILTER_SET_SIZE][2] = {
             const int32_t filter_set_size = DUAL_FILTER_SET_SIZE;
             int32_t best_in_temp = 0;
             uint32_t best_filters = 0;// mbmi->interp_filters;
-
+#if MULTI_PASS_PD
+            if (md_context_ptr->interpolation_search_level && picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header.enable_dual_filter) {
+#else
             if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level &&
                 picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header.enable_dual_filter) {
+#endif
                 int32_t tmp_skip_sb = 0;
                 int64_t tmp_skip_sse = INT64_MAX;
                 int32_t tmp_rs;
@@ -7403,9 +7410,12 @@ EbErrorType inter_pu_prediction_av1(
 
     uint16_t capped_size = md_context_ptr->interpolation_filter_search_blk_size == 0 ? 4 :
                            md_context_ptr->interpolation_filter_search_blk_size == 1 ? 8 : 16 ;
-
+#if MULTI_PASS_PD
+    if (md_context_ptr->interpolation_search_level == IT_SEARCH_OFF || md_context_ptr->hbd_mode_decision)
+#else
     if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level == IT_SEARCH_OFF ||
         md_context_ptr->hbd_mode_decision)
+#endif
     {
         candidate_buffer_ptr->candidate_ptr->interp_filters = 0;
     } else {
