@@ -1187,7 +1187,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // CHROMA_MODE_1  1     Fast chroma search @ MD
     // CHROMA_MODE_2  2     Chroma blind @ MD + CFL @ EP
     // CHROMA_MODE_3  3     Chroma blind @ MD + no CFL @ EP
-#if 0//MULTI_PASS_PD // Shut independent chroma search if 1st pass
+#if MULTI_PASS_PD // PHASE_0_TEST shut independent chroma search if 1st pass
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->chroma_level = CHROMA_MODE_2; // or CHROMA_MODE_3 
     else if (context_ptr->pd_pass == PD_PASS_1) {
