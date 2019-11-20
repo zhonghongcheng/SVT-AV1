@@ -1826,11 +1826,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
     if (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
 #if FIX_ESTIMATE_INTRA
-#if LETS_INJECT_DC
-        if (MR_MODE || context_ptr->pd_pass == PD_PASS_0)
-#else
         if (MR_MODE)
-#endif
 #else
         if (MR_MODE || picture_control_set_ptr->enc_mode == ENC_M0)
 #endif

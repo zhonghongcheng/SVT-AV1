@@ -4293,7 +4293,7 @@ void  inject_inter_candidates(
     ************* */
 
     uint32_t refIt;
-#if MULTI_PASS_PD // Shut OBMC, COMB, .. if 1st pass
+#if MULTI_PASS_PD && !LETS_1_NEAREST// Shut OBMC, COMB, .. if 1st pass
     if (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2) {
 #endif
     //all of ref pairs: (1)single-ref List0  (2)single-ref List1  (3)compound Bi-Dir List0-List1  (4)compound Uni-Dir List0-List0  (5)compound Uni-Dir List1-List1
@@ -4314,7 +4314,7 @@ void  inject_inter_candidates(
             break;
 #endif
     }
-#if MULTI_PASS_PD // Shut OBMC, COMB, .. if 1st pass
+#if MULTI_PASS_PD  && !LETS_1_NEAREST// Shut OBMC, COMB, .. if 1st pass
     }
 #endif
     //----------------------
@@ -5737,7 +5737,7 @@ EbErrorType generate_md_stage_0_cand(
     // Intra
     if (context_ptr->blk_geom->sq_size < 128) {
 #if LETS_INJECT_DC
-        if (context_ptr->pd_pass && picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode >= 5 && context_ptr->blk_geom->sq_size > 4 && context_ptr->blk_geom->shape == PART_N)
+        if ((context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2) && picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode >= 5 && context_ptr->blk_geom->sq_size > 4 && context_ptr->blk_geom->shape == PART_N)
 #else
         if (picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode >= 5 && context_ptr->blk_geom->sq_size > 4 && context_ptr->blk_geom->shape == PART_N)
 #endif
