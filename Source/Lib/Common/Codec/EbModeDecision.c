@@ -4470,9 +4470,7 @@ void  inject_inter_candidates(
             use_close_loop_me,
             close_loop_me_index);
     }
-#if MULTI_PASS_PD // Shut bipred 3x3 and unipred 3x3 if 1st pass
-    if (context_ptr->pd_pass == PD_PASS_2)
-#endif
+
     if (inject_newmv_candidate) {
         if (isCompoundEnabled) {
             if (allow_bipred) {
@@ -4551,9 +4549,7 @@ void  inject_inter_candidates(
                 }
             }
 #endif
-#if MULTI_PASS_PD // Shut pred me if 1 st pass
-        if (context_ptr->pd_pass == PD_PASS_2)
-#endif
+
         if (context_ptr->predictive_me_level)
             inject_predictive_me_candidates(
                 context_ptr,
@@ -5603,7 +5599,7 @@ EbErrorType generate_md_stage_0_cand(
    }
 #endif
 #if MULTI_PASS_PD && !LETS_INJECT_DC// Shut intra test if 1st pass
-   if (context_ptr->pd_pass == PD_PASS_2) {
+   if (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2) {
 #endif
     //----------------------
     // Intra
