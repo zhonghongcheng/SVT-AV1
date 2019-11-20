@@ -80,12 +80,22 @@ extern "C" {
 #define M1_NO_SC_ATB                0
 #define M3_NO_SC_REF_COUNT          0
 
+#define M2_NO_SC_OBMC               0
+#define M0_PALETTE_IN_M2            0
+#define M2_NON_SC_MD_STAGE_S_2      0
+#define M2_NON_SC_MD_STAGE_C_2      0
+#define M3_SC_4xN                   0
+#define M3_SC_UNIPRED_3x3           0
+#define M3_SC_TRELLIS               0
+#define M3_SC_NSQ_DEPTH             0
+#define M3_INTRA_PRED               0
+
 #define M1_UNI_3x3_INJEC            0
 #define M1_PRED_ME                  0
 #define M1_FRACT_SEARCH             0
 #define M1_NSQ_LEVEL                0
 #define M1_NO_SC_REF_COUNT          0
-#define M3_INTRA_PRED               0
+
 
 
     //SC M2-M3//

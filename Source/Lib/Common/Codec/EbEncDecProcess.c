@@ -1325,8 +1325,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->new_nearest_near_comb_injection = 0;
 #if sc_rtime_presets
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
-#if SHIFT_M4_TO_M3
-        if (picture_control_set_ptr->enc_mode <= ENC_M2)
+
+#if M3_SC_4xN
+        if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#elif SHIFT_M4_TO_M3 
+            if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #else
         if (picture_control_set_ptr->enc_mode <= ENC_M3)
 #endif
@@ -1374,7 +1377,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
             context_ptr->unipred3x3_injection = 1;
 #if sc_rtime_presets
-#if SHIFT_M4_TO_M3 
+#if M3_SC_UNIPRED_3x3
+        else if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#elif SHIFT_M4_TO_M3 
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #else
         else if (picture_control_set_ptr->enc_mode <= ENC_M3)
@@ -1688,6 +1693,8 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
 #if M2_TRELLIS
         if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#elif M3_SC_TRELLIS
+        if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #else
         if (picture_control_set_ptr->enc_mode <= ENC_M2)
 #endif
@@ -1847,7 +1854,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if STAGE_2_COUNT_PRUNING_TH_S
     // TH_S(for candidate removal per class)
     // Remove candidate if deviation to the best higher than TH_S
-#if M1_NON_SC_MD_STAGE_S_2
+#if M1_NON_SC_MD_STAGE_S_2 || M2_NON_SC_MD_STAGE_S_2
     if (MR_MODE)
 #else
     if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
@@ -1884,7 +1891,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if STAGE_2_COUNT_PRUNING_TH_C
     // TH_C(for class removal)
     // Remove class if deviation to the best higher than TH_C
-#if M1_NON_SC_MD_STAGE_C_2 ||M0_CANDIDATE_SC_1
+#if M1_NON_SC_MD_STAGE_C_2 ||M0_CANDIDATE_SC_1|| M2_NON_SC_MD_STAGE_C_2
     if (MR_MODE )
 #else
     if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected) 
