@@ -2053,10 +2053,12 @@ static void forward_considered_blocks(
     SequenceControlSet *sequence_control_set_ptr,
     PictureControlSet  *picture_control_set_ptr,
     uint32_t            sb_index) {
+
     MdcLcuData *resultsPtr = &picture_control_set_ptr->mdc_sb_array[sb_index];
     resultsPtr->leaf_count = 0;
     uint32_t  blk_index = 0;
     uint32_t d1_blocks_accumlated, tot_d1_blocks = 0, d1_block_idx;
+
     EbBool split_flag;
     while (blk_index < sequence_control_set_ptr->max_block_cnt) {
         const BlockGeom * blk_geom = get_blk_geom_mds(blk_index);
@@ -2119,9 +2121,9 @@ void derive_start_end_depth(
 
     uint8_t depth_offset = sb_size == BLOCK_128X128 ? 0 : 1;
     int8_t depth = blk_geom->depth + depth_offset;
-
-
+    
     uint8_t encode_mode = picture_control_set_ptr->parent_pcs_ptr->enc_mode;
+
     int8_t start_depth = sb_size == BLOCK_128X128 ? 0 : 1;
     int8_t end_depth = 5;
     int8_t depthp1 = depth + 1 <= end_depth ? depth + 1 : depth;
@@ -2280,14 +2282,17 @@ static void init_considered_block(
     int8_t ref_mode = 0; // 0: adaptive, 1: exclusive
 
     while (blk_index < sequence_control_set_ptr->max_block_cnt) {
+
         const BlockGeom * blk_geom = get_blk_geom_mds(blk_index);
         tot_d1_blocks =
             blk_geom->sq_size == 128 ? 17 :
             blk_geom->sq_size > 8 ? 25 :
             blk_geom->sq_size == 8 ? 5 : 1;
 
-        //if the parent square is inside inject this block
+        // if the parent square is inside inject this block
         uint8_t is_blk_allowed = picture_control_set_ptr->slice_type != I_SLICE ? 1 : (blk_geom->sq_size < 128) ? 1 : 0;
+
+        // derive split_flag based on ref_mode
         if (ref_mode)
             split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
         else
@@ -2298,17 +2303,18 @@ static void init_considered_block(
 
                 int8_t s_depth = 0;
                 int8_t e_depth = 0;
-
-
-                if (sb_params->is_complete_sb && (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE))
-                    derive_start_end_depth(
-                        picture_control_set_ptr,
-                        sb_ptr,
-                        sb_index,
-                        sequence_control_set_ptr->seq_header.sb_size,
-                        &s_depth,
-                        &e_depth,
-                        blk_geom);
+                
+                // ---> why the is_complete_sb check ?
+                if (context_ptr->pd_pass == PD_PASS_0)
+                    if (sb_params->is_complete_sb && (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE)) 
+                         derive_start_end_depth(
+                            picture_control_set_ptr,
+                            sb_ptr,
+                            sb_index,
+                            sequence_control_set_ptr->seq_header.sb_size,
+                            &s_depth,
+                            &e_depth,
+                            blk_geom);
 
                 //s_depth = 0;
                 //e_depth = 0;
@@ -2560,9 +2566,13 @@ void* enc_dec_kernel(void *input_ptr)
                     }
 
 #if MULTI_PASS_PD
+                    // ---> why the is_complete_sb check ?
                     EbBool multi_stage_pd = (!sequence_control_set_ptr->use_output_stat_file && !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_control_set_ptr->slice_type != I_SLICE && sequence_control_set_ptr->sb_geom[sb_index].is_complete_sb) ? EB_TRUE : EB_FALSE;
-
+                    
                     if (multi_stage_pd) {
+                        MdcLcuData *mdc_cu_ptr = &picture_control_set_ptr->mdc_sb_array[sb_index];
+                        uint32_t  blk_index = 0;
+
                         // Save a clean copy of the neighbor arrays 
                         copy_neighbour_arrays(
                             picture_control_set_ptr,
@@ -2592,8 +2602,57 @@ void* enc_dec_kernel(void *input_ptr)
                             context_ptr->md_context);
 
                        // Reset mdc array ( mdc output will not be used beting this point) - why rest ?
-                        MdcLcuData *mdc_cu_ptr = &picture_control_set_ptr->mdc_sb_array[sb_index];
-                        uint32_t  blk_index = 0;
+                        blk_index = 0;
+                        while (blk_index < sequence_control_set_ptr->max_block_cnt) {
+                            const BlockGeom * blk_geom = get_blk_geom_mds(blk_index);
+                            mdc_cu_ptr->leaf_data_array[blk_index].consider_block = 0;
+                            mdc_cu_ptr->leaf_data_array[blk_index].split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
+                            mdc_cu_ptr->leaf_data_array[blk_index].refined_split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
+                            blk_index++;
+                        }
+                        
+                        // PD0 -> PD1; up to 4421 block(s) -> less block(s)
+                        init_considered_block(
+                            sequence_control_set_ptr,
+                            picture_control_set_ptr,
+                            context_ptr->md_context,
+                            sb_index);
+                        
+                        // Re-generate final pass input
+                        forward_considered_blocks(
+                            sequence_control_set_ptr,
+                            picture_control_set_ptr,
+                            sb_index);
+                        
+                        copy_neighbour_arrays(
+                            picture_control_set_ptr,
+                            context_ptr->md_context,
+                            MULTI_STAGE_PD_NEIGHBOR_ARRAY_INDEX,
+                            MD_NEIGHBOR_ARRAY_INDEX,
+                            0,
+                            sb_origin_x,
+                            sb_origin_y);
+#if ADD_PD_1
+                        // 2nd PD Pass EncDec Kernel Signal(s) derivation
+                        context_ptr->md_context->pd_pass = PD_PASS_1;
+                        signal_derivation_enc_dec_kernel_oq(
+                            sequence_control_set_ptr,
+                            picture_control_set_ptr,
+                            context_ptr->md_context);
+
+                        mode_decision_sb(
+                            sequence_control_set_ptr,
+                            picture_control_set_ptr,
+                            mdcPtr,
+                            sb_ptr,
+                            sb_origin_x,
+                            sb_origin_y,
+                            sb_index,
+                            context_ptr->ss_mecontext,
+                            context_ptr->md_context);
+
+                        // Reset mdc array ( mdc output will not be used beting this point) - why rest ?
+                        blk_index = 0;
                         while (blk_index < sequence_control_set_ptr->max_block_cnt) {
                             const BlockGeom * blk_geom = get_blk_geom_mds(blk_index);
                             mdc_cu_ptr->leaf_data_array[blk_index].consider_block = 0;
@@ -2623,6 +2682,7 @@ void* enc_dec_kernel(void *input_ptr)
                             0,
                             sb_origin_x,
                             sb_origin_y);
+#endif
                     }
 #endif
 #if MULTI_PASS_PD

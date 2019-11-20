@@ -1604,6 +1604,43 @@ void set_md_stage_counts(
     else
         memset(context_ptr->bypass_md_stage_1, EB_TRUE, CAND_CLASS_TOTAL);
 
+#if MULTI_PASS_PD // Shut md-staging if 1st pass
+    if (context_ptr->pd_pass == PD_PASS_0) {
+        context_ptr->md_stage_1_count[CAND_CLASS_0] = 1;
+        context_ptr->md_stage_1_count[CAND_CLASS_1] = 1;
+        context_ptr->md_stage_1_count[CAND_CLASS_2] = 1;
+        context_ptr->md_stage_1_count[CAND_CLASS_3] = 1;
+        context_ptr->md_stage_1_count[CAND_CLASS_4] = 1;
+        context_ptr->md_stage_1_count[CAND_CLASS_5] = 1;
+        context_ptr->md_stage_1_count[CAND_CLASS_6] = 1;
+        context_ptr->md_stage_1_count[CAND_CLASS_7] = 1;
+    }
+    else  if (context_ptr->pd_pass == PD_PASS_1) {
+        uint8_t is_ref = picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag;
+        uint8_t is_base = (picture_control_set_ptr->temporal_layer_index == 0) ? 1 : 0;
+        uint8_t is_intra = (picture_control_set_ptr->slice_type == I_SLICE) ? 1 : 0;
+
+        // Stage 2 Cand Count
+        context_ptr->md_stage_1_count[CAND_CLASS_0] = is_intra ? fastCandidateTotalCount : is_ref ? 16 : 8;
+        context_ptr->md_stage_1_count[CAND_CLASS_1] = is_intra ? 0 : is_ref ? 16 : 8;
+        context_ptr->md_stage_1_count[CAND_CLASS_2] = is_intra ? 0 : is_ref ? 16 : 8;
+        context_ptr->md_stage_1_count[CAND_CLASS_3] = is_intra ? 0 : is_ref ? 16 : 8;
+        context_ptr->md_stage_1_count[CAND_CLASS_4] = is_intra ? 0 : is_ref ? 14 : 6;
+        context_ptr->md_stage_1_count[CAND_CLASS_5] = 16;
+        context_ptr->md_stage_1_count[CAND_CLASS_6] = is_base ? 10 : 5;
+        context_ptr->md_stage_1_count[CAND_CLASS_7] = 14;
+
+        // Stage 2 Cand Count
+        context_ptr->md_stage_2_count[CAND_CLASS_0] = is_intra ? 10 : is_ref ? 10 : 4;
+        context_ptr->md_stage_2_count[CAND_CLASS_1] = is_intra ? 0 : is_ref ? 6 : 3;
+        context_ptr->md_stage_2_count[CAND_CLASS_2] = is_intra ? 0 : is_ref ? 6 : 3;
+        context_ptr->md_stage_2_count[CAND_CLASS_3] = is_intra ? 0 : is_ref ? 6 : 3;
+        context_ptr->md_stage_2_count[CAND_CLASS_4] = is_intra ? 0 : is_ref ? 12 : 4;
+        context_ptr->md_stage_2_count[CAND_CLASS_6] = is_base ? 5 : is_ref ? 3 : 2;
+        context_ptr->md_stage_1_count[CAND_CLASS_7] = 7;
+    }
+    else {
+#endif
     // Step 2: set md_stage count
     context_ptr->md_stage_1_count[CAND_CLASS_0] = (picture_control_set_ptr->slice_type == I_SLICE) ? fastCandidateTotalCount : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTRA_NFL : (INTRA_NFL >> 1);
     context_ptr->md_stage_1_count[CAND_CLASS_1] = (picture_control_set_ptr->slice_type == I_SLICE) ? 0 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? INTER_NEW_NFL : (INTER_NEW_NFL >> 1);
@@ -1922,14 +1959,6 @@ void set_md_stage_counts(
 #endif
 
 #if MULTI_PASS_PD // Shut md-staging if 1st pass
-    if (context_ptr->pd_pass == PD_PASS_0) {     
-        context_ptr->md_stage_1_count[CAND_CLASS_0] = 1;
-        context_ptr->md_stage_1_count[CAND_CLASS_1] = 1;
-        context_ptr->md_stage_1_count[CAND_CLASS_2] = 1;
-        context_ptr->md_stage_1_count[CAND_CLASS_3] = 1;
-        context_ptr->md_stage_1_count[CAND_CLASS_4] = 1;
-        context_ptr->md_stage_1_count[CAND_CLASS_5] = 1;
-        context_ptr->md_stage_1_count[CAND_CLASS_6] = 1;
     }
 #endif
     // Step 3: update count for md_stage_1 and d_stage_2 if bypassed (no NIC setting should be done beyond this point)

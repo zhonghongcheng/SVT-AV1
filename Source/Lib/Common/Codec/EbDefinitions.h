@@ -215,10 +215,6 @@ extern "C" {
 #endif
 #if MULTI_PASS_PREP
 #define MULTI_PASS_PD                          1
-#if MULTI_PASS_PD
-#define SHUT_MVP                               1
-#endif
-#endif
 #define PRED_ONLY                              1 
 #define PRED_PLUS_REFINEMENT                   1
 #if PRED_PLUS_REFINEMENT
@@ -229,6 +225,9 @@ extern "C" {
 #define LETS_1_NEAREST                         0
 
 #define SHUT_FAST_COST                         1
+
+#define ADD_PD_1                               0
+#endif
 #endif
 #endif
 #define SHUT_FILTERING                         0 // CDEF RESTORATION DLF
