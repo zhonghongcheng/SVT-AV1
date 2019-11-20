@@ -578,7 +578,9 @@ extern "C" {
 #if ADD_DELTA_QP_SUPPORT
         uint16_t                        qp;
         int16_t                         delta_qp;
+#if !MEM_RED
         int16_t                         org_delta_qp;
+#endif
 #endif
         uint32_t                        total_bits;
 
@@ -588,7 +590,7 @@ extern "C" {
         uint8_t                       depth_ranking[NUMBER_OF_DEPTH];
         uint64_t                      depth_cost[NUMBER_OF_DEPTH];
 #endif
-        TileInfo tile_info;
+        TileInfo                      tile_info;
     } LargestCodingUnit;
 
     extern EbErrorType largest_coding_unit_ctor(

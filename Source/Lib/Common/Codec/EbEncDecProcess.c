@@ -1760,8 +1760,9 @@ void* enc_dec_kernel(void *input_ptr)
                     lcuRowIndexCount = (x_lcu_index == picture_width_in_sb - 1) ? lcuRowIndexCount + 1 : lcuRowIndexCount;
                     mdcPtr = &picture_control_set_ptr->mdc_sb_array[sb_index];
                     context_ptr->sb_index = sb_index;
+#if !MEM_RED
                     context_ptr->md_context->cu_use_ref_src_flag = (picture_control_set_ptr->parent_pcs_ptr->use_src_ref) && (picture_control_set_ptr->parent_pcs_ptr->edge_results_ptr[sb_index].edge_block_num == EB_FALSE || picture_control_set_ptr->parent_pcs_ptr->sb_flat_noise_array[sb_index]) ? EB_TRUE : EB_FALSE;
-
+#endif
                     if (picture_control_set_ptr->update_cdf) {
                         picture_control_set_ptr->rate_est_array[sb_index] = *picture_control_set_ptr->md_rate_estimation_array;
 #if CABAC_SERIAL

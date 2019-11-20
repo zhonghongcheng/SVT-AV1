@@ -115,7 +115,7 @@ void DerivePictureActivityStatistics(
     picture_control_set_ptr->non_moving_index_max_distance = (uint16_t)(ABS((int32_t)(picture_control_set_ptr->non_moving_index_average) - (int32_t)nonMovingIndexMax));
     return;
 }
-
+#if !MEM_RED
 void GrassLcu(
     SourceBasedOperationsContext        *context_ptr,
     SequenceControlSet                *sequence_control_set_ptr,
@@ -193,6 +193,7 @@ void GrassSkinPicture(
     PictureParentControlSet            *picture_control_set_ptr) {
     picture_control_set_ptr->grass_percentage_in_picture = (uint8_t)(context_ptr->picture_num_grass_sb * 100 / picture_control_set_ptr->sb_total_count);
 }
+#endif
 
 void SetDefaultDeltaQpRange(
     SourceBasedOperationsContext    *context_ptr,
@@ -225,7 +226,7 @@ void SetDefaultDeltaQpRange(
     context_ptr->min_delta_qp = min_delta_qp;
     context_ptr->max_delta_qp = max_delta_qp;
 }
-
+#if !MEM_RED
 void DetermineMorePotentialAuraAreas(
     SequenceControlSet        *sequence_control_set_ptr,
     PictureParentControlSet    *picture_control_set_ptr)
@@ -266,7 +267,6 @@ void DetermineMorePotentialAuraAreas(
     // To check the percentage of potential aura in the picture.. If a large area is detected then this is not isolated
     picture_control_set_ptr->percentage_of_edgein_light_background = (uint8_t)(countOfEdgeBlocks * 100 / sb_total_count);
 }
-
 /***************************************************
 * Detects the presence of dark area
 ***************************************************/
@@ -308,6 +308,7 @@ void DeriveHighDarkAreaDensityFlag(
     whiteAreaPercentage = (whiteSamplesCount * 100) / (sequence_control_set_ptr->seq_header.max_frame_width * sequence_control_set_ptr->seq_header.max_frame_height);
     picture_control_set_ptr->high_dark_low_light_area_density_flag = (EbBool)(blackAreaPercentage >= MIN_BLACK_AREA_PERCENTAGE) && (whiteAreaPercentage >= MIN_WHITE_AREA_PERCENTAGE);
 }
+#endif
 #define NORM_FACTOR    10
 #define VAR_MIN        10
 #define VAR_MAX        300
@@ -375,12 +376,12 @@ void* source_based_operations_kernel(void *input_ptr)
         inputResultsPtr = (InitialRateControlResults*)inputResultsWrapperPtr->object_ptr;
         picture_control_set_ptr = (PictureParentControlSet*)inputResultsPtr->picture_control_set_wrapper_ptr->object_ptr;
         sequence_control_set_ptr = (SequenceControlSet*)picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr;
-
+#if !MEM_RED
         picture_control_set_ptr->dark_back_groundlight_fore_ground = EB_FALSE;
         context_ptr->picture_num_grass_sb = 0;
-
-        context_ptr->sb_cmplx_contrast_count = 0;
         context_ptr->sb_high_contrast_count = 0;
+#endif
+        context_ptr->sb_cmplx_contrast_count = 0;
         context_ptr->complete_sb_count = 0;
         uint32_t sb_total_count = picture_control_set_ptr->sb_total_count;
         uint32_t sb_index;
@@ -401,13 +402,14 @@ void* source_based_operations_kernel(void *input_ptr)
             context_ptr->y_mean_ptr = y_mean_ptr;
             context_ptr->cr_mean_ptr = cr_mean_ptr;
             context_ptr->cb_mean_ptr = cb_mean_ptr;
-
+#if !MEM_RED
             // Grass detection
             GrassLcu(
                 context_ptr,
                 sequence_control_set_ptr,
                 picture_control_set_ptr,
                 sb_index);
+#endif
 
             // Spatial high contrast classifier
             if (is_complete_sb) {
@@ -429,7 +431,7 @@ void* source_based_operations_kernel(void *input_ptr)
             picture_control_set_ptr,
             picture_control_set_ptr->slice_type == I_SLICE ? EB_FALSE : picture_control_set_ptr->scene_transition_flag[REF_LIST_0]);
         // Dark density derivation (histograms not available when no SCD)
-
+#if !MEM_RED
         DeriveHighDarkAreaDensityFlag(
             sequence_control_set_ptr,
             picture_control_set_ptr);
@@ -437,16 +439,18 @@ void* source_based_operations_kernel(void *input_ptr)
         DetermineMorePotentialAuraAreas(
             sequence_control_set_ptr,
             picture_control_set_ptr);
+#endif
 
         // Activity statistics derivation
         DerivePictureActivityStatistics(
             sequence_control_set_ptr,
             picture_control_set_ptr);
-
+#if !MEM_RED
         // Skin & Grass detection
         GrassSkinPicture(
             context_ptr,
             picture_control_set_ptr);
+#endif
         // Get Empty Results Object
         eb_get_empty_object(
             context_ptr->picture_demux_results_output_fifo_ptr,

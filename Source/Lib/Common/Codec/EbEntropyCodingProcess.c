@@ -185,11 +185,15 @@ static void ResetEntropyCodingPicture(
     if (picture_control_set_ptr->parent_pcs_ptr->frm_hdr.allow_intrabc)
         assert(picture_control_set_ptr->parent_pcs_ptr->frm_hdr.delta_lf_params.delta_lf_present == 0);
     if (picture_control_set_ptr->parent_pcs_ptr->frm_hdr.delta_lf_params.delta_lf_present) {
+#if !MEM_RED
         picture_control_set_ptr->parent_pcs_ptr->prev_delta_lf_from_base = 0;
+#endif
         const int32_t frame_lf_count =
             picture_control_set_ptr->parent_pcs_ptr->monochrome == 0 ? FRAME_LF_COUNT : FRAME_LF_COUNT - 2;
+#if !MEM_RED
         for (int32_t lf_id = 0; lf_id < frame_lf_count; ++lf_id)
             picture_control_set_ptr->parent_pcs_ptr->prev_delta_lf[lf_id] = 0;
+#endif
     }
 #endif
 
@@ -241,11 +245,15 @@ static void reset_ec_tile(
     if (picture_control_set_ptr->parent_pcs_ptr->frm_hdr.allow_intrabc)
         assert(picture_control_set_ptr->parent_pcs_ptr->frm_hdr.delta_lf_params.delta_lf_present == 0);
     if (picture_control_set_ptr->parent_pcs_ptr->frm_hdr.delta_lf_params.delta_lf_present) {
+#if !MEM_RED
         picture_control_set_ptr->parent_pcs_ptr->prev_delta_lf_from_base = 0;
+#endif
         const int32_t frame_lf_count =
             picture_control_set_ptr->parent_pcs_ptr->monochrome == 0 ? FRAME_LF_COUNT : FRAME_LF_COUNT - 2;
+#if !MEM_RED
         for (int32_t lf_id = 0; lf_id < frame_lf_count; ++lf_id)
             picture_control_set_ptr->parent_pcs_ptr->prev_delta_lf[lf_id] = 0;
+#endif
     }
 #endif
 

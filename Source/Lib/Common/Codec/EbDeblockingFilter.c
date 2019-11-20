@@ -953,7 +953,11 @@ static TxSize set_lpf_parameters(
             const uint32_t curr_level =
                 get_filter_level(&pcs_ptr->parent_pcs_ptr->frm_hdr,
                     &pcs_ptr->parent_pcs_ptr->lf_info, edge_dir, plane,
+#if MEM_RED
+                    0, 0 /*segment_id*/,
+#else
                     pcs_ptr->parent_pcs_ptr->curr_delta_lf, 0 /*segment_id*/,
+#endif
                     mbmi->block_mi.mode, mbmi->block_mi.ref_frame[0]);
 
             const int32_t curr_skipped = mbmi->block_mi.skip &&
@@ -975,7 +979,11 @@ static TxSize set_lpf_parameters(
                     const uint32_t pv_lvl =
                         get_filter_level(&pcs_ptr->parent_pcs_ptr->frm_hdr,
                             &pcs_ptr->parent_pcs_ptr->lf_info, edge_dir, plane,
+#if MEM_RED
+                            0, 0 /*segment_id*/,
+#else
                             pcs_ptr->parent_pcs_ptr->curr_delta_lf, 0 /*segment_id*/,
+#endif
                             mi_prev->block_mi.mode, mi_prev->block_mi.ref_frame[0]);
 
                     const int32_t pv_skip = mi_prev->block_mi.skip &&

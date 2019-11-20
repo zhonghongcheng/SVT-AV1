@@ -91,8 +91,10 @@ extern "C" {
         uint8_t                                intra_coded_area_sb[MAX_NUMBER_OF_TREEBLOCKS_PER_PICTURE];//percentage of intra coded area 0-100%
         uint8_t                                pmp_masking_level_enc_dec;
         EbBool                                 skip_qpm_flag;
+#if !MEM_RED
         int16_t                                min_delta_qp_weight;
         int16_t                                max_delta_qp_weight;
+#endif
         int8_t                                 min_delta_qp[4];
         int8_t                                 max_delta_qp[4];
         int8_t                                 non_moving_delta_qp;

@@ -1128,9 +1128,9 @@ static void picture_parent_control_set_dctor(EbPtr p)
 
     EB_FREE_ARRAY(obj->sharp_edge_sb_flag);
     EB_FREE_ARRAY(obj->sb_stat_array);
-
+#if !MEM_RED
     EB_FREE_ARRAY(obj->complex_sb_array);
-
+#endif
     EB_FREE_ARRAY(obj->sb_depth_mode_array);
 
     {
@@ -1228,7 +1228,6 @@ EbErrorType picture_parent_control_set_ctor(
 
     EB_MALLOC_2D(object_ptr->ois_sb_results, object_ptr->sb_total_count, 1);
     EB_MALLOC_2D(object_ptr->ois_candicate, object_ptr->sb_total_count,  MAX_OIS_CANDIDATES * CU_MAX_COUNT);
-
     for (sb_index = 0; sb_index < object_ptr->sb_total_count; ++sb_index) {
         uint32_t cuIdx;
         for (cuIdx = 0; cuIdx < CU_MAX_COUNT; ++cuIdx)
@@ -1264,9 +1263,9 @@ EbErrorType picture_parent_control_set_ctor(
 
     EB_MALLOC_ARRAY(object_ptr->sharp_edge_sb_flag, object_ptr->sb_total_count);
     EB_MALLOC_ARRAY(object_ptr->sb_stat_array, object_ptr->sb_total_count);
-
+#if !MEM_RED
     EB_MALLOC_ARRAY(object_ptr->complex_sb_array, object_ptr->sb_total_count);
-
+#endif
     EB_CREATE_MUTEX(object_ptr->rc_distortion_histogram_mutex);
 
     EB_MALLOC_ARRAY(object_ptr->sb_depth_mode_array, object_ptr->sb_total_count);

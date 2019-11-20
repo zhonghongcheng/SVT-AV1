@@ -4449,12 +4449,16 @@ static void WriteUncompressedHeaderObu(SequenceControlSet *scs_ptr/*Av1Comp *cpi
                 eb_aom_wb_write_bit(wb, frm_hdr->delta_lf_params.delta_lf_present);
             if (frm_hdr->delta_lf_params.delta_lf_present) {
                 eb_aom_wb_write_literal(wb, OD_ILOG_NZ(frm_hdr->delta_lf_params.delta_lf_res) - 1, 2);
+#if !MEM_RED
                 pcs_ptr->prev_delta_lf_from_base = 0;
+#endif
                 eb_aom_wb_write_bit(wb, frm_hdr->delta_lf_params.delta_lf_multi);
                 const int32_t frame_lf_count =
                     pcs_ptr->monochrome == 0 ? FRAME_LF_COUNT : FRAME_LF_COUNT - 2;
+#if !MEM_RED
                 for (int32_t lf_id = 0; lf_id < frame_lf_count; ++lf_id)
                     pcs_ptr->prev_delta_lf[lf_id] = 0;
+#endif
             }
 #else
             printf("ERROR[AN]: delta_q_present_flag not supported yet\n");

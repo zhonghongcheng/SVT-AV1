@@ -152,16 +152,18 @@ void mode_decision_update_neighbor_arrays(
             bwdith,
             bheight,
             NEIGHBOR_ARRAY_UNIT_FULL_MASK);
+#if !MEM_RED
         if (picture_control_set_ptr->parent_pcs_ptr->skip_sub_blks)
-        // Intra Luma Mode Update
-        neighbor_array_unit_mode_write(
-            context_ptr->leaf_depth_neighbor_array,
-            (uint8_t*)&context_ptr->blk_geom->bsize,//(uint8_t*)luma_mode,
-            origin_x,
-            origin_y,
-            bwdith,
-            bheight,
-            NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
+            // Intra Luma Mode Update
+            neighbor_array_unit_mode_write(
+                context_ptr->leaf_depth_neighbor_array,
+                (uint8_t*)&context_ptr->blk_geom->bsize,//(uint8_t*)luma_mode,
+                origin_x,
+                origin_y,
+                bwdith,
+                bheight,
+                NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
+#endif
         // Intra Luma Mode Update
         neighbor_array_unit_mode_write(
             context_ptr->intra_luma_mode_neighbor_array,
@@ -7306,6 +7308,7 @@ void  order_nsq_table(
         }
     }
 }
+#if !MEM_RED
 uint8_t check_skip_sub_blks(
     PictureControlSet              *picture_control_set_ptr,
     ModeDecisionContext            *context_ptr,
@@ -7321,7 +7324,7 @@ uint8_t check_skip_sub_blks(
             }
     return skip_sub_blocks;
 }
-
+#endif
 // Hsan (chroma search) : av1_get_tx_type() to define as extern
 void search_best_independent_uv_mode(
     PictureControlSet     *picture_control_set_ptr,
@@ -7738,6 +7741,7 @@ void md_encode_block(
             context_ptr->mode_type_neighbor_array,
             context_ptr->leaf_depth_neighbor_array,
             context_ptr->leaf_partition_neighbor_array);
+#if !MEM_RED
          // Skip sub blocks if the current block has the same depth as the left block and above block
         if (picture_control_set_ptr->parent_pcs_ptr->skip_sub_blks)
             *skip_sub_blocks =check_skip_sub_blks(picture_control_set_ptr,
@@ -7745,6 +7749,9 @@ void md_encode_block(
                                                   cu_ptr,
                                                   is_complete_sb,
                                                   lcuAddr);
+#else 
+        UNUSED(skip_sub_blocks);
+#endif
 
         // Initialize uv_search_path
         context_ptr->uv_search_path = EB_FALSE;

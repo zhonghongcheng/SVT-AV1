@@ -14050,8 +14050,10 @@ extern "C" {
 
         uint8_t                               fade_out_from_black;
         uint8_t                               fade_in_to_black;
+#if !GLOBAL_WARPED_MOTION || !EIGHT_PEL_PREDICTIVE_ME
         EbBool                                is_pan;
         EbBool                                is_tilt;
+#endif
         uint8_t                              *sb_flat_noise_array;
         EdgeLcuResults                     *edge_results_ptr;                // used by EncDecProcess()
         uint8_t                              *sharp_edge_sb_flag;
@@ -14060,11 +14062,12 @@ extern "C" {
         int16_t                               non_moving_index_min_distance;
         int16_t                               non_moving_index_max_distance;
         uint16_t                              qp_scaling_average_complexity;
+        SbStat                               *sb_stat_array;
+        uint8_t                               very_low_var_pic_flag;
+#if !MEM_RED
         uint8_t                               grass_percentage_in_picture;
         uint8_t                               percentage_of_edgein_light_background;
         EbBool                                dark_back_groundlight_fore_ground;
-        SbStat                            *sb_stat_array;
-        uint8_t                               very_low_var_pic_flag;
         EbBool                                high_dark_area_density_flag;        // computed @ PictureAnalysisProcess() and used @ SourceBasedOperationsProcess()
         EbBool                                high_dark_low_light_area_density_flag;        // computed @ PictureAnalysisProcess() and used @ SourceBasedOperationsProcess()
         uint32_t                              intra_complexity_min[4];
@@ -14084,6 +14087,7 @@ extern "C" {
         int32_t                               intra_max_distance[4];
         int32_t                               inter_min_distance[4];
         int32_t                               inter_max_distance[4];
+#endif
         // Histograms
         uint32_t                          ****picture_histogram;
         uint64_t                              average_intensity_per_region[MAX_NUMBER_OF_REGIONS_IN_WIDTH][MAX_NUMBER_OF_REGIONS_IN_HEIGHT][3];
@@ -14139,16 +14143,19 @@ extern "C" {
         EbEncMode                             snd_pass_enc_mode;
 #endif
         EB_SB_DEPTH_MODE                     *sb_depth_mode_array;
-        EbSbComplexityStatus                 *complex_sb_array;
         EbCu8x8Mode                           cu8x8_mode;
+#if !MEM_RED
+        EbSbComplexityStatus                 *complex_sb_array;
         EbBool                                use_src_ref;
         EbBool                                limit_ois_to_dc_mode_flag;
-
+#endif
         // Multi-modes signal(s)
         EbPictureDepthMode                    pic_depth_mode;
         uint8_t                               loop_filter_mode;
         uint8_t                               intra_pred_mode;
+#if !MEM_RED
         uint8_t                               skip_sub_blks;
+#endif
         uint8_t                               atb_mode;
         uint8_t                               frame_end_cdf_update_mode; // mm-signal: 0: OFF, 1:ON
         //**********************************************************************************************************//
@@ -14160,9 +14167,10 @@ extern "C" {
 
         // Flag for a frame used as a reference - not written to the bitstream
         int32_t                               is_reference_frame;
-
+#if !MEM_RED
         // Flag signaling that the frame is encoded using only INTRA modes.
         uint8_t                               intra_only;
+#endif
         /* profile settings */
 #if CONFIG_ENTROPY_STATS
         int32_t                               coef_cdf_category;
@@ -14194,13 +14202,17 @@ extern "C" {
         int32_t                               nb_cdef_strengths;
 #if PREDICT_NSQ_SHAPE
         ReferenceMode                         reference_mode;
+#if !MEM_RED
         int32_t                               delta_q_present_flag;
+#endif
         int32_t                               reduced_tx_set_used;
 #endif
 
 #if ADD_DELTA_QP_SUPPORT
         // Resolution of delta quant
+#if !MEM_RED
         int32_t                               num_tg;
+#endif
         int32_t                               monochrome;
         int32_t                               prev_qindex;
         // Since actual frame level loop filtering level value is not available
@@ -14209,8 +14221,10 @@ extern "C" {
         // filtering level) and code the delta between previous superblock's delta
         // lf and current delta lf. It is equivalent to the delta between previous
         // superblock's actual lf and current lf.
+#if !MEM_RED
         int32_t                               prev_delta_lf_from_base;
         int32_t                               current_delta_lf_from_base;
+#endif
 
         // For this experiment, we have four frame filter levels for different plane
         // and direction. So, to support the per superblock update, we need to add
@@ -14226,16 +14240,20 @@ extern "C" {
         // SEG_LVL_ALT_LF_U   = 3;
         // SEG_LVL_ALT_LF_V   = 4;
 //
+#if !MEM_RED
         int32_t                               prev_delta_lf[FRAME_LF_COUNT];
         int32_t                               curr_delta_lf[FRAME_LF_COUNT];
+#endif
 #endif
         // Resolution of delta quant
         // int32_t delta_q_res;
         int32_t                               allow_comp_inter_inter;
+#if !GLOBAL_WARPED_MOTION
         int16_t                               panMvx;
         int16_t                               panMvy;
         int16_t                               tiltMvx;
         int16_t                               tiltMvy;
+#endif
         EbWarpedMotionParams                  global_motion[TOTAL_REFS_PER_FRAME];
         PictureControlSet                    *childPcs;
         Macroblock                           *av1x;

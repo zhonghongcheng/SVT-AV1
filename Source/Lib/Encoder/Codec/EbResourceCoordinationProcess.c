@@ -286,7 +286,9 @@ void ResetPcsAv1(
     // Flag for a frame used as a reference - not written to the bitstream
     picture_control_set_ptr->is_reference_frame = 0;
     // Flag signaling that the frame is encoded using only INTRA modes.
+#if !MEM_RED
     picture_control_set_ptr->intra_only = 0;
+#endif
     // uint8_t last_intra_only;
 
     frm_hdr->disable_cdf_update = 0;

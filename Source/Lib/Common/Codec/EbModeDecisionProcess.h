@@ -177,7 +177,9 @@ extern "C" {
         uint16_t                        pu_width;
         uint16_t                        pu_height;
         EbPfMode                        pf_md_mode;
+#if !MEM_RED
         EbBool                          cu_use_ref_src_flag;
+#endif
         uint8_t                         hbd_mode_decision;
         uint16_t                        qp_index;
         uint64_t                        three_quad_energy;

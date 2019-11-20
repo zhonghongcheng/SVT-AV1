@@ -435,10 +435,11 @@ void ReleasePaReferenceObjects(
 void MeBasedGlobalMotionDetection(
     PictureParentControlSet         *picture_control_set_ptr)
 {
+#if !GLOBAL_WARPED_MOTION || !EIGHT_PEL_PREDICTIVE_ME
     // PAN Generation
     picture_control_set_ptr->is_pan = EB_FALSE;
     picture_control_set_ptr->is_tilt = EB_FALSE;
-
+#endif
     if (picture_control_set_ptr->slice_type != I_SLICE)
         DetectGlobalMotion(picture_control_set_ptr);
     // Check if the motion vector field for temporal layer 0 pictures
@@ -777,7 +778,7 @@ void StationaryEdgeOverUpdateOverTimeLcu(
         }
     }
 }
-
+#if !GLOBAL_WARPED_MOTION || !EIGHT_PEL_PREDICTIVE_ME
 /************************************************
 * Global Motion Detection Based on Lookahead
 ** Mark pictures for pan
@@ -835,7 +836,7 @@ void UpdateGlobalMotionDetectionOverTime(
     }
     return;
 }
-
+#endif
 /************************************************
 * Update BEA Information Based on Lookahead
 ** Average zzCost of Collocated SB throughout lookahead frames
@@ -1148,7 +1149,7 @@ EbBool IsSpatiallyComplexArea(
         return EB_TRUE;
     return EB_FALSE;
 }
-
+#if !MEM_RED
 // Derives blockinessPresentFlag
 void DeriveBlockinessPresentFlag(
     SequenceControlSet        *sequence_control_set_ptr,
@@ -1180,7 +1181,7 @@ void DeriveBlockinessPresentFlag(
             picture_control_set_ptr->complex_sb_array[sb_index] = SB_COMPLEXITY_STATUS_0;
     }
 }
-
+#endif
 /************************************************
 * Initial Rate Control Kernel
 * The Initial Rate Control Process determines the initial bit budget for each
@@ -1360,14 +1361,19 @@ void* initial_rate_control_kernel(void *input_ptr)
 
                         // Mark each input picture as PAN or not
                         // If a lookahead is present then check PAN for a period of time
+
                         if (!picture_control_set_ptr->end_of_sequence_flag && sequence_control_set_ptr->static_config.look_ahead_distance != 0) {
+#if !GLOBAL_WARPED_MOTION || !EIGHT_PEL_PREDICTIVE_ME
                             // Check for Pan,Tilt, Zoom and other global motion detectors over the future pictures in the lookahead
                             UpdateGlobalMotionDetectionOverTime(
                                 encode_context_ptr,
                                 sequence_control_set_ptr,
                                 picture_control_set_ptr);
+#endif
                         }
-                        else {
+                        else 
+
+                        {
                             if (picture_control_set_ptr->slice_type != I_SLICE)
                                 DetectGlobalMotion(picture_control_set_ptr);
                         }
@@ -1393,10 +1399,12 @@ void* initial_rate_control_kernel(void *input_ptr)
                                 sequence_control_set_ptr,
                                 picture_control_set_ptr);
                         }
+#if !MEM_RED
                         // Derive blockinessPresentFlag
                         DeriveBlockinessPresentFlag(
                             sequence_control_set_ptr,
                             picture_control_set_ptr);
+#endif
 
                         // Get Empty Reference Picture Object
                         eb_get_empty_object(

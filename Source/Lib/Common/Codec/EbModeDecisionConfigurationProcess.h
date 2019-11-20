@@ -60,6 +60,7 @@ extern "C" {
         // Inter depth decision
         uint8_t                              group_of8x8_blocks_count;
         uint8_t                              group_of16x16_blocks_count;
+#if !MEM_RED
         uint64_t                              inter_complexity_minimum;
         uint64_t                              inter_complexity_maximum;
         uint64_t                              inter_complexity_average;
@@ -68,6 +69,7 @@ extern "C" {
         uint64_t                              intra_complexity_average;
         int16_t                              min_delta_qp_weight;
         int16_t                              max_delta_qp_weight;
+#endif
         int8_t                               min_delta_qp[4];
         int8_t                               max_delta_qp[4];
 

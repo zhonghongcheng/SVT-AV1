@@ -34,15 +34,15 @@ typedef struct SourceBasedOperationsContext
     // Delta QP Map
     int8_t      min_delta_qp;
     uint8_t     max_delta_qp;
-
+#if !MEM_RED
     int16_t     min_delta_qp_weight[3][4];
     int16_t     max_delta_qp_weight[3][4];
-
     // Skin
     uint8_t     grass_percentage_in_picture;
     // local zz cost array
     uint32_t    picture_num_grass_sb;
     uint32_t    sb_high_contrast_count;
+#endif
     uint32_t    complete_sb_count;
     uint32_t    sb_cmplx_contrast_count;
     uint32_t    high_contrast_num;

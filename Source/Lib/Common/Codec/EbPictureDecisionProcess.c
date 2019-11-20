@@ -1264,12 +1264,12 @@ EbErrorType signal_derivation_multi_processes_oq(
 
     if (MR_MODE)
         picture_control_set_ptr->intra_pred_mode = 0;
-
+#if !MEM_RED
     // Skip sub blk based on neighbors depth        Settings
     // 0                                            OFF
     // 1                                            ON
     picture_control_set_ptr->skip_sub_blks =   0;
-
+#endif
         if (picture_control_set_ptr->sc_content_detected)
             picture_control_set_ptr->cu8x8_mode = (picture_control_set_ptr->temporal_layer_index > 0) ?
             CU_8x8_MODE_1 :
@@ -1455,9 +1455,9 @@ void  Av1GenerateRpsInfo(
         frm_hdr->frame_type = picture_control_set_ptr->idr_flag ? KEY_FRAME : INTRA_ONLY_FRAME;
     else
         frm_hdr->frame_type = INTER_FRAME;
-
+#if !MEM_RED
     picture_control_set_ptr->intra_only = picture_control_set_ptr->slice_type == I_SLICE ? 1 : 0;
-
+#endif
     //RPS for Flat GOP
     if (picture_control_set_ptr->hierarchical_levels == 0)
     {
@@ -3606,10 +3606,11 @@ void* picture_decision_kernel(void *input_ptr)
                             frm_hdr->tx_mode = (picture_control_set_ptr->atb_mode) ?
                                 TX_MODE_SELECT :
                                 TX_MODE_LARGEST;
-
+#if !MEM_RED
                                 picture_control_set_ptr->use_src_ref = EB_FALSE;
-                                picture_control_set_ptr->enable_in_loop_motion_estimation_flag = EB_FALSE;
                                 picture_control_set_ptr->limit_ois_to_dc_mode_flag = EB_FALSE;
+#endif
+                                picture_control_set_ptr->enable_in_loop_motion_estimation_flag = EB_FALSE;
 
                                 // Update the Dependant List Count - If there was an I-frame or Scene Change, then cleanup the Picture Decision PA Reference Queue Dependent Counts
                                 if (picture_control_set_ptr->slice_type == I_SLICE)
