@@ -700,7 +700,11 @@ void* resource_coordination_kernel(void *input_ptr)
             // 1                 ON
             sequence_control_set_ptr->seq_header.enable_interintra_compound =  (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_10BIT &&
                                                                                 sequence_control_set_ptr->static_config.enable_hbd_mode_decision ) ? 0:
+#if M0_CANDIDATE_SC
+                                                                                (sequence_control_set_ptr->static_config.enc_mode == ENC_M0 && sequence_control_set_ptr->static_config.screen_content_mode == 0) ? 1 : 0;
+#else
                                                                                 (sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;
+#endif
 #else
             sequence_control_set_ptr->seq_header.enable_interintra_compound = (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_10BIT ) ? 0 :
                                                                               (sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;

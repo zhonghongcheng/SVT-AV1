@@ -905,6 +905,12 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_FULL;
         else if (sc_content_detected)
             if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#if M0_CANDIDATE_SC
+                if (picture_control_set_ptr->enc_mode <= ENC_M0)
+                    picture_control_set_ptr->nsq_search_level = (picture_control_set_ptr->is_used_as_reference_flag) ?
+                    NSQ_SEARCH_LEVEL6 : NSQ_SEARCH_LEVEL3;
+                else
+#endif
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL6;
             else if (picture_control_set_ptr->enc_mode <= ENC_M2)
                 if (picture_control_set_ptr->temporal_layer_index == 0)
@@ -1065,9 +1071,13 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
     if (!picture_control_set_ptr->sequence_control_set_ptr->static_config.disable_dlf_flag && frm_hdr->allow_intrabc == 0) {
     if (sc_content_detected)
+#if  M0_CANDIDATE_SC
+        if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#else
         if (picture_control_set_ptr->enc_mode == ENC_M0)
             picture_control_set_ptr->loop_filter_mode = 3;
         else if (picture_control_set_ptr->enc_mode == ENC_M1)
+#endif
             picture_control_set_ptr->loop_filter_mode = picture_control_set_ptr->is_used_as_reference_flag ? 3 : 0;
         else
             picture_control_set_ptr->loop_filter_mode = 0;
@@ -1234,9 +1244,14 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->intra_pred_mode = 4;
     else {
     if (sc_content_detected)
+#if M0_CANDIDATE_SC
+
+        if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#else
         if (picture_control_set_ptr->enc_mode == ENC_M0)
             picture_control_set_ptr->intra_pred_mode = 0;
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#endif
             if (picture_control_set_ptr->temporal_layer_index == 0)
                 picture_control_set_ptr->intra_pred_mode = 1;
             else
@@ -1334,7 +1349,7 @@ EbErrorType signal_derivation_multi_processes_oq(
         // 1                 ON: compond mode search: AVG/DIST/DIFF
         // 2                 ON: AVG/DIST/DIFF/WEDGE
         if (sequence_control_set_ptr->compound_mode)
-#if M0_tune || sc_rtime_presets
+#if (M0_tune || sc_rtime_presets)&& !M0_CANDIDATE_SC 
             if (picture_control_set_ptr->sc_content_detected)
                 picture_control_set_ptr->compound_mode = (picture_control_set_ptr->enc_mode <= ENC_M0) ? 2 : 0;
             else

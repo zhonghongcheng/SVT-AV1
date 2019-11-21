@@ -1284,6 +1284,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->global_mv_injection = 0;
 #endif
+#if M0_CANDIDATE_SC
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        context_ptr->new_nearest_near_comb_injection = 0;
+    else
+#endif
 #if FIX_NEAREST_NEW
     if (picture_control_set_ptr->enc_mode <= ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
 #else
@@ -1312,8 +1317,13 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 1                    ON FULL
     // 2                    Reduced set
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if M0_CANDIDATE_SC
+        if (picture_control_set_ptr->enc_mode <= ENC_M2)
+            context_ptr->unipred3x3_injection = 2;
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
             context_ptr->unipred3x3_injection = 1;
+#endif
         else
             context_ptr->unipred3x3_injection = 0;
     else
@@ -1350,6 +1360,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 4                    Level 4: 7x5 full-pel search +  (H + V + D) sub-pel refinement = 8 half-pel + 8 quarter-pel = 16 positions + pred_me_distortion to pa_me_distortion deviation on
     // 5                    Level 5: 7x5 full-pel search +  (H + V + D) sub-pel refinement = 8 half-pel + 8 quarter-pel = 16 positions + pred_me_distortion to pa_me_distortion deviation off
     if (picture_control_set_ptr->slice_type != I_SLICE)
+#if  M0_CANDIDATE_SC
+        if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_control_set_ptr->enc_mode <= ENC_M0)
+            context_ptr->predictive_me_level = 2;
+        else
+#endif
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #if M0_tune
             context_ptr->predictive_me_level = (picture_control_set_ptr->enc_mode <= ENC_M0)? 5: 4;
@@ -1536,6 +1551,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             context_ptr->edge_based_skip_angle_intra = 0;
         else
 #if FIX_ESTIMATE_INTRA
+#if M0_CANDIDATE_SC
+            if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+                context_ptr->edge_based_skip_angle_intra = 1;
+            else
+#endif
 #if M0_tune
             context_ptr->edge_based_skip_angle_intra = (picture_control_set_ptr->enc_mode == ENC_M0) ? 0 : 1;
 #else
@@ -1568,7 +1588,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
     // TH_S (for single candidate removal per class)
     // Remove candidate if deviation to the best is higher than TH_S
+#if M0_CANDIDATE_SC
+    if (MR_MODE || (picture_control_set_ptr->enc_mode == ENC_M0 && (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0)) || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
+#else
     if (MR_MODE || picture_control_set_ptr->enc_mode == ENC_M0 || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
+#endif
         context_ptr->md_stage_1_cand_prune_th = (uint64_t)~0;
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->md_stage_1_cand_prune_th = sequence_control_set_ptr->static_config.md_stage_1_cand_prune_th;
@@ -1586,7 +1610,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
     // TH_C (for class removal)
     // Remove class if deviation to the best higher than TH_C
+#if M0_CANDIDATE_SC
+    if (MR_MODE || (picture_control_set_ptr->enc_mode == ENC_M0 && (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0)) || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
+#else
     if (MR_MODE || picture_control_set_ptr->enc_mode == ENC_M0 || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
+#endif
         context_ptr->md_stage_1_class_prune_th = (uint64_t)~0;
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->md_stage_1_class_prune_th = sequence_control_set_ptr->static_config.md_stage_1_class_prune_th;
@@ -1608,7 +1636,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     
     // TH_C (for class removal)
     // Remove class if deviation to the best is higher than TH_C
+#if M0_CANDIDATE_SC
+    if (MR_MODE)
+#else
     if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#endif
         context_ptr->md_stage_2_class_prune_th = (uint64_t)~0;
     else if (picture_control_set_ptr->enc_mode <= ENC_M4)
         context_ptr->md_stage_2_class_prune_th = sequence_control_set_ptr->static_config.md_stage_2_class_prune_th;

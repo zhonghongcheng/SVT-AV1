@@ -167,7 +167,7 @@ EbErrorType signal_derivation_me_kernel_oq(
             sequence_control_set_ptr,
             context_ptr->me_context_ptr);
     if (picture_control_set_ptr->sc_content_detected)
-#if M0_tune || sc_rtime_presets
+#if ( M0_tune  || sc_rtime_presets ) && ! M0_CANDIDATE_SC
         context_ptr->me_context_ptr->fractional_search_method = (enc_mode == ENC_M0) ? FULL_SAD_SEARCH : SUB_SAD_SEARCH;
 #else
         context_ptr->me_context_ptr->fractional_search_method = SUB_SAD_SEARCH;
@@ -204,7 +204,11 @@ EbErrorType signal_derivation_me_kernel_oq(
     }
     else if (enc_mode == ENC_M0) {
         context_ptr->me_context_ptr->half_pel_mode =
+#if M0_CANDIDATE_SC
+            picture_control_set_ptr->sc_content_detected ? REFINMENT_HP_MODE : EX_HP_MODE;
+#else
             EX_HP_MODE;
+#endif
         context_ptr->me_context_ptr->quarter_pel_mode =
             REFINMENT_QP_MODE;
     }
@@ -493,7 +497,11 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
     }
     else if (enc_mode == ENC_M0) {
         context_ptr->me_context_ptr->half_pel_mode =
+#if  M0_CANDIDATE_SC
+            picture_control_set_ptr->sc_content_detected ? REFINMENT_HP_MODE : EX_HP_MODE;
+#else
             EX_HP_MODE;
+#endif
         context_ptr->me_context_ptr->quarter_pel_mode =
             REFINMENT_QP_MODE;
     }

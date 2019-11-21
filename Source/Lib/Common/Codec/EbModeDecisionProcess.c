@@ -579,6 +579,11 @@ void reset_mode_decision(
     // 3                                            OBMC @(MVP, PME ) + Opt NICs
     // 4                                            OBMC @(MVP, PME ) + Opt2 NICs
     if (sequence_control_set_ptr->static_config.enable_obmc) {
+#if  M0_CANDIDATE_SC 
+        if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+            picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M0 && picture_control_set_ptr->slice_type != I_SLICE ? 2 : 0;
+        else
+#endif
         if (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M0)
             picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode =
             picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0 && picture_control_set_ptr->slice_type != I_SLICE ? 2 : 0;
