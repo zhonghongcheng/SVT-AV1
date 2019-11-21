@@ -708,7 +708,7 @@ void* resource_coordination_kernel(void *input_ptr)
 #endif
 
 #if DISABLE_INTERINTRA_COMPOUND
-            picture_control_set_ptr->enable_inter_intra = 0;
+            sequence_control_set_ptr->seq_header->enable_inter_intra = 0;
 #endif
 
 #if FILTER_INTRA_FLAG
