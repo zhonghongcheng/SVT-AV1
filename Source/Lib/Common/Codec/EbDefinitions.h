@@ -35,14 +35,14 @@ extern "C" {
 #define QPS_QPM_OFF                 1
 #define EIGHT_PEL_FIX               1 // Improve the 8th pel
 #define HIGH_PRECISION_MV_QTHRESH   150
-#define M0_tune                      0
-#define DOUBLE_ME_PRED_SR            0
-#define MR_WEDGE                     0
-#define MR_MD_EXIT                   0
-#define MR_MD_THS                    0
+#define M0_tune                      1
+#define DOUBLE_ME_PRED_SR            1
+#define MR_WEDGE                     1
+#define MR_MD_EXIT                   1
+#define MR_MD_THS                    1
 
 #define HBD_CLEAN_UP                 1
-#define M0_CANDIDATE_SC              0
+#define M0_CANDIDATE_SC              1
 
 #define IFS_8BIT_MD                  1
 

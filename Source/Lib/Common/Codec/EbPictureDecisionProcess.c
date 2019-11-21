@@ -1107,13 +1107,15 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->cdef_filter_mode = 0;
         else
         if (picture_control_set_ptr->enc_mode <= ENC_M7)
-            picture_control_set_ptr->cdef_filter_mode = 4;
-        else
 #if M0_tune
-            picture_control_set_ptr->cdef_filter_mode = (picture_control_set_ptr->enc_mode <= ENC_M0)?5: 2;
+            picture_control_set_ptr->cdef_filter_mode = (picture_control_set_ptr->enc_mode <= ENC_M0) ? 5 : 4;
 #else
-            picture_control_set_ptr->cdef_filter_mode = 2;
+            picture_control_set_ptr->cdef_filter_mode = 4;
 #endif
+        else
+
+            picture_control_set_ptr->cdef_filter_mode = 2;
+
     }
     else
         picture_control_set_ptr->cdef_filter_mode = 0;
