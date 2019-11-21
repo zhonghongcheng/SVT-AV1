@@ -3115,6 +3115,12 @@ void predictive_me_search(
             MvReferenceFrame frame_type = rf[0];
             uint8_t list_idx = get_list_idx(rf[0]);
             uint8_t ref_idx = get_ref_frame_idx(rf[0]);
+
+#if ADD_PD_1
+            if (context_ptr->pd_pass == PD_PASS_1 && ref_idx > 0)
+                continue;
+#endif
+
             // Get the ME MV
             const MeLcuResults *me_results = picture_control_set_ptr->parent_pcs_ptr->me_results[context_ptr->me_sb_addr];
             int16_t me_mv_x;
@@ -7949,7 +7955,11 @@ void md_encode_block(
 #elif TEST_M1_NSQ_TABLES
 
 #else
+#if ADD_PD_1
+    is_nsq_table_used = picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || (picture_control_set_ptr->enc_mode == ENC_M0 && (context_ptr ->pd_pass == PD_PASS_0 || context_ptr->pd_pass == PD_PASS_2)) ? EB_FALSE : is_nsq_table_used;
+#else
     is_nsq_table_used = picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode == ENC_M0 ? EB_FALSE : is_nsq_table_used;
+#endif
 #endif
 #if ADJUST_NSQ_RANK_BASED_ON_NEIGH
     if (is_nsq_table_used) {

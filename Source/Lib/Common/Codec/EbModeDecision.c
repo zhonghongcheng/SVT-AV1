@@ -2040,6 +2040,10 @@ void inject_mvp_candidates_II(
         MvReferenceFrame frame_type = rf[0];
         uint8_t list_idx = get_list_idx(rf[0]);
         uint8_t ref_idx = get_ref_frame_idx(rf[0]);
+#if ADD_PD_1
+        if (context_ptr->pd_pass == PD_PASS_1 && ref_idx > 0)
+            return;
+#endif
 
         //NEAREST
         int16_t to_inject_mv_x = context_ptr->cu_ptr->ref_mvs[frame_type][0].as_mv.col;
@@ -2279,7 +2283,10 @@ void inject_mvp_candidates_II(
     {
         uint8_t ref_idx_0 = get_ref_frame_idx(rf[0]);
         uint8_t ref_idx_1 = get_ref_frame_idx(rf[1]);
-
+#if ADD_PD_1
+        if (context_ptr->pd_pass == PD_PASS_1 && (ref_idx_0 > 0 || ref_idx_1 > 0))
+            return;
+#endif
         {
             //NEAREST_NEAREST
             int16_t to_inject_mv_x_l0 = context_ptr->md_local_cu_unit[context_ptr->blk_geom->blkidx_mds].ed_ref_mv_stack[ref_pair][0].this_mv.as_mv.col;
@@ -4316,13 +4323,7 @@ void  inject_inter_candidates(
 #endif
     for (refIt = 0; refIt < picture_control_set_ptr->parent_pcs_ptr->tot_ref_frame_types; ++refIt) {
         MvReferenceFrame ref_frame_pair = picture_control_set_ptr->parent_pcs_ptr->ref_frame_type_arr[refIt];
-#if ADD_PD_1
-        MvReferenceFrame rf[2];
-        int inside_tile = 1;
-        av1_set_ref_frame(rf, ref_frame_pair);
 
-        if (context_ptr->pd_pass == PD_PASS_2 || (rf[0] == LAST_FRAME && rf[1] == NONE_FRAME) || (rf[0] == LAST_FRAME && rf[1] == BWDREF_FRAME))
-#endif
         inject_mvp_candidates_II(
             context_ptr,
             picture_control_set_ptr,

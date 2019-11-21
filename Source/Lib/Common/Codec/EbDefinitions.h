@@ -227,7 +227,7 @@ extern "C" {
 
 #define SHUT_FAST_COST                         1
 
-#define ADD_PD_1                               0
+#define ADD_PD_1                               1
 #endif
 #endif
 #endif
