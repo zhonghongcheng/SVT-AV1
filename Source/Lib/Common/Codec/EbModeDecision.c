@@ -3462,6 +3462,10 @@ void inject_new_candidates(
         ************* */
         if (inter_direction == 0) {
 
+#if ADD_PD_1
+            if (context_ptr->pd_pass == PD_PASS_1 && list0_ref_index > 0)
+                continue;
+#endif
             int16_t to_inject_mv_x = use_close_loop_me ? inloop_me_context->inloop_me_mv[0][0][close_loop_me_index][0] << 1 : me_results->me_mv_array[me_block_offset][list0_ref_index].x_mv << 1;
             int16_t to_inject_mv_y = use_close_loop_me ? inloop_me_context->inloop_me_mv[0][0][close_loop_me_index][1] << 1 : me_results->me_mv_array[me_block_offset][list0_ref_index].y_mv << 1;
             uint8_t to_inject_ref_type = svt_get_ref_frame_type(REF_LIST_0, list0_ref_index);
@@ -3606,6 +3610,12 @@ void inject_new_candidates(
                NEWMV L1
            ************* */
             if (inter_direction == 1) {
+
+#if ADD_PD_1
+                if (context_ptr->pd_pass == PD_PASS_1 && list1_ref_index > 0)
+                    continue;
+#endif
+
                 int16_t to_inject_mv_x = use_close_loop_me ? inloop_me_context->inloop_me_mv[1][0][close_loop_me_index][0] << 1 : me_results->me_mv_array[me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? 4 : 2) + list1_ref_index].x_mv << 1;
                 int16_t to_inject_mv_y = use_close_loop_me ? inloop_me_context->inloop_me_mv[1][0][close_loop_me_index][1] << 1 : me_results->me_mv_array[me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? 4 : 2) + list1_ref_index].y_mv << 1;
                 uint8_t to_inject_ref_type = svt_get_ref_frame_type(REF_LIST_1, list1_ref_index);
@@ -3747,6 +3757,10 @@ void inject_new_candidates(
             ************* */
             if (allow_bipred) {
 
+#if ADD_PD_1
+                if (context_ptr->pd_pass == PD_PASS_1 && (list0_ref_index > 0 || list1_ref_index > 0))
+                    continue;
+#endif
                 if (inter_direction == 2) {
                     int16_t to_inject_mv_x_l0 = use_close_loop_me ? inloop_me_context->inloop_me_mv[0][0][close_loop_me_index][0] << 1 : me_results->me_mv_array[me_block_offset][list0_ref_index].x_mv << 1;
                     int16_t to_inject_mv_y_l0 = use_close_loop_me ? inloop_me_context->inloop_me_mv[0][0][close_loop_me_index][1] << 1 : me_results->me_mv_array[me_block_offset][list0_ref_index].y_mv << 1;
@@ -4302,6 +4316,13 @@ void  inject_inter_candidates(
 #endif
     for (refIt = 0; refIt < picture_control_set_ptr->parent_pcs_ptr->tot_ref_frame_types; ++refIt) {
         MvReferenceFrame ref_frame_pair = picture_control_set_ptr->parent_pcs_ptr->ref_frame_type_arr[refIt];
+#if ADD_PD_1
+        MvReferenceFrame rf[2];
+        int inside_tile = 1;
+        av1_set_ref_frame(rf, ref_frame_pair);
+
+        if (context_ptr->pd_pass == PD_PASS_2 || (rf[0] == LAST_FRAME && rf[1] == NONE_FRAME) || (rf[0] == LAST_FRAME && rf[1] == BWDREF_FRAME))
+#endif
         inject_mvp_candidates_II(
             context_ptr,
             picture_control_set_ptr,
