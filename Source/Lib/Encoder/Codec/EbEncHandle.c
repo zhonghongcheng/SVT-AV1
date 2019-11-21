@@ -2018,7 +2018,7 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
     // Set over_boundary_block_mode     Settings
     // 0                            0: not allowed
     // 1                            1: allowed
-    if (sequence_control_set_ptr->static_config.enc_mode == ENC_M0)
+    if (sequence_control_set_ptr->static_config.enc_mode <= ENC_M5)
         sequence_control_set_ptr->over_boundary_block_mode = 1;
     else
         sequence_control_set_ptr->over_boundary_block_mode = 0;
