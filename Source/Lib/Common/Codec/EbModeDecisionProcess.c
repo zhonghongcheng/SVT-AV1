@@ -535,7 +535,7 @@ void reset_mode_decision(
     }
 #endif
 #if EIGHT_PEL_PREDICTIVE_ME
-#if M0_tune
+#if M0_tune || EIGHT_PEL_FIX
 #if EIGHT_PEL_FIX
     picture_control_set_ptr->parent_pcs_ptr->frm_hdr.allow_high_precision_mv =
         picture_control_set_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->frm_hdr.quantization_params.base_q_idx < HIGH_PRECISION_MV_QTHRESH  &&

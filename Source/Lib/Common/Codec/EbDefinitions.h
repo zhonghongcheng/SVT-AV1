@@ -32,8 +32,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#define EIGHT_PEL_FIX 1 // Improve the 8th pel
-#define HIGH_PRECISION_MV_QTHRESH 150
+#define QPS_QPM_OFF                 1
+#define EIGHT_PEL_FIX               1 // Improve the 8th pel
+#define HIGH_PRECISION_MV_QTHRESH   150
 #define M0_tune                      0
 #define HBD_CLEAN_UP                 1
 
