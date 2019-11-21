@@ -1099,7 +1099,11 @@ EbErrorType signal_derivation_multi_processes_oq(
         if (picture_control_set_ptr->enc_mode <= ENC_M7)
             picture_control_set_ptr->cdef_filter_mode = 4;
         else
+#if M0_tune
+            picture_control_set_ptr->cdef_filter_mode = (picture_control_set_ptr->enc_mode <= ENC_M0)?5: 2;
+#else
             picture_control_set_ptr->cdef_filter_mode = 2;
+#endif
     }
     else
         picture_control_set_ptr->cdef_filter_mode = 0;
@@ -1330,8 +1334,15 @@ EbErrorType signal_derivation_multi_processes_oq(
         // 1                 ON: compond mode search: AVG/DIST/DIFF
         // 2                 ON: AVG/DIST/DIFF/WEDGE
         if (sequence_control_set_ptr->compound_mode)
+#if M0_tune || sc_rtime_presets
+            if (picture_control_set_ptr->sc_content_detected)
+                picture_control_set_ptr->compound_mode = (picture_control_set_ptr->enc_mode <= ENC_M0) ? 2 : 0;
+            else
+			    picture_control_set_ptr->compound_mode = picture_control_set_ptr->enc_mode <= ENC_M1 ? 2 : 1;
+#else
             picture_control_set_ptr->compound_mode = picture_control_set_ptr->sc_content_detected ? 0 :
             picture_control_set_ptr->enc_mode <= ENC_M1 ? 2 : 1;
+#endif
         else
             picture_control_set_ptr->compound_mode = 0;
 
@@ -1348,7 +1359,11 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->frame_end_cdf_update_mode = 1;
         else
             picture_control_set_ptr->frame_end_cdf_update_mode = 0;
+#if M0_tune
+        if (picture_control_set_ptr->sc_content_detected || picture_control_set_ptr->enc_mode >= ENC_M4)
+#else
         if (picture_control_set_ptr->sc_content_detected || picture_control_set_ptr->enc_mode == ENC_M0 || picture_control_set_ptr->enc_mode >= ENC_M4)
+#endif
             picture_control_set_ptr->prune_unipred_at_me = 0;
         else
             picture_control_set_ptr->prune_unipred_at_me = 1;
