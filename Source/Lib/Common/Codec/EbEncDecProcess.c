@@ -1573,13 +1573,13 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
 #if SPEED_OPT
     // Derive INTER/INTER WEDGE variance TH
-    if (MR_MODE)
+    if (MR_MODE || MR_WEDGE)
         context_ptr->inter_inter_wedge_variance_th = 0;
     else
         context_ptr->inter_inter_wedge_variance_th = 100;
 
     // Derive MD Exit TH
-    if (MR_MODE)
+    if (MR_MODE || MR_MD_EXIT)
         context_ptr->md_exit_th = 0;
     else
         context_ptr->md_exit_th = (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected) ? 10 : 18;
@@ -1623,7 +1623,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
     // TH_S (for single candidate removal per class)
     // Remove candidate if deviation to the best is higher than TH_S
-    if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+    if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected|| MR_MD_THS)
         context_ptr->md_stage_2_cand_prune_th = (uint64_t)~0;
     else if (picture_control_set_ptr->enc_mode <= ENC_M0)
         context_ptr->md_stage_2_cand_prune_th = sequence_control_set_ptr->static_config.md_stage_2_cand_prune_th;

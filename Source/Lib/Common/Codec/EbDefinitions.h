@@ -36,6 +36,11 @@ extern "C" {
 #define EIGHT_PEL_FIX               1 // Improve the 8th pel
 #define HIGH_PRECISION_MV_QTHRESH   150
 #define M0_tune                      0
+#define DOUBLE_ME_PRED_SR            0
+#define MR_WEDGE                     0
+#define MR_MD_EXIT                   0
+#define MR_MD_THS                    0
+
 #define HBD_CLEAN_UP                 1
 #define M0_CANDIDATE_SC              0
 
