@@ -228,6 +228,32 @@ extern "C" {
 #define SHUT_FAST_COST                         1
 
 #define ADD_PD_1                               1
+#if ADD_PD_1
+
+#define SHUT_NSQ_TABLE                         1 // 0
+#define ENABLE_MRP                             1 // 1
+#define UNIPRED_BIPRED_3x3                     1 // 2
+#define ENABLE_NIC                             1 // 3
+#define INTERPOLATION_SEARCH                   1 // 4
+#define PRUNE_REF_FRAME                        1 // 5
+#define STAGE_1_2_PRUNING                      1 // 6
+#define CHECK_COMP                             1 // 7
+#define CHECK_N_4                              1 // 8
+#define CHECK_PRED_ME                          1 // 9
+#define CHECK_RDOQ                             1 // 10
+#define CHECK_OBMC                             1 // 11 
+#define CHECK_SKIP_ANGULAR_INTRA               1 // 12
+#define CHECK_FILTER                           1 // 13
+#define CHECK_INTER_INTRA                      1 // 14
+#define CHECK_FP_QUANT                         1 // 15
+#define CHECK_ATB                              1 // 16
+#define CHECK_PALETTE                          1 // 17
+#define CHECK_NEAREST_NEAR                     1 // 18
+
+#define EVERY_THING                            0
+
+
+#endif
 #endif
 #endif
 #endif

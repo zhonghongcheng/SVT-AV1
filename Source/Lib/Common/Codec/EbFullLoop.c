@@ -1403,7 +1403,11 @@ int32_t av1_quantize_inv_quantize(
 #else
 #if SHIFT_M4_TO_M3
 #if MULTI_PASS_PD // Shut fp
+#if CHECK_FP_QUANT
+    EbBool perform_quantize_fp = (picture_control_set_ptr->enc_mode <= ENC_M2 && (md_context->pd_pass == PD_PASS_1 || md_context->pd_pass == PD_PASS_2)) ? EB_TRUE : EB_FALSE;
+#else
     EbBool perform_quantize_fp = (picture_control_set_ptr->enc_mode <= ENC_M2 && md_context->pd_pass == PD_PASS_2) ? EB_TRUE : EB_FALSE;
+#endif
 #else
     EbBool perform_quantize_fp = picture_control_set_ptr->enc_mode <= ENC_M2 ? EB_TRUE : EB_FALSE;
 #endif

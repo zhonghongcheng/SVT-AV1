@@ -1191,12 +1191,14 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if MULTI_PASS_PD 
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->interpolation_search_level = IT_SEARCH_OFF;
+#if !INTERPOLATION_SEARCH
     else if (context_ptr->pd_pass == PD_PASS_1) {
         if (picture_control_set_ptr->temporal_layer_index == 0)
             context_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;
         else
             context_ptr->interpolation_search_level = IT_SEARCH_OFF;
     }
+#endif
     else
 #endif
     if (MR_MODE)
@@ -1364,9 +1366,13 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
 
 #if MULTI_PASS_PD // Shut nx4 and 4xn if 1st pass
-    if (context_ptr->pd_pass == PD_PASS_0 || context_ptr->pd_pass == PD_PASS_1)
+    if (context_ptr->pd_pass == PD_PASS_0)
+        context_ptr->new_nearest_near_comb_injection = 0;
+#if !CHECK_NEAREST_NEAR
+    else if (context_ptr->pd_pass == PD_PASS_1)
         context_ptr->new_nearest_near_comb_injection = 0;
     else
+#endif
 #endif
 #if FIX_NEAREST_NEW
 #if TEST_M0_NEW_NEAR_COMB
@@ -1381,8 +1387,12 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->new_nearest_near_comb_injection = 0;
 #if MULTI_PASS_PD // Shut nx4 and 4xn if 1st pass
-    if (context_ptr->pd_pass == PD_PASS_0 || context_ptr->pd_pass == PD_PASS_1)
+    if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->nx4_4xn_parent_mv_injection = 0;
+#if !CHECK_N_4
+    else if(context_ptr->pd_pass == PD_PASS_1)
+        context_ptr->nx4_4xn_parent_mv_injection = 0;
+#endif
     else
 #endif
 #if sc_rtime_presets
@@ -1438,7 +1448,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->unipred3x3_injection = 0;
     }
     else if (context_ptr->pd_pass == PD_PASS_1) {
+#if UNIPRED_BIPRED_3x3
+        context_ptr->unipred3x3_injection = 1;
+#else
         context_ptr->unipred3x3_injection = 2;
+#endif
     }
     else
 #endif
@@ -1490,7 +1504,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->bipred3x3_injection = 0;
     }
     else if (context_ptr->pd_pass == PD_PASS_1) {
+#if UNIPRED_BIPRED_3x3
+        context_ptr->bipred3x3_injection = 1;
+#else
         context_ptr->bipred3x3_injection = 2;
+#endif
     }
     else
 #endif
@@ -1540,8 +1558,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if MULTI_PASS_PD // Shut predictive if 1st pass
         if (context_ptr->pd_pass == PD_PASS_0)
             context_ptr->predictive_me_level = 0;
+#if !CHECK_PRED_ME
         else if (context_ptr->pd_pass == PD_PASS_1)
             context_ptr->predictive_me_level = 2;
+#endif
         else
 #endif
         if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
@@ -1798,8 +1818,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if MULTI_PASS_PD // Shut spatial SSE @ full loop
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
+#if !CHECK_RDOQ
     else if (context_ptr->pd_pass == PD_PASS_1)
         context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
+#endif
     else
 #endif
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
@@ -1852,8 +1874,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if MULTI_PASS_PD 
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->edge_based_skip_angle_intra = 0;
+#if !CHECK_SKIP_ANGULAR_INTRA
     else if (context_ptr->pd_pass == PD_PASS_1)
         context_ptr->edge_based_skip_angle_intra = 1;
+#endif
     else
 #endif
     if (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
@@ -1889,9 +1913,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if MULTI_PASS_PD // Shut spatial SSE @ full loop
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->prune_ref_frame_for_rec_partitions = 0;
+#if !PRUNE_REF_FRAME
     else if (context_ptr->pd_pass == PD_PASS_1)
         context_ptr->prune_ref_frame_for_rec_partitions = 1;
     else
+#endif
 #endif
 #if M0_PRUNE_REC_PART_M3
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode <= ENC_M3)
@@ -1935,9 +1961,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if MULTI_PASS_PD 
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->md_stage_1_count_th_s = (uint64_t)~0;
+#if !STAGE_1_2_PRUNING
     else if (context_ptr->pd_pass == PD_PASS_1)
         context_ptr->md_stage_1_count_th_s = 75;
     else
+#endif
 #endif
     if (MR_MODE || picture_control_set_ptr->enc_mode == ENC_M0 || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
         context_ptr->md_stage_1_count_th_s = (uint64_t)~0;
@@ -1961,9 +1989,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if MULTI_PASS_PD 
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->md_stage_1_count_th_c = (uint64_t)~0;
+#if !STAGE_1_2_PRUNING
     else if (context_ptr->pd_pass == PD_PASS_1)
         context_ptr->md_stage_1_count_th_c = 100;
     else
+#endif
 #endif
     if (MR_MODE || picture_control_set_ptr->enc_mode == ENC_M0 || sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
         context_ptr->md_stage_1_count_th_c = (uint64_t)~0;
@@ -1981,9 +2011,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if MULTI_PASS_PD 
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->md_stage_2_count_th_s = (uint64_t)~0;
+#if !STAGE_1_2_PRUNING
     else if (context_ptr->pd_pass == PD_PASS_1)
         context_ptr->md_stage_2_count_th_s = sequence_control_set_ptr->input_resolution <= INPUT_SIZE_1080i_RANGE ? 5 : 3;
     else
+#endif
 #endif
     if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         context_ptr->md_stage_2_count_th_s = (uint64_t)~0;
@@ -2021,9 +2053,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if MULTI_PASS_PD 
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->md_stage_2_count_th_c = (uint64_t)~0;
+#if !STAGE_1_2_PRUNING
     else if (context_ptr->pd_pass == PD_PASS_1)
         context_ptr->md_stage_2_count_th_c = 25;
     else
+#endif
 #endif
     if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected) 
         context_ptr->md_stage_2_count_th_c = (uint64_t)~0;
@@ -2682,7 +2716,11 @@ void* enc_dec_kernel(void *input_ptr)
                             sb_origin_y);
 #if ADD_PD_1
                         // 2nd PD Pass EncDec Kernel Signal(s) derivation
+#if EVERY_THING
+                        context_ptr->md_context->pd_pass = PD_PASS_2;
+#else
                         context_ptr->md_context->pd_pass = PD_PASS_1;
+#endif
                         signal_derivation_enc_dec_kernel_oq(
                             sequence_control_set_ptr,
                             picture_control_set_ptr,

@@ -1619,7 +1619,8 @@ void set_md_stage_counts(
         context_ptr->md_stage_1_count[CAND_CLASS_6] = 1;
         context_ptr->md_stage_1_count[CAND_CLASS_7] = 1;
     }
-    else  if (context_ptr->pd_pass == PD_PASS_1) {
+#if !ENABLE_NIC
+    else if (context_ptr->pd_pass == PD_PASS_1) {
         uint8_t is_ref = picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag;
         uint8_t is_base = (picture_control_set_ptr->temporal_layer_index == 0) ? 1 : 0;
         uint8_t is_intra = (picture_control_set_ptr->slice_type == I_SLICE) ? 1 : 0;
@@ -1643,6 +1644,7 @@ void set_md_stage_counts(
         context_ptr->md_stage_2_count[CAND_CLASS_6] = is_base ? 5 : is_ref ? 3 : 2;
         context_ptr->md_stage_1_count[CAND_CLASS_7] = 7;
     }
+#endif
     else {
 #endif
     // Step 2: set md_stage count
@@ -3116,7 +3118,7 @@ void predictive_me_search(
             uint8_t list_idx = get_list_idx(rf[0]);
             uint8_t ref_idx = get_ref_frame_idx(rf[0]);
 
-#if ADD_PD_1
+#if ADD_PD_1 && !ENABLE_MRP
             if (context_ptr->pd_pass == PD_PASS_1 && ref_idx > 0)
                 continue;
 #endif
@@ -6444,7 +6446,11 @@ void md_stage_3(
         context_ptr->md_staging_skip_full_pred = (context_ptr->md_staging_mode == MD_STAGING_MODE_3) ? EB_FALSE: EB_TRUE;
 #endif
 #if MULTI_PASS_PD // Shut tx size search if 1st pass
+#if CHECK_ATB
+        context_ptr->md_staging_skip_atb = (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2) ? context_ptr->coeff_based_skip_atb : EB_TRUE;
+#else
         context_ptr->md_staging_skip_atb = context_ptr->pd_pass == PD_PASS_2 ? context_ptr->coeff_based_skip_atb : EB_TRUE;
+#endif
 #else
         context_ptr->md_staging_skip_atb = context_ptr->coeff_based_skip_atb;
 #endif
@@ -7955,7 +7961,7 @@ void md_encode_block(
 #elif TEST_M1_NSQ_TABLES
 
 #else
-#if ADD_PD_1
+#if ADD_PD_1 && !SHUT_NSQ_TABLE
     is_nsq_table_used = picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || (picture_control_set_ptr->enc_mode == ENC_M0 && (context_ptr ->pd_pass == PD_PASS_0 || context_ptr->pd_pass == PD_PASS_2)) ? EB_FALSE : is_nsq_table_used;
 #else
     is_nsq_table_used = picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode == ENC_M0 ? EB_FALSE : is_nsq_table_used;
@@ -8108,7 +8114,11 @@ void md_encode_block(
 #if II_COMP_FLAG
         //for every CU, perform Luma DC/V/H/S intra prediction to be used later in inter-intra search
 #if MULTI_PASS_PD // Shut inter-intra
+#if CHECK_INTER_INTRA
+        int allow_ii = (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2) ? is_interintra_allowed_bsize(context_ptr->blk_geom->bsize) : 0;
+#else
         int allow_ii = (context_ptr->pd_pass == PD_PASS_2) ? is_interintra_allowed_bsize(context_ptr->blk_geom->bsize) : 0;
+#endif
 #else
         int allow_ii = is_interintra_allowed_bsize(context_ptr->blk_geom->bsize);
 #endif
