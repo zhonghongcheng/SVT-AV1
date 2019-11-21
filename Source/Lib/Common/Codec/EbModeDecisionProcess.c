@@ -587,7 +587,9 @@ void reset_mode_decision(
     }
     else
         picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = 0;
-
+#if DISABLE_OBMC
+    picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = 0;
+#endif
     frm_hdr->is_motion_mode_switchable =
         frm_hdr->is_motion_mode_switchable || picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode;
 

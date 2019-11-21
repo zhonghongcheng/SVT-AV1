@@ -56,8 +56,11 @@ extern "C" {
 #define DISABLE_MFMV 0
 #define DISABLE_RDOQ 0
 #define DISABLE_WARPED_MOTION 0
+#define DISABLE_OBMC 0
+#define DISABLE_CFL 1
+#define CHROMA_DC_ONLY 1
 
-#define SHUT_FILTERING 1
+#define SHUT_FILTERING 0
 
 /* Note: shutting the macro PAL_SUP will not give SS as pcs->palette_mode = 0
    rate estimation is changed for I frame + enabled sc for P (rate estimation

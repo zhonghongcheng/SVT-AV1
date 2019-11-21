@@ -1206,6 +1206,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             CHROMA_MODE_2 :
             CHROMA_MODE_3 ;
 
+#if CHROMA_DC_ONLY
+    context_ptr->chroma_level = CHROMA_MODE_1;
+#endif
+
     // Set fast loop method
     // 1 fast loop: SSD_SEARCH not supported
     // Level                Settings
