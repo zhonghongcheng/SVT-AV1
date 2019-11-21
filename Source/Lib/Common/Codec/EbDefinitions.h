@@ -39,6 +39,7 @@ extern "C" {
 // Colin. When below flags are 0, effectively master reference.
 #define DISABLE_SGSPR_FILTER            0   // SGSPR Filter
 #define DISABLE_CDEF_FILTER             0   // CDEF Filter
+#define DISABLE_REST_FILTER             0   // CDEF Filter
 #define DISABLE_FILTER_INTRA            0    
 #define DISABLE_NSQ_SEARCH              0   // NSQ Search
 #define DISABLE_DEBLOCKING_FILTER       0   // loop filter mode 0

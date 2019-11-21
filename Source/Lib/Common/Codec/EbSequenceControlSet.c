@@ -161,8 +161,13 @@ EbErrorType eb_sequence_control_set_ctor(
         sequence_control_set_ptr->seq_header.enable_cdef = 1;
     sequence_control_set_ptr->seq_header.enable_restoration = 1;
 #endif  
+ #if  DISABLE_CDEF_FILTER
+    sequence_control_set_ptr->seq_header.enable_cdef = 0;
+#endif
 
-
+#if DISABLE_REST_FILTER
+    sequence_control_set_ptr->seq_header.enable_restoration = 0;
+#endif
 #if DISABLE_MRP
     sequence_control_set_ptr->reference_count = 1;
 #else

@@ -1112,9 +1112,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 #if DISABLE_SGSPR_FILTER
     cm->sg_filter_mode = 0;
 #endif
-#if DISABLE_CDEF_FILTER
-    picture_control_set_ptr->cdef_filter_mode = 0;
-#endif
+
 
     // WN Level                                     Settings
     // 0                                            OFF
