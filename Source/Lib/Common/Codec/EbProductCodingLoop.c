@@ -6459,10 +6459,15 @@ EbBool allowed_ns_cu(
     EbBool                             is_nsq_table_used,
     uint8_t                            nsq_max_shapes_md,
     ModeDecisionContext              *context_ptr,
-    uint8_t                            is_complete_sb){
+    uint8_t                            is_complete_sb) {
     EbBool  ret = 1;
     UNUSED(is_complete_sb);
-
+#if DISABLE_NSQ_SEARCH
+    if (context_ptr->blk_geom->shape != PART_N) {
+        ret = 0;
+        return ret;
+    }
+#endif
 #if COMBINE_MDC_NSQ_TABLE
     if (is_nsq_table_used) {
         if (mdc_depth_level == MAX_MDC_LEVEL) {
