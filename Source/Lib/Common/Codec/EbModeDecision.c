@@ -3094,7 +3094,7 @@ void inject_warped_motion_candidates(
         const uint8_t list0_ref_index = me_block_results_ptr->ref_idx_l0;
 
 #if ADD_PD_1 && !ENABLE_MRP
-        if (context_ptr->pd_pass == PD_PASS_1 && list0_ref_index 0)
+        if (context_ptr->pd_pass == PD_PASS_1 && list0_ref_index > 0)
             continue;
 #endif
 
@@ -4370,7 +4370,11 @@ void  inject_inter_candidates(
 
     uint32_t refIt;
 #if MULTI_PASS_PD && !LETS_1_NEAREST// Shut OBMC, COMB, .. if 1st pass
+#if SHUT_MERGE
+    if (context_ptr->pd_pass == PD_PASS_2) {
+#else
     if (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2) {
+#endif
 #endif
     //all of ref pairs: (1)single-ref List0  (2)single-ref List1  (3)compound Bi-Dir List0-List1  (4)compound Uni-Dir List0-List0  (5)compound Uni-Dir List1-List1
 #if LETS_1_NEAREST
@@ -5374,6 +5378,7 @@ void  inject_intra_candidates(
         angle_estimation(src_buf, src_pic->stride_y, rows, cols, /*context_ptr->blk_geom->bsize,*/directional_mode_skip_mask);
     }
     uint8_t     angle_delta_shift = 1;
+
     if (picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode == 4) {
         if (picture_control_set_ptr->slice_type == I_SLICE) {
 #if PAETH_HBD
@@ -5394,19 +5399,31 @@ void  inject_intra_candidates(
             disable_z2_prediction = 0;
         }
     }else
+#if ADD_PD_1 && !CHECK_INTRA_MODE
+     if ((context_ptr->pd_pass == PD_PASS_1 && picture_control_set_ptr->temporal_layer_index > 0) || picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode == 3) {
+#else
     if (picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode == 3){
+#endif
         disable_z2_prediction       = 0;
         disable_angle_refinement    = 0;
         disable_angle_prediction    = 1;
         angleDeltaCandidateCount = disable_angle_refinement ? 1: angleDeltaCandidateCount;
+#if ADD_PD_1 && !CHECK_INTRA_MODE
+    } else if ((context_ptr->pd_pass == PD_PASS_0 || context_ptr->pd_pass == PD_PASS_2) && picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode == 2) {
+#else
     } else if (picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode == 2) {
+#endif
         disable_z2_prediction       = 0;
         disable_angle_refinement    = 0 ;
         disable_angle_prediction    = (context_ptr->blk_geom->sq_size > 16 ||
                                        context_ptr->blk_geom->bwidth == 4 ||
                                        context_ptr->blk_geom->bheight == 4) ? 1 : 0;
         angleDeltaCandidateCount = disable_angle_refinement ? 1: angleDeltaCandidateCount;
+#if ADD_PD_1
+    } else if ((context_ptr->pd_pass == PD_PASS_1 && picture_control_set_ptr->temporal_layer_index == 0) || picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode == 3) {
+#else
     } else if (picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode == 1) {
+#endif
         disable_z2_prediction       = (context_ptr->blk_geom->sq_size > 16 ||
                                        context_ptr->blk_geom->bwidth == 4 ||
                                        context_ptr->blk_geom->bheight == 4) ? 1 : 0;

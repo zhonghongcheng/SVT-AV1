@@ -369,6 +369,7 @@ extern "C" {
     uint8_t interpolation_search_level;
     // Signal to control initial and final pass PD setting(s)
     PD_PASS pd_pass;
+
     EbBool nearest_injected;
 #endif
     } ModeDecisionContext;

@@ -1505,6 +1505,7 @@ EbErrorType signal_derivation_multi_processes_oq(
     else
         picture_control_set_ptr->tx_search_reduced_set = 1;
 #endif
+
     // Intra prediction modes                       Settings
     // 0                                            FULL
     // 1                                            LIGHT per block : disable_z2_prediction && disable_angle_refinement  for 64/32/4
