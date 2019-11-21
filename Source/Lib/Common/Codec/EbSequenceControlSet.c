@@ -153,16 +153,15 @@ EbErrorType eb_sequence_control_set_ctor(
     // 2 - adaptive
 
     sequence_control_set_ptr->seq_header.order_hint_info.enable_ref_frame_mvs = 1;
+
 #if NO_ENCDEC || SHUT_FILTERING
-    sequence_control_set_ptr->enable_cdef = 0;
-
-    sequence_control_set_ptr->enable_restoration = 0;
+    sequence_control_set_ptr->seq_header.enable_cdef = 0;
+    sequence_control_set_ptr->seq_header.enable_restoration = 0; 
 #else
-    sequence_control_set_ptr->seq_header.enable_cdef = 1;
+        sequence_control_set_ptr->seq_header.enable_cdef = 1;
     sequence_control_set_ptr->seq_header.enable_restoration = 1;
-#endif
+#endif  
 
-    sequence_control_set_ptr->film_grain_random_seed = 7391;
 
 #if DISABLE_MRP
     sequence_control_set_ptr->reference_count = 1;

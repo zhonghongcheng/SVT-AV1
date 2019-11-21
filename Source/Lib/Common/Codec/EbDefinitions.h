@@ -40,7 +40,7 @@ extern "C" {
 #define DISABLE_SGSPR_FILTER            0   // SGSPR Filter
 #define DISABLE_CDEF_FILTER             0   // CDEF Filter
 #define DISABLE_FILTER_INTRA            0    
-#define DISABLE_NSQ_SEARCH              1   // NSQ Search
+#define DISABLE_NSQ_SEARCH              0   // NSQ Search
 #define DISABLE_DEBLOCKING_FILTER       0   // loop filter mode 0
 #define DISABLE_COMPOUND_MODE           0   // 
 #define DISABLE_INTERINTRA_COMPOUND     0
@@ -52,6 +52,11 @@ extern "C" {
 #define DISABLE_INTERPOLATION_FILTER_SEARCH     0
 #define DISABLE_ATB 0
 #define DISABLE_MRP 0
+#define DISABLE_MFMV 0
+#define DISABLE_RDOQ 0
+#define DISABLE_WARPED_MOTION 0
+
+#define SHUT_FILTERING 1
 
 /* Note: shutting the macro PAL_SUP will not give SS as pcs->palette_mode = 0
    rate estimation is changed for I frame + enabled sc for P (rate estimation

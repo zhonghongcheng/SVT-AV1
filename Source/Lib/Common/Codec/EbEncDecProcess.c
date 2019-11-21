@@ -1512,6 +1512,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
 
+
+#if DISABLE_RDOQ
+    context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
+#endif
+
     // Derive redundant block
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         if (picture_control_set_ptr->enc_mode <= ENC_M1)

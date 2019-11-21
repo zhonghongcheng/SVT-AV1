@@ -543,10 +543,8 @@ void reset_mode_decision(
         (picture_control_set_ptr->parent_pcs_ptr->is_pan || picture_control_set_ptr->parent_pcs_ptr->is_tilt) ? 1 : 0;
 #endif
 
-#if DISABLE_EIGTH_PEL_MV
-    picture_control_set_ptr->parent_pcs_ptr->allow_high_precision_mv = 0;
 #endif
-#endif
+
     EbBool enable_wm;
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         enable_wm = EB_FALSE;
@@ -564,6 +562,9 @@ void reset_mode_decision(
     frm_hdr->allow_warped_motion = enable_wm
         && !(frm_hdr->frame_type == KEY_FRAME || frm_hdr->frame_type == INTRA_ONLY_FRAME)
         && !frm_hdr->error_resilient_mode;
+#if DISABLE_WARPED_MOTION
+    frm_hdr->allow_warped_motion = EB_FALSE;
+#endif
     frm_hdr->is_motion_mode_switchable = frm_hdr->allow_warped_motion;
 #if OBMC_FLAG
     // OBMC Level                                   Settings
