@@ -1345,7 +1345,7 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->frame_end_cdf_update_mode = 1;
         else
             picture_control_set_ptr->frame_end_cdf_update_mode = 0;
-        if (picture_control_set_ptr->sc_content_detected || picture_control_set_ptr->enc_mode == ENC_M0 || picture_control_set_ptr->enc_mode >= ENC_M4)
+        if (picture_control_set_ptr->sc_content_detected ||  picture_control_set_ptr->enc_mode >= ENC_M4)
             picture_control_set_ptr->prune_unipred_at_me = 0;
         else
             picture_control_set_ptr->prune_unipred_at_me = 1;
