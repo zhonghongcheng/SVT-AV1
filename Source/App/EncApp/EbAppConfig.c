@@ -33,6 +33,7 @@
 #if TWO_PASS
 #define INPUT_STAT_FILE_TOKEN           "-input-stat-file"
 #define OUTPUT_STAT_FILE_TOKEN          "-output-stat-file"
+#define PASS_TOKEN                      "-pass"
 #endif
 #define STAT_FILE_TOKEN                 "-stat-file"
 #define WIDTH_TOKEN                     "-w"
@@ -206,6 +207,7 @@ static void set_output_stat_file(const char *value, EbConfig *cfg)
     if (cfg->output_stat_file) { fclose(cfg->output_stat_file); }
     FOPEN(cfg->output_stat_file, value, "wb");
 };
+static void set_pass(const char *value, EbConfig *cfg) { cfg->pass = strtoul(value, NULL, 0); };
 #if TWO_PASS_USE_2NDP_ME_IN_1STP
 static void set_snd_pass_enc_mode(const char *value, EbConfig *cfg) { cfg->snd_pass_enc_mode = (uint8_t)strtoul(value, NULL, 0); };
 #endif
@@ -369,6 +371,7 @@ config_entry_t config_entry[] = {
 #if TWO_PASS
     { SINGLE_INPUT, INPUT_STAT_FILE_TOKEN, "input_stat_file", set_input_stat_file },
     { SINGLE_INPUT, OUTPUT_STAT_FILE_TOKEN, "output_stat_file", set_output_stat_file },
+    { SINGLE_INPUT, PASS_TOKEN, "pass", set_pass },
 #endif
 
     // Interlaced Video
@@ -509,6 +512,9 @@ void eb_config_ctor(EbConfig *config_ptr)
     config_ptr->enc_mode                              = MAX_ENC_PRESET;
 #if TWO_PASS_USE_2NDP_ME_IN_1STP
     config_ptr->snd_pass_enc_mode                     = MAX_ENC_PRESET + 1;
+#endif
+#if TWO_PASS
+    config_ptr->pass                                   = 0;
 #endif
     config_ptr->intra_period                          = -2;
     config_ptr->intra_refresh_type                     = 1;
@@ -918,8 +924,23 @@ static EbErrorType VerifySettings(EbConfig *config, uint32_t channelNumber)
         fprintf(config->error_log_file, "Error instance %u: Invalid HBD mode decision flag [0 - 2], your input: %d\n", channelNumber + 1, config->target_socket);
         return_error = EB_ErrorBadParameter;
     }
+#if TWO_PASS
+    if (config->pass < 0 || config->pass > 2)
+    {
+        fprintf(config->error_log_file, "Error instance %u: Invalid pass [1 - 2] for 2-pass and 0 for 1-pass \n", channelNumber + 1);
+        return_error = EB_ErrorBadParameter;
+    }
 
+    if (config->pass == 2 && config->input_stat_file == (FILE*)NULL) {
+        fprintf(config->error_log_file, "Error instance %u: Invalid Input Stat File\n", channelNumber + 1);
+        return_error = EB_ErrorBadParameter;
+    }
 
+    if (config->pass == 1 && config->output_stat_file == (FILE*)NULL) {
+        fprintf(config->error_log_file, "Error instance %u: Invalid Output Stat File\n", channelNumber + 1);
+        return_error = EB_ErrorBadParameter;
+    }
+#endif
 
     return return_error;
 }
