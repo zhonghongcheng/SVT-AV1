@@ -258,6 +258,7 @@ extern "C" {
 /********************************************************/
 
 #define EVERY_THING                            0
+#define SKIP_DEPTH_BASED_ON_DEPTH_RANK         0 // (1) SUM THE COST OF EACH DEPTH, (2) RANK THE DEPTH BASE ON COST AND THEN (3) DECIDE WHICH DEPTH TO SKIP
 
 
 #endif

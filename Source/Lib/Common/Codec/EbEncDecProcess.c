@@ -2331,6 +2331,114 @@ void derive_start_end_depth(
         *e_depth = 0;
 }
 
+#if SKIP_DEPTH_BASED_ON_DEPTH_RANK
+uint64_t  olpd_th_tab[9][NUMBER_OF_DEPTH] = {
+    {200,200,200, 200, 200,200},
+    {200,200,200, 200, 200,200},
+    {200,200,200, 200, 200,200},
+    {200,200,200, 200, 200,200},
+    {200,200,200, 200, 200,200},
+    {200,200,200, 200, 200,200},
+    {200,200,200, 200, 200,200},
+    {200,200,200, 200, 200,200},
+    {200,200,200, 200, 200,200}, 
+};
+// Update MDC refinement
+void set_skipped_depth(
+    PictureControlSet  *picture_control_set_ptr,
+    LargestCodingUnit  *sb_ptr,
+    uint32_t sb_index,
+    uint32_t sb_size,
+    EbInputResolution input_resolution,
+    uint8_t is_used_as_reference_flag,
+    uint8_t *skip_depth,
+    uint8_t *last_depth) {
+    uint8_t depth_idx;
+    uint8_t number_of_depth_th = NUMBER_OF_DEPTH;
+    uint8_t encode_mode = picture_control_set_ptr->parent_pcs_ptr->enc_mode; 
+    int8_t best_depth;
+    uint64_t max_distance = 0xFFFFFFFFFFFFFFF;
+
+    for (depth_idx = 0; depth_idx < NUMBER_OF_DEPTH; depth_idx++) {
+        skip_depth[depth_idx] = 1;
+        if (sb_ptr->depth_ranking[depth_idx] == 0)
+            best_depth = depth_idx;
+    }
+    skip_depth[best_depth] = 0;
+    for (depth_idx = 0; depth_idx < NUMBER_OF_DEPTH; depth_idx++) {
+        uint64_t d_th = olpd_th_tab[encode_mode][depth_idx];
+        int64_t dist_cost = sb_ptr->depth_cost[best_depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[best_depth] - (int64_t)sb_ptr->depth_cost[sb_ptr->depth_ranking[depth_idx]]) * 100) / sb_ptr->depth_cost[best_depth] : max_distance;
+        if ((sb_ptr->depth_ranking[depth_idx] < number_of_depth_th) && dist_cost < d_th )
+            skip_depth[depth_idx] = 0;
+    }
+    for (depth_idx = 0; depth_idx < NUMBER_OF_DEPTH; depth_idx++)
+        if (skip_depth[depth_idx] == 0)
+            *last_depth = depth_idx;
+}
+static void init_considered_block(
+    SequenceControlSet  *sequence_control_set_ptr,
+    PictureControlSet   *picture_control_set_ptr,
+    ModeDecisionContext *context_ptr,
+    uint32_t             sb_index) {
+
+    MdcLcuData *resultsPtr = &picture_control_set_ptr->mdc_sb_array[sb_index];
+    resultsPtr->leaf_count = 0;
+    uint32_t  blk_index = 0;
+    LargestCodingUnit  *sb_ptr = picture_control_set_ptr->sb_ptr_array[sb_index];
+    uint32_t tot_d1_blocks, block_1d_idx;
+    EbBool split_flag;
+    int8_t ref_mode = 0; // 0: adaptive, 1: exclusive
+    uint32_t is_complete_sb = sequence_control_set_ptr->sb_geom[sb_index].is_complete_sb;
+    uint8_t skip_depth_tab[6] = { 0,0,0,0,0,0 };
+    uint8_t last_depth = 5;
+    uint8_t depth_offset = sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128 ? 0 : 1;
+
+    // Mark depth to skip.
+    if(is_complete_sb)
+        set_skipped_depth(
+            picture_control_set_ptr,
+            sb_ptr,
+            sb_index,
+            sequence_control_set_ptr->seq_header.sb_size,
+            sequence_control_set_ptr->input_resolution,
+            picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag,
+            skip_depth_tab,
+            &last_depth);
+    while (blk_index < sequence_control_set_ptr->max_block_cnt) {
+        const BlockGeom * blk_geom = get_blk_geom_mds(blk_index);
+        tot_d1_blocks =
+            blk_geom->sq_size == 128 ? 17 :
+            blk_geom->sq_size > 8 ? 25 :
+            blk_geom->sq_size == 8 ? 5 : 1;
+        //if the parent square is inside inject this block
+        uint8_t is_blk_allowed = picture_control_set_ptr->slice_type != I_SLICE ? 1 : (blk_geom->sq_size < 128) ? 1 : 0;
+
+        // derive split_flag based on ref_mode
+        if (ref_mode)
+            split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
+        else
+            split_flag = (blk_geom->depth + depth_offset) < last_depth ? EB_TRUE : EB_FALSE;
+
+        if (sequence_control_set_ptr->sb_geom[sb_index].block_is_inside_md_scan[blk_index] && is_blk_allowed) {
+            if (blk_geom->shape == PART_N) {
+                if (!skip_depth_tab[blk_geom->depth + depth_offset]) {
+                    for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                        resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                        resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = split_flag;
+                    }
+                }
+                else {
+                    for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
+                        resultsPtr->leaf_data_array[blk_index + block_1d_idx].consider_block = 1;
+                        resultsPtr->leaf_data_array[blk_index + block_1d_idx].refined_split_flag = EB_TRUE;
+                    }
+                }
+            }
+        }
+        blk_index += split_flag ? d1_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth] : ns_depth_offset[sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128][blk_geom->depth];
+    }
+}
+#else
 static void init_considered_block(
     SequenceControlSet  *sequence_control_set_ptr,
     PictureControlSet   *picture_control_set_ptr,
@@ -2427,7 +2535,7 @@ static void init_considered_block(
     }
 }
 #endif
-
+#endif
 /******************************************************
  * EncDec Kernel
  ******************************************************/
