@@ -388,7 +388,7 @@ void write_stat_info_to_file(
     unsigned int pic_width_in_block  = (uint8_t)((sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz);
     unsigned int pic_height_in_block = (uint8_t)((sequence_control_set_ptr->seq_header.max_frame_height + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz);
     unsigned int block_total_count = pic_width_in_block * pic_height_in_block;
-    dept_stat_ppg_t *dept_stat_propagate[slide_win_length];
+    dept_stat_ppg_t *dept_stat_propagate[STAT_LA_LENGTH];
     stat_struct_t stat_struct;
 
     memset(&stat_struct, 0, sizeof(stat_struct));
@@ -474,7 +474,7 @@ void write_stat_info_to_file(
 
     for(int frame=0; frame < slide_win_length; frame++)
         EB_FREE_ARRAY(dept_stat_propagate[frame]);
-if(0)
+if(1)
 {
     int64_t mc_dep_cost_base = 0, intra_cost_base = 0;
 
@@ -489,18 +489,18 @@ if(0)
         recrf_dist_base += stat_struct.cur_stat[sb_addr].recrf_dist;
         mc_dep_rate_base += stat_struct.cur_stat[sb_addr].mc_dep_rate;
         mc_dep_dist_base += stat_struct.cur_stat[sb_addr].mc_dep_dist;
-        if (ref_poc == 2) {
-            printf("\nindex:%d\t%.0f\t%.0f\t%.0f\t%.0f\t%.0f\t%.0f\t%.2f\n",
-                sb_addr,
-                (double)stat_struct.cur_stat[sb_addr].intra_cost,
-                (double)stat_struct.cur_stat[sb_addr].mc_dep_cost,
-                (double)stat_struct.cur_stat[sb_addr].recrf_dist,
-                (double)stat_struct.cur_stat[sb_addr].mc_dep_rate,
-                (double)stat_struct.cur_stat[sb_addr].mc_dep_dist,
-                (double)stat_struct.cur_stat[sb_addr].mc_flow,
-                (double)stat_struct.cur_stat[sb_addr].intra_cost / (double)stat_struct.cur_stat[sb_addr].mc_dep_cost
-                );
-        }
+        //if (ref_poc == 2) {
+        //    printf("\nindex:%d\t%.0f\t%.0f\t%.0f\t%.0f\t%.0f\t%.0f\t%.2f\n",
+        //        sb_addr,
+        //        (double)stat_struct.cur_stat[sb_addr].intra_cost,
+        //        (double)stat_struct.cur_stat[sb_addr].mc_dep_cost,
+        //        (double)stat_struct.cur_stat[sb_addr].recrf_dist,
+        //        (double)stat_struct.cur_stat[sb_addr].mc_dep_rate,
+        //        (double)stat_struct.cur_stat[sb_addr].mc_dep_dist,
+        //        (double)stat_struct.cur_stat[sb_addr].mc_flow,
+        //        (double)stat_struct.cur_stat[sb_addr].intra_cost / (double)stat_struct.cur_stat[sb_addr].mc_dep_cost
+        //        );
+        //}
     }
     double r0 = (double)intra_cost_base / mc_dep_cost_base;
     const int kf_boost =

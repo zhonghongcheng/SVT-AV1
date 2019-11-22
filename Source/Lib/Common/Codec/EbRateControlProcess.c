@@ -3747,7 +3747,7 @@ static int adaptive_qindex_calc_two_pass(
             referenced_area_avg = 0;
         // cross multiplication to derive kf_boost from referenced area; kf_boost range is [kf_low,kf_high], and referenced range [0,referenced_area_max]
         rc->kf_boost = (int)((referenced_area_avg  * (kf_high - kf_low)) / referenced_area_max) + kf_low;
-#if STAT_UPDATE
+#if 0 //STAT_UPDATE
         int new_kf_boost = 
             get_kf_boost_from_r0(picture_control_set_ptr->parent_pcs_ptr->r0, 60);
 
@@ -4083,7 +4083,7 @@ static void sb_qp_derivation_two_pass(
             }
             delta_qp = 0;
 
-#if  0// STAT_UPDATE
+#if   STAT_UPDATE
             if (picture_control_set_ptr->slice_type == 2/*picture_control_set_ptr->temporal_layer_index == 0*/) {
                 const double r0 = picture_control_set_ptr->parent_pcs_ptr->r0;
                 const double rk = (double)intra_cost / mc_dep_cost;
