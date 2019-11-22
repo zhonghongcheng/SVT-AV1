@@ -1319,10 +1319,6 @@ EbErrorType signal_derivation_multi_processes_oq(
 
         picture_control_set_ptr->wedge_mode = 0;
 
-#if DISABLE_WEDGE_MODE
-        picture_control_set_ptr->wedge_mode = 0;
-#endif
-
 #if II_COMP_FLAG
         // inter intra pred                      Settings
         // 0                                     OFF

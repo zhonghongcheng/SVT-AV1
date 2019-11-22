@@ -36,31 +36,32 @@ extern "C" {
 
 #define IFS_8BIT_MD                  1
 
-// Colin. When below flags are 0, effectively master reference.
-#define DISABLE_SGSPR_FILTER            0   // SGSPR Filter
-#define DISABLE_CDEF_FILTER             0   // CDEF Filter
-#define DISABLE_REST_FILTER             0   // CDEF Filter
-#define DISABLE_FILTER_INTRA            0    
-#define DISABLE_NSQ_SEARCH              0   // NSQ Search
-#define DISABLE_DEBLOCKING_FILTER       0   // loop filter mode 0
-#define DISABLE_COMPOUND_MODE           0   // 
-#define DISABLE_INTERINTRA_COMPOUND     0
-#define DISABLE_INTERINTER_COMPOUND_PRED 0
-#define DISABLE_WEDGE_MODE              0
-#define DISABLE_WN_FILTER               0
-#define DISABLE_TX_SEARCH              0
-#define DISABLE_EIGTH_PEL_MV            0
-#define DISABLE_INTERPOLATION_FILTER_SEARCH     0
-#define DISABLE_ATB 0
-#define DISABLE_MRP 0
-#define DISABLE_MFMV 0
-#define DISABLE_RDOQ 0
-#define DISABLE_WARPED_MOTION 0
-#define DISABLE_OBMC 0
-#define DISABLE_CFL 1
-#define CHROMA_DC_ONLY 1
+// begin: colin-feature-test 
+// when below flags are 0, behaviour matches master except with QPS_SW_THRESH = 100
+#define DISABLE_SGSPR_FILTER                0   // SGSPR Filter
+#define DISABLE_CDEF_FILTER                 0   // CDEF Filter
+#define DISABLE_REST_FILTER                 0   // Restoration Filter
+#define DISABLE_FILTER_INTRA                1    
+#define DISABLE_NSQ_SEARCH                  1   // NSQ Search
+#define DISABLE_DEBLOCKING_FILTER           1   // loop filter mode 0
+#define DISABLE_COMPOUND_MODE               1   
+#define DISABLE_INTERINTER_COMPOUND_PRED    1
+#define DISABLE_WN_FILTER                   0
+#define DISABLE_TX_SEARCH                   0
+#define DISABLE_EIGTH_PEL_MV                0
+#define DISABLE_INTERPOLATION_FILTER_SEARCH 1
+#define DISABLE_ATB                         1
+#define DISABLE_MRP                         1
+#define DISABLE_MFMV                        1
+#define DISABLE_RDOQ                        1
+#define DISABLE_WARPED_MOTION               1
+#define DISABLE_OBMC                        1
+#define DISABLE_CFL                         1
+#define CHROMA_DC_ONLY                      1
+#define SHUT_FILTERING                      1   // cdef + rest
 
-#define SHUT_FILTERING 0
+#define DISABLE_INTERINTRA_COMPOUND         0
+// end colin-feature-test
 
 /* Note: shutting the macro PAL_SUP will not give SS as pcs->palette_mode = 0
    rate estimation is changed for I frame + enabled sc for P (rate estimation
@@ -71,13 +72,10 @@ extern "C" {
 #define PAL_CLASS   1
 #endif
 
-#define INTER_INTRA_HBD         1 // Upgrade InterIntra compound 10bit
-#define II_COMP_FLAG            1 // InterIntra compound
-
 #define LESS_RECTANGULAR_CHECK_LEVEL 1 // Shortcut to skip a/b shapes depending on SQ/H/V shape costs
 
 #define INTER_INTRA_CLASS_PRUNING    1
-#define FILTER_INTRA_FLAG       1   // Filter intra prediction
+
 #define FIX_ALTREF                   1 // Address ALTREF mismatch between rtime-m0-test and master: fixed actual_future_pics derivation, shut padding of the central frame, fixed end past frame index prior to window shrinking
 #define FIX_NEAREST_NEW              1 // Address NEAREST_NEW mismatch between rtime-m0-test and master: fixed injection and fixed settings
 #define FIX_ESTIMATE_INTRA           1 // Address ESTIMATE_INTRA mismatch between rtime-m0-test and master: fixed settings
@@ -93,11 +91,12 @@ extern "C" {
 #define OBMC_CONVOLVE        1 // to track convolve kernels changes
 
 #define INJECT_NEW_NEAR_NEAR_NEW   1   // Inject NEW_NEAR / NEAR_NEW inter prediction
+#define FILTER_INTRA_FLAG       1   // Filter intra prediction
 
-
+#define II_COMP_FLAG            1 // InterIntra compound
 #define PAETH_HBD                    1 // Enbale Intra PAETH for 10bit
 #define INTER_INTER_HBD              1 // Upgrade InterInter compound 10bit
-
+#define INTER_INTRA_HBD         1 // Upgrade InterIntra compound 10bit
 #define ATB_10_BIT                   1 // Upgrade ATB  10bit
 
 #define PRED_CHANGE                  1 // Change the MRP in 4L Pictures 3, 5 , 7 and 9 use 1 as the reference
