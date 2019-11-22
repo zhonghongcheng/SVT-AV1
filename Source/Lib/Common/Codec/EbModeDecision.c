@@ -5349,7 +5349,11 @@ void  inject_intra_candidates(
     uint8_t                     intra_mode_start = DC_PRED;
 #if PAETH_HBD
 #if LETS_INJECT_DC
+#if ONLY_DC
+    uint8_t                     intra_mode_end = (context_ptr->pd_pass == PD_PASS_2) ? PAETH_PRED : DC_PRED;
+#else
     uint8_t                     intra_mode_end = (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2) ? PAETH_PRED : DC_PRED;
+#endif
 #else
     uint8_t                     intra_mode_end   =  PAETH_PRED;
 #endif
@@ -5828,7 +5832,11 @@ EbErrorType generate_md_stage_0_cand(
     // Intra
     if (context_ptr->blk_geom->sq_size < 128) {
 #if LETS_INJECT_DC
+#if ONLY_DC
+        if (context_ptr->pd_pass == PD_PASS_2 && picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode >= 5 && context_ptr->blk_geom->sq_size > 4 && context_ptr->blk_geom->shape == PART_N)
+#else
         if ((context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2) && picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode >= 5 && context_ptr->blk_geom->sq_size > 4 && context_ptr->blk_geom->shape == PART_N)
+#endif
 #else
         if (picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode >= 5 && context_ptr->blk_geom->sq_size > 4 && context_ptr->blk_geom->shape == PART_N)
 #endif
@@ -5851,7 +5859,11 @@ EbErrorType generate_md_stage_0_cand(
 #endif
 #if MULTI_PASS_PD // Shut intra test if 1st pass
 #if !CHECK_FILTER
+#if SHUT_FILTER_INTRA
+   if (context_ptr->pd_pass == PD_PASS_2)
+#else
     if ((context_ptr->pd_pass == PD_PASS_1 && picture_control_set_ptr->temporal_layer_index == 0) || context_ptr->pd_pass == PD_PASS_2)
+#endif
 #endif
         {
 #endif

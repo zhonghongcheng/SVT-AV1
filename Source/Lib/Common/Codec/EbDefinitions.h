@@ -231,28 +231,30 @@ extern "C" {
 #if ADD_PD_1
 
 #define SHUT_NSQ_TABLE                         1 // 0
-#define UNIPRED_BIPRED_3x3                     1 // 1
-#define ENABLE_NIC                             1 // 2
-#define PRUNE_REF_FRAME                        1 // 3
-#define STAGE_1_2_PRUNING                      1 // 4
-#define CHECK_COMP                             1 // 5
-#define CHECK_OBMC                             1 // 6 
-#define CHECK_SKIP_ANGULAR_INTRA               1 // 7
-#define CHECK_FILTER                           1 // 8
-#define CHECK_INTER_INTRA                      1 // 9
-#define CHECK_PALETTE                          1 // 10                                                                            
-#define INTERPOLATION_SEARCH                   1 // 11
-#define CHECK_N_4                              1 // 12                               
-#define CHECK_RDOQ                             1 // 13
-#define CHECK_FP_QUANT                         1 // 14
-#define CHECK_ATB                              1 // 15                                                                                       
-#define CHECK_NEAREST_NEAR                     1 // 16
-#define CHECK_PRED_ME                          1 // 17
-#define CHECK_INTRA_MODE                       1 // 18                                             
-/********************************************************/
-#define ENABLE_MRP                             1 // 19
-#define SHUT_MERGE                             0
-#define SHUT_NON_ZZ_MERGE                      0
+#define UNIPRED_BIPRED_3x3                     0 // 1
+#define ENABLE_NIC                             0 // 2
+#define PRUNE_REF_FRAME                        0 // 3
+#define STAGE_1_2_PRUNING                      0 // 4
+#define CHECK_COMP                             0 // 5
+#define CHECK_OBMC                             0 // 6 
+#define CHECK_SKIP_ANGULAR_INTRA               0 // 7
+#define CHECK_FILTER                           0 // 8
+#define CHECK_INTER_INTRA                      0 // 9                                                                          
+#define INTERPOLATION_SEARCH                   0 // 10
+#define CHECK_N_4                              0 // 11                               
+#define CHECK_RDOQ                             0 // 12
+#define CHECK_FP_QUANT                         0 // 13
+#define CHECK_ATB                              0 // 14                                                                                       
+#define CHECK_NEAREST_NEAR                     0 // 15
+#define CHECK_PRED_ME                          0 // 16
+#define CHECK_INTRA_MODE                       0 // 17                                             
+#define ENABLE_MRP                             0 // 18
+#define CHECK_PALETTE                          0 // XX  
+
+#define SHUT_MERGE                             1 
+#define ONLY_DC                                1
+#define SHUT_FILTER_INTRA                      1
+#define PD1_REF                                0
 /********************************************************/
 
 #define EVERY_THING                            0
