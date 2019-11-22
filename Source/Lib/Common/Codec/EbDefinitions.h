@@ -69,8 +69,8 @@ extern "C" {
 #if ENHANCE_ATB
 #define ATB_INTRA_2_DEPTH                 1 // ATB INTRA Depth 2
 #define UPDATE_ATB_INTRA_2_DEPTH          1
-#define ALL_LAYERS                        1 // ATB INTRA Depth 2
-#define COEFF_SKIP_OFF                    1
+#define ALL_LAYERS                        0 // ATB INTRA Depth 2
+#define COEFF_SKIP_OFF                    0
 #endif
 
 #define RDOQ_CHROMA                       1
