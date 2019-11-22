@@ -24,6 +24,7 @@
 #include "EbAppContext.h"
 #include "EbTime.h"
 #ifdef _WIN32
+#include <windows.h>
 #include <Windows.h>
 #include <io.h>     /* _setmode() */
 #include <fcntl.h>  /* _O_BINARY */
@@ -74,6 +75,37 @@ void AssignAppThreadGroup(uint8_t target_socket) {
 #endif
 }
 
+#define NEW_THREAD_OUT 0
+
+#if NEW_THREAD_OUT
+EbErrorType            return_error = EB_ErrorNone;            // Error Handling
+AppExitConditionType    exitCondition = APP_ExitConditionNone;    // Processing loop exit condition
+
+EbErrorType            return_errors[MAX_CHANNEL_NUMBER];          // Error Handling
+AppExitConditionType    exitConditions[MAX_CHANNEL_NUMBER];          // Processing loop exit condition
+AppExitConditionType    exitConditionsOutput[MAX_CHANNEL_NUMBER];         // Processing loop exit condition
+AppExitConditionType    exitConditionsRecon[MAX_CHANNEL_NUMBER];         // Processing loop exit condition
+AppExitConditionType    exitConditionsInput[MAX_CHANNEL_NUMBER];          // Processing loop exit condition
+
+EbBool                 channelActive[MAX_CHANNEL_NUMBER];
+
+EbConfig             *configs[MAX_CHANNEL_NUMBER];        // Encoder Configuration
+
+uint32_t                num_channels = 0;
+uint32_t                instanceCount = 0;
+EbAppContext         *appCallbacks[MAX_CHANNEL_NUMBER];   // Instances App callback data
+void get_stream_thread(void){
+
+    for (;;)
+
+    if (exitConditionsOutput[0] == APP_ExitConditionNone)
+        exitConditionsOutput[0] = ProcessOutputStreamBuffer(
+            configs[0],
+            appCallbacks[0],
+            (exitConditionsInput[0] == APP_ExitConditionNone) || (exitConditionsRecon[0] == APP_ExitConditionNone) ? 0 : 1);
+
+}
+#endif
 double get_psnr(double sse, double max);
 
 /***************************************
@@ -86,6 +118,7 @@ int32_t main(int32_t argc, char* argv[])
     _setmode(_fileno(stdout), _O_BINARY);
 #endif
     // GLOBAL VARIABLES
+#if !NEW_THREAD_OUT
     EbErrorType            return_error = EB_ErrorNone;            // Error Handling
     AppExitConditionType    exitCondition = APP_ExitConditionNone;    // Processing loop exit condition
 
@@ -102,6 +135,7 @@ int32_t main(int32_t argc, char* argv[])
     uint32_t                num_channels = 0;
     uint32_t                instanceCount=0;
     EbAppContext         *appCallbacks[MAX_CHANNEL_NUMBER];   // Instances App callback data
+#endif
     signal(SIGINT, EventHandler);
     printf("-------------------------------------------\n");
     printf("SVT-AV1 Encoder\n");
@@ -190,7 +224,15 @@ int32_t main(int32_t argc, char* argv[])
                 }
                 printf("Encoding          ");
                 fflush(stdout);
-
+#if NEW_THREAD_OUT
+                CreateThread(
+                    NULL,                           // default security attributes
+                    0,                              // default stack size
+                    (LPTHREAD_START_ROUTINE)get_stream_thread, // function to be tied to the new thread
+                    NULL,                  // context to be tied to the new thread
+                    0,                              // thread active when created
+                    NULL);                          // new thread ID
+#endif
                 while (exitCondition == APP_ExitConditionNone) {
                     exitCondition = APP_ExitConditionFinished;
                     for (instanceCount = 0; instanceCount < num_channels; ++instanceCount) {
@@ -203,11 +245,14 @@ int32_t main(int32_t argc, char* argv[])
                                 exitConditionsRecon[instanceCount] = ProcessOutputReconBuffer(
                                                                             configs[instanceCount],
                                                                             appCallbacks[instanceCount]);
+#if !NEW_THREAD_OUT
                             if (exitConditionsOutput[instanceCount] == APP_ExitConditionNone)
                                 exitConditionsOutput[instanceCount] = ProcessOutputStreamBuffer(
                                                                             configs[instanceCount],
                                                                             appCallbacks[instanceCount],
                                                                             (exitConditionsInput[instanceCount] == APP_ExitConditionNone) || (exitConditionsRecon[instanceCount] == APP_ExitConditionNone)? 0 : 1);
+#endif
+
                             if (((exitConditionsRecon[instanceCount] == APP_ExitConditionFinished || !configs[instanceCount]->recon_file)  && exitConditionsOutput[instanceCount] == APP_ExitConditionFinished && exitConditionsInput[instanceCount] == APP_ExitConditionFinished)||
                                 ((exitConditionsRecon[instanceCount] == APP_ExitConditionError && configs[instanceCount]->recon_file) || exitConditionsOutput[instanceCount] == APP_ExitConditionError || exitConditionsInput[instanceCount] == APP_ExitConditionError)){
                                 channelActive[instanceCount] = EB_FALSE;
