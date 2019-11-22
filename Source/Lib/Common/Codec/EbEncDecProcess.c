@@ -2166,7 +2166,7 @@ uint64_t  pd_level_tab[9][2][3] = {
 #else
     {{100,10,10},{100,10,10}},
 #endif
-    {{150,80,40},{150,80,40}},
+    {{15,5,5},{15,5,5}},
     {{100,20,0},{150,50,0}},
     {{100, 20, 0},{150,50,0}},
     {{100, 20, 0},{150,50,0}},
@@ -2178,6 +2178,7 @@ uint64_t  pd_level_tab[9][2][3] = {
 
 void derive_start_end_depth(
     PictureControlSet  *picture_control_set_ptr,
+    ModeDecisionContext *context_ptr,
     LargestCodingUnit  *sb_ptr,
     uint32_t sb_index,
     uint32_t sb_size,
@@ -2187,9 +2188,11 @@ void derive_start_end_depth(
 
     uint8_t depth_offset = sb_size == BLOCK_128X128 ? 0 : 1;
     int8_t depth = blk_geom->depth + depth_offset;
-    
+#if PD1_REF
+    uint8_t encode_mode = (context_ptr->pd_pass == PD_PASS_0) ? 0 : 1;
+#else
     uint8_t encode_mode = picture_control_set_ptr->parent_pcs_ptr->enc_mode;
-
+#endif
     int8_t start_depth = sb_size == BLOCK_128X128 ? 0 : 1;
     int8_t end_depth = 5;
     int8_t depthp1 = depth + 1 <= end_depth ? depth + 1 : depth;
@@ -2371,10 +2374,13 @@ static void init_considered_block(
                 int8_t e_depth = 0;
                 
                 // ---> why the is_complete_sb check ?
+#if !PD1_REF
                 if (context_ptr->pd_pass == PD_PASS_0)
+#endif
                     if (sb_params->is_complete_sb && (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE)) 
                          derive_start_end_depth(
                             picture_control_set_ptr,
+                            context_ptr,
                             sb_ptr,
                             sb_index,
                             sequence_control_set_ptr->seq_header.sb_size,
