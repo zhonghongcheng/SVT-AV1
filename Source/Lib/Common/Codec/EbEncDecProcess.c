@@ -2366,9 +2366,9 @@ void set_skipped_depth(
     }
     skip_depth[best_depth] = 0;
     for (depth_idx = 0; depth_idx < NUMBER_OF_DEPTH; depth_idx++) {
-        uint64_t d_th = olpd_th_tab[encode_mode][depth_idx];
-        int64_t dist_cost = sb_ptr->depth_cost[best_depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[best_depth] - (int64_t)sb_ptr->depth_cost[sb_ptr->depth_ranking[depth_idx]]) * 100) / sb_ptr->depth_cost[best_depth] : max_distance;
-        if ((sb_ptr->depth_ranking[depth_idx] < number_of_depth_th) && dist_cost < d_th )
+        uint64_t d_th = olpd_th_tab[encode_mode][sb_ptr->depth_ranking[depth_idx]];
+        int64_t dist_cost = sb_ptr->depth_cost[best_depth] != 0 ? (ABS((int64_t)sb_ptr->depth_cost[best_depth] - (int64_t)sb_ptr->depth_cost[depth_idx]) * 100) / sb_ptr->depth_cost[best_depth] : max_distance;
+        if ((sb_ptr->depth_ranking[depth_idx] < number_of_depth_th) && dist_cost < d_th)
             skip_depth[depth_idx] = 0;
     }
     for (depth_idx = 0; depth_idx < NUMBER_OF_DEPTH; depth_idx++)
