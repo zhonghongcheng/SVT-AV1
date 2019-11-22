@@ -546,6 +546,11 @@ void reset_mode_decision(
         (picture_control_set_ptr->parent_pcs_ptr->is_pan || picture_control_set_ptr->parent_pcs_ptr->is_tilt) ? 1 : 0;
 #endif
 
+
+#endif
+
+#if DISABLE_HIGH_PRECISION_MV
+    picture_control_set_ptr->parent_pcs_ptr->frm_hdr.allow_high_precision_mv = 0;
 #endif
 #endif
     EbBool enable_wm;
