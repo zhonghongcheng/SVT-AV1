@@ -36,33 +36,35 @@ extern "C" {
 
 #define IFS_8BIT_MD                  1
 
-// begin: colin-feature-test 
+// begin: colin-feature-test
 // when below flags are 0, behaviour matches master except with QPS_SW_THRESH = 100
 #define DISABLE_SGSPR_FILTER                0   // SGSPR Filter
 #define DISABLE_CDEF_FILTER                 0   // CDEF Filter
 #define DISABLE_REST_FILTER                 0   // Restoration Filter
-#define DISABLE_FILTER_INTRA                1    
-#define DISABLE_NSQ_SEARCH                  1   // NSQ Search
-#define DISABLE_DEBLOCKING_FILTER           1   // loop filter mode 0
-#define DISABLE_COMPOUND_MODE               1   
-#define DISABLE_INTERINTER_COMPOUND_PRED    1
+#define DISABLE_FILTER_INTRA                0
+#define DISABLE_NSQ_SEARCH                  0   // NSQ Search
+#define DISABLE_DEBLOCKING_FILTER           0   // loop filter mode 0
+#define DISABLE_COMPOUND_MODE               0
+#define DISABLE_INTERINTER_COMPOUND_PRED    0
 #define DISABLE_WN_FILTER                   0
 #define DISABLE_TX_SEARCH                   0
 #define DISABLE_EIGTH_PEL_MV                0
-#define DISABLE_INTERPOLATION_FILTER_SEARCH 1
-#define DISABLE_ATB                         1
-#define DISABLE_MRP                         1
-#define DISABLE_MFMV                        1
-#define DISABLE_RDOQ                        1
-#define DISABLE_WARPED_MOTION               1
-#define DISABLE_OBMC                        1
-#define DISABLE_CFL                         1
-#define CHROMA_DC_ONLY                      1
-#define SHUT_FILTERING                      1   // cdef + rest
+#define DISABLE_INTERPOLATION_FILTER_SEARCH 0
+#define DISABLE_ATB                         0
+#define DISABLE_MRP                         0
+#define DISABLE_MFMV                        0
+#define DISABLE_RDOQ                        0
+#define DISABLE_WARPED_MOTION               0
+#define DISABLE_OBMC                        0
+#define DISABLE_CFL                         0
+#define CHROMA_DC_ONLY                      0
+#define SHUT_FILTERING                      0   // cdef + rest
 
 #define DISABLE_INTERINTRA_COMPOUND         0
 // end colin-feature-test
-
+#define ATB_INTRA_FIX                       0
+#define EIGHT_PEL_FIX                       0 // Improve the 8th pel performance by shutting it based on the QP
+#define HIGH_PRECISION_MV_QTHRESH 150
 /* Note: shutting the macro PAL_SUP will not give SS as pcs->palette_mode = 0
    rate estimation is changed for I frame + enabled sc for P (rate estimation
    is a result changed for P frames)
