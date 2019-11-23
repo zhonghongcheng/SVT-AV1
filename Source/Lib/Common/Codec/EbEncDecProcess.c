@@ -2496,8 +2496,21 @@ static void init_considered_block(
                             &e_depth,
                             blk_geom);
 
-                //s_depth = 0;
-                //e_depth = 0;
+
+                if (context_ptr->pd_pass == PD_PASS_1) {
+                    if (context_ptr->md_cu_arr_nsq[blk_index].block_has_coeff == 0) {
+                        s_depth = 0;
+                        e_depth = 0;
+                    }
+                    else if (context_ptr->md_cu_arr_nsq[blk_index].best_d1_blk == blk_index) {
+                        s_depth = -1;
+                        e_depth = 0;
+                    }
+                    else {
+                        s_depth = 0;
+                        e_depth = 1;
+                    }
+                }
 
                 if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
 
