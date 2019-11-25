@@ -58,12 +58,15 @@ extern "C" {
 #define DISABLE_CFL                         0
 #define CHROMA_DC_ONLY                      0
 #define SHUT_FILTERING                      0   // cdef + rest
-#define DISABLE_HIGH_PRECISION_MV           1   // eigth-pel
+#define DISABLE_HIGH_PRECISION_MV           0   // eigth-pel
+#define RATE_ESTIMATION_UPDATE              0
+#define DISABLE_PALETTE_MODE                1
+
 
 #define DISABLE_INTERINTRA_COMPOUND         0
 // end colin-feature-test
-#define ATB_INTRA_FIX                       0
-#define EIGHT_PEL_FIX                       0 // Improve the 8th pel performance by shutting it based on the QP
+#define ATB_INTRA_FIX                       1
+#define EIGHT_PEL_FIX                       1 // Improve the 8th pel performance by shutting it based on the QP
 #define HIGH_PRECISION_MV_QTHRESH 150
 
 /* Note: shutting the macro PAL_SUP will not give SS as pcs->palette_mode = 0

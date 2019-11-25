@@ -1039,6 +1039,10 @@ EbErrorType signal_derivation_multi_processes_oq(
     else
         picture_control_set_ptr->palette_mode = 0;
 
+#if DISABLE_PALETTE_MODE
+    picture_control_set_ptr->palette_mode = 0;
+#endif
+
 
 
     assert(picture_control_set_ptr->palette_mode<7);
