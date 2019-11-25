@@ -1138,7 +1138,7 @@ EbErrorType signal_derivation_multi_processes_oq(
     else
         cm->wn_filter_mode = 0;
 
-#ifdef DISABLE_WN_FILTER
+#if DISABLE_WN_FILTER
     cm->wn_filter_mode = 0;
 #endif
 
