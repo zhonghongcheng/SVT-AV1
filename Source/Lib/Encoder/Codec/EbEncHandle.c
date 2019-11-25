@@ -2121,6 +2121,9 @@ void CopyApiFromApp(
     // Global motion
     sequence_control_set_ptr->static_config.enable_global_motion = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enable_global_motion;
 
+    // CDEF
+    sequence_control_set_ptr->static_config.enable_cdef = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enable_cdef;
+
     // atb mode
     sequence_control_set_ptr->static_config.enable_atb                   = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enable_atb;
     // cdf mode
@@ -2689,6 +2692,7 @@ EbErrorType eb_svt_enc_init_parameter(
     config_ptr->enable_cdf = DEFAULT;
     config_ptr->quant_fp = DEFAULT;
     config_ptr->update_cdf = DEFAULT;
+    config_ptr->enable_cdef = DEFAULT;
     config_ptr->enable_obmc = EB_TRUE;
     config_ptr->enable_rdoq = DEFAULT;
     config_ptr->enable_filter_intra = EB_TRUE;
