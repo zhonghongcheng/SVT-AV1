@@ -5403,7 +5403,7 @@ void  inject_intra_candidates(
             disable_z2_prediction = 0;
         }
     }else
-#if ADD_PD_1 && !CHECK_INTRA_MODE
+#if 0//ADD_PD_1 && !CHECK_INTRA_MODE
      if ((context_ptr->pd_pass == PD_PASS_1 && picture_control_set_ptr->temporal_layer_index > 0) || picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode == 3) {
 #else
     if (picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode == 3){
@@ -5423,7 +5423,7 @@ void  inject_intra_candidates(
                                        context_ptr->blk_geom->bwidth == 4 ||
                                        context_ptr->blk_geom->bheight == 4) ? 1 : 0;
         angleDeltaCandidateCount = disable_angle_refinement ? 1: angleDeltaCandidateCount;
-#if ADD_PD_1
+#if 0//ADD_PD_1
     } else if ((context_ptr->pd_pass == PD_PASS_1 && picture_control_set_ptr->temporal_layer_index == 0) || picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode == 3) {
 #else
     } else if (picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode == 1) {
@@ -5892,19 +5892,16 @@ EbErrorType generate_md_stage_0_cand(
 #if MULTI_PASS_PD // Shut intra test if 1st pass
     }
 #endif
-#if MULTI_PASS_PD // Shut intra test if 1st pass
-#if CHECK_PALETTE
-    if (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2) {
-#else
-    if (context_ptr->pd_pass == PD_PASS_2) {
-#endif
-#endif
+
 #if PAL_SUP
     //can be removed later if need be
     for (uint16_t i = 0; i < canTotalCnt; i++) {
         assert(context_ptr->fast_candidate_array[i].palette_info.pmi.palette_size[0] == 0);
         assert(context_ptr->fast_candidate_array[i].palette_info.pmi.palette_size[1] == 0);
     }
+#if MULTI_PASS_PD // Shut intra test if 1st pass
+    if (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2) {
+#endif
     if (svt_av1_allow_palette(picture_control_set_ptr->parent_pcs_ptr->palette_mode, context_ptr->blk_geom->bsize)) {
         inject_palette_candidates(
             picture_control_set_ptr,

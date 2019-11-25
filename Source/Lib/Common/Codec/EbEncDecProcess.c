@@ -1317,7 +1317,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 1                    On but only INTRA
     // 2                    On both INTRA and INTER
 #if MULTI_PASS_PD
-    if (context_ptr->pd_pass == PD_PASS_0 || context_ptr->pd_pass == PD_PASS_1)
+    if (context_ptr->pd_pass == PD_PASS_0)
+        context_ptr->full_loop_escape = 0;
+    else if (context_ptr->pd_pass == PD_PASS_1)
         context_ptr->full_loop_escape = 0;
     else
 #endif
@@ -2166,14 +2168,14 @@ uint64_t  pd_level_tab[9][2][3] = {
 #else
     {{100,10,10},{100,10,10}},
 #endif
-    {{3,3,3},{3,3,3}},
-    {{100,20,0},{150,50,0}},
-    {{100, 20, 0},{150,50,0}},
-    {{100, 20, 0},{150,50,0}},
-    {{100, 20, 0},{150,50,0}},
-    {{100, 20, 0},{150,50,0}},
-    {{100, 20, 0},{150,50,0}},
-    {{100, 20, 0},{150,50,0}}
+    {{100,10,10},{100,10,10}},
+    {{100,10,10},{100,10,10}},
+    {{100,10,10},{100,10,10}},
+    {{100,10,10},{100,10,10}},
+    {{100,10,10},{100,10,10}},
+    {{100,10,10},{100,10,10}},
+    {{100,10,10},{100,10,10}},
+    {{100,10,10},{100,10,10}},
 };
 
 void derive_start_end_depth(
@@ -2188,11 +2190,8 @@ void derive_start_end_depth(
 
     uint8_t depth_offset = sb_size == BLOCK_128X128 ? 0 : 1;
     int8_t depth = blk_geom->depth + depth_offset;
-#if PD1_REF
-    uint8_t encode_mode = (context_ptr->pd_pass == PD_PASS_0) ? 0 : 1;
-#else
     uint8_t encode_mode = picture_control_set_ptr->parent_pcs_ptr->enc_mode;
-#endif
+
     int8_t start_depth = sb_size == BLOCK_128X128 ? 0 : 1;
     int8_t end_depth = 5;
     int8_t depthp1 = depth + 1 <= end_depth ? depth + 1 : depth;
@@ -2478,15 +2477,14 @@ static void init_considered_block(
         if (sequence_control_set_ptr->sb_geom[sb_index].block_is_inside_md_scan[blk_index] && is_blk_allowed) {
             if (blk_geom->shape == PART_N) {
 
-                int8_t s_depth = 0;
-                int8_t e_depth = 0;
-                
-                // ---> why the is_complete_sb check ?
-#if !PD1_REF
-                if (context_ptr->pd_pass == PD_PASS_0)
-#endif
-                    if (sb_params->is_complete_sb && (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE)) 
-                         derive_start_end_depth(
+              
+                if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
+
+                    int8_t s_depth = 0;
+                    int8_t e_depth = 0;
+
+                    if (context_ptr->pd_pass == PD_PASS_0) {
+                        derive_start_end_depth(
                             picture_control_set_ptr,
                             context_ptr,
                             sb_ptr,
@@ -2495,25 +2493,32 @@ static void init_considered_block(
                             &s_depth,
                             &e_depth,
                             blk_geom);
+                    } else if (context_ptr->pd_pass == PD_PASS_1) {
 
+#if 0
+                        EbBool pred_has_coeff = EB_FALSE;  
+                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
 
-                if (context_ptr->pd_pass == PD_PASS_1) {
-                    //if (context_ptr->md_cu_arr_nsq[blk_index].block_has_coeff == 0) {
-                    //    s_depth = 0;
-                    //    e_depth = 0;
-                    //}
-                    //else 
-                        if (context_ptr->md_cu_arr_nsq[blk_index].best_d1_blk == blk_index) {
-                        s_depth = -1;
-                        e_depth = 0;
+                            if((context_ptr->md_cu_arr_nsq[blk_index + block_1d_idx].block_has_coeff))
+                                pred_has_coeff = EB_TRUE;
+                        }
+                        if (pred_has_coeff == EB_FALSE) {
+#else
+                        if (context_ptr->md_cu_arr_nsq[blk_index].block_has_coeff == 0) {
+#endif
+                            s_depth = 0;
+                            e_depth = 0;
+                        }
+                        else
+                            if (context_ptr->md_cu_arr_nsq[blk_index].best_d1_blk == blk_index) {
+                                s_depth = -1;
+                                e_depth = 0;
+                            }
+                            else {
+                                s_depth = 0;
+                                e_depth = 1;
+                            }
                     }
-                    else {
-                        s_depth = 0;
-                        e_depth = 1;
-                    }
-                }
-
-                if (context_ptr->md_cu_arr_nsq[blk_index].split_flag == EB_FALSE) {
 
                     // Add current pred depth block(s)
                     for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
