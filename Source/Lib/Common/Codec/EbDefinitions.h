@@ -254,7 +254,7 @@ extern "C" {
 #define SHUT_MERGE                             1 
 #define ONLY_DC                                1
 #define SHUT_FILTER_INTRA                      1
-
+#define TESTING_WIP                            0   
 /********************************************************/
 
 #define EVERY_THING                            0

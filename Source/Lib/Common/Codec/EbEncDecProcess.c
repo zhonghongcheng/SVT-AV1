@@ -1347,7 +1347,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->global_mv_injection = 0;
     }
     else if (context_ptr->pd_pass == PD_PASS_1) {
+#if TESTING_WIP
+        context_ptr->global_mv_injection = 0;
+#else
         context_ptr->global_mv_injection = 1;
+#endif
     }
     else
 #endif
@@ -1431,7 +1435,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->warped_motion_injection = 0;
     }
     else if (context_ptr->pd_pass == PD_PASS_1) {
+#if TESTING_WIP
+        context_ptr->warped_motion_injection = 0;
+#else
         context_ptr->warped_motion_injection = 1;
+#endif
     }
     else
 #endif
@@ -1765,7 +1773,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 1                    ON for 16x16 and above
     // 2                    ON for 32x32 and above
 #if MULTI_PASS_PD 
-    if (context_ptr->pd_pass == PD_PASS_0 || context_ptr->pd_pass == PD_PASS_1) {
+    if (context_ptr->pd_pass == PD_PASS_0) {
+        context_ptr->interpolation_filter_search_blk_size = 0;
+    }
+    else if (context_ptr->pd_pass == PD_PASS_1) {
         context_ptr->interpolation_filter_search_blk_size = 0;
     }
     else

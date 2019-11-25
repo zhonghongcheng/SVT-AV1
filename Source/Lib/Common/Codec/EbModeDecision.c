@@ -4305,7 +4305,11 @@ void  inject_inter_candidates(
     uint8_t sq_index = LOG2F(context_ptr->blk_geom->sq_size) - 2;
     uint8_t inject_newmv_candidate = 1;
 #if MULTI_PASS_PD // Shut coef-based inter skip if 1st pass
+#if TESTING_WIP
+    if (context_ptr->pd_pass == PD_PASS_2)
+#else
     if (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2)
+#endif
 #endif
     if (picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL) {
@@ -5812,7 +5816,11 @@ EbErrorType generate_md_stage_0_cand(
     uint8_t inject_intra_candidate = 1;
     uint8_t inject_inter_candidate = 1;
 #if MULTI_PASS_PD // Shut coef-based inter skip if 1st pass
+#if TESTING_WIP
+    if (context_ptr->pd_pass == PD_PASS_2) {
+#else
     if (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2) {
+#endif
 #endif
     if (slice_type != I_SLICE) {
         if (picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
