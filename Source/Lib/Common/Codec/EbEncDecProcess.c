@@ -2495,7 +2495,7 @@ static void init_considered_block(
                             blk_geom);
                     } else if (context_ptr->pd_pass == PD_PASS_1) {
 
-#if 1
+#if 0
                         EbBool pred_has_coeff = EB_FALSE;  
                         for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
 
