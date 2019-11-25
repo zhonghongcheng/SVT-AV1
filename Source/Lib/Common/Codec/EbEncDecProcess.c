@@ -2332,7 +2332,36 @@ static void init_considered_block(
                             blk_geom);
                     } else if (context_ptr->pd_pass == PD_PASS_1) {
 #if 0
-                        if (context_ptr->md_cu_arr_nsq[blk_index].block_has_coeff == 0) {
+
+                        EbBool zero_coeff_present_flag;
+
+                        switch (blk_geom->bsize) {
+
+                        case BLOCK_128X128:
+                            zero_coeff_present_flag = (context_ptr->md_cu_arr_nsq[blk_index].block_has_coeff == 0);
+                            break;
+
+                        case BLOCK_64X64:
+                        case BLOCK_32X32:
+                        case BLOCK_16X16:
+                            zero_coeff_present_flag = (context_ptr->md_cu_arr_nsq[blk_index].block_has_coeff == 0);
+                            break;
+
+                        case BLOCK_8X8:
+                            zero_coeff_present_flag = (context_ptr->md_cu_arr_nsq[blk_index].block_has_coeff == 0);
+                            break;
+
+                        case BLOCK_4X4:
+                            zero_coeff_present_flag = (context_ptr->md_cu_arr_nsq[blk_index].block_has_coeff == 0);
+                            break;
+
+                        default:
+                            assert(0);
+                            break;
+                        }
+
+
+                        if (zero_coeff_present_flag) {
                             s_depth = 0;
                             e_depth = 0;
                         }
