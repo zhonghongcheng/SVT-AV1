@@ -2495,12 +2495,14 @@ static void init_considered_block(
                             blk_geom);
                     } else if (context_ptr->pd_pass == PD_PASS_1) {
 
-#if 0
+#if 1
                         EbBool pred_has_coeff = EB_FALSE;  
                         for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
 
-                            if((context_ptr->md_cu_arr_nsq[blk_index + block_1d_idx].block_has_coeff))
+                            if ((context_ptr->md_cu_arr_nsq[blk_index + block_1d_idx].block_has_coeff)) {
                                 pred_has_coeff = EB_TRUE;
+                                break;
+                            }
                         }
                         if (pred_has_coeff == EB_FALSE) {
 #else
