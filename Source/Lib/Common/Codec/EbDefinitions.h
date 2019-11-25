@@ -220,7 +220,7 @@ extern "C" {
 #define PRED_PLUS_REFINEMENT                   1
 #if PRED_PLUS_REFINEMENT
 #define DEEP_REFINEMENT                        1
-#define NOW_ACT                                0
+
 #define LETS_INJECT_DC                         1
 #define LETS_USE_SPATIAL_SSE                   1
 #define LETS_1_NEAREST                         0

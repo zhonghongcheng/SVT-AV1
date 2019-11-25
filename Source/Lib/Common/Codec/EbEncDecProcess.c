@@ -2158,16 +2158,8 @@ static void forward_considered_blocks(
     }
 }
 
-#if NOW_ACT
-uint64_t  pd_level_tab[9][2][5] = {
-#else
 uint64_t  pd_level_tab[9][2][3] = {
-#endif
-#if NOW_ACT
-    {{300,200,100,100,100},{300,200,100,100,100}},
-#else
     {{100,10,10},{100,10,10}},
-#endif
     {{100,10,10},{100,10,10}},
     {{100,10,10},{100,10,10}},
     {{100,10,10},{100,10,10}},
@@ -2197,33 +2189,19 @@ void derive_start_end_depth(
     int8_t depthp1 = depth + 1 <= end_depth ? depth + 1 : depth;
     int8_t depthp2 = depth + 2 <= end_depth ? depth + 2 : depth + 1 <= end_depth ? depth + 1 : depth;
     int8_t depthp3 = depth + 3 <= end_depth ? depth + 3 : depth + 2 <= end_depth ? depth + 2 : depth + 1 <= end_depth ? depth + 1 : depth;
-#if NOW_ACT
-    int8_t depthp4 = depth + 4 <= end_depth ? depth + 4 : depth + 3 <= end_depth ? depth + 3 : depth + 2 <= end_depth ? depth + 2 : depth + 1 <= end_depth ? depth + 1 : depth;
-    int8_t depthp5 = depth + 5 <= end_depth ? depth + 5 : depth + 4 <= end_depth ? depth + 4 : depth + 3 <= end_depth ? depth + 3 : depth + 2 <= end_depth ? depth + 2 : depth + 1 <= end_depth ? depth + 1 : depth;
-#endif
+
     uint8_t depthm1 = depth - 1 >= start_depth ? depth - 1 : depth;
     uint8_t depthm2 = depth - 2 >= start_depth ? depth - 2 : depth - 1 >= start_depth ? depth - 1 : depth;
     uint8_t depthm3 = depth - 3 >= start_depth ? depth - 3 : depth - 2 >= start_depth ? depth - 2 : depth - 1 >= start_depth ? depth - 1 : depth;
-#if NOW_ACT
-    uint8_t depthm4 = depth - 4 >= start_depth ? depth - 4 : depth - 4 >= start_depth ? depth - 3 : depth - 2 >= start_depth ? depth - 2 : depth - 1 >= start_depth ? depth - 1 : depth;
-    uint8_t depthm5 = depth - 5 >= start_depth ? depth - 5 : depth - 4 >= start_depth ? depth - 4 : depth - 4 >= start_depth ? depth - 3 : depth - 2 >= start_depth ? depth - 2 : depth - 1 >= start_depth ? depth - 1 : depth;
-#endif
 
     uint64_t max_distance = 0xFFFFFFFFFFFFFFFF;
     uint64_t mth01 = pd_level_tab[encode_mode][0][0];
     uint64_t mth02 = pd_level_tab[encode_mode][0][1];
     uint64_t mth03 = pd_level_tab[encode_mode][0][2];
-#if NOW_ACT
-    uint64_t mth04 = pd_level_tab[encode_mode][0][3];
-    uint64_t mth05 = pd_level_tab[encode_mode][0][4];
-#endif
+
     uint64_t pth01 = pd_level_tab[encode_mode][1][0];
     uint64_t pth02 = pd_level_tab[encode_mode][1][1];
     uint64_t pth03 = pd_level_tab[encode_mode][1][2];
-#if NOW_ACT
-    uint64_t pth04 = pd_level_tab[encode_mode][1][3];
-    uint64_t pth05 = pd_level_tab[encode_mode][1][4];
-#endif
 
     uint64_t dist_001 =
         sb_ptr->depth_cost[depth] == 0 ?
@@ -2266,46 +2244,8 @@ void derive_start_end_depth(
         sb_ptr->depth_cost[depthm3] <= sb_ptr->depth_cost[depth] ?
         0 :
         (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthm3]) * 100) / sb_ptr->depth_cost[depth];
-#if NOW_ACT
 
-    uint64_t dist_004 =
-        sb_ptr->depth_cost[depth] == 0 ?
-        max_distance :
-        sb_ptr->depth_cost[depthp4] <= sb_ptr->depth_cost[depth] ?
-        0 :
-        (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthp4]) * 100) / sb_ptr->depth_cost[depth];
-
-    uint64_t dist_005 =
-        sb_ptr->depth_cost[depth] == 0 ?
-        max_distance :
-        sb_ptr->depth_cost[depthp5] <= sb_ptr->depth_cost[depth] ?
-        0 :
-        (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthp5]) * 100) / sb_ptr->depth_cost[depth];
-
-    uint64_t dist_400 =
-        sb_ptr->depth_cost[depth] == 0 ?
-        max_distance :
-        sb_ptr->depth_cost[depthm4] <= sb_ptr->depth_cost[depth] ?
-        0 :
-        (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthm4]) * 100) / sb_ptr->depth_cost[depth];
-
-    uint64_t dist_500 =
-        sb_ptr->depth_cost[depth] == 0 ?
-        max_distance :
-        sb_ptr->depth_cost[depthm5] <= sb_ptr->depth_cost[depth] ?
-        0 :
-        (ABS((int64_t)sb_ptr->depth_cost[depth] - (int64_t)sb_ptr->depth_cost[depthm5]) * 100) / sb_ptr->depth_cost[depth];
-
-#endif
-
-#if NOW_ACT
-     if (dist_500 < mth05)
-         *s_depth = -5;
-     else if (dist_400 < mth04)
-         *s_depth = -4;
-     else
-#endif
-        if (dist_300 < mth03)
+    if (dist_300 < mth03)
         *s_depth = -3;
     else if (dist_200 < mth02)
         *s_depth = -2;
@@ -2313,14 +2253,8 @@ void derive_start_end_depth(
         *s_depth = -1;
     else
         *s_depth = 0;
-#if NOW_ACT
-    if (dist_005 < pth05)
-        *e_depth = 5;
-    else if (dist_004 < pth04)
-        * e_depth = 4;
-    else 
-#endif
-        if (dist_003 < pth03)
+
+    if (dist_003 < pth03)
         *e_depth = 3;
     else if (dist_002 < pth02)
         *e_depth = 2;
@@ -2386,24 +2320,13 @@ static void init_considered_block(
                             &e_depth,
                             blk_geom);
                     } else if (context_ptr->pd_pass == PD_PASS_1) {
-
 #if 0
-                        EbBool pred_has_coeff = EB_FALSE;  
-                        for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
-
-                            if ((context_ptr->md_cu_arr_nsq[blk_index + block_1d_idx].block_has_coeff)) {
-                                pred_has_coeff = EB_TRUE;
-                                break;
-                            }
-                        }
-                        if (pred_has_coeff == EB_FALSE) {
-#else
                         if (context_ptr->md_cu_arr_nsq[blk_index].block_has_coeff == 0) {
-#endif
                             s_depth = 0;
                             e_depth = 0;
                         }
                         else
+#endif
                             if (context_ptr->md_cu_arr_nsq[blk_index].best_d1_blk == blk_index) {
                                 s_depth = -1;
                                 e_depth = 0;
