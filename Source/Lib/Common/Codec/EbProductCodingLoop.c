@@ -9784,31 +9784,10 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #if PRED_PLUS_REFINEMENT
     if (sequence_control_set_ptr->seq_header.sb_size == BLOCK_64X64)
         depth_cost[0] = MAX_CU_COST;
-#if SKIP_DEPTH_BASED_ON_DEPTH_RANK
-    for (uint8_t depth_idx = 0; depth_idx < NUMBER_OF_DEPTH; depth_idx++)
-        depth_cost[depth_idx] = depth_cost[depth_idx] < 0 ? MAX_MODE_COST : depth_cost[depth_idx];
-    //Sorting
-    {
-        uint32_t i, j, index;
-        for (i = 0; i < NUMBER_OF_DEPTH - 1; ++i) {
-            for (j = i + 1; j < NUMBER_OF_DEPTH; ++j) {
-                if (depth_cost[depth_table[j]] < depth_cost[depth_table[i]]) {
-                    index = depth_table[i];
-                    depth_table[i] = depth_table[j];
-                    depth_table[j] = index;
-                }
-            }
-        }
-    }
-    for (uint8_t depth_idx = 0; depth_idx < NUMBER_OF_DEPTH; depth_idx++) {
-        sb_ptr->depth_ranking[depth_idx] = find_depth_index(depth_idx, depth_table);
-        sb_ptr->depth_cost[depth_idx] = depth_cost[depth_idx];
-    }
-#else
+
     for (uint8_t depth_idx = 0; depth_idx < NUMBER_OF_DEPTH; depth_idx++) {
         sb_ptr->depth_cost[depth_idx] = depth_cost[depth_idx] < 0 ? MAX_MODE_COST : depth_cost[depth_idx];
     }
-#endif
 #endif
 
     return return_error;
