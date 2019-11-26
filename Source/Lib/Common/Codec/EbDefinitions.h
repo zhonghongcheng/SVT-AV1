@@ -265,8 +265,9 @@ extern "C" {
 /********************************************************/
 
 #define EVERY_THING                            0
-
+#define SKIP_DEPTH_ABILITY                     0
 #endif
+
 #endif
 #endif
 #endif

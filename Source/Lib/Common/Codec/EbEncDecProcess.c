@@ -2184,7 +2184,19 @@ uint64_t  pd_level_tab[9][2][3] = {
     {{100,10,10},{100,10,10}},
     {{100,10,10},{100,10,10}},
 };
-
+#if SKIP_DEPTH_ABILITY
+uint64_t  pd_skip_depth_tab[9][2][3] = {
+    {{100,10},{100,10}},
+    {{100,10},{100,10}},
+    {{100,10},{100,10}},
+    {{100,10},{100,10}},
+    {{100,10},{100,10}},
+    {{100,10},{100,10}},
+    {{100,10},{100,10}},
+    {{100,10},{100,10}},
+    {{100,10},{100,10}},
+};
+#endif
 void derive_start_end_depth(
     PictureControlSet  *picture_control_set_ptr,
     ModeDecisionContext *context_ptr,
@@ -2193,6 +2205,9 @@ void derive_start_end_depth(
     uint32_t sb_size,
     int8_t *s_depth,
     int8_t *e_depth,
+#if SKIP_DEPTH_ABILITY
+    uint8_t skip_depth[NUMBER_OF_DEPTH],
+#endif
     const BlockGeom * blk_geom) {
 
     uint8_t depth_offset = sb_size == BLOCK_128X128 ? 0 : 1;
@@ -2277,6 +2292,182 @@ void derive_start_end_depth(
         *e_depth = 1;
     else
         *e_depth = 0;
+#if SKIP_DEPTH_ABILITY
+    uint64_t skip_mth02 = pd_skip_depth_tab[encode_mode][0][1];
+    uint64_t skip_mth01 = pd_skip_depth_tab[encode_mode][0][0];
+    uint64_t skip_pth01 = pd_skip_depth_tab[encode_mode][1][0];
+    uint64_t skip_pth02 = pd_skip_depth_tab[encode_mode][1][1];
+    // Skip intermediate depth condition
+    uint8_t skip_pm2_flag = dist_200 < skip_mth02 ? 0 : 1;
+    uint8_t skip_pm1_flag = dist_100 < skip_mth01 ? 0 : 1;
+    uint8_t skip_p_flag   = 0;
+    uint8_t skip_pp1_flag = dist_001 < skip_pth01 ? 0 : 1;
+    uint8_t skip_pp2_flag = dist_002 < skip_pth02 ? 0 : 1;
+
+    if (*s_depth == 0 && *e_depth == 0) 
+        skip_depth[depth] = 0;
+    else if (*s_depth == -1 && *e_depth == 0) {
+        skip_depth[depthm1] = 0;
+        skip_depth[depth] = 0;
+    }
+    else if (*s_depth == -2 && *e_depth == 0) {
+        skip_depth[depthm2] = 0;
+        skip_depth[depth] = 0;
+        if(depthm2 != depthm1)
+            if(skip_pm1_flag)// Condition to skip P-1 
+            skip_depth[depthm1] = 1;
+    }
+    else if (*s_depth == -3 && *e_depth == 0) {
+        skip_depth[depthm3] = 0;
+        skip_depth[depth] = 0;
+        if(depthm3 != depthm2)
+            if(skip_pm2_flag)// Condition to skip P-2 
+            skip_depth[depthm2] = 1;
+        if(depthm2 != depthm1)
+            if(skip_pm1_flag)// Condition to skip P-1 
+            skip_depth[depthm1] = 1;
+    }
+    else if (*s_depth == -3 && *e_depth == 1) {
+        skip_depth[depthm3] = 0;
+        skip_depth[depthp1] = 0;
+        if(depthm3 != depthm2)
+            if(skip_pm2_flag)// Condition to skip P-2 
+            skip_depth[depthm2] = 1;
+        if(depthm2 != depthm1)
+            if(skip_pm1_flag)// Condition to skip P-1 
+            skip_depth[depthm1] = 1;
+        if(depthm1 != depth && depthp1 != depth)
+            if(skip_p_flag)// Condition to skip P 
+            skip_depth[depth] = 1;
+    }
+    else if (*s_depth == -2 && *e_depth == 1) {
+        skip_depth[depthm2] = 0;
+        skip_depth[depthp1] = 0;
+        if(depthm2 != depthm1)
+            if(skip_pm1_flag)// Condition to skip P-1 
+            skip_depth[depthm1] = 1;
+        if(depthm1 != depth && depthp1 != depth)
+            if(skip_p_flag)// Condition to skip P 
+            skip_depth[depth] = 1;
+    }
+    else if (*s_depth == -1 && *e_depth == 1) {
+        skip_depth[depthm1] = 0;
+        skip_depth[depthp1] = 0;
+        if(depthm1 != depth && depthp1 != depth)
+            if(skip_p_flag) // Condition to skip P 
+            skip_depth[depth] = 1;
+    }
+    else if (*s_depth == 0 && *e_depth == 1) {
+        skip_depth[depth] = 0;
+        skip_depth[depthp1] = 0;
+    }
+    else if (*s_depth == -3 && *e_depth == 2) {
+        skip_depth[depthm3] = 0;
+        skip_depth[depthp2] = 0;
+        if(depthm3 != depthm2)
+            if(skip_pm2_flag)// Condition to skip P-2 
+            skip_depth[depthm2] = 1;
+        if(depthm2 != depthm1)
+            if(skip_pm1_flag)// Condition to skip P-1 
+            skip_depth[depthm1] = 1;
+        if(depthm1 != depth )
+            if(skip_p_flag)// Condition to skip P 
+            skip_depth[depth] = 1;
+         if(depthp1 != depth)
+            if(skip_pp1_flag)// Condition to skip P+1 
+            skip_depth[depthp1] = 1;
+    }
+    else if (*s_depth == -2 && *e_depth == 2) {
+        skip_depth[depthm2] = 0;
+        skip_depth[depthp2] = 0;
+        if(depthm2 != depthm1)
+            if(skip_pm1_flag)// Condition to skip P-1 
+            skip_depth[depthm1] = 1;
+        if(depthm1 != depth )
+            if(skip_p_flag)// Condition to skip P 
+            skip_depth[depth] = 1;
+         if(depthp1 != depth)
+            if(skip_pp1_flag)// Condition to skip P+1 
+            skip_depth[depthp1] = 1;
+    }
+    else if (*s_depth == -1 && *e_depth == 2) {
+        skip_depth[depthm1] = 0;
+        skip_depth[depthp2] = 0;
+        if(depthm1 != depth )
+            if(skip_p_flag)// Condition to skip P 
+            skip_depth[depth] = 1;
+         if(depthp1 != depth)
+            if(skip_pp1_flag)// Condition to skip P+1 
+            skip_depth[depthp1] = 1;
+    }
+    else if (*s_depth == 0 && *e_depth == 2) {
+        skip_depth[depth] = 0;
+        skip_depth[depthp2] = 0;
+        if(depthp1 != depth)
+            if(skip_pp1_flag)// Condition to skip P+1 
+            skip_depth[depthp1] = 1;
+    }
+    else if (*s_depth == -3 && *e_depth == 3) {
+        skip_depth[depthm3] = 0;
+        skip_depth[depthp3] = 0;
+        if(depthm3 != depthm2)
+            if(skip_pm2_flag)// Condition to skip P-2 
+            skip_depth[depthm2] = 1;
+        if(depthm2 != depthm1)
+            if(skip_pm1_flag)// Condition to skip P-1 
+            skip_depth[depthm1] = 1;
+        if(depthm1 != depth )
+            if(skip_p_flag)// Condition to skip P 
+            skip_depth[depth] = 1;
+         if(depthp1 != depth)
+            if(skip_pp1_flag)// Condition to skip P+1 
+            skip_depth[depthp1] = 1;
+         if(depthp2 != depthp1 && depthp2 != depthp3)
+            if(skip_pp2_flag)// Condition to skip P+2 
+            skip_depth[depthp2] = 1;
+    }
+    else if (*s_depth == -2 && *e_depth == 3) {
+        skip_depth[depthm2] = 0;
+        skip_depth[depthp3] = 0;
+        if(depthm2 != depthm1)
+            if(skip_pm1_flag)// Condition to skip P-1 
+            skip_depth[depthm1] = 1;
+        if(depthm1 != depth )
+            if(skip_p_flag)// Condition to skip P 
+            skip_depth[depth] = 1;
+         if(depthp1 != depth)
+            if(skip_pp1_flag)// Condition to skip P+1 
+            skip_depth[depthp1] = 1;
+         if(depthp2 != depthp1 && depthp2 != depthp3)
+            if(skip_pp2_flag)// Condition to skip P+2 
+            skip_depth[depthp2] = 1;
+    }
+    else if (*s_depth == -1 && *e_depth == 3) {
+        skip_depth[depthm1] = 0;
+        skip_depth[depthp3] = 0;
+        if(depthm1 != depth )
+            if(skip_p_flag)// Condition to skip P 
+            skip_depth[depth] = 1;
+         if(depthp1 != depth)
+            if(skip_pp1_flag)// Condition to skip P+1 
+            skip_depth[depthp1] = 1;
+         if(depthp2 != depthp1 && depthp2 != depthp3)
+            if(skip_pp2_flag)// Condition to skip P+2 
+            skip_depth[depthp2] = 1;
+    }
+    else if (*s_depth == 0 && *e_depth == 3) {
+        skip_depth[depth] = 0;
+        skip_depth[depthp3] = 0;
+        if(depthp1 != depth)
+            if(skip_pp1_flag)// Condition to skip P+1 
+            skip_depth[depthp1] = 1;
+        if(depthp2 != depthp1 && depthp2 != depthp3)
+            if(skip_pp2_flag)// Condition to skip P+2 
+        skip_depth[depthp2] = 1;
+    }
+    else
+        printf("Error: unvalid *s_depth && *e_depth");
+#endif
 }
 
 static void init_considered_block(
@@ -2314,7 +2505,9 @@ static void init_considered_block(
             split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
         else
             split_flag = context_ptr->md_cu_arr_nsq[blk_index].split_flag;
-
+#if SKIP_DEPTH_ABILITY
+        uint8_t skip_depth_tab[NUMBER_OF_DEPTH] = { 0 };
+#endif
         if (sequence_control_set_ptr->sb_geom[sb_index].block_is_inside_md_scan[blk_index] && is_blk_allowed) {
             if (blk_geom->shape == PART_N) {
 
@@ -2333,6 +2526,9 @@ static void init_considered_block(
                             sequence_control_set_ptr->seq_header.sb_size,
                             &s_depth,
                             &e_depth,
+#if SKIP_DEPTH_ABILITY
+                            skip_depth_tab,
+#endif
                             blk_geom);
                     } else if (context_ptr->pd_pass == PD_PASS_1) {
 #if SQ_COEF_INFO || NSQ_COEF_INFO
@@ -2410,6 +2606,9 @@ static void init_considered_block(
                             resultsPtr,
                             blk_index,
                             sequence_control_set_ptr->seq_header.sb_size,
+#if SKIP_DEPTH_ABILITY
+                            skip_depth_tab,
+#endif
                             s_depth);
 
                         for (block_1d_idx = 0; block_1d_idx < tot_d1_blocks; block_1d_idx++) {
@@ -2424,6 +2623,9 @@ static void init_considered_block(
                             resultsPtr,
                             blk_index,
                             sequence_control_set_ptr->seq_header.sb_size,
+#if SKIP_DEPTH_ABILITY
+                            skip_depth_tab,
+#endif
                             e_depth);
                 }
             }
