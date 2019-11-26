@@ -1193,6 +1193,24 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
                 CHROMA_MODE_2 :
                 CHROMA_MODE_3;
     else
+#if PRESETS_TUNE
+
+        if (MR_MODE)
+            context_ptr->chroma_level = CHROMA_MODE_0;
+        else
+            if (picture_control_set_ptr->enc_mode <= ENC_M5 && picture_control_set_ptr->temporal_layer_index == 0)
+
+
+                context_ptr->chroma_level = CHROMA_MODE_0;
+            else
+                if (picture_control_set_ptr->enc_mode <= ENC_M5)
+                    context_ptr->chroma_level = CHROMA_MODE_1;
+                else
+                    context_ptr->chroma_level = (sequence_control_set_ptr->encoder_bit_depth == EB_8BIT) ?
+                    CHROMA_MODE_2 :
+                    CHROMA_MODE_3;
+
+#else
     if (MR_MODE)
         context_ptr->chroma_level = CHROMA_MODE_0;
     else
@@ -1205,6 +1223,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->chroma_level = (sequence_control_set_ptr->encoder_bit_depth == EB_8BIT) ?
             CHROMA_MODE_2 :
             CHROMA_MODE_3 ;
+#endif
 
     // Set fast loop method
     // 1 fast loop: SSD_SEARCH not supported
@@ -1212,7 +1231,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     //  0                   Collapsed fast loop
     //  1                   Decoupled fast loops ( intra/inter)
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if PRESETS_TUNE
+        if (picture_control_set_ptr->enc_mode <= ENC_M5)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
             context_ptr->decouple_intra_inter_fast_loop = 0;
         else
             context_ptr->decouple_intra_inter_fast_loop = 1;
@@ -1222,7 +1245,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // Set the search method when decoupled fast loop is used
     // Hsan: FULL_SAD_SEARCH not supported
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if PRESETS_TUNE
+        if (picture_control_set_ptr->enc_mode <= ENC_M5)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
             context_ptr->decoupled_fast_loop_search_method = SSD_SEARCH;
         else
             context_ptr->decoupled_fast_loop_search_method = FULL_SAD_SEARCH;
@@ -1238,7 +1265,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 1                    On but only INTRA
     // 2                    On both INTRA and INTER
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+#if PRESETS_TUNE
+        if (picture_control_set_ptr->enc_mode <= ENC_M5)
+#else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
             context_ptr->full_loop_escape = 0;
         else
             context_ptr->full_loop_escape = 2;
@@ -1255,6 +1286,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if GLOBAL_WARPED_MOTION
     if (sequence_control_set_ptr->static_config.enable_global_motion == EB_TRUE)
     {
+
         if (picture_control_set_ptr->enc_mode == ENC_M0)
 #else
         if (picture_control_set_ptr->enc_mode == ENC_M0)
@@ -1266,11 +1298,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     }
     else
         context_ptr->global_mv_injection = 0;
-
 #if M0_OPT
-    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
-        context_ptr->new_nearest_near_comb_injection = 0;
-    else
+            if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+                context_ptr->new_nearest_near_comb_injection = 0;
 #endif
 #if FIX_NEAREST_NEW
     if (picture_control_set_ptr->enc_mode <= ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
@@ -1281,11 +1311,24 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->new_nearest_near_comb_injection = 0;
 
+    
+#if PRESETS_TUNE
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        if (picture_control_set_ptr->enc_mode <= ENC_M2)
+            context_ptr->nx4_4xn_parent_mv_injection = 1;
+        else
+            context_ptr->nx4_4xn_parent_mv_injection = 0;
+    else
+        if (picture_control_set_ptr->enc_mode <= ENC_M1)
+            context_ptr->nx4_4xn_parent_mv_injection = 1;
+        else
+            context_ptr->nx4_4xn_parent_mv_injection = 0;
+#else
     if (picture_control_set_ptr->enc_mode == ENC_M0)
         context_ptr->nx4_4xn_parent_mv_injection = 1;
     else
         context_ptr->nx4_4xn_parent_mv_injection = 0;
-
+#endif
     // Set warped motion injection
     // Level                Settings
     // 0                    OFF
@@ -1301,7 +1344,12 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 1                    ON FULL
     // 2                    Reduced set
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
-        if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#if PRESETS_TUNE
+
+         if (picture_control_set_ptr->enc_mode <= ENC_M2)
+#else
+         if (picture_control_set_ptr->enc_mode <= ENC_M1)
+#endif
 #if M0_OPT
             context_ptr->unipred3x3_injection = 2;
 #else
@@ -1322,6 +1370,20 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 0                    OFF
     // 1                    ON FULL
     // 2                    Reduced set
+#if PRESETS_TUNE
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        if (picture_control_set_ptr->enc_mode <= ENC_M4)
+            context_ptr->bipred3x3_injection = 1;
+        else
+            context_ptr->bipred3x3_injection = 0;
+    else
+        if (picture_control_set_ptr->enc_mode <= ENC_M2)
+            context_ptr->bipred3x3_injection = 1;
+        else if (picture_control_set_ptr->enc_mode <= ENC_M4)
+            context_ptr->bipred3x3_injection = 2;
+        else
+            context_ptr->bipred3x3_injection = 0;
+#else
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
             context_ptr->bipred3x3_injection = 1;
@@ -1334,7 +1396,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->bipred3x3_injection = 2;
     else
         context_ptr->bipred3x3_injection = 0;
-
+#endif
     // Level                Settings
     // 0                    Level 0: OFF
     // 1                    Level 1: 7x5 full-pel search + sub-pel refinement off
@@ -1343,14 +1405,30 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 4                    Level 4: 7x5 full-pel search +  (H + V + D) sub-pel refinement = 8 half-pel + 8 quarter-pel = 16 positions + pred_me_distortion to pa_me_distortion deviation on
     // 5                    Level 5: 7x5 full-pel search +  (H + V + D) sub-pel refinement = 8 half-pel + 8 quarter-pel = 16 positions + pred_me_distortion to pa_me_distortion deviation off
     if (picture_control_set_ptr->slice_type != I_SLICE)
+
+#if PRESETS_TUNE
+        if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+            if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #if M0_OPT
-        if (picture_control_set_ptr->enc_mode <= ENC_M0)
-            context_ptr->predictive_me_level = picture_control_set_ptr->parent_pcs_ptr->sc_content_detected ? 2 : 5;
-        else if (picture_control_set_ptr->enc_mode <= ENC_M1)
+                context_ptr->predictive_me_level = (picture_control_set_ptr->enc_mode <= ENC_M0) ? 2 : 4;
+#else
+                context_ptr->predictive_me_level = 4;
+#endif
+            else if (picture_control_set_ptr->enc_mode <= ENC_M4)
+                context_ptr->predictive_me_level = 2;
+            else
+                context_ptr->predictive_me_level = 0;
+        else
+#endif
+#if PRESETS_TUNE
+        if (picture_control_set_ptr->enc_mode <= ENC_M2)
+
+
+            context_ptr->predictive_me_level = (picture_control_set_ptr->enc_mode <= ENC_M0) ? 5 : 4;
 #else
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
-#endif
             context_ptr->predictive_me_level = 4;
+#endif
         else if (picture_control_set_ptr->enc_mode <= ENC_M4)
             context_ptr->predictive_me_level = 2;
         else
@@ -1474,7 +1552,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // Combine MD Class1&2
     // 0                    OFF
     // 1                    ON
+#if PRESETS_TUNE
+    context_ptr->combine_class12 = (picture_control_set_ptr->enc_mode <= ENC_M4) ? 0 : 1;
+#else
     context_ptr->combine_class12 = (picture_control_set_ptr->enc_mode == ENC_M0) ? 0 : 1;
+#endif
 
     // Set interpolation filter search blk size
     // Level                Settings
@@ -1506,12 +1588,37 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->blk_skip_decision = EB_FALSE;
     // Derive Trellis Quant Coeff Optimization Flag
+#if PRESETS_TUNE
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        if (picture_control_set_ptr->enc_mode <= ENC_M2)
+            context_ptr->trellis_quant_coeff_optimization = EB_TRUE;
+        else
+            context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
+    else
+        if (picture_control_set_ptr->enc_mode <= ENC_M2)
+            context_ptr->trellis_quant_coeff_optimization = EB_TRUE;
+        else
+            context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
+#else
     if (picture_control_set_ptr->enc_mode == ENC_M0)
         context_ptr->trellis_quant_coeff_optimization = EB_TRUE;
     else
         context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
-
+#endif
     // Derive redundant block
+
+#if PRESETS_TUNE
+     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+         if (picture_control_set_ptr->enc_mode <= ENC_M8)
+             context_ptr->redundant_blk = EB_TRUE;
+         else
+             context_ptr->redundant_blk = EB_FALSE;
+     else
+         if (picture_control_set_ptr->enc_mode <= ENC_M5)
+             context_ptr->redundant_blk = EB_TRUE;
+         else
+             context_ptr->redundant_blk = EB_FALSE;
+#else
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
             context_ptr->redundant_blk = EB_TRUE;
@@ -1522,6 +1629,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->redundant_blk = EB_TRUE;
     else
         context_ptr->redundant_blk = EB_FALSE;
+#endif
     if (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
 #if FIX_ESTIMATE_INTRA
         if (MR_MODE)
@@ -1536,7 +1644,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             context_ptr->edge_based_skip_angle_intra = 1;
 #else
         else
-#if FIX_ESTIMATE_INTRA
+#if    PRESETS_TUNE 
+            context_ptr->edge_based_skip_angle_intra = (picture_control_set_ptr->enc_mode == ENC_M0) ? 0 : 1;
+
+#elif FIX_ESTIMATE_INTRA
             context_ptr->edge_based_skip_angle_intra = (picture_control_set_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0) ? 0 : 1;
 #else
             context_ptr->edge_based_skip_angle_intra = 1;

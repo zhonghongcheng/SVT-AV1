@@ -538,8 +538,12 @@ void reset_mode_decision(
     (void)sequence_control_set_ptr;
 #else
 #if EIGHT_PEL_PREDICTIVE_ME
+#if PRESETS_TUNE
+    picture_control_set_ptr->parent_pcs_ptr->frm_hdr.allow_high_precision_mv = 0;
+#else
     picture_control_set_ptr->parent_pcs_ptr->frm_hdr.allow_high_precision_mv = picture_control_set_ptr->enc_mode == ENC_M0 &&
         (sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER) ? 1 : 0;
+#endif
 #else
 #if EIGTH_PEL_MV
     picture_control_set_ptr->parent_pcs_ptr->allow_high_precision_mv = picture_control_set_ptr->enc_mode == ENC_M0 &&
@@ -573,6 +577,13 @@ void reset_mode_decision(
     // 3                                            OBMC @(MVP, PME ) + Opt NICs
     // 4                                            OBMC @(MVP, PME ) + Opt2 NICs
     if (sequence_control_set_ptr->static_config.enable_obmc) {
+#if PRESETS_TUNE
+        if (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M2)
+            picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode =
+            picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0 && picture_control_set_ptr->slice_type != I_SLICE ? 2 : 0;
+        else
+            picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = 0;
+#else
         if (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M0)
             picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode =
 #if M0_OPT
@@ -582,6 +593,7 @@ void reset_mode_decision(
 #endif
         else
             picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = 0;
+#endif
 
 #if MR_MODE
         picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode =
