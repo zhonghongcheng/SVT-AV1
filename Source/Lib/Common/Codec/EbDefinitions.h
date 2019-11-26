@@ -254,6 +254,13 @@ extern "C" {
 #define SHUT_MERGE                             1 
 #define ONLY_DC                                1
 #define SHUT_FILTER_INTRA                      1
+
+
+#define NSQ_COEF_INFO                          0
+#if !NSQ_COEF_INFO
+#define SQ_COEF_INFO                           1
+#endif
+
 #define TESTING_WIP                            0   
 /********************************************************/
 
