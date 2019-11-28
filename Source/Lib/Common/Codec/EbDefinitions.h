@@ -261,6 +261,12 @@ extern "C" {
 #define SQ_COEF_INFO                           1
 #endif
 
+#define MULTI_PASS_PD_I_SLICE_SC               0    
+#if MULTI_PASS_PD_I_SLICE_SC
+#define CONSERVATIVE_PD1                       1
+#endif
+#define CONSERVATIVE_PD0_REF                   0    
+
 #define TESTING_WIP                            0   
 /********************************************************/
 

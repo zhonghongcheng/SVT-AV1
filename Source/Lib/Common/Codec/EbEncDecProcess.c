@@ -2173,16 +2173,34 @@ static void forward_considered_blocks(
     }
 }
 
-uint64_t  pd_level_tab[9][2][3] = {
-    {{100,10,10},{100,10,10}},
-    {{100,10,10},{100,10,10}},
-    {{100,10,10},{100,10,10}},
-    {{100,10,10},{100,10,10}},
-    {{100,10,10},{100,10,10}},
-    {{100,10,10},{100,10,10}},
-    {{100,10,10},{100,10,10}},
-    {{100,10,10},{100,10,10}},
-    {{100,10,10},{100,10,10}},
+uint64_t  pd_level_tab[2][9][2][3] =
+{
+    {
+        {{200,200,200},{200,200,200}},
+        {{200,200,200},{200,200,200}},
+        {{200,200,200},{200,200,200}},
+        {{200,200,200},{200,200,200}},
+        {{200,200,200},{200,200,200}},
+        {{200,200,200},{200,200,200}},
+        {{200,200,200},{200,200,200}},
+        {{200,200,200},{200,200,200}},
+        {{200,200,200},{200,200,200}},
+    } ,
+    {
+#if CONSERVATIVE_PD0_REF
+        {{100,10,10},{100,10,10}},
+#else
+        {{100,10,10},{100,10,10}},
+#endif
+        {{100,10,10},{100,10,10}},
+        {{100,10,10},{100,10,10}},
+        {{100,10,10},{100,10,10}},
+        {{100,10,10},{100,10,10}},
+        {{100,10,10},{100,10,10}},
+        {{100,10,10},{100,10,10}},
+        {{100,10,10},{100,10,10}},
+        {{100,10,10},{100,10,10}},
+    }
 };
 #if SKIP_DEPTH_ABILITY
 uint64_t  pd_skip_depth_tab[9][2][3] = {
@@ -2225,13 +2243,13 @@ void derive_start_end_depth(
     uint8_t depthm3 = depth - 3 >= start_depth ? depth - 3 : depth - 2 >= start_depth ? depth - 2 : depth - 1 >= start_depth ? depth - 1 : depth;
 
     uint64_t max_distance = 0xFFFFFFFFFFFFFFFF;
-    uint64_t mth01 = pd_level_tab[encode_mode][0][0];
-    uint64_t mth02 = pd_level_tab[encode_mode][0][1];
-    uint64_t mth03 = pd_level_tab[encode_mode][0][2];
 
-    uint64_t pth01 = pd_level_tab[encode_mode][1][0];
-    uint64_t pth02 = pd_level_tab[encode_mode][1][1];
-    uint64_t pth03 = pd_level_tab[encode_mode][1][2];
+    uint64_t mth01 = pd_level_tab[!picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_control_set_ptr->slice_type != I_SLICE][encode_mode][0][0];
+    uint64_t mth02 = pd_level_tab[!picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_control_set_ptr->slice_type != I_SLICE][encode_mode][0][1];
+    uint64_t mth03 = pd_level_tab[!picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_control_set_ptr->slice_type != I_SLICE][encode_mode][0][2];
+    uint64_t pth01 = pd_level_tab[!picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_control_set_ptr->slice_type != I_SLICE][encode_mode][1][0];
+    uint64_t pth02 = pd_level_tab[!picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_control_set_ptr->slice_type != I_SLICE][encode_mode][1][1];
+    uint64_t pth03 = pd_level_tab[!picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_control_set_ptr->slice_type != I_SLICE][encode_mode][1][2];
 
     uint64_t dist_001 =
         sb_ptr->depth_cost[depth] == 0 ?
@@ -2578,7 +2596,11 @@ static void init_considered_block(
                             break;
                         }
 #endif
+#if CONSERVATIVE_PD1
+                        if (zero_coeff_present_flag && !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_control_set_ptr->slice_type != I_SLICE) {
+#else
                         if (zero_coeff_present_flag) {
+#endif
                             s_depth = 0;
                             e_depth = 0;
                         }
@@ -2845,8 +2867,11 @@ void* enc_dec_kernel(void *input_ptr)
 
 #if MULTI_PASS_PD
                     // ---> why the is_complete_sb check ?
+#if MULTI_PASS_PD_I_SLICE_SC
+                    EbBool multi_stage_pd = (!sequence_control_set_ptr->use_output_stat_file && sequence_control_set_ptr->sb_geom[sb_index].is_complete_sb) ? EB_TRUE : EB_FALSE;
+#else
                     EbBool multi_stage_pd = (!sequence_control_set_ptr->use_output_stat_file && !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_control_set_ptr->slice_type != I_SLICE && sequence_control_set_ptr->sb_geom[sb_index].is_complete_sb) ? EB_TRUE : EB_FALSE;
-                    
+#endif
                     if (multi_stage_pd) {
                         MdcLcuData *mdc_cu_ptr = &picture_control_set_ptr->mdc_sb_array[sb_index];
                         uint32_t  blk_index = 0;
@@ -2928,6 +2953,13 @@ void* enc_dec_kernel(void *input_ptr)
                             sb_origin_y);
 #if ADD_PD_1
                         // 2nd PD Pass EncDec Kernel Signal(s) derivation
+#if MULTI_PASS_PD_I_SLICE_SC
+#if CONSERVATIVE_PD1
+                        if(1) {
+#else
+                        if(!picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_control_set_ptr->slice_type != I_SLICE) {
+#endif
+#endif
 #if EVERY_THING
                         context_ptr->md_context->pd_pass = PD_PASS_2;
 #else
@@ -2980,6 +3012,9 @@ void* enc_dec_kernel(void *input_ptr)
                             0,
                             sb_origin_x,
                             sb_origin_y);
+#if MULTI_PASS_PD_I_SLICE_SC
+                       }
+#endif
 #endif
                     }
 #endif

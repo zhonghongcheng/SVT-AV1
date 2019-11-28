@@ -5354,7 +5354,11 @@ void  inject_intra_candidates(
 #if PAETH_HBD
 #if LETS_INJECT_DC
 #if ONLY_DC
+#if CONSERVATIVE_PD1
+    uint8_t                     intra_mode_end = (context_ptr->pd_pass == PD_PASS_2 || picture_control_set_ptr->slice_type == I_SLICE) ? PAETH_PRED : DC_PRED;
+#else
     uint8_t                     intra_mode_end = (context_ptr->pd_pass == PD_PASS_2) ? PAETH_PRED : DC_PRED;
+#endif
 #else
     uint8_t                     intra_mode_end = (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2) ? PAETH_PRED : DC_PRED;
 #endif
@@ -5416,7 +5420,7 @@ void  inject_intra_candidates(
         disable_angle_refinement    = 0;
         disable_angle_prediction    = 1;
         angleDeltaCandidateCount = disable_angle_refinement ? 1: angleDeltaCandidateCount;
-#if ADD_PD_1 && !CHECK_INTRA_MODE
+#if 0//ADD_PD_1 && !CHECK_INTRA_MODE
     } else if ((context_ptr->pd_pass == PD_PASS_0 || context_ptr->pd_pass == PD_PASS_2) && picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode == 2) {
 #else
     } else if (picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode == 2) {
@@ -5886,7 +5890,7 @@ EbErrorType generate_md_stage_0_cand(
 #if MULTI_PASS_PD // Shut intra test if 1st pass
        }
 #endif
-#if MULTI_PASS_PD // Shut intra test if 1st pass
+#if MULTI_PASS_PD && !MULTI_PASS_PD_I_SLICE_SC// Shut intra test if 1st pass
     if (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2) {
 #endif
     if (frm_hdr->allow_intrabc)
@@ -5897,7 +5901,7 @@ EbErrorType generate_md_stage_0_cand(
             context_ptr->cu_ptr,
             &canTotalCnt
         );
-#if MULTI_PASS_PD // Shut intra test if 1st pass
+#if MULTI_PASS_PD && !MULTI_PASS_PD_I_SLICE_SC// Shut intra test if 1st pass
     }
 #endif
 
@@ -5907,7 +5911,7 @@ EbErrorType generate_md_stage_0_cand(
         assert(context_ptr->fast_candidate_array[i].palette_info.pmi.palette_size[0] == 0);
         assert(context_ptr->fast_candidate_array[i].palette_info.pmi.palette_size[1] == 0);
     }
-#if MULTI_PASS_PD // Shut intra test if 1st pass
+#if MULTI_PASS_PD && !MULTI_PASS_PD_I_SLICE_SC// Shut intra test if 1st pass
     if (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2) {
 #endif
     if (svt_av1_allow_palette(picture_control_set_ptr->parent_pcs_ptr->palette_mode, context_ptr->blk_geom->bsize)) {
@@ -5921,7 +5925,7 @@ EbErrorType generate_md_stage_0_cand(
         assert(context_ptr->fast_candidate_array[i].palette_info.pmi.palette_size[1] == 0);
     }
 #endif
-#if MULTI_PASS_PD // Shut intra test if 1st pass
+#if MULTI_PASS_PD && !MULTI_PASS_PD_I_SLICE_SC// Shut intra test if 1st pass
     }
 #endif
     // Track the total number of fast intra candidates
