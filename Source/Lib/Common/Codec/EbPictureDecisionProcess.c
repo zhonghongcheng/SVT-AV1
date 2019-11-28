@@ -890,6 +890,10 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
 #endif
 
+#if REMOVE_MDC_EARLY_PART
+    picture_control_set_ptr->enable_adaptive_ol_partitioning = 0;
+#endif
+
     // NSQ search Level                               Settings
     // NSQ_SEARCH_OFF                                 OFF
     // NSQ_SEARCH_LEVEL1                              Allow only NSQ Inter-NEAREST/NEAR/GLOBAL if parent SQ has no coeff + reordering nsq_table number and testing only 1 NSQ SHAPE
