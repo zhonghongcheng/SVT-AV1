@@ -2187,11 +2187,7 @@ uint64_t  pd_level_tab[2][9][2][3] =
         {{200,200,200},{200,200,200}},
     } ,
     {
-#if CONSERVATIVE_PD0_REF
         {{100,10,10},{100,10,10}},
-#else
-        {{100,10,10},{100,10,10}},
-#endif
         {{100,10,10},{100,10,10}},
         {{100,10,10},{100,10,10}},
         {{100,10,10},{100,10,10}},
@@ -2596,7 +2592,7 @@ static void init_considered_block(
                             break;
                         }
 #endif
-#if CONSERVATIVE_PD1
+#if CONSERVATIVE_PD1 || MULTI_PASS_PD1_CONSERVATIVE_SC
                         if (zero_coeff_present_flag && !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_control_set_ptr->slice_type != I_SLICE) {
 #else
                         if (zero_coeff_present_flag) {
@@ -2870,7 +2866,7 @@ void* enc_dec_kernel(void *input_ptr)
 #if MULTI_PASS_PD_I_SLICE_SC
                     EbBool multi_stage_pd = (!sequence_control_set_ptr->use_output_stat_file && sequence_control_set_ptr->sb_geom[sb_index].is_complete_sb) ? EB_TRUE : EB_FALSE;
 #else
-#if MULTI_PASS_PD1_AGRESSIVE
+#if MULTI_PASS_PD1_AGRESSIVE || MULTI_PASS_PD1_CONSERVATIVE_SC || MULTI_PASS_PD0_SC
                     EbBool multi_stage_pd = (!sequence_control_set_ptr->use_output_stat_file && picture_control_set_ptr->slice_type != I_SLICE && sequence_control_set_ptr->sb_geom[sb_index].is_complete_sb) ? EB_TRUE : EB_FALSE;
 #else
                     EbBool multi_stage_pd = (!sequence_control_set_ptr->use_output_stat_file && !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_control_set_ptr->slice_type != I_SLICE && sequence_control_set_ptr->sb_geom[sb_index].is_complete_sb) ? EB_TRUE : EB_FALSE;
@@ -2957,7 +2953,7 @@ void* enc_dec_kernel(void *input_ptr)
                             sb_origin_y);
 #if ADD_PD_1
                         // 2nd PD Pass EncDec Kernel Signal(s) derivation
-#if MULTI_PASS_PD_I_SLICE_SC
+#if MULTI_PASS_PD_I_SLICE_SC || MULTI_PASS_PD0_SC
 #if CONSERVATIVE_PD1
                         if(1) {
 #else
@@ -3016,7 +3012,7 @@ void* enc_dec_kernel(void *input_ptr)
                             0,
                             sb_origin_x,
                             sb_origin_y);
-#if MULTI_PASS_PD_I_SLICE_SC
+#if MULTI_PASS_PD_I_SLICE_SC || MULTI_PASS_PD0_SC
                        }
 #endif
 #endif
