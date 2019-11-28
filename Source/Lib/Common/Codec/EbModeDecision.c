@@ -5355,7 +5355,7 @@ void  inject_intra_candidates(
 #if LETS_INJECT_DC
 #if ONLY_DC
 #if CONSERVATIVE_PD1
-    uint8_t                     intra_mode_end = (context_ptr->pd_pass == PD_PASS_2 || picture_control_set_ptr->slice_type == I_SLICE) ? PAETH_PRED : DC_PRED;
+    uint8_t                     intra_mode_end = (context_ptr->pd_pass == PD_PASS_2 || (context_ptr->pd_pass == PD_PASS_1 && picture_control_set_ptr->slice_type == I_SLICE)) ? PAETH_PRED : DC_PRED;
 #else
     uint8_t                     intra_mode_end = (context_ptr->pd_pass == PD_PASS_2) ? PAETH_PRED : DC_PRED;
 #endif
@@ -5391,6 +5391,14 @@ void  inject_intra_candidates(
     }
     uint8_t     angle_delta_shift = 1;
 
+#if CONSERVATIVE_PD1
+    if (context_ptr->pd_pass == PD_PASS_0 || context_ptr->pd_pass == PD_PASS_1) {
+        disable_angle_prediction = 1;
+        angleDeltaCandidateCount = 1;
+        angle_delta_shift = 1;
+        disable_z2_prediction = 1;
+    } else
+#endif
     if (picture_control_set_ptr->parent_pcs_ptr->intra_pred_mode == 4) {
         if (picture_control_set_ptr->slice_type == I_SLICE) {
 #if PAETH_HBD
