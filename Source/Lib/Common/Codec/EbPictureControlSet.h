@@ -58,7 +58,14 @@ extern "C" {
 
 // BDP OFF
 #define MD_NEIGHBOR_ARRAY_INDEX                0
+#if MULTI_PASS_PD
+#define MULTI_STAGE_PD_NEIGHBOR_ARRAY_INDEX    4
+#endif
+#if MULTI_PASS_PD
+#define NEIGHBOR_ARRAY_TOTAL_COUNT             5
+#else
 #define NEIGHBOR_ARRAY_TOTAL_COUNT             4
+#endif
 #define AOM_QM_BITS                            5
 #define QM_TOTAL_SIZE                          3344
 
@@ -14250,7 +14257,9 @@ extern "C" {
         uint8_t                               tx_search_level;
         uint64_t                              tx_weight;
         uint8_t                               tx_search_reduced_set;
+#if !MULTI_PASS_PD
         uint8_t                               interpolation_search_level;
+#endif
         uint8_t                               nsq_search_level;
 #if PAL_SUP
         uint8_t                               palette_mode;

@@ -34,6 +34,13 @@ extern "C" {
 #endif
 
 #define REMOVE_MDC_EARLY_PART        1 // Remove MDC early part code (API signal(s), structure(s), kernel(s), ..)
+#define MULTI_PASS_PD                1
+#define ENABLE_MRP                   1
+#define CHECK_COMP                   0
+#define NSQ_COEF_INFO                0
+#if !NSQ_COEF_INFO                   
+#define SQ_COEF_INFO                 1
+#endif
 
 #define HBD_CLEAN_UP                 1
 
@@ -189,7 +196,11 @@ enum {
 #define PAD_VALUE                                (128+32)
 
 /* Use open-loop data to predict the NSQ partitions. */
-#define PREDICT_NSQ_SHAPE                               0
+#if REMOVE_MDC_EARLY_PART
+#define PREDICT_NSQ_SHAPE                               1 // to set to 0
+#else
+#define PREDICT_NSQ_SHAPE                               1
+#endif
 #if PREDICT_NSQ_SHAPE
 #define NUMBER_OF_DEPTH                                 6
 #define NUMBER_OF_SHAPES                                10
@@ -545,6 +556,15 @@ static INLINE unsigned int negative_to_zero(int value) {
 #endif
 #endif /* ATTRIBUTE_PACKED */
 
+#if MULTI_PASS_PD
+typedef enum PD_PASS {
+    PD_PASS_0,
+    PD_PASS_1,
+    PD_PASS_2,
+    PD_PASS_TOTAL,
+} PD_PASS;
+#endif
+
 typedef enum CAND_CLASS {
     CAND_CLASS_0,
     CAND_CLASS_1,
@@ -633,11 +653,17 @@ typedef enum TxSearchLevel
 
 typedef enum InterpolationSearchLevel
 {
+#if MULTI_PASS_PD
+    IT_SEARCH_OFF,
+    IT_SEARCH_FAST_LOOP_UV_BLIND,
+    IT_SEARCH_FAST_LOOP,
+#else
     IT_SEARCH_OFF,
     IT_SEARCH_INTER_DEPTH,
     IT_SEARCH_FULL_LOOP,
     IT_SEARCH_FAST_LOOP_UV_BLIND,
     IT_SEARCH_FAST_LOOP,
+#endif
 } InterpolationSearchLevel;
 
 typedef enum NsqSearchLevel

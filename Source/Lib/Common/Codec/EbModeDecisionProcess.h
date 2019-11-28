@@ -362,6 +362,12 @@ extern "C" {
     // square cost weighting for deciding if a/b shapes could be skipped
     uint32_t sq_weight;
 #endif
+
+#if MULTI_PASS_PD
+    uint8_t interpolation_search_level;
+    // Signal to control initial and final pass PD setting(s)
+    PD_PASS pd_pass;
+#endif
     } ModeDecisionContext;
 
     typedef void(*EbAv1LambdaAssignFunc)(
