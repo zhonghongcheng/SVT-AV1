@@ -267,6 +267,10 @@ extern "C" {
 #endif
 #define CONSERVATIVE_PD0_REF                   0    
 
+#define MULTI_PASS_PD1_AGRESSIVE               0
+#define MULTI_PASS_PD1_CONSERVATIVE_SC         0
+#define MULTI_PASS_PD0_SC                      0
+
 #define TESTING_WIP                            0   
 /********************************************************/
 

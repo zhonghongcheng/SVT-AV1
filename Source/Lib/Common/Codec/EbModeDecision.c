@@ -5898,9 +5898,7 @@ EbErrorType generate_md_stage_0_cand(
 #if MULTI_PASS_PD // Shut intra test if 1st pass
        }
 #endif
-#if MULTI_PASS_PD && !MULTI_PASS_PD_I_SLICE_SC// Shut intra test if 1st pass
-    if (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2) {
-#endif
+
     if (frm_hdr->allow_intrabc)
         inject_intra_bc_candidates(
             picture_control_set_ptr,
@@ -5909,9 +5907,7 @@ EbErrorType generate_md_stage_0_cand(
             context_ptr->cu_ptr,
             &canTotalCnt
         );
-#if MULTI_PASS_PD && !MULTI_PASS_PD_I_SLICE_SC// Shut intra test if 1st pass
-    }
-#endif
+
 
 #if PAL_SUP
     //can be removed later if need be
@@ -5919,9 +5915,7 @@ EbErrorType generate_md_stage_0_cand(
         assert(context_ptr->fast_candidate_array[i].palette_info.pmi.palette_size[0] == 0);
         assert(context_ptr->fast_candidate_array[i].palette_info.pmi.palette_size[1] == 0);
     }
-#if MULTI_PASS_PD && !MULTI_PASS_PD_I_SLICE_SC// Shut intra test if 1st pass
-    if (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2) {
-#endif
+
     if (svt_av1_allow_palette(picture_control_set_ptr->parent_pcs_ptr->palette_mode, context_ptr->blk_geom->bsize)) {
         inject_palette_candidates(
             picture_control_set_ptr,
@@ -5933,9 +5927,7 @@ EbErrorType generate_md_stage_0_cand(
         assert(context_ptr->fast_candidate_array[i].palette_info.pmi.palette_size[1] == 0);
     }
 #endif
-#if MULTI_PASS_PD && !MULTI_PASS_PD_I_SLICE_SC// Shut intra test if 1st pass
-    }
-#endif
+
     // Track the total number of fast intra candidates
     context_ptr->fast_candidate_intra_count = canTotalCnt;
 
