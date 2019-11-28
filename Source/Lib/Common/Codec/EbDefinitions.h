@@ -189,7 +189,7 @@ enum {
 #define PAD_VALUE                                (128+32)
 
 /* Use open-loop data to predict the NSQ partitions. */
-#define PREDICT_NSQ_SHAPE                               1
+#define PREDICT_NSQ_SHAPE                               0
 #if PREDICT_NSQ_SHAPE
 #define NUMBER_OF_DEPTH                                 6
 #define NUMBER_OF_SHAPES                                10
@@ -199,12 +199,11 @@ enum {
 #define ADD_SUPPORT_TO_SKIP_PART_N                      1
 #define ADD_MDC_REFINEMENT_LOOP                         1
 #define ADD_MDC_FULL_COST                               1
-#define NSQ_TAB_SIZE                                    8
 #define MAX_MDC_LEVEL                                   8
 #define MDC_ADAPTIVE_LEVEL                              1
-#else
-#define NSQ_TAB_SIZE                                    6
 #endif
+
+#define NSQ_TAB_SIZE                                    8
 
 #define AUTO_MODE                                 -1
 

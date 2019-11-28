@@ -890,7 +890,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
 #endif
 
-#if REMOVE_MDC_EARLY_PART
+#if REMOVE_MDC_EARLY_PART && MDC_ADAPTIVE_LEVEL
     picture_control_set_ptr->enable_adaptive_ol_partitioning = 0;
 #endif
 
