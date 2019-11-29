@@ -44,6 +44,7 @@ extern "C" {
 #if !NSQ_COEF_INFO                   
 #define SQ_COEF_INFO                 1
 #endif
+#define BYPASS_PD0_MVP               0
 #endif
 
 #define HBD_CLEAN_UP                 1
@@ -214,11 +215,16 @@ enum {
 #define ADD_SUPPORT_TO_SKIP_PART_N                      1
 #define ADD_MDC_REFINEMENT_LOOP                         1
 #define ADD_MDC_FULL_COST                               1
+#define NSQ_TAB_SIZE                                    8
 #define MAX_MDC_LEVEL                                   8
 #define MDC_ADAPTIVE_LEVEL                              1
-#endif
-
+#else
+#if REMOVE_MDC_EARLY_PART
 #define NSQ_TAB_SIZE                                    8
+#else
+#define NSQ_TAB_SIZE                                    6
+#endif
+#endif
 
 #define AUTO_MODE                                 -1
 

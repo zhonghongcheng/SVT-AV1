@@ -8015,6 +8015,9 @@ void md_encode_block(
             get_me_info_index(picture_control_set_ptr->parent_pcs_ptr->max_number_of_pus_per_sb, context_ptr->blk_geom, context_ptr->geom_offset_x, context_ptr->geom_offset_y);
 
         // Generate MVP(s)
+#if BYPASS_PD0_MVP
+        if (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2) {
+#endif
         if (frm_hdr->allow_intrabc) // picture_control_set_ptr->slice_type == I_SLICE
             generate_av1_mvp_table(
                 &context_ptr->sb_ptr->tile_info,
@@ -8037,6 +8040,21 @@ void md_encode_block(
                 picture_control_set_ptr->parent_pcs_ptr->ref_frame_type_arr,
                 picture_control_set_ptr->parent_pcs_ptr->tot_ref_frame_types,
                 picture_control_set_ptr);
+#if BYPASS_PD0_MVP
+        }
+        else {
+            pd0_mvp_bypass_init(
+                &context_ptr->sb_ptr->tile_info,
+                context_ptr,
+                context_ptr->cu_ptr,
+                context_ptr->blk_geom,
+                context_ptr->cu_origin_x,
+                context_ptr->cu_origin_y,
+                picture_control_set_ptr->parent_pcs_ptr->ref_frame_type_arr,
+                picture_control_set_ptr->parent_pcs_ptr->tot_ref_frame_types,
+                picture_control_set_ptr);
+        }
+#endif
 
         // Perform ME search around the best MVP
         if (context_ptr->predictive_me_level)

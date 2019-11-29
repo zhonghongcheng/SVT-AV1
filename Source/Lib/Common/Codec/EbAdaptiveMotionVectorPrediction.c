@@ -1203,6 +1203,121 @@ IntMv gm_get_motion_vector_enc(
     }
     return res;
 }
+#if BYPASS_PD0_MVP
+void pd0_mvp_bypass_init(
+    TileInfo                         *tile,
+    ModeDecisionContext            *context_ptr,
+    CodingUnit                     *cu_ptr,
+    const BlockGeom                  *blk_geom,
+    uint16_t                          cu_origin_x,
+    uint16_t                          cu_origin_y,
+    MvReferenceFrame                 *ref_frames,
+    uint32_t                          tot_refs,
+    PictureControlSet              *picture_control_set_ptr)
+{
+    int32_t mi_row = cu_origin_y >> MI_SIZE_LOG2;
+    int32_t mi_col = cu_origin_x >> MI_SIZE_LOG2;
+    Av1Common  *cm = picture_control_set_ptr->parent_pcs_ptr->av1_cm;
+    FrameHeader *frm_hdr = &picture_control_set_ptr->parent_pcs_ptr->frm_hdr;
+    MacroBlockD  *xd = cu_ptr->av1xd;
+    xd->n8_w = blk_geom->bwidth >> MI_SIZE_LOG2;
+    xd->n8_h = blk_geom->bheight >> MI_SIZE_LOG2;
+    xd->n4_w = blk_geom->bwidth >> MI_SIZE_LOG2;
+    xd->n4_h = blk_geom->bheight >> MI_SIZE_LOG2;
+    BlockSize bsize = blk_geom->bsize;
+    const int32_t bw = mi_size_wide[bsize];
+    const int32_t bh = mi_size_high[bsize];
+
+    xd->mb_to_top_edge = -((mi_row * MI_SIZE) * 8);
+    xd->mb_to_bottom_edge = ((cm->mi_rows - bh - mi_row) * MI_SIZE) * 8;
+    xd->mb_to_left_edge = -((mi_col * MI_SIZE) * 8);
+    xd->mb_to_right_edge = ((cm->mi_cols - bw - mi_col) * MI_SIZE) * 8;
+
+    xd->up_available = (mi_row > tile->mi_row_start);
+    xd->left_available = (mi_col > tile->mi_col_start);
+
+    xd->n8_h = bh;
+    xd->n8_w = bw;
+    xd->is_sec_rect = 0;
+    if (xd->n8_w < xd->n8_h) {
+        // Only mark is_sec_rect as 1 for the last block.
+        // For PARTITION_VERT_4, it would be (0, 0, 0, 1);
+        // For other partitions, it would be (0, 1).
+        if (!((mi_col + xd->n8_w) & (xd->n8_h - 1))) xd->is_sec_rect = 1;
+    }
+
+    if (xd->n8_w > xd->n8_h)
+        if (mi_row & (xd->n8_w - 1)) xd->is_sec_rect = 1;
+
+    xd->tile.mi_col_start = tile->mi_col_start;
+    xd->tile.mi_col_end = tile->mi_col_end;
+    xd->tile.mi_row_start = tile->mi_row_start;
+    xd->tile.mi_row_end = tile->mi_row_end;
+
+    xd->mi_stride = picture_control_set_ptr->mi_stride;
+    const int32_t offset = mi_row * xd->mi_stride + mi_col;
+    xd->mi = picture_control_set_ptr->mi_grid_base + offset;
+
+    xd->mi[0]->mbmi.block_mi.partition = from_shape_to_part[blk_geom->shape];
+
+    uint32_t refIt;
+    for (refIt = 0; refIt < tot_refs; ++refIt) {
+        MvReferenceFrame ref_frame = ref_frames[refIt];
+        IntMv zeromv[2] = { {0}, {0} };
+
+        MvReferenceFrame rf[2];
+        av1_set_ref_frame(rf, ref_frame);
+
+        if (ref_frame != INTRA_FRAME) {
+            zeromv[0].as_int =
+                gm_get_motion_vector_enc(&picture_control_set_ptr->parent_pcs_ptr->global_motion[rf[0]],
+                    frm_hdr->allow_high_precision_mv, bsize, mi_col, mi_row,
+                    frm_hdr->force_integer_mv)
+                .as_int;
+            zeromv[1].as_int = (rf[1] != NONE_FRAME)
+                ? gm_get_motion_vector_enc(&picture_control_set_ptr->parent_pcs_ptr->global_motion[rf[1]],
+                    frm_hdr->allow_high_precision_mv,
+                    bsize, mi_col, mi_row,
+                    frm_hdr->force_integer_mv)
+                .as_int
+                : 0;
+        }
+        else
+            zeromv[0].as_int = zeromv[1].as_int = 0;
+
+        IntMv gm_mv[2];
+
+        if (ref_frame == INTRA_FRAME) {
+            gm_mv[0].as_int = gm_mv[1].as_int = 0;
+        }
+        else {
+            if (ref_frame < REF_FRAMES) {
+                gm_mv[0] = gm_get_motion_vector_enc(
+                    &picture_control_set_ptr->parent_pcs_ptr->global_motion[ref_frame], frm_hdr->allow_high_precision_mv, bsize,
+                    mi_col, mi_row, frm_hdr->force_integer_mv);
+                gm_mv[1].as_int = 0;
+            }
+            else {
+                MvReferenceFrame rf[2];
+                av1_set_ref_frame(rf, ref_frame);
+                gm_mv[0] = gm_get_motion_vector_enc(
+                    &picture_control_set_ptr->parent_pcs_ptr->global_motion[rf[0]], frm_hdr->allow_high_precision_mv, bsize, mi_col,
+                    mi_row, frm_hdr->force_integer_mv);
+                gm_mv[1] = gm_get_motion_vector_enc(
+                    &picture_control_set_ptr->parent_pcs_ptr->global_motion[rf[1]], frm_hdr->allow_high_precision_mv, bsize, mi_col,
+                    mi_row, frm_hdr->force_integer_mv);
+            }
+        }
+    }
+
+    // Set to 0 the fields which would have been set by setup_ref_mv_list()
+    memset(xd->ref_mv_count, 0, sizeof(uint8_t) * MODE_CTX_REF_FRAMES);
+    memset(context_ptr->md_local_cu_unit[blk_geom->blkidx_mds].ed_ref_mv_stack, 0, sizeof(CandidateMv) * MODE_CTX_REF_FRAMES * MAX_REF_MV_STACK_SIZE);
+    memset(cu_ptr->ref_mvs, 0, sizeof(cu_ptr->ref_mvs[0][0]) * MODE_CTX_REF_FRAMES * MAX_MV_REF_CANDIDATES);
+    memset(cu_ptr->inter_mode_ctx, 0, sizeof(int16_t) * MODE_CTX_REF_FRAMES);
+    memset(xd->ref_mv_count, 0, sizeof(int8_t) * MODE_CTX_REF_FRAMES);
+}
+#endif
 
 void generate_av1_mvp_table(
     TileInfo                         *tile,

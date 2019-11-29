@@ -44,6 +44,19 @@ extern "C" {
         uint32_t  picture_height,
         uint32_t  tb_size);
 
+#if BYPASS_PD0_MVP
+    void pd0_mvp_bypass_init(
+        TileInfo                   *tile,
+        struct ModeDecisionContext *context_ptr,
+        CodingUnit                 *cu_ptr,
+        const BlockGeom            *blk_geom,
+        uint16_t                    cu_origin_x,
+        uint16_t                    cu_origin_y,
+        MvReferenceFrame           *ref_frames,
+        uint32_t                    tot_refs,
+        PictureControlSet          *picture_control_set_ptr);
+#endif
+
     void generate_av1_mvp_table(
         TileInfo                   *tile,
         struct ModeDecisionContext *context_ptr,
