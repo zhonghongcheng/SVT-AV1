@@ -45,7 +45,7 @@ extern "C" {
         uint32_t  tb_size);
 
 #if BYPASS_PD0_MVP
-    void pd0_mvp_bypass_init(
+    void mvp_bypass_init(
         TileInfo                   *tile,
         struct ModeDecisionContext *context_ptr,
         CodingUnit                 *cu_ptr,

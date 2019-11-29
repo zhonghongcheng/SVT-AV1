@@ -4386,7 +4386,7 @@ void  inject_inter_candidates(
 
     uint32_t refIt;
 #if MULTI_PASS_PD_SUPPORT 
-    if (context_ptr->pd_pass == PD_PASS_2) 
+    if (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2)
 #endif
     //all of ref pairs: (1)single-ref List0  (2)single-ref List1  (3)compound Bi-Dir List0-List1  (4)compound Uni-Dir List0-List0  (5)compound Uni-Dir List1-List1
     for (refIt = 0; refIt < picture_control_set_ptr->parent_pcs_ptr->tot_ref_frame_types; ++refIt) {

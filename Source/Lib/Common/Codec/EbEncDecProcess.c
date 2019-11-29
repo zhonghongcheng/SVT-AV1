@@ -1315,7 +1315,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             context_ptr->global_mv_injection = 0;
         }
         else if (context_ptr->pd_pass == PD_PASS_1) {
-            context_ptr->global_mv_injection = 1;
+            context_ptr->global_mv_injection = 0;
         }
         else
 #endif

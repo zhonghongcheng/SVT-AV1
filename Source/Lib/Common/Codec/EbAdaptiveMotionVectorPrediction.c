@@ -1204,7 +1204,7 @@ IntMv gm_get_motion_vector_enc(
     return res;
 }
 #if BYPASS_PD0_MVP
-void pd0_mvp_bypass_init(
+void mvp_bypass_init(
     TileInfo                         *tile,
     ModeDecisionContext            *context_ptr,
     CodingUnit                     *cu_ptr,

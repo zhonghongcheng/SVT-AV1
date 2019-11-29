@@ -2896,8 +2896,13 @@ void predictive_me_search(
 
     const SequenceControlSet *sequence_control_set_ptr = (SequenceControlSet*)picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr;
 #if M0_OPT
+#if MULTI_PASS_PD_SUPPORT
+    int16_t full_pel_ref_window_width_th = (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0 && picture_control_set_ptr->enc_mode == ENC_M0 && context_ptr->pd_pass == PD_PASS_2) ? FULL_PEL_REF_WINDOW_WIDTH_EXTENDED : FULL_PEL_REF_WINDOW_WIDTH;
+    int16_t full_pel_ref_window_height_th = (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0 && picture_control_set_ptr->enc_mode == ENC_M0 && context_ptr->pd_pass == PD_PASS_2) ? FULL_PEL_REF_WINDOW_HEIGHT_EXTENDED : FULL_PEL_REF_WINDOW_HEIGHT;
+#else
     int16_t full_pel_ref_window_width_th = (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0 && picture_control_set_ptr->enc_mode == ENC_M0) ? FULL_PEL_REF_WINDOW_WIDTH_EXTENDED : FULL_PEL_REF_WINDOW_WIDTH;
     int16_t full_pel_ref_window_height_th = (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0 && picture_control_set_ptr->enc_mode == ENC_M0) ? FULL_PEL_REF_WINDOW_HEIGHT_EXTENDED : FULL_PEL_REF_WINDOW_HEIGHT;
+#endif
 #endif
     EbBool use_ssd = EB_TRUE;
 
@@ -8043,7 +8048,7 @@ void md_encode_block(
 #if BYPASS_PD0_MVP
         }
         else {
-            pd0_mvp_bypass_init(
+            mvp_bypass_init(
                 &context_ptr->sb_ptr->tile_info,
                 context_ptr,
                 context_ptr->cu_ptr,
