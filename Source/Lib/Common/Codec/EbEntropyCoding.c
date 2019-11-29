@@ -1566,7 +1566,7 @@ static INLINE int is_inter_mode(PredictionMode mode)
 }
 
 #if OBMC_FLAG
-#if !MULTI_PASS_PD
+#if !MULTI_PASS_PD_SUPPORT
 MotionMode obmc_motion_mode_allowed(
     const PictureControlSet         *picture_control_set_ptr,
     const CodingUnit                *cu_ptr,

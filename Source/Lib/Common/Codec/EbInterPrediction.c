@@ -7274,7 +7274,7 @@ void interpolation_filter_search(
     uint8_t bit_depth)
 {
     const Av1Common *cm = picture_control_set_ptr->parent_pcs_ptr->av1_cm;//&cpi->common;
-#if MULTI_PASS_PD
+#if MULTI_PASS_PD_SUPPORT
     EbBool use_uv = (md_context_ptr->blk_geom->has_uv && md_context_ptr->chroma_level <= CHROMA_MODE_1 && md_context_ptr->interpolation_search_level != IT_SEARCH_FAST_LOOP_UV_BLIND) ? EB_TRUE : EB_FALSE;
 #else
     EbBool use_uv = (md_context_ptr->blk_geom->has_uv && md_context_ptr->chroma_level <= CHROMA_MODE_1 &&
@@ -7364,7 +7364,7 @@ void interpolation_filter_search(
             const int32_t filter_set_size = DUAL_FILTER_SET_SIZE;
             int32_t best_in_temp = 0;
             uint32_t best_filters = 0;// mbmi->interp_filters;
-#if MULTI_PASS_PD
+#if MULTI_PASS_PD_SUPPORT
             if (md_context_ptr->interpolation_search_level && picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header.enable_dual_filter) {
 #else
             if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level &&
@@ -7742,7 +7742,7 @@ EbErrorType inter_pu_prediction_av1(
         return return_error;
     }
 
-#if MULTI_PASS_PD
+#if MULTI_PASS_PD_SUPPORT
     if (md_context_ptr->interpolation_search_level == IT_SEARCH_OFF)
 #else
     if (picture_control_set_ptr->parent_pcs_ptr->interpolation_search_level == IT_SEARCH_OFF)

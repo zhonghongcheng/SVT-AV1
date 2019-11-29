@@ -767,11 +767,6 @@ EbErrorType signal_derivation_multi_processes_oq(
     PictureParentControlSet   *picture_control_set_ptr) {
     EbErrorType return_error = EB_ErrorNone;
     FrameHeader *frm_hdr = &picture_control_set_ptr->frm_hdr;
-    //  MDC Partitioning Method              Settings
-    //  PIC_ALL_DEPTH_MODE                   ALL sq and nsq: SB size -> 4x4
-    //  PIC_ALL_C_DEPTH_MODE                 ALL sq and nsq: SB size -> 4x4  (No 4xN ; Nx4)
-    //  PIC_SQ_DEPTH_MODE                    ONLY sq: SB size -> 4x4
-    //  PIC_SQ_NON4_DEPTH_MODE               ONLY sq: SB size -> 8x8  (No 4x4)
 
     uint8_t sc_content_detected = picture_control_set_ptr->sc_content_detected;
 
@@ -800,7 +795,13 @@ EbErrorType signal_derivation_multi_processes_oq(
     picture_control_set_ptr->tf_enable_hme_level2_flag = tf_enable_hme_level2_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][picture_control_set_ptr->enc_mode];
 #endif
 
-        if (sc_content_detected)
+        if (sc_content_detected) 
+#if ENABLE_MULTI_PASS_PD
+            if (picture_control_set_ptr->enc_mode == ENC_M0)
+                // Use a single-stage PD if or 1st encoding Pass I_SLICE
+                picture_control_set_ptr->pic_depth_mode = (picture_control_set_ptr->slice_type == I_SLICE) ? PIC_ALL_DEPTH_MODE : PIC_MULTI_PASS_PD_MODE_0;
+            else
+#endif
             if (picture_control_set_ptr->enc_mode <= ENC_M1)
                 picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
             else if (picture_control_set_ptr->enc_mode <= ENC_M3)
@@ -817,7 +818,11 @@ EbErrorType signal_derivation_multi_processes_oq(
                     picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
             else
                 picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
-
+#if ENABLE_MULTI_PASS_PD
+        else if (picture_control_set_ptr->enc_mode == ENC_M0)
+            // Use a single-stage PD if or 1st encoding Pass I_SLICE
+            picture_control_set_ptr->pic_depth_mode = (picture_control_set_ptr->slice_type == I_SLICE) ? PIC_ALL_DEPTH_MODE : PIC_MULTI_PASS_PD_MODE_1;
+#endif
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
             picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
 
@@ -987,7 +992,7 @@ EbErrorType signal_derivation_multi_processes_oq(
         if (picture_control_set_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE) picture_control_set_ptr->pic_depth_mode = PIC_SQ_DEPTH_MODE;
     if (picture_control_set_ptr->pic_depth_mode > PIC_SQ_DEPTH_MODE)
         assert(picture_control_set_ptr->nsq_search_level == NSQ_SEARCH_OFF);
-#if !MULTI_PASS_PD
+#if !MULTI_PASS_PD_SUPPORT
     // Interpolation search Level                     Settings
     // 0                                              OFF
     // 1                                              Interpolation search at inter-depth

@@ -547,7 +547,7 @@ void reset_mode_decision(
 #endif
 #endif
 #endif
-#if !MULTI_PASS_PD
+#if !MULTI_PASS_PD_SUPPORT
     EbBool enable_wm;
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         enable_wm = EB_FALSE;

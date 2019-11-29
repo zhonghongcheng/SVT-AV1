@@ -631,7 +631,7 @@ uint64_t av1_intra_fast_cost(
     const BlockGeom         *blk_geom,
     uint32_t                 miRow,
     uint32_t                 miCol,
-#if MULTI_PASS_PD
+#if MULTI_PASS_PD_SUPPORT
     PD_PASS                  pd_pass,
 #endif
     uint8_t                 md_pass,
@@ -646,7 +646,7 @@ uint64_t av1_intra_fast_cost(
     UNUSED(left_neighbor_mode);
     UNUSED(top_neighbor_mode);
     UNUSED(md_pass);
-#if MULTI_PASS_PD
+#if MULTI_PASS_PD_SUPPORT
     UNUSED(pd_pass);
 #endif
     FrameHeader *frm_hdr = &picture_control_set_ptr->parent_pcs_ptr->frm_hdr;
@@ -1340,7 +1340,7 @@ uint32_t get_compound_mode_rate(
     #if II_COMP_FLAG
 int is_interintra_wedge_used(BlockSize sb_type);
 int svt_is_interintra_allowed(
-#if MULTI_PASS_PD
+#if MULTI_PASS_PD_SUPPORT
     PD_PASS pd_pass,
 #endif
     uint8_t enable_inter_intra,
@@ -1691,7 +1691,7 @@ uint64_t av1_inter_fast_cost(
     const BlockGeom         *blk_geom,
     uint32_t                 miRow,
     uint32_t                 miCol,
-#if MULTI_PASS_PD
+#if MULTI_PASS_PD_SUPPORT
     PD_PASS                  pd_pass,
 #endif
     uint8_t                  md_pass,
@@ -1904,7 +1904,7 @@ uint64_t av1_inter_fast_cost(
         // inter intra mode rate
         if (picture_control_set_ptr->parent_pcs_ptr->frm_hdr.reference_mode != COMPOUND_REFERENCE &&
             picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->seq_header.enable_interintra_compound &&
-#if MULTI_PASS_PD
+#if MULTI_PASS_PD_SUPPORT
             svt_is_interintra_allowed(pd_pass, picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra, blk_geom->bsize, candidate_ptr->inter_mode, rf)) {
 #else
             svt_is_interintra_allowed(picture_control_set_ptr->parent_pcs_ptr->enable_inter_intra,blk_geom->bsize, candidate_ptr->inter_mode, rf)) {

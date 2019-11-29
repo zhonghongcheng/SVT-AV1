@@ -171,7 +171,7 @@ extern "C" {
         const BlockGeom         *blk_geom,
         uint32_t                 miRow,
         uint32_t                 miCol,
-#if MULTI_PASS_PD
+#if MULTI_PASS_PD_SUPPORT
         PD_PASS                  pd_pass,
 #endif
         uint8_t                  md_pass,
@@ -191,7 +191,7 @@ extern "C" {
         const BlockGeom         *blk_geom,
         uint32_t                 miRow,
         uint32_t                 miCol,
-#if MULTI_PASS_PD
+#if MULTI_PASS_PD_SUPPORT
         PD_PASS                  pd_pass,
 #endif
         uint8_t                  md_pass,

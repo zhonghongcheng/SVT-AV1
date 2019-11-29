@@ -34,12 +34,15 @@ extern "C" {
 #endif
 
 #define REMOVE_MDC_EARLY_PART        1 // Remove MDC early part code (API signal(s), structure(s), kernel(s), ..)
-#define MULTI_PASS_PD                1
+#define MULTI_PASS_PD_SUPPORT        1
+#if MULTI_PASS_PD_SUPPORT
+#define ENABLE_MULTI_PASS_PD         0
 #define ENABLE_MRP                   1
 #define CHECK_COMP                   0
 #define NSQ_COEF_INFO                0
 #if !NSQ_COEF_INFO                   
 #define SQ_COEF_INFO                 1
+#endif
 #endif
 
 #define HBD_CLEAN_UP                 1
@@ -556,7 +559,7 @@ static INLINE unsigned int negative_to_zero(int value) {
 #endif
 #endif /* ATTRIBUTE_PACKED */
 
-#if MULTI_PASS_PD
+#if MULTI_PASS_PD_SUPPORT
 typedef enum PD_PASS {
     PD_PASS_0,
     PD_PASS_1,
@@ -653,7 +656,7 @@ typedef enum TxSearchLevel
 
 typedef enum InterpolationSearchLevel
 {
-#if MULTI_PASS_PD
+#if MULTI_PASS_PD_SUPPORT
     IT_SEARCH_OFF,
     IT_SEARCH_FAST_LOOP_UV_BLIND,
     IT_SEARCH_FAST_LOOP,
@@ -3015,16 +3018,33 @@ typedef enum EbCu8x8Mode
     CU_8x8_MODE_1 = 1   // Perform OIS and only Full_Search for CU_8x8
 } EbCu8x8Mode;
 
+
+#if MULTI_PASS_PD_SUPPORT
+typedef enum EbPictureDepthMode
+{
+    PIC_MULTI_PASS_PD_MODE_0    = 0, // Multi-Pass PD Mode 0
+    PIC_MULTI_PASS_PD_MODE_1    = 1, // Multi-Pass PD Mode 1
+    PIC_MULTI_PASS_PD_MODE_2    = 2, // Multi-Pass PD Mode 2
+    PIC_MULTI_PASS_PD_MODE_3    = 3, // Multi-Pass PD Mode 3 
+    PIC_ALL_DEPTH_MODE          = 4, // ALL sq and nsq:  SB size -> 4x4
+    PIC_ALL_C_DEPTH_MODE        = 5, // ALL sq and nsq with control :  SB size -> 4x4
+    PIC_SQ_DEPTH_MODE           = 6, // ALL sq:  SB size -> 4x4
+    PIC_SQ_NON4_DEPTH_MODE      = 7, // SQ:  SB size -> 8x8
+    PIC_OPEN_LOOP_DEPTH_MODE    = 8, // Early Inter Depth Decision:  SB size -> 8x8
+    PIC_SB_SWITCH_DEPTH_MODE    = 9  // Adaptive Depth Partitioning
+
+} EbPictureDepthMode;
+#else
 typedef enum EbPictureDepthMode
 {
     PIC_ALL_DEPTH_MODE          = 0, // ALL sq and nsq:  SB size -> 4x4
     PIC_ALL_C_DEPTH_MODE        = 1, // ALL sq and nsq with control :  SB size -> 4x4
     PIC_SQ_DEPTH_MODE           = 2, // ALL sq:  SB size -> 4x4
     PIC_SQ_NON4_DEPTH_MODE      = 3, // SQ:  SB size -> 8x8
-    PIC_OPEN_LOOP_DEPTH_MODE = 4, // Early Inter Depth Decision:  SB size -> 8x8
-    PIC_SB_SWITCH_DEPTH_MODE = 5  // Adaptive Depth Partitioning
+    PIC_OPEN_LOOP_DEPTH_MODE    = 4, // Early Inter Depth Decision:  SB size -> 8x8
+    PIC_SB_SWITCH_DEPTH_MODE    = 5  // Adaptive Depth Partitioning
 } EbPictureDepthMode;
-
+#endif
 #define EB_SB_DEPTH_MODE              uint8_t
 #define SB_SQ_BLOCKS_DEPTH_MODE             1
 #define SB_SQ_NON4_BLOCKS_DEPTH_MODE        2

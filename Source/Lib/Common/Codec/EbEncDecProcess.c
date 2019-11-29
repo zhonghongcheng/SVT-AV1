@@ -1176,14 +1176,14 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     ModeDecisionContext   *context_ptr) {
     EbErrorType return_error = EB_ErrorNone;
 
-#if MULTI_PASS_PD
+#if MULTI_PASS_PD_SUPPORT
     // Interpolation search Level                     Settings
     // 0                                              OFF
     // 1                                              Interpolation search at inter-depth
     // 2                                              Interpolation search at full loop
     // 3                                              Chroma blind interpolation search at fast loop
     // 4                                              Interpolation search at fast loop
-#if MULTI_PASS_PD 
+#if MULTI_PASS_PD_SUPPORT 
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->interpolation_search_level = IT_SEARCH_OFF;
     else if (context_ptr->pd_pass == PD_PASS_1) {
@@ -1219,7 +1219,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // CHROMA_MODE_1  1     Fast chroma search @ MD
     // CHROMA_MODE_2  2     Chroma blind @ MD + CFL @ EP
     // CHROMA_MODE_3  3     Chroma blind @ MD + no CFL @ EP
-#if MULTI_PASS_PD 
+#if MULTI_PASS_PD_SUPPORT 
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->chroma_level = CHROMA_MODE_2; // or CHROMA_MODE_3 
     else if (context_ptr->pd_pass == PD_PASS_1) {
@@ -1285,7 +1285,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 0                    Off
     // 1                    On but only INTRA
     // 2                    On both INTRA and INTER
-#if MULTI_PASS_PD
+#if MULTI_PASS_PD_SUPPORT
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->full_loop_escape = 0;
     else if (context_ptr->pd_pass == PD_PASS_1)
@@ -1310,7 +1310,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #if GLOBAL_WARPED_MOTION
     if (sequence_control_set_ptr->static_config.enable_global_motion == EB_TRUE)
     {
-#if MULTI_PASS_PD // Shut global mv if 1st pass
+#if MULTI_PASS_PD_SUPPORT // Shut global mv if 1st pass
         if (context_ptr->pd_pass == PD_PASS_0) {
             context_ptr->global_mv_injection = 0;
         }
@@ -1331,7 +1331,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->global_mv_injection = 0;
 
-#if MULTI_PASS_PD // Shut nx4 and 4xn if 1st pass
+#if MULTI_PASS_PD_SUPPORT // Shut nx4 and 4xn if 1st pass
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->new_nearest_near_comb_injection = 0;
     else if (context_ptr->pd_pass == PD_PASS_1)
@@ -1352,7 +1352,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->new_nearest_near_comb_injection = 0;
 
-#if MULTI_PASS_PD // Shut nx4 and 4xn if 1st pass
+#if MULTI_PASS_PD_SUPPORT // Shut nx4 and 4xn if 1st pass
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->nx4_4xn_parent_mv_injection = 0;
     else if (context_ptr->pd_pass == PD_PASS_1)
@@ -1368,7 +1368,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // Level                Settings
     // 0                    OFF
     // 1                    On
-#if MULTI_PASS_PD 
+#if MULTI_PASS_PD_SUPPORT 
     if (context_ptr->pd_pass == PD_PASS_0) {
         context_ptr->warped_motion_injection = 0;
     }
@@ -1387,7 +1387,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 0                    OFF
     // 1                    ON FULL
     // 2                    Reduced set
-#if MULTI_PASS_PD 
+#if MULTI_PASS_PD_SUPPORT 
     if (context_ptr->pd_pass == PD_PASS_0) {
         context_ptr->unipred3x3_injection = 0;
     }
@@ -1418,7 +1418,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 0                    OFF
     // 1                    ON FULL
     // 2                    Reduced set
-#if MULTI_PASS_PD 
+#if MULTI_PASS_PD_SUPPORT 
     if (context_ptr->pd_pass == PD_PASS_0) {
         context_ptr->bipred3x3_injection = 0;
     }
@@ -1448,7 +1448,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 4                    Level 4: 7x5 full-pel search +  (H + V + D) sub-pel refinement = 8 half-pel + 8 quarter-pel = 16 positions + pred_me_distortion to pa_me_distortion deviation on
     // 5                    Level 5: 7x5 full-pel search +  (H + V + D) sub-pel refinement = 8 half-pel + 8 quarter-pel = 16 positions + pred_me_distortion to pa_me_distortion deviation off
     if (picture_control_set_ptr->slice_type != I_SLICE)
-#if MULTI_PASS_PD // Shut predictive if 1st pass
+#if MULTI_PASS_PD_SUPPORT // Shut predictive if 1st pass
         if (context_ptr->pd_pass == PD_PASS_0)
             context_ptr->predictive_me_level = 0;
         else if (context_ptr->pd_pass == PD_PASS_1)
@@ -1492,7 +1492,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // |CLASS_4 |                             |No Tx Size Search               |Tx Size Search                           |
     // |CLASS_5 |                             |Interpolation Search            |                                         |
     // |________|_____________________________|________________________________|_________________________________________|
-#if MULTI_PASS_PD 
+#if MULTI_PASS_PD_SUPPORT 
     if (context_ptr->pd_pass == PD_PASS_0) {
         context_ptr->md_staging_mode = MD_STAGING_MODE_0;
     }
@@ -1594,7 +1594,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // Combine MD Class1&2
     // 0                    OFF
     // 1                    ON
-#if MULTI_PASS_PD 
+#if MULTI_PASS_PD_SUPPORT 
     if (context_ptr->pd_pass == PD_PASS_0) {
         context_ptr->combine_class12 = 0;
     } else if (context_ptr->pd_pass == PD_PASS_1) {
@@ -1609,7 +1609,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // 0                    ON for 8x8 and above
     // 1                    ON for 16x16 and above
     // 2                    ON for 32x32 and above
-#if MULTI_PASS_PD 
+#if MULTI_PASS_PD_SUPPORT 
     if (context_ptr->pd_pass == PD_PASS_0) {
         context_ptr->interpolation_filter_search_blk_size = 0;
     }
@@ -1627,7 +1627,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     context_ptr->pf_md_mode = PF_OFF;
 
     // Derive Spatial SSE Flag
-#if MULTI_PASS_PD // Shut spatial SSE @ full loop
+#if MULTI_PASS_PD_SUPPORT // Shut spatial SSE @ full loop
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->spatial_sse_full_loop = EB_TRUE;
     else if (context_ptr->pd_pass == PD_PASS_1)
@@ -1650,7 +1650,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->blk_skip_decision = EB_FALSE;
     // Derive Trellis Quant Coeff Optimization Flag
-#if MULTI_PASS_PD // Shut spatial SSE @ full loop
+#if MULTI_PASS_PD_SUPPORT // Shut spatial SSE @ full loop
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
     else if (context_ptr->pd_pass == PD_PASS_1)
@@ -1663,7 +1663,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
 
     // Derive redundant block
-#if MULTI_PASS_PD // Shut redundant_blk
+#if MULTI_PASS_PD_SUPPORT // Shut redundant_blk
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->redundant_blk = EB_FALSE;
     else if (context_ptr->pd_pass == PD_PASS_1)
@@ -1682,7 +1682,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->redundant_blk = EB_FALSE;
 
     if (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
-#if MULTI_PASS_PD 
+#if MULTI_PASS_PD_SUPPORT 
         if (context_ptr->pd_pass == PD_PASS_0)
             context_ptr->edge_based_skip_angle_intra = 0;
         else if (context_ptr->pd_pass == PD_PASS_1)
@@ -1710,7 +1710,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
     else
         context_ptr->edge_based_skip_angle_intra = 0;
-#if MULTI_PASS_PD // Shut spatial SSE @ full loop
+#if MULTI_PASS_PD_SUPPORT // Shut spatial SSE @ full loop
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->prune_ref_frame_for_rec_partitions = 0;
     else if (context_ptr->pd_pass == PD_PASS_1)
@@ -1735,7 +1735,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->inter_inter_wedge_variance_th = 100;
 
     // Derive MD Exit TH
-#if MULTI_PASS_PD // Shut md_exit_th
+#if MULTI_PASS_PD_SUPPORT // Shut md_exit_th
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->md_exit_th = 0;
     else if (context_ptr->pd_pass == PD_PASS_1)
@@ -1755,7 +1755,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
     // TH_S (for single candidate removal per class)
     // Remove candidate if deviation to the best is higher than TH_S
-#if MULTI_PASS_PD 
+#if MULTI_PASS_PD_SUPPORT 
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->md_stage_1_cand_prune_th = (uint64_t)~0;
     else if (context_ptr->pd_pass == PD_PASS_1)
@@ -1784,7 +1784,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
     // TH_C (for class removal)
     // Remove class if deviation to the best higher than TH_C
-#if MULTI_PASS_PD 
+#if MULTI_PASS_PD_SUPPORT 
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->md_stage_1_class_prune_th = (uint64_t)~0;
     else if (context_ptr->pd_pass == PD_PASS_1)
@@ -1804,7 +1804,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
     // TH_S (for single candidate removal per class)
     // Remove candidate if deviation to the best is higher than TH_S
-#if MULTI_PASS_PD 
+#if MULTI_PASS_PD_SUPPORT 
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->md_stage_2_cand_prune_th = (uint64_t)~0;
     else if (context_ptr->pd_pass == PD_PASS_1)
@@ -1830,7 +1830,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
     // TH_C (for class removal)
     // Remove class if deviation to the best is higher than TH_C
-#if MULTI_PASS_PD 
+#if MULTI_PASS_PD_SUPPORT 
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->md_stage_2_class_prune_th = (uint64_t)~0;
     else if (context_ptr->pd_pass == PD_PASS_1)
@@ -1858,7 +1858,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     // skip HA and HB if h_cost > (weighted sq_cost)
     // skip VA and VB if v_cost > (weighted sq_cost)
 
-#if MULTI_PASS_PD // Shut sq_to_h_v_weight_to_skip_a_b
+#if MULTI_PASS_PD_SUPPORT // Shut sq_to_h_v_weight_to_skip_a_b
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->sq_weight = (uint32_t)~0;
     else if (context_ptr->pd_pass == PD_PASS_1)
@@ -1885,7 +1885,7 @@ void av1_estimate_syntax_rate___partial(
     MdRateEstimationContext        *md_rate_estimation_array,
     FRAME_CONTEXT                  *fc);
 
-#if MULTI_PASS_PD
+#if MULTI_PASS_PD_SUPPORT
 void copy_neighbour_arrays(
     PictureControlSet   *picture_control_set_ptr,
     ModeDecisionContext *context_ptr,
@@ -2279,7 +2279,7 @@ static void perform_pred_depth_refinement(
                         }
 #endif
 
-                        if (zero_coeff_present_flag && !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_control_set_ptr->slice_type != I_SLICE) {
+                        if (zero_coeff_present_flag && picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_1) {
                             s_depth = 0;
                             e_depth = 0;
                         }
@@ -2394,7 +2394,7 @@ void* enc_dec_kernel(void *input_ptr)
         is16bit = (EbBool)(sequence_control_set_ptr->static_config.encoder_bit_depth > EB_8BIT);
         (void)is16bit;
         (void)endOfRowFlag;
-#if !MULTI_PASS_PD
+#if !MULTI_PASS_PD_SUPPORT
         // EncDec Kernel Signal(s) derivation
 
         signal_derivation_enc_dec_kernel_oq(
@@ -2537,11 +2537,11 @@ void* enc_dec_kernel(void *input_ptr)
                             context_ptr->ss_mecontext);
                     }
 
-#if MULTI_PASS_PD
-                    // Use single-stage PD if I_SLICE or SC 
-                    EbBool multi_stage_pd = (!sequence_control_set_ptr->use_output_stat_file && !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && picture_control_set_ptr->slice_type != I_SLICE && sequence_control_set_ptr->sb_geom[sb_index].is_complete_sb) ? EB_TRUE : EB_FALSE;
-
-                    if (0) { //if (multi_stage_pd) {
+#if MULTI_PASS_PD_SUPPORT
+                    if ((picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_0 ||
+                         picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_1 ||
+                         picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_2 ||
+                         picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_3) && sequence_control_set_ptr->sb_geom[sb_index].is_complete_sb) {
 
                         MdcLcuData *mdc_cu_ptr = &picture_control_set_ptr->mdc_sb_array[sb_index];
                         uint32_t  blk_index = 0;
@@ -2556,16 +2556,17 @@ void* enc_dec_kernel(void *input_ptr)
                             sb_origin_x,
                             sb_origin_y);
 
-                        // 1st PD Pass EncDec Kernel Signal(s) derivation
+                        // [PD_PASS_0] Signal(s) derivation
                         context_ptr->md_context->pd_pass = PD_PASS_0;
                         signal_derivation_enc_dec_kernel_oq(
                             sequence_control_set_ptr,
                             picture_control_set_ptr,
                             context_ptr->md_context);
 
+                        // [PD_PASS_0] Mode Decision
                         // Input : mdc_cu_ptr built @ mdc process (up to 4421)     
                         // Output: md_cu_arr_nsq reduced set of block(s)   
-                        mode_decision_sb( // is an MDC like PD0
+                        mode_decision_sb(
                             sequence_control_set_ptr,
                             picture_control_set_ptr,
                             mdcPtr,
@@ -2576,7 +2577,7 @@ void* enc_dec_kernel(void *input_ptr)
                             context_ptr->ss_mecontext,
                             context_ptr->md_context);
 
-                       // Reset mdc_cu_ptr ( mdc process output will not be used beting this point)
+                        // Reset mdc_cu_ptr ( mdc process output will not be used beting this point)
                         blk_index = 0;
                         while (blk_index < sequence_control_set_ptr->max_block_cnt) {
                             const BlockGeom * blk_geom = get_blk_geom_mds(blk_index);
@@ -2608,68 +2609,70 @@ void* enc_dec_kernel(void *input_ptr)
                             0,
                             sb_origin_x,
                             sb_origin_y);
-#if MULTI_PASS_PD
-                        // 2nd PD Pass EncDec Kernel Signal(s) derivation
-                            context_ptr->md_context->pd_pass = PD_PASS_1;
+#if MULTI_PASS_PD_SUPPORT
+                        // [PD_PASS_1] Signal(s) derivation
+                        context_ptr->md_context->pd_pass = PD_PASS_1;
+                        signal_derivation_enc_dec_kernel_oq(
+                            sequence_control_set_ptr,
+                            picture_control_set_ptr,
+                            context_ptr->md_context);
 
-                            signal_derivation_enc_dec_kernel_oq(
-                                sequence_control_set_ptr,
-                                picture_control_set_ptr,
-                                context_ptr->md_context);
+                        // [PD_PASS_1] Mode Decision
+                        mode_decision_sb(
+                            sequence_control_set_ptr,
+                            picture_control_set_ptr,
+                            mdcPtr,
+                            sb_ptr,
+                            sb_origin_x,
+                            sb_origin_y,
+                            sb_index,
+                            context_ptr->ss_mecontext,
+                            context_ptr->md_context);
 
-                            mode_decision_sb(
-                                sequence_control_set_ptr,
-                                picture_control_set_ptr,
-                                mdcPtr,
-                                sb_ptr,
-                                sb_origin_x,
-                                sb_origin_y,
-                                sb_index,
-                                context_ptr->ss_mecontext,
-                                context_ptr->md_context);
-
-                            // Reset mdc array ( mdc output will not be used beting this point) - why rest ?
-                            blk_index = 0;
-                            while (blk_index < sequence_control_set_ptr->max_block_cnt) {
-                                const BlockGeom * blk_geom = get_blk_geom_mds(blk_index);
-                                mdc_cu_ptr->leaf_data_array[blk_index].consider_block = 0;
-                                mdc_cu_ptr->leaf_data_array[blk_index].split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
-                                mdc_cu_ptr->leaf_data_array[blk_index].refined_split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
-                                blk_index++;
-                            }
-
-                            // Perform Pred_1 depth refinement
-                            perform_pred_depth_refinement(
-                                sequence_control_set_ptr,
-                                picture_control_set_ptr,
-                                context_ptr->md_context,
-                                sb_index);
-
-                            // Re-build mdc_cu_ptr for the 3rd PD Pass [PD_PASS_2]
-                            build_cand_block_array(
-                                sequence_control_set_ptr,
-                                picture_control_set_ptr,
-                                sb_index);
-
-                            // Reset neighnor information to current SB @ position (0,0)
-                            copy_neighbour_arrays(
-                                picture_control_set_ptr,
-                                context_ptr->md_context,
-                                MULTI_STAGE_PD_NEIGHBOR_ARRAY_INDEX,
-                                MD_NEIGHBOR_ARRAY_INDEX,
-                                0,
-                                sb_origin_x,
-                                sb_origin_y);
-#endif
+                        // Reset mdc array ( mdc output will not be used beting this point) - why rest ?
+                        blk_index = 0;
+                        while (blk_index < sequence_control_set_ptr->max_block_cnt) {
+                            const BlockGeom * blk_geom = get_blk_geom_mds(blk_index);
+                            mdc_cu_ptr->leaf_data_array[blk_index].consider_block = 0;
+                            mdc_cu_ptr->leaf_data_array[blk_index].split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
+                            mdc_cu_ptr->leaf_data_array[blk_index].refined_split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
+                            blk_index++;
                         }
+
+                        // Perform Pred_1 depth refinement
+                        perform_pred_depth_refinement(
+                            sequence_control_set_ptr,
+                            picture_control_set_ptr,
+                            context_ptr->md_context,
+                            sb_index);
+
+                        // Re-build mdc_cu_ptr for the 3rd PD Pass [PD_PASS_2]
+                        build_cand_block_array(
+                            sequence_control_set_ptr,
+                            picture_control_set_ptr,
+                            sb_index);
+
+                        // Reset neighnor information to current SB @ position (0,0)
+                        copy_neighbour_arrays(
+                            picture_control_set_ptr,
+                            context_ptr->md_context,
+                            MULTI_STAGE_PD_NEIGHBOR_ARRAY_INDEX,
+                            MD_NEIGHBOR_ARRAY_INDEX,
+                            0,
+                            sb_origin_x,
+                            sb_origin_y);
 #endif
-#if MULTI_PASS_PD
-                    // 2nd PD Pass EncDec Kernel Signal(s) derivation
+                    }
+#endif
+#if MULTI_PASS_PD_SUPPORT
+                    // [PD_PASS_2] Signal(s) derivation
                     context_ptr->md_context->pd_pass = PD_PASS_2;
                     signal_derivation_enc_dec_kernel_oq(
                         sequence_control_set_ptr,
                         picture_control_set_ptr,
                         context_ptr->md_context);
+
+                    // [PD_PASS_2] Mode Decision
 #endif
                     mode_decision_sb(
                         sequence_control_set_ptr,

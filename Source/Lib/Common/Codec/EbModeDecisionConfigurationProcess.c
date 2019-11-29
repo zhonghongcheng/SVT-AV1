@@ -2592,7 +2592,7 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
         picture_control_set_ptr->enc_mode == ENC_M0 && frm_hdr->quantization_params.base_q_idx < HIGH_PRECISION_MV_QTHRESH &&
         (sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER) ? 1 : 0;
 #endif
-#if MULTI_PASS_PD
+#if MULTI_PASS_PD_SUPPORT
     EbBool enable_wm;
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         enable_wm = EB_FALSE;
@@ -3157,8 +3157,15 @@ void* mode_decision_configuration_kernel(void *input_ptr)
                 }
             }
         }
-
+#if MULTI_PASS_PD_SUPPORT
+        else  if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_ALL_DEPTH_MODE       ||
+                  picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_0 ||
+                  picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_1 ||
+                  picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_2 ||
+                  picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_3 ){
+#else
         else  if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_ALL_DEPTH_MODE) {
+#endif
             forward_all_blocks_to_md(
                 sequence_control_set_ptr,
                 picture_control_set_ptr);
