@@ -2279,7 +2279,7 @@ static void perform_pred_depth_refinement(
                         }
 #endif
 
-                        if (zero_coeff_present_flag && picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_1) {
+                        if (zero_coeff_present_flag && (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_2 || picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_3)) {
                             s_depth = 0;
                             e_depth = 0;
                         }
@@ -2609,62 +2609,65 @@ void* enc_dec_kernel(void *input_ptr)
                             0,
                             sb_origin_x,
                             sb_origin_y);
-#if MULTI_PASS_PD_SUPPORT
-                        // [PD_PASS_1] Signal(s) derivation
-                        context_ptr->md_context->pd_pass = PD_PASS_1;
-                        signal_derivation_enc_dec_kernel_oq(
-                            sequence_control_set_ptr,
-                            picture_control_set_ptr,
-                            context_ptr->md_context);
 
-                        // [PD_PASS_1] Mode Decision
-                        mode_decision_sb(
-                            sequence_control_set_ptr,
-                            picture_control_set_ptr,
-                            mdcPtr,
-                            sb_ptr,
-                            sb_origin_x,
-                            sb_origin_y,
-                            sb_index,
-                            context_ptr->ss_mecontext,
-                            context_ptr->md_context);
+                        if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_1 || 
+                            picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_2 ||
+                            picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_3 ){
 
-                        // Reset mdc array ( mdc output will not be used beting this point) - why rest ?
-                        blk_index = 0;
-                        while (blk_index < sequence_control_set_ptr->max_block_cnt) {
-                            const BlockGeom * blk_geom = get_blk_geom_mds(blk_index);
-                            mdc_cu_ptr->leaf_data_array[blk_index].consider_block = 0;
-                            mdc_cu_ptr->leaf_data_array[blk_index].split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
-                            mdc_cu_ptr->leaf_data_array[blk_index].refined_split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
-                            blk_index++;
+                            // [PD_PASS_1] Signal(s) derivation
+                            context_ptr->md_context->pd_pass = PD_PASS_1;
+                            signal_derivation_enc_dec_kernel_oq(
+                                sequence_control_set_ptr,
+                                picture_control_set_ptr,
+                                context_ptr->md_context);
+
+                            // [PD_PASS_1] Mode Decision
+                            mode_decision_sb(
+                                sequence_control_set_ptr,
+                                picture_control_set_ptr,
+                                mdcPtr,
+                                sb_ptr,
+                                sb_origin_x,
+                                sb_origin_y,
+                                sb_index,
+                                context_ptr->ss_mecontext,
+                                context_ptr->md_context);
+
+                            // Reset mdc array ( mdc output will not be used beting this point) - why rest ?
+                            blk_index = 0;
+                            while (blk_index < sequence_control_set_ptr->max_block_cnt) {
+                                const BlockGeom * blk_geom = get_blk_geom_mds(blk_index);
+                                mdc_cu_ptr->leaf_data_array[blk_index].consider_block = 0;
+                                mdc_cu_ptr->leaf_data_array[blk_index].split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
+                                mdc_cu_ptr->leaf_data_array[blk_index].refined_split_flag = blk_geom->sq_size > 4 ? EB_TRUE : EB_FALSE;
+                                blk_index++;
+                            }
+
+                            // Perform Pred_1 depth refinement
+                            perform_pred_depth_refinement(
+                                sequence_control_set_ptr,
+                                picture_control_set_ptr,
+                                context_ptr->md_context,
+                                sb_index);
+
+                            // Re-build mdc_cu_ptr for the 3rd PD Pass [PD_PASS_2]
+                            build_cand_block_array(
+                                sequence_control_set_ptr,
+                                picture_control_set_ptr,
+                                sb_index);
+
+                            // Reset neighnor information to current SB @ position (0,0)
+                            copy_neighbour_arrays(
+                                picture_control_set_ptr,
+                                context_ptr->md_context,
+                                MULTI_STAGE_PD_NEIGHBOR_ARRAY_INDEX,
+                                MD_NEIGHBOR_ARRAY_INDEX,
+                                0,
+                                sb_origin_x,
+                                sb_origin_y);
                         }
-
-                        // Perform Pred_1 depth refinement
-                        perform_pred_depth_refinement(
-                            sequence_control_set_ptr,
-                            picture_control_set_ptr,
-                            context_ptr->md_context,
-                            sb_index);
-
-                        // Re-build mdc_cu_ptr for the 3rd PD Pass [PD_PASS_2]
-                        build_cand_block_array(
-                            sequence_control_set_ptr,
-                            picture_control_set_ptr,
-                            sb_index);
-
-                        // Reset neighnor information to current SB @ position (0,0)
-                        copy_neighbour_arrays(
-                            picture_control_set_ptr,
-                            context_ptr->md_context,
-                            MULTI_STAGE_PD_NEIGHBOR_ARRAY_INDEX,
-                            MD_NEIGHBOR_ARRAY_INDEX,
-                            0,
-                            sb_origin_x,
-                            sb_origin_y);
-#endif
                     }
-#endif
-#if MULTI_PASS_PD_SUPPORT
+
                     // [PD_PASS_2] Signal(s) derivation
                     context_ptr->md_context->pd_pass = PD_PASS_2;
                     signal_derivation_enc_dec_kernel_oq(
