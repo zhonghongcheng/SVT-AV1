@@ -4328,7 +4328,7 @@ void  inject_inter_candidates(
     uint8_t sq_index = LOG2F(context_ptr->blk_geom->sq_size) - 2;
     uint8_t inject_newmv_candidate = 1;
 #if MULTI_PASS_PD_SUPPORT // Shut coef-based inter skip if 1st pass
-    if (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2)
+    if (context_ptr->pd_pass == PD_PASS_2)
 #endif
     if (picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
         picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL) {
@@ -4386,7 +4386,7 @@ void  inject_inter_candidates(
 
     uint32_t refIt;
 #if MULTI_PASS_PD_SUPPORT 
-    if (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2)
+    if (context_ptr->pd_pass == PD_PASS_2)
 #endif
     //all of ref pairs: (1)single-ref List0  (2)single-ref List1  (3)compound Bi-Dir List0-List1  (4)compound Uni-Dir List0-List0  (5)compound Uni-Dir List1-List1
     for (refIt = 0; refIt < picture_control_set_ptr->parent_pcs_ptr->tot_ref_frame_types; ++refIt) {
@@ -6016,7 +6016,7 @@ EbErrorType generate_md_stage_0_cand(
     uint8_t inject_intra_candidate = 1;
     uint8_t inject_inter_candidate = 1;
 #if MULTI_PASS_PD_SUPPORT // Shut coef-based inter skip if 1st pass
-    if (context_ptr->pd_pass == PD_PASS_1 || context_ptr->pd_pass == PD_PASS_2)
+    if (context_ptr->pd_pass == PD_PASS_2)
 #endif
     if (slice_type != I_SLICE) {
         if (picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
