@@ -69,6 +69,7 @@ extern "C" {
 #define EIGHT_PEL_FIX                       1 // Improve the 8th pel performance by shutting it based on the QP
 #define HIGH_PRECISION_MV_QTHRESH 150
 #define UPDATE_CDEF                         1 // Update bit cost estimation for CDEF
+#define RDOQ_IMPROVEMENT                    1
 /* Note: shutting the macro PAL_SUP will not give SS as pcs->palette_mode = 0
    rate estimation is changed for I frame + enabled sc for P (rate estimation
    is a result changed for P frames)
