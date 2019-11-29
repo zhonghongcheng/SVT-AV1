@@ -8693,6 +8693,14 @@ EB_EXTERN EbErrorType mode_decision_sb(
     int skip_next_sq = 0;
     uint32_t next_non_skip_blk_idx_mds = 0;
     uint8_t skip_sub_blocks;
+#if PRED_PLUS_REFINEMENT
+    int64_t depth_cost[NUMBER_OF_DEPTH] = { -1,-1,-1,-1,-1,-1 };
+    uint8_t  depth_table[NUMBER_OF_DEPTH] = { 0, 1, 2 , 3 ,4 ,5 };
+    uint64_t nsq_cost[NUMBER_OF_SHAPES] = { MAX_CU_COST, MAX_CU_COST,MAX_CU_COST,MAX_CU_COST,MAX_CU_COST,
+        MAX_CU_COST, MAX_CU_COST,MAX_CU_COST,MAX_CU_COST,MAX_CU_COST };
+    PART nsq_shape_table[NUMBER_OF_SHAPES] = { PART_N, PART_H, PART_V, PART_HA, PART_HB,
+        PART_VA, PART_VB, PART_H4, PART_V4, PART_S };
+#endif
     do {
         skip_sub_blocks = 0;
         blk_idx_mds = leaf_data_array[cuIdx].mds_idx;
@@ -8903,7 +8911,11 @@ EB_EXTERN EbErrorType mode_decision_sb(
         skip_next_nsq = 0;
 #if ADD_SUPPORT_TO_SKIP_PART_N
         if (blk_geom->nsi + 1 == blk_geom->totns) {
+#if PRED_PLUS_REFINEMENT
+            nsq_cost[context_ptr->blk_geom->shape] = d1_non_square_block_decision(context_ptr, d1_block_itr);
+#else
             d1_non_square_block_decision(context_ptr, d1_block_itr);
+#endif
             d1_block_itr++;
         }
 #else
@@ -8919,6 +8931,9 @@ EB_EXTERN EbErrorType mode_decision_sb(
             uint32_t first_blk_idx = context_ptr->cu_ptr->mds_idx - (blk_geom->nsi);//index of first block in this partition
             for (int blk_it = 0; blk_it < blk_geom->nsi + 1; blk_it++)
                 tot_cost += context_ptr->md_local_cu_unit[first_blk_idx + blk_it].cost;
+#if PRED_PLUS_REFINEMENT
+            nsq_cost[context_ptr->blk_geom->shape] = tot_cost;
+#endif
 #if SPEED_OPT
             if ((tot_cost + tot_cost * (blk_geom->totns - (blk_geom->nsi + 1))* context_ptr->md_exit_th / (blk_geom->nsi + 1) / 100) > context_ptr->md_local_cu_unit[context_ptr->blk_geom->sqi_mds].cost)
 #else
@@ -8958,6 +8973,22 @@ EB_EXTERN EbErrorType mode_decision_sb(
 
         if (d1_blocks_accumlated == leafDataPtr->tot_d1_blocks)
         {
+#if PRED_PLUS_REFINEMENT
+            //Sorting
+            {
+                uint32_t i, j, index;
+                for (i = 0; i < NUMBER_OF_SHAPES - 1; ++i) {
+                    for (j = i + 1; j < NUMBER_OF_SHAPES; ++j) {
+                        if (nsq_cost[nsq_shape_table[j]] < nsq_cost[nsq_shape_table[i]]) {
+                            index = nsq_shape_table[i];
+                            nsq_shape_table[i] = nsq_shape_table[j];
+                            nsq_shape_table[j] = index;
+                        }
+                    }
+                }
+                depth_cost[sequence_control_set_ptr->static_config.super_block_size == 128 ? context_ptr->blk_geom->depth : context_ptr->blk_geom->depth + 1] += nsq_cost[nsq_shape_table[0]];
+            }
+#endif
             uint32_t  lastCuIndex_mds = d2_inter_depth_block_decision(
                 context_ptr,
                 blk_geom->sqi_mds,//input is parent square
@@ -9004,6 +9035,15 @@ EB_EXTERN EbErrorType mode_decision_sb(
         else
             cuIdx++;
     } while (cuIdx < leaf_count);// End of CU loop
+
+#if PRED_PLUS_REFINEMENT
+    if (sequence_control_set_ptr->seq_header.sb_size == BLOCK_64X64)
+        depth_cost[0] = MAX_CU_COST;
+
+    for (uint8_t depth_idx = 0; depth_idx < NUMBER_OF_DEPTH; depth_idx++) {
+        sb_ptr->depth_cost[depth_idx] = depth_cost[depth_idx] < 0 ? MAX_MODE_COST : depth_cost[depth_idx];
+    }
+#endif
 
     return return_error;
 }

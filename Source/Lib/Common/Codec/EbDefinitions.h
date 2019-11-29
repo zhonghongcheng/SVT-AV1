@@ -36,6 +36,7 @@ extern "C" {
 #define REMOVE_MDC_EARLY_PART        1 // Remove MDC early part code (API signal(s), structure(s), kernel(s), ..)
 #define MULTI_PASS_PD_SUPPORT        1
 #if MULTI_PASS_PD_SUPPORT
+#define PRED_PLUS_REFINEMENT         1
 #define ENABLE_MULTI_PASS_PD         0
 #define ENABLE_MRP                   1
 #define CHECK_COMP                   0
