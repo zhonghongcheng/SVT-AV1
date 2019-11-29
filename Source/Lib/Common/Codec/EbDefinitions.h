@@ -208,7 +208,7 @@ enum {
 
 /* Use open-loop data to predict the NSQ partitions. */
 #if REMOVE_MDC_EARLY_PART
-#define PREDICT_NSQ_SHAPE                               1 // to set to 0
+#define PREDICT_NSQ_SHAPE                               0 // to set to 0
 #else
 #define PREDICT_NSQ_SHAPE                               1
 #endif
@@ -227,6 +227,8 @@ enum {
 #else
 #if REMOVE_MDC_EARLY_PART
 #define NSQ_TAB_SIZE                                    8
+#define NUMBER_OF_DEPTH                                 6
+#define NUMBER_OF_SHAPES                                10
 #else
 #define NSQ_TAB_SIZE                                    6
 #endif
