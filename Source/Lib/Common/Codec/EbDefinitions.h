@@ -96,7 +96,7 @@ extern "C" {
 #define PRED_CHANGE_MOD              1 // Reorder the references for MRP
 #define SPEED_OPT                    1 // Speed optimization(s)
 #define GLOBAL_WARPED_MOTION         1 // Global warped motion detection and insertion
-
+#define GM_OPT                       1
 #ifndef NON_AVX512_SUPPORT
 #define NON_AVX512_SUPPORT
 #endif
@@ -151,6 +151,13 @@ typedef enum ME_QP_MODE {
     EX_QP_MODE = 0,       // Exhaustive  1/4-pel serach mode.
     REFINMENT_QP_MODE = 1 // Refinement 1/4-pel serach mode.
 } ME_QP_MODE;
+#if GM_OPT   
+typedef enum GM_LEVEL {
+    GM_FULL = 0,       // Exhaustive serach mode.
+    GM_DOWN = 1,       // Downsampled 1/4th serach mode.
+    GM_TRAN_ONLY = 2   // Translation only using ME MV.
+} GM_LEVEL;
+#endif
 struct Buf2D
 {
     uint8_t *buf;

@@ -220,155 +220,164 @@ void DetectGlobalMotion(
     PictureParentControlSet    *picture_control_set_ptr)
 {
 #if GLOBAL_WARPED_MOTION
-    uint32_t numOfListToSearch = (picture_control_set_ptr->slice_type == P_SLICE)
-        ? (uint32_t)REF_LIST_0 : (uint32_t)REF_LIST_1;
+#if GM_OPT
+    if (picture_control_set_ptr->gm_level <= GM_DOWN) {
+#endif
+        uint32_t numOfListToSearch = (picture_control_set_ptr->slice_type == P_SLICE)
+            ? (uint32_t)REF_LIST_0 : (uint32_t)REF_LIST_1;
 
-    for (uint32_t listIndex = REF_LIST_0; listIndex <= numOfListToSearch; ++listIndex) {
+        for (uint32_t listIndex = REF_LIST_0; listIndex <= numOfListToSearch; ++listIndex) {
 
-        uint32_t num_of_ref_pic_to_search;
-        if (picture_control_set_ptr->is_alt_ref == EB_TRUE)
-            num_of_ref_pic_to_search = 1;
-        else
-            num_of_ref_pic_to_search = picture_control_set_ptr->slice_type == P_SLICE
+            uint32_t num_of_ref_pic_to_search;
+            if (picture_control_set_ptr->is_alt_ref == EB_TRUE)
+                num_of_ref_pic_to_search = 1;
+            else
+                num_of_ref_pic_to_search = picture_control_set_ptr->slice_type == P_SLICE
                 ? picture_control_set_ptr->ref_list0_count
                 : listIndex == REF_LIST_0
-                    ? picture_control_set_ptr->ref_list0_count
-                    : picture_control_set_ptr->ref_list1_count;
+                ? picture_control_set_ptr->ref_list0_count
+                : picture_control_set_ptr->ref_list1_count;
 
-        // Ref Picture Loop
-        for (uint32_t ref_pic_index = 0; ref_pic_index < num_of_ref_pic_to_search;
-             ++ref_pic_index)
-        {
-            picture_control_set_ptr->is_global_motion[listIndex][ref_pic_index] = EB_FALSE;
-            if (picture_control_set_ptr->global_motion_estimation[listIndex][ref_pic_index].wmtype > TRANSLATION)
-                picture_control_set_ptr->is_global_motion[listIndex][ref_pic_index] = EB_TRUE;
-        }
-    }
-#else
-    uint32_t    sb_count;
-    uint32_t    picture_width_in_sb = (picture_control_set_ptr->enhanced_picture_ptr->width + BLOCK_SIZE_64 - 1) / BLOCK_SIZE_64;
-    uint32_t    sb_origin_x;
-    uint32_t    sb_origin_y;
-
-    uint32_t  totalCheckedLcus = 0;
-    uint32_t  totalPanLcus = 0;
-
-    int32_t    xCurrentMv = 0;
-    int32_t    yCurrentMv = 0;
-    int32_t    xLeftMv = 0;
-    int32_t    yLeftMv = 0;
-    int32_t    xTopMv = 0;
-    int32_t    yTopMv = 0;
-    int32_t    xRightMv = 0;
-    int32_t    yRightMv = 0;
-    int32_t    xBottomMv = 0;
-    int32_t    yBottomMv = 0;
-    int64_t  xTiltMvSum = 0;
-    int64_t  yTiltMvSum = 0;
-    int64_t xPanMvSum = 0;
-    int64_t yPanMvSum = 0;
-    uint32_t  totalTiltLcus = 0;
-
-    uint32_t  totalTiltHighAmpLcus = 0;
-    uint32_t  totalPanHighAmpLcus = 0;
-
-    for (sb_count = 0; sb_count < picture_control_set_ptr->sb_total_count; ++sb_count) {
-        sb_origin_x = (sb_count % picture_width_in_sb) * BLOCK_SIZE_64;
-        sb_origin_y = (sb_count / picture_width_in_sb) * BLOCK_SIZE_64;
-        if (((sb_origin_x + BLOCK_SIZE_64) <= picture_control_set_ptr->enhanced_picture_ptr->width) &&
-            ((sb_origin_y + BLOCK_SIZE_64) <= picture_control_set_ptr->enhanced_picture_ptr->height)) {
-            // Current MV
-            GetMv(picture_control_set_ptr, sb_count, &xCurrentMv, &yCurrentMv);
-
-            // Left MV
-            if (sb_origin_x == 0) {
-                xLeftMv = 0;
-                yLeftMv = 0;
-            }
-            else
-                GetMv(picture_control_set_ptr, sb_count - 1, &xLeftMv, &yLeftMv);
-            // Top MV
-            if (sb_origin_y == 0) {
-                xTopMv = 0;
-                yTopMv = 0;
-            }
-            else
-                GetMv(picture_control_set_ptr, sb_count - picture_width_in_sb, &xTopMv, &yTopMv);
-            // Right MV
-            if ((sb_origin_x + (BLOCK_SIZE_64 << 1)) > picture_control_set_ptr->enhanced_picture_ptr->width) {
-                xRightMv = 0;
-                yRightMv = 0;
-            }
-            else
-                GetMv(picture_control_set_ptr, sb_count + 1, &xRightMv, &yRightMv);
-            // Bottom MV
-            if ((sb_origin_y + (BLOCK_SIZE_64 << 1)) > picture_control_set_ptr->enhanced_picture_ptr->height) {
-                xBottomMv = 0;
-                yBottomMv = 0;
-            }
-            else
-                GetMv(picture_control_set_ptr, sb_count + picture_width_in_sb, &xBottomMv, &yBottomMv);
-            totalCheckedLcus++;
-
-            if ((EbBool)(CheckMvForPan(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &xCurrentMv, &yCurrentMv, &xLeftMv, &yLeftMv) ||
-                CheckMvForPan(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &xCurrentMv, &yCurrentMv, &xTopMv, &yTopMv) ||
-                CheckMvForPan(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &xCurrentMv, &yCurrentMv, &xRightMv, &yRightMv) ||
-                CheckMvForPan(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &xCurrentMv, &yCurrentMv, &xBottomMv, &yBottomMv))) {
-                totalPanLcus++;
-
-                xPanMvSum += xCurrentMv;
-                yPanMvSum += yCurrentMv;
-            }
-
-            if ((EbBool)(CheckMvForTilt(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &xCurrentMv, &yCurrentMv, &xLeftMv, &yLeftMv) ||
-                CheckMvForTilt(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &xCurrentMv, &yCurrentMv, &xTopMv, &yTopMv) ||
-                CheckMvForTilt(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &xCurrentMv, &yCurrentMv, &xRightMv, &yRightMv) ||
-                CheckMvForTilt(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &xCurrentMv, &yCurrentMv, &xBottomMv, &yBottomMv))) {
-                totalTiltLcus++;
-
-                xTiltMvSum += xCurrentMv;
-                yTiltMvSum += yCurrentMv;
-            }
-
-            if ((EbBool)(CheckMvForPanHighAmp(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &xCurrentMv, &xLeftMv) ||
-                CheckMvForPanHighAmp(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &xCurrentMv, &xTopMv) ||
-                CheckMvForPanHighAmp(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &xCurrentMv, &xRightMv) ||
-                CheckMvForPanHighAmp(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &xCurrentMv, &xBottomMv))) {
-                totalPanHighAmpLcus++;
-            }
-
-            if ((EbBool)(CheckMvForTiltHighAmp(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &yCurrentMv, &yLeftMv) ||
-                CheckMvForTiltHighAmp(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &yCurrentMv, &yTopMv) ||
-                CheckMvForTiltHighAmp(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &yCurrentMv, &yRightMv) ||
-                CheckMvForTiltHighAmp(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &yCurrentMv, &yBottomMv))) {
-                totalTiltHighAmpLcus++;
+            // Ref Picture Loop
+            for (uint32_t ref_pic_index = 0; ref_pic_index < num_of_ref_pic_to_search;
+                ++ref_pic_index)
+            {
+                picture_control_set_ptr->is_global_motion[listIndex][ref_pic_index] = EB_FALSE;
+                if (picture_control_set_ptr->global_motion_estimation[listIndex][ref_pic_index].wmtype > TRANSLATION)
+                    picture_control_set_ptr->is_global_motion[listIndex][ref_pic_index] = EB_TRUE;
             }
         }
+#if GM_OPT
     }
-    picture_control_set_ptr->is_pan = EB_FALSE;
-    picture_control_set_ptr->is_tilt = EB_FALSE;
+    else {
+#endif
+        uint32_t    sb_count;
+        uint32_t    picture_width_in_sb = (picture_control_set_ptr->enhanced_picture_ptr->width + BLOCK_SIZE_64 - 1) / BLOCK_SIZE_64;
+        uint32_t    sb_origin_x;
+        uint32_t    sb_origin_y;
 
-    picture_control_set_ptr->panMvx = 0;
-    picture_control_set_ptr->panMvy = 0;
-    picture_control_set_ptr->tiltMvx = 0;
-    picture_control_set_ptr->tiltMvy = 0;
+        uint32_t  totalCheckedLcus = 0;
+        uint32_t  totalPanLcus = 0;
 
-    // If more than PAN_LCU_PERCENTAGE % of LCUs are PAN
-    if ((totalCheckedLcus > 0) && ((totalPanLcus * 100 / totalCheckedLcus) > PAN_LCU_PERCENTAGE)) {
-        picture_control_set_ptr->is_pan = EB_TRUE;
-        if (totalPanLcus > 0) {
-            picture_control_set_ptr->panMvx = (int16_t)(xPanMvSum / totalPanLcus);
-            picture_control_set_ptr->panMvy = (int16_t)(yPanMvSum / totalPanLcus);
+        int32_t    xCurrentMv = 0;
+        int32_t    yCurrentMv = 0;
+        int32_t    xLeftMv = 0;
+        int32_t    yLeftMv = 0;
+        int32_t    xTopMv = 0;
+        int32_t    yTopMv = 0;
+        int32_t    xRightMv = 0;
+        int32_t    yRightMv = 0;
+        int32_t    xBottomMv = 0;
+        int32_t    yBottomMv = 0;
+        int64_t  xTiltMvSum = 0;
+        int64_t  yTiltMvSum = 0;
+        int64_t xPanMvSum = 0;
+        int64_t yPanMvSum = 0;
+        uint32_t  totalTiltLcus = 0;
+
+        uint32_t  totalTiltHighAmpLcus = 0;
+        uint32_t  totalPanHighAmpLcus = 0;
+
+        for (sb_count = 0; sb_count < picture_control_set_ptr->sb_total_count; ++sb_count) {
+            sb_origin_x = (sb_count % picture_width_in_sb) * BLOCK_SIZE_64;
+            sb_origin_y = (sb_count / picture_width_in_sb) * BLOCK_SIZE_64;
+            if (((sb_origin_x + BLOCK_SIZE_64) <= picture_control_set_ptr->enhanced_picture_ptr->width) &&
+                ((sb_origin_y + BLOCK_SIZE_64) <= picture_control_set_ptr->enhanced_picture_ptr->height)) {
+                // Current MV
+                GetMv(picture_control_set_ptr, sb_count, &xCurrentMv, &yCurrentMv);
+
+                // Left MV
+                if (sb_origin_x == 0) {
+                    xLeftMv = 0;
+                    yLeftMv = 0;
+                }
+                else
+                    GetMv(picture_control_set_ptr, sb_count - 1, &xLeftMv, &yLeftMv);
+                // Top MV
+                if (sb_origin_y == 0) {
+                    xTopMv = 0;
+                    yTopMv = 0;
+                }
+                else
+                    GetMv(picture_control_set_ptr, sb_count - picture_width_in_sb, &xTopMv, &yTopMv);
+                // Right MV
+                if ((sb_origin_x + (BLOCK_SIZE_64 << 1)) > picture_control_set_ptr->enhanced_picture_ptr->width) {
+                    xRightMv = 0;
+                    yRightMv = 0;
+                }
+                else
+                    GetMv(picture_control_set_ptr, sb_count + 1, &xRightMv, &yRightMv);
+                // Bottom MV
+                if ((sb_origin_y + (BLOCK_SIZE_64 << 1)) > picture_control_set_ptr->enhanced_picture_ptr->height) {
+                    xBottomMv = 0;
+                    yBottomMv = 0;
+                }
+                else
+                    GetMv(picture_control_set_ptr, sb_count + picture_width_in_sb, &xBottomMv, &yBottomMv);
+                totalCheckedLcus++;
+
+                if ((EbBool)(CheckMvForPan(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &xCurrentMv, &yCurrentMv, &xLeftMv, &yLeftMv) ||
+                    CheckMvForPan(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &xCurrentMv, &yCurrentMv, &xTopMv, &yTopMv) ||
+                    CheckMvForPan(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &xCurrentMv, &yCurrentMv, &xRightMv, &yRightMv) ||
+                    CheckMvForPan(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &xCurrentMv, &yCurrentMv, &xBottomMv, &yBottomMv))) {
+                    totalPanLcus++;
+
+                    xPanMvSum += xCurrentMv;
+                    yPanMvSum += yCurrentMv;
+                }
+
+                if ((EbBool)(CheckMvForTilt(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &xCurrentMv, &yCurrentMv, &xLeftMv, &yLeftMv) ||
+                    CheckMvForTilt(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &xCurrentMv, &yCurrentMv, &xTopMv, &yTopMv) ||
+                    CheckMvForTilt(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &xCurrentMv, &yCurrentMv, &xRightMv, &yRightMv) ||
+                    CheckMvForTilt(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &xCurrentMv, &yCurrentMv, &xBottomMv, &yBottomMv))) {
+                    totalTiltLcus++;
+
+                    xTiltMvSum += xCurrentMv;
+                    yTiltMvSum += yCurrentMv;
+                }
+
+                if ((EbBool)(CheckMvForPanHighAmp(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &xCurrentMv, &xLeftMv) ||
+                    CheckMvForPanHighAmp(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &xCurrentMv, &xTopMv) ||
+                    CheckMvForPanHighAmp(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &xCurrentMv, &xRightMv) ||
+                    CheckMvForPanHighAmp(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &xCurrentMv, &xBottomMv))) {
+                    totalPanHighAmpLcus++;
+                }
+
+                if ((EbBool)(CheckMvForTiltHighAmp(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &yCurrentMv, &yLeftMv) ||
+                    CheckMvForTiltHighAmp(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &yCurrentMv, &yTopMv) ||
+                    CheckMvForTiltHighAmp(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &yCurrentMv, &yRightMv) ||
+                    CheckMvForTiltHighAmp(picture_control_set_ptr->hierarchical_levels, picture_control_set_ptr->temporal_layer_index, &yCurrentMv, &yBottomMv))) {
+                    totalTiltHighAmpLcus++;
+                }
+            }
         }
-    }
+        picture_control_set_ptr->is_pan = EB_FALSE;
+        picture_control_set_ptr->is_tilt = EB_FALSE;
 
-    if ((totalCheckedLcus > 0) && ((totalTiltLcus * 100 / totalCheckedLcus) > PAN_LCU_PERCENTAGE)) {
-        picture_control_set_ptr->is_tilt = EB_TRUE;
-        if (totalTiltLcus > 0) {
-            picture_control_set_ptr->tiltMvx = (int16_t)(xTiltMvSum / totalTiltLcus);
-            picture_control_set_ptr->tiltMvy = (int16_t)(yTiltMvSum / totalTiltLcus);
+        picture_control_set_ptr->panMvx = 0;
+        picture_control_set_ptr->panMvy = 0;
+        picture_control_set_ptr->tiltMvx = 0;
+        picture_control_set_ptr->tiltMvy = 0;
+
+        // If more than PAN_LCU_PERCENTAGE % of LCUs are PAN
+        if ((totalCheckedLcus > 0) && ((totalPanLcus * 100 / totalCheckedLcus) > PAN_LCU_PERCENTAGE)) {
+            picture_control_set_ptr->is_pan = EB_TRUE;
+            if (totalPanLcus > 0) {
+                picture_control_set_ptr->panMvx = (int16_t)(xPanMvSum / totalPanLcus);
+                picture_control_set_ptr->panMvy = (int16_t)(yPanMvSum / totalPanLcus);
+            }
         }
+
+        if ((totalCheckedLcus > 0) && ((totalTiltLcus * 100 / totalCheckedLcus) > PAN_LCU_PERCENTAGE)) {
+            picture_control_set_ptr->is_tilt = EB_TRUE;
+            if (totalTiltLcus > 0) {
+                picture_control_set_ptr->tiltMvx = (int16_t)(xTiltMvSum / totalTiltLcus);
+                picture_control_set_ptr->tiltMvy = (int16_t)(yTiltMvSum / totalTiltLcus);
+            }
+        }
+#if GM_OPT
     }
+#endif
 #endif
 }
 
