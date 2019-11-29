@@ -8941,6 +8941,13 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #endif
             d1_block_itr++;
         }
+#elif REMOVE_MDC_EARLY_PART
+        if (blk_geom->nsi + 1 == blk_geom->totns)
+#if PRED_PLUS_REFINEMENT
+            nsq_cost[context_ptr->blk_geom->shape] = d1_non_square_block_decision(context_ptr);
+#else
+            d1_non_square_block_decision(context_ptr);
+#endif
 #else
         if (blk_geom->nsi + 1 == blk_geom->totns)
             d1_non_square_block_decision(context_ptr);

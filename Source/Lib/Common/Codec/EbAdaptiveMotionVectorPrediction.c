@@ -1260,56 +1260,6 @@ void mvp_bypass_init(
 
     xd->mi[0]->mbmi.block_mi.partition = from_shape_to_part[blk_geom->shape];
 
-    uint32_t refIt;
-    for (refIt = 0; refIt < tot_refs; ++refIt) {
-        MvReferenceFrame ref_frame = ref_frames[refIt];
-        IntMv zeromv[2] = { {0}, {0} };
-
-        MvReferenceFrame rf[2];
-        av1_set_ref_frame(rf, ref_frame);
-
-        if (ref_frame != INTRA_FRAME) {
-            zeromv[0].as_int =
-                gm_get_motion_vector_enc(&picture_control_set_ptr->parent_pcs_ptr->global_motion[rf[0]],
-                    frm_hdr->allow_high_precision_mv, bsize, mi_col, mi_row,
-                    frm_hdr->force_integer_mv)
-                .as_int;
-            zeromv[1].as_int = (rf[1] != NONE_FRAME)
-                ? gm_get_motion_vector_enc(&picture_control_set_ptr->parent_pcs_ptr->global_motion[rf[1]],
-                    frm_hdr->allow_high_precision_mv,
-                    bsize, mi_col, mi_row,
-                    frm_hdr->force_integer_mv)
-                .as_int
-                : 0;
-        }
-        else
-            zeromv[0].as_int = zeromv[1].as_int = 0;
-
-        IntMv gm_mv[2];
-
-        if (ref_frame == INTRA_FRAME) {
-            gm_mv[0].as_int = gm_mv[1].as_int = 0;
-        }
-        else {
-            if (ref_frame < REF_FRAMES) {
-                gm_mv[0] = gm_get_motion_vector_enc(
-                    &picture_control_set_ptr->parent_pcs_ptr->global_motion[ref_frame], frm_hdr->allow_high_precision_mv, bsize,
-                    mi_col, mi_row, frm_hdr->force_integer_mv);
-                gm_mv[1].as_int = 0;
-            }
-            else {
-                MvReferenceFrame rf[2];
-                av1_set_ref_frame(rf, ref_frame);
-                gm_mv[0] = gm_get_motion_vector_enc(
-                    &picture_control_set_ptr->parent_pcs_ptr->global_motion[rf[0]], frm_hdr->allow_high_precision_mv, bsize, mi_col,
-                    mi_row, frm_hdr->force_integer_mv);
-                gm_mv[1] = gm_get_motion_vector_enc(
-                    &picture_control_set_ptr->parent_pcs_ptr->global_motion[rf[1]], frm_hdr->allow_high_precision_mv, bsize, mi_col,
-                    mi_row, frm_hdr->force_integer_mv);
-            }
-        }
-    }
-
     // Set to 0 the fields which would have been set by setup_ref_mv_list()
     memset(xd->ref_mv_count, 0, sizeof(uint8_t) * MODE_CTX_REF_FRAMES);
     memset(context_ptr->md_local_cu_unit[blk_geom->blkidx_mds].ed_ref_mv_stack, 0, sizeof(CandidateMv) * MODE_CTX_REF_FRAMES * MAX_REF_MV_STACK_SIZE);
@@ -1381,27 +1331,9 @@ void generate_av1_mvp_table(
     uint32_t refIt;
     for (refIt = 0; refIt < tot_refs; ++refIt) {
         MvReferenceFrame ref_frame = ref_frames[refIt];
-        IntMv zeromv[2] = { {0}, {0} };
 
         MvReferenceFrame rf[2];
         av1_set_ref_frame(rf, ref_frame);
-
-        if (ref_frame != INTRA_FRAME) {
-            zeromv[0].as_int =
-                gm_get_motion_vector_enc(&picture_control_set_ptr->parent_pcs_ptr->global_motion[rf[0]],
-                    frm_hdr->allow_high_precision_mv, bsize, mi_col, mi_row,
-                    frm_hdr->force_integer_mv)
-                .as_int;
-            zeromv[1].as_int = (rf[1] != NONE_FRAME)
-                ? gm_get_motion_vector_enc(&picture_control_set_ptr->parent_pcs_ptr->global_motion[rf[1]],
-                    frm_hdr->allow_high_precision_mv,
-                    bsize, mi_col, mi_row,
-                    frm_hdr->force_integer_mv)
-                .as_int
-                : 0;
-        }
-        else
-            zeromv[0].as_int = zeromv[1].as_int = 0;
 
         IntMv gm_mv[2];
 

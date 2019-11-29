@@ -13640,7 +13640,7 @@ extern "C" {
         uint8_t           ol_best_nsq_shape8;
 #endif
 #endif
-#if ADD_MDC_REFINEMENT_LOOP
+#if ADD_MDC_REFINEMENT_LOOP || REMOVE_MDC_EARLY_PART
         uint8_t           consider_block;
         uint8_t           refined_split_flag;
 #endif
