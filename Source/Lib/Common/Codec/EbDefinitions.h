@@ -38,12 +38,8 @@ extern "C" {
 #if MULTI_PASS_PD_SUPPORT
 #define PRED_PLUS_REFINEMENT         1
 #define ENABLE_MULTI_PASS_PD         1
-#define ENABLE_MRP                   1
+#define ENABLE_MRP                   0
 #define CHECK_COMP                   0
-#define NSQ_COEF_INFO                0
-#if !NSQ_COEF_INFO                   
-#define SQ_COEF_INFO                 1
-#endif
 #define BYPASS_PD0_MVP               1
 #endif
 

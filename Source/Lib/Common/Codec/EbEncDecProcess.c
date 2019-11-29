@@ -2231,60 +2231,61 @@ static void perform_pred_depth_refinement(
                             blk_geom);
                     }
                     else if (context_ptr->pd_pass == PD_PASS_1) {
-#if SQ_COEF_INFO || NSQ_COEF_INFO
+
                         EbBool zero_coeff_present_flag = EB_FALSE;
 
-#if SQ_COEF_INFO
-                        zero_coeff_present_flag = context_ptr->md_cu_arr_nsq[blk_index].block_has_coeff == 0;
-#elif NSQ_COEF_INFO
-                        switch (blk_geom->bsize) {
+                        if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_2)
+                            zero_coeff_present_flag = context_ptr->md_cu_arr_nsq[blk_index].block_has_coeff == 0;
 
-                        case BLOCK_128X128:
-                            zero_coeff_present_flag = (context_ptr->md_local_cu_unit[blk_index].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index].block_has_coeff == 0) || // SQ
-                                (context_ptr->md_local_cu_unit[blk_index + 1].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 1].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 2].block_has_coeff == 0) || // H
-                                (context_ptr->md_local_cu_unit[blk_index + 3].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 3].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 4].block_has_coeff == 0) || // V
-                                (context_ptr->md_local_cu_unit[blk_index + 5].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 5].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 6].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 7].block_has_coeff == 0) ||
-                                (context_ptr->md_local_cu_unit[blk_index + 8].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 8].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 9].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 10].block_has_coeff == 0) ||
-                                (context_ptr->md_local_cu_unit[blk_index + 11].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 11].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 12].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 13].block_has_coeff == 0) ||
-                                (context_ptr->md_local_cu_unit[blk_index + 14].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 14].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 15].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 16].block_has_coeff == 0);
-                            break;
+                        else if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_3) {
+                            switch (blk_geom->bsize) {
 
-                        case BLOCK_64X64:
-                        case BLOCK_32X32:
-                        case BLOCK_16X16:
-                            zero_coeff_present_flag = (context_ptr->md_local_cu_unit[blk_index].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index].block_has_coeff == 0) || // SQ
-                                (context_ptr->md_local_cu_unit[blk_index + 1].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 1].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 2].block_has_coeff == 0) || // H
-                                (context_ptr->md_local_cu_unit[blk_index + 3].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 3].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 4].block_has_coeff == 0) || // V
-                                (context_ptr->md_local_cu_unit[blk_index + 5].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 5].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 6].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 7].block_has_coeff == 0) ||
-                                (context_ptr->md_local_cu_unit[blk_index + 8].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 8].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 9].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 10].block_has_coeff == 0) ||
-                                (context_ptr->md_local_cu_unit[blk_index + 11].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 11].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 12].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 13].block_has_coeff == 0) ||
-                                (context_ptr->md_local_cu_unit[blk_index + 14].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 14].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 15].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 16].block_has_coeff == 0) ||
-                                (context_ptr->md_local_cu_unit[blk_index + 17].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 17].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 18].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 19].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 20].block_has_coeff == 0) ||
-                                (context_ptr->md_local_cu_unit[blk_index + 21].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 21].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 22].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 23].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 24].block_has_coeff == 0);
-                            break;
+                            case BLOCK_128X128:
+                                zero_coeff_present_flag = (context_ptr->md_local_cu_unit[blk_index].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index].block_has_coeff == 0) || // SQ
+                                    (context_ptr->md_local_cu_unit[blk_index + 1].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 1].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 2].block_has_coeff == 0) || // H
+                                    (context_ptr->md_local_cu_unit[blk_index + 3].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 3].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 4].block_has_coeff == 0) || // V
+                                    (context_ptr->md_local_cu_unit[blk_index + 5].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 5].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 6].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 7].block_has_coeff == 0) ||
+                                    (context_ptr->md_local_cu_unit[blk_index + 8].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 8].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 9].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 10].block_has_coeff == 0) ||
+                                    (context_ptr->md_local_cu_unit[blk_index + 11].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 11].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 12].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 13].block_has_coeff == 0) ||
+                                    (context_ptr->md_local_cu_unit[blk_index + 14].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 14].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 15].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 16].block_has_coeff == 0);
+                                break;
 
-                        case BLOCK_8X8:
-                            zero_coeff_present_flag = (context_ptr->md_local_cu_unit[blk_index].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index].block_has_coeff == 0) || // SQ
-                                (context_ptr->md_local_cu_unit[blk_index + 1].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 1].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 2].block_has_coeff == 0) || // H
-                                (context_ptr->md_local_cu_unit[blk_index + 3].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 3].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 4].block_has_coeff == 0);  // V
-                            break;
+                            case BLOCK_64X64:
+                            case BLOCK_32X32:
+                            case BLOCK_16X16:
+                                zero_coeff_present_flag = (context_ptr->md_local_cu_unit[blk_index].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index].block_has_coeff == 0) || // SQ
+                                    (context_ptr->md_local_cu_unit[blk_index + 1].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 1].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 2].block_has_coeff == 0) || // H
+                                    (context_ptr->md_local_cu_unit[blk_index + 3].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 3].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 4].block_has_coeff == 0) || // V
+                                    (context_ptr->md_local_cu_unit[blk_index + 5].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 5].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 6].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 7].block_has_coeff == 0) ||
+                                    (context_ptr->md_local_cu_unit[blk_index + 8].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 8].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 9].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 10].block_has_coeff == 0) ||
+                                    (context_ptr->md_local_cu_unit[blk_index + 11].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 11].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 12].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 13].block_has_coeff == 0) ||
+                                    (context_ptr->md_local_cu_unit[blk_index + 14].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 14].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 15].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 16].block_has_coeff == 0) ||
+                                    (context_ptr->md_local_cu_unit[blk_index + 17].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 17].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 18].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 19].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 20].block_has_coeff == 0) ||
+                                    (context_ptr->md_local_cu_unit[blk_index + 21].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 21].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 22].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 23].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 24].block_has_coeff == 0);
+                                break;
 
-                        case BLOCK_4X4:
-                            zero_coeff_present_flag = (context_ptr->md_cu_arr_nsq[blk_index].block_has_coeff == 0); // SQ
-                            break;
+                            case BLOCK_8X8:
+                                zero_coeff_present_flag = (context_ptr->md_local_cu_unit[blk_index].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index].block_has_coeff == 0) || // SQ
+                                    (context_ptr->md_local_cu_unit[blk_index + 1].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 1].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 2].block_has_coeff == 0) || // H
+                                    (context_ptr->md_local_cu_unit[blk_index + 3].avail_blk_flag && context_ptr->md_cu_arr_nsq[blk_index + 3].block_has_coeff == 0 && context_ptr->md_cu_arr_nsq[blk_index + 4].block_has_coeff == 0);  // V
+                                break;
 
-                        default:
-                            assert(0);
-                            break;
+                            case BLOCK_4X4:
+                                zero_coeff_present_flag = (context_ptr->md_cu_arr_nsq[blk_index].block_has_coeff == 0); // SQ
+                                break;
+
+                            default:
+                                assert(0);
+                                break;
+                            }
                         }
-#endif
 
-                        if (zero_coeff_present_flag && (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_2 || picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_3)) {
+                        if (zero_coeff_present_flag) {
                             s_depth = 0;
                             e_depth = 0;
                         }
                         else
-#endif
+
                             if (context_ptr->md_cu_arr_nsq[blk_index].best_d1_blk == blk_index) {
                                 s_depth = -1;
                                 e_depth = 0;
