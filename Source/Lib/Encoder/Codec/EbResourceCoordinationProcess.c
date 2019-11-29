@@ -687,11 +687,15 @@ void* resource_coordination_kernel(void *input_ptr)
 
             sb_params_init(sequence_control_set_ptr);
             sb_geom_init(sequence_control_set_ptr);
-
+#if PRESETS_TUNE // this should be updated to support hbd
+            sequence_control_set_ptr->enable_altrefs = sequence_control_set_ptr->static_config.enable_altrefs &&
+                sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT ? EB_TRUE : EB_FALSE;
+#else
             sequence_control_set_ptr->enable_altrefs = sequence_control_set_ptr->static_config.enable_altrefs &&
                     sequence_control_set_ptr->static_config.altref_nframes > 1 &&
                     ((sequence_control_set_ptr->static_config.encoder_bit_depth >= 8 && sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ||
                     sequence_control_set_ptr->static_config.encoder_bit_depth == 8) ? EB_TRUE : EB_FALSE;
+#endif
 
 #if II_COMP_FLAG
 #if INTER_INTRA_HBD
@@ -723,7 +727,11 @@ void* resource_coordination_kernel(void *input_ptr)
             // 0                 OFF
             // 1                 ON
             if (sequence_control_set_ptr->static_config.enable_filter_intra)
-                sequence_control_set_ptr->seq_header.enable_filter_intra        = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M2) ? 1 : 0;
+#if PRESETS_TUNE
+                sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M4) ? 1 : 0;
+#else
+                sequence_control_set_ptr->seq_header.enable_filter_intra = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M2) ? 1 : 0;
+#endif
             else
                 sequence_control_set_ptr->seq_header.enable_filter_intra        =  0;
 #endif
