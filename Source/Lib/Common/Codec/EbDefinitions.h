@@ -33,6 +33,7 @@
 extern "C" {
 #endif
 
+#define ONE_PASS_NO_LAD              1 // set the default 1 pass to no adaptive QPS and QPM (Zero LAD)
 #define REMOVE_MDC_EARLY_PART        1 // Remove MDC early part code (API signal(s), structure(s), kernel(s), ..)
 #define MULTI_PASS_PD_SUPPORT        1
 #if MULTI_PASS_PD_SUPPORT

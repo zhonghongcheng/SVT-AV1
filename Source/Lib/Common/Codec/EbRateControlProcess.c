@@ -3229,7 +3229,7 @@ enum {
 #define LOW_QPS_COMP_THRESHOLD         40
 #define HIGH_FILTERED_THRESHOLD     (4<<8) // 8 bit precision
 #define LOW_FILTERED_THRESHOLD      (2<<8) // 8 bit precision
-#define QPS_SW_THRESH                  100 // 8
+#define QPS_SW_THRESH                  8
 
 #if TWO_PASS
 #if TWO_PASS_IMPROVEMENT
@@ -4280,7 +4280,11 @@ void* rate_control_kernel(void *input_ptr)
                     // if there are need enough pictures in the LAD/SlidingWindow, the adaptive QP scaling is not used
 #if TWO_PASS
                     int32_t new_qindex;
+#if ONE_PASS_NO_LAD
+                    if (sequence_control_set_ptr->use_input_stat_file && !sequence_control_set_ptr->use_output_stat_file && picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH) {
+#else
                     if (!sequence_control_set_ptr->use_output_stat_file && picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH) {
+#endif
                         // Content adaptive qp assignment
                         if(sequence_control_set_ptr->use_input_stat_file && !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected &&
                             picture_control_set_ptr->parent_pcs_ptr->referenced_area_has_non_zero)
@@ -4444,8 +4448,13 @@ void* rate_control_kernel(void *input_ptr)
                 }
             }
 #if TWO_PASS
+#if ONE_PASS_NO_LAD
+            if (sequence_control_set_ptr->use_input_stat_file && sequence_control_set_ptr->static_config.enable_adaptive_quantization == 2 && picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH &&
+                !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && !sequence_control_set_ptr->use_output_stat_file)
+#else
             if (sequence_control_set_ptr->static_config.enable_adaptive_quantization == 2 && picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH &&
                 !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected && !sequence_control_set_ptr->use_output_stat_file)
+#endif
                 if(sequence_control_set_ptr->use_input_stat_file && picture_control_set_ptr->parent_pcs_ptr->referenced_area_has_non_zero)
                     sb_qp_derivation_two_pass(picture_control_set_ptr);
                 else
