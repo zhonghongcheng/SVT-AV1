@@ -1506,7 +1506,20 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->unipred3x3_injection = 2;
     else
         context_ptr->unipred3x3_injection = 0;
+#if M2_UNIPRED3X3_INJECTION
 
+    if (context_ptr->pd_pass == PD_PASS_0) {
+        context_ptr->unipred3x3_injection = 0;
+    }
+    else if (context_ptr->pd_pass == PD_PASS_1) {
+        context_ptr->unipred3x3_injection = 2;
+    }
+    else if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected) 
+            context_ptr->unipred3x3_injection = 2;
+    else 
+        context_ptr->unipred3x3_injection = 2;
+
+#endif
     // Set bipred3x3 injection
     // Level                Settings
     // 0                    OFF

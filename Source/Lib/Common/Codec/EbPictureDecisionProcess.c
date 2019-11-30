@@ -888,13 +888,8 @@ EbErrorType signal_derivation_multi_processes_oq(
             else
                 picture_control_set_ptr->pic_depth_mode = PIC_SB_SWITCH_DEPTH_MODE;
 #endif
-#if M1_PIC_DEPTH_MODE
 
-            picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
-
-       
-
-#elif M2_PIC_DEPTH_MODE
+#if M2_PIC_DEPTH_MODE
         if (sc_content_detected) 
                     picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
         else 
@@ -902,6 +897,8 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
             else
                 picture_control_set_ptr->pic_depth_mode = PIC_ALL_C_DEPTH_MODE;
+#elif M1_PIC_DEPTH_MODE
+            picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
 #endif
         if (picture_control_set_ptr->pic_depth_mode < PIC_SQ_DEPTH_MODE)
             assert(sequence_control_set_ptr->nsq_present == 1 && "use nsq_present 1");
