@@ -1219,6 +1219,25 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->interpolation_search_level = IT_SEARCH_OFF;
 #endif
+
+#if M3_INTERPOLATION_SEARCH_LEVEL
+    if (context_ptr->pd_pass == PD_PASS_0)
+        context_ptr->interpolation_search_level = IT_SEARCH_OFF;
+    else if (context_ptr->pd_pass == PD_PASS_1) {
+        if (picture_control_set_ptr->temporal_layer_index == 0)
+            context_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;
+        else
+            context_ptr->interpolation_search_level = IT_SEARCH_OFF;
+    }
+    else if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        context_ptr->interpolation_search_level = IT_SEARCH_OFF;
+    else 
+        if (picture_control_set_ptr->temporal_layer_index == 0)
+            context_ptr->interpolation_search_level = IT_SEARCH_FAST_LOOP_UV_BLIND;
+        else
+            context_ptr->interpolation_search_level = IT_SEARCH_OFF;
+
+#endif
     // Set Chroma Mode
     // Level                Settings
     // CHROMA_MODE_0  0     Full chroma search @ MD
@@ -1367,7 +1386,10 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     }
     else
         context_ptr->global_mv_injection = 0;
-
+#if M1_GLOBAL_MV_INJECTION  
+ 
+        context_ptr->global_mv_injection = 0;
+#endif
 #if MULTI_PASS_PD_SUPPORT // Shut nx4 and 4xn if 1st pass
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->new_nearest_near_comb_injection = 0;
@@ -1388,6 +1410,12 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->new_nearest_near_comb_injection = 1;
     else
         context_ptr->new_nearest_near_comb_injection = 0;
+
+#if M1_NEW_NEAREST_NEAR_COMB_INJECTION
+    context_ptr->new_nearest_near_comb_injection = 0;
+#endif
+
+
 
 #if MULTI_PASS_PD_SUPPORT // Shut nx4 and 4xn if 1st pass
     if (context_ptr->pd_pass == PD_PASS_0)
@@ -1412,6 +1440,17 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->nx4_4xn_parent_mv_injection = 1;
     else
         context_ptr->nx4_4xn_parent_mv_injection = 0;
+#endif
+#if M2_NX4_4XN_PARENT_MV_INJECTION
+    if (context_ptr->pd_pass == PD_PASS_0)
+        context_ptr->nx4_4xn_parent_mv_injection = 0;
+    else if (context_ptr->pd_pass == PD_PASS_1)
+        context_ptr->nx4_4xn_parent_mv_injection = 0;
+    else if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        context_ptr->nx4_4xn_parent_mv_injection = 1;
+    else
+        context_ptr->nx4_4xn_parent_mv_injection = 0;
+
 #endif
 
     // Set warped motion injection
@@ -1556,6 +1595,17 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
                    
 
                     context_ptr->predictive_me_level = 0;
+#if M1_PREDICTIVE_ME_LEVEL
+  if (picture_control_set_ptr->slice_type != I_SLICE)
+        if (context_ptr->pd_pass == PD_PASS_0)
+            context_ptr->predictive_me_level = 0;
+        else if (context_ptr->pd_pass == PD_PASS_1)
+            context_ptr->predictive_me_level = 2;
+        else
+            context_ptr->predictive_me_level =  4;
+#endif
+
+
 #else
 #if M0_OPT
             if (picture_control_set_ptr->enc_mode <= ENC_M0)
@@ -1842,6 +1892,18 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
     else
         context_ptr->edge_based_skip_angle_intra = 0;
+
+#if M1_EDGE_BASED_SKIP_ANGLE_INTRA
+ if (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT)
+        if (context_ptr->pd_pass == PD_PASS_0)
+            context_ptr->edge_based_skip_angle_intra = 0;
+        else if (context_ptr->pd_pass == PD_PASS_1)
+            context_ptr->edge_based_skip_angle_intra = 1;
+        else
+            context_ptr->edge_based_skip_angle_intra = 1;
+    else
+        context_ptr->edge_based_skip_angle_intra = 0;
+#endif
 #if MULTI_PASS_PD_SUPPORT // Shut spatial SSE @ full loop
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->prune_ref_frame_for_rec_partitions = 0;
@@ -1853,7 +1915,20 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->prune_ref_frame_for_rec_partitions = 0;
     else
         context_ptr->prune_ref_frame_for_rec_partitions = 1;
+#if M1_PRUNE_REF_FRAME_FOR_REC_PARTITIONS
 
+    if (context_ptr->pd_pass == PD_PASS_0)
+        context_ptr->prune_ref_frame_for_rec_partitions = 0;
+    else if (context_ptr->pd_pass == PD_PASS_1)
+        context_ptr->prune_ref_frame_for_rec_partitions = 1;
+    else
+#
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        context_ptr->prune_ref_frame_for_rec_partitions = 0;
+    else
+        context_ptr->prune_ref_frame_for_rec_partitions = 1;
+
+#endif
 #if SPEED_OPT
     // Derive INTER/INTER WEDGE variance TH
 
@@ -1865,7 +1940,9 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->inter_inter_wedge_variance_th = 0;
     else
         context_ptr->inter_inter_wedge_variance_th = 100;
-
+#if M1_INTER_INTER_WEDGE_VARIANCE_TH
+        context_ptr->inter_inter_wedge_variance_th = 100;
+#endif
     // Derive MD Exit TH
 #if MULTI_PASS_PD_SUPPORT // Shut md_exit_th
     if (context_ptr->pd_pass == PD_PASS_0)
@@ -1882,7 +1959,14 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->md_exit_th = 0;
     else
         context_ptr->md_exit_th = (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected) ? 10 : 18;
-
+#if M1_MD_EXIT_TH
+    if (context_ptr->pd_pass == PD_PASS_0)
+        context_ptr->md_exit_th = 0;
+    else if (context_ptr->pd_pass == PD_PASS_1)
+        context_ptr->md_exit_th = (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected) ? 10 : 18;
+    else
+        context_ptr->md_exit_th = (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected) ? 10 : 18;
+#endif
 #if INTER_INTRA_CLASS_PRUNING
 
     // TH_S (for single candidate removal per class)
@@ -1912,6 +1996,18 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
 #endif
 
+#if M1_MD_STAGE_1_COUNT_TH_S
+
+    if (context_ptr->pd_pass == PD_PASS_0)
+        context_ptr->md_stage_1_cand_prune_th = (uint64_t)~0;
+    else if (context_ptr->pd_pass == PD_PASS_1)
+        context_ptr->md_stage_1_cand_prune_th = sequence_control_set_ptr->static_config.md_stage_1_cand_prune_th;
+    else if ( sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
+        context_ptr->md_stage_1_cand_prune_th = (uint64_t)~0;
+    else 
+        context_ptr->md_stage_1_cand_prune_th = sequence_control_set_ptr->static_config.md_stage_1_cand_prune_th;
+#endif
+
 #if INTER_INTRA_CLASS_PRUNING
 
     // TH_C (for class removal)
@@ -1933,6 +2029,21 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->md_stage_1_class_prune_th = sequence_control_set_ptr->static_config.md_stage_1_class_prune_th;
     else
         context_ptr->md_stage_1_class_prune_th = (uint64_t)~0;
+
+#if M1_MD_STAGE_1_COUNT_TH_C
+    // TH_C (for class removal)
+    // Remove class if deviation to the best higher than TH_C
+
+    if (context_ptr->pd_pass == PD_PASS_0)
+        context_ptr->md_stage_1_class_prune_th = (uint64_t)~0;
+    else if (context_ptr->pd_pass == PD_PASS_1)
+        context_ptr->md_stage_1_class_prune_th = sequence_control_set_ptr->static_config.md_stage_1_class_prune_th;
+    else if (sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER)
+        context_ptr->md_stage_1_class_prune_th = (uint64_t)~0;
+    else 
+        context_ptr->md_stage_1_class_prune_th = sequence_control_set_ptr->static_config.md_stage_1_class_prune_th;
+#endif
+
 
     // TH_S (for single candidate removal per class)
     // Remove candidate if deviation to the best is higher than TH_S
@@ -1959,7 +2070,32 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->md_stage_2_cand_prune_th = sequence_control_set_ptr->input_resolution <= INPUT_SIZE_1080i_RANGE ? 5 : 3;
     else
         context_ptr->md_stage_2_cand_prune_th = (uint64_t)~0;
+#if M3_MD_STAGE_2_COUNT_TH_S
+    // TH_S (for single candidate removal per class)
+    // Remove candidate if deviation to the best is higher than TH_S
 
+    if (context_ptr->pd_pass == PD_PASS_0)
+        context_ptr->md_stage_2_cand_prune_th = (uint64_t)~0;
+    else if (context_ptr->pd_pass == PD_PASS_1)
+        context_ptr->md_stage_2_cand_prune_th = sequence_control_set_ptr->input_resolution <= INPUT_SIZE_1080i_RANGE ? 5 : 3;
+    else if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        context_ptr->md_stage_2_cand_prune_th = (uint64_t)~0;
+    else 
+        context_ptr->md_stage_2_cand_prune_th = sequence_control_set_ptr->input_resolution <= INPUT_SIZE_1080i_RANGE ? 5 : 3;
+
+#elif M1_MD_STAGE_2_COUNT_TH_S
+   // TH_S (for single candidate removal per class)
+    // Remove candidate if deviation to the best is higher than TH_S
+
+    if (context_ptr->pd_pass == PD_PASS_0)
+        context_ptr->md_stage_2_cand_prune_th = (uint64_t)~0;
+    else if (context_ptr->pd_pass == PD_PASS_1)
+        context_ptr->md_stage_2_cand_prune_th = sequence_control_set_ptr->input_resolution <= INPUT_SIZE_1080i_RANGE ? 5 : 3;
+    else if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        context_ptr->md_stage_2_cand_prune_th = (uint64_t)~0;
+    else 
+        context_ptr->md_stage_2_cand_prune_th = sequence_control_set_ptr->input_resolution <= INPUT_SIZE_1080i_RANGE ? 15 : 12;
+#endif
     // TH_C (for class removal)
     // Remove class if deviation to the best is higher than TH_C
 #if MULTI_PASS_PD_SUPPORT 

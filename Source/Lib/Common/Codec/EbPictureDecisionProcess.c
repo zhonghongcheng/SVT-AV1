@@ -772,6 +772,12 @@ EbErrorType signal_derivation_multi_processes_oq(
 
 #if TWO_PASS_USE_2NDP_ME_IN_1STP
     uint8_t enc_mode_hme = sequence_control_set_ptr->use_output_stat_file ? picture_control_set_ptr->snd_pass_enc_mode : picture_control_set_ptr->enc_mode;
+
+#if M1_ENABLE_HME_FLAG
+    enc_mode_hme = ENC_M1;
+#endif
+
+
     picture_control_set_ptr->enable_hme_flag = enable_hme_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][enc_mode_hme];
 
     picture_control_set_ptr->enable_hme_level0_flag = enable_hme_level0_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][enc_mode_hme];
@@ -882,7 +888,21 @@ EbErrorType signal_derivation_multi_processes_oq(
             else
                 picture_control_set_ptr->pic_depth_mode = PIC_SB_SWITCH_DEPTH_MODE;
 #endif
+#if M1_PIC_DEPTH_MODE
 
+            picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
+
+       
+
+#elif M2_PIC_DEPTH_MODE
+        if (sc_content_detected) 
+                    picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
+        else 
+            if (picture_control_set_ptr->slice_type == I_SLICE)
+                picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
+            else
+                picture_control_set_ptr->pic_depth_mode = PIC_ALL_C_DEPTH_MODE;
+#endif
         if (picture_control_set_ptr->pic_depth_mode < PIC_SQ_DEPTH_MODE)
             assert(sequence_control_set_ptr->nsq_present == 1 && "use nsq_present 1");
 
@@ -1027,6 +1047,29 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL3;
         else
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
+#endif
+#if M3_NSQ_SEARCH_LEVEL
+        picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
+
+#elif M2_NSQ_SEARCH_LEVEL
+
+        if (sc_content_detected)
+            if (picture_control_set_ptr->is_used_as_reference_flag)
+                picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL5;
+            else
+                picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL2;
+        else
+            if (picture_control_set_ptr->is_used_as_reference_flag)
+                picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL3;
+            else
+                picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL1;
+
+#elif M1_NSQ_SEARCH_LEVEL        
+        if (sc_content_detected)
+            picture_control_set_ptr->nsq_search_level = (picture_control_set_ptr->is_used_as_reference_flag) ?
+            NSQ_SEARCH_LEVEL6 : NSQ_SEARCH_LEVEL3;
+        else
+            picture_control_set_ptr->nsq_search_level = (picture_control_set_ptr->is_used_as_reference_flag) ? NSQ_SEARCH_LEVEL6 : NSQ_SEARCH_LEVEL3;
 #endif
     if (picture_control_set_ptr->nsq_search_level > NSQ_SEARCH_OFF)
         assert(sequence_control_set_ptr->nsq_present == 1 && "use nsq_present 1");
@@ -1214,6 +1257,18 @@ EbErrorType signal_derivation_multi_processes_oq(
     }
     else
         picture_control_set_ptr->cdef_filter_mode = 0;
+
+#if M1_CDEF_FILTER_MODE
+    if (sequence_control_set_ptr->seq_header.enable_cdef && frm_hdr->allow_intrabc == 0) {
+        if (sc_content_detected)
+                picture_control_set_ptr->cdef_filter_mode = 4;
+        else
+            picture_control_set_ptr->cdef_filter_mode = 4;
+    }
+    else
+        picture_control_set_ptr->cdef_filter_mode = 0;
+
+#endif
 
     // SG Level                                    Settings
     // 0                                            OFF
@@ -1436,7 +1491,22 @@ EbErrorType signal_derivation_multi_processes_oq(
 
     if (MR_MODE)
         picture_control_set_ptr->intra_pred_mode = 0;
+#if M2_INTRA_PRED_MODE
+    if (picture_control_set_ptr->slice_type == I_SLICE)
+            picture_control_set_ptr->intra_pred_mode = 0;
+    else {
+    if (sc_content_detected)
+            if (picture_control_set_ptr->temporal_layer_index == 0)
+                picture_control_set_ptr->intra_pred_mode = 1;
+            else
+                picture_control_set_ptr->intra_pred_mode = 2;
+    else if (picture_control_set_ptr->temporal_layer_index == 0)
+            picture_control_set_ptr->intra_pred_mode = 0;
+    else 
+            picture_control_set_ptr->intra_pred_mode = 3;
+    }
 
+#endif
     // Skip sub blk based on neighbors depth        Settings
     // 0                                            OFF
     // 1                                            ON
@@ -1473,7 +1543,9 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
         else
             picture_control_set_ptr->atb_mode = 0;
-
+#if M2_ATB_MODE
+        picture_control_set_ptr->atb_mode = 0;
+#endif
         // Set skip atb                          Settings
         // 0                                     OFF
         // 1                                     ON
@@ -1517,7 +1589,16 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
         else
             picture_control_set_ptr->compound_mode = 0;
+#if M2_COMPOUND_MODE
+        if (sequence_control_set_ptr->compound_mode)
+            if (picture_control_set_ptr->sc_content_detected)
+                picture_control_set_ptr->compound_mode =  0;
+            else
+                picture_control_set_ptr->compound_mode = 1;
+        else
+            picture_control_set_ptr->compound_mode = 0;
 
+#endif
         // set compound_types_to_try
         if (picture_control_set_ptr->compound_mode)
             picture_control_set_ptr->compound_types_to_try = picture_control_set_ptr->compound_mode == 1 ? MD_COMP_DIFF0 : MD_COMP_WEDGE;

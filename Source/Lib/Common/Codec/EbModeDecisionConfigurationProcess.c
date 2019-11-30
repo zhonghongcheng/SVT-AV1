@@ -2607,6 +2607,10 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
     frm_hdr->allow_high_precision_mv =
         picture_control_set_ptr->enc_mode == ENC_M0 && frm_hdr->quantization_params.base_q_idx < HIGH_PRECISION_MV_QTHRESH &&
         (sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER) ? 1 : 0;
+
+#if M1_ALLOW_HIGH_PRECISION_MV
+    frm_hdr->allow_high_precision_mv = 0;
+#endif
 #endif
 #if MULTI_PASS_PD_SUPPORT
     EbBool enable_wm;
@@ -2619,6 +2623,12 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
             (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M5 && picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0)) ? EB_TRUE : EB_FALSE;
 #else
         enable_wm = (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M5) || MR_MODE ? EB_TRUE : EB_FALSE;
+#endif
+#if M1_ENABLE_WM
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        enable_wm = EB_FALSE;
+    else
+        enable_wm = (picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0) ? EB_TRUE : EB_FALSE;
 #endif
 #if !FIX_WM_SETTINGS
     enable_wm = picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index > 0 ? EB_FALSE : enable_wm;
@@ -2665,7 +2675,15 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
     }
     else
         picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = 0;
+#if M1_PIC_OBMC_MODE
+    if (sequence_control_set_ptr->static_config.enable_obmc) {
 
+            picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode =
+            picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0 && picture_control_set_ptr->slice_type != I_SLICE ? 2 : 0;
+    }
+    else
+        picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = 0;
+#endif
     frm_hdr->is_motion_mode_switchable =
         frm_hdr->is_motion_mode_switchable || picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode;
 

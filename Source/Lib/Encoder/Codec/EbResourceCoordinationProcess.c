@@ -95,6 +95,10 @@ EbErrorType signal_derivation_pre_analysis_oq(
 #else
     uint8_t  hme_me_level = picture_control_set_ptr->enc_mode;
 #endif
+    
+#if M1_ENABLE_HME_FLAG
+     hme_me_level = ENC_M1;
+#endif
     // Derive HME Flag
     if (sequence_control_set_ptr->static_config.use_default_me_hme) {
         picture_control_set_ptr->enable_hme_flag = enable_hme_flag[0][input_resolution][hme_me_level] || enable_hme_flag[1][input_resolution][hme_me_level];
@@ -721,6 +725,10 @@ void* resource_coordination_kernel(void *input_ptr)
             sequence_control_set_ptr->seq_header.enable_interintra_compound = (sequence_control_set_ptr->static_config.encoder_bit_depth == EB_10BIT ) ? 0 :
                                                                               (sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;
 #endif
+#endif
+
+#if M1_ENABLE_INTERINTRA_COMPOUND
+        sequence_control_set_ptr->seq_header.enable_interintra_compound =  0;
 #endif
 #if FILTER_INTRA_FLAG
             // Set filter intra mode      Settings

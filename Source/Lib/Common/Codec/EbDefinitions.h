@@ -33,6 +33,66 @@
 extern "C" {
 #endif
 
+// M0 TO M1
+#define M1_ENABLE_HME_FLAG                        0
+#define M1_ME_HME_SEARCH_AREA                     0
+#define M1_NEW_NEAREST_NEAR_COMB_INJECTION        0
+#define M1_PREDICTIVE_ME_LEVEL                    0
+#define M1_EDGE_BASED_SKIP_ANGLE_INTRA            0
+#define M1_PRUNE_REF_FRAME_FOR_REC_PARTITIONS     0
+#define M1_MD_STAGE_1_COUNT_TH_S                  0
+#define M1_MD_STAGE_1_COUNT_TH_C                  0
+#define M1_MD_STAGE_2_COUNT_TH_S                  0
+#define M1_ENABLE_WM                              0
+#define M1_IS_NSQ_TABLE_USED                      0
+#define M1_HALF_QUARTER_PEL_MODE                  0
+#define M1_NSQ_SEARCH_LEVEL                       0
+#define M1_CDEF_FILTER_MODE                       0
+#define M1_ENABLE_INTERINTRA_COMPOUND             0
+#define M1_GLOBAL_MV_INJECTION                    0
+#define M1_INTER_INTER_WEDGE_VARIANCE_TH          0
+
+#define M1_MD_EXIT_TH                             0
+#define M1_ALLOW_HIGH_PRECISION_MV                0
+#define M1_PIC_OBMC_MODE                          0  // SC ONLY
+#define M1_FRACTIONAL_SEARCH_METHOD               0  // SC ONLY
+#define M1_PIC_DEPTH_MODE                         0
+#define M1_MD_STAGE_2_COUNT                       0
+#define M1_FULL_PEL_REF_WINDOW                    0
+//M2 TO M1
+#define M2_NX4_4XN_PARENT_MV_INJECTION            0
+#define M2_PIC_DEPTH_MODE                         0
+#define M2_ADPATIVE_OL_PARTITIONING_LEVEL         0//
+#define M2_NSQ_SEARCH_LEVEL                       0
+#define M2_INTRA_PRED_MODE                        0
+#define M2_ATB_MODE                               0
+#define M2_COMPOUND_MODE                          0
+#define M2_REF_COUNT_USED                         0
+ 
+//M3 TO M2
+#define M3_REF_COUNT_USED                          0
+#define M3_NSQ_SEARCH_LEVEL                        0
+#define M3_INTERPOLATION_SEARCH_LEVEL              0
+#define M3_MD_STAGE_2_COUNT_TH_S                   0
+
+// NOT yet done
+#define M3_UNIPRED3X3_INJECTION                    0
+#define M3_BIPRED3X3_INJECTION                     0
+#define M3_PREDICTIVE_ME_LEVEL                     0
+#define M3_TRELLIS_QUANT_COEFF_OPTIMIZATION        0
+#define M3_PERFORM_QUANTIZE_FP                     0         //(TRELLIS SHOULD BE ON TO BE TESTED)
+#define M3_PIC_OBMC_MODE                           0
+#define M3_PIC_DEPTH_MODE                          0
+#define M3_LOOP_FILTER_MODE                        0
+#define M3_SG_FILTER_MODE                          0
+#define M3_TX_SEARCH_REDUCED_SET                   0
+#define M3_INTRA_PRED_MODE                         0
+#define M3_MRP_MODE                                0
+
+
+
+
+
 #define ONE_PASS_NO_LAD              1 // set the default 1 pass to no adaptive QPS and QPM (Zero LAD)
 #define REMOVE_MDC_EARLY_PART        1 // Remove MDC early part code (API signal(s), structure(s), kernel(s), ..)
 #define MULTI_PASS_PD_SUPPORT        1
