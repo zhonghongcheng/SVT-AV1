@@ -2675,7 +2675,11 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
     }
     else
         picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = 0;
-#if M1_PIC_OBMC_MODE
+
+#if M3_PIC_OBMC_MODE
+
+    picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = 0;
+#elif M1_PIC_OBMC_MODE
     if (sequence_control_set_ptr->static_config.enable_obmc) {
 
             picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode =

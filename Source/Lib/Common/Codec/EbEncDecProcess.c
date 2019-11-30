@@ -1561,7 +1561,20 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->bipred3x3_injection = 0;
 #endif
+#if M3_BIPRED3X3_INJECTION
 
+    if (context_ptr->pd_pass == PD_PASS_0) {
+        context_ptr->bipred3x3_injection = 0;
+    }
+    else if (context_ptr->pd_pass == PD_PASS_1) {
+        context_ptr->bipred3x3_injection = 2;
+    }
+    else
+        if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+            context_ptr->bipred3x3_injection = 1;
+        else
+            context_ptr->bipred3x3_injection = 2;
+#endif
     // Level                Settings
     // 0                    Level 0: OFF
     // 1                    Level 1: 7x5 full-pel search + sub-pel refinement off
@@ -1608,7 +1621,17 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
                    
 
                     context_ptr->predictive_me_level = 0;
-#if M1_PREDICTIVE_ME_LEVEL
+#if M3_PREDICTIVE_ME_LEVEL
+        if (picture_control_set_ptr->slice_type != I_SLICE)
+            if (context_ptr->pd_pass == PD_PASS_0)
+                context_ptr->predictive_me_level = 0;
+            else if (context_ptr->pd_pass == PD_PASS_1)
+                context_ptr->predictive_me_level = 2;
+            else
+                context_ptr->predictive_me_level = 2;
+    else
+        context_ptr->predictive_me_level = 0;
+#elif M1_PREDICTIVE_ME_LEVEL
   if (picture_control_set_ptr->slice_type != I_SLICE)
         if (context_ptr->pd_pass == PD_PASS_0)
             context_ptr->predictive_me_level = 0;
@@ -1844,7 +1867,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
 #endif
+#if M3_TRELLIS_QUANT_COEFF_OPTIMIZATION
+    
+    context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
 
+#endif
     // Derive redundant block
 #if MULTI_PASS_PD_SUPPORT // Shut redundant_blk
     if (context_ptr->pd_pass == PD_PASS_0)

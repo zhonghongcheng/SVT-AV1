@@ -1671,7 +1671,12 @@ void set_md_stage_counts(
         context_ptr->md_stage_1_count[CAND_CLASS_1] = context_ptr->md_stage_1_count[CAND_CLASS_1] * 2;
     }
 #if PRESETS_TUNE
+#if M3_MD_STAGE_1_COUNT
+    if (1) {
+#else
     if (picture_control_set_ptr->enc_mode >= ENC_M3) {
+
+#endif
 #else
     if (picture_control_set_ptr->enc_mode >= ENC_M2) {
 #endif
@@ -1744,7 +1749,11 @@ void set_md_stage_counts(
         context_ptr->md_stage_2_count[CAND_CLASS_0] = (picture_control_set_ptr->slice_type == I_SLICE) ? 10 : (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? 4 : 1;
 #endif
 #if PRESETS_TUNE
+#if M3_MD_STAGE_2_COUNT
+    if (1 && picture_control_set_ptr->enc_mode <= ENC_M4) {
+#else
     if (picture_control_set_ptr->enc_mode >= ENC_M3 && picture_control_set_ptr->enc_mode <= ENC_M4) {
+#endif
 #else
     if (picture_control_set_ptr->enc_mode >= ENC_M2 && picture_control_set_ptr->enc_mode <= ENC_M4) {
 #endif

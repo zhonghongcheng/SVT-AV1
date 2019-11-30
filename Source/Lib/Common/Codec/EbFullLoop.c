@@ -1626,6 +1626,10 @@ int32_t av1_quantize_inv_quantize(
 #else
     EbBool perform_quantize_fp = picture_control_set_ptr->enc_mode == ENC_M0 ? EB_TRUE: EB_FALSE;
 #endif
+#if M3_PERFORM_QUANTIZE_FP
+
+    perform_quantize_fp =  EB_FALSE;
+#endif
     if (perform_rdoq && perform_quantize_fp && !is_inter) {
         if (bit_increment) {
             eb_av1_highbd_quantize_fp_facade(

@@ -888,8 +888,16 @@ EbErrorType signal_derivation_multi_processes_oq(
             else
                 picture_control_set_ptr->pic_depth_mode = PIC_SB_SWITCH_DEPTH_MODE;
 #endif
+#if M3_PIC_DEPTH_MODE
+        if (sc_content_detected)
+            if (picture_control_set_ptr->slice_type == I_SLICE)
+                picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
+            else
+                picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
+        else
+            picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
 
-#if M2_PIC_DEPTH_MODE
+#elif M2_PIC_DEPTH_MODE
         if (sc_content_detected) 
                     picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
         else 
@@ -1225,6 +1233,19 @@ EbErrorType signal_derivation_multi_processes_oq(
     }
     else
         picture_control_set_ptr->loop_filter_mode = 0;
+
+#if M3_LOOP_FILTER_MODE
+   if (!picture_control_set_ptr->sequence_control_set_ptr->static_config.disable_dlf_flag && frm_hdr->allow_intrabc == 0) {
+    if (sc_content_detected)
+            picture_control_set_ptr->loop_filter_mode = 0;
+    else
+            picture_control_set_ptr->loop_filter_mode = picture_control_set_ptr->is_used_as_reference_flag ? 3 : 0;
+
+    }
+    else
+        picture_control_set_ptr->loop_filter_mode = 0;
+
+#endif
     // CDEF Level                                   Settings
     // 0                                            OFF
     // 1                                            1 step refinement
@@ -1295,7 +1316,13 @@ EbErrorType signal_derivation_multi_processes_oq(
         cm->sg_filter_mode = 3;
     else
         cm->sg_filter_mode = 1;
+#if M3_SG_FILTER_MODE
+    if (sc_content_detected)
+        cm->sg_filter_mode = 4;
+    else
+        cm->sg_filter_mode = 3;
 
+#endif
     // WN Level                                     Settings
     // 0                                            OFF
     // 1                                            3-Tap luma/ 3-Tap chroma
@@ -1424,6 +1451,15 @@ EbErrorType signal_derivation_multi_processes_oq(
     else
         picture_control_set_ptr->tx_search_reduced_set = 1;
 #endif
+
+#if M3_TX_SEARCH_REDUCED_SET
+    if (sc_content_detected)
+            picture_control_set_ptr->tx_search_reduced_set = 0;
+    else if (picture_control_set_ptr->tx_search_level == TX_SEARCH_ENC_DEC)
+            picture_control_set_ptr->tx_search_reduced_set = 0;
+    else
+            picture_control_set_ptr->tx_search_reduced_set = 1;
+#endif
     // Intra prediction modes                       Settings
     // 0                                            FULL
     // 1                                            LIGHT per block : disable_z2_prediction && disable_angle_refinement  for 64/32/4
@@ -1488,7 +1524,23 @@ EbErrorType signal_derivation_multi_processes_oq(
 
     if (MR_MODE)
         picture_control_set_ptr->intra_pred_mode = 0;
-#if M2_INTRA_PRED_MODE
+#if M3_INTRA_PRED_MODE
+    if (picture_control_set_ptr->slice_type == I_SLICE)
+            picture_control_set_ptr->intra_pred_mode = 0;
+    else {
+    if (sc_content_detected)
+            if (picture_control_set_ptr->temporal_layer_index == 0)
+                picture_control_set_ptr->intra_pred_mode = 2;
+            else
+                picture_control_set_ptr->intra_pred_mode = 3;
+
+    else if (picture_control_set_ptr->temporal_layer_index == 0)
+            picture_control_set_ptr->intra_pred_mode = 1;
+    else
+            picture_control_set_ptr->intra_pred_mode = 3;
+
+    }
+#elif M2_INTRA_PRED_MODE
     if (picture_control_set_ptr->slice_type == I_SLICE)
             picture_control_set_ptr->intra_pred_mode = 0;
     else {

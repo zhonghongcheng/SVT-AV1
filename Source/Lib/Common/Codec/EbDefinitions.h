@@ -78,24 +78,25 @@ extern "C" {
 #endif
 //M3 TO M2
 #if  ENABLE_M3
-#define M3_REF_COUNT_USED                          0
-#define M3_NSQ_SEARCH_LEVEL                        0
-#define M3_INTERPOLATION_SEARCH_LEVEL              0
-#define M3_MD_STAGE_2_COUNT_TH_S                   0
+#define M3_REF_COUNT_USED                          1
+#define M3_NSQ_SEARCH_LEVEL                        1
+#define M3_INTERPOLATION_SEARCH_LEVEL              1
+#define M3_MD_STAGE_2_COUNT_TH_S                   1
 
 // NOT yet done
-#define M3_UNIPRED3X3_INJECTION                    0
-#define M3_BIPRED3X3_INJECTION                     0
-#define M3_PREDICTIVE_ME_LEVEL                     0
-#define M3_TRELLIS_QUANT_COEFF_OPTIMIZATION        0
-#define M3_PERFORM_QUANTIZE_FP                     0         //(TRELLIS SHOULD BE ON TO BE TESTED)
-#define M3_PIC_OBMC_MODE                           0
-#define M3_PIC_DEPTH_MODE                          0
-#define M3_LOOP_FILTER_MODE                        0
-#define M3_SG_FILTER_MODE                          0
-#define M3_TX_SEARCH_REDUCED_SET                   0
-#define M3_INTRA_PRED_MODE                         0
-#define M3_MRP_MODE                                0
+#define M3_BIPRED3X3_INJECTION                     1
+#define M3_PREDICTIVE_ME_LEVEL                     1
+#define M3_TRELLIS_QUANT_COEFF_OPTIMIZATION        1
+#define M3_PERFORM_QUANTIZE_FP                     1         //(TRELLIS SHOULD BE ON TO BE TESTED)
+#define M3_PIC_OBMC_MODE                           1
+#define M3_PIC_DEPTH_MODE                          1
+#define M3_LOOP_FILTER_MODE                        1
+#define M3_SG_FILTER_MODE                          1
+#define M3_TX_SEARCH_REDUCED_SET                   1
+#define M3_INTRA_PRED_MODE                         1
+#define M3_MRP_MODE                                1
+#define M3_MD_STAGE_1_COUNT                        1
+#define M3_MD_STAGE_2_COUNT                        1
 #endif
 
 
