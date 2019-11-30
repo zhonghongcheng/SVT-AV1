@@ -54,7 +54,7 @@ extern "C" {
 #define ATB_FIX                      1
 
 #define M0_OPT                       1
-#define PRESETS_TUNE                 0
+#define PRESETS_TUNE                 1
 /* Note: shutting the macro PAL_SUP will not give SS as pcs->palette_mode = 0
    rate estimation is changed for I frame + enabled sc for P (rate estimation
    is a result changed for P frames)
