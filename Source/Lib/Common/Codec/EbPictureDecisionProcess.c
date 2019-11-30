@@ -796,12 +796,6 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
 
         if (sc_content_detected) 
-#if ENABLE_MULTI_PASS_PD
-            if (picture_control_set_ptr->enc_mode == ENC_M0)
-                // Use a single-stage PD if or 1st encoding Pass I_SLICE
-                picture_control_set_ptr->pic_depth_mode = (picture_control_set_ptr->slice_type == I_SLICE) ? PIC_ALL_DEPTH_MODE : PIC_MULTI_PASS_PD_MODE_0;
-            else
-#endif
 #if PRESETS_TUNE
                 if (picture_control_set_ptr->enc_mode <= ENC_M2)
                     picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
@@ -832,9 +826,11 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
 #endif
 #if ENABLE_MULTI_PASS_PD
+        else if (MR_MODE)            
+            picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
         else if (picture_control_set_ptr->enc_mode == ENC_M0)
             // Use a single-stage PD if or 1st encoding Pass I_SLICE
-            picture_control_set_ptr->pic_depth_mode = (picture_control_set_ptr->slice_type == I_SLICE) ? PIC_ALL_DEPTH_MODE : PIC_MULTI_PASS_PD_MODE_2;
+            picture_control_set_ptr->pic_depth_mode = (picture_control_set_ptr->slice_type == I_SLICE) ? PIC_ALL_DEPTH_MODE : PIC_MULTI_PASS_PD_MODE_1;
 #endif
 #if PRESETS_TUNE
         else if (picture_control_set_ptr->enc_mode <= ENC_M1)
