@@ -4898,7 +4898,7 @@ void  inject_intra_candidates_ois(
             candidate_array[can_total_cnt].use_intrabc = 0;
             candidate_array[can_total_cnt].is_directional_mode_flag = (uint8_t)av1_is_directional_mode((PredictionMode)intra_mode);
             candidate_array[can_total_cnt].angle_delta[PLANE_TYPE_Y] = angle_delta;
-#if DISABLE_CFL
+#if DISABLE_CFL || CHROMA_DC_ONLY
             disable_cfl_flag = 1;
 #endif
             candidate_array[can_total_cnt].intra_chroma_mode = disable_cfl_flag ? intra_luma_to_chroma[intra_mode] :
@@ -5401,7 +5401,7 @@ void  inject_intra_candidates(
     uint8_t                     angleDeltaCandidateCount = use_angle_delta ? 7 : 1;
     ModeDecisionCandidate    *candidateArray = context_ptr->fast_candidate_array;
     EbBool                      disable_cfl_flag = (MAX(context_ptr->blk_geom->bheight, context_ptr->blk_geom->bwidth) > 32) ? EB_TRUE : EB_FALSE;
-#if DISABLE_CFL
+#if DISABLE_CFL || CHROMA_DC_ONLY
     disable_cfl_flag = 1;
 #endif
 
@@ -5628,7 +5628,7 @@ void  inject_filter_intra_candidates(
     ModeDecisionCandidate      *candidateArray = context_ptr->fast_candidate_array;
 
     EbBool                      disable_cfl_flag = (MAX(context_ptr->blk_geom->bheight, context_ptr->blk_geom->bwidth) > 32) ? EB_TRUE : EB_FALSE;
-#if DISABLE_CFL
+#if DISABLE_CFL || CHROMA_DC_ONLY
     disable_cfl_flag = 1;
 #endif
 
@@ -5729,7 +5729,7 @@ void  inject_palette_candidates(
     uint32_t                  can_total_cnt = *candidate_total_cnt;
     ModeDecisionCandidate    *candidateArray = context_ptr->fast_candidate_array;
     EbBool                    disable_cfl_flag = (MAX(context_ptr->blk_geom->bheight, context_ptr->blk_geom->bwidth) > 32) ? EB_TRUE : EB_FALSE;
-#if DISABLE_CFL
+#if DISABLE_CFL || CHROMA_DC_ONLY
     disable_cfl_flag = 1;
 #endif
     uint32_t cand_i;

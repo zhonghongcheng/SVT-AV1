@@ -2371,7 +2371,7 @@ EB_EXTERN void av1_encode_pass(
                 EbBool disable_cfl_flag = (context_ptr->blk_geom->sq_size > 32 ||
                     context_ptr->blk_geom->bwidth == 4 ||
                     context_ptr->blk_geom->bheight == 4) ? EB_TRUE : EB_FALSE;
-#if DISABLE_CFL
+#if DISABLE_CFL || CHROMA_DC_ONLY
                 disable_cfl_flag = 1;
 #endif
                 // Evaluate cfl @ EP if applicable, and not done @ MD

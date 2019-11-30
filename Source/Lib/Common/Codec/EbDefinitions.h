@@ -56,7 +56,7 @@ extern "C" {
 #define DISABLE_WARPED_MOTION               0
 #define DISABLE_OBMC                        0
 #define DISABLE_CFL                         0
-#define CHROMA_DC_ONLY                      0
+#define CHROMA_DC_ONLY                      1
 #define SHUT_FILTERING                      0   // cdef + rest
 #define DISABLE_HIGH_PRECISION_MV           0   // eigth-pel
 #define RATE_ESTIMATION_UPDATE              0
@@ -69,7 +69,7 @@ extern "C" {
 #define EIGHT_PEL_FIX                       1 // Improve the 8th pel performance by shutting it based on the QP
 #define HIGH_PRECISION_MV_QTHRESH 150
 #define UPDATE_CDEF                         1 // Update bit cost estimation for CDEF
-#define RDOQ_IMPROVEMENT                    1
+#define RDOQ_IMPROVEMENT                    0
 /* Note: shutting the macro PAL_SUP will not give SS as pcs->palette_mode = 0
    rate estimation is changed for I frame + enabled sc for P (rate estimation
    is a result changed for P frames)
