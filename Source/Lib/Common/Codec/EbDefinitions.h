@@ -42,6 +42,7 @@ extern "C" {
 #define ENABLE_MRP                   0
 #define CHECK_COMP                   0
 #define BYPASS_PD0_MVP               1
+#define MULTI_PASS_M1_BEYOND         0
 #endif
 
 #define HBD_CLEAN_UP                 1
