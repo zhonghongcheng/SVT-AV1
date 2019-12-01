@@ -1245,7 +1245,11 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
         if (picture_control_set_ptr->enc_mode <= ENC_M7)
 #if M0_OPT
+#if M1_ADOPTIONS_1
+            picture_control_set_ptr->cdef_filter_mode = (picture_control_set_ptr->enc_mode <= ENC_M1) ? 5 : 4;
+#else
             picture_control_set_ptr->cdef_filter_mode = (picture_control_set_ptr->enc_mode <= ENC_M0) ? 5 : 4;
+#endif
 #else
             picture_control_set_ptr->cdef_filter_mode = 4;
 #endif

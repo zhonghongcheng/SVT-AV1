@@ -1375,7 +1375,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         }
         else
 #endif
+#if GMC_M1_M3
+        if (picture_control_set_ptr->enc_mode <= ENC_M3)
+#else
         if (picture_control_set_ptr->enc_mode == ENC_M0)
+#endif
 #else
         if (picture_control_set_ptr->enc_mode == ENC_M0)
 
@@ -1918,8 +1922,14 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
             context_ptr->edge_based_skip_angle_intra = 0;
 #if M0_OPT
+#if M1_ADOPTIONS_1
+        else if (picture_control_set_ptr->enc_mode <= ENC_M1 && !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+            context_ptr->edge_based_skip_angle_intra = 0;
+#else
         else if (picture_control_set_ptr->enc_mode <= ENC_M0)
             context_ptr->edge_based_skip_angle_intra = picture_control_set_ptr->parent_pcs_ptr->sc_content_detected ? 1 : 0;
+
+#endif
         else
             context_ptr->edge_based_skip_angle_intra = 1;
 #else
@@ -1951,7 +1961,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->prune_ref_frame_for_rec_partitions = 1;
     else
 #endif
+#if M1_ADOPTIONS_1
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode <= ENC_M1)
+#else
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode == ENC_M0)
+#endif
         context_ptr->prune_ref_frame_for_rec_partitions = 0;
     else
         context_ptr->prune_ref_frame_for_rec_partitions = 1;
@@ -2094,8 +2108,12 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->md_stage_2_cand_prune_th = sequence_control_set_ptr->input_resolution <= INPUT_SIZE_1080i_RANGE ? 5 : 3;
     else
 #endif
-#if M0_OPT
+#if M0_OPT || M1_ADOPTIONS_1
+#if M1_ADOPTIONS_1
+    if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected || picture_control_set_ptr->enc_mode <= ENC_M1)
+#else
     if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected|| picture_control_set_ptr->enc_mode <= ENC_M0)
+#endif
 #else
     if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
 #endif

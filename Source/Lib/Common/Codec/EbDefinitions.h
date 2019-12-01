@@ -76,7 +76,6 @@ extern "C" {
 //M3 TO M2
 #if  ENABLE_M3
 #define M3_REF_COUNT_USED                          1
-#define M3_NSQ_SEARCH_LEVEL                        1
 #define M3_INTERPOLATION_SEARCH_LEVEL              1
 #define M3_MD_STAGE_2_COUNT_TH_S                   1
 
@@ -95,8 +94,9 @@ extern "C" {
 #define M3_MD_STAGE_1_COUNT                        1
 #define M3_MD_STAGE_2_COUNT                        1
 #endif
-
-
+#define GMC_M1_M3                    0
+#define M1_ADOPTIONS_1               0
+#define M1_ADOPTIONS_2               0
 
 
 #define ONE_PASS_NO_LAD              1 // set the default 1 pass to no adaptive QPS and QPM (Zero LAD)

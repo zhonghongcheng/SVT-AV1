@@ -2605,7 +2605,11 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
 #if EIGHT_PEL_FIX
     FrameHeader *frm_hdr = &picture_control_set_ptr->parent_pcs_ptr->frm_hdr;
     frm_hdr->allow_high_precision_mv =
+#if M1_ADOPTIONS_1
+        picture_control_set_ptr->enc_mode <= ENC_M1 && frm_hdr->quantization_params.base_q_idx < HIGH_PRECISION_MV_QTHRESH &&
+#else
         picture_control_set_ptr->enc_mode == ENC_M0 && frm_hdr->quantization_params.base_q_idx < HIGH_PRECISION_MV_QTHRESH &&
+#endif
         (sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER) ? 1 : 0;
 
 #if M1_ALLOW_HIGH_PRECISION_MV
@@ -2619,7 +2623,11 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
     else
 #if WARP_UPDATE
         enable_wm = (MR_MODE ||
+#if M1_ADOPTIONS_1
+        (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M1 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ||
+#else
         (picture_control_set_ptr->parent_pcs_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ||
+#endif
             (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M5 && picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0)) ? EB_TRUE : EB_FALSE;
 #else
         enable_wm = (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M5) || MR_MODE ? EB_TRUE : EB_FALSE;
