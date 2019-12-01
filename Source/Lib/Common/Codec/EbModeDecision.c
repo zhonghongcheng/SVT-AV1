@@ -4704,7 +4704,7 @@ void  inject_inter_candidates(
                     }
                 }
 #if GM_OPT
-        }else 
+        }else{
 #endif
         /**************
          GLOBALMV L0
@@ -4884,6 +4884,11 @@ void  inject_inter_candidates(
                 }
             }
         }
+
+#if GM_OPT
+        }
+#endif
+
 #endif
     }
 
