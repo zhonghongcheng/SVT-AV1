@@ -2923,8 +2923,7 @@ void predictive_me_search(
     int16_t full_pel_ref_window_height_th = (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0 && picture_control_set_ptr->enc_mode == ENC_M0) ? FULL_PEL_REF_WINDOW_HEIGHT_EXTENDED : FULL_PEL_REF_WINDOW_HEIGHT;
 #endif
 #endif
-#if 1//M1_FULL_PEL_REF_WINDOW
-
+#if M1_FULL_PEL_REF_WINDOW
     full_pel_ref_window_width_th =  FULL_PEL_REF_WINDOW_WIDTH;
     full_pel_ref_window_height_th = FULL_PEL_REF_WINDOW_HEIGHT;
 #endif
@@ -7962,14 +7961,6 @@ void md_encode_block(
     is_nsq_table_used = picture_control_set_ptr->enc_mode == ENC_M0 ?  EB_FALSE : is_nsq_table_used;
 #endif
 
-#if M1_IS_NSQ_TABLE_USED
-
-     is_nsq_table_used = (picture_control_set_ptr->slice_type == !I_SLICE &&
-        picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode <= PIC_ALL_C_DEPTH_MODE &&
-        picture_control_set_ptr->parent_pcs_ptr->nsq_search_level >= NSQ_SEARCH_LEVEL1 &&
-        picture_control_set_ptr->parent_pcs_ptr->nsq_search_level < NSQ_SEARCH_FULL) ? EB_TRUE : EB_FALSE;
-
-#endif
     if (is_nsq_table_used) {
         if (context_ptr->blk_geom->shape == PART_N) {
             order_nsq_table(

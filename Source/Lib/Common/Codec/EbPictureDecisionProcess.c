@@ -905,15 +905,9 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
 
 #elif M2_PIC_DEPTH_MODE
-        if (sc_content_detected) 
-                    picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
-        else 
-            if (picture_control_set_ptr->slice_type == I_SLICE)
-                picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
-            else
-                picture_control_set_ptr->pic_depth_mode = PIC_ALL_C_DEPTH_MODE;
+        picture_control_set_ptr->pic_depth_mode = (picture_control_set_ptr->slice_type == I_SLICE) ? PIC_ALL_DEPTH_MODE : PIC_MULTI_PASS_PD_MODE_2;
 #elif M1_PIC_DEPTH_MODE
-            picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
+        picture_control_set_ptr->pic_depth_mode = (picture_control_set_ptr->slice_type == I_SLICE) ? PIC_ALL_DEPTH_MODE : PIC_MULTI_PASS_PD_MODE_2;
 #endif
         if (picture_control_set_ptr->pic_depth_mode < PIC_SQ_DEPTH_MODE)
             assert(sequence_control_set_ptr->nsq_present == 1 && "use nsq_present 1");
@@ -1060,29 +1054,7 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
 #endif
-#if M3_NSQ_SEARCH_LEVEL
-        picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
 
-#elif M2_NSQ_SEARCH_LEVEL
-
-        if (sc_content_detected)
-            if (picture_control_set_ptr->is_used_as_reference_flag)
-                picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL5;
-            else
-                picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL2;
-        else
-            if (picture_control_set_ptr->is_used_as_reference_flag)
-                picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL3;
-            else
-                picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL1;
-
-#elif M1_NSQ_SEARCH_LEVEL        
-        if (sc_content_detected)
-            picture_control_set_ptr->nsq_search_level = (picture_control_set_ptr->is_used_as_reference_flag) ?
-            NSQ_SEARCH_LEVEL6 : NSQ_SEARCH_LEVEL3;
-        else
-            picture_control_set_ptr->nsq_search_level = (picture_control_set_ptr->is_used_as_reference_flag) ? NSQ_SEARCH_LEVEL6 : NSQ_SEARCH_LEVEL3;
-#endif
     if (picture_control_set_ptr->nsq_search_level > NSQ_SEARCH_OFF)
         assert(sequence_control_set_ptr->nsq_present == 1 && "use nsq_present 1");
 

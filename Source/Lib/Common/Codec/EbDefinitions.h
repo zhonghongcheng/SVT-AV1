@@ -48,9 +48,7 @@ extern "C" {
 #define M1_MD_STAGE_1_COUNT_TH_C                  1
 #define M1_MD_STAGE_2_COUNT_TH_S                  1
 #define M1_ENABLE_WM                              1
-#define M1_IS_NSQ_TABLE_USED                      1
 #define M1_HALF_QUARTER_PEL_MODE                  1
-#define M1_NSQ_SEARCH_LEVEL                       1
 #define M1_CDEF_FILTER_MODE                       1
 #define M1_ENABLE_INTERINTRA_COMPOUND             1
 #define M1_GLOBAL_MV_INJECTION                    1
@@ -68,7 +66,6 @@ extern "C" {
 #if  ENABLE_M2 || ENABLE_M3
 #define M2_NX4_4XN_PARENT_MV_INJECTION            1
 #define M2_PIC_DEPTH_MODE                         1
-#define M2_NSQ_SEARCH_LEVEL                       1
 #define M2_INTRA_PRED_MODE                        1
 #define M2_ATB_MODE                               1
 #define M2_COMPOUND_MODE                          1
