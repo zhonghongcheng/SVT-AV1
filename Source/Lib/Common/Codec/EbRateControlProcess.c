@@ -3747,7 +3747,7 @@ static int adaptive_qindex_calc_two_pass(
             referenced_area_avg = 0;
         // cross multiplication to derive kf_boost from referenced area; kf_boost range is [kf_low,kf_high], and referenced range [0,referenced_area_max]
         rc->kf_boost = (int)((referenced_area_avg  * (kf_high - kf_low)) / referenced_area_max) + kf_low;
-#if 0 //STAT_UPDATE
+#if STAT_UPDATE && SU_QPS_I
         int new_kf_boost = 
             get_kf_boost_from_r0(picture_control_set_ptr->parent_pcs_ptr->r0, 60);
 
@@ -3790,7 +3790,7 @@ static int adaptive_qindex_calc_two_pass(
             ((int)referenced_area_avg - (int)picture_control_set_ptr->ref_pic_referenced_area_avg_array[0][0] >= REF_AREA_DIF_THRESHOLD
             && referenced_area_avg > 20 && picture_control_set_ptr->ref_pic_referenced_area_avg_array[0][0] <= 20) ? (float_t)1.3 : (float_t)1;
         rc->gfu_boost = (int)(((referenced_area_avg)  * (gf_high - gf_low)) / referenced_area_max) + gf_low;
-#if 0 //STAT_UPDATE
+#if STAT_UPDATE && SU_QPS_B
         int frames_to_key = 60 - picture_control_set_ptr->parent_pcs_ptr->picture_number + 15;
         int new_gfu_boost =
             get_gfu_boost_from_r0(picture_control_set_ptr->parent_pcs_ptr->r0, frames_to_key);
@@ -4083,8 +4083,17 @@ static void sb_qp_derivation_two_pass(
             }
             delta_qp = 0;
 
-#if   STAT_UPDATE
-            if (picture_control_set_ptr->slice_type == 2/*picture_control_set_ptr->temporal_layer_index == 0*/) {
+#if STAT_UPDATE
+#if SU_QPM_I && SU_QPM_B
+            if (picture_control_set_ptr->temporal_layer_index == 0 )
+#elif SU_QPM_I 
+            if (picture_control_set_ptr->slice_type == 2)
+#elif SU_QPM_B
+            if (picture_control_set_ptr->slice_type != 2 && picture_control_set_ptr->temporal_layer_index == 0)
+#else
+            if (0)
+#endif
+            {
                 const double r0 = picture_control_set_ptr->parent_pcs_ptr->r0;
                 const double rk = (double)intra_cost / mc_dep_cost;
                 double beta = (r0 / rk);

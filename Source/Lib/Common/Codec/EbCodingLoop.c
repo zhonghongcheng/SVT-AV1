@@ -2415,9 +2415,12 @@ EB_EXTERN void av1_encode_pass(
                 // Collect the referenced area per 64x64
                 if (sequence_control_set_ptr->use_output_stat_file) {
                     dept_stat_t *cur_stats = &cu_ptr->cur_stat;
-                    int64_t weights[5] = { 10,10,10,10,10 };//{14, 32,45,50,60  };
-
-                    int64_t weight = weights[picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index];
+#if SU_NEW_WEIGHTS
+                    int64_t weights_intra[5] = { 16, 33,46,53,68 };//{14, 32,45,50,60  };
+#else
+                    int64_t weights_intra[5] = { 10, 10,10,10,10 };
+#endif
+                    int64_t weight_intra = weights_intra[picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index];
 #if STAT_UPDATE_SW
                     if(context_ptr->cu_origin_x==0 && context_ptr->cu_origin_y==0) {
                         eb_block_on_mutex(sequence_control_set_ptr->stat_info_mutex);
@@ -2430,9 +2433,9 @@ EB_EXTERN void av1_encode_pass(
                     }
 #endif
                     if (picture_control_set_ptr->parent_pcs_ptr->slice_type == 2)
-                        weight = 10;
-                    cur_stats->inter_cost = (cu_ptr->lowest_inter_cost* 10/weight) << TPL_DEP_COST_SCALE_LOG2; //((cu_ptr->lowest_inter_total_dist[0] * weight) << RDDIV_BITS); //
-                    cur_stats->intra_cost = (cu_ptr->lowest_intra_cost* 10/weight) << TPL_DEP_COST_SCALE_LOG2; //((cu_ptr->lowest_intra_total_dist[0]* weight) << RDDIV_BITS);// 
+                        weight_intra = 10;
+                    cur_stats->inter_cost = (cu_ptr->lowest_inter_cost* 10/ weight_intra) << TPL_DEP_COST_SCALE_LOG2; //((cu_ptr->lowest_inter_total_dist[0] * weight) << RDDIV_BITS); //
+                    cur_stats->intra_cost = (cu_ptr->lowest_intra_cost* 10/ weight_intra) << TPL_DEP_COST_SCALE_LOG2; //((cu_ptr->lowest_intra_total_dist[0]* weight) << RDDIV_BITS);// 
                     cur_stats->srcrf_dist = cu_ptr->lowest_inter_total_dist[0] << TPL_DEP_COST_SCALE_LOG2;
                     cur_stats->recrf_dist = cu_ptr->lowest_intra_total_dist[0] << TPL_DEP_COST_SCALE_LOG2;
                     cur_stats->srcrf_rate = cu_ptr->lowest_inter_total_rate << TPL_DEP_COST_SCALE_LOG2;
