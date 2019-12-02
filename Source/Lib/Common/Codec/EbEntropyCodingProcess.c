@@ -394,8 +394,8 @@ void write_stat_info_to_file(
     memset(&stat_struct, 0, sizeof(stat_struct));
     // build propagate dept_stat_ppg_t
     for(int frame = 0; frame < slide_win_length; frame++) {
-        EB_MALLOC_ARRAY(dept_stat_propagate[frame], block_total_count+100);
-        for(int i = 0; i < (block_total_count+100); i++)
+        EB_MALLOC_ARRAY(dept_stat_propagate[frame], block_total_count);
+        for(int i = 0; i < (block_total_count); i++)
             memset(&(dept_stat_propagate[frame][i]), 0, sizeof(dept_stat_ppg_t));
     }
 
