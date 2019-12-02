@@ -43,7 +43,6 @@ int32_t eb_av1_loop_restoration_corners_in_sb(Av1Common *cm, int32_t plane,
     int32_t mi_row, int32_t mi_col, BlockSize bsize,
     int32_t *rcol0, int32_t *rcol1, int32_t *rrow0,
     int32_t *rrow1, int32_t *tile_tl_idx);
-
 static INLINE int has_second_ref(const MbModeInfo *mbmi) {
     return mbmi->block_mi.ref_frame[1] > INTRA_FRAME;
 }
@@ -1688,7 +1687,6 @@ static void write_motion_mode(
 
     return;
 }
-
 //****************************************************************************************************//
 extern  int8_t av1_ref_frame_type(const MvReferenceFrame *const rf);
 uint16_t compound_mode_ctx_map[3][COMP_NEWMV_CTXS] = {
@@ -2341,7 +2339,6 @@ int32_t eb_av1_get_reference_mode_context(
     return ctx;
 }
 int av1_get_intra_inter_context(const MacroBlockD *xd);
-
 int av1_get_reference_mode_context_new(const MacroBlockD *xd);
 
 static INLINE AomCdfProb *av1_get_reference_mode_cdf(const MacroBlockD *xd) {
@@ -6039,13 +6036,11 @@ static INLINE int is_interintra_allowed_mode(const PredictionMode mode) {
 static INLINE int is_interintra_allowed_ref(const MvReferenceFrame rf[2]) {
     return (rf[0] > INTRA_FRAME) && (rf[1] <= INTRA_FRAME);
 }
-
 static INLINE int is_interintra_allowed(const MbModeInfo *mbmi) {
   return is_interintra_allowed_bsize(mbmi->block_mi.sb_type) &&
          is_interintra_allowed_mode(mbmi->block_mi.mode) &&
          is_interintra_allowed_ref(mbmi->block_mi.ref_frame);
 }
-
 int is_interintra_wedge_used(BlockSize sb_type);
 #endif
 
@@ -6754,7 +6749,7 @@ EB_EXTERN EbErrorType write_sb(
 
         cu_ptr = &tb_ptr->final_cu_arr[final_cu_index];
 
-        blk_geom = get_blk_geom_mds(cu_index); // AMIR to be replaced with /*cu_ptr->mds_idx*/
+        blk_geom = get_blk_geom_mds(cu_index);
 
         bsize = blk_geom->bsize;
         assert(bsize < BlockSizeS_ALL);

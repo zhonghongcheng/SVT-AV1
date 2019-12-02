@@ -3065,7 +3065,6 @@ uint32_t qp_scaling_calc(
     uint32_t            temporal_layer_index,
     uint32_t            base_qp)
 {
-    // AMIR to fix
     uint32_t    scaled_qp = 0;
     int         base_qindex;
 
@@ -3228,7 +3227,7 @@ enum {
 #define LOW_QPS_COMP_THRESHOLD         40
 #define HIGH_FILTERED_THRESHOLD     (4<<8) // 8 bit precision
 #define LOW_FILTERED_THRESHOLD      (2<<8) // 8 bit precision
-#define QPS_SW_THRESH                   8  // 100 to shut QPS/QPM (i.e. CORE only)
+#define QPS_SW_THRESH          8
 
 #if TWO_PASS
 #if TWO_PASS_IMPROVEMENT
