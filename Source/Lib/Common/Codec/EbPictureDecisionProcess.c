@@ -837,7 +837,7 @@ EbErrorType signal_derivation_multi_processes_oq(
         else if (picture_control_set_ptr->enc_mode == ENC_M0)
             // Use a single-stage PD if or 1st encoding Pass I_SLICE
             picture_control_set_ptr->pic_depth_mode = (picture_control_set_ptr->slice_type == I_SLICE) ? PIC_ALL_DEPTH_MODE : PIC_MULTI_PASS_PD_MODE_1;
-#if MULTI_PASS_M1_BEYOND
+#if MULTI_PASS_M1_BEYOND && !M1_SQ
         else if (picture_control_set_ptr->enc_mode <= ENC_M2)
             // Use a single-stage PD if or 1st encoding Pass I_SLICE
             picture_control_set_ptr->pic_depth_mode = (picture_control_set_ptr->slice_type == I_SLICE) ? PIC_ALL_DEPTH_MODE : PIC_MULTI_PASS_PD_MODE_2;

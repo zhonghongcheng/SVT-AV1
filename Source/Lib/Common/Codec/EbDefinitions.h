@@ -98,6 +98,7 @@ extern "C" {
 #define GMC_M1_M3                    0
 #define M1_ADOPTIONS_1               0
 #define M1_ADOPTIONS_2               0
+#define M1_SQ                        0
 
 
 #define ONE_PASS_NO_LAD              1 // set the default 1 pass to no adaptive QPS and QPM (Zero LAD)
