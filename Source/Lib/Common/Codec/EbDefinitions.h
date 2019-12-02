@@ -96,8 +96,8 @@ extern "C" {
 #define M3_MD_STAGE_2_COUNT                        1
 #endif
 #define GMC_M1_M3                    0
-#define M1_ADOPTIONS_1               0
-#define M1_ADOPTIONS_2               0
+#define M1_ADOPTIONS_1               1
+#define M1_ADOPTIONS_2               1
 #define M1_SQ                        0
 
 
