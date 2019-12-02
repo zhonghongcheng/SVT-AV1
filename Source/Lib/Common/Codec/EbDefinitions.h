@@ -42,28 +42,29 @@ extern "C" {
 #define M1_ME_HME_SEARCH_AREA                     1
 #define M1_NEW_NEAREST_NEAR_COMB_INJECTION        1
 #define M1_PREDICTIVE_ME_LEVEL                    1
-#define M1_EDGE_BASED_SKIP_ANGLE_INTRA            1
-#define M1_PRUNE_REF_FRAME_FOR_REC_PARTITIONS     1
 #define M1_MD_STAGE_1_COUNT_TH_S                  1
 #define M1_MD_STAGE_1_COUNT_TH_C                  1
 #define M1_MD_STAGE_2_COUNT_TH_S                  1
-#define M1_ENABLE_WM                              1
 #define M1_HALF_QUARTER_PEL_MODE                  1
-#define M1_CDEF_FILTER_MODE                       1
-#define M1_ENABLE_INTERINTRA_COMPOUND             1
 #define M1_GLOBAL_MV_INJECTION                    1
 #define M1_INTER_INTER_WEDGE_VARIANCE_TH          1
 
 #define M1_MD_EXIT_TH                             1
-#define M1_ALLOW_HIGH_PRECISION_MV                1
 #define M1_PIC_OBMC_MODE                          1  // SC ONLY
 #define M1_FRACTIONAL_SEARCH_METHOD               1  // SC ONLY
 #define M1_PIC_DEPTH_MODE                         1
-#define M1_MD_STAGE_2_COUNT                       1
 #define M1_FULL_PEL_REF_WINDOW                    1
 #endif
 //M2 TO M1
 #if  ENABLE_M2 || ENABLE_M3
+#define M1_MD_STAGE_2_COUNT                       1
+#define M1_PRUNE_REF_FRAME_FOR_REC_PARTITIONS     1
+#define M1_ENABLE_WM                              1
+#define M1_ENABLE_INTERINTRA_COMPOUND             1
+#define M1_ALLOW_HIGH_PRECISION_MV                1
+#define M1_EDGE_BASED_SKIP_ANGLE_INTRA            1
+#define M1_CDEF_FILTER_MODE                       1
+
 #define M2_NX4_4XN_PARENT_MV_INJECTION            1
 #define M2_PIC_DEPTH_MODE                         1
 #define M2_INTRA_PRED_MODE                        1
