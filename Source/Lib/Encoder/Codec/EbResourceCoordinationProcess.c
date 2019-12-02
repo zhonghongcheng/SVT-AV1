@@ -692,8 +692,7 @@ void* resource_coordination_kernel(void *input_ptr)
             sb_params_init(sequence_control_set_ptr);
             sb_geom_init(sequence_control_set_ptr);
 #if PRESETS_TUNE // this should be updated to support hbd
-            sequence_control_set_ptr->enable_altrefs = sequence_control_set_ptr->static_config.enable_altrefs &&
-                sequence_control_set_ptr->static_config.encoder_bit_depth == EB_8BIT ? EB_TRUE : EB_FALSE;
+            sequence_control_set_ptr->enable_altrefs = sequence_control_set_ptr->static_config.enable_altrefs ? EB_TRUE : EB_FALSE;
 #else
             sequence_control_set_ptr->enable_altrefs = sequence_control_set_ptr->static_config.enable_altrefs &&
                     sequence_control_set_ptr->static_config.altref_nframes > 1 &&
