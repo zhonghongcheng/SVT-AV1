@@ -1259,7 +1259,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     }
     else
 #endif
-#if MOVE_MR_CHECK
+#if MR_MODE_FIX
 #if MR_CHROMA_LEVEL
         if (1)
 #else
@@ -1280,7 +1280,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
                 CHROMA_MODE_3;
     else // non SC
 #if PRESETS_TUNE
-#if !MOVE_MR_CHECK
+#if !MR_MODE_FIX
 #if MR_CHROMA_LEVEL
         if (1)
 #else

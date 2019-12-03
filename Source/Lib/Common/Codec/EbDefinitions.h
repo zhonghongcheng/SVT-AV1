@@ -34,7 +34,7 @@ extern "C" {
 #endif
 
 #define MR_MODE         0 // To get MR bitstreams using enc-mode 0
-#define MOVE_MR_CHECK   1 // Move the MR_MODE check to before SC check when setting signals 
+#define MR_MODE_FIX     1 // Move the MR_MODE check to before SC check (or other checks) when setting signals 
                           // (Should be loosless for non-SC content, when MR_MODE ON)
 
 #define ENABLE_M1    0 // To get M1  using enc-mode 0

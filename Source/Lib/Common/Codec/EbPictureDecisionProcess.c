@@ -801,7 +801,7 @@ EbErrorType signal_derivation_multi_processes_oq(
     picture_control_set_ptr->tf_enable_hme_level2_flag = tf_enable_hme_level2_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][picture_control_set_ptr->enc_mode];
 #endif
 
-#if MOVE_MR_CHECK
+#if MR_MODE_FIX
 #if MR_PIC_DEPTH_MODE
        if (1)
 #else
@@ -841,7 +841,7 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
 #endif
 #if ENABLE_MULTI_PASS_PD
-#if !MOVE_MR_CHECK
+#if !MR_MODE_FIX
 #if MR_PIC_DEPTH_MODE
        else if (1)
 #else
@@ -1581,6 +1581,15 @@ EbErrorType signal_derivation_multi_processes_oq(
         // 1                 ON for INTRA blocks
 #if ATB_10_BIT
 #if ATB_HBD
+#if MR_MODE_FIX
+#if MR_ATB_MODE
+        if (1)
+#else
+        if(MR_MODE)
+#endif
+            picture_control_set_ptr->atb_mode = 1;
+        else 
+#endif
         if (picture_control_set_ptr->enc_mode <= ENC_M1)
 #else
         if (picture_control_set_ptr->enc_mode <= ENC_M1 &&  !sequence_control_set_ptr->static_config.enable_hbd_mode_decision)
@@ -1595,9 +1604,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
         else
             picture_control_set_ptr->atb_mode = 0;
-#if MR_ATB_MODE
-        picture_control_set_ptr->atb_mode = (picture_control_set_ptr->enc_mode <= ENC_M1) ? 1 : 0;
-#endif
+
 #if M2_ATB_MODE
         picture_control_set_ptr->atb_mode = 0;
 #endif
