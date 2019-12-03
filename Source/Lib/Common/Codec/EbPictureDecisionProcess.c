@@ -801,6 +801,15 @@ EbErrorType signal_derivation_multi_processes_oq(
     picture_control_set_ptr->tf_enable_hme_level2_flag = tf_enable_hme_level2_flag[picture_control_set_ptr->sc_content_detected][sequence_control_set_ptr->input_resolution][picture_control_set_ptr->enc_mode];
 #endif
 
+#if MOVE_MR_CHECK
+#if MR_PIC_DEPTH_MODE
+       if (1)
+#else
+       if (MR_MODE)
+#endif
+            picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
+       else 
+#endif
         if (sc_content_detected) 
 #if PRESETS_TUNE
                 if (picture_control_set_ptr->enc_mode <= ENC_M2)
@@ -832,8 +841,14 @@ EbErrorType signal_derivation_multi_processes_oq(
                 picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
 #endif
 #if ENABLE_MULTI_PASS_PD
-        else if (MR_MODE)            
+#if !MOVE_MR_CHECK
+#if MR_PIC_DEPTH_MODE
+       else if (1)
+#else
+       else if (MR_MODE)
+#endif         
             picture_control_set_ptr->pic_depth_mode = PIC_ALL_DEPTH_MODE;
+#endif
         else if (picture_control_set_ptr->enc_mode == ENC_M0)
             // Use a single-stage PD if or 1st encoding Pass I_SLICE
             picture_control_set_ptr->pic_depth_mode = (picture_control_set_ptr->slice_type == I_SLICE) ? PIC_ALL_DEPTH_MODE : PIC_MULTI_PASS_PD_MODE_1;
@@ -964,7 +979,11 @@ EbErrorType signal_derivation_multi_processes_oq(
     // NSQ_SEARCH_LEVEL6                              Allow only NSQ Inter-NEAREST/NEAR/GLOBAL if parent SQ has no coeff + reordering nsq_table number and testing only 6 NSQ SHAPE
     // NSQ_SEARCH_FULL                                Allow NSQ Intra-FULL and Inter-FULL
 
+#if MR_NSQ_SEARCH_LEVEL
+        if (1)
+#else
         if (MR_MODE)
+#endif
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_FULL;
 #if MULTI_PASS_M1_BEYOND
         else if (picture_control_set_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_0 ||
@@ -1350,7 +1369,11 @@ EbErrorType signal_derivation_multi_processes_oq(
 
     // Set tx search skip weights (MAX_MODE_COST: no skipping; 0: always skipping)
 #if PRESETS_TUNE
+#if MR_TX_WEIGHT
+    if (1)
+#else
     if (MR_MODE) // tx weight
+#endif
         picture_control_set_ptr->tx_weight = MAX_MODE_COST;
     else {
         if (picture_control_set_ptr->tx_search_level == TX_SEARCH_ENC_DEC)
@@ -1498,7 +1521,11 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->intra_pred_mode = 4;
     }
 
+#if MR_INTRA_PRED_MODE
+    if (1)
+#else
     if (MR_MODE)
+#endif
         picture_control_set_ptr->intra_pred_mode = 0;
 #if M3_INTRA_PRED_MODE
     if (picture_control_set_ptr->slice_type == I_SLICE)
@@ -1568,6 +1595,9 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
         else
             picture_control_set_ptr->atb_mode = 0;
+#if MR_ATB_MODE
+        picture_control_set_ptr->atb_mode = (picture_control_set_ptr->enc_mode <= ENC_M1) ? 1 : 0;
+#endif
 #if M2_ATB_MODE
         picture_control_set_ptr->atb_mode = 0;
 #endif
@@ -1576,7 +1606,11 @@ EbErrorType signal_derivation_multi_processes_oq(
         // 1                                     ON
 
 #if SPEED_OPT
+#if MR_COEFF_BASED_SKIP_ATB
+        if (1)
+#else
         if (MR_MODE || picture_control_set_ptr->sc_content_detected)
+#endif
 #else
         if (MR_MODE || picture_control_set_ptr->enc_mode == ENC_M0 || picture_control_set_ptr->sc_content_detected)
 #endif

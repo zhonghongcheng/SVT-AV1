@@ -729,7 +729,9 @@ void* resource_coordination_kernel(void *input_ptr)
                                                                               (sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;
 #endif
 #endif
-
+#if MR_ENABLE_INTERINTRA_COMPOUND
+        sequence_control_set_ptr->seq_header.enable_interintra_compound =  1;
+#endif
 #if M1_ENABLE_INTERINTRA_COMPOUND
         sequence_control_set_ptr->seq_header.enable_interintra_compound =  0;
 #endif

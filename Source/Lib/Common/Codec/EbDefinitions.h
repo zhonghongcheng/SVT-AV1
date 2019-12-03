@@ -32,9 +32,36 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define MR_MODE         0 // To get MR bitstreams using enc-mode 0
+#define MOVE_MR_CHECK   1 // Move the MR_MODE check to before SC check when setting signals 
+                          // (Should be loosless for non-SC content, when MR_MODE ON)
+
 #define ENABLE_M1    0 // To get M1  using enc-mode 0
 #define ENABLE_M2    0 // To get M2  using enc-mode 0
 #define ENABLE_M3    0 // To get M3  using enc-mode 0
+
+// M0 to MR
+#define MR_INTERPOLATION_SEARCH_LEVEL             0
+#define MR_EDGE_BASED_SKIP_ANGLE_INTRA            0
+#define MR_INTER_INTER_WEDGE_VARIANCE_TH          0
+#define MR_CHROMA_LEVEL                           0
+#define MR_MD_EXIT_TH                             0
+#define MR_MD_STAGE_1_CAND_PRUNE_TH               0
+#define MR_MD_STAGE_1_CLASS_PRUNE_TH              0
+#define MR_MD_STAGE_2_CAND_PRUNE_TH               0
+#define MR_MD_STAGE_2_CLASS_PRUNE_TH              0
+#define MR_SQ_WEIGHT                              0
+#define MR_ENABLE_WM                              0
+#define MR_PIC_OBMC_MODE                          0
+#define MR_HALF_QUARTER_PEL_MODE                  0
+#define MR_PIC_DEPTH_MODE                         0
+#define MR_NSQ_SEARCH_LEVEL                       0
+#define MR_TX_WEIGHT                              0
+#define MR_INTRA_PRED_MODE                        0
+#define MR_ATB_MODE                               0
+#define MR_COEFF_BASED_SKIP_ATB                   0
+#define MR_ENABLE_INTERINTRA_COMPOUND             0
 
 // M0 TO M1
 #if ENABLE_M1 || ENABLE_M2 || ENABLE_M3
@@ -170,8 +197,6 @@ extern "C" {
 #ifndef NON_AVX512_SUPPORT
 #define NON_AVX512_SUPPORT
 #endif
-
-#define MR_MODE                           0
 
 #define WARP_UPDATE                       1 // Modified Warp settings: ON for MR mode. ON for ref frames in M0
 #define UPDATE_CDEF                       1 // Update bit cost estimation for CDEF filter

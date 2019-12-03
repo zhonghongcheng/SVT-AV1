@@ -203,7 +203,11 @@ EbErrorType signal_derivation_me_kernel_oq(
             context_ptr->me_context_ptr->use_subpel_flag = 0;
     else
         context_ptr->me_context_ptr->use_subpel_flag = 1;
+#if MR_HALF_QUARTER_PEL_MODE
+    if (1) {
+#else
     if (MR_MODE) {
+#endif
         context_ptr->me_context_ptr->half_pel_mode =
             EX_HP_MODE;
         context_ptr->me_context_ptr->quarter_pel_mode =
@@ -330,7 +334,11 @@ EbErrorType signal_derivation_me_kernel_oq(
             context_ptr->me_context_ptr->use_subpel_flag = 0;
     else
         context_ptr->me_context_ptr->use_subpel_flag = 1;
+#if MR_HALF_QUARTER_PEL_MODE
+    if (1) {
+#else
     if (MR_MODE) {
+#endif
         context_ptr->me_context_ptr->half_pel_mode =
             EX_HP_MODE;
         context_ptr->me_context_ptr->quarter_pel_mode =
@@ -519,7 +527,11 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
             context_ptr->me_context_ptr->use_subpel_flag = 0;
     else
         context_ptr->me_context_ptr->use_subpel_flag = 1;
+#if MR_HALF_QUARTER_PEL_MODE
+    if (1) {
+#else
     if (MR_MODE) {
+#endif
         context_ptr->me_context_ptr->half_pel_mode =
             EX_HP_MODE;
         context_ptr->me_context_ptr->quarter_pel_mode =
@@ -630,7 +642,11 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
             context_ptr->me_context_ptr->use_subpel_flag = 0;
     else
         context_ptr->me_context_ptr->use_subpel_flag = 1;
+#if MR_HALF_QUARTER_PEL_MODE
+    if (1) {
+#else
     if (MR_MODE) {
+#endif
         context_ptr->me_context_ptr->half_pel_mode =
             EX_HP_MODE;
         context_ptr->me_context_ptr->quarter_pel_mode =
