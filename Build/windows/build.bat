@@ -15,7 +15,7 @@ if NOT "%unittest%"=="" set "cmake_eflags=%cmake_eflags% -DBUILD_TESTING=ON"
 if "%vs%"=="2019" (
     cmake ../.. %GENERATOR% -A x64 -DCMAKE_INSTALL_PREFIX=%SYSTEMDRIVE%\svt-encoders -DCMAKE_CONFIGURATION_TYPES="Debug;Release" %cmake_eflags%
 ) else (
-    cmake ../.. %GENERATOR% -DCMAKE_INSTALL_PREFIX=%SYSTEMDRIVE%\svt-encoders -DCMAKE_CONFIGURATION_TYPES="Debug;Release" %cmake_eflags%
+    cmake ../.. %GENERATOR% -DCMAKE_INSTALL_PREFIX=%SYSTEMDRIVE%\svt-encoders %cmake_eflags%
 )
 
 if "%build%"=="y" (

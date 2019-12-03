@@ -130,10 +130,17 @@ extern "C" {
         __m128i max = _mm_max_epu16(in, re);
         __m128i min = _mm_min_epu16(in, re);
         __m128i diff = _mm_sub_epi16(max, min);
+#if 0
         diff = _mm_unpacklo_epi16(diff, _mm_setzero_si128());
         diff = _mm_mullo_epi32(diff, diff);
 
         *sum = _mm256_add_epi64(*sum, _mm256_cvtepu32_epi64(diff));
+#else        
+        diff = _mm_madd_epi16(diff, diff);
+        __m256i zero = _mm256_setzero_si256();
+        zero = _mm256_inserti128_si256(zero, diff, 1);
+        *sum = _mm256_add_epi32(*sum, zero);
+#endif
     }
 
     static INLINE void FullDistortionKernel16_AVX2_INTRIN(
@@ -142,6 +149,7 @@ extern "C" {
         __m256i max = _mm256_max_epu16(in, re);
         __m256i min = _mm256_min_epu16(in, re);
         __m256i diff = _mm256_sub_epi16(max, min);
+#if 0
         __m256i diff_L = _mm256_unpacklo_epi16(diff, _mm256_setzero_si256());
         __m256i diff_H = _mm256_unpackhi_epi16(diff, _mm256_setzero_si256());
         __m256i mul_L = _mm256_mullo_epi32(diff_L, diff_L);
@@ -153,9 +161,21 @@ extern "C" {
             _mm256_unpacklo_epi32(mul_L, _mm256_setzero_si256()));
         *sum = _mm256_add_epi64(*sum, sum_1);
         *sum = _mm256_add_epi64(*sum, sum_2);
+#else 
+        diff = _mm256_madd_epi16(diff, diff);
+        *sum = _mm256_add_epi32(*sum, diff);
+#endif
 
     }
 
+#if 1
+    static INLINE void Sum32To64(__m256i* const sum32, __m256i* const sum64) {
+        //Save partial sum into large 64bit register instead of 32 bit (which could overflow)
+        *sum64 = _mm256_add_epi64(*sum64, _mm256_unpacklo_epi32(*sum32, _mm256_setzero_si256()));
+        *sum64 = _mm256_add_epi64(*sum64, _mm256_unpackhi_epi32(*sum32, _mm256_setzero_si256()));
+        *sum32 = _mm256_setzero_si256();
+    }
+#endif
     static INLINE void SpatialFullDistortionKernel32Leftover_AVX2_INTRIN(
         const uint8_t *const input, const uint8_t *const recon, __m256i *const sum0,
         __m256i *const sum1)

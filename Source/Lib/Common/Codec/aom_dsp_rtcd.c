@@ -386,6 +386,9 @@ void setup_rtcd_internal(EbAsm asm_type)
     eb_av1_inv_txfm2d_add_16x4 = eb_av1_inv_txfm2d_add_16x4_c;
     if (flags & HAS_SSE4_1) eb_av1_inv_txfm2d_add_16x4 = eb_av1_inv_txfm2d_add_16x4_sse4_1;
 
+
+    eb_av1_highbd_warp_affine = eb_av1_highbd_warp_affine_c;
+    if (flags & HAS_SSE4_1) eb_av1_highbd_warp_affine = eb_av1_highbd_warp_affine_sse4_1;
 #ifndef NON_AVX512_SUPPORT
     if (CanUseIntelAVX512()) {
         eb_av1_inv_txfm2d_add_16x16 = eb_av1_inv_txfm2d_add_16x16_avx512;
@@ -1903,6 +1906,9 @@ void setup_rtcd_internal(EbAsm asm_type)
     SET_AVX2(sad_16b_kernel,
              sad_16b_kernel_c,
              sad_16bit_kernel_avx2);
+    SET_SSE2(residual_kernel16bit,
+        residual_kernel16bit_c,
+        residual_kernel16bit_sse2_intrin);
 
 }
 
