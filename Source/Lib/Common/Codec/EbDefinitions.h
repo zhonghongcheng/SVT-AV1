@@ -35,6 +35,8 @@ extern "C" {
 
 #define STAT_UPDATE                  0
 #define STAT_UPDATE_SW               0
+#define STAT_UPDATE_MC_FLOW_NON_ZERO 0
+#define STAT_UPDATE_MC_FLOW_PIC_NUM  0
 #define SU_QPS_I                     0
 #define SU_QPS_B                     0
 #define SU_QPM_I                     0

@@ -413,7 +413,15 @@ void write_stat_info_to_file(
                     stat_ref_info_t *stat_ref_info = &(fstat_ref_info[block_index]);
                     int32_t overlap_area = stat_ref_info->overlap_area[sb_index];
                     int32_t pix_num      = stat_ref_info->pix_num[sb_index];
-                    int64_t mc_flow = 0;//dept_stat_propagate_ptr[block_index].mc_flow * overlap_area / (64*64);
+#if STAT_UPDATE_MC_FLOW_NON_ZERO
+#if STAT_UPDATE_MC_FLOW_PIC_NUM
+                    int64_t mc_flow = dept_stat_propagate_ptr[block_index].mc_flow * pix_num / (64*64);
+#else
+                    int64_t mc_flow = dept_stat_propagate_ptr[block_index].mc_flow * overlap_area / (64*64);
+#endif
+#else
+                    int64_t mc_flow = 0;
+#endif
                     int64_t mc_dep_cost = stat_ref_info->intra_cost[sb_index] + mc_flow;
                     mc_flow = (int64_t)(stat_ref_info->quant_ratio[sb_index] * mc_dep_cost * (1.0 - stat_ref_info->iiratio_nl[sb_index]));
                     mc_flow = mc_flow * temporal_weight / (stat_ref_info->is_bipred[sb_index] ? 2 : 1 );
@@ -445,7 +453,11 @@ void write_stat_info_to_file(
                     stat_ref_info_t *stat_ref_info = &(fstat_ref_info[block_index]);
                     int32_t overlap_area = stat_ref_info->overlap_area[sb_index];
                     int32_t pix_num      = stat_ref_info->pix_num[sb_index];
+#if STAT_UPDATE_MC_FLOW_PIC_NUM
+                    int64_t mc_flow = dept_stat_propagate_ptr[block_index].mc_flow * pix_num / (64*64);
+#else
                     int64_t mc_flow = dept_stat_propagate_ptr[block_index].mc_flow * overlap_area / (64*64);
+#endif
                     int64_t mc_dep_cost = stat_ref_info->intra_cost[sb_index] + mc_flow;
                     int64_t mc_saved = stat_ref_info->mc_saved[sb_index];//dept_stat_propagate_ptr[block_index].mc_saved;
                     mc_flow = (int64_t)(stat_ref_info->quant_ratio[sb_index] * mc_dep_cost * (1.0 - stat_ref_info->iiratio_nl[sb_index]));
