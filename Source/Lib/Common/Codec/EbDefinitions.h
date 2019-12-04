@@ -76,10 +76,10 @@ extern "C" {
 #define NEW_NEAREST_NEAR_COMB_INJECTION_OFF       0
 #define NX4_4XN_PARENT_MV_INJECTION_0             0
 //#define NX4_4XN_PARENT_MV_INJECTION_1             0 // M0 def
-#define WARPED_MOTION_INJECTION_ON                0 // non-SC def
+//#define WARPED_MOTION_INJECTION_ON                0 // non-SC def - test for SC only
 #define WARPED_MOTION_INJECTION_OFF               0 // SC def
 #define UNIPRED3X3_INJECTION_0                    0
-#define UNIPRED3X3_INJECTION_1                    0 // M0,1 def
+//#define UNIPRED3X3_INJECTION_1                    0 // M0,1 def - test for SC only
 #define UNIPRED3X3_INJECTION_2                    0 // M0,1,2 SC def
 #define BIPRED3X3_INJECTION_0                     0
 //#define BIPRED3X3_INJECTION_1                     0 // M0 def
@@ -89,7 +89,7 @@ extern "C" {
 #define PREDICTIVE_ME_LEVEL_2                     0
 #define PREDICTIVE_ME_LEVEL_3                     0
 #define PREDICTIVE_ME_LEVEL_4                     0
-#define PREDICTIVE_ME_LEVEL_5                     0
+//#define PREDICTIVE_ME_LEVEL_5                     0 // test for SC only
 #define USE_MD_STAGING_MODE_0                     0
 //#define USE_MD_STAGING_MODE_1                     0 // M0 def
 
