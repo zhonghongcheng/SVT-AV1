@@ -63,6 +63,36 @@ extern "C" {
 #define MR_COEFF_BASED_SKIP_ATB                   0
 #define MR_ENABLE_INTERINTRA_COMPOUND             0
 
+// Adjust M0 settings - commented out macros are the M0 defaults
+#define DECOUPLE_INTRA_INTER_FAST_LOOP_ON         0
+//#define DECOUPLE_INTRA_INTER_FAST_LOOP_OFF        0 // M0,1,2,3 def
+//#define DFL_FULL_SAD_SEARCH                       0 // not used
+//#define FULL_LOOP_ESCAPE_0                        0 // M0,1,2,3 def
+#define FULL_LOOP_ESCAPE_1                        0
+#define FULL_LOOP_ESCAPE_2                        0
+#define GLOBAL_MV_INJECTION_ON                    0 // M0 def (if enabled only)
+#define GLOBAL_MV_INJECTION_OFF                   0 // M1,2,3 def
+#define NEW_NEAREST_NEAR_COMB_INJECTION_ON        0
+#define NEW_NEAREST_NEAR_COMB_INJECTION_OFF       0
+#define NX4_4XN_PARENT_MV_INJECTION_0             0
+//#define NX4_4XN_PARENT_MV_INJECTION_1             0 // M0 def
+#define WARPED_MOTION_INJECTION_ON                0 // non-SC def
+#define WARPED_MOTION_INJECTION_OFF               0 // SC def
+#define UNIPRED3X3_INJECTION_0                    0
+#define UNIPRED3X3_INJECTION_1                    0 // M0,1 def
+#define UNIPRED3X3_INJECTION_2                    0 // M0,1,2 SC def
+#define BIPRED3X3_INJECTION_0                     0
+//#define BIPRED3X3_INJECTION_1                     0 // M0 def
+#define BIPRED3X3_INJECTION_2                     0
+#define PREDICTIVE_ME_LEVEL_0                     0
+#define PREDICTIVE_ME_LEVEL_1                     0
+#define PREDICTIVE_ME_LEVEL_2                     0
+#define PREDICTIVE_ME_LEVEL_3                     0
+#define PREDICTIVE_ME_LEVEL_4                     0
+#define PREDICTIVE_ME_LEVEL_5                     0
+#define USE_MD_STAGING_MODE_0                     0
+//#define USE_MD_STAGING_MODE_1                     0 // M0 def
+
 // M0 TO M1
 #if ENABLE_M1 || ENABLE_M2 || ENABLE_M3
 #define M1_ENABLE_HME_FLAG                        1
