@@ -64,13 +64,24 @@ extern "C" {
 #define MR_ENABLE_INTERINTRA_COMPOUND             0
 
 // Adjust M0 settings - commented out macros are the M0 defaults
-#define DECOUPLE_INTRA_INTER_FAST_LOOP_ON         0
+#define M1_PIC_DEPTH_MODE                         0
+#define M3_PIC_DEPTH_MODE                         0
+#define M7_PIC_DEPTH_MODE                         0
+#define CDEF_FILTER_MODE_4                        0
+#define CDEF_FILTER_MODE_2                        0
+#define SG_FILTER_MODE_3                          0
+#define SG_FILTER_MODE_1                          0
+#define WN_FILTER_MODE_2                          0
+#define WN_FILTER_MODE_0                          0
+#define HALF_PEL_MODE_REFINEMENT                  0
+
+//#define DECOUPLE_INTRA_INTER_FAST_LOOP_ON         0
 //#define DECOUPLE_INTRA_INTER_FAST_LOOP_OFF        0 // M0,1,2,3 def
 //#define DFL_FULL_SAD_SEARCH                       0 // not used
 //#define FULL_LOOP_ESCAPE_0                        0 // M0,1,2,3 def
-#define FULL_LOOP_ESCAPE_1                        0
+//#define FULL_LOOP_ESCAPE_1                        0
 #define FULL_LOOP_ESCAPE_2                        0
-#define GLOBAL_MV_INJECTION_ON                    0 // M0 def (if enabled only)
+//#define GLOBAL_MV_INJECTION_ON                    0 // M0 def (if enabled only)
 #define GLOBAL_MV_INJECTION_OFF                   0 // M1,2,3 def
 #define NEW_NEAREST_NEAR_COMB_INJECTION_ON        0
 #define NEW_NEAREST_NEAR_COMB_INJECTION_OFF       0
@@ -85,24 +96,13 @@ extern "C" {
 //#define BIPRED3X3_INJECTION_1                     0 // M0 def
 #define BIPRED3X3_INJECTION_2                     0
 #define PREDICTIVE_ME_LEVEL_0                     0
-#define PREDICTIVE_ME_LEVEL_1                     0
+//#define PREDICTIVE_ME_LEVEL_1                     0
 #define PREDICTIVE_ME_LEVEL_2                     0
-#define PREDICTIVE_ME_LEVEL_3                     0
+//#define PREDICTIVE_ME_LEVEL_3                     0
 #define PREDICTIVE_ME_LEVEL_4                     0
 //#define PREDICTIVE_ME_LEVEL_5                     0 // test for SC only
 #define USE_MD_STAGING_MODE_0                     0
 //#define USE_MD_STAGING_MODE_1                     0 // M0 def
-
-#define M1_PIC_DEPTH_MODE                         0
-#define M3_PIC_DEPTH_MODE                         0
-#define M7_PIC_DEPTH_MODE                         0
-#define CDEF_FILTER_MODE_4                        0
-#define CDEF_FILTER_MODE_2                        0
-#define SG_FILTER_MODE_3                          0
-#define SG_FILTER_MODE_1                          0
-#define WN_FILTER_MODE_2                          0
-#define WN_FILTER_MODE_0                          0
-#define HALF_PEL_MODE_REFINEMENT                  0
 
 // M0 TO M1
 #if ENABLE_M1 || ENABLE_M2 || ENABLE_M3

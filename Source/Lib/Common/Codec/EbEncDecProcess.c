@@ -1373,6 +1373,21 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->full_loop_escape = 0;
     else
 #endif
+#if FULL_LOOP_ESCAPE_0
+    if (1)
+        context_ptr->full_loop_escape = 0;
+    else
+#endif
+#if FULL_LOOP_ESCAPE_1
+    if (1)
+        context_ptr->full_loop_escape = 1;
+    else
+#endif
+#if FULL_LOOP_ESCAPE_2
+    if (1)
+        context_ptr->full_loop_escape = 2;
+    else
+#endif
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
 #if PRESETS_TUNE
         if (picture_control_set_ptr->enc_mode <= ENC_M5)
@@ -1388,16 +1403,6 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->full_loop_escape = 2;
 
-#if FULL_LOOP_ESCAPE_0
-    context_ptr->full_loop_escape = 0;
-#endif
-#if FULL_LOOP_ESCAPE_1
-    context_ptr->full_loop_escape = 1;
-#endif
-#if FULL_LOOP_ESCAPE_2
-    context_ptr->full_loop_escape = 2;
-#endif
-
     // Set global MV injection
     // Level                Settings
     // 0                    Injection off (Hsan: but not derivation as used by MV ref derivation)
@@ -1412,6 +1417,16 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         else if (context_ptr->pd_pass == PD_PASS_1) {
             context_ptr->global_mv_injection = 0;
         }
+        else
+#endif
+#if GLOBAL_MV_INJECTION_ON
+        if (1)
+            context_ptr->global_mv_injection = 1;
+        else
+#endif
+#if GLOBAL_MV_INJECTION_OFF
+        if (1)
+            context_ptr->global_mv_injection = 0;
         else
 #endif
 #if GMC_M1_M3
@@ -1446,12 +1461,6 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->global_mv_injection = 0;
 #endif
-#if GLOBAL_MV_INJECTION_ON
-    context_ptr->global_mv_injection = 1;
-#endif
-#if GLOBAL_MV_INJECTION_OFF
-    context_ptr->global_mv_injection = 0;
-#endif
 #if M1_GLOBAL_MV_INJECTION  
  
         context_ptr->global_mv_injection = 0;
@@ -1462,6 +1471,16 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->new_nearest_near_comb_injection = 0;
     else if (context_ptr->pd_pass == PD_PASS_1)
+        context_ptr->new_nearest_near_comb_injection = 0;
+    else
+#endif
+#if NEW_NEAREST_NEAR_COMB_INJECTION_ON
+    if (1)
+        context_ptr->new_nearest_near_comb_injection = 1;
+    else
+#endif
+#if NEW_NEAREST_NEAR_COMB_INJECTION_OFF
+    if (1)
         context_ptr->new_nearest_near_comb_injection = 0;
     else
 #endif
@@ -1479,12 +1498,6 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->new_nearest_near_comb_injection = 0;
 
-#if NEW_NEAREST_NEAR_COMB_INJECTION_ON
-    context_ptr->new_nearest_near_comb_injection = 1;
-#endif
-#if NEW_NEAREST_NEAR_COMB_INJECTION_OFF
-    context_ptr->new_nearest_near_comb_injection = 0;
-#endif
 #if M1_NEW_NEAREST_NEAR_COMB_INJECTION
     context_ptr->new_nearest_near_comb_injection = 0;
 #endif
@@ -1495,6 +1508,16 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->nx4_4xn_parent_mv_injection = 0;
     else if (context_ptr->pd_pass == PD_PASS_1)
         context_ptr->nx4_4xn_parent_mv_injection = 0;
+    else
+#endif
+#if NX4_4XN_PARENT_MV_INJECTION_0
+    if (1)
+        context_ptr->nx4_4xn_parent_mv_injection = 0;
+    else
+#endif
+#if NX4_4XN_PARENT_MV_INJECTION_1
+    if (1)
+        context_ptr->nx4_4xn_parent_mv_injection = 1;
     else
 #endif
 #if PRESETS_TUNE
@@ -1514,12 +1537,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->nx4_4xn_parent_mv_injection = 0;
 #endif
-#if NX4_4XN_PARENT_MV_INJECTION_0
-    context_ptr->nx4_4xn_parent_mv_injection = 0;
-#endif
-#if NX4_4XN_PARENT_MV_INJECTION_1
-    context_ptr->nx4_4xn_parent_mv_injection = 1;
-#endif
+
 #if M2_NX4_4XN_PARENT_MV_INJECTION
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->nx4_4xn_parent_mv_injection = 0;
@@ -1545,17 +1563,20 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     }
     else
 #endif
+#if WARPED_MOTION_INJECTION_ON
+    if (1)
+        context_ptr->warped_motion_injection = 1;
+    else
+#endif
+#if WARPED_MOTION_INJECTION_OFF
+    if (1)
+        context_ptr->warped_motion_injection = 0;
+    else
+#endif
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         context_ptr->warped_motion_injection = 0;
     else
         context_ptr->warped_motion_injection = 1;
-
-#if WARPED_MOTION_INJECTION_ON
-    context_ptr->warped_motion_injection = 1;
-#endif
-#if WARPED_MOTION_INJECTION_OFF
-    context_ptr->warped_motion_injection = 0;
-#endif
 
     // Set unipred3x3 injection
     // Level                Settings
@@ -1569,6 +1590,21 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else if (context_ptr->pd_pass == PD_PASS_1) {
         context_ptr->unipred3x3_injection = 2;
     }
+    else
+#endif
+#if UNIPRED3X3_INJECTION_0
+    if (1)
+        context_ptr->unipred3x3_injection = 0;
+    else
+#endif
+#if UNIPRED3X3_INJECTION_1
+    if (1)
+        context_ptr->unipred3x3_injection = 1;
+    else
+#endif
+#if UNIPRED3X3_INJECTION_2
+    if (1)
+        context_ptr->unipred3x3_injection = 2;
     else
 #endif
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
@@ -1593,15 +1629,6 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->unipred3x3_injection = 0;
 
-#if UNIPRED3X3_INJECTION_0
-    context_ptr->unipred3x3_injection = 0;
-#endif
-#if UNIPRED3X3_INJECTION_1
-    context_ptr->unipred3x3_injection = 1;
-#endif
-#if UNIPRED3X3_INJECTION_2
-    context_ptr->unipred3x3_injection = 2;
-#endif
 #if M2_UNIPRED3X3_INJECTION
 
     if (context_ptr->pd_pass == PD_PASS_0) {
@@ -1631,6 +1658,21 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     }
     else
 #endif
+#if BIPRED3X3_INJECTION_0
+    if (1)
+        context_ptr->bipred3x3_injection = 0;
+    else
+#endif
+#if BIPRED3X3_INJECTION_1
+    if (1)
+        context_ptr->bipred3x3_injection = 1;
+    else
+#endif
+#if BIPRED3X3_INJECTION_2
+    if (1)
+        context_ptr->bipred3x3_injection = 2;
+    else
+#endif
 #if PRESETS_TUNE
         if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
             if (picture_control_set_ptr->enc_mode <= ENC_M4)
@@ -1658,15 +1700,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else
         context_ptr->bipred3x3_injection = 0;
 #endif
-#if BIPRED3X3_INJECTION_0
-    context_ptr->bipred3x3_injection = 0;
-#endif
-#if BIPRED3X3_INJECTION_1
-    context_ptr->bipred3x3_injection = 1;
-#endif
-#if BIPRED3X3_INJECTION_2
-    context_ptr->bipred3x3_injection = 2;
-#endif
+
 #if M3_BIPRED3X3_INJECTION
 
     if (context_ptr->pd_pass == PD_PASS_0) {
@@ -1695,6 +1729,36 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             context_ptr->predictive_me_level = 0;
         else if (context_ptr->pd_pass == PD_PASS_1)
             context_ptr->predictive_me_level = 2;
+        else
+#endif
+#if PREDICTIVE_ME_LEVEL_0
+        if (1)
+            context_ptr->predictive_me_level = 3;
+        else
+#endif
+#if PREDICTIVE_ME_LEVEL_1
+        if (1)
+            context_ptr->predictive_me_level = 4;
+        else
+#endif
+#if PREDICTIVE_ME_LEVEL_2
+        if (1)
+            context_ptr->predictive_me_level = 5;
+        else
+#endif
+#if PREDICTIVE_ME_LEVEL_3
+        if (1)
+            context_ptr->predictive_me_level = 3;
+        else
+#endif
+#if PREDICTIVE_ME_LEVEL_4
+        if (1)
+            context_ptr->predictive_me_level = 4;
+        else
+#endif
+#if PREDICTIVE_ME_LEVEL_5
+        if (1)
+            context_ptr->predictive_me_level = 5;
         else
 #endif
 #if PRESETS_TUNE
@@ -1729,24 +1793,6 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
                     context_ptr->predictive_me_level = 0;
 
-#if PREDICTIVE_ME_LEVEL_0
-    context_ptr->predictive_me_level = 0;
-#endif
-#if PREDICTIVE_ME_LEVEL_1
-    context_ptr->predictive_me_level = 1;
-#endif
-#if PREDICTIVE_ME_LEVEL_2
-    context_ptr->predictive_me_level = 2;
-#endif
-#if PREDICTIVE_ME_LEVEL_3
-    context_ptr->predictive_me_level = 3;
-#endif
-#if PREDICTIVE_ME_LEVEL_4
-    context_ptr->predictive_me_level = 4;
-#endif
-#if PREDICTIVE_ME_LEVEL_5
-    context_ptr->predictive_me_level = 5;
-#endif
 #if M3_PREDICTIVE_ME_LEVEL
         if (picture_control_set_ptr->slice_type != I_SLICE)
             if (context_ptr->pd_pass == PD_PASS_0)
@@ -1814,6 +1860,16 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     else if (context_ptr->pd_pass == PD_PASS_1) {
         context_ptr->md_staging_mode = MD_STAGING_MODE_1;
     }
+    else
+#endif
+#if USE_MD_STAGING_MODE_0
+    if (1)
+        context_ptr->md_staging_mode = MD_STAGING_MODE_0;
+    else
+#endif
+#if USE_MD_STAGING_MODE_1
+    if (1)
+        context_ptr->md_staging_mode = MD_STAGING_MODE_1;
     else
 #endif
     if (picture_control_set_ptr->enc_mode <= ENC_M4)
@@ -1907,12 +1963,6 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->md_staging_mode = MD_STAGING_MODE_0; // Default structure = fast loop + full loop = md_stage_0 + md_stage_3
 #endif
 
-#if USE_MD_STAGING_MODE_0
-    context_ptr->md_staging_mode = MD_STAGING_MODE_0;
-#endif
-#if USE_MD_STAGING_MODE_1
-    context_ptr->md_staging_mode = MD_STAGING_MODE_1;
-#endif
     // Combine MD Class1&2
     // 0                    OFF
     // 1                    ON
