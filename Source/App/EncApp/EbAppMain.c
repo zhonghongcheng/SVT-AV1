@@ -85,6 +85,15 @@ int32_t main(int32_t argc, char* argv[])
     _setmode(_fileno(stdin), _O_BINARY);
     _setmode(_fileno(stdout), _O_BINARY);
 #endif
+#if 1
+    __int64   creBeg, extBeg, krnBeg, usrBeg;
+    __int64   creEnd, extEnd, krnEnd, usrEnd;
+    __int64   i;
+    __int64   krn, usr;
+    DWORD     beg = GetTickCount(), end;
+
+    GetProcessTimes(GetCurrentProcess(), (FILETIME*)&creBeg, (FILETIME*)&extBeg, (FILETIME*)&krnBeg, (FILETIME*)&usrBeg);
+#endif
     // GLOBAL VARIABLES
     EbErrorType            return_error = EB_ErrorNone;            // Error Handling
     AppExitConditionType    exitCondition = APP_ExitConditionNone;    // Processing loop exit condition
@@ -351,7 +360,19 @@ int32_t main(int32_t argc, char* argv[])
             if (appCallbacks[instanceCount])
                 free(appCallbacks[instanceCount]);
         }
+#if 1
+        end = GetTickCount();
+                GetProcessTimes(GetCurrentProcess(), (FILETIME*)&creEnd, (FILETIME*)&extEnd, (FILETIME*)&krnEnd, (FILETIME*)&usrEnd);
 
+                krn = krnEnd - krnBeg;
+                usr = usrEnd - usrBeg;
+                krn /= 10000;
+                usr /= 10000;
+                end -= beg;
+
+                printf("ProcessTimes: %d ms\n", (DWORD)usr + krn);
+                printf("Ticks: %d ms\n", (DWORD)end);
+#endif
         printf("Encoder finished\n");
     }
 

@@ -2431,9 +2431,13 @@ static void pick_wedge(
     int8_t *const best_wedge_sign,
     int8_t *const best_wedge_index)
 {
-
+#if HBD2_COMP
+    uint8_t hbd_mode_decision = context_ptr->hbd_mode_decision == EB_DUAL_BIT_MD ? EB_8_BIT_MD: context_ptr->hbd_mode_decision ;
+#else
+	uint8_t hbd_mode_decision = context_ptr->hbd_mode_decision;
+#endif
 #if COMP_HBD
-    EbPictureBufferDesc  *src_pic = context_ptr->hbd_mode_decision ? picture_control_set_ptr->input_frame16bit : picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr;
+    EbPictureBufferDesc  *src_pic = hbd_mode_decision ? picture_control_set_ptr->input_frame16bit : picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr;
 #else
     EbPictureBufferDesc   *src_pic = picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr;
 #endif
@@ -2453,7 +2457,7 @@ static void pick_wedge(
     DECLARE_ALIGNED(32, int16_t, residual0[MAX_SB_SQUARE]);  // src - pred0
 
 #if COMP_HBD //CCODE
-    if (context_ptr->hbd_mode_decision) {
+    if (hbd_mode_decision) {
         uint16_t *src_buf_hbd = (uint16_t*)src_pic->buffer_y + (context_ptr->cu_origin_x + src_pic->origin_x) + (context_ptr->cu_origin_y + src_pic->origin_y) * src_pic->stride_y;
         aom_highbd_subtract_block(bh, bw, residual0, bw, (uint8_t*)src_buf_hbd/*src->buf*/, src_pic->stride_y/*src->stride*/, (uint8_t*)p0, bw, EB_10BIT);
     }
@@ -2502,6 +2506,11 @@ static int8_t estimate_wedge_sign(
     const uint8_t *pred1,
     int stride1)
 {
+#if HBD2_COMP
+    uint8_t hbd_mode_decision = context_ptr->hbd_mode_decision == EB_DUAL_BIT_MD ? EB_8_BIT_MD: context_ptr->hbd_mode_decision ;
+#else
+    uint8_t hbd_mode_decision = context_ptr->hbd_mode_decision;
+#endif
     static const BlockSize split_qtr[BlockSizeS_ALL] = {
         //                            4X4
         BLOCK_INVALID,
@@ -2532,7 +2541,7 @@ static int8_t estimate_wedge_sign(
 
     const aom_variance_fn_ptr_t *fn_ptr = &mefn_ptr[bsize];
 #if COMP_HBD // TO BE FIXED
-    EbPictureBufferDesc  *src_pic = context_ptr->hbd_mode_decision ? picture_control_set_ptr->input_frame16bit : picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr;
+    EbPictureBufferDesc  *src_pic = hbd_mode_decision ? picture_control_set_ptr->input_frame16bit : picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr;
 #else
     EbPictureBufferDesc   *src_pic = picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr;
 #endif
@@ -2654,6 +2663,11 @@ static void  pick_interinter_seg(
     const int16_t *const residual1,
     const int16_t *const diff10)
 {
+#if HBD2_COMP
+    uint8_t hbd_mode_decision = context_ptr->hbd_mode_decision == EB_DUAL_BIT_MD ? EB_8_BIT_MD: context_ptr->hbd_mode_decision ;
+#else
+    uint8_t hbd_mode_decision = context_ptr->hbd_mode_decision;
+#endif
     const int bw = block_size_wide[bsize];
     const int bh = block_size_high[bsize];
     const int N = 1 << num_pels_log2_lookup[bsize];
@@ -2672,7 +2686,7 @@ static void  pick_interinter_seg(
 
         // build mask and inverse
 #if COMP_HBD //CCODE
-        if (context_ptr->hbd_mode_decision)
+        if (hbd_mode_decision)
             av1_build_compound_diffwtd_mask_highbd(tmp_mask[cur_mask_type], cur_mask_type,
                  p0, bw, p1, bw, bh, bw, EB_10BIT);
         else
@@ -2727,8 +2741,13 @@ void search_compound_diff_wedge(
 
     //if (*calc_pred_masked_compound)
     {
+#if HBD2_COMP
+        uint8_t hbd_mode_decision = context_ptr->hbd_mode_decision == EB_DUAL_BIT_MD ? EB_8_BIT_MD: context_ptr->hbd_mode_decision ;
+#else
+        uint8_t hbd_mode_decision = context_ptr->hbd_mode_decision ;
+#endif
 #if COMP_HBD
-        EbPictureBufferDesc  *src_pic = context_ptr->hbd_mode_decision ? picture_control_set_ptr->input_frame16bit : picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr;
+        EbPictureBufferDesc  *src_pic = hbd_mode_decision ? picture_control_set_ptr->input_frame16bit : picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr;
 #else
         EbPictureBufferDesc   *src_pic = picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr;
 #endif
@@ -2764,14 +2783,14 @@ void search_compound_diff_wedge(
         assert(list_idx1 < MAX_NUM_OF_REF_PIC_LIST);
 #if COMP_HBD
         if (ref_idx_l0 >= 0)
-            ref_pic_list0 = context_ptr->hbd_mode_decision ?
+            ref_pic_list0 = hbd_mode_decision ?
                             ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[list_idx0][ref_idx_l0]->object_ptr)->reference_picture16bit :
                             ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[list_idx0][ref_idx_l0]->object_ptr)->reference_picture;
         else
             ref_pic_list0 = (EbPictureBufferDesc*)EB_NULL;
 
         if (ref_idx_l1 >= 0)
-            ref_pic_list1 = context_ptr->hbd_mode_decision ?
+            ref_pic_list1 = hbd_mode_decision ?
                             ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[list_idx1][ref_idx_l1]->object_ptr)->reference_picture16bit :
                             ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[list_idx1][ref_idx_l1]->object_ptr)->reference_picture;
         else
@@ -2792,7 +2811,7 @@ void search_compound_diff_wedge(
         pred_desc.buffer_y = context_ptr->pred0;
 
         //we call the regular inter prediction path here(no compound)
-        av1_inter_prediction_function_table[context_ptr->hbd_mode_decision > EB_8_BIT_MD](
+        av1_inter_prediction_function_table[hbd_mode_decision > EB_8_BIT_MD](
             picture_control_set_ptr,
             0,//fixed interpolation filter for compound search
             context_ptr->cu_ptr,
@@ -2826,14 +2845,14 @@ void search_compound_diff_wedge(
             0,          //output origin_x,
             0,          //output origin_y,
             0,//do chroma
-             context_ptr->hbd_mode_decision ? EB_10BIT : EB_8BIT);
+            hbd_mode_decision ? EB_10BIT : EB_8BIT);
 
         //ref1 prediction
         mv_unit.pred_direction = UNI_PRED_LIST_1;
         pred_desc.buffer_y = context_ptr->pred1;
 
         //we call the regular inter prediction path here(no compound)
-        av1_inter_prediction_function_table[context_ptr->hbd_mode_decision > EB_8_BIT_MD](
+        av1_inter_prediction_function_table[hbd_mode_decision > EB_8_BIT_MD](
             picture_control_set_ptr,
             0,//fixed interpolation filter for compound search
             context_ptr->cu_ptr,
@@ -2867,10 +2886,10 @@ void search_compound_diff_wedge(
             0,          //output origin_x,
             0,          //output origin_y,
             0,//do chroma
-            context_ptr->hbd_mode_decision ? EB_10BIT : EB_8BIT);
+            hbd_mode_decision ? EB_10BIT : EB_8BIT);
 
 #if COMP_HBD //CCODE
-        if (context_ptr->hbd_mode_decision) {
+        if (hbd_mode_decision) {
             uint16_t *src_buf_hbd = (uint16_t*)src_pic->buffer_y + (context_ptr->cu_origin_x + src_pic->origin_x) + (context_ptr->cu_origin_y + src_pic->origin_y) * src_pic->stride_y;
             aom_highbd_subtract_block(bheight, bwidth, context_ptr->residual1, bwidth,(uint8_t*)  src_buf_hbd, src_pic->stride_y, (uint8_t*) context_ptr->pred1, bwidth,EB_10BIT);
             aom_highbd_subtract_block(bheight, bwidth, context_ptr->diff10, bwidth, (uint8_t*) context_ptr->pred1, bwidth, (uint8_t*) context_ptr->pred0, bwidth,EB_10BIT);
@@ -4467,7 +4486,9 @@ static INLINE void calc_target_weighted_pred_above(
 {
     (void)nb_mi;
     (void)num_planes;
+#if !OMARK
     (void)is16bit;
+#endif
     struct calc_target_weighted_pred_ctxt *ctxt =
         (struct calc_target_weighted_pred_ctxt *)fun_ctxt;
 
@@ -4476,6 +4497,26 @@ static INLINE void calc_target_weighted_pred_above(
 
     int32_t *wsrc = ctxt->wsrc_buf + (rel_mi_col * MI_SIZE);
     int32_t *mask = ctxt->mask_buf + (rel_mi_col * MI_SIZE);
+#if OMARK
+    if(is16bit) {
+        const uint16_t *tmp = (uint16_t *)ctxt->tmp + rel_mi_col * MI_SIZE;
+
+        {
+            for (int row = 0; row < ctxt->overlap; ++row) {
+                const uint8_t m0 = mask1d[row];
+                const uint8_t m1 = AOM_BLEND_A64_MAX_ALPHA - m0;
+                for (int col = 0; col < nb_mi_width * MI_SIZE; ++col) {
+                    wsrc[col] = m1 * tmp[col];
+                    mask[col] = m0;
+                }
+                wsrc += bw;
+                mask += bw;
+                tmp += ctxt->tmp_stride;
+            }
+        }
+    }
+else {
+#endif
     const uint8_t *tmp = ctxt->tmp + rel_mi_col * MI_SIZE;
 
     {
@@ -4489,8 +4530,11 @@ static INLINE void calc_target_weighted_pred_above(
             wsrc += bw;
             mask += bw;
             tmp += ctxt->tmp_stride;
-        }
+        }// intrinsic
     }
+#if OMARK
+    }
+#endif
 }
 
 static INLINE void calc_target_weighted_pred_left(
@@ -4504,8 +4548,9 @@ static INLINE void calc_target_weighted_pred_left(
 {
     (void)nb_mi;
     (void)num_planes;
+#if !OMARK
     (void)is16bit;
-
+#endif
     struct calc_target_weighted_pred_ctxt *ctxt =
         (struct calc_target_weighted_pred_ctxt *)fun_ctxt;
 
@@ -4514,6 +4559,27 @@ static INLINE void calc_target_weighted_pred_left(
 
     int32_t *wsrc = ctxt->wsrc_buf + (rel_mi_row * MI_SIZE * bw);
     int32_t *mask = ctxt->mask_buf + (rel_mi_row * MI_SIZE * bw);
+#if OMARK
+    if (is16bit) {
+        const uint16_t *tmp = (uint16_t *)ctxt->tmp + (rel_mi_row * MI_SIZE * ctxt->tmp_stride);
+
+        {
+            for (int row = 0; row < nb_mi_height * MI_SIZE; ++row) {
+                for (int col = 0; col < ctxt->overlap; ++col) {
+                    const uint8_t m0 = mask1d[col];
+                    const uint8_t m1 = AOM_BLEND_A64_MAX_ALPHA - m0;
+                    wsrc[col] = (wsrc[col] >> AOM_BLEND_A64_ROUND_BITS) * m0 +
+                        (tmp[col] << AOM_BLEND_A64_ROUND_BITS) * m1;
+                    mask[col] = (mask[col] >> AOM_BLEND_A64_ROUND_BITS) * m0;
+                }
+                wsrc += bw;
+                mask += bw;
+                tmp += ctxt->tmp_stride;
+            }
+        }
+    }
+    else {
+#endif
     const uint8_t *tmp = ctxt->tmp + (rel_mi_row * MI_SIZE * ctxt->tmp_stride);
 
     {
@@ -4529,7 +4595,10 @@ static INLINE void calc_target_weighted_pred_left(
             mask += bw;
             tmp += ctxt->tmp_stride;
         }
+    } // intrinsic
+#if OMARK
     }
+#endif
 
 }
 // This function has a structure similar to av1_build_obmc_inter_prediction
@@ -4582,7 +4651,11 @@ static void calc_target_weighted_pred(
     const uint8_t           *left,
     int                     left_stride)
 {
+#if OMARK
+    uint8_t is16bit = context_ptr->hbd_mode_decision > EB_8_BIT_MD ;
+#else
     uint8_t is16bit =0;
+#endif
     const BlockSize bsize = context_ptr->blk_geom->bsize;
     const int bw = xd->n4_w << MI_SIZE_LOG2;
     const int bh = xd->n4_h << MI_SIZE_LOG2;
@@ -4637,8 +4710,23 @@ static void calc_target_weighted_pred(
             calc_target_weighted_pred_left,
             &ctxt);
     }
+#if OMARK
+    EbPictureBufferDesc   *src_pic =  is16bit  ? picture_control_set_ptr->input_frame16bit : picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr;
+    if (is16bit) {
+        const uint16_t        *src = (uint16_t*)src_pic->buffer_y + (context_ptr->cu_origin_x + src_pic->origin_x) + (context_ptr->cu_origin_y + src_pic->origin_y) * src_pic->stride_y;
 
+        for (int row = 0; row < bh; ++row) {
+            for (int col = 0; col < bw; ++col) {
+                wsrc_buf[col] = src[col] * src_scale - wsrc_buf[col];
+            }
+            wsrc_buf += bw;
+            src += src_pic->stride_y;
+        }
+    }
+    else {
+#else
     EbPictureBufferDesc   *src_pic = picture_control_set_ptr->parent_pcs_ptr->enhanced_picture_ptr;
+#endif
     const uint8_t         *src = src_pic->buffer_y + (context_ptr->cu_origin_x + src_pic->origin_x) + (context_ptr->cu_origin_y + src_pic->origin_y) * src_pic->stride_y;
 
     for (int row = 0; row < bh; ++row) {
@@ -4646,8 +4734,11 @@ static void calc_target_weighted_pred(
             wsrc_buf[col] = src[col] * src_scale - wsrc_buf[col];
         }
         wsrc_buf += bw;
-        src += src_pic->stride_y;
+        src += src_pic->stride_y;// INTRINSIC
     }
+#if OMARK
+    }
+#endif
 
 }
 /* perform all neigh predictions and get wighted src to be used for obmc
@@ -4657,29 +4748,57 @@ void precompute_obmc_data(
     PictureControlSet            *picture_control_set_ptr,
     ModeDecisionContext          *context_ptr)
 {
-
+#if OMARK
+    uint16_t * tmp_obmc_bufs[2];
+#else
     uint8_t * tmp_obmc_bufs[2];
-
+#endif
     tmp_obmc_bufs[0] = context_ptr->obmc_buff_0;
     tmp_obmc_bufs[1] = context_ptr->obmc_buff_1;
 
 
+#if OMARK
+    uint16_t *dst_buf1[MAX_MB_PLANE], *dst_buf2[MAX_MB_PLANE];
+#else
     uint8_t *dst_buf1[MAX_MB_PLANE], *dst_buf2[MAX_MB_PLANE];
+#endif
     int dst_stride1[MAX_MB_PLANE] = { MAX_SB_SIZE, MAX_SB_SIZE, MAX_SB_SIZE };
     int dst_stride2[MAX_MB_PLANE] = { MAX_SB_SIZE, MAX_SB_SIZE, MAX_SB_SIZE };
 
     {
+#if OMARK
+        dst_buf1[0] = (uint16_t *)tmp_obmc_bufs[0];
+        dst_buf1[1] = (uint16_t *)tmp_obmc_bufs[0] + MAX_SB_SQUARE;
+        dst_buf1[2] = (uint16_t *)tmp_obmc_bufs[0] + MAX_SB_SQUARE * 2;
+        dst_buf2[0] = (uint16_t *)tmp_obmc_bufs[1];
+        dst_buf2[1] = (uint16_t *)tmp_obmc_bufs[1] + MAX_SB_SQUARE;
+        dst_buf2[2] = (uint16_t *)tmp_obmc_bufs[1] + MAX_SB_SQUARE * 2;
+#else
         dst_buf1[0] = tmp_obmc_bufs[0];
         dst_buf1[1] = tmp_obmc_bufs[0] + MAX_SB_SQUARE;
         dst_buf1[2] = tmp_obmc_bufs[0] + MAX_SB_SQUARE * 2;
         dst_buf2[0] = tmp_obmc_bufs[1];
         dst_buf2[1] = tmp_obmc_bufs[1] + MAX_SB_SQUARE;
         dst_buf2[2] = tmp_obmc_bufs[1] + MAX_SB_SQUARE * 2;
+#endif
     }
 
     int mi_row = context_ptr->cu_origin_y >> 2;
     int mi_col = context_ptr->cu_origin_x >> 2;
+#if OMARK
+    if (context_ptr->hbd_mode_decision) {
+        build_prediction_by_above_preds_hbd(
+            1,
+            context_ptr->blk_geom->bsize, picture_control_set_ptr, context_ptr->cu_ptr->av1xd, mi_row, mi_col, dst_buf1,
+            dst_stride1);
 
+        build_prediction_by_left_preds_hbd(
+            1,
+            context_ptr->blk_geom->bsize, picture_control_set_ptr, context_ptr->cu_ptr->av1xd, mi_row, mi_col, dst_buf2,
+            dst_stride2);
+    }
+    else {
+#endif    
     build_prediction_by_above_preds(
         1,
         context_ptr->blk_geom->bsize, picture_control_set_ptr, context_ptr->cu_ptr->av1xd, mi_row, mi_col, dst_buf1,
@@ -4689,13 +4808,19 @@ void precompute_obmc_data(
         1,
         context_ptr->blk_geom->bsize, picture_control_set_ptr, context_ptr->cu_ptr->av1xd, mi_row, mi_col, dst_buf2,
         dst_stride2);
-
-
+#if OMARK
+    }
+#endif
     calc_target_weighted_pred(
         picture_control_set_ptr,
         context_ptr,
+#if OMARK
+        picture_control_set_ptr->parent_pcs_ptr->av1_cm, context_ptr->cu_ptr->av1xd, mi_row, mi_col, (uint8_t*)dst_buf1[0],
+        dst_stride1[0] , (uint8_t*)dst_buf2[0]  ,
+#else
         picture_control_set_ptr->parent_pcs_ptr->av1_cm, context_ptr->cu_ptr->av1xd, mi_row, mi_col, dst_buf1[0],
         dst_stride1[0] , dst_buf2[0]  ,
+#endif
         dst_stride2[0] );
 
 }
@@ -5495,7 +5620,9 @@ EbErrorType av1_inter_prediction_hbd(
     EbBool                          perform_chroma,
     uint8_t                         bit_depth)
 {
+#if !OMARK
     (void)use_precomputed_obmc;
+#endif
     (void) md_context;
 
     EbErrorType  return_error = EB_ErrorNone;
@@ -6179,6 +6306,20 @@ EbErrorType av1_inter_prediction_hbd(
 
         int mi_row = pu_origin_y >> 2;
         int mi_col = pu_origin_x >> 2;
+#if OMARK
+        use_precomputed_obmc=0;
+        if (use_precomputed_obmc)
+        {
+            dst_buf1[0] = (uint16_t*)md_context->obmc_buff_0;
+            dst_buf1[1] = (uint16_t*) md_context->obmc_buff_0 + MAX_SB_SQUARE;
+            dst_buf1[2] = (uint16_t*)md_context->obmc_buff_0 + MAX_SB_SQUARE*2;
+            dst_buf2[0] = (uint16_t*)md_context->obmc_buff_1;
+            dst_buf2[1] = (uint16_t*)md_context->obmc_buff_1 + MAX_SB_SQUARE;
+            dst_buf2[2] = (uint16_t*)md_context->obmc_buff_1 + MAX_SB_SQUARE*2;
+        }
+        else
+        {
+#endif
 
         build_prediction_by_above_preds_hbd(
             perform_chroma,
@@ -6189,7 +6330,9 @@ EbErrorType av1_inter_prediction_hbd(
             perform_chroma,
             blk_geom->bsize, picture_control_set_ptr, cu_ptr->av1xd, mi_row, mi_col, dst_buf2,
             dst_stride2);
-
+#if OMARK
+        }
+#endif
         uint16_t * final_dst_ptr_y  = (uint16_t*) prediction_ptr->buffer_y + prediction_ptr->origin_x + dst_origin_x + (prediction_ptr->origin_y + dst_origin_y) * prediction_ptr->stride_y;
         uint16_t  final_dst_stride_y = prediction_ptr->stride_y;
 
