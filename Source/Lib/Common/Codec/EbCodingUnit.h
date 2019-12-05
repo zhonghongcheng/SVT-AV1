@@ -591,7 +591,70 @@ extern "C" {
 #endif
         TileInfo tile_info;
     } LargestCodingUnit;
+#if SIMPLE_MOTION_SEARCH_SPLIT
 
+// Structure to hold snapshot of coding context during the mode picking process
+//typedef struct {
+// // MB_MODE_INFO mic;
+// // MB_MODE_INFO_EXT mbmi_ext;
+//  uint8_t *color_index_map[2];
+//  uint8_t *blk_skip;
+//
+//  TranLow *coeff[MAX_MB_PLANE];
+//  TranLow *qcoeff[MAX_MB_PLANE];
+//  TranLow *dqcoeff[MAX_MB_PLANE];
+//  uint16_t *eobs[MAX_MB_PLANE];
+//  uint8_t *txb_entropy_ctx[MAX_MB_PLANE];
+//
+//  int num_4x4_blk;
+//  // For current partition, only if all Y, U, and V transform blocks'
+//  // coefficients are quantized to 0, skippable is set to 1.
+//  int skippable;
+//  int best_mode_index;
+//  int hybrid_pred_diff;
+//  int comp_pred_diff;
+//  int single_pred_diff;
+//
+//  //RD_STATS rd_stats;
+//
+//  int rd_mode_is_ready;  // Flag to indicate whether rd pick mode decision has
+//                         // been made.
+//
+//  // motion vector cache for adaptive motion search control in partition
+//  // search loop
+//  MV pred_mv[REF_FRAMES];
+//  PartitionType partition;
+//} PICK_MODE_CONTEXT;
+typedef struct PC_TREE {
+  PartitionType partitioning;
+  BlockSize block_size;
+  //PICK_MODE_CONTEXT none;
+  //PICK_MODE_CONTEXT horizontal[2];
+  //PICK_MODE_CONTEXT vertical[2];
+  //PICK_MODE_CONTEXT horizontala[3];
+  //PICK_MODE_CONTEXT horizontalb[3];
+  //PICK_MODE_CONTEXT verticala[3];
+  //PICK_MODE_CONTEXT verticalb[3];
+  //PICK_MODE_CONTEXT horizontal4[4];
+  //PICK_MODE_CONTEXT vertical4[4];
+  struct PC_TREE *split[4];
+  int index;
+
+  // Simple motion search_features
+  MV mv_ref_fulls[REF_FRAMES];
+  unsigned int sms_none_feat[2];
+  unsigned int sms_rect_feat[8];
+  int sms_none_valid;
+  int sms_rect_valid;
+} PC_TREE;
+
+#define FEATURE_SIZE_SMS_SPLIT 17
+#define FEATURE_SMS_NONE_FLAG 1
+#define FEATURE_SMS_SPLIT_FLAG (1 << 1)
+#define FEATURE_SMS_RECT_FLAG (1 << 2)
+#define FEATURE_SMS_SPLIT_MODEL_FLAG \
+  (FEATURE_SMS_NONE_FLAG | FEATURE_SMS_SPLIT_FLAG)
+#endif
     extern EbErrorType largest_coding_unit_ctor(
         LargestCodingUnit             *larget_coding_unit_ptr,
         uint8_t                        sb_sz,

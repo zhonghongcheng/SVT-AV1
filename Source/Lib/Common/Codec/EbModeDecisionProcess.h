@@ -96,7 +96,9 @@ extern "C" {
         InterPredictionContext       *inter_prediction_context;
         MdCodingUnit                  *md_local_cu_unit;
         CodingUnit                    *md_cu_arr_nsq;
-
+#if SIMPLE_MOTION_SEARCH_SPLIT
+        PC_TREE                       *pc_root;
+#endif
         NeighborArrayUnit            *intra_luma_mode_neighbor_array;
         NeighborArrayUnit            *intra_chroma_mode_neighbor_array;
         NeighborArrayUnit            *mv_neighbor_array;
@@ -362,7 +364,10 @@ extern "C" {
     // square cost weighting for deciding if a/b shapes could be skipped
     uint32_t sq_weight;
 #endif
-
+#if LESS_4_PARTITIONS
+    int partition_horz4_allowed;
+    int partition_vert4_allowed;
+#endif
 #if MULTI_PASS_PD_SUPPORT
     uint8_t interpolation_search_level;
     // Signal to control initial and final pass PD setting(s)

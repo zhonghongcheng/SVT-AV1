@@ -520,7 +520,10 @@ void setup_rtcd_internal(EbAsm asm_type)
     if (flags & HAS_SSE4_1) aom_highbd_blend_a64_hmask = aom_highbd_blend_a64_hmask_sse4_1;
     aom_highbd_blend_a64_vmask = aom_highbd_blend_a64_vmask_c;
     if (flags & HAS_SSE4_1) aom_highbd_blend_a64_vmask = aom_highbd_blend_a64_vmask_sse4_1;
-
+#if AUTO_MAX_PARTITION || LESS_4_PARTITIONS
+        av1_nn_predict = av1_nn_predict_c;
+        //if (flags & HAS_SSE3) av1_nn_predict = av1_nn_predict_sse3;
+#endif
     eb_aom_paeth_predictor_16x16 = eb_aom_paeth_predictor_16x16_c;
     if (flags & HAS_SSSE3) eb_aom_paeth_predictor_16x16 = eb_aom_paeth_predictor_16x16_ssse3;
     if (flags & HAS_AVX2) eb_aom_paeth_predictor_16x16 = eb_aom_paeth_predictor_16x16_avx2;
