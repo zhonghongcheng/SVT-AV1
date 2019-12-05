@@ -93,6 +93,17 @@ extern "C" {
 #define USE_MD_STAGING_MODE_0                     0
 //#define USE_MD_STAGING_MODE_1                     0 // M0 def
 
+#define M1_PIC_DEPTH_MODE                         0
+#define M3_PIC_DEPTH_MODE                         0
+#define M7_PIC_DEPTH_MODE                         0
+#define CDEF_FILTER_MODE_4                        0
+#define CDEF_FILTER_MODE_2                        0
+#define SG_FILTER_MODE_3                          0
+#define SG_FILTER_MODE_1                          0
+#define WN_FILTER_MODE_2                          0
+#define WN_FILTER_MODE_0                          0
+#define HALF_PEL_MODE_REFINEMENT                  0
+
 // M0 TO M1
 #if ENABLE_M1 || ENABLE_M2 || ENABLE_M3
 #define M1_ENABLE_HME_FLAG                        1
@@ -109,7 +120,7 @@ extern "C" {
 #define M1_MD_EXIT_TH                             1
 #define M1_PIC_OBMC_MODE                          1  // SC ONLY
 #define M1_FRACTIONAL_SEARCH_METHOD               1  // SC ONLY
-#define M1_PIC_DEPTH_MODE                         1
+//#define M1_PIC_DEPTH_MODE                         1
 #define M1_FULL_PEL_REF_WINDOW                    1
 #endif
 //M2 TO M1
@@ -143,7 +154,7 @@ extern "C" {
 #define M3_TRELLIS_QUANT_COEFF_OPTIMIZATION        1
 #define M3_PERFORM_QUANTIZE_FP                     1         //(TRELLIS SHOULD BE ON TO BE TESTED)
 #define M3_PIC_OBMC_MODE                           1
-#define M3_PIC_DEPTH_MODE                          1
+//#define M3_PIC_DEPTH_MODE                          1
 #define M3_LOOP_FILTER_MODE                        1
 #define M3_SG_FILTER_MODE                          1
 #define M3_TX_SEARCH_REDUCED_SET                   1

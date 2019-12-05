@@ -903,6 +903,12 @@ EbErrorType signal_derivation_multi_processes_oq(
             else
                 picture_control_set_ptr->pic_depth_mode = PIC_SB_SWITCH_DEPTH_MODE;
 #endif
+#if M7_PIC_DEPTH_MODE
+        if (picture_control_set_ptr->slice_type == I_SLICE)
+            picture_control_set_ptr->pic_depth_mode = PIC_SQ_NON4_DEPTH_MODE;
+        else
+            picture_control_set_ptr->pic_depth_mode = PIC_SB_SWITCH_DEPTH_MODE;
+#endif
 #if M3_PIC_DEPTH_MODE
         if (sc_content_detected)
             if (picture_control_set_ptr->slice_type == I_SLICE)
@@ -917,6 +923,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 #elif M1_PIC_DEPTH_MODE
         picture_control_set_ptr->pic_depth_mode = (picture_control_set_ptr->slice_type == I_SLICE) ? PIC_ALL_DEPTH_MODE : PIC_MULTI_PASS_PD_MODE_2;
 #endif
+
         if (picture_control_set_ptr->pic_depth_mode < PIC_SQ_DEPTH_MODE)
             assert(sequence_control_set_ptr->nsq_present == 1 && "use nsq_present 1");
 
@@ -944,7 +951,6 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->enable_adaptive_ol_partitioning = sequence_control_set_ptr->static_config.olpd_refinement;
         }
 #else
-
 #if PREDICT_NSQ_SHAPE
     // Depth Level                           Settings
     // 0                                     pred only
@@ -1280,7 +1286,26 @@ EbErrorType signal_derivation_multi_processes_oq(
     }
     else
         picture_control_set_ptr->cdef_filter_mode = 0;
-
+#endif
+#if CDEF_FILTER_MODE_4
+    if (sequence_control_set_ptr->seq_header.enable_cdef && frm_hdr->allow_intrabc == 0) {
+        if (sc_content_detected)
+            picture_control_set_ptr->cdef_filter_mode = 4;
+        else
+            picture_control_set_ptr->cdef_filter_mode = 4;
+    }
+    else
+        picture_control_set_ptr->cdef_filter_mode = 0;
+#endif
+#if CDEF_FILTER_MODE_2
+    if (sequence_control_set_ptr->seq_header.enable_cdef && frm_hdr->allow_intrabc == 0) {
+        if (sc_content_detected)
+            picture_control_set_ptr->cdef_filter_mode = 0;
+        else
+            picture_control_set_ptr->cdef_filter_mode = 2;
+    }
+    else
+        picture_control_set_ptr->cdef_filter_mode = 0;
 #endif
 
     // SG Level                                    Settings
@@ -1316,7 +1341,12 @@ EbErrorType signal_derivation_multi_processes_oq(
         cm->sg_filter_mode = 4;
     else
         cm->sg_filter_mode = 3;
-
+#endif
+#if SG_FILTER_MODE_3
+        cm->sg_filter_mode = 3;
+#endif
+#if SG_FILTER_MODE_1
+        cm->sg_filter_mode = 1;
 #endif
     // WN Level                                     Settings
     // 0                                            OFF
@@ -1341,6 +1371,13 @@ EbErrorType signal_derivation_multi_processes_oq(
         cm->wn_filter_mode = 2;
     else
         cm->wn_filter_mode = 0;
+
+#if WN_FILTER_MODE_2
+    cm->wn_filter_mode = 2;
+#endif
+#if WN_FILTER_MODE_0
+    cm->wn_filter_mode = 0;
+#endif
 
     // Tx_search Level                                Settings
     // 0                                              OFF
