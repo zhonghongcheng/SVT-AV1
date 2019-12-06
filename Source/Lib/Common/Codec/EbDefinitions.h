@@ -32,8 +32,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#define ML_TEST                      0
-#if ML_TEST1
+#define ML_TEST                      1
+#if ML_TEST
 #define AUTO_MAX_PARTITION           1
 #if AUTO_MAX_PARTITION
 #define USE_ADAPT_PRED               1
