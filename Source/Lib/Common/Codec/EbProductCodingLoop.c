@@ -8724,13 +8724,9 @@ void av1_ml_prune_4_partition(
 #undef FEATURES
 #undef LABELS
 #endif
-
 #if LESS_RECTANGULAR_CHECK_LEVEL
 #if LESS_4_PARTITIONS
 void update_skip_next_nsq(
-#else
-void update_skip_next_nsq_for_a_b_shapes(
-#endif
     ModeDecisionContext *context_ptr,
     uint64_t *sq_cost, uint64_t *h_cost,
     uint64_t *v_cost, 
@@ -8906,6 +8902,64 @@ void update_skip_next_nsq_for_a_b_shapes(
     }
 
 }
+#else
+void update_skip_next_nsq_for_a_b_shapes(
+    ModeDecisionContext *context_ptr,
+    uint64_t *sq_cost, uint64_t *h_cost,
+    uint64_t *v_cost, int *skip_next_nsq) {
+
+    switch (context_ptr->blk_geom->d1i)
+    {
+
+    // NS
+    case 0:
+        *sq_cost = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+        *h_cost = 0;
+        *v_cost = 0;
+        break;
+
+    // H
+    case 1:
+        *h_cost = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+        break;
+    case 2:
+        *h_cost += context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+        break;
+
+    // V
+    case 3:
+        *v_cost = context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+        break;
+    case 4:
+        *v_cost += context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost;
+        *skip_next_nsq = (*h_cost > ((*sq_cost * context_ptr->sq_weight) / 100)) ? 1 : *skip_next_nsq;
+        break;
+
+    // HA
+    case 5:
+    case 6:
+    case 7:
+
+    // HB
+    case 8:
+    case 9:
+        *skip_next_nsq = (*h_cost > ((*sq_cost * context_ptr->sq_weight) / 100)) ? 1 : *skip_next_nsq;
+        break;
+    case 10:
+
+    // VA
+    case 11:
+    case 12:
+    case 13:
+
+    // VB
+    case 14:
+    case 15:
+        *skip_next_nsq = (*v_cost > ((*sq_cost * context_ptr->sq_weight) / 100)) ? 1 : *skip_next_nsq;
+        break;
+    }
+}
+#endif
 #endif
 #if AUTO_MAX_PARTITION
 #define FLT_MAX          3.402823466e+38F        // max value
