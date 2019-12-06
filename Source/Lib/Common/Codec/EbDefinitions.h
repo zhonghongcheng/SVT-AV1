@@ -32,15 +32,17 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#define ML_TEST                      0
+#if ML_TEST1
 #define AUTO_MAX_PARTITION           1
 #if AUTO_MAX_PARTITION
 #define USE_ADAPT_PRED               1
 #endif
-#define LESS_4_PARTITIONS            1
+#define LESS_4_PARTITIONS            0
 #define SIMPLE_MOTION_SEARCH_SPLIT   1
 #define DISABLE_AUTO_MAX             1
 #define DISABLE_LESS_4_PAT           1
-
+#endif
 #define ENABLE_M1    0 // To get M1  using enc-mode 0
 #define ENABLE_M2    0 // To get M2  using enc-mode 0
 #define ENABLE_M3    0 // To get M3  using enc-mode 0

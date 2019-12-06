@@ -1665,7 +1665,7 @@ EbErrorType signal_derivation_multi_processes_oq(
 #if SIMPLE_MOTION_SEARCH_SPLIT
       // The aggresiveness of pruning with simple_motion_search.
       // Currently 0 is the lowest, and 2 the highest.
-      picture_control_set_ptr->simple_motion_search_prune_agg = 0;
+      picture_control_set_ptr->simple_motion_search_prune_agg = 1;
       // Perform simple motion search before none_partition to decide if we
       // want to remove all partitions other than PARTITION_SPLIT. If set to 0, this
       // model is disabled. If set to 1, the model attempts to perform

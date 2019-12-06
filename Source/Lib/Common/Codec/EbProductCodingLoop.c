@@ -8969,6 +8969,7 @@ void av1_simple_motion_search(
     PC_TREE *pc_tree,
     int save_mv,
     unsigned int *best_sse,
+    unsigned int *best_var,
     int *best_ref,
     uint8_t hbd_mode_decision) {
 
@@ -8985,12 +8986,14 @@ void av1_simple_motion_search(
     float mv_row;
     uint8_t ref = 0;
     unsigned int curr_sse = 0;
+    unsigned int curr_var = 0;
     const BlockGeom *blk_geom = get_blk_geom_mds(blk_idx_mds);
     const uint32_t cu_origin_x = sb_origin_x + blk_geom->origin_x;
     const uint32_t cu_origin_y = sb_origin_y + blk_geom->origin_y;
     if (cu_origin_x > sequence_control_set_ptr->max_input_luma_width || cu_origin_y > sequence_control_set_ptr->max_input_luma_height) {
         // If the whole block is outside of the image, set sse to 0.
         *best_sse = 0;
+        *best_var = 0;
        return 0;
     }
     if (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128) {
@@ -9088,7 +9091,7 @@ void av1_simple_motion_search(
 
             const uint32_t input_origin_index = (cu_origin_y + input_picture_ptr->origin_y) * input_picture_ptr->stride_y + (cu_origin_x + input_picture_ptr->origin_x);
             const uint32_t cu_origin_index = blk_geom->origin_x + blk_geom->origin_y * SB_STRIDE_Y;
-            fn_ptr->vf((input_picture_ptr->buffer_y + input_origin_index), input_picture_ptr->stride_y, (prediction_ptr->buffer_y + cu_origin_index), prediction_ptr->stride_y, &curr_sse);
+            curr_var = fn_ptr->vf((input_picture_ptr->buffer_y + input_origin_index), input_picture_ptr->stride_y, (prediction_ptr->buffer_y + cu_origin_index), prediction_ptr->stride_y, &curr_sse);
 
             mv_col = (float)(mv_unit.mv->x >> 3);
             mv_row = (float)(mv_unit.mv->y >> 3);
@@ -9098,7 +9101,7 @@ void av1_simple_motion_search(
 
     if (curr_sse < *best_sse) {
         *best_sse = curr_sse;
-        //*best_var = curr_var;
+        *best_var = curr_var;
         best_ref = ref;
     }
 
@@ -9136,6 +9139,7 @@ static int simple_motion_search_get_best_ref(
     PC_TREE             *pc_tree, 
     int                  save_mv,
     unsigned int         *best_sse,
+    unsigned int         *best_var,
     uint8_t              hbd_mode_decision) {
  // const AV1_COMMON *const cm = &cpi->common;
   int best_ref = -1;
@@ -9164,7 +9168,7 @@ static int simple_motion_search_get_best_ref(
           context_ptr->sb_origin_x,
           context_ptr->sb_origin_y,
           blk_idx_mds,
-          pc_tree, save_mv, best_sse,
+          pc_tree, save_mv, best_sse, best_var,
           &best_ref,
           hbd_mode_decision);
 
@@ -9229,6 +9233,7 @@ static AOM_INLINE void simple_motion_search_prune_part_features(
         pc_tree, 
         1,//save_mv,
         &pc_tree->sms_none_feat[0],
+        &pc_tree->sms_none_feat[1],
         hbd_mode_decision);
     pc_tree->sms_none_valid = 1;
   }
@@ -9254,6 +9259,7 @@ static AOM_INLINE void simple_motion_search_prune_part_features(
                   sub_tree,
                   1,//save_mv,
                   &sub_tree->sms_none_feat[0],
+                  &sub_tree->sms_none_feat[1],
                   hbd_mode_decision);
               sub_tree->sms_none_valid = 1;
           }
@@ -9272,6 +9278,7 @@ static AOM_INLINE void simple_motion_search_prune_part_features(
                   sub_tree,
                   1,//save_mv,
                   &sub_tree->sms_none_feat[0],
+                  &sub_tree->sms_none_feat[1],
                   hbd_mode_decision);
               sub_tree->sms_none_valid = 1;
           }
@@ -9290,6 +9297,7 @@ static AOM_INLINE void simple_motion_search_prune_part_features(
                   sub_tree,
                   1,//save_mv,
                   &sub_tree->sms_none_feat[0],
+                  &sub_tree->sms_none_feat[1],
                   hbd_mode_decision);
               sub_tree->sms_none_valid = 1;
           }
@@ -9308,6 +9316,7 @@ static AOM_INLINE void simple_motion_search_prune_part_features(
                   sub_tree,
                   1,//save_mv,
                   &sub_tree->sms_none_feat[0],
+                  &sub_tree->sms_none_feat[1],
                   hbd_mode_decision);
               sub_tree->sms_none_valid = 1;
           }
@@ -9331,6 +9340,7 @@ static AOM_INLINE void simple_motion_search_prune_part_features(
               pc_tree,
               0,//save_mv,
               &pc_tree->sms_rect_feat[0],
+              &pc_tree->sms_rect_feat[1],
               hbd_mode_decision);
 
           r_idx = 1;
@@ -9345,6 +9355,7 @@ static AOM_INLINE void simple_motion_search_prune_part_features(
               pc_tree,
               0,//save_mv,
               &pc_tree->sms_rect_feat[2],
+              &pc_tree->sms_rect_feat[3],
               hbd_mode_decision);
           // Vert subblock
           //subsize = get_partition_subsize(bsize, PARTITION_VERT);
@@ -9360,6 +9371,7 @@ static AOM_INLINE void simple_motion_search_prune_part_features(
               pc_tree,
               0,//save_mv,
               &pc_tree->sms_rect_feat[4],
+              &pc_tree->sms_rect_feat[5],
               hbd_mode_decision);
           uint32_t rec_blkidx_mds_4 = context_ptr->blk_geom->blkidx_mds + 4;
           simple_motion_search_get_best_ref(
@@ -9372,6 +9384,7 @@ static AOM_INLINE void simple_motion_search_prune_part_features(
               pc_tree,
               0,//save_mv,
               &pc_tree->sms_rect_feat[6],
+              &pc_tree->sms_rect_feat[7],
               hbd_mode_decision);
 
           pc_tree->sms_rect_valid = 1;
@@ -10122,8 +10135,12 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #if AUTO_MAX_PARTITION
             EbBool auto_max_partition_block_skip = (context_ptr->blk_geom->bwidth > block_size_wide[max_bsize] || context_ptr->blk_geom->bheight > block_size_high[max_bsize]) && (mdcResultTbPtr->leaf_data_array[cuIdx].split_flag == EB_TRUE);
 #if SIMPLE_MOTION_SEARCH_SPLIT
-            uint8_t allow_block = picture_control_set_ptr->parent_pcs_ptr->simple_motion_search_split >= 2 ? do_square_split : 
-                context_ptr->blk_geom->shape == PART_N ? 1 : do_square_split;  
+            uint8_t allow_block = 
+            //context_ptr->blk_geom == PART_N ? partition_none_allowed:
+            context_ptr->blk_geom == PART_H ? partition_horz_allowed:
+            context_ptr->blk_geom == PART_V ? partition_vert_allowed:
+            context_ptr->blk_geom == PART_HA || context_ptr->blk_geom == PART_HA || context_ptr->blk_geom == PART_VA  || context_ptr->blk_geom == PART_VA  ? do_rectangular_split:
+            do_square_split;  
             if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[cu_ptr->mds_idx] && !skip_next_nsq && !skip_next_sq && !auto_max_partition_block_skip && allow_block) {
 #else
             if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[cu_ptr->mds_idx] && !skip_next_nsq && !skip_next_sq && !auto_max_partition_block_skip) {
@@ -10293,6 +10310,10 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #endif
 #if SIMPLE_MOTION_SEARCH_SPLIT
             do_square_split = 1;
+            partition_none_allowed = 1;
+            partition_horz_allowed = 1;
+            partition_vert_allowed = 1;
+            do_rectangular_split = 1;
             if (picture_control_set_ptr->parent_pcs_ptr->simple_motion_search_split) {
                 const BlockGeom  *sq_blk_geom = get_blk_geom_mds(blk_geom->sqi_mds);
                 if (sq_blk_geom->bwidth > 4 && sq_blk_geom->bheight > 4)
@@ -10310,6 +10331,12 @@ EB_EXTERN EbErrorType mode_decision_sb(
                         &partition_vert_allowed,
                         &do_rectangular_split,
                         &do_square_split);
+               /*if (do_square_split == 0 || partition_none_allowed == 0 || partition_horz_allowed == 0 || partition_vert_allowed == 0 || do_rectangular_split == 0)
+                    printf("%d,%d,%d,%d,%d\n", do_square_split,
+                        partition_none_allowed,
+                        partition_horz_allowed,
+                        partition_vert_allowed,
+                        do_rectangular_split);*/
             }
 #endif
             context_ptr->coeff_based_skip_atb = picture_control_set_ptr->parent_pcs_ptr->coeff_based_skip_atb &&
