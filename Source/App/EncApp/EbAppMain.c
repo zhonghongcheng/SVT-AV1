@@ -85,7 +85,7 @@ int32_t main(int32_t argc, char* argv[])
     _setmode(_fileno(stdin), _O_BINARY);
     _setmode(_fileno(stdout), _O_BINARY);
 #endif
-#if 1
+#if 0
     __int64   creBeg, extBeg, krnBeg, usrBeg;
     __int64   creEnd, extEnd, krnEnd, usrEnd;
     __int64   i;
@@ -360,7 +360,7 @@ int32_t main(int32_t argc, char* argv[])
             if (appCallbacks[instanceCount])
                 free(appCallbacks[instanceCount]);
         }
-#if 1
+#if 0
         end = GetTickCount();
                 GetProcessTimes(GetCurrentProcess(), (FILETIME*)&creEnd, (FILETIME*)&extEnd, (FILETIME*)&krnEnd, (FILETIME*)&usrEnd);
 

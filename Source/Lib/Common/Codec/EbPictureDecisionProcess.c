@@ -868,6 +868,10 @@ EbErrorType signal_derivation_multi_processes_oq(
         else {
             picture_control_set_ptr->enable_adaptive_ol_partitioning = sequence_control_set_ptr->static_config.olpd_refinement;
         }
+#if DEBUG_MODE
+                    picture_control_set_ptr->enable_adaptive_ol_partitioning = 0;
+
+#endif
 #else
 
 #if PREDICT_NSQ_SHAPE
@@ -1343,6 +1347,9 @@ EbErrorType signal_derivation_multi_processes_oq(
         // 0                                     OFF
         // 1                                     ON
             picture_control_set_ptr->enable_inter_intra = picture_control_set_ptr->slice_type != I_SLICE ? sequence_control_set_ptr->seq_header.enable_interintra_compound : 0;
+#endif
+#if DEBUG_MODE
+            picture_control_set_ptr->enable_inter_intra =0;
 #endif
         // Set compound mode      Settings
         // 0                 OFF: No compond mode search : AVG only

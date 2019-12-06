@@ -7515,6 +7515,7 @@ void interpolation_filter_search(
 }
 
 EbErrorType inter_pu_prediction_av1(
+    uint8_t                              hbd_mode_decision,
     ModeDecisionContext                  *md_context_ptr,
     PictureControlSet                    *picture_control_set_ptr,
     ModeDecisionCandidateBuffer          *candidate_buffer_ptr)
@@ -7537,12 +7538,12 @@ EbErrorType inter_pu_prediction_av1(
     mv_unit.mv[1] = mv_1;
 
     if (candidate_buffer_ptr->candidate_ptr->use_intrabc) {
-        if (!md_context_ptr->hbd_mode_decision)
+        if (!hbd_mode_decision)
             ref_pic_list0 = ((EbReferenceObject*)picture_control_set_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr->object_ptr)->reference_picture;
         else
             ref_pic_list0 = ((EbReferenceObject*)picture_control_set_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr->object_ptr)->reference_picture16bit;
 
-        av1_inter_prediction_function_table[md_context_ptr->hbd_mode_decision > EB_8_BIT_MD](
+        av1_inter_prediction_function_table[hbd_mode_decision > EB_8_BIT_MD](
             picture_control_set_ptr,
             candidate_buffer_ptr->candidate_ptr->interp_filters,
             md_context_ptr->cu_ptr,
@@ -7576,7 +7577,7 @@ EbErrorType inter_pu_prediction_av1(
             md_context_ptr->blk_geom->origin_x,
             md_context_ptr->blk_geom->origin_y,
             md_context_ptr->chroma_level <= CHROMA_MODE_1 && md_context_ptr->md_staging_skip_inter_chroma_pred == EB_FALSE,
-            md_context_ptr->hbd_mode_decision ? EB_10BIT : EB_8BIT);
+            hbd_mode_decision ? EB_10BIT : EB_8BIT);
 
         return return_error;
     }
@@ -7596,13 +7597,13 @@ EbErrorType inter_pu_prediction_av1(
     assert(list_idx1 < MAX_NUM_OF_REF_PIC_LIST);
 
     if (ref_idx_l0 >= 0) {
-        ref_pic_list0 = md_context_ptr->hbd_mode_decision ?
+        ref_pic_list0 = hbd_mode_decision ?
             ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[list_idx0][ref_idx_l0]->object_ptr)->reference_picture16bit
             : ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[list_idx0][ref_idx_l0]->object_ptr)->reference_picture;
     }
 
     if (ref_idx_l1 >= 0) {
-        ref_pic_list1 =  md_context_ptr->hbd_mode_decision ?
+        ref_pic_list1 =  hbd_mode_decision ?
             ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[list_idx1][ref_idx_l1]->object_ptr)->reference_picture16bit
             : ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[list_idx1][ref_idx_l1]->object_ptr)->reference_picture;
     }
@@ -7621,7 +7622,7 @@ EbErrorType inter_pu_prediction_av1(
     }
 
     uint8_t bit_depth = EB_8BIT;
-    if (sequence_control_set_ptr->static_config.encoder_bit_depth > EB_8BIT && md_context_ptr->hbd_mode_decision)
+    if (sequence_control_set_ptr->static_config.encoder_bit_depth > EB_8BIT && hbd_mode_decision)
         bit_depth = sequence_control_set_ptr->static_config.encoder_bit_depth;
 
 
@@ -7663,7 +7664,7 @@ EbErrorType inter_pu_prediction_av1(
             if (md_context_ptr->blk_geom->bwidth > capped_size && md_context_ptr->blk_geom->bheight > capped_size)
 #if IFS_8BIT_MD
             {
-                if (md_context_ptr->hbd_mode_decision == EB_DUAL_BIT_MD) {
+                if (md_context_ptr->hbd_mode_decision == EB_DUAL_BIT_MD && hbd_mode_decision > EB_8_BIT_MD) {
 
                     if (ref_idx_l0 >= 0)
                         ref_pic_list0 = ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[list_idx0][ref_idx_l0]->object_ptr)->reference_picture;
@@ -7683,7 +7684,7 @@ EbErrorType inter_pu_prediction_av1(
                     md_context_ptr->hbd_mode_decision == EB_DUAL_BIT_MD ? EB_8_BIT_MD: md_context_ptr->hbd_mode_decision,
                     bit_depth);
 #if IFS_8BIT_MD
-                if (md_context_ptr->hbd_mode_decision == EB_DUAL_BIT_MD) {
+                if (md_context_ptr->hbd_mode_decision == EB_DUAL_BIT_MD && hbd_mode_decision > EB_8_BIT_MD) {
                     if (ref_idx_l0 >= 0)
                         ref_pic_list0 = ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[list_idx0][ref_idx_l0]->object_ptr)->reference_picture16bit;
 
@@ -7699,7 +7700,7 @@ EbErrorType inter_pu_prediction_av1(
     NeighborArrayUnit            *cb_recon_neighbor_array;
     NeighborArrayUnit            *cr_recon_neighbor_array;
 
-    if (!md_context_ptr->hbd_mode_decision) {
+    if (!hbd_mode_decision) {
         luma_recon_neighbor_array = md_context_ptr->luma_recon_neighbor_array;
         cb_recon_neighbor_array = md_context_ptr->cb_recon_neighbor_array;
         cr_recon_neighbor_array = md_context_ptr->cr_recon_neighbor_array;
@@ -7711,7 +7712,7 @@ EbErrorType inter_pu_prediction_av1(
 
     }
 
-    av1_inter_prediction_function_table[md_context_ptr->hbd_mode_decision > EB_8_BIT_MD](
+    av1_inter_prediction_function_table[hbd_mode_decision > EB_8_BIT_MD](
         picture_control_set_ptr,
         candidate_buffer_ptr->candidate_ptr->interp_filters,
         md_context_ptr->cu_ptr,
@@ -7745,7 +7746,7 @@ EbErrorType inter_pu_prediction_av1(
         md_context_ptr->blk_geom->origin_x,
         md_context_ptr->blk_geom->origin_y,
         md_context_ptr->chroma_level <= CHROMA_MODE_1 && md_context_ptr->md_staging_skip_inter_chroma_pred == EB_FALSE,
-        md_context_ptr->hbd_mode_decision ? EB_10BIT : EB_8BIT);
+        hbd_mode_decision ? EB_10BIT : EB_8BIT);
 
     return return_error;
 }

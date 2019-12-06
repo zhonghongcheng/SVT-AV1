@@ -33,7 +33,14 @@
 extern "C" {
 #endif
 #define OMARK                        0 // OBMC HBD2
-#define HBD2_COMP                    1 // comp inter-inter HBD2
+#define HBD2_COMP                    0 // comp inter-inter HBD2
+#define HBD2_PME                     0
+#define DEBUG_MODE                   0
+
+
+
+
+
 #define HBD_CLEAN_UP                 1
 
 #define IFS_8BIT_MD                  1

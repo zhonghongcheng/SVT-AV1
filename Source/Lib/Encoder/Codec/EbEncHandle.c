@@ -2023,7 +2023,8 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
 #endif
 
     // Set hbd_mode_decision OFF for high encode modes or bitdepth < 10
-    if (sequence_control_set_ptr->static_config.enc_mode > ENC_M0 || sequence_control_set_ptr->static_config.encoder_bit_depth < 10)
+// FIX 10Bit MX
+    if (/*sequence_control_set_ptr->static_config.enc_mode > ENC_M0 ||*/ sequence_control_set_ptr->static_config.encoder_bit_depth < 10)
         sequence_control_set_ptr->static_config.enable_hbd_mode_decision = 0;
 }
 
