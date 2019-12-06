@@ -8999,15 +8999,14 @@ void av1_simple_motion_search(
     if (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128) {
             uint32_t me_sb_size = sequence_control_set_ptr->sb_sz;
             uint32_t me_pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / me_sb_size;
-            uint32_t me_sb_x = (context_ptr->cu_origin_x / me_sb_size);
-            uint32_t me_sb_y = (context_ptr->cu_origin_y / me_sb_size);
+            uint32_t me_sb_x = (cu_origin_x / me_sb_size);
+            uint32_t me_sb_y = (cu_origin_y / me_sb_size);
             me_sb_addr = me_sb_x + me_sb_y * me_pic_width_in_sb;
             geom_offset_x = (me_sb_x & 0x1) * me_sb_size;
             geom_offset_y = (me_sb_y & 0x1) * me_sb_size;
     }
     else
         me_sb_addr = sb_index;
-
     uint32_t me_block_offset = (blk_geom->bwidth == 4 || blk_geom->bheight == 4 || blk_geom->bwidth == 128 || blk_geom->bheight == 128) ? 0 :
         get_me_info_index(
             picture_control_set_ptr->parent_pcs_ptr->max_number_of_pus_per_sb,
@@ -9055,7 +9054,7 @@ void av1_simple_motion_search(
                 picture_control_set_ptr,
                 interp_filters,
                 &cu_ptr,
-                0,//ref_frame_type,
+                ref,//ref_frame_type,
                 &mv_unit,
                 0,//use_intrabc,
 #if OBMC_FLAG
