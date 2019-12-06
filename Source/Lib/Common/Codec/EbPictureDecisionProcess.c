@@ -1672,6 +1672,7 @@ EbErrorType signal_derivation_multi_processes_oq(
       // PARTITION_SPLIT only. If set to 2, the model also attempts to prune
       // PARTITION_SPLIT.
       picture_control_set_ptr->simple_motion_search_split = picture_control_set_ptr->slice_type == I_SLICE ? 0 : 1;
+      picture_control_set_ptr->split_only_weight = 2.0;
 #endif
     return return_error;
     return return_error;

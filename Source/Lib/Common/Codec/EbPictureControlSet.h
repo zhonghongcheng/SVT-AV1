@@ -14339,6 +14339,7 @@ extern "C" {
   // Currently 0 is the lowest, and 2 the highest.
   int simple_motion_search_prune_agg;
   int simple_motion_search_split;
+  float split_only_weight;
 #endif
     } PictureParentControlSet;
 
