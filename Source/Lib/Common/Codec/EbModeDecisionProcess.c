@@ -562,6 +562,9 @@ void reset_mode_decision(
 #if !FIX_WM_SETTINGS
     enable_wm = picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index > 0 ? EB_FALSE : enable_wm;
 #endif
+#if MR_ENABLE_WM
+    enable_wm = EB_TRUE;
+#endif
     frm_hdr->allow_warped_motion = enable_wm
         && !(frm_hdr->frame_type == KEY_FRAME || frm_hdr->frame_type == INTRA_ONLY_FRAME)
         && !frm_hdr->error_resilient_mode;
@@ -584,7 +587,7 @@ void reset_mode_decision(
         else
             picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = 0;
 
-#if MR_MODE
+#if MR_MODE || MR_PIC_OBMC_MODE
         picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode =
             picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0 && picture_control_set_ptr->slice_type != I_SLICE ? 1 : 0;
 #endif

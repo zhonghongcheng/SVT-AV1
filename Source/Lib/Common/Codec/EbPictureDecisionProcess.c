@@ -964,7 +964,11 @@ EbErrorType signal_derivation_multi_processes_oq(
     // NSQ_SEARCH_LEVEL6                              Allow only NSQ Inter-NEAREST/NEAR/GLOBAL if parent SQ has no coeff + reordering nsq_table number and testing only 6 NSQ SHAPE
     // NSQ_SEARCH_FULL                                Allow NSQ Intra-FULL and Inter-FULL
 
+#if MR_NSQ_SEARCH_LEVEL
+        if (1)
+#else
         if (MR_MODE)
+#endif
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_FULL;
 #if MULTI_PASS_M1_BEYOND
         else if (picture_control_set_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_0 ||
@@ -1576,7 +1580,11 @@ EbErrorType signal_derivation_multi_processes_oq(
         // 1                                     ON
 
 #if SPEED_OPT
+#if MR_COEFF_BASED_SKIP_ATB
+        if (1)
+#else
         if (MR_MODE || picture_control_set_ptr->sc_content_detected)
+#endif
 #else
         if (MR_MODE || picture_control_set_ptr->enc_mode == ENC_M0 || picture_control_set_ptr->sc_content_detected)
 #endif

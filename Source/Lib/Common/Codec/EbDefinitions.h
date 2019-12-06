@@ -32,9 +32,23 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define MR_MODE                           0
+
 #define ENABLE_M1    0 // To get M1  using enc-mode 0
 #define ENABLE_M2    0 // To get M2  using enc-mode 0
 #define ENABLE_M3    0 // To get M3  using enc-mode 0
+
+
+// MR to M0
+#define MR_ADOPTIONS                              1
+#if MR_ADOPTIONS
+#define MR_CHROMA_LEVEL                           1
+#define MR_ENABLE_WM                              1
+#define MR_COEFF_BASED_SKIP_ATB                   1
+#define MR_NSQ_SEARCH_LEVEL                       1
+#define MR_PIC_OBMC_MODE                          1
+#endif
 
 // M0 TO M1
 #if ENABLE_M1 || ENABLE_M2 || ENABLE_M3
@@ -170,8 +184,6 @@ extern "C" {
 #ifndef NON_AVX512_SUPPORT
 #define NON_AVX512_SUPPORT
 #endif
-
-#define MR_MODE                           0
 
 #define WARP_UPDATE                       1 // Modified Warp settings: ON for MR mode. ON for ref frames in M0
 #define UPDATE_CDEF                       1 // Update bit cost estimation for CDEF filter
