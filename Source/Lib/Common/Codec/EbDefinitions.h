@@ -38,7 +38,7 @@ extern "C" {
 #if AUTO_MAX_PARTITION
 #define USE_ADAPT_PRED               1
 #endif
-#define LESS_4_PARTITIONS            0
+#define LESS_4_PARTITIONS            1
 #define SIMPLE_MOTION_SEARCH_SPLIT   1
 #define DISABLE_AUTO_MAX             1
 #define DISABLE_LESS_4_PAT           1

@@ -6748,7 +6748,7 @@ EbBool allowed_ns_cu(
         }
     }
 #else
-#if LESS_4_PARTITIONS
+#if 0//LESS_4_PARTITIONS
     if (context_ptr->blk_geom->shape == PART_H4 && context_ptr->partition_horz4_allowed == 0)
         ret = 0;
     else if (context_ptr->blk_geom->shape == PART_V4 && context_ptr->partition_vert4_allowed == 0)
@@ -8725,7 +8725,7 @@ void av1_ml_prune_4_partition(
 #undef LABELS
 #endif
 #if LESS_RECTANGULAR_CHECK_LEVEL
-#if LESS_4_PARTITIONS
+#if 0//LESS_4_PARTITIONS
 void update_skip_next_nsq(
     ModeDecisionContext *context_ptr,
     uint64_t *sq_cost, uint64_t *h_cost,
@@ -10280,7 +10280,7 @@ EB_EXTERN EbErrorType mode_decision_sb(
 
 #if LESS_RECTANGULAR_CHECK_LEVEL
         if (context_ptr->sq_weight != (uint32_t)~0 && blk_geom->bsize > BLOCK_8X8)
-#if LESS_4_PARTITIONS
+#if 0//LESS_4_PARTITIONS
             update_skip_next_nsq(
                 context_ptr,
                 &sq_cost,
