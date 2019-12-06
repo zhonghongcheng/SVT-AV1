@@ -104,6 +104,15 @@ extern "C" {
 #define USE_MD_STAGING_MODE_0                     0
 //#define USE_MD_STAGING_MODE_1                     0 // M0 def
 
+// ME features
+#define FRACTIONAL_SEARCH_METHOD_FULL_SAD         0
+#define FRACTIONAL_SEARCH_METHOD_SUB_SAD          0
+#define FRACTIONAL_SEARCH_64X64_OFF               0
+#define USE_SUBPEL_FLAG_OFF                       0
+#define FRACTIONAL_SEARCH_MODEL_1                 0
+#define HME_SEARCH_METHOD_SUB_SAD                 0
+#define ME_SEARCH_METHOD_SUB_SAD                  0
+
 // M0 TO M1
 #if ENABLE_M1 || ENABLE_M2 || ENABLE_M3
 #define M1_ENABLE_HME_FLAG                        1
