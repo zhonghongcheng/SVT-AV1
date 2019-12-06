@@ -10133,9 +10133,7 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #if AUTO_MAX_PARTITION
             EbBool auto_max_partition_block_skip = (context_ptr->blk_geom->bwidth > block_size_wide[max_bsize] || context_ptr->blk_geom->bheight > block_size_high[max_bsize]) && (mdcResultTbPtr->leaf_data_array[cuIdx].split_flag == EB_TRUE);
 #if SIMPLE_MOTION_SEARCH_SPLIT
-            uint8_t allow_block = 
-            //context_ptr->blk_geom == PART_N ? partition_none_allowed:
-            context_ptr->blk_geom->shape == PART_H ? partition_horz_allowed:
+            uint8_t allow_block = context_ptr->blk_geom->shape == PART_H ? partition_horz_allowed:
             context_ptr->blk_geom->shape == PART_V ? partition_vert_allowed:
             context_ptr->blk_geom->shape == PART_HA || context_ptr->blk_geom->shape == PART_HA || context_ptr->blk_geom->shape == PART_VA  || context_ptr->blk_geom->shape == PART_VA  ? do_rectangular_split:
             do_square_split;  
