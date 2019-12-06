@@ -8977,8 +8977,6 @@ void av1_simple_motion_search(
     // Otherwise do loop through the reference frames and find the one with the
     // minimum SSE
     const MV *mv_ref_fulls = pc_tree->mv_ref_fulls;
-    uint32_t me_sb_x;
-    uint32_t me_sb_y;
     uint32_t me_sb_addr;
     uint32_t geom_offset_x = 0;
     uint32_t geom_offset_y = 0;
@@ -8994,9 +8992,10 @@ void av1_simple_motion_search(
         // If the whole block is outside of the image, set sse to 0.
         *best_sse = 0;
         *best_var = 0;
-       return 0;
+
     }
-    if (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128) {
+    else {
+        if (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128) {
             uint32_t me_sb_size = sequence_control_set_ptr->sb_sz;
             uint32_t me_pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / me_sb_size;
             uint32_t me_sb_x = (cu_origin_x / me_sb_size);
@@ -9004,106 +9003,106 @@ void av1_simple_motion_search(
             me_sb_addr = me_sb_x + me_sb_y * me_pic_width_in_sb;
             geom_offset_x = (me_sb_x & 0x1) * me_sb_size;
             geom_offset_y = (me_sb_y & 0x1) * me_sb_size;
-    }
-    else
-        me_sb_addr = sb_index;
-    uint32_t me_block_offset = (blk_geom->bwidth == 4 || blk_geom->bheight == 4 || blk_geom->bwidth == 128 || blk_geom->bheight == 128) ? 0 :
-        get_me_info_index(
-            picture_control_set_ptr->parent_pcs_ptr->max_number_of_pus_per_sb,
-            blk_geom, 
-            geom_offset_x,
-            geom_offset_y);
-    EbAsm asm_type = sequence_control_set_ptr->encode_context_ptr->asm_type;
-    const MeLcuResults *me_results = picture_control_set_ptr->parent_pcs_ptr->me_results[me_sb_addr];
-    uint8_t total_me_cnt = me_results->total_me_candidate_index[me_block_offset];
-    const MeCandidate *me_block_results = me_results->me_candidate[me_block_offset];
-    for (uint8_t me_candidate_index = 0; me_candidate_index < total_me_cnt; ++me_candidate_index) {
-        const MeCandidate *me_block_results_ptr = &me_block_results[me_candidate_index];
-        const uint8_t inter_direction = me_block_results_ptr->direction;
-        const uint8_t list0_ref_index = me_block_results_ptr->ref_idx_l0;
-        const uint8_t list1_ref_index = me_block_results_ptr->ref_idx_l1;
-        if (inter_direction == 0 && list0_ref_index == 0) {
-            ModeDecisionCandidateBuffer *candidate_buffer = &(context_ptr->candidate_buffer_ptr_array[0][0]);
-            candidate_buffer->candidate_ptr = &(context_ptr->fast_candidate_array[0]);
-            ModeDecisionCandidate *candidate_ptr = candidate_buffer->candidate_ptr;
-            EbPictureBufferDesc   *prediction_ptr = candidate_buffer->prediction_ptr;
-            const InterpFilters interp_filters = av1_make_interp_filters(EIGHTTAP_REGULAR, EIGHTTAP_REGULAR);
-            CodingUnit cu_ptr;
-            MacroBlockD av1xd;
-            cu_ptr.av1xd = &av1xd;
-            uint32_t mirow = cu_origin_y >> MI_SIZE_LOG2;
-            uint32_t micol = cu_origin_x >> MI_SIZE_LOG2;
-            cu_ptr.mds_idx = blk_idx_mds;
-            const int32_t bw = mi_size_wide[blk_geom->bwidth];
-            const int32_t bh = mi_size_high[blk_geom->bheight];
-            cu_ptr.av1xd->mb_to_top_edge = -(int32_t)((mirow * MI_SIZE) * 8);
-            cu_ptr.av1xd->mb_to_bottom_edge = ((picture_control_set_ptr->parent_pcs_ptr->av1_cm->mi_rows - bw - mirow) * MI_SIZE) * 8;
-            cu_ptr.av1xd->mb_to_left_edge = -(int32_t)((micol * MI_SIZE) * 8);
-            cu_ptr.av1xd->mb_to_right_edge = ((picture_control_set_ptr->parent_pcs_ptr->av1_cm->mi_cols - bh - micol) * MI_SIZE) * 8;
-            MvUnit   mv_unit;
-            mv_unit.pred_direction = UNI_PRED_LIST_0;
-            mv_unit.mv->x = me_results->me_mv_array[me_block_offset][list0_ref_index].x_mv << 1;
-            mv_unit.mv->y = me_results->me_mv_array[me_block_offset][list0_ref_index].y_mv << 1;
-            MvReferenceFrame rf[2];
-            rf[0] = svt_get_ref_frame_type(me_block_results_ptr->ref0_list, list0_ref_index);
-            rf[1] = svt_get_ref_frame_type(me_block_results_ptr->ref1_list, list1_ref_index);
-            ref = rf[0]; //av1_ref_frame_type(rf);
-            if (ref > 7)
-                printf("Invalid ref error\n");
-            av1_inter_prediction_function_table[hbd_mode_decision](
-                picture_control_set_ptr,
-                interp_filters,
-                &cu_ptr,
-                ref,//ref_frame_type,
-                &mv_unit,
-                0,//use_intrabc,
+        }
+        else
+            me_sb_addr = sb_index;
+        uint32_t me_block_offset = (blk_geom->bwidth == 4 || blk_geom->bheight == 4 || blk_geom->bwidth == 128 || blk_geom->bheight == 128) ? 0 :
+            get_me_info_index(
+                picture_control_set_ptr->parent_pcs_ptr->max_number_of_pus_per_sb,
+                blk_geom,
+                geom_offset_x,
+                geom_offset_y);
+        EbAsm asm_type = sequence_control_set_ptr->encode_context_ptr->asm_type;
+        const MeLcuResults *me_results = picture_control_set_ptr->parent_pcs_ptr->me_results[me_sb_addr];
+        uint8_t total_me_cnt = me_results->total_me_candidate_index[me_block_offset];
+        const MeCandidate *me_block_results = me_results->me_candidate[me_block_offset];
+        for (uint8_t me_candidate_index = 0; me_candidate_index < total_me_cnt; ++me_candidate_index) {
+            const MeCandidate *me_block_results_ptr = &me_block_results[me_candidate_index];
+            const uint8_t inter_direction = me_block_results_ptr->direction;
+            const uint8_t list0_ref_index = me_block_results_ptr->ref_idx_l0;
+            const uint8_t list1_ref_index = me_block_results_ptr->ref_idx_l1;
+            if (inter_direction == 0 && list0_ref_index == 0) {
+                ModeDecisionCandidateBuffer *candidate_buffer = &(context_ptr->candidate_buffer_ptr_array[0][0]);
+                candidate_buffer->candidate_ptr = &(context_ptr->fast_candidate_array[0]);
+                ModeDecisionCandidate *candidate_ptr = candidate_buffer->candidate_ptr;
+                EbPictureBufferDesc   *prediction_ptr = candidate_buffer->prediction_ptr;
+                const InterpFilters interp_filters = av1_make_interp_filters(EIGHTTAP_REGULAR, EIGHTTAP_REGULAR);
+                CodingUnit cu_ptr;
+                MacroBlockD av1xd;
+                cu_ptr.av1xd = &av1xd;
+                uint32_t mirow = cu_origin_y >> MI_SIZE_LOG2;
+                uint32_t micol = cu_origin_x >> MI_SIZE_LOG2;
+                cu_ptr.mds_idx = blk_idx_mds;
+                const int32_t bw = mi_size_wide[blk_geom->bwidth];
+                const int32_t bh = mi_size_high[blk_geom->bheight];
+                cu_ptr.av1xd->mb_to_top_edge = -(int32_t)((mirow * MI_SIZE) * 8);
+                cu_ptr.av1xd->mb_to_bottom_edge = ((picture_control_set_ptr->parent_pcs_ptr->av1_cm->mi_rows - bw - mirow) * MI_SIZE) * 8;
+                cu_ptr.av1xd->mb_to_left_edge = -(int32_t)((micol * MI_SIZE) * 8);
+                cu_ptr.av1xd->mb_to_right_edge = ((picture_control_set_ptr->parent_pcs_ptr->av1_cm->mi_cols - bh - micol) * MI_SIZE) * 8;
+                MvUnit   mv_unit;
+                mv_unit.pred_direction = UNI_PRED_LIST_0;
+                mv_unit.mv->x = me_results->me_mv_array[me_block_offset][list0_ref_index].x_mv << 1;
+                mv_unit.mv->y = me_results->me_mv_array[me_block_offset][list0_ref_index].y_mv << 1;
+                MvReferenceFrame rf[2];
+                rf[0] = svt_get_ref_frame_type(me_block_results_ptr->ref0_list, list0_ref_index);
+                rf[1] = svt_get_ref_frame_type(me_block_results_ptr->ref1_list, list1_ref_index);
+                ref = rf[0]; //av1_ref_frame_type(rf);
+                if (ref > 7)
+                    printf("Invalid ref error\n");
+                av1_inter_prediction_function_table[hbd_mode_decision](
+                    picture_control_set_ptr,
+                    interp_filters,
+                    &cu_ptr,
+                    ref,//ref_frame_type,
+                    &mv_unit,
+                    0,//use_intrabc,
 #if OBMC_FLAG
-                SIMPLE_TRANSLATION,
-                0,
-                0,
+                    SIMPLE_TRANSLATION,
+                    0,
+                    0,
 #endif
-                1,//compound_idx not used
-                NULL,// interinter_comp not used
+                    1,//compound_idx not used
+                    NULL,// interinter_comp not used
 #if II_COMP_FLAG
-                NULL,
-                NULL,
-                NULL,
-                NULL,
-                0,
-                0,
-                0,
-                0,
+                    NULL,
+                    NULL,
+                    NULL,
+                    NULL,
+                    0,
+                    0,
+                    0,
+                    0,
 #endif
-                cu_origin_x,
-                cu_origin_y,
-                blk_geom->bwidth,
-                blk_geom->bheight,
-                !hbd_mode_decision ? ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[0][0]->object_ptr)->reference_picture : ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[0][0]->object_ptr)->reference_picture16bit, // use last = [List 0][Ref Index 0]
-                NULL,//ref_pic_list1,
-                prediction_ptr,
-                blk_geom->origin_x,
-                blk_geom->origin_y,
-                0,//perform_chroma,
-                hbd_mode_decision ? EB_10BIT : EB_8BIT);
+                    cu_origin_x,
+                    cu_origin_y,
+                    blk_geom->bwidth,
+                    blk_geom->bheight,
+                    !hbd_mode_decision ? ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[0][0]->object_ptr)->reference_picture : ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[0][0]->object_ptr)->reference_picture16bit, // use last = [List 0][Ref Index 0]
+                    NULL,//ref_pic_list1,
+                    prediction_ptr,
+                    blk_geom->origin_x,
+                    blk_geom->origin_y,
+                    0,//perform_chroma,
+                    hbd_mode_decision ? EB_10BIT : EB_8BIT);
 
-            const aom_variance_fn_ptr_t *fn_ptr = &mefn_ptr[blk_geom->bsize];
+                const aom_variance_fn_ptr_t *fn_ptr = &mefn_ptr[blk_geom->bsize];
 
-            const uint32_t input_origin_index = (cu_origin_y + input_picture_ptr->origin_y) * input_picture_ptr->stride_y + (cu_origin_x + input_picture_ptr->origin_x);
-            const uint32_t cu_origin_index = blk_geom->origin_x + blk_geom->origin_y * SB_STRIDE_Y;
-            curr_var = fn_ptr->vf((input_picture_ptr->buffer_y + input_origin_index), input_picture_ptr->stride_y, (prediction_ptr->buffer_y + cu_origin_index), prediction_ptr->stride_y, &curr_sse);
+                const uint32_t input_origin_index = (cu_origin_y + input_picture_ptr->origin_y) * input_picture_ptr->stride_y + (cu_origin_x + input_picture_ptr->origin_x);
+                const uint32_t cu_origin_index = blk_geom->origin_x + blk_geom->origin_y * SB_STRIDE_Y;
+                curr_var = fn_ptr->vf((input_picture_ptr->buffer_y + input_origin_index), input_picture_ptr->stride_y, (prediction_ptr->buffer_y + cu_origin_index), prediction_ptr->stride_y, &curr_sse);
 
-            mv_col = (float)(mv_unit.mv->x >> 3);
-            mv_row = (float)(mv_unit.mv->y >> 3);
-            break;
+                mv_col = (float)(mv_unit.mv->x >> 3);
+                mv_row = (float)(mv_unit.mv->y >> 3);
+                break;
+            }
+        }
+
+        if (curr_sse < *best_sse) {
+            *best_sse = curr_sse;
+            *best_var = curr_var;
+            *best_ref = ref;
         }
     }
-
-    if (curr_sse < *best_sse) {
-        *best_sse = curr_sse;
-        *best_var = curr_var;
-        best_ref = ref;
-    }
-
     //if (save_mv) {
     //    const int new_mv_row = mv_row;
     //    const int new_mv_col = mv_col;
@@ -10136,9 +10135,9 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #if SIMPLE_MOTION_SEARCH_SPLIT
             uint8_t allow_block = 
             //context_ptr->blk_geom == PART_N ? partition_none_allowed:
-            context_ptr->blk_geom == PART_H ? partition_horz_allowed:
-            context_ptr->blk_geom == PART_V ? partition_vert_allowed:
-            context_ptr->blk_geom == PART_HA || context_ptr->blk_geom == PART_HA || context_ptr->blk_geom == PART_VA  || context_ptr->blk_geom == PART_VA  ? do_rectangular_split:
+            context_ptr->blk_geom->shape == PART_H ? partition_horz_allowed:
+            context_ptr->blk_geom->shape == PART_V ? partition_vert_allowed:
+            context_ptr->blk_geom->shape == PART_HA || context_ptr->blk_geom->shape == PART_HA || context_ptr->blk_geom->shape == PART_VA  || context_ptr->blk_geom->shape == PART_VA  ? do_rectangular_split:
             do_square_split;  
             if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[cu_ptr->mds_idx] && !skip_next_nsq && !skip_next_sq && !auto_max_partition_block_skip && allow_block) {
 #else
