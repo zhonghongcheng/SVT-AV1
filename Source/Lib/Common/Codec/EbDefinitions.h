@@ -32,6 +32,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#define TWO_PASS_LOW_RES_IMPROVEMENT 1
 
 #define STAT_UPDATE                  0
 #define STAT_UPDATE_SW               0
@@ -42,6 +43,7 @@ extern "C" {
 #define SU_QPM_I                     0
 #define SU_QPM_B                     0
 #define SU_NEW_WEIGHTS               0
+
 
 
 #define FIX_ALTREF                   1 // Address ALTREF mismatch between rtime-m0-test and master: fixed actual_future_pics derivation, shut padding of the central frame, fixed end past frame index prior to window shrinking

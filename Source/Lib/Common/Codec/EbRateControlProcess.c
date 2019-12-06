@@ -3781,10 +3781,11 @@ static int adaptive_qindex_calc_two_pass(
         referenced_area_max = sequence_control_set_ptr->input_resolution < 2 ? MAX_REF_AREA_NONI_LOW_RES :
             ((int)referenced_area_avg - (int)picture_control_set_ptr->ref_pic_referenced_area_avg_array[0][0] >= REF_AREA_DIF_THRESHOLD) ?
             MAX_REF_AREA_NONI_LOW_RES : MAX_REF_AREA_NONI;
-
+#if !TWO_PASS_LOW_RES_IMPROVEMENT
         // Clip the complexity of highly complex pictures to maximum.
         if (picture_control_set_ptr->parent_pcs_ptr->qp_scaling_average_complexity > HIGH_QPS_COMP_THRESHOLD)
             referenced_area_avg = 0;
+#endif
 
         rc->arf_boost_factor =
             ((int)referenced_area_avg - (int)picture_control_set_ptr->ref_pic_referenced_area_avg_array[0][0] >= REF_AREA_DIF_THRESHOLD
