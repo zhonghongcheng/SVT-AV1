@@ -44,6 +44,7 @@ extern "C" {
 #define SU_QPM_B                     0
 #define SU_NEW_WEIGHTS               0
 
+#define FIRST_PASS_STAT_FIX          1
 
 
 #define FIX_ALTREF                   1 // Address ALTREF mismatch between rtime-m0-test and master: fixed actual_future_pics derivation, shut padding of the central frame, fixed end past frame index prior to window shrinking

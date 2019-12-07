@@ -3830,6 +3830,13 @@ EB_EXTERN void av1_encode_pass(
                                     origin_y = MIN(origin_y, sequence_control_set_ptr->seq_header.max_frame_height - blk_geom->bheight);
                                     uint16_t sb_origin_x = origin_x / context_ptr->sb_sz * context_ptr->sb_sz;
                                     uint16_t sb_origin_y = origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
+
+#if FIRST_PASS_STAT_FIX
+                                    uint16_t sb_origin_x_org = origin_x / context_ptr->sb_sz * context_ptr->sb_sz;
+                                    uint16_t sb_origin_y_org = origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
+#endif
+
+
                                     uint32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
                                     uint16_t sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
                                     uint16_t width, height, weight;
@@ -3874,8 +3881,11 @@ EB_EXTERN void av1_encode_pass(
                                     eb_release_mutex(sequence_control_set_ptr->stat_info_mutex);
 #endif
 #endif
-
+#if FIRST_PASS_STAT_FIX
+                                    if (origin_x + blk_geom->bwidth > sb_origin_x_org + context_ptr->sb_sz) {
+#else
                                     if (origin_x + blk_geom->bwidth > sb_origin_x + context_ptr->sb_sz) {
+#endif
                                         sb_origin_x = (origin_x / context_ptr->sb_sz + 1)* context_ptr->sb_sz;
                                         sb_origin_y = origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
                                         sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
@@ -3920,7 +3930,11 @@ EB_EXTERN void av1_encode_pass(
 #endif
 
                                     }
+#if FIRST_PASS_STAT_FIX
+                                    if (origin_y + blk_geom->bheight > sb_origin_y_org + context_ptr->sb_sz) {
+#else
                                     if (origin_y + blk_geom->bheight > sb_origin_y + context_ptr->sb_sz) {
+#endif
                                         sb_origin_x = (origin_x / context_ptr->sb_sz)* context_ptr->sb_sz;
                                         sb_origin_y = (origin_y / context_ptr->sb_sz + 1) * context_ptr->sb_sz;
                                         sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
@@ -3964,8 +3978,13 @@ EB_EXTERN void av1_encode_pass(
 #endif
 #endif
                                     }
+#if FIRST_PASS_STAT_FIX
+                                    if (origin_x + blk_geom->bwidth > sb_origin_x_org + context_ptr->sb_sz &&
+                                        origin_y + blk_geom->bheight > sb_origin_y_org + context_ptr->sb_sz) {
+#else
                                     if (origin_x + blk_geom->bwidth > sb_origin_x + context_ptr->sb_sz &&
                                         origin_y + blk_geom->bheight > sb_origin_y + context_ptr->sb_sz) {
+#endif
                                         sb_origin_x = (origin_x / context_ptr->sb_sz + 1)* context_ptr->sb_sz;
                                         sb_origin_y = (origin_y / context_ptr->sb_sz + 1) * context_ptr->sb_sz;
                                         sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
@@ -4024,6 +4043,11 @@ EB_EXTERN void av1_encode_pass(
                                 origin_y = MIN(origin_y, sequence_control_set_ptr->seq_header.max_frame_height - blk_geom->bheight);
                                 uint16_t sb_origin_x = origin_x / context_ptr->sb_sz * context_ptr->sb_sz;
                                 uint16_t sb_origin_y = origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
+#if FIRST_PASS_STAT_FIX
+                                uint16_t sb_origin_x_org = origin_x / context_ptr->sb_sz * context_ptr->sb_sz;
+                                uint16_t sb_origin_y_org = origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
+#endif
+
                                 uint32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
                                 uint16_t sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
                                 uint16_t width, height, weight;
@@ -4068,7 +4092,11 @@ EB_EXTERN void av1_encode_pass(
                                 eb_release_mutex(sequence_control_set_ptr->stat_info_mutex);
 #endif
 #endif
+#if FIRST_PASS_STAT_FIX
+                                if (origin_x + blk_geom->bwidth > sb_origin_x_org + context_ptr->sb_sz) {
+#else
                                 if (origin_x + blk_geom->bwidth > sb_origin_x + context_ptr->sb_sz) {
+#endif
                                     sb_origin_x = (origin_x / context_ptr->sb_sz + 1)* context_ptr->sb_sz;
                                     sb_origin_y = origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
                                     sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
@@ -4112,7 +4140,11 @@ EB_EXTERN void av1_encode_pass(
 #endif
 #endif
                                 }
+#if FIRST_PASS_STAT_FIX
+                                if (origin_y + blk_geom->bheight > sb_origin_y_org + context_ptr->sb_sz) {
+#else
                                 if (origin_y + blk_geom->bheight > sb_origin_y + context_ptr->sb_sz) {
+#endif
                                     sb_origin_x = (origin_x / context_ptr->sb_sz)* context_ptr->sb_sz;
                                     sb_origin_y = (origin_y / context_ptr->sb_sz + 1) * context_ptr->sb_sz;
                                     sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
@@ -4156,8 +4188,13 @@ EB_EXTERN void av1_encode_pass(
 #endif
 #endif
                                 }
+#if FIRST_PASS_STAT_FIX
+                                if (origin_x + blk_geom->bwidth > sb_origin_x_org + context_ptr->sb_sz &&
+                                    +origin_y + blk_geom->bheight > sb_origin_y_org + context_ptr->sb_sz) {
+#else
                                 if (origin_x + blk_geom->bwidth > sb_origin_x + context_ptr->sb_sz &&
                                     origin_y + blk_geom->bheight > sb_origin_y + context_ptr->sb_sz) {
+#endif
                                     sb_origin_x = (origin_x / context_ptr->sb_sz + 1)* context_ptr->sb_sz;
                                     sb_origin_y = (origin_y / context_ptr->sb_sz + 1) * context_ptr->sb_sz;
                                     sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
