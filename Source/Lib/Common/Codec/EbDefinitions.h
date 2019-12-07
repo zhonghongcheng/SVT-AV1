@@ -32,6 +32,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#define HBD2_COMP                    1 // comp inter-inter HBD2
+#define HBD2_PME                     1 // pme HBD1
+
+
 #define ENABLE_M1    0 // To get M1  using enc-mode 0
 #define ENABLE_M2    0 // To get M2  using enc-mode 0
 #define ENABLE_M3    0 // To get M3  using enc-mode 0
