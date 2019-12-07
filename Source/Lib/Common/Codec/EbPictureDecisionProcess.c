@@ -1686,8 +1686,14 @@ EbErrorType signal_derivation_multi_processes_oq(
 
         picture_control_set_ptr->wedge_mode = 0;
 
-#if SKIP_WEDGE_COMPOUND_NON_INTRA
+#if SKIP_WEDGE_MODE_1_NON_INTRA
         picture_control_set_ptr->wedge_mode = picture_control_set_ptr->slice_type != I_SLICE ? 1 : 0;
+#endif
+#if SKIP_WEDGE_MODE_2_NON_INTRA
+        picture_control_set_ptr->wedge_mode = picture_control_set_ptr->slice_type != I_SLICE ? 2 : 0;
+#endif
+#if SKIP_WEDGE_MODE_3_NON_INTRA
+        picture_control_set_ptr->wedge_mode = picture_control_set_ptr->slice_type != I_SLICE ? 3 : 0;
 #endif
 
 #if II_COMP_FLAG

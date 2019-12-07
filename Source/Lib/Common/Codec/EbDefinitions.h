@@ -80,7 +80,9 @@ extern "C" {
 #define M3_INTRA_PRED_MODE                        0
 #define SKIP_SUB_BLOCKS_NON_INTRA                 0
 
-#define SKIP_WEDGE_COMPOUND_NON_INTRA             0
+#define SKIP_WEDGE_MODE_1_NON_INTRA               0
+#define SKIP_WEDGE_MODE_2_NON_INTRA               0
+#define SKIP_WEDGE_MODE_3_NON_INTRA               0
 #define M2_COMPOUND_MODE                          0
 #define GM_LEVEL_DOWN                             0
 
