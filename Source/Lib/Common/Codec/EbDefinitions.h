@@ -51,8 +51,16 @@ extern "C" {
 
 #define HALF_PEL_MODE_REFINEMENT                  0
 #define M1_PIC_DEPTH_MODE                         0
-#define BIPRED3X3_INJECTION_2                     1
-#define CDEF_FILTER_MODE_4                        1
+#define BIPRED3X3_INJECTION_2                     0
+#define CDEF_FILTER_MODE_4                        0
+
+#define FRACTIONAL_SEARCH_MODEL_1                 0
+#define HME_SEARCH_METHOD_SUB_SAD                 0
+#define ME_SEARCH_METHOD_SUB_SAD                  0
+#define SKIP_SUB_BLOCKS_NON_INTRA                 0
+
+#define SKIP_WEDGE_MODE_1_NON_INTRA               0
+#define FRACTIONAL_SEARCH_METHOD_FULL_SAD         0
 #endif
 
 // M0 TO M1

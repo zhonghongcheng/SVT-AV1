@@ -1551,6 +1551,10 @@ EbErrorType signal_derivation_multi_processes_oq(
     // 1                                            ON
     picture_control_set_ptr->skip_sub_blks =   0;
 
+#if SKIP_SUB_BLOCKS_NON_INTRA
+    picture_control_set_ptr->skip_sub_blks = picture_control_set_ptr->slice_type != I_SLICE ? 1 : 0;
+#endif
+
         if (picture_control_set_ptr->sc_content_detected)
             picture_control_set_ptr->cu8x8_mode = (picture_control_set_ptr->temporal_layer_index > 0) ?
             CU_8x8_MODE_1 :
@@ -1609,6 +1613,10 @@ EbErrorType signal_derivation_multi_processes_oq(
         // 3                 Fast: Mode 1 & Mode 2
 
         picture_control_set_ptr->wedge_mode = 0;
+
+#if SKIP_WEDGE_MODE_1_NON_INTRA
+        picture_control_set_ptr->wedge_mode = picture_control_set_ptr->slice_type != I_SLICE ? 1 : 0;
+#endif
 
 #if II_COMP_FLAG
         // inter intra pred                      Settings
