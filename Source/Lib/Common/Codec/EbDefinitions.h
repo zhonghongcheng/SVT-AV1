@@ -48,6 +48,11 @@ extern "C" {
 #define MR_COEFF_BASED_SKIP_ATB                   1
 #define MR_NSQ_SEARCH_LEVEL                       1
 #define MR_PIC_OBMC_MODE                          1
+
+#define HALF_PEL_MODE_REFINEMENT                  0
+#define M1_PIC_DEPTH_MODE                         0
+#define BIPRED3X3_INJECTION_2                     1
+#define CDEF_FILTER_MODE_4                        1
 #endif
 
 // M0 TO M1
@@ -66,7 +71,7 @@ extern "C" {
 #define M1_MD_EXIT_TH                             1
 #define M1_PIC_OBMC_MODE                          1  // SC ONLY
 #define M1_FRACTIONAL_SEARCH_METHOD               1  // SC ONLY
-#define M1_PIC_DEPTH_MODE                         1
+//#define M1_PIC_DEPTH_MODE                         1
 #define M1_FULL_PEL_REF_WINDOW                    1
 #endif
 //M2 TO M1

@@ -1559,6 +1559,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     }
     else
 #endif
+#if BIPRED3X3_INJECTION_2
+        if (1)
+            context_ptr->bipred3x3_injection = 2;
+        else
+#endif
 #if PRESETS_TUNE
         if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
             if (picture_control_set_ptr->enc_mode <= ENC_M4)

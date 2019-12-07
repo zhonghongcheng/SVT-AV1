@@ -1265,7 +1265,17 @@ EbErrorType signal_derivation_multi_processes_oq(
     }
     else
         picture_control_set_ptr->cdef_filter_mode = 0;
+#endif
 
+#if CDEF_FILTER_MODE_4
+    if (sequence_control_set_ptr->seq_header.enable_cdef && frm_hdr->allow_intrabc == 0) {
+        if (sc_content_detected)
+            picture_control_set_ptr->cdef_filter_mode = 4;
+        else
+            picture_control_set_ptr->cdef_filter_mode = 4;
+    }
+    else
+        picture_control_set_ptr->cdef_filter_mode = 0;
 #endif
 
     // SG Level                                    Settings

@@ -231,6 +231,9 @@ EbErrorType signal_derivation_me_kernel_oq(
         context_ptr->me_context_ptr->quarter_pel_mode =
             REFINMENT_QP_MODE;
 #endif
+#if HALF_PEL_MODE_REFINEMENT
+        context_ptr->me_context_ptr->half_pel_mode = REFINMENT_HP_MODE;
+#endif
     // Set fractional search model
     // 0: search all blocks
     // 1: selective based on Full-Search SAD & MV.
