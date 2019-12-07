@@ -1231,6 +1231,18 @@ EbErrorType signal_derivation_multi_processes_oq(
     else
         picture_control_set_ptr->loop_filter_mode = 0;
 
+#if M6_LOOP_FILTER_MODE
+    if (!picture_control_set_ptr->sequence_control_set_ptr->static_config.disable_dlf_flag && frm_hdr->allow_intrabc == 0) {
+        if (sc_content_detected)
+            picture_control_set_ptr->loop_filter_mode = 0;
+        else
+            picture_control_set_ptr->loop_filter_mode = picture_control_set_ptr->is_used_as_reference_flag ? 1 : 0;
+
+    }
+    else
+        picture_control_set_ptr->loop_filter_mode = 0;
+
+#endif
 #if M3_LOOP_FILTER_MODE
    if (!picture_control_set_ptr->sequence_control_set_ptr->static_config.disable_dlf_flag && frm_hdr->allow_intrabc == 0) {
     if (sc_content_detected)
@@ -1601,6 +1613,10 @@ EbErrorType signal_derivation_multi_processes_oq(
     // 1                                            ON
     picture_control_set_ptr->skip_sub_blks =   0;
 
+#if SKIP_SUB_BLOCKS_NON_INTRA
+    picture_control_set_ptr->skip_sub_blks = picture_control_set_ptr->slice_type != I_SLICE ? 1 : 0;
+#endif
+
         if (picture_control_set_ptr->sc_content_detected)
             picture_control_set_ptr->cu8x8_mode = (picture_control_set_ptr->temporal_layer_index > 0) ?
             CU_8x8_MODE_1 :
@@ -1669,6 +1685,10 @@ EbErrorType signal_derivation_multi_processes_oq(
         // 3                 Fast: Mode 1 & Mode 2
 
         picture_control_set_ptr->wedge_mode = 0;
+
+#if SKIP_WEDGE_COMPOUND_NON_INTRA
+        picture_control_set_ptr->wedge_mode = picture_control_set_ptr->slice_type != I_SLICE ? 1 : 0;
+#endif
 
 #if II_COMP_FLAG
         // inter intra pred                      Settings
@@ -1739,6 +1759,10 @@ EbErrorType signal_derivation_multi_processes_oq(
         // GM_DOWN                                    Downsampled 1/4th serach mode.
         // GM_TRAN_ONLY                               Translation only using ME MV.
         picture_control_set_ptr->gm_level = GM_FULL;
+
+#if GM_LEVEL_DOWN
+        picture_control_set_ptr->gm_level = GM_DOWN;
+#endif
 #endif
     return return_error;
     return return_error;

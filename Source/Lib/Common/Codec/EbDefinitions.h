@@ -63,7 +63,7 @@ extern "C" {
 #define MR_COEFF_BASED_SKIP_ATB                   0
 #define MR_ENABLE_INTERINTRA_COMPOUND             0
 
-// Adjust M0 settings - commented out macros are the M0 defaults
+// Multi-Processes signal(s)
 #define M1_PIC_DEPTH_MODE                         0
 #define M3_PIC_DEPTH_MODE                         0
 #define M7_PIC_DEPTH_MODE                         0
@@ -73,8 +73,17 @@ extern "C" {
 #define SG_FILTER_MODE_1                          0
 #define WN_FILTER_MODE_2                          0
 #define WN_FILTER_MODE_0                          0
-#define HALF_PEL_MODE_REFINEMENT                  0
 
+#define M3_LOOP_FILTER_MODE                       0
+#define M6_LOOP_FILTER_MODE                       0
+#define M2_INTRA_PRED_MODE                        0
+#define M3_INTRA_PRED_MODE                        0
+#define SKIP_SUB_BLOCKS_NON_INTRA                 0
+#define SKIP_WEDGE_COMPOUND_NON_INTRA             0
+#define M2_COMPOUND_MODE                          0
+#define GM_LEVEL_DOWN                             0
+
+// MD features
 //#define DECOUPLE_INTRA_INTER_FAST_LOOP_ON         0
 //#define DECOUPLE_INTRA_INTER_FAST_LOOP_OFF        0 // M0,1,2,3 def
 //#define DFL_FULL_SAD_SEARCH                       0 // not used
@@ -113,6 +122,17 @@ extern "C" {
 #define HME_SEARCH_METHOD_SUB_SAD                 0
 #define ME_SEARCH_METHOD_SUB_SAD                  0
 
+#define HALF_PEL_MODE_REFINEMENT                  0
+
+#define M1_HME_ME_LEVEL                           0
+#define M2_HME_ME_LEVEL                           0
+#define M3_HME_ME_LEVEL                           0
+#define M4_HME_ME_LEVEL                           0
+#define M5_HME_ME_LEVEL                           0
+#define M6_HME_ME_LEVEL                           0
+#define M7_HME_ME_LEVEL                           0
+#define M8_HME_ME_LEVEL                           1
+
 // M0 TO M1
 #if ENABLE_M1 || ENABLE_M2 || ENABLE_M3
 #define M1_ENABLE_HME_FLAG                        1
@@ -144,9 +164,9 @@ extern "C" {
 
 #define M2_NX4_4XN_PARENT_MV_INJECTION            1
 #define M2_PIC_DEPTH_MODE                         1
-#define M2_INTRA_PRED_MODE                        1
+//#define M2_INTRA_PRED_MODE                        1
 #define M2_ATB_MODE                               1
-#define M2_COMPOUND_MODE                          1
+//#define M2_COMPOUND_MODE                          1
 #define M2_REF_COUNT_USED                         1
 #define M2_UNIPRED3X3_INJECTION                   1
 #define M2_MFMV_ENABLED                           1
@@ -164,10 +184,10 @@ extern "C" {
 #define M3_PERFORM_QUANTIZE_FP                     1         //(TRELLIS SHOULD BE ON TO BE TESTED)
 #define M3_PIC_OBMC_MODE                           1
 //#define M3_PIC_DEPTH_MODE                          1
-#define M3_LOOP_FILTER_MODE                        1
+//#define M3_LOOP_FILTER_MODE                        1
 #define M3_SG_FILTER_MODE                          1
 #define M3_TX_SEARCH_REDUCED_SET                   1
-#define M3_INTRA_PRED_MODE                         1
+//#define M3_INTRA_PRED_MODE                         1
 #define M3_MRP_MODE                                1
 #define M3_MD_STAGE_1_COUNT                        1
 #define M3_MD_STAGE_2_COUNT                        1

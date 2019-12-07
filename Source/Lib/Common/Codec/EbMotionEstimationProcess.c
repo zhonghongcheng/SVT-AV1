@@ -111,6 +111,31 @@ void* set_me_hme_params_oq(
 
     uint8_t sc_content_detected = picture_control_set_ptr->sc_content_detected;
 
+#if M1_HME_ME_LEVEL
+    hmeMeLevel = 1;
+#endif
+#if M2_HME_ME_LEVEL
+    hmeMeLevel = 2;
+#endif
+#if M3_HME_ME_LEVEL
+    hmeMeLevel = 3;
+#endif
+#if M4_HME_ME_LEVEL
+    hmeMeLevel = 4;
+#endif
+#if M5_HME_ME_LEVEL
+    hmeMeLevel = 5;
+#endif
+#if M6_HME_ME_LEVEL
+    hmeMeLevel = 6;
+#endif
+#if M7_HME_ME_LEVEL
+    hmeMeLevel = 7;
+#endif
+#if M8_HME_ME_LEVEL
+    hmeMeLevel = 8;
+#endif
+
     // HME Level0
     me_context_ptr->hme_level0_total_search_area_width = hme_level0_total_search_area_width[sc_content_detected][input_resolution][hmeMeLevel];
     me_context_ptr->hme_level0_total_search_area_height = hme_level0_total_search_area_height[sc_content_detected][input_resolution][hmeMeLevel];
