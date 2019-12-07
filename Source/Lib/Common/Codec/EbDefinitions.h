@@ -79,6 +79,7 @@ extern "C" {
 #define M2_INTRA_PRED_MODE                        0
 #define M3_INTRA_PRED_MODE                        0
 #define SKIP_SUB_BLOCKS_NON_INTRA                 0
+
 #define SKIP_WEDGE_COMPOUND_NON_INTRA             0
 #define M2_COMPOUND_MODE                          0
 #define GM_LEVEL_DOWN                             0
@@ -131,7 +132,7 @@ extern "C" {
 #define M5_HME_ME_LEVEL                           0
 #define M6_HME_ME_LEVEL                           0
 #define M7_HME_ME_LEVEL                           0
-#define M8_HME_ME_LEVEL                           1
+#define M8_HME_ME_LEVEL                           0
 
 // M0 TO M1
 #if ENABLE_M1 || ENABLE_M2 || ENABLE_M3
