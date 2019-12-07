@@ -79,6 +79,7 @@ script:
     cmake -j $(if [ $TRAVIS_OS_NAME = osx ]; then sysctl -n hw.ncpu; else nproc; fi) --build . &&
     sudo cmake --build . --target install && cd $TRAVIS_BUILD_DIR
   - SvtAv1EncApp -enc-mode 8 -i akiyo_cif.y4m -n 150 -b test1.ivf
+  - SvtAv1EncApp -enc-mode 8 -i Chimera-Aerial_480x270_2997fps_10bit_420_150frames.y4m -n 150 -b test1.ivf
 before_cache:
   - "sudo chown -R travis: $HOME/.ccache"
   - ccache -c
@@ -179,20 +180,27 @@ matrix:
     - name: Binary Identical?
       script:
         - mv -t $HOME akiyo_cif.y4m
+        - mv -t $HOME Chimera-Aerial_480x270_2997fps_10bit_420_150frames.y4m
         - *base_script
         - cd $HOME
-        - SvtAv1EncApp -enc-mode 8 -i akiyo_cif.y4m -n 120 -b test-pr-m8.ivf
-        - SvtAv1EncApp -enc-mode 0 -i akiyo_cif.y4m -n 3 -b test-pr-m0.ivf
+        - SvtAv1EncApp -enc-mode 8 -i akiyo_cif.y4m -n 120 -b test-pr-8bit-m8.ivf
+        - SvtAv1EncApp -enc-mode 0 -i akiyo_cif.y4m -n 3 -b test-pr-8bit-m0.ivf
+        - SvtAv1EncApp -enc-mode 8 -i Chimera-Aerial_480x270_2997fps_10bit_420_150frames.y4m -n 120 -b test-pr-10bit-m8.ivf
+        - SvtAv1EncApp -enc-mode 0 -i Chimera-Aerial_480x270_2997fps_10bit_420_150frames.y4m -n 3 -b test-pr-10bit-m0.ivf
         - cd $TRAVIS_BUILD_DIR
         - git fetch https://github.com/OpenVisualCloud/SVT-AV1.git master
         - git checkout FETCH_HEAD
         - rm -rf $TRAVIS_BUILD_DIR/Build/linux/${build_type:-Release}/*
         - *base_script
         - cd $HOME
-        - SvtAv1EncApp -enc-mode 8 -i akiyo_cif.y4m -n 120 -b test-master-m8.ivf
-        - SvtAv1EncApp -enc-mode 0 -i akiyo_cif.y4m -n 3 -b test-master-m0.ivf
-        - diff test-pr-m8.ivf test-master-m8.ivf
-        - diff test-pr-m0.ivf test-master-m0.ivf
+        - SvtAv1EncApp -enc-mode 8 -i akiyo_cif.y4m -n 120 -b test-master-8bit-m8.ivf
+        - SvtAv1EncApp -enc-mode 0 -i akiyo_cif.y4m -n 3 -b test-master-8bit-m0.ivf
+        - SvtAv1EncApp -enc-mode 8 -i Chimera-Aerial_480x270_2997fps_10bit_420_150frames.y4m -n 120 -b test-master-10bit-m8.ivf
+        - SvtAv1EncApp -enc-mode 0 -i Chimera-Aerial_480x270_2997fps_10bit_420_150frames.y4m -n 3 -b test-master-10bit-m0.ivf
+        - diff test-pr-8bit-m8.ivf test-master-8bit-m8.ivf
+        - diff test-pr-8bit-m0.ivf test-master-8bit-m0.ivf
+        - diff test-pr-10bit-m8.ivf test-master-10bit-m8.ivf
+        - diff test-pr-10bit-m0.ivf test-master-10bit-m0.ivf
 
     # Coveralls on Linux and macOS
     - name: Coveralls Linux+gcc
