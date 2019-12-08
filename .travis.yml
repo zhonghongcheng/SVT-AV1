@@ -78,7 +78,9 @@ script:
     cmake $TRAVIS_BUILD_DIR -G"${generator:-Unix Makefiles}" -DCMAKE_BUILD_TYPE=${build_type:-Release} ${CMAKE_EFLAGS}
     cmake -j $(if [ $TRAVIS_OS_NAME = osx ]; then sysctl -n hw.ncpu; else nproc; fi) --build . &&
     sudo cmake --build . --target install && cd $TRAVIS_BUILD_DIR
+  - SvtAv1EncApp -enc-mode 0 -i akiyo_cif.y4m -n 3 -b test1.ivf
   - SvtAv1EncApp -enc-mode 8 -i akiyo_cif.y4m -n 150 -b test1.ivf
+  - SvtAv1EncApp -enc-mode 0 -i Chimera-Aerial_480x270_2997fps_10bit_420_150frames.y4m -n 3 -b test1.ivf
   - SvtAv1EncApp -enc-mode 8 -i Chimera-Aerial_480x270_2997fps_10bit_420_150frames.y4m -n 150 -b test1.ivf
 before_cache:
   - "sudo chown -R travis: $HOME/.ccache"
