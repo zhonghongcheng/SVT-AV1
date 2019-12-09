@@ -136,41 +136,6 @@ matrix:
             fi
           done
     # GCC & Clang builds
-    - name: Linux GCC 7 build
-      stage: test
-      env: build_type=release CC=gcc-7 CXX=g++-7
-    - name: Linux GCC 8 build
-      env: build_type=release CC=gcc-8 CXX=g++-8
-    - name: Linux GCC 9 build
-      env: build_type=release CC=gcc-9 CXX=g++-9
-    - name: Linux Clang 6 build
-      compiler: clang
-      env: build_type=release CC=clang-6.0 CXX=clang++-6.0
-    - name: Linux Clang 10 build
-      compiler: clang
-      env: build_type=release CC=clang-10 CXX=clang++-10
     - name: macOS Clang build
       os: osx
       compiler: clang
-
-    # Tests if .ivf files are identical on binary level
-    - name: Binary Identical?
-      script:
-        - mv -t $HOME akiyo_cif.y4m
-        - mv -t $HOME Chimera-Aerial_480x270_2997fps_10bit_420_150frames.y4m
-        - *base_script
-        - cd $HOME
-        - SvtAv1EncApp -enc-mode 0 -i Chimera-Aerial_480x270_2997fps_10bit_420_150frames.y4m -n 3 -b test-pr-10bit-m0.ivf
-        - cd $TRAVIS_BUILD_DIR
-        - git fetch https://github.com/OpenVisualCloud/SVT-AV1.git master
-        - git checkout FETCH_HEAD
-        - rm -rf $TRAVIS_BUILD_DIR/Build/linux/${build_type:-Release}/*
-        - *base_script
-        - cd $HOME
-        - SvtAv1EncApp -enc-mode 0 -i Chimera-Aerial_480x270_2997fps_10bit_420_150frames.y4m -n 3 -b test-master-10bit-m0.ivf
-        - diff test-pr-8bit-m8.ivf test-master-8bit-m8.ivf
-        - diff test-pr-8bit-m0.ivf test-master-8bit-m0.ivf
-        - diff test-pr-10bit-m8.ivf test-master-10bit-m8.ivf
-        - diff test-pr-10bit-m0.ivf test-master-10bit-m0.ivf
-
-    # Coveralls on Linux and macOS
