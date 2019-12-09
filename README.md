@@ -6,7 +6,7 @@
 
 The Scalable Video Technology for AV1 Encoder (SVT-AV1 Encoder) is an AV1-compliant encoder library core. The SVT-AV1 development is a work-in-progress targeting performance levels applicable to both VOD and Live encoding / transcoding video applications.
 
-## License
+##  License
 
 SVT-AV1 Encoder is licensed under the OSI-approved BSD+Patent license. See [LICENSE](LICENSE.md) for details.
 
