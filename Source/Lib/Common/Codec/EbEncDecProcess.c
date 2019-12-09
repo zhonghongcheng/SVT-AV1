@@ -1733,17 +1733,17 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 #endif
 #if PREDICTIVE_ME_LEVEL_0
         if (1)
-            context_ptr->predictive_me_level = 3;
+            context_ptr->predictive_me_level = 0;
         else
 #endif
 #if PREDICTIVE_ME_LEVEL_1
         if (1)
-            context_ptr->predictive_me_level = 4;
+            context_ptr->predictive_me_level = 1;
         else
 #endif
 #if PREDICTIVE_ME_LEVEL_2
         if (1)
-            context_ptr->predictive_me_level = 5;
+            context_ptr->predictive_me_level = 2;
         else
 #endif
 #if PREDICTIVE_ME_LEVEL_3

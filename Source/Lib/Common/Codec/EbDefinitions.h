@@ -67,6 +67,8 @@ extern "C" {
 #define M1_PIC_DEPTH_MODE                         0
 #define M3_PIC_DEPTH_MODE                         0
 #define M7_PIC_DEPTH_MODE                         0
+#define PIC_DEPTH_MODE_MPPD_0                     0
+#define PIC_DEPTH_MODE_MPPD_3                     1
 #define CDEF_FILTER_MODE_4                        0
 #define CDEF_FILTER_MODE_2                        0
 #define SG_FILTER_MODE_3                          0
