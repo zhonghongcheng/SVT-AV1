@@ -2052,8 +2052,10 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
     sequence_control_set_ptr->mfmv_enabled = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;
 #endif
 #endif
+#if MFMV_ENABLED_0
+    sequence_control_set_ptr->mfmv_enabled = 0;
+#endif
 #if M2_MFMV_ENABLED
-
         sequence_control_set_ptr->mfmv_enabled =  0;
 #endif
     // Set hbd_mode_decision OFF for bitdepth < 10

@@ -120,6 +120,9 @@ EbErrorType signal_derivation_pre_analysis_oq(
     if (picture_control_set_ptr->enc_mode >= ENC_M8)
         sequence_control_set_ptr->seq_header.enable_restoration = 0;
     sequence_control_set_ptr->cdf_mode = (picture_control_set_ptr->enc_mode <= ENC_M6) ? 0 : 1;
+#if CDF_MODE_1
+    sequence_control_set_ptr->cdf_mode = 1;
+#endif
     return return_error;
 }
 

@@ -1551,10 +1551,6 @@ EbErrorType signal_derivation_multi_processes_oq(
     // 1                                            ON
     picture_control_set_ptr->skip_sub_blks =   0;
 
-#if SKIP_SUB_BLOCKS_NON_INTRA
-    picture_control_set_ptr->skip_sub_blks = picture_control_set_ptr->slice_type != I_SLICE ? 1 : 0;
-#endif
-
         if (picture_control_set_ptr->sc_content_detected)
             picture_control_set_ptr->cu8x8_mode = (picture_control_set_ptr->temporal_layer_index > 0) ?
             CU_8x8_MODE_1 :
@@ -1586,6 +1582,10 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
         else
             picture_control_set_ptr->atb_mode = 0;
+
+#if ATB_MODE_0
+        picture_control_set_ptr->atb_mode = 0;
+#endif
 #if M2_ATB_MODE
         picture_control_set_ptr->atb_mode = 0;
 #endif
@@ -1640,6 +1640,13 @@ EbErrorType signal_derivation_multi_processes_oq(
 #endif
         else
             picture_control_set_ptr->compound_mode = 0;
+
+#if COMPOUND_MODE_1
+        if (sequence_control_set_ptr->compound_mode)
+            picture_control_set_ptr->compound_mode = 1;
+        else
+            picture_control_set_ptr->compound_mode = 0;
+#endif
 #if M2_COMPOUND_MODE
         if (sequence_control_set_ptr->compound_mode)
             if (picture_control_set_ptr->sc_content_detected)
@@ -1675,6 +1682,10 @@ EbErrorType signal_derivation_multi_processes_oq(
             picture_control_set_ptr->prune_unipred_at_me = 0;
         else
             picture_control_set_ptr->prune_unipred_at_me = 1;
+#if PRUNE_UNIPRED_ME_0
+        picture_control_set_ptr->prune_unipred_at_me = 0;
+#endif
+
         //CHKN: Temporal MVP should be disabled for pictures beloning to 4L MiniGop preceeded by 5L miniGOP. in this case the RPS is wrong(known issue). check RPS construction for more info.
         if ((sequence_control_set_ptr->static_config.hierarchical_levels == 4 && picture_control_set_ptr->hierarchical_levels == 3) ||
             picture_control_set_ptr->slice_type == I_SLICE)

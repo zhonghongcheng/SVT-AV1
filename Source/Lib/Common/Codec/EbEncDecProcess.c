@@ -1872,11 +1872,17 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->blk_skip_decision = EB_TRUE;
     else
         context_ptr->blk_skip_decision = EB_FALSE;
+
     // Derive Trellis Quant Coeff Optimization Flag
 #if MULTI_PASS_PD_SUPPORT // Shut spatial SSE @ full loop
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
     else if (context_ptr->pd_pass == PD_PASS_1)
+        context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
+    else
+#endif
+#if TRELLIS_0
+    if (1)
         context_ptr->trellis_quant_coeff_optimization = EB_FALSE;
     else
 #endif
@@ -1910,6 +1916,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->redundant_blk = EB_TRUE;
     else
 #endif
+#if REDUNDANT_BLK_0
+    if(1)
+        context_ptr->redundant_blk = EB_FALSE;
+    else
+#endif
 #if PRESETS_TUNE
         if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
             if (picture_control_set_ptr->enc_mode <= ENC_M8)
@@ -1938,6 +1949,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         if (context_ptr->pd_pass == PD_PASS_0)
             context_ptr->edge_based_skip_angle_intra = 0;
         else if (context_ptr->pd_pass == PD_PASS_1)
+            context_ptr->edge_based_skip_angle_intra = 1;
+        else
+#endif
+#if EDGE_BASED_SKIP_ANGLE_INTRA_1
+        if (1)
             context_ptr->edge_based_skip_angle_intra = 1;
         else
 #endif
@@ -1984,6 +2000,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
     if (context_ptr->pd_pass == PD_PASS_0)
         context_ptr->prune_ref_frame_for_rec_partitions = 0;
     else if (context_ptr->pd_pass == PD_PASS_1)
+        context_ptr->prune_ref_frame_for_rec_partitions = 1;
+    else
+#endif
+#if PRUNE_REF_FRAME_REC_PART_1
+    if (1)
         context_ptr->prune_ref_frame_for_rec_partitions = 1;
     else
 #endif
