@@ -14339,6 +14339,9 @@ extern "C" {
 #if GM_OPT
         uint8_t                                gm_level;
 #endif
+#if REDUCE_INTER_MODES
+        uint8_t                                reduce_inter_modes;
+#endif
     } PictureParentControlSet;
 
     typedef struct PictureControlSetInitData

@@ -1412,6 +1412,9 @@ EbErrorType signal_derivation_multi_processes_oq(
         // GM_TRAN_ONLY                               Translation only using ME MV.
         picture_control_set_ptr->gm_level = GM_FULL;
 #endif
+#if REDUCE_INTER_MODES
+        picture_control_set_ptr->reduce_inter_modes = 1;
+#endif
     return return_error;
 }
 
