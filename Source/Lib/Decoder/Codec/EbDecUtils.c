@@ -91,9 +91,8 @@ void derive_blk_pointers(EbPictureBufferDesc *recon_picture_buf, int32_t plane,
     }
 }
 
-void pad_pic(EbPictureBufferDesc *recon_picture_buf, FrameHeader *frame_hdr) {
+void pad_pic(EbPictureBufferDesc *recon_picture_buf) {
 
-    FrameSize *frame_size = &frame_hdr->frame_size;
     int32_t sx = 0, sy = 0;
 
     switch (recon_picture_buf->color_format) {
@@ -122,8 +121,8 @@ void pad_pic(EbPictureBufferDesc *recon_picture_buf, FrameHeader *frame_hdr) {
         generate_padding(
             recon_picture_buf->buffer_y,
             recon_picture_buf->stride_y,
-            frame_size->superres_upscaled_width,
-            frame_size->frame_height,
+            recon_picture_buf->width,
+            recon_picture_buf->height,
             recon_picture_buf->origin_x,
             recon_picture_buf->origin_y);
 
@@ -132,8 +131,8 @@ void pad_pic(EbPictureBufferDesc *recon_picture_buf, FrameHeader *frame_hdr) {
             generate_padding(
                 recon_picture_buf->buffer_cb,
                 recon_picture_buf->stride_cb,
-                (frame_size->superres_upscaled_width + sx) >> sx,
-                (frame_size->frame_height + sy) >> sy,
+                recon_picture_buf->width >> sx,
+                recon_picture_buf->height >> sy,
                 recon_picture_buf->origin_x >> sx,
                 recon_picture_buf->origin_y >> sy);
 
@@ -141,8 +140,8 @@ void pad_pic(EbPictureBufferDesc *recon_picture_buf, FrameHeader *frame_hdr) {
             generate_padding(
                 recon_picture_buf->buffer_cr,
                 recon_picture_buf->stride_cr,
-                (frame_size->superres_upscaled_width + sx) >> sx,
-                (frame_size->frame_height + sy) >> sy,
+                recon_picture_buf->width >> sx,
+                recon_picture_buf->height >> sy,
                 recon_picture_buf->origin_x >> sx,
                 recon_picture_buf->origin_y >> sy);
         }
@@ -152,8 +151,8 @@ void pad_pic(EbPictureBufferDesc *recon_picture_buf, FrameHeader *frame_hdr) {
         generate_padding16_bit(
             recon_picture_buf->buffer_y,
             recon_picture_buf->stride_y << 1,
-            frame_size->superres_upscaled_width << 1,
-            frame_size->frame_height,
+            recon_picture_buf->width << 1,
+            recon_picture_buf->height,
             recon_picture_buf->origin_x << 1,
             recon_picture_buf->origin_y);
 
@@ -162,8 +161,8 @@ void pad_pic(EbPictureBufferDesc *recon_picture_buf, FrameHeader *frame_hdr) {
             generate_padding16_bit(
                 recon_picture_buf->buffer_cb,
                 recon_picture_buf->stride_cb << 1,
-                ((frame_size->superres_upscaled_width + sx) >> sx) << 1,
-                (frame_size->frame_height + sy) >> sy,
+                recon_picture_buf->width >> sx << 1,
+                recon_picture_buf->height >> sy,
                 recon_picture_buf->origin_x >> sx << 1,
                 recon_picture_buf->origin_y >> sy);
 
@@ -171,8 +170,8 @@ void pad_pic(EbPictureBufferDesc *recon_picture_buf, FrameHeader *frame_hdr) {
             generate_padding16_bit(
                 recon_picture_buf->buffer_cr,
                 recon_picture_buf->stride_cr << 1,
-                ((frame_size->superres_upscaled_width + sx) >> sx) << 1,
-                (frame_size->frame_height + sy) >> sy,
+                recon_picture_buf->width >> sx << 1,
+                recon_picture_buf->height >> sy,
                 recon_picture_buf->origin_x >> sx << 1,
                 recon_picture_buf->origin_y >> sy);
         }

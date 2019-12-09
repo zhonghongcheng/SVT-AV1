@@ -12,13 +12,8 @@ extern "C" {
 
 #include "stdint.h"
 #include "EbSvtAv1.h"
-#if 1 //TWO_PASS
-#include <stdlib.h>
-#include <stdio.h>
-#endif
+
 #define TILES    1
-#define TWO_PASS_USE_2NDP_ME_IN_1STP                1
-#define TWO_PASS                                    1
 #define ALT_REF_OVERLAY_APP                         1
     //***HME***
 #define EB_HME_SEARCH_AREA_COLUMN_MAX_COUNT         2
@@ -44,13 +39,7 @@ typedef struct EbSvtAv1EncConfiguration
      *
      * Default is defined as MAX_ENC_PRESET. */
     uint8_t                  enc_mode;
-#if TWO_PASS_USE_2NDP_ME_IN_1STP
-    /* For two pass encoding, the enc_mod of the second pass is passed in the first pass.
-    * First pass has the option to run with second pass ME settings.
-    *
-    * Default is defined as MAX_ENC_PRESET. */
-    uint8_t                  snd_pass_enc_mode;
-#endif
+
     // GOP Structure
 
     /* The intra period defines the interval of frames after which you insert an
@@ -110,9 +99,6 @@ typedef struct EbSvtAv1EncConfiguration
      *
      * Default is 0. */
     uint32_t                 source_height;
-
-    uint32_t render_width, render_height;
-
     /* The frequecy of images being displayed. If the number is less than 1000,
      * the input frame rate is an integer number between 1 and 60, else the input
      * number is in Q16 format, shifted by 16 bits, where max allowed is 240 fps.
@@ -191,12 +177,7 @@ typedef struct EbSvtAv1EncConfiguration
     *
     * Default is 0.*/
     EbBool                   use_qp_file;
-#if 1 //TWO_PASS
-    /* Input stats file */
-    FILE                    *input_stat_file;
-    /* output stats file */
-    FILE                    *output_stat_file;
-#endif
+
     /* Enable picture QP scaling between hierarchical levels
     *
     * Default is null.*/
@@ -225,25 +206,6 @@ typedef struct EbSvtAv1EncConfiguration
     * Default is 0. */
     EbBool                   enable_warped_motion;
 
-    /* Global motion
-    *
-    * Default is 1. */
-    EbBool                   enable_global_motion;
-
-    /* OBMC
-    *
-    * Default is 1. */
-    EbBool                   enable_obmc;
-
-    /* RDOQ
-    *
-    * Default is -1. */
-    int8_t                   enable_rdoq;
-
-    /* Filter intra prediction
-    *
-    * Default is 1. */
-    EbBool                   enable_filter_intra;
     /* Flag to enable the use of default ME HME parameters.
     *
     * Default is 1. */
@@ -275,24 +237,10 @@ typedef struct EbSvtAv1EncConfiguration
     uint32_t                 search_area_height;
 
     // MD Parameters
-    /* Enable the use of HBD (10-bit) for 10 bit content at the mode decision step
-     *
-     * 0 = 8bit mode decision
-     * 1 = 10bit mode decision
-     * 2 = Auto: 8bit & 10bit mode decision
-     *
-    * Default is 1. */
-    uint8_t                   enable_hbd_mode_decision;
-
-    /* Palette Mode
+    /* Enable the use of HBD (10-bit) at the mode decision step
     *
-    * Default is -1. */
-    int32_t                   enable_palette;
-
-    /* Open Loop Partitioning Decision refinement
-    *
-    * Default is -1. */
-    int32_t                   olpd_refinement;
+    * Default is 0. */
+    EbBool                   enable_hbd_mode_decision;
 
     /* Enable the use of Constrained Intra, which yields sending two picture
      * parameter sets in the elementary streams .
@@ -321,7 +269,7 @@ typedef struct EbSvtAv1EncConfiguration
     uint32_t                 look_ahead_distance;
 
     /* Target bitrate in bits/second, only apllicable when rate control mode is
-     * set to 2 or 3.
+     * set to 1.
      *
      * Default is 7000000. */
     uint32_t                 target_bit_rate;
@@ -400,14 +348,6 @@ typedef struct EbSvtAv1EncConfiguration
     * Default is 60. */
     int32_t                  injector_frame_rate;
 
-    /* Flag to constrain motion vectors.
-     *
-     * 1: Motion vectors are allowed to point outside frame boundary.
-     * 0: Motion vectors are NOT allowed to point outside frame boundary.
-     *
-     * Default is 1. */
-    uint8_t                  unrestricted_motion_vector;
-
     // Threads management
 
     /* The number of logical processor which encoder threads run on. If
@@ -479,17 +419,6 @@ typedef struct EbSvtAv1EncConfiguration
     uint8_t                  altref_strength;
     uint8_t                  altref_nframes;
     EbBool                   enable_overlays;
-
-    uint32_t                     sq_weight;
-
-    uint64_t                 md_stage_1_class_prune_th;
-    uint64_t                 md_stage_1_cand_prune_th;
-    uint64_t                 md_stage_2_class_prune_th;
-    uint64_t                 md_stage_2_cand_prune_th;
-
-    // signal for automax_partition; on by default
-    uint8_t                     enable_auto_max_partition;
-
 } EbSvtAv1EncConfiguration;
 
     /* STEP 1: Call the library to construct a Component Handle.

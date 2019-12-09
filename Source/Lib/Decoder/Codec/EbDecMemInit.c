@@ -65,7 +65,6 @@ EbErrorType dec_eb_recon_picture_buffer_desc_ctor(
             = picture_buffer_desc_ptr->stride_y;
     picture_buffer_desc_ptr->origin_x = pictureBufferDescInitDataPtr->left_padding;
     picture_buffer_desc_ptr->origin_y = pictureBufferDescInitDataPtr->top_padding;
-    picture_buffer_desc_ptr->origin_bot_y = pictureBufferDescInitDataPtr->bot_padding;
 
     picture_buffer_desc_ptr->luma_size = (pictureBufferDescInitDataPtr->max_width +
         pictureBufferDescInitDataPtr->left_padding + pictureBufferDescInitDataPtr->right_padding) *
@@ -154,8 +153,8 @@ static EbErrorType init_master_frame_ctxt(EbDecHandle  *dec_handle_ptr) {
             (num_sb * sizeof(SBInfo)), EB_N_PTR);
 
         /* ModeInfo str allocation at 4x4 level */
-        EB_MALLOC_DEC(BlockModeInfo*, cur_frame_buf->mode_info,
-                    (num_sb * num_mis_in_sb * sizeof(BlockModeInfo)), EB_N_PTR);
+        EB_MALLOC_DEC(ModeInfo_t*, cur_frame_buf->mode_info,
+                    (num_sb * num_mis_in_sb * sizeof(ModeInfo_t)), EB_N_PTR);
 
         /* TransformInfo str allocation at 4x4 level */
         EB_MALLOC_DEC(TransformInfo_t*, cur_frame_buf->trans_info[AOM_PLANE_Y],
@@ -257,13 +256,12 @@ static EbErrorType init_master_frame_ctxt(EbDecHandle  *dec_handle_ptr) {
         // accessing will skip few SB in-between.
         // if rest_unit_size == SB_size then it's straight forward to access
         // every SB level loop restoration filter value.
-        LRCtxt *lr_ctxt = (LRCtxt *)dec_handle_ptr->pv_lr_ctxt;
-        for (int32_t plane = 0; plane <= AOM_PLANE_V; plane++) {
-            EB_MALLOC_DEC(RestorationUnitInfo *, cur_frame_buf->lr_unit[plane],
-                (num_sb * sizeof(RestorationUnitInfo)), EB_N_PTR);
-            lr_ctxt->lr_unit[plane] = cur_frame_buf->lr_unit[plane];
-            lr_ctxt->lr_stride[plane] = sb_cols;
-        }
+        EB_MALLOC_DEC(RestorationUnitInfo *, cur_frame_buf->lr_unit[AOM_PLANE_Y],
+                        (num_sb * sizeof(RestorationUnitInfo)), EB_N_PTR);
+        EB_MALLOC_DEC(RestorationUnitInfo *, cur_frame_buf->lr_unit[AOM_PLANE_U],
+                        (num_sb * sizeof(RestorationUnitInfo)), EB_N_PTR);
+        EB_MALLOC_DEC(RestorationUnitInfo *, cur_frame_buf->lr_unit[AOM_PLANE_V],
+                        (num_sb * sizeof(RestorationUnitInfo)), EB_N_PTR);
     }
 #if FRAME_MI_MAP
     FrameMiMap *frame_mi_map = &master_frame_buf->frame_mi_map;
@@ -341,7 +339,6 @@ static EbErrorType init_parse_context (EbDecHandle  *dec_handle_ptr) {
     ParseNbr4x4Ctxt *neigh_ctx = &parse_ctx->parse_nbr4x4_ctxt;
 
     num_mi_col = sb_cols * num_4x4_neigh_sb;
-    neigh_ctx->num_mi_col = num_mi_col;
     num_mi_row = num_4x4_neigh_sb;
     //num_mi_frame = sb_cols * sb_rows * num_4x4_neigh_sb;
 
@@ -354,8 +351,11 @@ static EbErrorType init_parse_context (EbDecHandle  *dec_handle_ptr) {
     EB_MALLOC_DEC(uint8_t*, neigh_ctx->left_part_ht, num_mi_row * sizeof(uint8_t), EB_N_PTR);
     /* TODO : Optimize the size for Chroma */
     for (int i = 0; i < num_planes; i++) {
-        EB_MALLOC_DEC(int8_t*, neigh_ctx->left_ctx[i], num_mi_row * sizeof(int8_t), EB_N_PTR);
-        EB_MALLOC_DEC(int8_t*, neigh_ctx->above_ctx[i], num_mi_col * sizeof(int8_t), EB_N_PTR);
+        EB_MALLOC_DEC(uint8_t*, neigh_ctx->above_dc_ctx[i], num_mi_col * sizeof(uint8_t), EB_N_PTR);
+        EB_MALLOC_DEC(uint8_t*, neigh_ctx->left_dc_ctx[i], num_mi_row * sizeof(uint8_t), EB_N_PTR);
+
+        EB_MALLOC_DEC(uint8_t*, neigh_ctx->above_level_ctx[i], num_mi_col * sizeof(uint8_t), EB_N_PTR);
+        EB_MALLOC_DEC(uint8_t*, neigh_ctx->left_level_ctx[i], num_mi_row * sizeof(uint8_t), EB_N_PTR);
 
         EB_MALLOC_DEC(uint16_t*, neigh_ctx->above_palette_colors[i],
             num4_64x64 * PALETTE_MAX_SIZE *sizeof(uint16_t), EB_N_PTR);
@@ -408,9 +408,9 @@ static EbErrorType init_lf_ctxt(EbDecHandle  *dec_handle_ptr) {
     /*Boundary checking of mi_row & mi_col are not done while populating,
     so more memory is allocated by alligning to sb_size */
     int32_t aligned_width   = ALIGN_POWER_OF_TWO(seq_header->max_frame_width,
-        MAX_SB_SIZE_LOG2);
+        seq_header->sb_size_log2);
     int32_t aligned_height  = ALIGN_POWER_OF_TWO(seq_header->max_frame_height,
-        MAX_SB_SIZE_LOG2);
+        seq_header->sb_size_log2);
     int32_t mi_cols = aligned_width >> MI_SIZE_LOG2;
     int32_t mi_rows = aligned_height >> MI_SIZE_LOG2;
 
@@ -440,7 +440,7 @@ static EbErrorType init_lr_ctxt(EbDecHandle  *dec_handle_ptr)
     EB_MALLOC_DEC(RestorationLineBuffers *, lr_ctxt->rlbs,
                   sizeof(RestorationLineBuffers), EB_N_PTR)
     EB_MALLOC_DEC(int32_t *, lr_ctxt->rst_tmpbuf,
-                  RESTORATION_TMPBUF_SIZE, EB_N_PTR)
+                  RESTORATION_TMPBUF_SIZE * sizeof(int32_t), EB_N_PTR)
 
     int frame_width = dec_handle_ptr->seq_header.max_frame_width;
     int frame_height = dec_handle_ptr->seq_header.max_frame_height;

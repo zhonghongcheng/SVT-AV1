@@ -60,6 +60,7 @@
 #include <unistd.h>
 #endif
 
+#define RTCD_C
 #include "aom_dsp_rtcd.h"
 
  /**************************************
@@ -954,10 +955,6 @@ EB_API EbErrorType eb_init_encoder(EbComponentType *svt_enc_component)
         inputData.hbd_mode_decision = enc_handle_ptr->sequence_control_set_instance_array[instance_index]->sequence_control_set_ptr->static_config.enable_hbd_mode_decision;
         inputData.cdf_mode = enc_handle_ptr->sequence_control_set_instance_array[instance_index]->sequence_control_set_ptr->cdf_mode;
         inputData.mfmv = enc_handle_ptr->sequence_control_set_instance_array[instance_index]->sequence_control_set_ptr->mfmv_enabled;
-
-#if PAL_SUP
-        inputData.cfg_palette = enc_handle_ptr->sequence_control_set_instance_array[0]->sequence_control_set_ptr->static_config.screen_content_mode;
-#endif
         EB_NEW(
             enc_handle_ptr->picture_control_set_pool_ptr_array[instance_index],
             eb_system_resource_ctor,
@@ -1564,25 +1561,6 @@ EB_API EbErrorType eb_init_encoder(EbComponentType *svt_enc_component)
     EB_ALLOC_PTR_ARRAY(enc_handle_ptr->enc_dec_context_ptr_array, enc_handle_ptr->sequence_control_set_instance_array[0]->sequence_control_set_ptr->enc_dec_process_init_count);
 
     for (processIndex = 0; processIndex < enc_handle_ptr->sequence_control_set_instance_array[0]->sequence_control_set_ptr->enc_dec_process_init_count; ++processIndex) {
-#if PAL_SUP
-        EB_NEW(
-            enc_handle_ptr->enc_dec_context_ptr_array[processIndex],
-            enc_dec_context_ctor,
-            enc_handle_ptr->enc_dec_tasks_consumer_fifo_ptr_array[processIndex],
-            enc_handle_ptr->enc_dec_results_producer_fifo_ptr_array[processIndex],
-            enc_handle_ptr->enc_dec_tasks_producer_fifo_ptr_array[EncDecPortLookup(ENCDEC_INPUT_PORT_ENCDEC, processIndex)],
-            enc_handle_ptr->picture_demux_results_producer_fifo_ptr_array[
-                enc_handle_ptr->sequence_control_set_instance_array[0]->sequence_control_set_ptr->source_based_operations_process_init_count +
-                    //1 +
-                    processIndex], // Add port lookup logic here JMJ
-            enc_handle_ptr->sequence_control_set_instance_array[0]->sequence_control_set_ptr->static_config.screen_content_mode,
-            is16bit,
-            color_format,
-            enc_handle_ptr->sequence_control_set_instance_array[0]->sequence_control_set_ptr->static_config.enable_hbd_mode_decision,
-            enc_handle_ptr->sequence_control_set_instance_array[0]->sequence_control_set_ptr->max_input_luma_width,
-            enc_handle_ptr->sequence_control_set_instance_array[0]->sequence_control_set_ptr->max_input_luma_height
-            );
-#else
         EB_NEW(
             enc_handle_ptr->enc_dec_context_ptr_array[processIndex],
             enc_dec_context_ctor,
@@ -1599,7 +1577,6 @@ EB_API EbErrorType eb_init_encoder(EbComponentType *svt_enc_component)
             enc_handle_ptr->sequence_control_set_instance_array[0]->sequence_control_set_ptr->max_input_luma_width,
             enc_handle_ptr->sequence_control_set_instance_array[0]->sequence_control_set_ptr->max_input_luma_height
         );
-#endif
     }
 
     // Dlf Contexts
@@ -1846,13 +1823,16 @@ EB_API EbErrorType eb_deinit_handle(
         return_error = eb_av1_enc_component_de_init(svt_enc_component);
 
         free(svt_enc_component);
-#if  defined(__linux__)
-        EB_FREE(lp_group);
-#endif
         eb_decrease_component_count();
     }
     else
         return_error = EB_ErrorInvalidComponent;
+
+    #if  defined(__linux__)
+        if(lp_group != NULL) {
+            EB_FREE(lp_group);
+        }
+    #endif
     return return_error;
 }
 
@@ -1942,17 +1922,15 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
     if (sequence_control_set_ptr->max_input_luma_width % MIN_BLOCK_SIZE) {
         sequence_control_set_ptr->max_input_pad_right = MIN_BLOCK_SIZE - (sequence_control_set_ptr->max_input_luma_width % MIN_BLOCK_SIZE);
         sequence_control_set_ptr->max_input_luma_width = sequence_control_set_ptr->max_input_luma_width + sequence_control_set_ptr->max_input_pad_right;
-    } else {
-        sequence_control_set_ptr->max_input_pad_right = 0;
     }
-
+    else
+        sequence_control_set_ptr->max_input_pad_right = 0;
     if (sequence_control_set_ptr->max_input_luma_height % MIN_BLOCK_SIZE) {
         sequence_control_set_ptr->max_input_pad_bottom = MIN_BLOCK_SIZE - (sequence_control_set_ptr->max_input_luma_height % MIN_BLOCK_SIZE);
         sequence_control_set_ptr->max_input_luma_height = sequence_control_set_ptr->max_input_luma_height + sequence_control_set_ptr->max_input_pad_bottom;
-    } else {
-        sequence_control_set_ptr->max_input_pad_bottom = 0;
     }
-
+    else
+        sequence_control_set_ptr->max_input_pad_bottom = 0;
     sequence_control_set_ptr->max_input_chroma_width = sequence_control_set_ptr->max_input_luma_width >> subsampling_x;
     sequence_control_set_ptr->max_input_chroma_height = sequence_control_set_ptr->max_input_luma_height >> subsampling_y;
 
@@ -1966,12 +1944,7 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
     derive_input_resolution(
         sequence_control_set_ptr,
         sequence_control_set_ptr->seq_header.max_frame_width*sequence_control_set_ptr->seq_header.max_frame_height);
-#if TWO_PASS
-    // In two pass encoding, the first pass uses sb size=64
-    if (sequence_control_set_ptr->static_config.screen_content_mode == 1 || sequence_control_set_ptr->use_output_stat_file)
-#else
     if (sequence_control_set_ptr->static_config.screen_content_mode == 1)
-#endif
         sequence_control_set_ptr->static_config.super_block_size = 64;
     else
         sequence_control_set_ptr->static_config.super_block_size = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M3 && sequence_control_set_ptr->input_resolution >= INPUT_SIZE_1080i_RANGE) ? 128 : 64;
@@ -2000,7 +1973,6 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
     //0: NSQ absent
     //1: NSQ present
     sequence_control_set_ptr->nsq_present = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode <= ENC_M5) ? 1 : 0;
-
     // Set down-sampling method     Settings
     // 0                            0: filtering
     // 1                            1: decimation
@@ -2008,7 +1980,6 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
         sequence_control_set_ptr->down_sampling_method_me_search = ME_FILTERED_DOWNSAMPLED;
     else
         sequence_control_set_ptr->down_sampling_method_me_search = ME_DECIMATED_DOWNSAMPLED;
-
     // Set over_boundary_block_mode     Settings
     // 0                            0: not allowed
     // 1                            1: allowed
@@ -2016,15 +1987,7 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
         sequence_control_set_ptr->over_boundary_block_mode = 1;
     else
         sequence_control_set_ptr->over_boundary_block_mode = 0;
-#if M0_OPT
-    sequence_control_set_ptr->mfmv_enabled = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode == ENC_M0 && sequence_control_set_ptr->static_config.screen_content_mode != 1) ? 1 : 0;
-#else
     sequence_control_set_ptr->mfmv_enabled = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;
-#endif
-
-    // Set hbd_mode_decision OFF for high encode modes or bitdepth < 10
-    if (sequence_control_set_ptr->static_config.enc_mode > ENC_M0 || sequence_control_set_ptr->static_config.encoder_bit_depth < 10)
-        sequence_control_set_ptr->static_config.enable_hbd_mode_decision = 0;
 }
 
 void CopyApiFromApp(
@@ -2032,9 +1995,8 @@ void CopyApiFromApp(
     EbSvtAv1EncConfiguration   *pComponentParameterStructure){
     uint32_t                  hmeRegionIndex = 0;
 
-    sequence_control_set_ptr->max_input_luma_width = pComponentParameterStructure->source_width;
-    sequence_control_set_ptr->max_input_luma_height = pComponentParameterStructure->source_height;
-
+    sequence_control_set_ptr->max_input_luma_width = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->source_width;
+    sequence_control_set_ptr->max_input_luma_height = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->source_height;
     sequence_control_set_ptr->frame_rate = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->frame_rate;
 
     sequence_control_set_ptr->general_frame_only_constraint_flag = 0;
@@ -2084,36 +2046,16 @@ void CopyApiFromApp(
     sequence_control_set_ptr->static_config.base_layer_switch_mode = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->base_layer_switch_mode;
     sequence_control_set_ptr->static_config.hierarchical_levels = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->hierarchical_levels;
     sequence_control_set_ptr->static_config.enc_mode = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enc_mode;
-#if TWO_PASS_USE_2NDP_ME_IN_1STP
-    sequence_control_set_ptr->static_config.snd_pass_enc_mode = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->snd_pass_enc_mode;
-#endif
     sequence_control_set_ptr->intra_period_length = sequence_control_set_ptr->static_config.intra_period_length;
     sequence_control_set_ptr->intra_refresh_type = sequence_control_set_ptr->static_config.intra_refresh_type;
     sequence_control_set_ptr->max_temporal_layers = sequence_control_set_ptr->static_config.hierarchical_levels;
     sequence_control_set_ptr->static_config.use_qp_file = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->use_qp_file;
-#if TWO_PASS
-    sequence_control_set_ptr->static_config.input_stat_file = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->input_stat_file;
-    sequence_control_set_ptr->static_config.output_stat_file = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->output_stat_file;
-    sequence_control_set_ptr->use_input_stat_file = sequence_control_set_ptr->static_config.input_stat_file ? 1 : 0;
-    sequence_control_set_ptr->use_output_stat_file = sequence_control_set_ptr->static_config.output_stat_file ? 1 : 0;
-#endif
+
     // Deblock Filter
     sequence_control_set_ptr->static_config.disable_dlf_flag = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->disable_dlf_flag;
 
     // Local Warped Motion
     sequence_control_set_ptr->static_config.enable_warped_motion = EB_TRUE;
-
-    // Global motion
-    sequence_control_set_ptr->static_config.enable_global_motion = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enable_global_motion;
-
-    // OBMC
-    sequence_control_set_ptr->static_config.enable_obmc = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enable_obmc;
-
-    // RDOQ
-    sequence_control_set_ptr->static_config.enable_rdoq = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enable_rdoq;
-
-    // Filter intra prediction
-    sequence_control_set_ptr->static_config.enable_filter_intra = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enable_filter_intra;
 
     // ME Tools
     sequence_control_set_ptr->static_config.use_default_me_hme = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->use_default_me_hme;
@@ -2152,12 +2094,10 @@ void CopyApiFromApp(
     // MD Parameters
     sequence_control_set_ptr->static_config.enable_hbd_mode_decision = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->encoder_bit_depth > 8 ? ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enable_hbd_mode_decision : 0;
     sequence_control_set_ptr->static_config.constrained_intra = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->constrained_intra;
-    sequence_control_set_ptr->static_config.enable_palette = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enable_palette;
-    sequence_control_set_ptr->static_config.olpd_refinement = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->olpd_refinement;
+
     // Adaptive Loop Filter
     sequence_control_set_ptr->static_config.tile_rows = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->tile_rows;
     sequence_control_set_ptr->static_config.tile_columns = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->tile_columns;
-    sequence_control_set_ptr->static_config.unrestricted_motion_vector = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->unrestricted_motion_vector;
 
     // Rate Control
     sequence_control_set_ptr->static_config.scene_change_detection = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->scene_change_detection;
@@ -2236,14 +2176,6 @@ void CopyApiFromApp(
     sequence_control_set_ptr->static_config.altref_nframes = pComponentParameterStructure->altref_nframes;
     sequence_control_set_ptr->static_config.enable_overlays = pComponentParameterStructure->enable_overlays;
 
-    sequence_control_set_ptr->static_config.sq_weight = pComponentParameterStructure->sq_weight;
-    sequence_control_set_ptr->static_config.enable_auto_max_partition = pComponentParameterStructure->enable_auto_max_partition;
-
-    sequence_control_set_ptr->static_config.md_stage_1_cand_prune_th = pComponentParameterStructure->md_stage_1_cand_prune_th;
-    sequence_control_set_ptr->static_config.md_stage_1_class_prune_th = pComponentParameterStructure->md_stage_1_class_prune_th;
-    sequence_control_set_ptr->static_config.md_stage_2_cand_prune_th = pComponentParameterStructure->md_stage_2_cand_prune_th;
-    sequence_control_set_ptr->static_config.md_stage_2_class_prune_th = pComponentParameterStructure->md_stage_2_class_prune_th;
-
     return;
 }
 
@@ -2295,12 +2227,7 @@ static EbErrorType VerifySettings(
         SVT_LOG("Error instance %u: EncoderMode must be in the range of [0-%d]\n", channelNumber + 1, MAX_ENC_PRESET);
         return_error = EB_ErrorBadParameter;
     }
-#if TWO_PASS_USE_2NDP_ME_IN_1STP
-    if (config->snd_pass_enc_mode > MAX_ENC_PRESET + 1) {
-        SVT_LOG("Error instance %u: Second pass encoder mode must be in the range of [0-%d]\n", channelNumber + 1, MAX_ENC_PRESET + 1);
-        return_error = EB_ErrorBadParameter;
-    }
-#endif
+
     if (config->ext_block_flag > 1) {
         SVT_LOG("Error instance %u: ExtBlockFlag must be [0-1]\n", channelNumber + 1);
         return_error = EB_ErrorBadParameter;
@@ -2341,6 +2268,11 @@ static EbErrorType VerifySettings(
 
     if (sequence_control_set_ptr->max_input_luma_height % 2) {
         SVT_LOG("Error Instance %u: Source Height must be even for YUV_420 colorspace\n", channelNumber + 1);
+        return_error = EB_ErrorBadParameter;
+    }
+
+    if ((sequence_control_set_ptr->max_input_luma_height % 8) || (sequence_control_set_ptr->max_input_luma_width % 8)) {
+        SVT_LOG("Error Instance %u: Only multiple of 8 resolutions are supported \n", channelNumber + 1);
         return_error = EB_ErrorBadParameter;
     }
 
@@ -2471,14 +2403,16 @@ static EbErrorType VerifySettings(
         SVT_LOG("Error Instance %u: The constrained intra must be [0 - 1] \n", channelNumber + 1);
         return_error = EB_ErrorBadParameter;
     }
-    if (config->rate_control_mode > 2) {
-
-        SVT_LOG("Error Instance %u: The rate control mode must be [0 - 2] \n", channelNumber + 1);
+    if (config->rate_control_mode > 3) {
+        SVT_LOG("Error Instance %u: The rate control mode must be [0 - 3] \n", channelNumber + 1);
         return_error = EB_ErrorBadParameter;
     }
-    if ((config->rate_control_mode == 1 || config->rate_control_mode == 2) && config->look_ahead_distance != (uint32_t)config->intra_period_length) {
-        SVT_LOG("Error Instance %u: The rate control mode 1/2 LAD must be equal to intra_period \n", channelNumber + 1);
-
+    if (config->rate_control_mode == 1) {
+        SVT_LOG("Error Instance %u: The rate control mode 1 is currently not supported \n", channelNumber + 1);
+        return_error = EB_ErrorBadParameter;
+    }
+    if ((config->rate_control_mode == 3|| config->rate_control_mode == 2) && config->look_ahead_distance != (uint32_t)config->intra_period_length) {
+        SVT_LOG("Error Instance %u: The rate control mode 2/3 LAD must be equal to intra_period \n", channelNumber + 1);
         return_error = EB_ErrorBadParameter;
     }
     if (config->look_ahead_distance > MAX_LAD && config->look_ahead_distance != (uint32_t)~0) {
@@ -2488,10 +2422,6 @@ static EbErrorType VerifySettings(
     }
     if (config->tile_rows < 0 || config->tile_columns < 0 || config->tile_rows > 6 || config->tile_columns > 6) {
         SVT_LOG("Error Instance %u: Log2Tile rows/cols must be [0 - 6] \n", channelNumber + 1);
-        return_error = EB_ErrorBadParameter;
-    }
-    if (config->unrestricted_motion_vector > 1) {
-        SVT_LOG("Error Instance %u : Invalid Unrestricted Motion Vector flag [0 - 1]\n", channelNumber + 1);
         return_error = EB_ErrorBadParameter;
     }
 
@@ -2591,28 +2521,6 @@ static EbErrorType VerifySettings(
         return_error = EB_ErrorBadParameter;
     }
 
-    // palette
-    if (config->enable_palette < (int32_t)(-1) || config->enable_palette >6) {
-        SVT_LOG( "Error instance %u: Invalid Palette Mode [0 .. 6], your input: %i\n", channelNumber + 1, config->enable_palette);
-        return_error = EB_ErrorBadParameter;
-    }
-
-    // RDOQ
-    if (config->enable_rdoq != (int8_t)0 && config->enable_rdoq != (int8_t)1 && config->enable_rdoq != (int8_t)-1) {
-        SVT_LOG( "Error instance %u: Invalid RDOQ parameter [-1, 0, 1], your input: %i\n", channelNumber + 1, config->enable_rdoq);
-        return_error = EB_ErrorBadParameter;
-    }
-
-    // mdc refinement
-    if (config->olpd_refinement < (int32_t)(-1) || config->olpd_refinement > 1) {
-        SVT_LOG("Error instance %u: Invalid OLPD Refinement Mode [0 .. 1], your input: %i\n", channelNumber + 1, config->olpd_refinement);
-        return_error = EB_ErrorBadParameter;
-    }
-    else if (config->olpd_refinement == 1 && config->enc_mode >= ENC_M1) {
-        SVT_LOG("Error instance %u: Invalid OLPD Refinement mode for M%d [0], your input: %i\n", channelNumber + 1, config->enc_mode, config->olpd_refinement);
-        return_error = EB_ErrorBadParameter;
-    }
-
     return return_error;
 }
 
@@ -2652,19 +2560,12 @@ EbErrorType eb_svt_enc_init_parameter(
     config_ptr->min_qp_allowed = 10;
     config_ptr->base_layer_switch_mode = 0;
     config_ptr->enc_mode = MAX_ENC_PRESET;
-#if TWO_PASS_USE_2NDP_ME_IN_1STP
-    config_ptr->snd_pass_enc_mode = MAX_ENC_PRESET + 1;
-#endif
     config_ptr->intra_period_length = -2;
     config_ptr->intra_refresh_type = 1;
     config_ptr->hierarchical_levels = 4;
     config_ptr->pred_structure = EB_PRED_RANDOM_ACCESS;
     config_ptr->disable_dlf_flag = EB_FALSE;
     config_ptr->enable_warped_motion = EB_TRUE;
-    config_ptr->enable_global_motion = EB_TRUE;
-    config_ptr->enable_obmc = EB_TRUE;
-    config_ptr->enable_rdoq = AUTO_MODE;
-    config_ptr->enable_filter_intra = EB_TRUE;
     config_ptr->in_loop_me_flag = EB_TRUE;
     config_ptr->ext_block_flag = EB_FALSE;
     config_ptr->use_default_me_hme = EB_TRUE;
@@ -2690,14 +2591,11 @@ EbErrorType eb_svt_enc_init_parameter(
     config_ptr->hme_level2_search_area_in_width_array[1] = 1;
     config_ptr->hme_level2_search_area_in_height_array[0] = 1;
     config_ptr->hme_level2_search_area_in_height_array[1] = 1;
-    config_ptr->enable_hbd_mode_decision = 1;
     config_ptr->constrained_intra = EB_FALSE;
-    config_ptr->enable_palette = -1;
-    config_ptr->olpd_refinement = -1;
+
     // Bitstream options
     //config_ptr->codeVpsSpsPps = 0;
     //config_ptr->codeEosNal = 0;
-    config_ptr->unrestricted_motion_vector = EB_TRUE;
 
     config_ptr->high_dynamic_range_input = 0;
     config_ptr->screen_content_mode = 2;
@@ -2736,14 +2634,7 @@ EbErrorType eb_svt_enc_init_parameter(
     config_ptr->altref_strength = 5;
     config_ptr->enable_overlays = EB_FALSE;
 
-    config_ptr->sq_weight = 100;
-
-    config_ptr->md_stage_1_cand_prune_th = 75;
-    config_ptr->md_stage_1_class_prune_th = 100;
-    config_ptr->md_stage_2_cand_prune_th = 15;
-    config_ptr->md_stage_2_class_prune_th = 25;
-
-    config_ptr->enable_auto_max_partition = 1;    return return_error;
+    return return_error;
 }
 //#define DEBUG_BUFFERS
 static void print_lib_params(
@@ -2785,9 +2676,11 @@ static void print_lib_params(
         SVT_LOG("\nSVT [config]: FrameRate / Gop Size\t\t\t\t\t\t: %d / %d ", config->frame_rate > 1000 ? config->frame_rate >> 16 : config->frame_rate, config->intra_period_length + 1);
     SVT_LOG("\nSVT [config]: HierarchicalLevels / BaseLayerSwitchMode / PredStructure\t\t: %d / %d / %d ", config->hierarchical_levels, config->base_layer_switch_mode, config->pred_structure);
     if (config->rate_control_mode == 1)
-        SVT_LOG("\nSVT [config]: RCMode / TargetBitrate (kbps)/ LookaheadDistance / SceneChange\t\t: VBR / %d / %d / %d ", (int)config->target_bit_rate/1000, config->look_ahead_distance, config->scene_change_detection);
+        SVT_LOG("\nSVT [config]: RCMode / TargetBitrate / LookaheadDistance / SceneChange\t\t: ABR / %d / %d / %d ", config->target_bit_rate, config->look_ahead_distance, config->scene_change_detection);
     else if (config->rate_control_mode == 2)
-        SVT_LOG("\nSVT [config]: RCMode / TargetBitrate (kbps)/ LookaheadDistance / SceneChange\t\t: Constraint VBR / %d / %d / %d ", (int)config->target_bit_rate/1000, config->look_ahead_distance, config->scene_change_detection);
+        SVT_LOG("\nSVT [config]: RCMode / TargetBitrate / LookaheadDistance / SceneChange\t\t: VBR / %d / %d / %d ", config->target_bit_rate, config->look_ahead_distance, config->scene_change_detection);
+    else if (config->rate_control_mode == 3)
+        SVT_LOG("\nSVT [config]: RCMode / TargetBitrate / LookaheadDistance / SceneChange\t\t: Constraint VBR / %d / %d / %d ", config->target_bit_rate, config->look_ahead_distance, config->scene_change_detection);
     else
         SVT_LOG("\nSVT [config]: BRC Mode / QP  / LookaheadDistance / SceneChange\t\t\t: CQP / %d / %d / %d ", scs->qp, config->look_ahead_distance, config->scene_change_detection);
 #ifdef DEBUG_BUFFERS
@@ -3106,7 +2999,8 @@ static EbErrorType CopyFrameBuffer(
             input_picture_ptr->buffer_bit_inc_y + lumaBufferOffset,
             input_picture_ptr->stride_bit_inc_y,
             lumaWidth,
-            lumaHeight);
+            lumaHeight,
+            config->asm_type);
 
         un_pack2d(
             (uint16_t*)(inputPtr->cb + chromaOffset),
@@ -3116,7 +3010,8 @@ static EbErrorType CopyFrameBuffer(
             input_picture_ptr->buffer_bit_inc_cb + chromaBufferOffset,
             input_picture_ptr->stride_bit_inc_cb,
             chromaWidth,
-            (lumaHeight >> 1));
+            (lumaHeight >> 1),
+            config->asm_type);
 
         un_pack2d(
             (uint16_t*)(inputPtr->cr + chromaOffset),
@@ -3126,7 +3021,8 @@ static EbErrorType CopyFrameBuffer(
             input_picture_ptr->buffer_bit_inc_cr + chromaBufferOffset,
             input_picture_ptr->stride_bit_inc_cr,
             chromaWidth,
-            (lumaHeight >> 1));
+            (lumaHeight >> 1),
+            config->asm_type);
     }
     return return_error;
 }

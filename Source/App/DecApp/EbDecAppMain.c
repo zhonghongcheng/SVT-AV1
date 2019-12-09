@@ -21,9 +21,7 @@
 #include <fcntl.h>  /* _O_BINARY */
 #endif
 
-int init_pic_buffer(EbSvtIOFormat *pic_buffer, CLInput *cli,
-                    EbSvtAv1DecConfiguration *config)
-{
+int init_pic_buffer(EbSvtIOFormat *pic_buffer, CLInput *cli) {
     switch (cli->fmt) {
     case EB_YUV400:
         pic_buffer->cb_stride = INT32_MAX;
@@ -56,7 +54,6 @@ int init_pic_buffer(EbSvtIOFormat *pic_buffer, CLInput *cli,
     pic_buffer->cr_ext = NULL;
     pic_buffer->origin_x = 0;
     pic_buffer->origin_y = 0;
-    pic_buffer->bit_depth = config->max_bit_depth;
     return 0;
 }
 
@@ -82,7 +79,7 @@ int read_input_frame(DecInputContext *input, uint8_t **buffer, size_t *bytes_rea
 void write_frame(EbBufferHeaderType *recon_buffer, CLInput *cli) {
     EbSvtIOFormat* img = (EbSvtIOFormat*)recon_buffer->p_buffer;
 
-    const int bytes_per_sample = (img->bit_depth == EB_EIGHT_BIT) ? 1 : 2;
+    const int bytes_per_sample = (cli->bit_depth == EB_EIGHT_BIT) ? 1 : 2;
 
     // Write luma plane
     unsigned char *buf = img->luma;
@@ -100,11 +97,11 @@ void write_frame(EbBufferHeaderType *recon_buffer, CLInput *cli) {
         buf = img->cb;
         stride = img->cb_stride;
         if (img->color_fmt == EB_YUV420) {
-            w = (w + 1) >> 1;
-            h = (h + 1) >> 1;
+            w /= 2;
+            h /= 2;
         }
         else if (img->color_fmt == EB_YUV422) {
-            w = (w + 1) >> 1;
+            w /= 2;
         }
         assert(img->color_fmt <= EB_YUV444);
 
@@ -151,7 +148,7 @@ int32_t main(int32_t argc, char* argv[])
     cli.fps_summary = 0;
 
     DecInputContext input = { NULL, NULL };
-    ObuDecInputContext obu_ctx = { NULL, 0, 0, 0, 0 };
+    ObuDecInputContext obu_ctx = { NULL, 0, 0, 0 };
     input.cli_ctx = &cli;
     input.obu_ctx = &obu_ctx;
 
@@ -170,8 +167,26 @@ int32_t main(int32_t argc, char* argv[])
     size_t bytes_in_buffer = 0, buffer_size = 0;
 
     // Print Decoder Info
+    printf("\n**WARNING** decoder is not feature complete\n");
+    printf("Current support: intra, inter & post proc filters, ");
+    printf("no super-resolution, no ref scaling\n\n");
+
     printf("-------------------------------------\n");
-    printf("SVT-AV1 Decoder\n");
+    printf("SVT-AV1 Decoder Sample Application v1.2.0\n");
+    printf("Platform:   %u bit\n", (unsigned) sizeof(void*) * 8);
+#if ( defined( _MSC_VER ) && (_MSC_VER < 1910) )
+    printf("Compiler: VS13\n");
+#elif ( defined( _MSC_VER ) && (_MSC_VER >= 1910) )
+    printf("Compiler: VS17\n");
+#elif defined(__INTEL_COMPILER)
+    printf("Compiler: Intel\n");
+#elif defined(__GNUC__)
+    printf("Compiler: GCC\n");
+#else
+    printf("Compiler: unknown\n");
+#endif
+
+    printf("APP Build date: %s %s\n", __DATE__, __TIME__);
 
     // Initialize config
     if (!config_ptr)
@@ -191,7 +206,7 @@ int32_t main(int32_t argc, char* argv[])
         }
 
         assert(config_ptr->max_color_format <= EB_YUV444);
-        assert(config_ptr->max_bit_depth <= EB_TWELVE_BIT);
+        assert(config_ptr->max_bit_depth < EB_TWELVE_BIT);
 
         int enable_md5 = cli.enable_md5;
 
@@ -209,7 +224,7 @@ int32_t main(int32_t argc, char* argv[])
         ((EbSvtIOFormat *)recon_buffer->p_buffer)->luma = (uint8_t*)malloc(size);
         ((EbSvtIOFormat *)recon_buffer->p_buffer)->cb = (uint8_t*)malloc(size >> 2);
         ((EbSvtIOFormat *)recon_buffer->p_buffer)->cr = (uint8_t*)malloc(size >> 2);
-        if (!init_pic_buffer((EbSvtIOFormat*)recon_buffer->p_buffer, &cli, config_ptr)) {
+        if (!init_pic_buffer((EbSvtIOFormat*)recon_buffer->p_buffer, &cli)) {
             printf("Decoding \n");
             EbAV1StreamInfo *stream_info = (EbAV1StreamInfo*)malloc(sizeof(EbAV1StreamInfo));
             EbAV1FrameInfo *frame_info = (EbAV1FrameInfo*)malloc(sizeof(EbAV1FrameInfo));
@@ -230,8 +245,7 @@ int32_t main(int32_t argc, char* argv[])
 
                     dec_timer_start(&timer);
 
-                    return_error |= eb_svt_decode_frame(p_handle, buf,
-                        bytes_in_buffer, obu_ctx.is_annexb);
+                    return_error |= eb_svt_decode_frame(p_handle, buf, bytes_in_buffer);
 
                     dec_timer_mark(&timer);
                     dx_time += dec_timer_elapsed(&timer);
@@ -243,7 +257,7 @@ int32_t main(int32_t argc, char* argv[])
                             show_progress(in_frame , dx_time);
 
                         if (enable_md5)
-                            write_md5(recon_buffer, &md5_ctx);
+                            write_md5(recon_buffer, &cli, &md5_ctx);
                         if(cli.outFile != NULL)
                             write_frame(recon_buffer, &cli);
                     }
@@ -279,8 +293,6 @@ int32_t main(int32_t argc, char* argv[])
 fail:
     if (cli.inFile) fclose(cli.inFile);
     if (cli.outFile) fclose(cli.outFile);
-
-    free(config_ptr);
 
     return return_error;
 }

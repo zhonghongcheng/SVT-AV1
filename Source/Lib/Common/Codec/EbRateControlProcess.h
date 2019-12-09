@@ -10,6 +10,7 @@
 #include "EbSystemResourceManager.h"
 #include "EbSvtAv1Enc.h"
 #include "EbPictureControlSet.h"
+#include "RateControlModel.h"
 #include "EbObject.h"
 
 #define CCOEFF_INIT_FACT              2
@@ -200,6 +201,7 @@ typedef struct RateControlContext
     EbFifo                            *rate_control_output_results_fifo_ptr;
 
     HighLevelRateControlContext       *high_level_rate_control_ptr;
+    EbRateControlModel                *rc_model_ptr;
 
     RateControlIntervalParamContext  **rate_control_param_queue;
     uint64_t                           rate_control_param_queue_head_index;

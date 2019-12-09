@@ -23,159 +23,27 @@
 #include "EbRestoration.h"
 #include "EbDecRestoration.h"
 
-#define LR_PAD_SIDE 3
-#define LR_PAD_MAX  (LR_PAD_SIDE << 1)
+AV1PixelRect av1_whole_frame_rect(SeqHeader *seq_header, int is_uv) {
+    AV1PixelRect rect;
 
-void save_tile_row_boundary_lines(uint8_t *src, int32_t src_stride,
-    int32_t src_width, int32_t src_height, int32_t use_highbd, int32_t plane,
-    Av1Common *cm, int32_t after_cdef, RestorationStripeBoundaries *boundaries);
+    int ss_x = is_uv && seq_header->color_config.subsampling_x;
+    int ss_y = is_uv && seq_header->color_config.subsampling_y;
 
-void lr_generate_padding(
-    EbByte  src_pic,                    //output paramter, pointer to the source picture(0,0).
-    uint32_t   src_stride,              //input paramter, the stride of the source picture to be padded.
-    uint32_t   original_src_width,      //input paramter, the width of the source picture which excludes the padding.
-    uint32_t   original_src_height)     //input paramter, the heigth of the source picture which excludes the padding.
-{
-    uint32_t   verticalIdx;
-    EbByte  tempSrcPic0;
-    EbByte  tempSrcPic1;
-    EbByte  tempSrcPic2;
-    EbByte  tempSrcPic3;
-
-    tempSrcPic0 = src_pic;
-    for (verticalIdx = original_src_height; verticalIdx > 0; --verticalIdx)
-    {
-        // horizontal padding
-        EB_MEMSET(tempSrcPic0 - LR_PAD_SIDE, *tempSrcPic0, LR_PAD_SIDE);
-        EB_MEMSET(tempSrcPic0 + original_src_width, *(tempSrcPic0 + original_src_width - 1), LR_PAD_SIDE);
-        tempSrcPic0 += src_stride;
-    }
-
-    // vertical padding
-    tempSrcPic0 = src_pic - LR_PAD_SIDE;
-    tempSrcPic1 = src_pic + (original_src_height - 1) * src_stride - LR_PAD_SIDE;
-    tempSrcPic2 = tempSrcPic0;
-    tempSrcPic3 = tempSrcPic1;
-
-    for (verticalIdx = LR_PAD_SIDE; verticalIdx > 0; --verticalIdx)
-    {
-        // top part data copy
-        tempSrcPic2 -= src_stride;
-        EB_MEMCPY(tempSrcPic2, tempSrcPic0, sizeof(uint8_t) * (original_src_width + LR_PAD_MAX));
-        // bottom part data copy
-        tempSrcPic3 += src_stride;
-        EB_MEMCPY(tempSrcPic3, tempSrcPic1, sizeof(uint8_t) * (original_src_width + LR_PAD_MAX));
-    }
-    return;
+    rect.top = 0;
+    rect.bottom = ROUND_POWER_OF_TWO(seq_header->max_frame_height, ss_y);
+    rect.left = 0;
+    rect.right = ROUND_POWER_OF_TWO(seq_header->max_frame_width, ss_x);
+    return rect;
 }
 
-void lr_generate_padding16_bit(
-    EbByte  src_pic,                       //output paramter, pointer to the source picture to be padded.
-    uint32_t   src_stride,                 //input paramter, the stride of the source picture to be padded.
-    uint32_t   original_src_width,         //input paramter, the width of the source picture which excludes the padding.
-    uint32_t   original_src_height)        //input paramter, the height of the source picture which excludes the padding.
-{
-    uint32_t   verticalIdx;
-    EbByte  tempSrcPic0;
-    EbByte  tempSrcPic1;
-    EbByte  tempSrcPic2;
-    EbByte  tempSrcPic3;
-    uint8_t use_highbd = 1;
-
-    tempSrcPic0 = src_pic;
-    for (verticalIdx = original_src_height; verticalIdx > 0; --verticalIdx)
-    {
-        // horizontal padding
-        memset16bit((uint16_t*)(tempSrcPic0 - (LR_PAD_SIDE << use_highbd)), ((uint16_t*)(tempSrcPic0))[0], LR_PAD_SIDE);
-        memset16bit((uint16_t*)(tempSrcPic0 + original_src_width),
-            ((uint16_t*)(tempSrcPic0 + original_src_width - 2/*1*/))[0], LR_PAD_SIDE);
-        tempSrcPic0 += src_stride;
-    }
-
-    // vertical padding
-    tempSrcPic0 = src_pic - (LR_PAD_SIDE << use_highbd);
-    tempSrcPic1 = src_pic + (original_src_height - 1) * src_stride - (LR_PAD_SIDE << use_highbd);
-    tempSrcPic2 = tempSrcPic0;
-    tempSrcPic3 = tempSrcPic1;
-    for (verticalIdx = LR_PAD_SIDE; verticalIdx > 0; --verticalIdx)
-    {
-        // top part data copy
-        tempSrcPic2 -= src_stride;
-        EB_MEMCPY(tempSrcPic2, tempSrcPic0, sizeof(uint8_t) * (original_src_width + (LR_PAD_MAX << use_highbd)));
-        // bottom part data copy
-        tempSrcPic3 += src_stride;
-        EB_MEMCPY(tempSrcPic3, tempSrcPic1, sizeof(uint8_t) * (original_src_width + (LR_PAD_MAX << use_highbd)));
-    }
-
-    return;
+int av1_superres_scaled(FrameSize *frame_size) {
+    return !(frame_size->frame_width == frame_size->superres_upscaled_width);
 }
 
-void lr_pad_pic(EbPictureBufferDesc *recon_picture_buf, FrameHeader *frame_hdr, EbColorConfig *color_cfg) {
-
-    FrameSize *frame_size = &frame_hdr->frame_size;
-    uint8_t sx = color_cfg->subsampling_x;
-    uint8_t sy = color_cfg->subsampling_y;
-
-    if (recon_picture_buf->bit_depth == EB_8BIT) {
-        // Y samples
-        lr_generate_padding(
-            recon_picture_buf->buffer_y + recon_picture_buf->origin_x +
-            recon_picture_buf->stride_y * recon_picture_buf->origin_y,
-            recon_picture_buf->stride_y,
-            frame_size->superres_upscaled_width,
-            frame_size->frame_height);
-
-        if (recon_picture_buf->color_format != EB_YUV400) {
-            // Cb samples
-            lr_generate_padding(
-                recon_picture_buf->buffer_cb + (recon_picture_buf->origin_x >> sx) +
-                recon_picture_buf->stride_cb * (recon_picture_buf->origin_y >> sy),
-                recon_picture_buf->stride_cb,
-                (frame_size->superres_upscaled_width + sx) >> sx,
-                (frame_size->frame_height + sy) >> sy);
-
-            // Cr samples
-            lr_generate_padding(
-                recon_picture_buf->buffer_cr + (recon_picture_buf->origin_x >> sx) +
-                recon_picture_buf->stride_cr * (recon_picture_buf->origin_y >> sy),
-                recon_picture_buf->stride_cr,
-                (frame_size->superres_upscaled_width + sx) >> sx,
-                (frame_size->frame_height + sy) >> sy);
-        }
-    }
-    else {
-        // Y samples
-        lr_generate_padding16_bit(
-            recon_picture_buf->buffer_y + (recon_picture_buf->origin_x << 1) +
-            (recon_picture_buf->stride_y << 1) * recon_picture_buf->origin_y,
-            recon_picture_buf->stride_y << 1,
-            frame_size->superres_upscaled_width << 1,
-            frame_size->frame_height);
-
-        if (recon_picture_buf->color_format != EB_YUV400) {
-            // Cb samples
-            lr_generate_padding16_bit(
-                recon_picture_buf->buffer_cb + ((recon_picture_buf->origin_x >> sx) << 1) +
-                (recon_picture_buf->stride_cb << 1) * (recon_picture_buf->origin_y >> sy),
-                recon_picture_buf->stride_cb << 1,
-                ((frame_size->superres_upscaled_width + sx) >> sx) << 1,
-                (frame_size->frame_height + sy) >> sy);
-
-            // Cr samples
-            lr_generate_padding16_bit(
-                recon_picture_buf->buffer_cr + (recon_picture_buf->origin_x >> sx << 1) +
-                (recon_picture_buf->stride_cr << 1) * (recon_picture_buf->origin_y >> sy),
-                recon_picture_buf->stride_cr << 1,
-                ((frame_size->superres_upscaled_width + sx) >> sx) << 1,
-                (frame_size->frame_height + sy) >> sy);
-        }
-    }
-}
 void dec_av1_loop_restoration_filter_frame(EbDecHandle *dec_handle, int optimized_lr)
 {
     assert(!dec_handle->frame_header.all_lossless);
 
-    FrameHeader *frame_header = &dec_handle->frame_header;
     LRCtxt *lr_ctxt = (LRCtxt *)dec_handle->pv_lr_ctxt;
     MasterFrameBuf *master_frame_buf = &dec_handle->master_frame_buf;
     CurFrameBuf    *frame_buf = &master_frame_buf->cur_frame_bufs[0];
@@ -183,7 +51,7 @@ void dec_av1_loop_restoration_filter_frame(EbDecHandle *dec_handle, int optimize
     AV1PixelRect tile_rect;
     EbPictureBufferDesc *cur_pic_buf = dec_handle->cur_pic_buf[0]->ps_pic_buf;
     RestorationUnitInfo *lr_unit;
-    lr_pad_pic(cur_pic_buf, frame_header, &dec_handle->seq_header.color_config);
+
     lr_ctxt->lr_unit[AOM_PLANE_Y] = frame_buf->lr_unit[AOM_PLANE_Y];
     lr_ctxt->lr_unit[AOM_PLANE_U] = frame_buf->lr_unit[AOM_PLANE_U];
     lr_ctxt->lr_unit[AOM_PLANE_V] = frame_buf->lr_unit[AOM_PLANE_V];
@@ -191,16 +59,17 @@ void dec_av1_loop_restoration_filter_frame(EbDecHandle *dec_handle, int optimize
     int num_plane = av1_num_planes(&dec_handle->seq_header.color_config);
     int use_highbd = (dec_handle->seq_header.color_config.bit_depth > 8);
     int bit_depth = dec_handle->seq_header.color_config.bit_depth;
-    int h = 0, w = 0, x, y, unit_row, unit_col;
-    int src_stride, dst_stride, tile_stripe0 = 0;
+    int sb_log2 = dec_handle->seq_header.sb_size_log2;
+    int h = 0, w = 0, x, y, src_stride, dst_stride, tile_stripe0 = 0;
     uint8_t *src, *dst;
 
     for (int plane = 0; plane < num_plane; plane++)
     {
-        LRParams *lr_params = &frame_header->lr_params[plane];
+        LRParams *lr_params = &dec_handle->frame_header.lr_params[plane];
         int ext_size = lr_params->loop_restoration_size * 3 / 2;
         int is_uv = plane > 0;
         int sx = 0, sy = 0;
+        int master_col = dec_handle->master_frame_buf.sb_cols;
 
         if (plane) {
             sx = dec_handle->seq_header.color_config.subsampling_x;
@@ -214,17 +83,14 @@ void dec_av1_loop_restoration_filter_frame(EbDecHandle *dec_handle, int optimize
         dst = lr_ctxt->dst;
         dst_stride = lr_ctxt->dst_stride;
 
-        tile_rect = whole_frame_rect(&dec_handle->frame_header.frame_size,
-            dec_handle->seq_header.color_config.subsampling_x,
-            dec_handle->seq_header.color_config.subsampling_y, is_uv);
-
+        tile_rect = av1_whole_frame_rect(&dec_handle->seq_header, is_uv);
         int tile_h = tile_rect.bottom - tile_rect.top;
         int tile_w = tile_rect.right - tile_rect.left;
 
         if (lr_params->frame_restoration_type == RESTORE_NONE)
             continue;
 
-        for (y = 0, unit_row = 0; y < tile_h; y += h, unit_row++)
+        for (y = 0; y < tile_h; y += h)
         {
             int remaining_h = tile_h - y;
             h = (remaining_h < ext_size) ? remaining_h :
@@ -238,17 +104,16 @@ void dec_av1_loop_restoration_filter_frame(EbDecHandle *dec_handle, int optimize
             tile_limit.v_start = AOMMAX(tile_rect.top, tile_limit.v_start - voffset);
             if (tile_limit.v_end < tile_rect.bottom) tile_limit.v_end -= voffset;
 
-            for (x = 0, unit_col = 0; x < tile_w; x += w, unit_col++)
+            for (x = 0; x < tile_w; x += w)
             {
                 int remaining_w = tile_w - x;
                 w = (remaining_w < ext_size) ? remaining_w :
                                                lr_params->loop_restoration_size;
-
                 tile_limit.h_start = tile_rect.left + x;
-                tile_limit.h_end = tile_rect.left + x + w;
+                tile_limit.h_end   = tile_rect.left + x + w;
 
                 lr_unit = lr_ctxt->lr_unit[plane] +
-                    unit_row * lr_ctxt->lr_stride[plane] + unit_col;
+                    ((y >> sb_log2) * master_col) + ((x >> sb_log2));
 
                 if (!use_highbd)
                     eb_av1_loop_restoration_filter_unit(1, &tile_limit, lr_unit,
@@ -271,33 +136,191 @@ void dec_av1_loop_restoration_filter_frame(EbDecHandle *dec_handle, int optimize
     }
 }
 
+static void dec_save_deblock_boundary_lines(EbDecHandle *dec_handle,
+    int plane, int row, int stripe, int use_highbd, int is_above,
+    RestorationStripeBoundaries *boundaries)
+{
+    uint8_t *src;
+    int32_t stride;
+    int sx = 0, sy = 0;
+    int frame_width = dec_handle->frame_header.frame_size.frame_width;
+    int frame_height = dec_handle->frame_header.frame_size.frame_height;
+
+    if (plane) {
+        sx = dec_handle->seq_header.color_config.subsampling_x;
+        sy = dec_handle->seq_header.color_config.subsampling_y;
+    }
+
+    EbPictureBufferDesc *cur_pic_buf = dec_handle->cur_pic_buf[0]->ps_pic_buf;
+    // src points to frame start
+    derive_blk_pointers(cur_pic_buf, plane, 0, 0, (void *)&src, &stride, sx, sy);
+
+    const uint8_t *src_buf = REAL_PTR(use_highbd, use_highbd ?
+                                      CONVERT_TO_BYTEPTR(src) : src);
+
+    const int src_stride = stride << use_highbd;
+    const uint8_t *src_rows = src_buf + row * src_stride;
+
+    uint8_t *bdry_buf = is_above ? boundaries->stripe_boundary_above
+        : boundaries->stripe_boundary_below;
+    uint8_t *bdry_start = bdry_buf + (RESTORATION_EXTRA_HORZ << use_highbd);
+    const int bdry_stride = boundaries->stripe_boundary_stride << use_highbd;
+    uint8_t *bdry_rows = bdry_start + RESTORATION_CTX_VERT * stripe * bdry_stride;
+
+    // There is a rare case in which a processing stripe can end 1px above the
+    // crop border. In this case, we do want to use deblocked pixels from below
+    // the stripe (hence why we ended up in this function), but instead of
+    // fetching 2 "below" rows we need to fetch one and duplicate it.
+    // This is equivalent to clamping the sample locations against the crop border
+    const int lines_to_save =
+        AOMMIN(RESTORATION_CTX_VERT, (frame_height >> sy) - row);
+    assert(lines_to_save == 1 || lines_to_save == 2);
+
+    int upscaled_width = frame_width >> sx;;
+    int line_bytes = 0;
+
+    if (av1_superres_scaled(&dec_handle->frame_header.frame_size))
+        assert(0);
+    else {
+        line_bytes = upscaled_width << use_highbd;
+        for (int i = 0; i < lines_to_save; i++) {
+            memcpy(bdry_rows + i * bdry_stride, src_rows + i * src_stride,
+                line_bytes);
+        }
+    }
+
+    // If we only saved one line, then copy it into the second line buffer
+    if (lines_to_save == 1)
+        memcpy(bdry_rows + bdry_stride, bdry_rows, line_bytes);
+
+    extend_lines(bdry_rows, upscaled_width, RESTORATION_CTX_VERT, bdry_stride,
+        RESTORATION_EXTRA_HORZ, use_highbd);
+}
+
+void dec_save_cdef_boundary_lines(EbDecHandle *dec_handle,
+    int plane, int row, int stripe, int use_highbd, int is_above,
+    RestorationStripeBoundaries *boundaries)
+{
+    FrameHeader *frame_info = &dec_handle->frame_header;
+    int frame_width = frame_info->frame_size.frame_width;
+    int sx = 0, sy = 0;
+    uint8_t *src;
+    int32_t stride;
+    if (plane) {
+        sx = dec_handle->seq_header.color_config.subsampling_x;
+        sy = dec_handle->seq_header.color_config.subsampling_y;
+    }
+
+    EbPictureBufferDesc *cur_pic_buf = dec_handle->cur_pic_buf[0]->ps_pic_buf;
+    // src points to frame start
+    derive_blk_pointers(cur_pic_buf, plane, 0, 0, (void *)&src, &stride, sx, sy);
+
+    const int is_uv = plane > 0;
+    const uint8_t *src_buf = REAL_PTR(use_highbd, use_highbd ?
+                                      CONVERT_TO_BYTEPTR(src) : src);
+    const int src_stride = stride << use_highbd;
+    const uint8_t *src_rows = src_buf + row * src_stride;
+
+    uint8_t *bdry_buf = is_above ? boundaries->stripe_boundary_above
+        : boundaries->stripe_boundary_below;
+    uint8_t *bdry_start = bdry_buf + (RESTORATION_EXTRA_HORZ << use_highbd);
+    const int bdry_stride = boundaries->stripe_boundary_stride << use_highbd;
+    uint8_t *bdry_rows = bdry_start + RESTORATION_CTX_VERT * stripe * bdry_stride;
+    const int src_width = frame_width >> sx;
+
+    // At the point where this function is called, we've already applied
+    // superres. So we don't need to extend the lines here, we can just
+    // pull directly from the topmost row of the upscaled frame.
+    const int ss_x = is_uv && sx;
+    const int upscaled_width =
+        av1_superres_scaled(&dec_handle->frame_header.frame_size) ?
+        (frame_info->frame_size.superres_upscaled_width + ss_x) >> ss_x : src_width;
+
+    const int line_bytes = upscaled_width << use_highbd;
+    for (int i = 0; i < RESTORATION_CTX_VERT; i++) {
+        // Copy the line at 'row' into both context lines. This is because
+        // we want to (effectively) extend the outermost row of CDEF data
+        // from this tile to produce a border, rather than using deblocked
+        // pixels from the tile above/below.
+        memcpy(bdry_rows + i * bdry_stride, src_rows, line_bytes);
+    }
+    extend_lines(bdry_rows, upscaled_width, RESTORATION_CTX_VERT, bdry_stride,
+        RESTORATION_EXTRA_HORZ, use_highbd);
+}
+
+void dec_save_tile_row_boundary_lines(EbDecHandle *dec_handle, int use_highbd,
+                                      int plane, int after_cdef)
+{
+    const int is_uv = plane > 0;
+    const int ss_y = is_uv && dec_handle->seq_header.color_config.subsampling_y;
+    const int stripe_height = RESTORATION_PROC_UNIT_SIZE >> ss_y;
+    const int stripe_off = RESTORATION_UNIT_OFFSET >> ss_y;
+    int frame_height = dec_handle->frame_header.frame_size.frame_height;
+    LRCtxt *lr_ctxt = (LRCtxt *)dec_handle->pv_lr_ctxt;
+
+    // Get the tile rectangle, with height rounded up to the next multiple of 8
+    // luma pixels (only relevant for the bottom tile of the frame)
+    const AV1PixelRect tile_rect =
+        av1_whole_frame_rect(&dec_handle->seq_header, is_uv);
+    const int stripe0 = 0;
+
+    RestorationStripeBoundaries *boundaries = &lr_ctxt->boundaries[plane];
+
+    const int plane_height = ROUND_POWER_OF_TWO(frame_height, ss_y);
+
+    int tile_stripe;
+    for (tile_stripe = 0;; ++tile_stripe) {
+        const int rel_y0 = AOMMAX(0, tile_stripe * stripe_height - stripe_off);
+        const int y0 = tile_rect.top + rel_y0;
+        if (y0 >= tile_rect.bottom)
+            break;
+
+        const int rel_y1 = (tile_stripe + 1) * stripe_height - stripe_off;
+        const int y1 = AOMMIN(tile_rect.top + rel_y1, tile_rect.bottom);
+
+        const int frame_stripe = stripe0 + tile_stripe;
+
+        // In this case, we should only use CDEF pixels at the top
+        // and bottom of the frame as a whole; internal tile boundaries
+        // can use deblocked pixels from adjacent tiles for context.
+        const int use_deblock_above = (frame_stripe > 0);
+        const int use_deblock_below = (y1 < plane_height);
+
+        if (!after_cdef) {
+            // Save deblocked context where needed.
+            if (use_deblock_above) {
+                dec_save_deblock_boundary_lines(dec_handle, plane,
+                    y0 - RESTORATION_CTX_VERT, frame_stripe, use_highbd, 1, boundaries);
+            }
+            if (use_deblock_below) {
+                dec_save_deblock_boundary_lines(dec_handle, plane, y1, frame_stripe,
+                    use_highbd, 0, boundaries);
+            }
+        }
+        else {
+            // Save CDEF context where needed. Note that we need to save the CDEF
+            // context for a particular boundary iff we *didn't* save deblocked
+            // context for that boundary.
+            //
+            // In addition, we need to save copies of the outermost line within
+            // the tile, rather than using data from outside the tile.
+            if (!use_deblock_above) {
+                dec_save_cdef_boundary_lines(dec_handle, plane, y0,
+                    frame_stripe, use_highbd, 1, boundaries);
+            }
+            if (!use_deblock_below) {
+                dec_save_cdef_boundary_lines(dec_handle, plane, y1 - 1,
+                    frame_stripe, use_highbd, 0, boundaries);
+            }
+        }
+    }
+}
+
 void dec_av1_loop_restoration_save_boundary_lines(EbDecHandle *dec_handle,
-    int after_cdef)
+                                                  int after_cdef)
 {
     const int num_planes = av1_num_planes(&dec_handle->seq_header.color_config);
     const int use_highbd = (dec_handle->seq_header.color_config.bit_depth > 8);
-
-    for (int p = 0; p < num_planes; ++p) {
-        LRCtxt *lr_ctxt = (LRCtxt *)dec_handle->pv_lr_ctxt;
-        FrameSize *frame_size = &dec_handle->frame_header.frame_size;
-        int32_t sx = 0, sy = 0;
-        uint8_t *src;
-        int32_t stride;
-        if (p) {
-            sx = dec_handle->seq_header.color_config.subsampling_x;
-            sy = dec_handle->seq_header.color_config.subsampling_y;
-        }
-
-        int32_t crop_width = frame_size->frame_width >> sx;
-        int32_t crop_height = frame_size->frame_height >> sy;
-        EbPictureBufferDesc *cur_pic_buf = dec_handle->cur_pic_buf[0]->ps_pic_buf;
-        derive_blk_pointers(cur_pic_buf, p, 0, 0, (void *)&src, &stride, sx, sy);
-        uint8_t *src_buf = REAL_PTR(use_highbd, use_highbd ?
-                                    CONVERT_TO_BYTEPTR(src) : src);
-        int32_t src_stride = stride;
-        RestorationStripeBoundaries *boundaries = &lr_ctxt->boundaries[p];
-
-        save_tile_row_boundary_lines(src_buf, src_stride, crop_width, crop_height,
-            use_highbd, p, &dec_handle->cm, after_cdef, boundaries);
-    }
+    for (int p = 0; p < num_planes; ++p)
+        dec_save_tile_row_boundary_lines(dec_handle, use_highbd, p, after_cdef);
 }

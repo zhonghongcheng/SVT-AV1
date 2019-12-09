@@ -166,7 +166,6 @@ typedef struct EbConfig
      ****************************************/
     FILE                    *config_file;
     FILE                    *input_file;
-    EbBool                  input_file_is_fifo;
     FILE                    *bitstream_file;
     FILE                    *recon_file;
     FILE                    *error_log_file;
@@ -174,12 +173,7 @@ typedef struct EbConfig
     FILE                    *buffer_file;
 
     FILE                    *qp_file;
-#if TWO_PASS
-    FILE                    *input_stat_file;
-    FILE                    *output_stat_file;
-    EbBool                  use_input_stat_file;
-    EbBool                  use_output_stat_file;
-#endif
+
     EbBool                  y4m_input;
     unsigned char           y4m_buf[9];
 
@@ -219,9 +213,6 @@ typedef struct EbConfig
      *****************************************/
     uint32_t                 base_layer_switch_mode;
     uint8_t                  enc_mode;
-#if TWO_PASS_USE_2NDP_ME_IN_1STP
-    uint8_t                  snd_pass_enc_mode;
-#endif
     int32_t                  intra_period;
     uint32_t                 intra_refresh_type;
     uint32_t                 hierarchical_levels;
@@ -246,26 +237,6 @@ typedef struct EbConfig
      ****************************************/
     EbBool                  enable_warped_motion;
 
-    /****************************************
-     * Global Motion
-     ****************************************/
-    EbBool                  enable_global_motion;
-
-    /****************************************
-     * OBMC
-     ****************************************/
-    EbBool                  enable_obmc;
-
-    /****************************************
-     * RDOQ
-     ****************************************/
-
-     int8_t                  enable_rdoq;
-
-    /****************************************
-     * Filter intra prediction
-     ****************************************/
-    EbBool                  enable_filter_intra;
     /****************************************
      * ME Tools
      ****************************************/
@@ -307,11 +278,10 @@ typedef struct EbConfig
      * MD Parameters
      ****************************************/
     EbBool                  constrained_intra;
-    int8_t                  enable_hbd_mode_decision;
-    int32_t                  enable_palette;
+    EbBool                  enable_hbd_mode_decision;
+
     int32_t                  tile_columns;
     int32_t                  tile_rows;
-    int32_t                  olpd_refinement;   // Open Loop Partitioning Decision Refinement
 
     /****************************************
      * Rate Control
@@ -331,7 +301,6 @@ typedef struct EbConfig
 
     uint32_t                 screen_content_mode;
     uint32_t                 high_dynamic_range_input;
-    EbBool                   unrestricted_motion_vector;
 
     /****************************************
      * Annex A Parameters
@@ -379,19 +348,6 @@ typedef struct EbConfig
     uint8_t                 altref_nframes;
     EbBool                  enable_overlays;
     // --- end: ALTREF_FILTERING_SUPPORT
-
-    // square cost weighting for deciding if a/b shapes could be skipped
-    uint32_t                 sq_weight;
-
-    // inter/intra class pruning costs before MD stage 1/2
-    uint64_t                 md_stage_1_class_prune_th;
-    uint64_t                 md_stage_1_cand_prune_th;
-    uint64_t                 md_stage_2_class_prune_th;
-    uint64_t                 md_stage_2_cand_prune_th;
-
-    // signal for enabling shortcut to skip search depths
-    uint8_t                 enable_auto_max_partition;
-
 } EbConfig;
 
 extern void eb_config_ctor(EbConfig *config_ptr);

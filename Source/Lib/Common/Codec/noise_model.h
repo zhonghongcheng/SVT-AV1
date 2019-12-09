@@ -351,7 +351,8 @@ extern "C" {
     int32_t eb_aom_denoise_and_model_run(struct aom_denoise_and_model_t *ctx,
         EbPictureBufferDesc *sd,
         aom_film_grain_t *film_grain,
-        int32_t use_highbd);
+        int32_t use_highbd,
+        EbAsm asm_type);
 
     /*!\brief Allocates a context that can be used for denoising and noise modeling.
      *

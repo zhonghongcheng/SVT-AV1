@@ -80,7 +80,7 @@ typedef struct EbDecPicBuf {
 typedef struct CurFrameBuf {
     SBInfo          *sb_info;
 
-    BlockModeInfo   *mode_info;
+    ModeInfo_t      *mode_info;
 
     int32_t         *coeff[MAX_MB_PLANE];
 
@@ -208,10 +208,6 @@ typedef struct EbDecHandle {
     // have a remapped index for the same.
     int32_t remapped_ref_idx[REF_FRAMES];
 
-    struct ScaleFactors ref_scale_factors[REF_FRAMES];
-    /*Scale of the current frame with respect to itself.*/
-    struct ScaleFactors sf_identity;
-
     /* TODO:  Move ref_frame_map, remapped_ref_idx, cur_pic_buf and frame_header to a FrameStr! */
     EbDecPicBuf *ref_frame_map[REF_FRAMES];
     // Prepare ref_frame_map for the next frame.
@@ -233,10 +229,6 @@ typedef struct EbDecHandle {
     EbMemoryMapEntry            *memory_map;
     uint32_t                     memory_map_index;
     uint64_t                     total_lib_memory;
-    struct Av1Common             cm;
-
-    // Loop filter frame level flag
-    uint8_t              is_lf_enabled;
 }EbDecHandle;
 
 #ifdef __cplusplus

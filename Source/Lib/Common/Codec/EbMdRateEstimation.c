@@ -98,12 +98,6 @@ void av1_estimate_syntax_rate___partial(
         }
     }
 }
-#if FILTER_INTRA_FLAG
-int av1_filter_intra_allowed_bsize(  uint8_t enable_filter_intra,  BlockSize bs);
-#if !PAL_SUP
-int av1_filter_intra_allowed(uint8_t   enable_filter_intra, BlockSize bsize, uint32_t  mode);
-#endif
-#endif
 /*************************************************************
 * av1_estimate_syntax_rate()
 * Estimate the rate for each syntax elements and for
@@ -141,12 +135,7 @@ void av1_estimate_syntax_rate(
     }
 
     av1_get_syntax_rate_from_cdf(md_rate_estimation_array->filter_intra_mode_fac_bits, fc->filter_intra_mode_cdf, NULL);
-#if FILTER_INTRA_FLAG
-    for (i = 0; i < BlockSizeS_ALL; ++i) {
-        if (av1_filter_intra_allowed_bsize(1,i))
-            av1_get_syntax_rate_from_cdf(md_rate_estimation_array->filter_intra_fac_bits[i], fc->filter_intra_cdfs[i], NULL);
-    }
-#else
+
     // NM - To be added when intra filtering is adopted
     /*for (i = 0; i < BlockSizeS_ALL; ++i) {
         if (av1_filter_intra_allowed_bsize(cm, i))
@@ -155,7 +144,7 @@ void av1_estimate_syntax_rate(
     }*/
 
     // NM - To be added when inter filtering is adopted
-#endif
+
     for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; ++i)
         av1_get_syntax_rate_from_cdf(md_rate_estimation_array->switchable_interp_fac_bitss[i], fc->switchable_interp_cdf[i], NULL);
 
@@ -377,15 +366,10 @@ void av1_estimate_mv_rate(
         frm_hdr->allow_high_precision_mv ? nmvcost_hp : nmvcost, //out
         nmv_ctx,
         frm_hdr->allow_high_precision_mv);
-#if EIGHT_PEL_FIX
-    md_rate_estimation_array->nmvcoststack[0] = frm_hdr->allow_high_precision_mv ?
-        &md_rate_estimation_array->nmv_costs_hp[0][MV_MAX] : &md_rate_estimation_array->nmv_costs[0][MV_MAX];
-    md_rate_estimation_array->nmvcoststack[1] = frm_hdr->allow_high_precision_mv ?
-        &md_rate_estimation_array->nmv_costs_hp[1][MV_MAX] : &md_rate_estimation_array->nmv_costs[1][MV_MAX];
-#else
+
     md_rate_estimation_array->nmvcoststack[0] = &md_rate_estimation_array->nmv_costs[0][MV_MAX];
     md_rate_estimation_array->nmvcoststack[1] = &md_rate_estimation_array->nmv_costs[1][MV_MAX];
-#endif
+
     if (frm_hdr->allow_intrabc) {
         int32_t *dvcost[2] = { &md_rate_estimation_array->dv_cost[0][MV_MAX], &md_rate_estimation_array->dv_cost[1][MV_MAX] };
         eb_av1_build_nmv_cost_table(md_rate_estimation_array->dv_joint_cost, dvcost, &picture_control_set_ptr->coeff_est_entropy_coder_ptr->fc->ndvc,

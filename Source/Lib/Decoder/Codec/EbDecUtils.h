@@ -31,7 +31,7 @@ void derive_blk_pointers(EbPictureBufferDesc *recon_picture_buf, int32_t plane,
                          void **pp_blk_recon_buf, int32_t *recon_stride,
                          int32_t sub_x, int32_t sub_y);
 
-void pad_pic(EbPictureBufferDesc *recon_picture_buf, FrameHeader *frame_hdr);
+void pad_pic(EbPictureBufferDesc *recon_picture_buf);
 
 int inverse_recenter(int r, int v);
 
@@ -47,22 +47,18 @@ static INLINE int is_interintra_allowed_ref(const MvReferenceFrame rf[2]) {
     return (rf[0] > INTRA_FRAME) && (rf[1] <= INTRA_FRAME);
 }
 
-static INLINE int is_interintra_allowed(const BlockModeInfo *mbmi) {
+static INLINE int is_interintra_allowed(const ModeInfo_t *mbmi) {
     return is_interintra_allowed_bsize(mbmi->sb_type) &&
         is_interintra_allowed_mode(mbmi->mode) &&
         is_interintra_allowed_ref(mbmi->ref_frame);
 }
 
 #if COMP_INTERINTRA
-static INLINE int is_interintra_pred(const BlockModeInfo *mbmi) {
+static INLINE int is_interintra_pred(const ModeInfo_t *mbmi) {
     return mbmi->ref_frame[0] > INTRA_FRAME &&
         mbmi->ref_frame[1] == INTRA_FRAME && is_interintra_allowed(mbmi);
 }
 #endif //comp_interintra
-
-static INLINE int has_second_ref(const BlockModeInfo *mbmi) {
-    return mbmi->ref_frame[1] > INTRA_FRAME;
-}
 
 #ifdef __cplusplus
 }

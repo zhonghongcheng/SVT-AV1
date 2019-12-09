@@ -17,11 +17,8 @@
 #include <string.h>
 
 #include "EbCodingUnit.h"
-#include "EbInterPrediction.h"
-
 #include "EbSvtAv1Dec.h"
 #include "EbDecHandle.h"
-#include "EbDecPicMgr.h"
 #include "EbDecProcessFrame.h"
 #include "EbDecObmc.h"
 #include "EbDecNbr.h"
@@ -31,7 +28,7 @@
 #include "aom_dsp_rtcd.h"
 
 //This function is present in encoder also, but encoder structures & decoder structures are different.
-static INLINE int dec_is_neighbor_overlappable(const BlockModeInfo *mbmi){
+static INLINE int dec_is_neighbor_overlappable(const ModeInfo_t *mbmi){
     // TODO: currently intrabc  is not supporting
     return mbmi->use_intrabc || mbmi->ref_frame[0] > INTRA_FRAME;
 }
@@ -40,17 +37,72 @@ static INLINE int dec_is_neighbor_overlappable(const BlockModeInfo *mbmi){
 //    return AOMMIN(block_size_wide[bsize], block_size_high[bsize]) >= 8;
 //}
 
-void av1_modify_neighbor_predictor_for_obmc(BlockModeInfo *mbmi) {
+void av1_modify_neighbor_predictor_for_obmc(ModeInfo_t *mbmi) {
     mbmi->ref_frame[1] = NONE_FRAME;
     mbmi->inter_inter_compound.type = COMPOUND_AVERAGE;
     return;
 }
 
-int av1_skip_u4x4_pred_in_obmc(BlockSize bsize, int dir, int32_t sub_x, int32_t sub_y);
+// HW does not support < 4x4 prediction. To limit the bandwidth requirement, if
+// block-size of current plane is smaller than 8x8, always only blend with the
+// left neighbor(s) (skip blending with the above side).
+#define DISABLE_CHROMA_U8X8_OBMC 0  // 0: one-sided obmc; 1: disable
+
+int av1_skip_u4x4_pred_in_obmc(BlockSize bsize, int32_t sub_x, int32_t sub_y, int dir) {
+
+    assert(is_motion_variation_allowed_bsize(bsize));
+
+    const BlockSize bsize_plane =
+        get_plane_block_size(bsize, sub_x, sub_y);
+    switch (bsize_plane) {
+#if DISABLE_CHROMA_U8X8_OBMC
+    case BLOCK_4X4:
+    case BLOCK_8X4:
+    case BLOCK_4X8: return 1; break;
+#else
+    case BLOCK_4X4:
+    case BLOCK_8X4:
+    case BLOCK_4X8: return dir == 0; break;
+#endif
+    default: return 0;
+    }
+}
 
 // obmc_mask_N[overlap_position]
+static const uint8_t obmc_mask_1[1] = { 64 };
+static const uint8_t obmc_mask_2[2] = { 45, 64 };
 
-const uint8_t *av1_get_obmc_mask(int length);
+static const uint8_t obmc_mask_4[4] = { 39, 50, 59, 64 };
+
+static const uint8_t obmc_mask_8[8] = { 36, 42, 48, 53, 57, 61, 64, 64 };
+
+static const uint8_t obmc_mask_16[16] = { 34, 37, 40, 43, 46, 49, 52, 54,
+                                          56, 58, 60, 61, 64, 64, 64, 64 };
+
+static const uint8_t obmc_mask_32[32] = { 33, 35, 36, 38, 40, 41, 43, 44,
+                                          45, 47, 48, 50, 51, 52, 53, 55,
+                                          56, 57, 58, 59, 60, 60, 61, 62,
+                                          64, 64, 64, 64, 64, 64, 64, 64 };
+
+static const uint8_t obmc_mask_64[64] = {
+  33, 34, 35, 35, 36, 37, 38, 39, 40, 40, 41, 42, 43, 44, 44, 44,
+  45, 46, 47, 47, 48, 49, 50, 51, 51, 51, 52, 52, 53, 54, 55, 56,
+  56, 56, 57, 57, 58, 58, 59, 60, 60, 60, 60, 60, 61, 62, 62, 62,
+  62, 62, 63, 63, 63, 63, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+};
+
+const uint8_t *av1_get_obmc_mask(int length) {
+    switch (length) {
+    case 1: return obmc_mask_1;
+    case 2: return obmc_mask_2;
+    case 4: return obmc_mask_4;
+    case 8: return obmc_mask_8;
+    case 16: return obmc_mask_16;
+    case 32: return obmc_mask_32;
+    case 64: return obmc_mask_64;
+    default: assert(0); return NULL;
+    }
+}
 
 static INLINE void build_obmc_inter_pred_above(EbDecHandle *dec_handle,
     PartitionInfo_t *pi, BlockSize bsize, int rel_mi_col, uint8_t above_mi_width,
@@ -75,7 +127,7 @@ static INLINE void build_obmc_inter_pred_above(EbDecHandle *dec_handle,
         const int bw = (above_mi_width * MI_SIZE) >> sub_x;
         const int bh = overlap >> sub_y;
 
-        if (av1_skip_u4x4_pred_in_obmc(bsize, 0, sub_x, sub_y)) continue;
+        if (av1_skip_u4x4_pred_in_obmc(bsize, sub_x, sub_y, 0)) continue;
 
         if (recon_picture_buf->bit_depth != EB_8BIT) {
             above_buf = (uint8_t *)((uint16_t *)above_tmp_buf[plane] +
@@ -139,7 +191,7 @@ static INLINE void build_obmc_inter_pred_left(EbDecHandle *dec_handle,
         const int bh = (left_mi_height * MI_SIZE) >> sub_y;
 
 
-        if (av1_skip_u4x4_pred_in_obmc(bsize, 1, sub_x, sub_y)) continue;
+        if (av1_skip_u4x4_pred_in_obmc(bsize, sub_x, sub_y, 1)) continue;
 
         if (recon_picture_buf->bit_depth != EB_8BIT) {
             left_buf = (uint8_t *)((uint16_t *)left_tmp_buf[plane] +
@@ -180,7 +232,7 @@ static INLINE void build_obmc_inter_pred_left(EbDecHandle *dec_handle,
 
 static INLINE void dec_build_prediction_by_above_pred(EbDecHandle *dec_handle,
     PartitionInfo_t *backup_pi, BlockSize bsize, int bw4, int mi_row, int mi_col,
-    int rel_mi_col, uint8_t above_mi_width, BlockModeInfo *above_mbmi,
+    int rel_mi_col, uint8_t above_mi_width, ModeInfo_t *above_mbmi,
     uint8_t *tmp_buf[MAX_MB_PLANE], int tmp_stride[MAX_MB_PLANE],
     const int num_planes)
 {
@@ -190,21 +242,9 @@ static INLINE void dec_build_prediction_by_above_pred(EbDecHandle *dec_handle,
     int mi_x, mi_y;
     uint8_t *tmp_recon_buf;
     int32_t tmp_recon_stride;
-    BlockModeInfo bakup_abv_mbmi = *above_mbmi;
+    ModeInfo_t bakup_abv_mbmi = *above_mbmi;
     backup_pi->mi = &bakup_abv_mbmi;
     av1_modify_neighbor_predictor_for_obmc(backup_pi->mi);
-
-    const int num_refs = 1 + has_second_ref(backup_pi->mi);
-
-    for (int ref = 0; ref < num_refs; ++ref) {
-        const MvReferenceFrame  frame = backup_pi->mi->ref_frame[ref];
-        backup_pi->block_ref_sf[ref] = get_ref_scale_factors(dec_handle, frame);
-
-        if ((!av1_is_valid_scale(backup_pi->block_ref_sf[ref]))) {
-            printf("\n Reference frame has invalid dimensions \n");
-            assert(0);
-        }
-    }
 
     backup_pi->mb_to_left_edge = 8 * MI_SIZE * (-above_mi_col);
     backup_pi->mb_to_right_edge += (bw4 - rel_mi_col - above_mi_width)
@@ -231,7 +271,7 @@ static INLINE void dec_build_prediction_by_above_pred(EbDecHandle *dec_handle,
             tmp_recon_stride = tmp_stride[plane];
         }
 
-        if (av1_skip_u4x4_pred_in_obmc(bsize, 0, sub_x, sub_y)) continue;
+        if (av1_skip_u4x4_pred_in_obmc(bsize, sub_x, sub_y, 0)) continue;
         svtav1_predict_inter_block_plane(dec_handle, backup_pi, plane,
             1/*obmc*/, mi_x, mi_y, (void *)tmp_recon_buf, tmp_recon_stride,
             0/*some_use_intra*/, recon_picture_buf->bit_depth);
@@ -289,7 +329,7 @@ static void dec_build_prediction_by_above_preds(EbDecHandle *dec_handle,
 
     for (int above_mi_col = mi_col; above_mi_col < end_col && nb_count < nb_max;
         above_mi_col += mi_step) {
-        BlockModeInfo *above_mi = get_cur_mode_info(dec_handle, mi_row-1,
+        ModeInfo_t *above_mi = get_cur_mode_info(dec_handle, mi_row-1,
             above_mi_col, NULL);
 
         mi_step =
@@ -325,7 +365,7 @@ static void dec_build_prediction_by_above_preds(EbDecHandle *dec_handle,
 
 static INLINE void dec_build_prediction_by_left_pred(EbDecHandle *dec_handle,
     PartitionInfo_t *backup_pi, BlockSize bsize, int bh4, int mi_row, int mi_col,
-    int rel_mi_row, uint8_t left_mi_height, BlockModeInfo *left_mbmi,
+    int rel_mi_row, uint8_t left_mi_height, ModeInfo_t *left_mbmi,
     uint8_t *tmp_buf[MAX_MB_PLANE], int tmp_stride[MAX_MB_PLANE],
     const int num_planes)
 {
@@ -335,21 +375,9 @@ static INLINE void dec_build_prediction_by_left_pred(EbDecHandle *dec_handle,
     int mi_x, mi_y;
     uint8_t *tmp_recon_buf;
     int32_t tmp_recon_stride;
-    BlockModeInfo bakup_left_mbmi = *left_mbmi;
+    ModeInfo_t bakup_left_mbmi = *left_mbmi;
     backup_pi->mi = &bakup_left_mbmi;
     av1_modify_neighbor_predictor_for_obmc(backup_pi->mi);
-
-    const int num_refs = 1 + has_second_ref(backup_pi->mi);
-
-    for (int ref = 0; ref < num_refs; ++ref) {
-        const MvReferenceFrame  frame = backup_pi->mi->ref_frame[ref];
-        backup_pi->block_ref_sf[ref] = get_ref_scale_factors(dec_handle, frame);
-
-        if ((!av1_is_valid_scale(backup_pi->block_ref_sf[ref]))) {
-            printf("\n Reference frame has invalid dimensions \n");
-            assert(0);
-        }
-    }
 
     backup_pi->mb_to_top_edge = 8 * MI_SIZE * (-left_mi_row);
     backup_pi->mb_to_bottom_edge +=
@@ -377,7 +405,7 @@ static INLINE void dec_build_prediction_by_left_pred(EbDecHandle *dec_handle,
             tmp_recon_stride = tmp_stride[plane];
         }
 
-        if (av1_skip_u4x4_pred_in_obmc(bsize, 1, sub_x, sub_y)) continue;
+        if (av1_skip_u4x4_pred_in_obmc(bsize, sub_x, sub_y, 1)) continue;
        // dec_build_inter_predictors(ctxt->cm, pi, j, &backup_mbmi, 1, bw, bh, mi_x,
        //                            mi_y);
         svtav1_predict_inter_block_plane(dec_handle, backup_pi, plane,
@@ -436,7 +464,7 @@ static void dec_build_prediction_by_left_preds(EbDecHandle *dec_handle,
 
     for (int left_mi_row = mi_row; left_mi_row < end_row && nb_count < nb_max;
         left_mi_row += mi_step) {
-        BlockModeInfo *left_mi =
+        ModeInfo_t *left_mi =
             get_cur_mode_info(dec_handle, left_mi_row, mi_col-1, NULL);
         mi_step =
             AOMMIN(mi_size_high[left_mi->sb_type], mi_size_high[BLOCK_64X64]);

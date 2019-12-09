@@ -20,7 +20,7 @@ extern "C" {
         uint32_t  width,
         uint32_t  height);
 
-    void compressed_packmsb_c(
+    void compressed_packmsb(
         uint8_t  *in8_bit_buffer,
         uint32_t  in8_stride,
         uint8_t  *inn_bit_buffer,
@@ -49,7 +49,7 @@ extern "C" {
         uint32_t  width,
         uint32_t  height);
 
-    void un_pack8_bit_data_c(
+    void un_pack8_bit_data(
         uint16_t *in16_bit_buffer,
         uint32_t  in_stride,
         uint8_t  *out8_bit_buffer,
@@ -57,7 +57,7 @@ extern "C" {
         uint32_t  width,
         uint32_t  height);
 
-    void unpack_avg_c(
+    void unpack_avg(
         uint16_t *ref16_l0,
         uint32_t  ref_l0_stride,
         uint16_t *ref16_l1,
@@ -67,7 +67,7 @@ extern "C" {
         uint32_t  width,
         uint32_t  height);
 
-    void unpack_avg_safe_sub_c(
+    void unpack_avg_safe_sub(
         uint16_t *ref16_l0,
         uint32_t  ref_l0_stride,
         uint16_t *ref16_l1,

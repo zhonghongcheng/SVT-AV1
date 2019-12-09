@@ -294,10 +294,10 @@ typedef struct TilesInfo_s {
 
     /*!< Specifying the start column (in units of 4x4 luma samples) for each tile
      * across the image */
-    uint16_t    tile_col_start_mi[MAX_TILE_ROWS + 1];
+    uint16_t    tile_col_start_sb[MAX_TILE_ROWS + 1];
 
     /*!< Specifying the start row (in units of 4x4 luma samples) for each tile down the image */
-    uint16_t    tile_row_start_mi[MAX_TILE_COLS + 1];
+    uint16_t    tile_row_start_sb[MAX_TILE_COLS + 1];
 
     /*!< Specifies which tile to use for the CDF update */
     uint16_t    context_update_tile_id;
@@ -309,15 +309,27 @@ typedef struct TilesInfo_s {
 typedef struct QuantizationParams {
     /*!< Indicates the base frame qindex */
     uint8_t     base_q_idx;
-    /*!< Indicates the DC quantizer relative to base_q_idx */
-    int8_t      delta_q_dc[MAX_MB_PLANE];
-    /*!< Indicates the AC quantizer relative to base_q_idx */
-    int8_t      delta_q_ac[MAX_MB_PLANE];
+    /*!< Indicates the Y DC quantizer relative to base_q_idx */
+    int8_t     delta_q_y_dc;
+    /*!< Indicates the U DC quantizer relative to base_q_idx */
+    int8_t     delta_q_u_dc;
+    /*!< Indicates the V DC quantizer relative to base_q_idx */
+    int8_t     delta_q_v_dc;
+    /*!< Indicates the U AC quantizer relative to base_q_idx */
+    int8_t     delta_q_u_ac;
+    /*!< Indicates the V AC quantizer relative to base_q_idx */
+    int8_t     delta_q_v_ac;
     /*!<Specifies that the quantizer matrix will be used to compute quantizers*/
     uint8_t     using_qmatrix;
     /*!< Specifies the level in the quantizer matrix that should be used for
-     * each plane decoding */
-    uint8_t     qm[MAX_MB_PLANE];
+     * luma plane decoding */
+    uint8_t     qm_y;
+    /*!< specifies the level in the quantizer matrix that should be used for
+     * chroma U plane decoding*/
+    uint8_t     qm_u;
+    /*!< Specifies the level in the quantizer matrix that should be used for
+     * chroma V plane decoding*/
+    uint8_t     qm_v;
 } QuantizationParams;
 typedef struct DeltaQParams {
     /*!< Specifies whether quantizer index delta values are present */
@@ -589,7 +601,9 @@ typedef struct FrameHeader {
 
 typedef struct Dequant
 {
-    DECLARE_ALIGNED(16, int16_t, dequant_QTX[MAX_SEGMENTS][MAX_MB_PLANE][2]);  // 0: DC, 1: AC
+    DECLARE_ALIGNED(16, int16_t, y_dequant_QTX[MAX_SEGMENTS][2]);  // 0: DC, 1: AC
+    DECLARE_ALIGNED(16, int16_t, u_dequant_QTX[MAX_SEGMENTS][2]);  // 0: DC, 1: AC
+    DECLARE_ALIGNED(16, int16_t, v_dequant_QTX[MAX_SEGMENTS][2]);  // 0: DC, 1: AC
 } Dequant;
 
 

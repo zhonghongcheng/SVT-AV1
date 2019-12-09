@@ -29,28 +29,42 @@
 #include "EbDecHandle.h"
 #include "EbDecParseHelper.h"
 #include "EbDecProcessFrame.h"
-#include "EbCommonUtils.h"
 
-/* Avoid 12-bit output mismatch by intra pred intrinsic kernel */
-void dec_init_intra_predictors_12b_internal(void) {
-    eb_av1_highbd_dr_prediction_z2 = eb_av1_highbd_dr_prediction_z2_c;
+
+extern PredictionMode get_uv_mode(UvPredictionMode mode);
+
+/*TODO: Remove replication and harmonize with encoder after data str. harmonization */
+static int dec_is_smooth(const ModeInfo_t *mbmi, int32_t plane) {
+    if (plane == 0) {
+        const PredictionMode mode = mbmi->mode;
+        return (mode == SMOOTH_PRED || mode == SMOOTH_V_PRED ||
+            mode == SMOOTH_H_PRED);
+    }
+    else {
+        // uv_mode is not set for inter blocks, so need to explicitly
+        // detect that case.
+        if (dec_is_inter_block(mbmi)) return 0;
+
+        const UvPredictionMode uv_mode = mbmi->uv_mode;
+        return (uv_mode == UV_SMOOTH_PRED || uv_mode == UV_SMOOTH_V_PRED ||
+            uv_mode == UV_SMOOTH_H_PRED);
+    }
 }
-
 /*TODO: Remove replication and harmonize with encoder after data str. harmonization */
 int32_t dec_get_filt_type(const PartitionInfo_t *part_info, int32_t plane) {
     int ab_sm, le_sm;
 
     if (plane == 0) {
-        const BlockModeInfo *ab = part_info->above_mbmi;
-        const BlockModeInfo *le = part_info->left_mbmi;
-        ab_sm = ab ? is_smooth(ab, plane) : 0;
-        le_sm = le ? is_smooth(le, plane) : 0;
+        const ModeInfo_t *ab = part_info->above_mbmi;
+        const ModeInfo_t *le = part_info->left_mbmi;
+        ab_sm = ab ? dec_is_smooth(ab, plane) : 0;
+        le_sm = le ? dec_is_smooth(le, plane) : 0;
     }
     else {
-        const BlockModeInfo *ab = part_info->chroma_above_mbmi;
-        const BlockModeInfo *le = part_info->chroma_left_mbmi;
-        ab_sm = ab ? is_smooth(ab, plane) : 0;
-        le_sm = le ? is_smooth(le, plane) : 0;
+        const ModeInfo_t *ab = part_info->chroma_above_mbmi;
+        const ModeInfo_t *le = part_info->chroma_left_mbmi;
+        ab_sm = ab ? dec_is_smooth(ab, plane) : 0;
+        le_sm = le ? dec_is_smooth(le, plane) : 0;
     }
 
     return (ab_sm || le_sm) ? 1 : 0;
@@ -188,7 +202,7 @@ static INLINE CflAllowedType is_cfl_allowed_with_frame_header(const PartitionInf
                                               FrameHeader *fh )
 
 {
-    const BlockModeInfo *mbmi = xd->mi;
+    const ModeInfo_t *mbmi = xd->mi;
     const BlockSize bsize = mbmi->sb_type;
     assert(bsize < BlockSizeS_ALL);
     if (fh->lossless_array[mbmi->segment_id]) {
@@ -217,7 +231,7 @@ void cfl_predict_block(PartitionInfo_t *xd, CflCtx *cfl_ctx, uint8_t *dst,
                        int32_t dst_stride, TxSize tx_size, int32_t plane,
                        EbColorConfig *cc, FrameHeader *fh)
 {
-    BlockModeInfo *mbmi = xd->mi;
+    ModeInfo_t *mbmi = xd->mi;
     CflAllowedType is_cfl_allowed_flag = is_cfl_allowed_with_frame_header(xd, cc, fh);
     assert(is_cfl_allowed_flag == CFL_ALLOWED);
     (void)is_cfl_allowed_flag;
@@ -325,8 +339,8 @@ void cfl_store_tx(PartitionInfo_t *xd, CflCtx *cfl_ctx, int row, int col, TxSize
 static void decode_build_intra_predictors(
     PartitionInfo_t *part_info,
     uint8_t*   topNeighArray,
-    uint8_t*   leftNeighArray, int32_t  ref_stride,
-    uint8_t   *dst,  int32_t  dst_stride,
+    uint8_t*   leftNeighArray,
+    uint8_t   *dst, int32_t  dst_stride,
     PredictionMode mode, int32_t angle_delta,
     FilterIntraMode filter_intra_mode,
     TxSize tx_size, int32_t disable_edge_filter,
@@ -336,6 +350,7 @@ static void decode_build_intra_predictors(
 {
     int32_t i;
 
+    int32_t ref_stride = 1;
     const uint8_t *above_ref = topNeighArray;//CHKN ref - ref_stride;
     const uint8_t *left_ref = leftNeighArray;//CHKN ref - 1;
 
@@ -508,7 +523,7 @@ static void decode_build_intra_predictors(
 static void decode_build_intra_predictors_high(
     PartitionInfo_t *part_info,
     uint16_t* topNeighArray,
-    uint16_t* leftNeighArray, int32_t ref_stride,
+    uint16_t* leftNeighArray,
     uint16_t *dst,
     int32_t dst_stride, PredictionMode mode, int32_t angle_delta,
     FilterIntraMode filter_intra_mode, TxSize tx_size,
@@ -526,8 +541,9 @@ static void decode_build_intra_predictors_high(
     int32_t need_above = extend_modes[mode] & NEED_ABOVE;
     int32_t need_above_left = extend_modes[mode] & NEED_ABOVELEFT;
 
-    const uint16_t *above_ref = topNeighArray;//CHKN ref - ref_stride;
-    const uint16_t *left_ref = leftNeighArray;//CHKN ref - 1;
+    int32_t ref_stride = 1;
+    const uint16_t *above_ref = topNeighArray;
+    const uint16_t *left_ref = leftNeighArray;
 
     int32_t p_angle = 0;
     const int32_t is_dr_mode = av1_is_directional_mode(mode);
@@ -698,7 +714,7 @@ void svtav1_predict_intra_block(PartitionInfo_t *xd, int32_t plane,
                                 TxSize tx_size, TileInfo *td,
                                 void *pv_pred_buf, int32_t pred_stride,
                                 void *topNeighArray,
-                                void *leftNeighArray, int32_t ref_stride,
+                                void *leftNeighArray,
                                 SeqHeader *seq_header, const PredictionMode mode,
                                 int32_t blk_mi_col_off, int32_t blk_mi_row_off,
                                 EbBitDepthEnum bit_depth)
@@ -709,7 +725,7 @@ void svtav1_predict_intra_block(PartitionInfo_t *xd, int32_t plane,
     int32_t sub_x = plane ? cc->subsampling_x : 0;
     int32_t sub_y = plane ? cc->subsampling_y : 0;
 
-    const BlockModeInfo *const mbmi = xd->mi;
+    const ModeInfo_t *const mbmi = xd->mi;
 
     const int txwpx = tx_size_wide[tx_size];
     const int txhpx = tx_size_high[tx_size];
@@ -770,8 +786,8 @@ void svtav1_predict_intra_block(PartitionInfo_t *xd, int32_t plane,
     if (bit_depth == EB_8BIT) {
         decode_build_intra_predictors(
             xd,
-            (uint8_t*)topNeighArray,/*As per SVT Enc*/
-            (uint8_t*)leftNeighArray,/*As per SVT Enc*/ ref_stride,
+            (uint8_t*)topNeighArray + 1,/*As per SVT Enc*/
+            (uint8_t*)leftNeighArray + 1,/*As per SVT Enc*/
             (uint8_t*)pv_pred_buf, pred_stride, mode,
             angle_delta, filter_intra_mode, tx_size,
             disable_edge_filter,
@@ -783,9 +799,9 @@ void svtav1_predict_intra_block(PartitionInfo_t *xd, int32_t plane,
     else { //16bit
         decode_build_intra_predictors_high(
             xd,
-            (uint16_t*)topNeighArray, /*As per SVT Enc*/
-            (uint16_t*)leftNeighArray,/*As per SVT Enc*/ref_stride,
-            (uint16_t*)pv_pred_buf,  pred_stride, mode,
+            (uint16_t*)topNeighArray + 1,/*As per SVT Enc*/
+            (uint16_t*)leftNeighArray + 1,/*As per SVT Enc*/
+            (uint16_t*)pv_pred_buf, pred_stride, mode,
             angle_delta, filter_intra_mode, tx_size,
             disable_edge_filter,
             have_top ? AOMMIN(txwpx, xr + txwpx) : 0,
@@ -802,28 +818,54 @@ void svt_av1_predict_intra(DecModCtxt *dec_mod_ctxt, PartitionInfo_t *part_info,
     void *pv_blk_recon_buf, int32_t recon_stride,
     EbBitDepthEnum bit_depth, int32_t blk_mi_col_off, int32_t blk_mi_row_off )
 {
+    int32_t i, wpx, hpx;
     EbDecHandle *dec_handle = (EbDecHandle *)dec_mod_ctxt->dec_handle_ptr;
-    void *pv_topNeighArray, *pv_leftNeighArray;
+
+    //assert(part_info->wpx[plane] <= 64);
+    //assert(part_info->hpx[plane] <= 64);
+    wpx = AOMMIN(part_info->wpx[plane], plane ?
+        (64 >> dec_handle->seq_header.color_config.subsampling_x) : 64);
+    hpx = AOMMIN(part_info->hpx[plane], plane ?
+        (64 >> dec_handle->seq_header.color_config.subsampling_y) : 64);
+
+    void *pv_topNeighArray  = (void *)dec_mod_ctxt->topNeighArray;;
+    void *pv_leftNeighArray = (void *)dec_mod_ctxt->leftNeighArray;
 
     const PredictionMode mode = (plane == AOM_PLANE_Y) ?
         part_info->mi->mode : get_uv_mode(part_info->mi->uv_mode);
 
     if (bit_depth == EB_8BIT) {
         EbByte  buf = (EbByte)pv_blk_recon_buf;
-        pv_topNeighArray  = (void*) (buf - recon_stride);
-        pv_leftNeighArray = (void*)(buf - 1);
+        uint8_t *pu1_topNeighArray = (uint8_t *)dec_mod_ctxt->topNeighArray;
+        uint8_t *pu1_leftNeighArray = (uint8_t *)dec_mod_ctxt->leftNeighArray;
+
+        memcpy(pu1_topNeighArray + 1, (buf - recon_stride),
+            wpx * 2 * sizeof(uint8_t));
+
+        for (i = 0; i < hpx * 2; i++)
+            pu1_leftNeighArray[i + 1] = buf[-1 + i * recon_stride];
+
+        pu1_topNeighArray[0] = pu1_leftNeighArray[0] = buf[-1 - recon_stride];
     }
     else {//16bit
         uint16_t *buf = (uint16_t *)pv_blk_recon_buf;
-        pv_topNeighArray = (void*)(buf - recon_stride);
-        pv_leftNeighArray = (void*)(buf - 1);
+        uint16_t *pu2_topNeighArray = (uint16_t *)dec_mod_ctxt->topNeighArray;
+        uint16_t *pu2_leftNeighArray = (uint16_t *)dec_mod_ctxt->leftNeighArray;
+
+        memcpy(pu2_topNeighArray + 1, (buf - recon_stride),
+            wpx * 2 * sizeof(uint16_t));
+
+        for (i = 0; i < hpx * 2; i++)
+            pu2_leftNeighArray[i + 1] = buf[-1 + i * recon_stride];
+
+        pu2_topNeighArray[0] = pu2_leftNeighArray[0] = buf[-1 - recon_stride];
     }
 
     if (plane != AOM_PLANE_Y && part_info->mi->uv_mode == UV_CFL_PRED) {
         svtav1_predict_intra_block(part_info, plane,
             tx_size, td,
-            pv_blk_recon_buf,  recon_stride,
-            pv_topNeighArray, pv_leftNeighArray, recon_stride,
+            pv_blk_recon_buf, recon_stride,
+            pv_topNeighArray, pv_leftNeighArray,
             &dec_handle->seq_header, mode,
             blk_mi_col_off, blk_mi_row_off, bit_depth);
 
@@ -838,7 +880,7 @@ void svt_av1_predict_intra(DecModCtxt *dec_mod_ctxt, PartitionInfo_t *part_info,
     svtav1_predict_intra_block(part_info, plane,
         tx_size, td,
         pv_blk_recon_buf, recon_stride,
-        pv_topNeighArray, pv_leftNeighArray, recon_stride,
+        pv_topNeighArray, pv_leftNeighArray,
         &dec_handle->seq_header, mode,
         blk_mi_col_off, blk_mi_row_off, bit_depth);
 }

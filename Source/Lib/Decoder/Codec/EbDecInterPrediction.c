@@ -74,7 +74,7 @@ void svt_make_inter_predictor(PartitionInfo_t *part_info, int32_t ref,
     EbDecPicBuf *ref_buf, int32_t pre_x, int32_t pre_y, int32_t bw, int32_t bh,
     ConvolveParams *conv_params, int32_t plane, int32_t do_warp)
 {
-    const BlockModeInfo *mi = part_info->mi;
+    const ModeInfo_t *mi = part_info->mi;
     const int32_t is_intrabc = is_intrabc_block(mi);
 
     const int32_t ss_x = plane ? part_info->subsampling_x : 0;
@@ -82,78 +82,30 @@ void svt_make_inter_predictor(PartitionInfo_t *part_info, int32_t ref,
     int32_t bit_depth = ref_buf->ps_pic_buf->bit_depth;
     int32_t highbd = bit_depth > EB_8BIT;
 
-    /*ScaleFactor*/
-    const struct ScaleFactors *const sf = is_intrabc ?
-        part_info->sf_identity : part_info->block_ref_sf[ref];
+    /*Currenly svt decoder won't support ScaleFactor*/
+    ScaleFactors *const sf = NULL; //TODO: Add reference scaling support later
+                /* is_intrabc ? &cm->sf_identity : xd->block_ref_scale_factors[ref]; */
 
     const MV mv = mi->mv[ref].as_mv;
     MV mv_q4;
     void *src_mod;
     SubpelParams subpel_params;
-    do_warp = do_warp && !av1_is_scaled(sf);
 
-    const int32_t is_scaled = av1_is_scaled(sf);
-    if (is_scaled) {
-        int orig_pos_y = (pre_y + 0) << SUBPEL_BITS;
-        orig_pos_y += mv.row * (1 << (1 - ss_y));
-        int orig_pos_x = (pre_x + 0) << SUBPEL_BITS;
-        orig_pos_x += mv.col * (1 << (1 - ss_x));
-        int pos_y = sf->scale_value_y(orig_pos_y, sf);
-        int pos_x = sf->scale_value_x(orig_pos_x, sf);
-        pos_x += SCALE_EXTRA_OFF;
-        pos_y += SCALE_EXTRA_OFF;
+    mv_q4 = dec_clamp_mv_to_umv_border_sb(
+        part_info->mb_to_left_edge,
+        part_info->mb_to_right_edge,
+        part_info->mb_to_top_edge,
+        part_info->mb_to_bottom_edge,
+        &mv, bw, bh, ss_x, ss_y);
 
-        const int top = -AOM_LEFT_TOP_MARGIN_SCALED(ss_y);
-        const int left = -AOM_LEFT_TOP_MARGIN_SCALED(ss_x);
-        const int bottom = ((ref_buf->frame_height >> ss_y) + AOM_INTERP_EXTEND)
-            << SCALE_SUBPEL_BITS;
-        const int right = ((ref_buf->superres_upscaled_width >> ss_x) +
-            AOM_INTERP_EXTEND) << SCALE_SUBPEL_BITS;
+    int32_t src_offset = (((pre_y)+(mv_q4.row >> SUBPEL_BITS))
+        * src_stride) + (pre_x)+(mv_q4.col >> SUBPEL_BITS);
+    src_mod = (void *)((uint8_t *)src + (src_offset << highbd));
 
-        pos_y = clamp(pos_y, top, bottom);
-        pos_x = clamp(pos_x, left, right);
-
-        subpel_params.subpel_x = pos_x & SCALE_SUBPEL_MASK;
-        subpel_params.subpel_y = pos_y & SCALE_SUBPEL_MASK;
-
-        pos_y = pos_y >> SCALE_SUBPEL_BITS;
-        pos_x = pos_x >> SCALE_SUBPEL_BITS;
-        MV temp_mv;
-        temp_mv = dec_clamp_mv_to_umv_border_sb(
-            part_info->mb_to_left_edge,
-            part_info->mb_to_right_edge,
-            part_info->mb_to_top_edge,
-            part_info->mb_to_bottom_edge,
-            &mv, bw, bh, ss_x, ss_y);
-
-        MV32 scaled_mv;
-        scaled_mv = av1_scale_mv(&temp_mv, (pre_x + 0), (pre_y + 0), sf);
-        scaled_mv.row += SCALE_EXTRA_OFF;
-        scaled_mv.col += SCALE_EXTRA_OFF;
-
-        subpel_params.xs = sf->x_step_q4;
-        subpel_params.ys = sf->y_step_q4;
-
-        int32_t src_offset = ( pos_y * src_stride ) + pos_x ;
-        src_mod = (void *)((uint8_t *)src + (src_offset << highbd));
-    }
-    else {
-        mv_q4 = dec_clamp_mv_to_umv_border_sb(
-            part_info->mb_to_left_edge,
-            part_info->mb_to_right_edge,
-            part_info->mb_to_top_edge,
-            part_info->mb_to_bottom_edge,
-            &mv, bw, bh, ss_x, ss_y);
-
-        int32_t src_offset = (((pre_y)+(mv_q4.row >> SUBPEL_BITS))
-            * src_stride) + (pre_x)+(mv_q4.col >> SUBPEL_BITS);
-        src_mod = (void *)((uint8_t *)src + (src_offset << highbd));
-
-        subpel_params.xs = SCALE_SUBPEL_SHIFTS;
-        subpel_params.ys = SCALE_SUBPEL_SHIFTS;
-        subpel_params.subpel_x = (mv_q4.col & SUBPEL_MASK) << SCALE_EXTRA_BITS;
-        subpel_params.subpel_y = (mv_q4.row & SUBPEL_MASK) << SCALE_EXTRA_BITS;
-    }
+    subpel_params.xs = 0;
+    subpel_params.ys = 0;
+    subpel_params.subpel_x = mv_q4.col & SUBPEL_MASK;
+    subpel_params.subpel_y = mv_q4.row & SUBPEL_MASK;
 
     assert(IMPLIES(is_intrabc, !do_warp));
 
@@ -167,13 +119,21 @@ void svt_make_inter_predictor(PartitionInfo_t *part_info, int32_t ref,
 
         wm_params = (mi->motion_mode == WARPED_CAUSAL) ? wm_local : wm_global;
 
-        eb_av1_warp_plane((EbWarpedMotionParams *)wm_params,
-            highbd, bit_depth, src,
-            ref_buf->ps_pic_buf->width >> ss_x,
-            ref_buf->ps_pic_buf->height >> ss_y,
-            src_stride, dst_mod,
-            pre_x, pre_y, bw, bh, dst_stride,
-            ss_x, ss_y, conv_params);
+        if (highbd)
+            eb_av1_warp_plane((EbWarpedMotionParams *)wm_params,
+                highbd, bit_depth, CONVERT_TO_BYTEPTR(src),
+                ref_buf->ps_pic_buf->width >> ss_x,
+                ref_buf->ps_pic_buf->height >> ss_y,
+                src_stride, CONVERT_TO_BYTEPTR(dst_mod),
+                pre_x, pre_y, bw, bh, dst_stride,
+                ss_x, ss_y, conv_params);
+        else
+            eb_av1_warp_plane((EbWarpedMotionParams *)wm_params,
+                highbd, bit_depth,
+                src, ref_buf->ps_pic_buf->width >> ss_x,
+                ref_buf->ps_pic_buf->height >> ss_y,
+                src_stride, dst_mod, pre_x, pre_y, bw, bh, dst_stride,
+                ss_x, ss_y, conv_params);
     }
     else if (highbd) {
         uint16_t *src16 = (uint16_t *)src_mod;
@@ -242,7 +202,7 @@ void av1_combine_interintra(PartitionInfo_t *part_info, BlockSize bsize,
     int plane, uint8_t *inter_pred, int inter_stride,
     uint8_t *intra_pred, int intra_stride, EbBitDepthEnum bit_depth)
 {
-    BlockModeInfo *mi = part_info->mi;
+    ModeInfo_t *mi = part_info->mi;
     int32_t sub_x = (plane > 0) ? part_info->subsampling_x : 0;
     int32_t sub_y = (plane > 0) ? part_info->subsampling_y : 0;
     const BlockSize plane_bsize = get_plane_block_size(bsize, sub_x, sub_y);
@@ -250,18 +210,18 @@ void av1_combine_interintra(PartitionInfo_t *part_info, BlockSize bsize,
     if (bit_depth > EB_8BIT) {
         /*As per spec we r considering interitra_wedge_sign is always "zero"*/
         /*Check buffers, Aom  2nd time inter_pred buffer plane is plane independent */
-        combine_interintra_highbd(mi->interintra_mode_params.interintra_mode,
-            mi->interintra_mode_params.wedge_interintra,
-            mi->interintra_mode_params.interintra_wedge_index, 0/*interintra_wedgesign*/,
+        combine_interintra_highbd(mi->interintra_mode.interintra_mode,
+            mi->interintra_mode.wedge_interintra,
+            mi->interintra_mode.interintra_wedge_index, 0/*interintra_wedgesign*/,
             bsize, plane_bsize, inter_pred, inter_stride, inter_pred,
             inter_stride, intra_pred, intra_stride, bit_depth);
         return;
     }
 
     /*Check buffers, Aom  2nd time inter_pred buffer plane is plane independent */
-    combine_interintra(mi->interintra_mode_params.interintra_mode,
-        mi->interintra_mode_params.wedge_interintra,
-        mi->interintra_mode_params.interintra_wedge_index, 0/*interintra_wedgesign*/,
+    combine_interintra(mi->interintra_mode.interintra_mode,
+        mi->interintra_mode.wedge_interintra,
+        mi->interintra_mode.interintra_wedge_index, 0/*interintra_wedgesign*/,
         bsize, plane_bsize, inter_pred, inter_stride, inter_pred,
         inter_stride, intra_pred, intra_stride);
 }
@@ -271,39 +231,57 @@ void av1_build_intra_predictors_for_interintra(EbDecHandle *dec_hdl,
     BlockSize bsize, int32_t plane, uint8_t *dst, int dst_stride,
     EbBitDepthEnum bit_depth)
 {
-    BlockModeInfo *mi = part_info->mi;
+    ModeInfo_t *mi = part_info->mi;
+    int32_t i, wpx, hpx;
     DecModCtxt *dec_mod_ctxt = (DecModCtxt *)dec_hdl->pv_dec_mod_ctxt;
     int32_t sub_x = (plane > 0) ? part_info->subsampling_x : 0;
     int32_t sub_y = (plane > 0) ? part_info->subsampling_y : 0;
     BlockSize plane_bsize = get_plane_block_size(bsize, sub_x, sub_y);
     PredictionMode mode =
-        interintra_to_intra_mode[mi->interintra_mode_params.interintra_mode];
+        interintra_to_intra_mode[mi->interintra_mode.interintra_mode];
     assert(mi->angle_delta[PLANE_TYPE_Y] == 0);
     assert(mi->angle_delta[PLANE_TYPE_UV] == 0);
     assert(mi->filter_intra_mode_info.use_filter_intra == 0);
     assert(mi->use_intrabc == 0);
     assert(mi->palette_size[plane != 0] == 0);
 
+    wpx = AOMMIN(part_info->wpx[plane], (64 >> sub_x));
+    hpx = AOMMIN(part_info->hpx[plane], (64 >> sub_y));
 
-    void *pv_topNeighArray, *pv_leftNeighArray;
+    void *pv_topNeighArray = (void *)dec_mod_ctxt->topNeighArray;;
+    void *pv_leftNeighArray = (void *)dec_mod_ctxt->leftNeighArray;
 
     if (bit_depth == EB_8BIT) {
         EbByte  buf = (EbByte)pv_blk_recon_buf;
+        uint8_t *pu1_topNeighArray = (uint8_t *)dec_mod_ctxt->topNeighArray;
+        uint8_t *pu1_leftNeighArray = (uint8_t *)dec_mod_ctxt->leftNeighArray;
 
-        pv_topNeighArray = (void*)(buf - recon_stride);
-        pv_leftNeighArray = (void*)(buf - 1);
+        memcpy(pu1_topNeighArray + 1, (buf - recon_stride),
+            wpx * 2 * sizeof(uint8_t));
+
+        for (i = 0; i < hpx * 2; i++)
+            pu1_leftNeighArray[i + 1] = buf[-1 + i * recon_stride];
+
+        pu1_topNeighArray[0] = pu1_leftNeighArray[0] = buf[-1 - recon_stride];
     }
     else {//16bit
         uint16_t *buf = (uint16_t *)pv_blk_recon_buf;
-        pv_topNeighArray = (void*)(buf - recon_stride);
-        pv_leftNeighArray = (void*)(buf - 1);
-    }
+        uint16_t *pu2_topNeighArray = (uint16_t *)dec_mod_ctxt->topNeighArray;
+        uint16_t *pu2_leftNeighArray = (uint16_t *)dec_mod_ctxt->leftNeighArray;
 
+        memcpy(pu2_topNeighArray + 1, (buf - recon_stride),
+            wpx * 2 * sizeof(uint16_t));
+
+        for (i = 0; i < hpx * 2; i++)
+            pu2_leftNeighArray[i + 1] = buf[-1 + i * recon_stride];
+
+        pu2_topNeighArray[0] = pu2_leftNeighArray[0] = buf[-1 - recon_stride];
+    }
     /*Calling Intra prediction */
     svtav1_predict_intra_block(part_info, plane,
         max_txsize_rect_lookup[plane_bsize], dec_mod_ctxt->cur_tile_info,
-        (void *)dst,  dst_stride, pv_topNeighArray, pv_leftNeighArray,
-        recon_stride, &dec_hdl->seq_header, mode, 0, 0, bit_depth);
+        (void *)dst, dst_stride, pv_topNeighArray, pv_leftNeighArray,
+        &dec_hdl->seq_header, mode, 0, 0, bit_depth);
 }
 
 /* Build interintra_predictors */
@@ -337,7 +315,7 @@ void svtav1_predict_inter_block_plane(
     void *dst, int32_t dst_stride,
     int32_t some_use_intra, int32_t bit_depth)
 {
-    const BlockModeInfo *mi = part_info->mi;
+    const ModeInfo_t *mi = part_info->mi;
     const FrameHeader *cur_frm_hdr = &dec_hdl->frame_header;
     DecModCtxt *dec_mod_ctx = (DecModCtxt*) dec_hdl->pv_dec_mod_ctxt;
     SeqHeader *seq_header = &dec_hdl->seq_header;
@@ -484,7 +462,7 @@ void svtav1_predict_inter_block(
 
         for (i = row_start; i <= row_end; i++) {
             for (j = col_start; j <= col_end; j++) {
-                BlockModeInfo *mode_info = get_cur_mode_info(dec_hdl,
+                ModeInfo_t *mode_info = get_cur_mode_info(dec_hdl,
                     i, j, part_info->sb_info);
                 if (mode_info->ref_frame[0] == INTRA_FRAME)
                     some_use_intra = 1;

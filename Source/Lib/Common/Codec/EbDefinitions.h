@@ -33,101 +33,24 @@
 extern "C" {
 #endif
 
-#define MULTI_PASS_PD                1 // Multi-Pass Partitioning Depth (Multi-Pass PD) performs multiple PD stages for the same SB towards 1 final Partitioning Structure. As we go from PDn to PDn + 1, the prediction accuracy of the MD feature(s) increases while the number of block(s) decreases
-
-#define HBD_CLEAN_UP                 1
-
-#define IFS_8BIT_MD                  1
-
-#define COMP_HBD                     1
-#define INTERINTRA_HBD               1
-#define ATB_HBD                      1
-#define ATB_FIX                      1
-
-#define M0_OPT                       1
-/* Note: shutting the macro PAL_SUP will not give SS as pcs->palette_mode = 0
-   rate estimation is changed for I frame + enabled sc for P (rate estimation
-   is a result changed for P frames)
-*/
-#define PAL_SUP                      1 //Palette prediction support.
-#if PAL_SUP
-#define PAL_CLASS   1
-#endif
-
-#define AUTO_MAX_PARTITION           1 // Shortcut to skip search depths depending on motion estimation info and statistics
-
-#define LESS_RECTANGULAR_CHECK_LEVEL 1 // Shortcut to skip a/b shapes depending on SQ/H/V shape costs
-
-#define INTER_INTRA_CLASS_PRUNING    1
-
-#define FIX_ALTREF                   1 // Address ALTREF mismatch between rtime-m0-test and master: fixed actual_future_pics derivation, shut padding of the central frame, fixed end past frame index prior to window shrinking
-#define FIX_NEAREST_NEW              1 // Address NEAREST_NEW mismatch between rtime-m0-test and master: fixed injection and fixed settings
-#define FIX_ESTIMATE_INTRA           1 // Address ESTIMATE_INTRA mismatch between rtime-m0-test and master: fixed settings
-#define FIX_SKIP_REDUNDANT_BLOCK     1 // Address SKIP_REDUNDANT_BLOCK mismatch between rtime-m0-test and master: fixed the action to bypass MD
-#define FIX_COEF_BASED_ATB_SKIP      1 // Address COEF_BASED_ATB_SKIP mismatch between rtime-m0-test and master: reset coeff_based_skip_atb @ each SB
-#define FIX_WM_SETTINGS              1 // Address WM_SETTINGS mismatch between rtime-m0-test and master: fixed settings
-#define FIX_ENABLE_CDF_UPDATE        1 // Address ENABLE_CDF_UPDATE mismatch between rtime-m0-test and master: removed useless update
-#define FIX_SORTING_METHOD           1 // Address SORTING mismatch between rtime-m0-test and master: used same method
-#define FIX_SETTINGS_RESET           1 // Address SEGMENT_RESET mismatch between rtime-m0-test and master: only @ 1st segment
-#define FIX_COMPOUND                 1 // Address COMPOUND mismatch between rtime-m0-test and master: used block size @ the derivation of compound count
-
-#define OBMC_FLAG            1 // OBMC motion mode flag
-
-#define INJECT_NEW_NEAR_NEAR_NEW   1   // Inject NEW_NEAR / NEAR_NEW inter prediction
-#define FILTER_INTRA_FLAG    1 // Filter intra prediction
-
-
-#define II_COMP_FLAG                 1 // InterIntra compound
-#define PAETH_HBD                    1 // Enbale Intra PAETH for 10bit
-#define INTER_INTER_HBD              1 // Upgrade InterInter compound 10bit
-#define INTER_INTRA_HBD              1 // Upgrade InterIntra compound 10bit
-#define ATB_10_BIT                   1 // Upgrade ATB  10bit
-
+#define II_COMP_FLAG 1
 #define PRED_CHANGE                  1 // Change the MRP in 4L Pictures 3, 5 , 7 and 9 use 1 as the reference
 #define PRED_CHANGE_5L               1 // Change the MRP in 5L Pictures 3, 5 , 7 and 9 use 1 as the reference, 11, 13, 15 and 17 use 9 as the reference
-#define PRED_CHANGE_MOD              1 // Reorder the references for MRP
-#define SPEED_OPT                    1 // Speed optimization(s)
-#define GLOBAL_WARPED_MOTION         1 // Global warped motion detection and insertion
-#define GM_OPT                       1 // Perform global motion estimation on a down-sampled version of the input picture
 
-#ifndef NON_AVX512_SUPPORT
+
 #define NON_AVX512_SUPPORT
-#endif
 
 #define MR_MODE                           0
-
-#define WARP_UPDATE                       1 // Modified Warp settings: ON for MR mode. ON for ref frames in M0
-#define UPDATE_CDEF                       1 // Update bit cost estimation for CDEF filter
-#define EIGTH_PEL_MV                      1
-#define EIGHT_PEL_PREDICTIVE_ME           1
-#define EIGHT_PEL_FIX                     1 // Improve the 8th pel performance by shutting it based on the qindex and bug fixes
-#define HIGH_PRECISION_MV_QTHRESH         150
+#define EIGTH_PEL_MV                      0
 #define COMP_INTERINTRA                   1 // InterIntra mode support
 
-#define ENHANCE_ATB                       1
-
-#define RDOQ_CHROMA                       1
-
-
-#define TWO_PASS                          1 // Two pass encoding. For now, the encoder is called two times and data transfered using file.
-                                            // Actions in the second pass: Frame and SB QP assignment and temporal filtering strenght change
-#define TWO_PASS_USE_2NDP_ME_IN_1STP      1 // Add a config parameter to the first pass to use the ME settings of the second pass
-
-#define REMOVE_MD_STAGE_1                 1 // Simplified MD Staging; removed md_stage_1
-#define NON_KF_INTRA_TF_FIX               0 // Fix temporal filtering for non-key Intra frames
-
-#define TWO_PASS_IMPROVEMENT              1 // Tune 2 pass for better Luma by adjusting the reference area and the actions
 //FOR DEBUGGING - Do not remove
 #define NO_ENCDEC                         0 // bypass encDec to test cmpliance of MD. complained achieved when skip_flag is OFF. Port sample code from VCI-SW_AV1_Candidate1 branch
 
 #define ADP_STATS_PER_LAYER                             0
+#define NSQ_TAB_SIZE                                    6
 #define AOM_INTERP_EXTEND                               4
 #define OPTIMISED_EX_SUBPEL                             1
-
-#define AOM_LEFT_TOP_MARGIN_PX(subsampling) \
-  ((AOM_BORDER_IN_PIXELS >> subsampling) - AOM_INTERP_EXTEND)
-#define AOM_LEFT_TOP_MARGIN_SCALED(subsampling) \
-  (AOM_LEFT_TOP_MARGIN_PX(subsampling) << SCALE_SUBPEL_BITS)
 
 #if OPTIMISED_EX_SUBPEL
 #define H_PEL_SEARCH_WIND 3  // 1/2-pel serach window
@@ -144,13 +67,6 @@ typedef enum ME_QP_MODE {
     EX_QP_MODE = 0,       // Exhaustive  1/4-pel serach mode.
     REFINMENT_QP_MODE = 1 // Refinement 1/4-pel serach mode.
 } ME_QP_MODE;
-#if GM_OPT
-typedef enum GM_LEVEL {
-    GM_FULL         = 0,       // Exhaustive search mode.
-    GM_DOWN         = 1,       // Downsampled search mode, with a downsampling factor of 2 in each dimension
-    GM_TRAN_ONLY    = 2        // Translation only using ME MV.
-} GM_LEVEL;
-#endif
 struct Buf2D
 {
     uint8_t *buf;
@@ -198,53 +114,15 @@ enum {
 
 #define PAD_VALUE                                (128+32)
 
-/* Use open-loop data to predict the NSQ partitions. */
-#if MULTI_PASS_PD
-#define PREDICT_NSQ_SHAPE                               0 // to set to 0
-#else
-#define PREDICT_NSQ_SHAPE                               1
-#endif
-#if PREDICT_NSQ_SHAPE
-#define NUMBER_OF_DEPTH                                 6
-#define NUMBER_OF_SHAPES                                10
-#define ADD_SAD_FOR_128X128                             1
-#define ADJUST_NSQ_RANK_BASED_ON_NEIGH                  1
-#define COMBINE_MDC_NSQ_TABLE                           1
-#define ADD_SUPPORT_TO_SKIP_PART_N                      1
-#define ADD_MDC_REFINEMENT_LOOP                         1
-#define ADD_MDC_FULL_COST                               1
-#define NSQ_TAB_SIZE                                    8
-#define MAX_MDC_LEVEL                                   8
-#define MDC_ADAPTIVE_LEVEL                              1
-#else
-#if MULTI_PASS_PD
-#define NSQ_TAB_SIZE                                    8
-#define NUMBER_OF_DEPTH                                 6
-#define NUMBER_OF_SHAPES                                10
-#else
-#define NSQ_TAB_SIZE                                    6
-#endif
-#endif
-
-#define AUTO_MODE                                 -1
-
 //  Delta QP support
 #define ADD_DELTA_QP_SUPPORT                      1  // Add delta QP support
 #define BLOCK_MAX_COUNT_SB_128                    4421  // TODO: reduce alloction for 64x64
 #define BLOCK_MAX_COUNT_SB_64                     1101  // TODO: reduce alloction for 64x64
 #define MAX_TXB_COUNT                             4 // Maximum number of transform blocks.
 #if II_COMP_FLAG
-#if OBMC_FLAG
-#if FILTER_INTRA_FLAG
-#define MAX_NFL                                 125 // Maximum number of candidates MD can support
+#define MAX_NFL                                  80
 #else
-#define MAX_NFL                                 120 // Maximum number of candidates MD can support
-#endif
-#else
-#define MAX_NFL                                  95
-#endif
-#else
-#define MAX_NFL                                   80
+#define MAX_NFL                                   65
 #endif
 #define MAX_NFL_BUFF                              (MAX_NFL + CAND_CLASS_TOTAL)  //need one extra temp buffer for each fast loop call
 #define MAX_LAD                                   120 // max lookahead-distance 2x60fps
@@ -300,11 +178,7 @@ enum {
 // Maximum number of tile rows and tile columns
 #define MAX_TILE_ROWS 64
 #define MAX_TILE_COLS 64
-#if ENHANCE_ATB
-#define MAX_VARTX_DEPTH 2
-#else
 #define MAX_VARTX_DEPTH 1
-#endif
 #define MI_SIZE_64X64 (64 >> MI_SIZE_LOG2)
 #define MI_SIZE_128X128 (128 >> MI_SIZE_LOG2)
 #define MAX_PALETTE_SQUARE (64 * 64)
@@ -379,13 +253,6 @@ one more than the minimum. */
 #define SUBPEL_MASK ((1 << SUBPEL_BITS) - 1)
 #define SUBPEL_SHIFTS (1 << SUBPEL_BITS)
 #define SUBPEL_TAPS 8
-
-#define SCALE_SUBPEL_BITS 10
-#define SCALE_SUBPEL_SHIFTS (1 << SCALE_SUBPEL_BITS)
-#define SCALE_SUBPEL_MASK (SCALE_SUBPEL_SHIFTS - 1)
-#define SCALE_EXTRA_BITS (SCALE_SUBPEL_BITS - SUBPEL_BITS)
-#define SCALE_EXTRA_OFF ((1 << SCALE_EXTRA_BITS) / 2)
-
 typedef int16_t InterpKernel[SUBPEL_TAPS];
 
 /***************************************************/
@@ -531,7 +398,7 @@ typedef enum ATTRIBUTE_PACKED
     COMPONENT_NONE = 15
 }COMPONENT_TYPE;
 
-static INLINE int32_t clamp(int32_t value, int32_t low, int32_t high) {
+static int32_t clamp(int32_t value, int32_t low, int32_t high) {
     return value < low ? low : (value > high ? high : value);
 }
 
@@ -555,11 +422,6 @@ static INLINE uint16_t clip_pixel_highbd(int32_t val, int32_t bd) {
 static INLINE unsigned int negative_to_zero(int value) {
     return value & ~(value >> (sizeof(value) * 8 - 1));
 }
-
-static INLINE int av1_num_planes(EbColorConfig   *color_info) {
-    return color_info->mono_chrome ? 1 : MAX_MB_PLANE;
-}
-
 //*********************************************************************************************************************//
 // enums.h
 /*!\brief Decorator indicating that given struct/union/enum is packed */
@@ -571,15 +433,6 @@ static INLINE int av1_num_planes(EbColorConfig   *color_info) {
 #endif
 #endif /* ATTRIBUTE_PACKED */
 
-#if MULTI_PASS_PD
-typedef enum PD_PASS {
-    PD_PASS_0,
-    PD_PASS_1,
-    PD_PASS_2,
-    PD_PASS_TOTAL,
-} PD_PASS;
-#endif
-
 typedef enum CAND_CLASS {
     CAND_CLASS_0,
     CAND_CLASS_1,
@@ -588,16 +441,6 @@ typedef enum CAND_CLASS {
 #if II_COMP_FLAG
     CAND_CLASS_4,
 #endif
-#if OBMC_FLAG
-    CAND_CLASS_5,
-#endif
-#if FILTER_INTRA_FLAG
-    CAND_CLASS_6,
-#endif
-#if PAL_CLASS
-    CAND_CLASS_7,
-#endif
-    CAND_CLASS_8,
     CAND_CLASS_TOTAL
 } CAND_CLASS;
 
@@ -608,15 +451,12 @@ typedef enum MD_STAGE {
     MD_STAGE_3,
     MD_STAGE_TOTAL
 } MD_STAGE;
-#if REMOVE_MD_STAGE_1
-#define MD_STAGING_MODE_0    0
-#define MD_STAGING_MODE_1    1
-#else
+
 #define MD_STAGING_MODE_0    0
 #define MD_STAGING_MODE_1    1
 #define MD_STAGING_MODE_2    2
 #define MD_STAGING_MODE_3    3
-#endif
+
 #define INTRA_NFL           16
 #define INTER_NEW_NFL       16
 #define INTER_PRED_NFL      16
@@ -626,9 +466,9 @@ typedef enum MD_STAGE {
 #define MAX_REF_TYPE_CAND   30
 #define PRUNE_REC_TH         5
 #define PRUNE_REF_ME_TH      2
-#if !SPEED_OPT
+
 #define MD_EXIT_THSL         0 // MD_EXIT_THSL -->0 is lossless 100 is maximum. Increase with a step of 10-20.
-#endif
+
 typedef enum
 {
     EIGHTTAP_REGULAR,
@@ -640,16 +480,7 @@ typedef enum
     SWITCHABLE = SWITCHABLE_FILTERS + 1, /* the last switchable one */
     EXTRA_FILTERS = INTERP_FILTERS_ALL - SWITCHABLE_FILTERS,
 }InterpFilter;
-#if OBMC_FLAG
 
-#define AV1_COMMON Av1Common
-enum {
-  USE_2_TAPS_ORIG = 0,  // This is used in temporal filtering.
-  USE_2_TAPS,
-  USE_4_TAPS,
-  USE_8_TAPS,
-} UENUM1BYTE(SUBPEL_SEARCH_TYPE);
-#endif
 typedef struct InterpFilterParams
 {
     const int16_t *filter_ptr;
@@ -668,17 +499,11 @@ typedef enum TxSearchLevel
 
 typedef enum InterpolationSearchLevel
 {
-#if MULTI_PASS_PD
-    IT_SEARCH_OFF,
-    IT_SEARCH_FAST_LOOP_UV_BLIND,
-    IT_SEARCH_FAST_LOOP,
-#else
     IT_SEARCH_OFF,
     IT_SEARCH_INTER_DEPTH,
     IT_SEARCH_FULL_LOOP,
     IT_SEARCH_FAST_LOOP_UV_BLIND,
     IT_SEARCH_FAST_LOOP,
-#endif
 } InterpolationSearchLevel;
 
 typedef enum NsqSearchLevel
@@ -690,9 +515,6 @@ typedef enum NsqSearchLevel
     NSQ_SEARCH_LEVEL4,
     NSQ_SEARCH_LEVEL5,
     NSQ_SEARCH_LEVEL6,
-#if PREDICT_NSQ_SHAPE
-    NSQ_SEARCH_LEVEL7,
-#endif
     NSQ_SEARCH_FULL
 } NsqSearchLevel;
 
@@ -1201,7 +1023,7 @@ typedef enum ATTRIBUTE_PACKED
     INTERINTRA_MODES
 } InterIntraMode;
 
-typedef enum ATTRIBUTE_PACKED
+typedef enum
 {
     COMPOUND_AVERAGE,
     COMPOUND_DISTWTD,
@@ -1278,11 +1100,6 @@ typedef enum ATTRIBUTE_PACKED
     FILTER_INTRA_MODES,
 } FilterIntraMode;
 
-#if FILTER_INTRA_FLAG
-static const PredictionMode fimode_to_intramode[FILTER_INTRA_MODES] = {
-  DC_PRED, V_PRED, H_PRED, D157_PRED, PAETH_PRED
-};
-#endif
 #define DIRECTIONAL_MODES 8
 #define MAX_ANGLE_DELTA 3
 #define ANGLE_STEP 3
@@ -1994,9 +1811,6 @@ typedef struct LoopFilterInfoN
 #define GM_TRANS_MIN -GM_TRANS_MAX
 #define GM_ALPHA_MIN -GM_ALPHA_MAX
 #define GM_ROW3HOMO_MIN -GM_ROW3HOMO_MAX
-
-#define USE_CUR_GM_REFMV 1
-
 /* clang-format off */
 typedef enum TransformationType
 {
@@ -2155,6 +1969,14 @@ typedef enum EbBitFieldMasks
 #define LAST_BWD_FRAME     8
 #define LAST_ALT_FRAME    16
 
+//----------------------
+// Used to hide GCC warnings for unused function tables
+#ifdef __GNUC__
+#define FUNC_TABLE __attribute__ ((unused))
+#else
+#define FUNC_TABLE
+#endif
+
 #define MAX_NUM_TOKENS          200
 
 #define LAD_DISABLE                       0
@@ -2230,17 +2052,7 @@ typedef enum EbBitDepthEnum
     EB_16BIT = 16,
     EB_32BIT = 32
 } EbBitDepthEnum;
-#if HBD_CLEAN_UP
-/** The MD_BIT_DEPTH_MODE type is used to describe the bitdepth of MD path.
-*/
 
-typedef enum MD_BIT_DEPTH_MODE
-{
-    EB_8_BIT_MD     = 0,    // 8bit mode decision
-    EB_10_BIT_MD    = 1,    // 10bit mode decision
-    EB_DUAL_BIT_MD  = 2     // Auto: 8bit & 10bit mode decision
-} MD_BIT_DEPTH_MODE;
-#endif
 /** The EB_GOP type is used to describe the hierarchical coding structure of
 Groups of Pictures (GOP) units.
 */
@@ -2399,21 +2211,6 @@ typedef enum EbAsm
     ASM_TYPE_INVALID = ~0
 } EbAsm;
 
-#if PAL_SUP
-#define  MAX_PAL_CAND   14
-typedef struct {
-    // Value of base colors for Y, U, and V
-    uint16_t palette_colors[3 * PALETTE_MAX_SIZE];
-    // Number of base colors for Y (0) and UV (1)
-    uint8_t palette_size[2];
-
-} PaletteModeInfo;
-
-typedef struct {
-    PaletteModeInfo pmi;
-    uint8_t  *color_idx_map;
-} PaletteInfo;
-#endif
 /** The EB_NULL type is used to define the C style NULL pointer.
 */
 #define EB_NULL ((void*) 0)
@@ -2653,11 +2450,9 @@ void(*ErrorHandler)(
 #define LOG2F_MAX_LCU_SIZE                          6u
 #define LOG2_64_SIZE                                6 // log2(BLOCK_SIZE_64)
 #define MAX_LEVEL_COUNT                             5 // log2(BLOCK_SIZE_64) - log2(MIN_BLOCK_SIZE)
-#if !ENHANCE_ATB
 #define MAX_TU_DEPTH                                2
-#endif
-#define LOG_MIN_BLOCK_SIZE                          3
-#define MIN_BLOCK_SIZE                              (1 << LOG_MIN_BLOCK_SIZE)
+#define LOG_MIN_BLOCK_SIZE                             3
+#define MIN_BLOCK_SIZE                                 (1 << LOG_MIN_BLOCK_SIZE)
 #define LOG_MIN_PU_SIZE                             2
 #define MIN_PU_SIZE                                 (1 << LOG_MIN_PU_SIZE)
 #define MAX_NUM_OF_PU_PER_CU                        1
@@ -3030,35 +2825,16 @@ typedef enum EbCu8x8Mode
     CU_8x8_MODE_1 = 1   // Perform OIS and only Full_Search for CU_8x8
 } EbCu8x8Mode;
 
-
-#if MULTI_PASS_PD
-// Multi-Pass Partitioning Depth(Multi - Pass PD) performs multiple PD stages for the same SB towards 1 final Partitioning Structure
-// As we go from PDn to PDn + 1, the prediction accuracy of the MD feature(s) increases while the number of block(s) decreases
-typedef enum EbPictureDepthMode
-{
-    PIC_MULTI_PASS_PD_MODE_0    = 0, // Multi-Pass PD Mode 0: PD0 | PD0_REFINEMENT
-    PIC_MULTI_PASS_PD_MODE_1    = 1, // Multi-Pass PD Mode 1: PD0 | PD0_REFINEMENT | PD1 | PD1_REFINEMENT using SQ vs. NSQ only
-    PIC_MULTI_PASS_PD_MODE_2    = 2, // Multi-Pass PD Mode 2: PD0 | PD0_REFINEMENT | PD1 | PD1_REFINEMENT using SQ vs. NSQ and SQ coeff info
-    PIC_MULTI_PASS_PD_MODE_3    = 3, // Multi-Pass PD Mode 3: PD0 | PD0_REFINEMENT | PD1 | PD1_REFINEMENT using SQ vs. NSQ and both SQ and NSQ coeff info
-    PIC_ALL_DEPTH_MODE          = 4, // ALL sq and nsq:  SB size -> 4x4
-    PIC_ALL_C_DEPTH_MODE        = 5, // ALL sq and nsq with control :  SB size -> 4x4
-    PIC_SQ_DEPTH_MODE           = 6, // ALL sq:  SB size -> 4x4
-    PIC_SQ_NON4_DEPTH_MODE      = 7, // SQ:  SB size -> 8x8
-    PIC_OPEN_LOOP_DEPTH_MODE    = 8, // Early Inter Depth Decision:  SB size -> 8x8
-    PIC_SB_SWITCH_DEPTH_MODE    = 9  // Adaptive Depth Partitioning
-
-} EbPictureDepthMode;
-#else
 typedef enum EbPictureDepthMode
 {
     PIC_ALL_DEPTH_MODE          = 0, // ALL sq and nsq:  SB size -> 4x4
     PIC_ALL_C_DEPTH_MODE        = 1, // ALL sq and nsq with control :  SB size -> 4x4
     PIC_SQ_DEPTH_MODE           = 2, // ALL sq:  SB size -> 4x4
     PIC_SQ_NON4_DEPTH_MODE      = 3, // SQ:  SB size -> 8x8
-    PIC_OPEN_LOOP_DEPTH_MODE    = 4, // Early Inter Depth Decision:  SB size -> 8x8
-    PIC_SB_SWITCH_DEPTH_MODE    = 5  // Adaptive Depth Partitioning
+    PIC_OPEN_LOOP_DEPTH_MODE = 4, // Early Inter Depth Decision:  SB size -> 8x8
+    PIC_SB_SWITCH_DEPTH_MODE = 5  // Adaptive Depth Partitioning
 } EbPictureDepthMode;
-#endif
+
 #define EB_SB_DEPTH_MODE              uint8_t
 #define SB_SQ_BLOCKS_DEPTH_MODE             1
 #define SB_SQ_NON4_BLOCKS_DEPTH_MODE        2
@@ -3422,17 +3198,6 @@ static const uint32_t MD_SCAN_TO_OIS_32x32_SCAN[CU_MAX_COUNT] =
     /*84 */3,
 };
 
-#if TWO_PASS
-typedef struct stat_struct_t
-{
-    uint32_t                        referenced_area[MAX_NUMBER_OF_TREEBLOCKS_PER_PICTURE];
-} stat_struct_t;
-#if TWO_PASS_IMPROVEMENT
-#define TWO_PASS_IR_THRSHLD 40  // Intra refresh threshold used to reduce the reference area.
-                                // If the periodic Intra refresh is less than the threshold,
-                                // the referenced area is normalized
-#endif
-#endif
 #define SC_MAX_LEVEL 2 // 2 sets of HME/ME settings are used depending on the scene content mode
 
 /******************************************************************************
@@ -3689,17 +3454,10 @@ static const uint16_t search_area_width[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPP
         { 192,  192,  192,  192,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
         { 192,  192,  192,  192,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
     } , {
-#if M0_OPT
-        {480 ,  480,  480,  144,  144,   88,   48,   48,   48,   48,   48,    48,   48 },
-        {480 ,  480,  480,  144,  144,   88,   48,   48,   48,   48,   48,    48,   48 },
-        {640 ,  640,  640,  288,  288,  168,  128,  128,   64,   80,   80,    80,   80 },
-        {640 ,  640,  640,  288,  288,  168,  128,  128,   64,   80,   80,    80,   80 }
-#else
         {480 ,  480,  480,  144,  144,   88,   48,   48,   48,   48,   48,    48,   48 },
         {480 ,  480,  480,  144,  144,   88,   48,   48,   48,   48,   48,    48,   48 },
         {960 ,  640,  640,  288,  288,  168,  128,  128,   64,   80,   80,    80,   80 },
         {960 ,  640,  640,  288,  288,  168,  128,  128,   64,   80,   80,    80,   80 }
-#endif
     }
 };
 static const uint16_t search_area_height[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
@@ -3709,17 +3467,10 @@ static const uint16_t search_area_height[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUP
         { 192,  192,  192,  192,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
         { 192,  192,  192,  192,   32,   32,   32,   32,   16,    9,    9,     9,    9 }
     } , {
-#if M0_OPT
-        {480 ,  480,  480,  144,  144,   88,   48,   48,   48,   48,   48,    48,   48 },
-        {480 ,  480,  480,  144,  144,   88,   48,   48,   48,   48,   48,    48,   48 },
-        {640 ,  640,  640,  288,  288,  168,   80,   80,   48,   80,   80,    80,   80 },
-        {640 ,  640,  640,  288,  288,  168,   80,   80,   48,   80,   80,    80,   80 }
-#else
         {480 ,  480,  480,  144,  144,   88,   48,   48,   48,   48,   48,    48,   48 },
         {480 ,  480,  480,  144,  144,   88,   48,   48,   48,   48,   48,    48,   48 },
         {960 ,  640,  640,  288,  288,  168,   80,   80,   48,   80,   80,    80,   80 },
         {960 ,  640,  640,  288,  288,  168,   80,   80,   48,   80,   80,    80,   80 }
-#endif
     }
 
     //     M0    M1    M2    M3    M4    M5    M6    M7    M8    M9    M10    M11    M12

@@ -66,7 +66,6 @@ EbErrorType eb_picture_buffer_desc_ctor(
     pictureBufferDescPtr->stride_cb = pictureBufferDescPtr->stride_cr = pictureBufferDescPtr->stride_y >> subsampling_x;
     pictureBufferDescPtr->origin_x = pictureBufferDescInitDataPtr->left_padding;
     pictureBufferDescPtr->origin_y = pictureBufferDescInitDataPtr->top_padding;
-    pictureBufferDescPtr->origin_bot_y = pictureBufferDescInitDataPtr->bot_padding;
 
     pictureBufferDescPtr->luma_size = (pictureBufferDescInitDataPtr->max_width + pictureBufferDescInitDataPtr->left_padding + pictureBufferDescInitDataPtr->right_padding) *
         (pictureBufferDescInitDataPtr->max_height + pictureBufferDescInitDataPtr->top_padding + pictureBufferDescInitDataPtr->bot_padding);
@@ -145,7 +144,6 @@ EbErrorType eb_recon_picture_buffer_desc_ctor(
     pictureBufferDescPtr->stride_cb = pictureBufferDescPtr->stride_cr = pictureBufferDescPtr->stride_y >> subsampling_x;
     pictureBufferDescPtr->origin_x = pictureBufferDescInitDataPtr->left_padding;
     pictureBufferDescPtr->origin_y = pictureBufferDescInitDataPtr->top_padding;
-    pictureBufferDescPtr->origin_bot_y = pictureBufferDescInitDataPtr->bot_padding;
 
     pictureBufferDescPtr->luma_size = (pictureBufferDescInitDataPtr->max_width + pictureBufferDescInitDataPtr->left_padding + pictureBufferDescInitDataPtr->right_padding) *
         (pictureBufferDescInitDataPtr->max_height + pictureBufferDescInitDataPtr->top_padding + pictureBufferDescInitDataPtr->bot_padding);

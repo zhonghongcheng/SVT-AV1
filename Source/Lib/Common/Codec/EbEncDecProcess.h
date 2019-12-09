@@ -133,12 +133,9 @@ extern "C" {
         EbFifo                *packetization_output_fifo_ptr,
         EbFifo                *feedback_fifo_ptr,
         EbFifo                *picture_demux_fifo_ptr,
-#if PAL_SUP
-        uint8_t                 cfg_palette,
-#endif
         EbBool                   is16bit,
         EbColorFormat            color_format,
-        uint8_t                  enable_hbd_mode_decision,
+        EbBool                   enable_hbd_mode_decision,
         uint32_t                 max_input_luma_width,
         uint32_t                 max_input_luma_height);
 

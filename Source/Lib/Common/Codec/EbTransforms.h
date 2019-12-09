@@ -318,7 +318,7 @@ extern "C" {
     }
     static INLINE int is_rect_tx_allowed(/*const MacroBlockD *xd,*/
         const MbModeInfo *mbmi) {
-        return is_rect_tx_allowed_bsize(mbmi->block_mi.sb_type) /*&&
+        return is_rect_tx_allowed_bsize(mbmi->sb_type) /*&&
             !xd->lossless[mbmi->segment_id]*/;
     }
 
@@ -3996,6 +3996,7 @@ extern "C" {
         int16_t             *transform_inner_array_ptr,
         uint32_t             bit_increment,
         TxType               transform_type,
+        EbAsm                asm_type,
         PlaneType           component_type,
         EB_TRANS_COEFF_SHAPE trans_coeff_shape);
     extern int32_t av1_quantize_inv_quantize(
@@ -4011,6 +4012,7 @@ extern "C" {
         uint32_t                       height,
         TxSize                         txsize,
         uint16_t                      *eob,
+        EbAsm                          asm_type,
         uint32_t                      *y_count_non_zero_coeffs,
         uint32_t                       component_type,
         uint32_t                       bit_increment,
@@ -4032,6 +4034,7 @@ extern "C" {
         uint32_t  bit_increment,
         TxType    transform_type,
         uint32_t  eob,
+        EbAsm     asm_type,
         uint32_t  partial_frequency_n2_flag);
 
     EbErrorType av1_inv_transform_recon(
@@ -4044,8 +4047,7 @@ extern "C" {
         uint32_t    bit_increment,
         TxType      transform_type,
         PlaneType  component_type,
-        uint32_t    eob,
-        uint8_t     lossless);
+        uint32_t    eob);
 
     EbErrorType av1_inv_transform_recon8bit(
         int32_t    *coeff_buffer,//1D buffer
@@ -4056,8 +4058,7 @@ extern "C" {
         TxSize      txsize,
         TxType      transform_type,
         PlaneType  component_type,
-        uint32_t    eob,
-        uint8_t     lossless);
+        uint32_t    eob);
 
     extern uint8_t map_chroma_qp(
         uint8_t qp

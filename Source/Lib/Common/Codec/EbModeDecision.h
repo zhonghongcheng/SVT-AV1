@@ -70,9 +70,6 @@ extern "C" {
         EbBool                                 merge_flag;
         uint16_t                               count_non_zero_coeffs;
         uint8_t                                type;
-#if PAL_SUP
-        PaletteInfo                          palette_info;
-#endif
         // MD Rate Estimation Ptr
         MdRateEstimationContext             *md_rate_estimation_ptr; // 64 bits
         uint64_t                               fast_luma_rate;
@@ -81,6 +78,7 @@ extern "C" {
         uint64_t                               chroma_distortion_inter_depth;
         uint32_t                               luma_fast_distortion;
         uint32_t                               full_distortion;
+
         EbPtr                                 prediction_context_ptr;
         PictureControlSet                   *picture_control_set_ptr;
         EbPredDirection                        prediction_direction[MAX_NUM_OF_PU_PER_CU]; // 2 bits // Hsan: does not seem to be used why not removed ?
@@ -100,9 +98,6 @@ extern "C" {
         int32_t                                angle_delta[PLANE_TYPES];
         EbBool                                 is_directional_mode_flag;
         EbBool                                 is_directional_chroma_mode_flag;
-#if FILTER_INTRA_FLAG
-        uint8_t                                filter_intra_mode;
-#endif
         uint32_t                               intra_chroma_mode; // AV1 mode, no need to convert
 
         // Index of the alpha Cb and alpha Cr combination
@@ -131,8 +126,7 @@ extern "C" {
         MotionMode                            motion_mode;
         uint16_t                               num_proj_ref;
         EbBool                                 local_warp_valid;
-        EbWarpedMotionParams                   wm_params_l0;
-        EbWarpedMotionParams                   wm_params_l1;
+        EbWarpedMotionParams                   wm_params;
         uint8_t                                tx_depth;
         InterInterCompoundData                 interinter_comp;
         uint8_t                                compound_idx;
@@ -153,7 +147,8 @@ extern "C" {
     typedef EbErrorType(*EbPredictionFunc)(
         struct ModeDecisionContext           *context_ptr,
         PictureControlSet                    *picture_control_set_ptr,
-        struct ModeDecisionCandidateBuffer   *candidate_buffer_ptr);
+        struct ModeDecisionCandidateBuffer   *candidate_buffer_ptr,
+        EbAsm                                   asm_type);
     typedef uint64_t(*EbFastCostFunc)(
         CodingUnit                           *cu_ptr,
         struct ModeDecisionCandidate         *candidate_buffer,
@@ -167,16 +162,12 @@ extern "C" {
         const BlockGeom                        *blk_geom,
         uint32_t                                miRow,
         uint32_t                                miCol,
-#if MULTI_PASS_PD
-        uint8_t                                 enable_inter_intra,
-        EbBool                                  full_cost_shut_fast_rate_flag,
-#endif
         uint8_t                                 md_pass,
         uint32_t                                left_neighbor_mode,
         uint32_t                                top_neighbor_mode);
 
     typedef EbErrorType(*EB_FULL_COST_FUNC)(
-        SuperBlock                          *sb_ptr,
+        LargestCodingUnit                    *sb_ptr,
         CodingUnit                           *cu_ptr,
         uint32_t                                cu_size,
         uint32_t                                cu_size_log2,
@@ -278,13 +269,6 @@ extern "C" {
         uint64_t                       *full_cost_skip_ptr,
         uint64_t                       *full_cost_merge_ptr
     );
-
-#if ENHANCE_ATB
-    extern EbErrorType mode_decision_scratch_candidate_buffer_ctor(
-        ModeDecisionCandidateBuffer    *buffer_ptr,
-        EbBitDepthEnum                  max_bitdepth
-    );
-#endif
 
     uint32_t product_full_mode_decision(
          struct ModeDecisionContext  *context_ptr,

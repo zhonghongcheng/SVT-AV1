@@ -6,14 +6,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
 
 #include "EbAppString.h"
 #include "EbAppConfig.h"
 #include "EbAppInputy4m.h"
 
 #ifdef _WIN32
-#include <windows.h>
 #else
 #include <unistd.h>
 #endif
@@ -30,10 +28,6 @@
 #define OUTPUT_RECON_TOKEN              "-o"
 #define ERROR_FILE_TOKEN                "-errlog"
 #define QP_FILE_TOKEN                   "-qp-file"
-#if TWO_PASS
-#define INPUT_STAT_FILE_TOKEN           "-input-stat-file"
-#define OUTPUT_STAT_FILE_TOKEN          "-output-stat-file"
-#endif
 #define STAT_FILE_TOKEN                 "-stat-file"
 #define WIDTH_TOKEN                     "-w"
 #define HEIGHT_TOKEN                    "-h"
@@ -50,9 +44,6 @@
 #define ENCODER_COLOR_FORMAT            "-color-format"
 #define INPUT_COMPRESSED_TEN_BIT_FORMAT "-compressed-ten-bit-format"
 #define ENCMODE_TOKEN                   "-enc-mode"
-#if TWO_PASS_USE_2NDP_ME_IN_1STP
-#define ENCMODE2P_TOKEN                 "-enc-mode-2p"
-#endif
 #define HIERARCHICAL_LEVELS_TOKEN       "-hierarchical-levels" // no Eval
 #define PRED_STRUCT_TOKEN               "-pred-struct"
 #define INTRA_PERIOD_TOKEN              "-intra-period"
@@ -66,10 +57,6 @@
 #define INTRA_REFRESH_TYPE_TOKEN        "-irefresh-type" // no Eval
 #define LOOP_FILTER_DISABLE_TOKEN       "-dlf"
 #define LOCAL_WARPED_ENABLE_TOKEN       "-local-warp"
-#define GLOBAL_MOTION_ENABLE_TOKEN      "-global-motion"
-#define OBMC_TOKEN                      "-obmc"
-#define RDOQ_TOKEN                      "-rdoq"
-#define FILTER_INTRA_TOKEN              "-filter-intra"
 #define USE_DEFAULT_ME_HME_TOKEN        "-use-default-me-hme"
 #define HME_ENABLE_TOKEN                "-hme"
 #define HME_L0_ENABLE_TOKEN             "-hme-l0"
@@ -97,8 +84,6 @@
 #define ENABLE_OVERLAYS                 "-enable-overlays"
 // --- end: ALTREF_FILTERING_SUPPORT
 #define HBD_MD_ENABLE_TOKEN             "-hbd-md"
-#define PALETTE_TOKEN                   "-palette"
-#define OLPD_REFINEMENT_TOKEN           "-olpd-refinement"
 #define CONSTRAINED_INTRA_ENABLE_TOKEN  "-constrd-intra"
 #define HDR_INPUT_TOKEN                 "-hdr"
 #define RATE_CONTROL_ENABLE_TOKEN       "-rc"
@@ -111,9 +96,6 @@
 #define TILE_ROW_TOKEN                   "-tile-rows"
 #define TILE_COL_TOKEN                   "-tile-columns"
 
-#define SQ_WEIGHT_TOKEN                 "-sqw"
-#define ENABLE_AMP_TOKEN                "-enable-amp"
-
 #define SCENE_CHANGE_DETECTION_TOKEN    "-scd"
 #define INJECTOR_TOKEN                  "-inj"  // no Eval
 #define INJECTOR_FRAMERATE_TOKEN        "-inj-frm-rt" // no Eval
@@ -121,7 +103,6 @@
 #define ASM_TYPE_TOKEN                  "-asm"
 #define THREAD_MGMNT                    "-lp"
 #define TARGET_SOCKET                   "-ss"
-#define UNRESTRICTED_MOTION_VECTOR      "-umv"
 #define CONFIG_FILE_COMMENT_CHAR    '#'
 #define CONFIG_FILE_NEWLINE_CHAR    '\n'
 #define CONFIG_FILE_RETURN_CHAR     '\r'
@@ -137,46 +118,27 @@
 #define BUFFER_FILE_MAX_ARG_COUNT   320
 #define BUFFER_FILE_MAX_VAR_LEN     128
 
-#define MDS1_PRUNE_C_TH             "-mds1p-class-th"
-#define MDS1_PRUNE_S_TH             "-mds1p-cand-th"
-#define MDS2_PRUNE_C_TH             "-mds2p-class-th"
-#define MDS2_PRUNE_S_TH             "-mds2p-cand-th"
-
 /**********************************
  * Set Cfg Functions
  **********************************/
-static void SetCfgInputFile(const char *filename, EbConfig *cfg)
+static void SetCfgInputFile                     (const char *value, EbConfig *cfg)
 {
-    if (cfg->input_file && !cfg->input_file_is_fifo)
+    if (cfg->input_file && cfg->input_file != stdin)
         fclose(cfg->input_file);
-
-    if (!filename) {
-        cfg->input_file = NULL;
-        return;
-    }
-
-    if (!strcmp(filename, "stdin"))
+    if (!strcmp(value, "stdin"))
         cfg->input_file = stdin;
     else
-        FOPEN(cfg->input_file, filename, "rb");
-
-    if (cfg->input_file == NULL) {
-        return;
+        FOPEN(cfg->input_file, value, "rb");
+    /* if input is a YUV4MPEG2 (y4m) file, read header and parse parameters */
+    if(cfg->input_file!=NULL){
+        if(check_if_y4m(cfg) == EB_TRUE)
+            cfg->y4m_input = EB_TRUE;
+        else
+            cfg->y4m_input = EB_FALSE;
+    }else{
+        cfg->y4m_input = EB_FALSE;
     }
-
-#ifdef _WIN32
-    cfg->input_file_is_fifo =
-    GetFileType(cfg->input_file) == FILE_TYPE_PIPE;
-#else
-    int fd = fileno(cfg->input_file);
-    struct stat statbuf;
-    fstat(fd, &statbuf);
-    cfg->input_file_is_fifo = S_ISFIFO(statbuf.st_mode);
-#endif
-
-    cfg->y4m_input = check_if_y4m(cfg);
 };
-
 static void SetCfgStreamFile                    (const char *value, EbConfig *cfg)
 {
     if (cfg->bitstream_file) { fclose(cfg->bitstream_file); }
@@ -197,21 +159,6 @@ static void SetCfgQpFile                        (const char *value, EbConfig *cf
     if (cfg->qp_file) { fclose(cfg->qp_file); }
     FOPEN(cfg->qp_file,value, "r");
 };
-#if TWO_PASS
-static void set_input_stat_file(const char *value, EbConfig *cfg)
-{
-    if (cfg->input_stat_file) { fclose(cfg->input_stat_file); }
-    FOPEN(cfg->input_stat_file, value, "rb");
-};
-static void set_output_stat_file(const char *value, EbConfig *cfg)
-{
-    if (cfg->output_stat_file) { fclose(cfg->output_stat_file); }
-    FOPEN(cfg->output_stat_file, value, "wb");
-};
-#if TWO_PASS_USE_2NDP_ME_IN_1STP
-static void set_snd_pass_enc_mode(const char *value, EbConfig *cfg) { cfg->snd_pass_enc_mode = (uint8_t)strtoul(value, NULL, 0); };
-#endif
-#endif
 static void SetCfgStatFile(const char *value, EbConfig *cfg)
 {
     if (cfg->stat_file) { fclose(cfg->stat_file); }
@@ -248,11 +195,6 @@ static void SetCfgUseQpFile                     (const char *value, EbConfig *cf
 static void SetCfgFilmGrain                     (const char *value, EbConfig *cfg) { cfg->film_grain_denoise_strength = strtol(value, NULL, 0); };  //not bool to enable possible algorithm extension in the future
 static void SetDisableDlfFlag                   (const char *value, EbConfig *cfg) {cfg->disable_dlf_flag = (EbBool)strtoul(value, NULL, 0);};
 static void SetEnableLocalWarpedMotionFlag      (const char *value, EbConfig *cfg) {cfg->enable_warped_motion = (EbBool)strtoul(value, NULL, 0);};
-static void SetEnableGlobalMotionFlag           (const char *value, EbConfig *cfg) {cfg->enable_global_motion = (EbBool)strtoul(value, NULL, 0);};
-static void SetEnableObmcFlag                   (const char *value, EbConfig *cfg) {cfg->enable_obmc = (EbBool)strtoul(value, NULL, 0);};
-static void SetEnableRdoqFlag                   (const char *value, EbConfig *cfg) {cfg->enable_rdoq = (int8_t)strtol(value, NULL, 0);};
-
-static void SetEnableFilterIntraFlag            (const char *value, EbConfig *cfg) {cfg->enable_filter_intra = (EbBool)strtoul(value, NULL, 0);};
 static void SetEnableHmeFlag                    (const char *value, EbConfig *cfg) {cfg->enable_hme_flag = (EbBool)strtoul(value, NULL, 0);};
 static void SetEnableHmeLevel0Flag              (const char *value, EbConfig *cfg) {cfg->enable_hme_level0_flag = (EbBool)strtoul(value, NULL, 0);};
 static void SetTileRow                          (const char *value, EbConfig *cfg) { cfg->tile_rows = strtoul(value, NULL, 0); };
@@ -261,7 +203,7 @@ static void SetTileCol                          (const char *value, EbConfig *cf
 static void SetSceneChangeDetection             (const char *value, EbConfig *cfg) {cfg->scene_change_detection = strtoul(value, NULL, 0);};
 static void SetLookAheadDistance                (const char *value, EbConfig *cfg) {cfg->look_ahead_distance = strtoul(value, NULL, 0);};
 static void SetRateControlMode                  (const char *value, EbConfig *cfg) {cfg->rate_control_mode = strtoul(value, NULL, 0);};
-static void SetTargetBitRate                    (const char *value, EbConfig *cfg) {cfg->target_bit_rate = 1000*strtoul(value, NULL, 0);};
+static void SetTargetBitRate                    (const char *value, EbConfig *cfg) {cfg->target_bit_rate = strtoul(value, NULL, 0);};
 static void SetMaxQpAllowed                     (const char *value, EbConfig *cfg) {cfg->max_qp_allowed = strtoul(value, NULL, 0);};
 static void SetMinQpAllowed                     (const char *value, EbConfig *cfg) {cfg->min_qp_allowed = strtoul(value, NULL, 0);};
 static void SetAdaptiveQuantization             (const char *value, EbConfig *cfg) {cfg->enable_adaptive_quantization = (EbBool)strtol(value,  NULL, 0);};
@@ -289,9 +231,7 @@ static void SetAltRefStrength                   (const char *value, EbConfig *cf
 static void SetAltRefNFrames                    (const char *value, EbConfig *cfg) {cfg->altref_nframes = (uint8_t)strtoul(value, NULL, 0);};
 static void SetEnableOverlays                   (const char *value, EbConfig *cfg) { cfg->enable_overlays = (EbBool)strtoul(value, NULL, 0); };
 // --- end: ALTREF_FILTERING_SUPPORT
-static void SetEnableHBDModeDecision            (const char *value, EbConfig *cfg) {cfg->enable_hbd_mode_decision = (uint8_t)strtoul(value, NULL, 0);};
-static void SetEnablePalette                    (const char *value, EbConfig *cfg) { cfg->enable_palette = (int32_t)strtoul(value, NULL, 0); };
-static void SetEnableOlpdRefinement              (const char *value, EbConfig *cfg) { cfg->olpd_refinement = (int32_t)strtoul(value, NULL, 0); };
+static void SetEnableHBDModeDecision            (const char *value, EbConfig *cfg) {cfg->enable_hbd_mode_decision = (EbBool)strtoul(value, NULL, 0);};
 static void SetEnableConstrainedIntra           (const char *value, EbConfig *cfg) {cfg->constrained_intra                                             = (EbBool)strtoul(value, NULL, 0);};
 static void SetHighDynamicRangeInput            (const char *value, EbConfig *cfg) {cfg->high_dynamic_range_input            = strtol(value,  NULL, 0);};
 static void SetProfile                          (const char *value, EbConfig *cfg) {cfg->profile                          = strtol(value,  NULL, 0);};
@@ -316,35 +256,6 @@ static void SetLatencyMode                      (const char *value, EbConfig *cf
 static void SetAsmType                          (const char *value, EbConfig *cfg)  {cfg->asm_type                   = (uint32_t)strtoul(value, NULL, 0);};
 static void SetLogicalProcessors                (const char *value, EbConfig *cfg)  {cfg->logical_processors         = (uint32_t)strtoul(value, NULL, 0);};
 static void SetTargetSocket                     (const char *value, EbConfig *cfg)  {cfg->target_socket              = (int32_t)strtol(value, NULL, 0);};
-static void SetUnrestrictedMotionVector         (const char *value, EbConfig *cfg)  {cfg->unrestricted_motion_vector = (EbBool)strtol(value, NULL, 0);};
-
-static void SetSquareWeight                     (const char *value, EbConfig *cfg)  {cfg->sq_weight                  = (uint64_t)strtoul(value, NULL, 0);
-        if (cfg->sq_weight == 0)
-            cfg->sq_weight = (uint32_t)~0;
-}
-
-static void SetMDS1_PRUNE_C_TH(const char *value, EbConfig *cfg) {
-    cfg->md_stage_1_class_prune_th = (uint64_t)strtoul(value, NULL, 0);
-    if (cfg->md_stage_1_class_prune_th == 0)
-        cfg->md_stage_1_class_prune_th = (uint64_t)~0;
-}
-static void SetMDS1_PRUNE_S_TH(const char *value, EbConfig *cfg) {
-    cfg->md_stage_1_cand_prune_th = (uint64_t)strtoul(value, NULL, 0);
-    if (cfg->md_stage_1_cand_prune_th == 0)
-        cfg->md_stage_1_cand_prune_th = (uint64_t)~0;
-}
-static void SetMDS2_PRUNE_C_TH(const char *value, EbConfig *cfg) {
-    cfg->md_stage_2_class_prune_th = (uint64_t)strtoul(value, NULL, 0);
-    if (cfg->md_stage_2_class_prune_th == 0)
-        cfg->md_stage_2_class_prune_th = (uint64_t)~0;
-}
-static void SetMDS2_PRUNE_S_TH(const char *value, EbConfig *cfg) {
-    cfg->md_stage_2_cand_prune_th = (uint64_t)strtoul(value, NULL, 0);
-    if (cfg->md_stage_2_cand_prune_th == 0)
-        cfg->md_stage_2_cand_prune_th = (uint64_t)~0;
-}
-
-static void set_enable_auto_max_partition           (const char *value, EbConfig *cfg) { cfg->enable_auto_max_partition = (uint8_t)strtol(value, NULL, 0); };
 
 enum cfg_type{
     SINGLE_INPUT,   // Configuration parameters that have only 1 value input
@@ -372,10 +283,6 @@ config_entry_t config_entry[] = {
     { SINGLE_INPUT, OUTPUT_RECON_TOKEN, "ReconFile", SetCfgReconFile },
     { SINGLE_INPUT, QP_FILE_TOKEN, "QpFile", SetCfgQpFile },
     { SINGLE_INPUT, STAT_FILE_TOKEN, "StatFile", SetCfgStatFile },
-#if TWO_PASS
-    { SINGLE_INPUT, INPUT_STAT_FILE_TOKEN, "input_stat_file", set_input_stat_file },
-    { SINGLE_INPUT, OUTPUT_STAT_FILE_TOKEN, "output_stat_file", set_output_stat_file },
-#endif
 
     // Interlaced Video
     { SINGLE_INPUT, INTERLACED_VIDEO_TOKEN , "InterlacedVideo" , SetInterlacedVideo },
@@ -388,9 +295,6 @@ config_entry_t config_entry[] = {
     { SINGLE_INPUT, BUFFERED_INPUT_TOKEN, "BufferedInput", SetBufferedInput },
     { SINGLE_INPUT, BASE_LAYER_SWITCH_MODE_TOKEN, "BaseLayerSwitchMode", SetBaseLayerSwitchMode },
     { SINGLE_INPUT, ENCMODE_TOKEN, "EncoderMode", SetencMode},
-#if TWO_PASS_USE_2NDP_ME_IN_1STP
-    { SINGLE_INPUT, ENCMODE2P_TOKEN, "EncoderMode2p", set_snd_pass_enc_mode},
-#endif
     { SINGLE_INPUT, INTRA_PERIOD_TOKEN, "IntraPeriod", SetCfgIntraPeriod },
     { SINGLE_INPUT, INTRA_REFRESH_TYPE_TOKEN, "IntraRefreshType", SetCfgIntraRefreshType },
     { SINGLE_INPUT, FRAME_RATE_TOKEN, "FrameRate", SetFrameRate },
@@ -419,14 +323,6 @@ config_entry_t config_entry[] = {
     { SINGLE_INPUT, LOOP_FILTER_DISABLE_TOKEN, "LoopFilterDisable", SetDisableDlfFlag },
     // LOCAL WARPED MOTION
     { SINGLE_INPUT, LOCAL_WARPED_ENABLE_TOKEN, "LocalWarpedMotion", SetEnableLocalWarpedMotionFlag },
-    // GLOBAL MOTION
-    { SINGLE_INPUT, GLOBAL_MOTION_ENABLE_TOKEN, "GlobalMotion", SetEnableGlobalMotionFlag },
-    // OBMC
-    { SINGLE_INPUT, OBMC_TOKEN, "Obmc", SetEnableObmcFlag },
-    // RDOQ
-    { SINGLE_INPUT, RDOQ_TOKEN, "RDOQ", SetEnableRdoqFlag },
-    // Filter Intra
-    { SINGLE_INPUT, FILTER_INTRA_TOKEN, "FilterIntra", SetEnableFilterIntraFlag },
     // ME Tools
     { SINGLE_INPUT, USE_DEFAULT_ME_HME_TOKEN, "UseDefaultMeHme", SetCfgUseDefaultMeHme },
     { SINGLE_INPUT, HME_ENABLE_TOKEN, "HME", SetEnableHmeFlag },
@@ -446,14 +342,11 @@ config_entry_t config_entry[] = {
     // MD Parameters
     { SINGLE_INPUT, SCREEN_CONTENT_TOKEN, "ScreenContentMode", SetScreenContentMode},
     { SINGLE_INPUT, HBD_MD_ENABLE_TOKEN, "HighBitDepthModeDecision", SetEnableHBDModeDecision },
-    { SINGLE_INPUT, PALETTE_TOKEN, "PaletteMode", SetEnablePalette },
-    { SINGLE_INPUT, OLPD_REFINEMENT_TOKEN, "OlpdRefinement", SetEnableOlpdRefinement },
     { SINGLE_INPUT, CONSTRAINED_INTRA_ENABLE_TOKEN, "ConstrainedIntra", SetEnableConstrainedIntra},
     // Thread Management
     { SINGLE_INPUT, THREAD_MGMNT, "logicalProcessors", SetLogicalProcessors },
     { SINGLE_INPUT, TARGET_SOCKET, "TargetSocket", SetTargetSocket },
     // Optional Features
-    { SINGLE_INPUT, UNRESTRICTED_MOTION_VECTOR, "UnrestrictedMotionVector", SetUnrestrictedMotionVector },
 
 //    { SINGLE_INPUT, BITRATE_REDUCTION_TOKEN, "bit_rate_reduction", SetBitRateReduction },
     { SINGLE_INPUT, HDR_INPUT_TOKEN, "HighDynamicRangeInput", SetHighDynamicRangeInput },
@@ -483,14 +376,6 @@ config_entry_t config_entry[] = {
     { SINGLE_INPUT, ENABLE_OVERLAYS, "EnableOverlays", SetEnableOverlays },
     // --- end: ALTREF_FILTERING_SUPPORT
 
-    { SINGLE_INPUT, SQ_WEIGHT_TOKEN, "SquareWeight", SetSquareWeight },
-    { SINGLE_INPUT, ENABLE_AMP_TOKEN, "AutomaxPartition", set_enable_auto_max_partition },
-
-    { SINGLE_INPUT, MDS1_PRUNE_C_TH, "MDStage1PruneClassThreshold", SetMDS1_PRUNE_C_TH },
-    { SINGLE_INPUT, MDS1_PRUNE_S_TH, "MDStage1PruneCandThreshold", SetMDS1_PRUNE_S_TH },
-    { SINGLE_INPUT, MDS2_PRUNE_C_TH, "MDStage2PruneClassThreshold", SetMDS2_PRUNE_C_TH },
-    { SINGLE_INPUT, MDS2_PRUNE_S_TH, "MDStage2PruneCandThreshold", SetMDS2_PRUNE_S_TH },
-
     // Termination
     {SINGLE_INPUT,NULL,  NULL,                                NULL}
 };
@@ -500,43 +385,71 @@ config_entry_t config_entry[] = {
  **********************************/
 void eb_config_ctor(EbConfig *config_ptr)
 {
-    memset(config_ptr, 0, sizeof(*config_ptr));
+    config_ptr->config_file                           = NULL;
+    config_ptr->input_file                            = NULL;
+    config_ptr->bitstream_file                        = NULL;
+    config_ptr->recon_file                            = NULL;
     config_ptr->error_log_file                         = stderr;
+    config_ptr->qp_file                               = NULL;
+    config_ptr->stat_file                             = NULL;
+
     config_ptr->frame_rate                            = 30 << 16;
+    config_ptr->frame_rate_numerator                   = 0;
+    config_ptr->frame_rate_denominator                 = 0;
     config_ptr->encoder_bit_depth                      = 8;
     config_ptr->encoder_color_format                   = 1; //EB_YUV420
+    config_ptr->compressed_ten_bit_format               = 0;
+    config_ptr->source_width                          = 0;
+    config_ptr->source_height                         = 0;
+    config_ptr->input_padded_width                     = 0;
+    config_ptr->input_padded_height                    = 0;
+    config_ptr->frames_to_be_encoded                 = 0;
     config_ptr->buffered_input                        = -1;
+    config_ptr->sequence_buffer                       = 0;
+    config_ptr->latency_mode                          = 0;
 
+    // Interlaced Video
+    config_ptr->interlaced_video                      = EB_FALSE;
+    config_ptr->separate_fields                       = EB_FALSE;
     config_ptr->qp                                   = 50;
     config_ptr->use_qp_file                          = EB_FALSE;
+    config_ptr->stat_report                          = 0;
+
+    config_ptr->scene_change_detection               = 0;
+    config_ptr->rate_control_mode                      = 0;
     config_ptr->look_ahead_distance                  = (uint32_t)~0;
     config_ptr->target_bit_rate                        = 7000000;
     config_ptr->max_qp_allowed                       = 63;
     config_ptr->min_qp_allowed                       = 10;
 
     config_ptr->enable_adaptive_quantization         = 2;
+    config_ptr->base_layer_switch_mode               = 0;
     config_ptr->enc_mode                              = MAX_ENC_PRESET;
-#if TWO_PASS_USE_2NDP_ME_IN_1STP
-    config_ptr->snd_pass_enc_mode                     = MAX_ENC_PRESET + 1;
-#endif
     config_ptr->intra_period                          = -2;
     config_ptr->intra_refresh_type                     = 1;
     config_ptr->hierarchical_levels                   = 4;
     config_ptr->pred_structure                        = 2;
-    config_ptr->enable_global_motion                 = EB_TRUE;
-    config_ptr->enable_obmc                          = EB_TRUE;
-    config_ptr->enable_rdoq                          = -1;
-    config_ptr->enable_filter_intra                  = EB_TRUE;
+    config_ptr->disable_dlf_flag                     = EB_FALSE;
+    config_ptr->enable_warped_motion                 = EB_FALSE;
+    config_ptr->ext_block_flag                       = EB_FALSE;
     config_ptr->in_loop_me_flag                      = EB_TRUE;
     config_ptr->use_default_me_hme                   = EB_TRUE;
     config_ptr->enable_hme_flag                        = EB_TRUE;
     config_ptr->enable_hme_level0_flag                  = EB_TRUE;
+    config_ptr->enable_hme_level1_flag                  = EB_FALSE;
+    config_ptr->enable_hme_level2_flag                  = EB_FALSE;
     config_ptr->search_area_width                      = 16;
     config_ptr->search_area_height                     = 7;
     config_ptr->number_hme_search_region_in_width         = 2;
     config_ptr->number_hme_search_region_in_height        = 2;
     config_ptr->hme_level0_total_search_area_width        = 64;
     config_ptr->hme_level0_total_search_area_height       = 25;
+    config_ptr->hme_level0_column_index                 = 0;
+    config_ptr->hme_level0_row_index                    = 0;
+    config_ptr->hme_level1_column_index                 = 0;
+    config_ptr->hme_level1_row_index                    = 0;
+    config_ptr->hme_level2_column_index                 = 0;
+    config_ptr->hme_level2_row_index                    = 0;
     config_ptr->hme_level0_search_area_in_width_array[0]   = 32;
     config_ptr->hme_level0_search_area_in_width_array[1]   = 32;
     config_ptr->hme_level0_search_area_in_height_array[0]  = 12;
@@ -550,31 +463,71 @@ void eb_config_ctor(EbConfig *config_ptr)
     config_ptr->hme_level2_search_area_in_height_array[0]  = 1;
     config_ptr->hme_level2_search_area_in_height_array[1]  = 1;
     config_ptr->screen_content_mode                  = 2;
-    config_ptr->enable_hbd_mode_decision             = 1;
-    config_ptr->enable_palette                       = -1;
-    config_ptr->olpd_refinement                      = -1;
+    config_ptr->enable_hbd_mode_decision             = EB_FALSE;
+    config_ptr->constrained_intra                    = 0;
+    config_ptr->film_grain_denoise_strength          = 0;
+
+    // Thresholds
+    config_ptr->high_dynamic_range_input             = 0;
+
+    // Annex A parameters
+    config_ptr->profile                              = 0;
+    config_ptr->tier                                 = 0;
+    config_ptr->level                                = 0;
+
+    // Latency
+    config_ptr->injector                             = 0;
     config_ptr->injector_frame_rate                    = 60 << 16;
+    config_ptr->speed_control_flag                     = 0;
+
+    // Testing
+    config_ptr->eos_flag                                = 0;
+
+    // Computational Performance Parameters
+    config_ptr->performance_context.lib_start_time[0] = 0;
+    config_ptr->performance_context.lib_start_time[1] = 0;
+
+    config_ptr->performance_context.encode_start_time[0] = 0;
+    config_ptr->performance_context.encode_start_time[1] = 0;
+
+    config_ptr->performance_context.total_execution_time = 0;
+    config_ptr->performance_context.total_encode_time    = 0;
+
+    config_ptr->performance_context.frame_count         = 0;
+    config_ptr->performance_context.average_speed       = 0;
+    config_ptr->performance_context.starts_time         = 0;
+    config_ptr->performance_context.startu_time         = 0;
+    config_ptr->performance_context.max_latency         = 0;
+    config_ptr->performance_context.total_latency       = 0;
+    config_ptr->performance_context.byte_count          = 0;
+    config_ptr->performance_context.sum_luma_psnr       = 0;
+    config_ptr->performance_context.sum_cr_psnr         = 0;
+    config_ptr->performance_context.sum_cb_psnr         = 0;
+    config_ptr->performance_context.sum_luma_sse        = 0;
+    config_ptr->performance_context.sum_cr_sse          = 0;
+    config_ptr->performance_context.sum_cb_sse          = 0;
+    config_ptr->performance_context.sum_qp              = 0;
 
     // ASM Type
     config_ptr->asm_type                              = 1;
 
+    config_ptr->stop_encoder                          = 0;
+    config_ptr->logical_processors                    = 0;
     config_ptr->target_socket                         = -1;
+    config_ptr->processed_frame_count                  = 0;
+    config_ptr->processed_byte_count                   = 0;
+    config_ptr->tile_rows                            = 0;
+    config_ptr->tile_columns                         = 0;
 
-    config_ptr->unrestricted_motion_vector           = EB_TRUE;
+    config_ptr->byte_count_since_ivf                 = 0;
+    config_ptr->ivf_count                            = 0;
 
     // --- start: ALTREF_FILTERING_SUPPORT
     config_ptr->enable_altrefs                       = EB_TRUE;
     config_ptr->altref_strength                      = 5;
     config_ptr->altref_nframes                       = 7;
+    config_ptr->enable_overlays                      = EB_FALSE;
     // --- end: ALTREF_FILTERING_SUPPORT
-
-    config_ptr->sq_weight                            = 100;
-    config_ptr->enable_auto_max_partition             = 1;
-
-    config_ptr->md_stage_1_cand_prune_th                = 75;
-    config_ptr->md_stage_1_class_prune_th                = 100;
-    config_ptr->md_stage_2_cand_prune_th                = 15;
-    config_ptr->md_stage_2_class_prune_th                = 25;
 
     return;
 }
@@ -591,8 +544,7 @@ void eb_config_dtor(EbConfig *config_ptr)
     }
 
     if (config_ptr->input_file) {
-        if (!config_ptr->input_file_is_fifo)
-            fclose(config_ptr->input_file);
+        if (config_ptr->input_file != stdin) fclose(config_ptr->input_file);
         config_ptr->input_file = (FILE *) NULL;
     }
 
@@ -620,16 +572,6 @@ void eb_config_dtor(EbConfig *config_ptr)
         fclose(config_ptr->stat_file);
         config_ptr->stat_file = (FILE *) NULL;
     }
-#if TWO_PASS
-    if (config_ptr->input_stat_file) {
-        fclose(config_ptr->input_stat_file);
-        config_ptr->input_stat_file = (FILE *)NULL;
-    }
-    if (config_ptr->output_stat_file) {
-        fclose(config_ptr->output_stat_file);
-        config_ptr->output_stat_file = (FILE *)NULL;
-    }
-#endif
     return;
 }
 
@@ -865,6 +807,7 @@ static EbErrorType VerifySettings(EbConfig *config, uint32_t channelNumber)
         fprintf(config->error_log_file, "Error instance %u: Could not find QP file, UseQpFile is set to 1\n", channelNumber + 1);
         return_error = EB_ErrorBadParameter;
     }
+
     if (config->separate_fields > 1) {
         fprintf(config->error_log_file, "Error Instance %u: Invalid SeperateFields Input\n", channelNumber + 1);
         return_error = EB_ErrorBadParameter;
@@ -907,31 +850,13 @@ static EbErrorType VerifySettings(EbConfig *config, uint32_t channelNumber)
         return_error = EB_ErrorBadParameter;
     }
 
-    // Global Motion
-    if (config->enable_global_motion != 0 && config->enable_global_motion != 1) {
-        fprintf(config->error_log_file, "Error instance %u: Invalid global motion flag [0 - 1], your input: %d\n", channelNumber + 1, config->target_socket);
-        return_error = EB_ErrorBadParameter;
-    }
-
-    // OBMC
-    if (config->enable_obmc != 0 && config->enable_obmc != 1) {
-        fprintf(config->error_log_file, "Error instance %u: Invalid OBMC flag [0 - 1], your input: %d\n", channelNumber + 1, config->target_socket);
-        return_error = EB_ErrorBadParameter;
-    }
-
-    // Filter Intra prediction
-    if (config->enable_filter_intra != 0 && config->enable_filter_intra != 1) {
-        fprintf(config->error_log_file, "Error instance %u: Invalid Filter Intra flag [0 - 1], your input: %d\n", channelNumber + 1, config->target_socket);
-        return_error = EB_ErrorBadParameter;
-    }
-
     // HBD mode decision
-    if (config->enable_hbd_mode_decision != 0 && config->enable_hbd_mode_decision != 1 && config->enable_hbd_mode_decision != 2) {
-        fprintf(config->error_log_file, "Error instance %u: Invalid HBD mode decision flag [0 - 2], your input: %d\n", channelNumber + 1, config->target_socket);
+    if (config->enable_hbd_mode_decision != 0 && config->enable_hbd_mode_decision != 1) {
+        fprintf(config->error_log_file, "Error instance %u: Invalid HBD mode decision flag [0 - 1], your input: %d\n", channelNumber + 1, config->target_socket);
         return_error = EB_ErrorBadParameter;
     }
-
-
+    if (config->enable_hbd_mode_decision == 1 && config->encoder_bit_depth != 10)
+        config->enable_hbd_mode_decision = 0;
 
     return return_error;
 }
@@ -1304,8 +1229,8 @@ EbErrorType read_command_line(
 
                 // Assuming no errors, add padding to width and height
                 if (return_errors[index] == EB_ErrorNone) {
-                    configs[index]->input_padded_width = configs[index]->source_width + configs[index]->source_width % 8;
-                    configs[index]->input_padded_height = configs[index]->source_height + configs[index]->source_width % 8;
+                    configs[index]->input_padded_width  = configs[index]->source_width;
+                    configs[index]->input_padded_height = configs[index]->source_height;
                 }
 
                 // Assuming no errors, set the frames to be encoded to the number of frames in the input yuv
