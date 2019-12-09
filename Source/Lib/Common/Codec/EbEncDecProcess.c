@@ -1620,6 +1620,11 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
             context_ptr->predictive_me_level = 2;
         else
 #endif
+#if PREDICTIVE_ME_LEVEL_0
+        if (1)
+            context_ptr->predictive_me_level = 0;
+        else
+#endif
 #if PRESETS_TUNE
             if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
                if (picture_control_set_ptr->enc_mode <= ENC_M1)

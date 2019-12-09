@@ -53,11 +53,9 @@ extern "C" {
 #define M1_PIC_DEPTH_MODE                       0
 #define BIPRED3X3_INJECTION_2                   0
 #define CDEF_FILTER_MODE_4                      0
-
 #define FRACTIONAL_SEARCH_MODEL_1               0
 #define HME_SEARCH_METHOD_SUB_SAD               0
 #define ME_SEARCH_METHOD_SUB_SAD                0
-
 #define SKIP_WEDGE_MODE_1_NON_INTRA             0
 #define FRACTIONAL_SEARCH_METHOD_FULL_SAD       0
 
@@ -65,11 +63,16 @@ extern "C" {
 #define CDF_MODE_1                              0
 #define MFMV_ENABLED_0                          0
 #define COMPOUND_MODE_1                         0
+
 #define EDGE_BASED_SKIP_ANGLE_INTRA_1           0
 #define PRUNE_UNIPRED_ME_0                      0
 #define REDUNDANT_BLK_0                         0
 #define PRUNE_REF_FRAME_REC_PART_1              0
+
 #define TRELLIS_0                               0
+#define UPDATE_CDF_0                            0
+#define PREDICTIVE_ME_LEVEL_0                   0
+#define PIC_OBMC_MODE_0                         0
 #endif
 
 // M0 TO M1

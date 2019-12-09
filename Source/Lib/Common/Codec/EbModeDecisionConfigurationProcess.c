@@ -2591,7 +2591,11 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
         else
             picture_control_set_ptr->update_cdf = 0;
     else
-    picture_control_set_ptr->update_cdf = (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M5) ? 1 : 0;
+        picture_control_set_ptr->update_cdf = (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M5) ? 1 : 0;
+
+#if UPDATE_CDF_0
+    picture_control_set_ptr->update_cdf = 0;
+#endif
 
     if(picture_control_set_ptr->update_cdf)
         assert(sequence_control_set_ptr->cdf_mode == 0 && "use cdf_mode 0");
@@ -2657,6 +2661,11 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
     // 4                                            OBMC @(MVP, PME ) + Opt2 NICs
     if (sequence_control_set_ptr->static_config.enable_obmc) {
 #if PRESETS_TUNE
+#if PIC_OBMC_MODE_0
+        if (1)
+            picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = 0;
+        else
+#endif
 #if M0_OPT
         if (picture_control_set_ptr->parent_pcs_ptr->enc_mode == ENC_M0)
             picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode =
