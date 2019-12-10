@@ -2599,6 +2599,7 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
 
     if(picture_control_set_ptr->update_cdf)
         assert(sequence_control_set_ptr->cdf_mode == 0 && "use cdf_mode 0");
+
 #if FILTER_INTRA_FLAG
     //Filter Intra Mode : 0: OFF  1: ON
     if (sequence_control_set_ptr->seq_header.enable_filter_intra)
@@ -2606,6 +2607,7 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
     else
         picture_control_set_ptr->pic_filter_intra_mode = 0;
 #endif
+
 #if EIGHT_PEL_FIX
     FrameHeader *frm_hdr = &picture_control_set_ptr->parent_pcs_ptr->frm_hdr;
     frm_hdr->allow_high_precision_mv =
@@ -2664,6 +2666,26 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
 #if PIC_OBMC_MODE_0
         if (1)
             picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = 0;
+        else
+#endif
+#if PIC_OBMC_MODE_1
+        if (1)
+            picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = 1;
+        else
+#endif
+#if PIC_OBMC_MODE_2
+        if (1)
+            picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = 2;
+        else
+#endif
+#if PIC_OBMC_MODE_3
+        if (1)
+            picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = 3;
+        else
+#endif
+#if PIC_OBMC_MODE_4
+        if (1)
+            picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = 4;
         else
 #endif
 #if M0_OPT

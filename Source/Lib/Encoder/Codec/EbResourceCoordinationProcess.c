@@ -119,6 +119,10 @@ EbErrorType signal_derivation_pre_analysis_oq(
 
     if (picture_control_set_ptr->enc_mode >= ENC_M8)
         sequence_control_set_ptr->seq_header.enable_restoration = 0;
+#if RESTORATION_FILTER_0
+    sequence_control_set_ptr->seq_header.enable_restoration = 0;
+#endif
+
     sequence_control_set_ptr->cdf_mode = (picture_control_set_ptr->enc_mode <= ENC_M6) ? 0 : 1;
 #if CDF_MODE_1
     sequence_control_set_ptr->cdf_mode = 1;
@@ -732,7 +736,9 @@ void* resource_coordination_kernel(void *input_ptr)
                                                                               (sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;
 #endif
 #endif
-
+#if ENABLE_INTERINTRA_COMPOUND_OFF
+            sequence_control_set_ptr->seq_header.enable_interintra_compound = 0;
+#endif
 #if M1_ENABLE_INTERINTRA_COMPOUND
         sequence_control_set_ptr->seq_header.enable_interintra_compound =  0;
 #endif
@@ -748,6 +754,10 @@ void* resource_coordination_kernel(void *input_ptr)
 #endif
             else
                 sequence_control_set_ptr->seq_header.enable_filter_intra        =  0;
+
+#if ENABLE_FILTER_INTRA_OFF
+        sequence_control_set_ptr->seq_header.enable_filter_intra = 0;
+#endif
 #endif
             // Set compound mode      Settings
             // 0                 OFF: No compond mode search : AVG only
