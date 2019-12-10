@@ -1002,6 +1002,8 @@ static bool ref_mv_idx_early_breakout(
     PictureControlSet            *picture_control_set_ptr,
     ModeDecisionContext          *context_ptr,
     const int8_t                 inter_direction,
+    const int8_t                 list_idx0,
+    const int8_t                 list_idx1,
     const int8_t                 ref_idx0,
     const int8_t                 ref_idx1,
     const int8_t                 ref_mv_idx,
@@ -1010,7 +1012,7 @@ static bool ref_mv_idx_early_breakout(
     int  is_comp_pred = inter_direction == 2 ? 1 : 0;
     if (inter_direction == 0) {
         if (picture_control_set_ptr->parent_pcs_ptr->reduce_inter_modes && ref_mv_idx > 0) {
-            MvReferenceFrame ref_frame_type = svt_get_ref_frame_type(REF_LIST_0, ref_idx0);
+            MvReferenceFrame ref_frame_type = svt_get_ref_frame_type(list_idx0, ref_idx0);
             if (ref_frame_type == LAST2_FRAME ||
                 ref_frame_type == LAST3_FRAME ) {
                 const int has_nearmv = have_nearmv_in_inter_mode(pred_mode) ? 1 : 0;
@@ -1022,9 +1024,8 @@ static bool ref_mv_idx_early_breakout(
         }
     }else if (inter_direction == 1) {
         if (picture_control_set_ptr->parent_pcs_ptr->reduce_inter_modes && ref_mv_idx > 0) {
-            MvReferenceFrame ref_frame_type = svt_get_ref_frame_type(REF_LIST_1, ref_idx1);
-            if (ref_frame_type == BWDREF_FRAME ||
-                ref_frame_type == ALTREF2_FRAME ) {
+            MvReferenceFrame ref_frame_type = svt_get_ref_frame_type(ref_idx1, ref_idx1);
+            if (ref_frame_type == ALTREF2_FRAME ) {
                 const int has_nearmv = have_nearmv_in_inter_mode(pred_mode) ? 1 : 0;
                 int32_t weight = context_ptr->md_local_cu_unit[context_ptr->blk_geom->blkidx_mds].ed_ref_mv_stack[ref_frame_type][ref_mv_idx + has_nearmv].weight;
                 if (weight < REF_CAT_LEVEL) {
@@ -1177,6 +1178,8 @@ void Unipred3x3CandidatesInjection(
                 picture_control_set_ptr,
                 context_ptr,
                 candidateArray[canTotalCnt].prediction_direction[0],
+                REF_LIST_0,
+                -1,
                 list0_ref_index,
                 -1,
                 candidateArray[canTotalCnt].drl_index,
@@ -1339,6 +1342,8 @@ void Unipred3x3CandidatesInjection(
                 picture_control_set_ptr,
                 context_ptr,
                 candidateArray[canTotalCnt].prediction_direction[0],
+                -1,
+                REF_LIST_1,
                 -1,
                 list1_ref_index,
                 candidateArray[canTotalCnt].drl_index,
@@ -1577,6 +1582,8 @@ void Bipred3x3CandidatesInjection(
                 picture_control_set_ptr,
                 context_ptr,
                 candidateArray[canTotalCnt].prediction_direction[0],
+                me_block_results_ptr->ref0_list,
+                me_block_results_ptr->ref1_list,
                 list0_ref_index,
                 list1_ref_index,
                 candidateArray[canTotalCnt].drl_index,
@@ -1713,6 +1720,8 @@ void Bipred3x3CandidatesInjection(
                 picture_control_set_ptr,
                 context_ptr,
                 candidateArray[canTotalCnt].prediction_direction[0],
+                me_block_results_ptr->ref0_list,
+                me_block_results_ptr->ref1_list,
                 list0_ref_index,
                 list1_ref_index,
                 candidateArray[canTotalCnt].drl_index,
@@ -3749,14 +3758,16 @@ void inject_new_candidates(
 #if REDUCE_INTER_MODES
              // Whether this reference motion vector can be skipped, based on initial
              // heuristics.
-               uint8_t bypass_candidate = ref_mv_idx_early_breakout(
-                picture_control_set_ptr,
-                context_ptr,
-                inter_direction,
-                list0_ref_index,
-                list1_ref_index,
-                candidateArray[canTotalCnt].drl_index,
-                candidateArray[canTotalCnt].pred_mode);
+                uint8_t bypass_candidate = ref_mv_idx_early_breakout(
+                    picture_control_set_ptr,
+                    context_ptr,
+                    inter_direction,
+                    REF_LIST_0,
+                    -1,
+                    list0_ref_index,
+                    list1_ref_index,
+                    candidateArray[canTotalCnt].drl_index,
+                    candidateArray[canTotalCnt].pred_mode);
                if (bypass_candidate)
                    continue;
 #endif
@@ -3908,14 +3919,16 @@ void inject_new_candidates(
 #if REDUCE_INTER_MODES
              // Whether this reference motion vector can be skipped, based on initial
              // heuristics.
-               uint8_t bypass_candidate = ref_mv_idx_early_breakout(
-                picture_control_set_ptr,
-                context_ptr,
-                inter_direction,
-                list0_ref_index,
-                list1_ref_index,
-                candidateArray[canTotalCnt].drl_index,
-                candidateArray[canTotalCnt].pred_mode);
+                    uint8_t bypass_candidate = ref_mv_idx_early_breakout(
+                        picture_control_set_ptr,
+                        context_ptr,
+                        inter_direction,
+                        -1,
+                        REF_LIST_1,
+                        list0_ref_index,
+                        list1_ref_index,
+                        candidateArray[canTotalCnt].drl_index,
+                        candidateArray[canTotalCnt].pred_mode);
                if (bypass_candidate)
                    continue;
 #endif
@@ -4068,14 +4081,16 @@ void inject_new_candidates(
 #if REDUCE_INTER_MODES
                      // Whether this reference motion vector can be skipped, based on initial
                      // heuristics.
-                       uint8_t bypass_candidate = ref_mv_idx_early_breakout(
-                        picture_control_set_ptr,
-                        context_ptr,
-                        inter_direction,
-                        list0_ref_index,
-                        list1_ref_index,
-                        candidateArray[canTotalCnt].drl_index,
-                        candidateArray[canTotalCnt].pred_mode);
+                        uint8_t bypass_candidate = ref_mv_idx_early_breakout(
+                            picture_control_set_ptr,
+                            context_ptr,
+                            inter_direction,
+                            me_block_results_ptr->ref0_list,
+                            me_block_results_ptr->ref1_list,
+                            list0_ref_index,
+                            list1_ref_index,
+                            candidateArray[canTotalCnt].drl_index,
+                            candidateArray[canTotalCnt].pred_mode);
                        if (bypass_candidate)
                            continue;
 #endif
@@ -4223,6 +4238,8 @@ void inject_new_candidates(
                                 picture_control_set_ptr,
                                 context_ptr,
                                 candidateArray[canTotalCnt].prediction_direction[0],
+                                REF_LIST_0,
+                                -1,
                                 ref_pic_index,
                                 -1,
                                 candidateArray[canTotalCnt].drl_index,
@@ -4336,6 +4353,8 @@ void inject_new_candidates(
                                 picture_control_set_ptr,
                                 context_ptr,
                                 candidateArray[canTotalCnt].prediction_direction[0],
+                                -1,
+                                REF_LIST_1,
                                 -1,
                                 ref_pic_index,
                                 candidateArray[canTotalCnt].drl_index,
@@ -4461,6 +4480,8 @@ void inject_new_candidates(
                                         picture_control_set_ptr,
                                         context_ptr,
                                         candidateArray[canTotalCnt].prediction_direction[0],
+                                        REF_LIST_0,
+                                        REF_LIST_1,
                                         ref_pic_index_l0,
                                         ref_pic_index_l1,
                                         candidateArray[canTotalCnt].drl_index,
