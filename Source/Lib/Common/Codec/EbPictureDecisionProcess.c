@@ -1413,7 +1413,7 @@ EbErrorType signal_derivation_multi_processes_oq(
         picture_control_set_ptr->gm_level = GM_FULL;
 #endif
 #if REDUCE_INTER_MODES
-        picture_control_set_ptr->reduce_inter_modes = 1;
+        picture_control_set_ptr->reduce_inter_modes = 0;
 #endif
     return return_error;
 }
