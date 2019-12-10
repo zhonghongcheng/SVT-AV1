@@ -5018,7 +5018,9 @@ void tx_partitioning_path(
 
     uint8_t  best_tx_depth = 0;
     uint64_t best_cost_search = (uint64_t)~0;
-
+#if TX_SIZE_EARLY_EXIT2
+    uint8_t is_best_has_coeff = 1;
+#endif
     // Fill the scratch buffer
     memcpy(context_ptr->scratch_candidate_buffer->candidate_ptr, candidate_buffer->candidate_ptr, sizeof(ModeDecisionCandidate));
 
@@ -5114,7 +5116,14 @@ void tx_partitioning_path(
 
     // Transform Depth Loop
     for (context_ptr->tx_depth = 0; context_ptr->tx_depth <= end_tx_depth; context_ptr->tx_depth++) {
-
+#if TX_SIZE_EARLY_EXIT1
+        if (best_tx_depth != 1 && context_ptr->tx_depth == 2)
+            continue;
+#endif
+#if TX_SIZE_EARLY_EXIT2
+        if (!is_best_has_coeff)
+            continue;
+#endif
         ModeDecisionCandidateBuffer *tx_candidate_buffer = (context_ptr->tx_depth == 0) ? candidate_buffer : context_ptr->scratch_candidate_buffer;
 
         tx_candidate_buffer->candidate_ptr->tx_depth = context_ptr->tx_depth;
@@ -5226,7 +5235,9 @@ void tx_partitioning_path(
         if (cost < best_cost_search) {
             best_cost_search = cost;
             best_tx_depth = context_ptr->tx_depth;
-
+#if TX_SIZE_EARLY_EXIT2
+            is_best_has_coeff = block_has_coeff;        
+#endif
             y_full_distortion[DIST_CALC_RESIDUAL] = tx_y_full_distortion[DIST_CALC_RESIDUAL];
             y_full_distortion[DIST_CALC_PREDICTION] = tx_y_full_distortion[DIST_CALC_PREDICTION];
             *y_coeff_bits = tx_y_coeff_bits;
