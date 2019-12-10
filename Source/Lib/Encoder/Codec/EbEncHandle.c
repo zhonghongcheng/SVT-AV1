@@ -2040,6 +2040,11 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
         sequence_control_set_ptr->over_boundary_block_mode = 1;
     else
         sequence_control_set_ptr->over_boundary_block_mode = 0;
+
+#if OVER_BOUNDARY_BLOCK_MODE_0
+    sequence_control_set_ptr->over_boundary_block_mode = 0;
+#endif
+
 #if PRESETS_TUNE
     if (sequence_control_set_ptr->static_config.screen_content_mode == 1)
         sequence_control_set_ptr->mfmv_enabled = 0;

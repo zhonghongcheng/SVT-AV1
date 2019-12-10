@@ -88,6 +88,7 @@ extern "C" {
 #define ENABLE_WM_OFF                           0
 #define M1_INTER_INTER_WEDGE_VARIANCE_TH        0
 #define M1_PIC_DEPTH_MODE_NON_REF               0
+#define OVER_BOUNDARY_BLOCK_MODE_0              0
 #endif
 
 // M0 TO M1
