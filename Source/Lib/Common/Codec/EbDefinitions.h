@@ -82,9 +82,10 @@ extern "C" {
 #define PREDICTIVE_ME_LEVEL_2                   0
 #define PREDICTIVE_ME_LEVEL_3                   0
 #define PREDICTIVE_ME_LEVEL_4                   0
-#define PREDICTIVE_ME_LEVEL_5                   0
 #define ENABLE_FILTER_INTRA_OFF                 0
 #define ENABLE_INTERINTRA_COMPOUND_OFF          0
+
+#define ENABLE_WM_OFF                           1
 #endif
 
 // M0 TO M1

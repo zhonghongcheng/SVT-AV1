@@ -2650,6 +2650,9 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
 #if MR_ENABLE_WM
     enable_wm = EB_TRUE;
 #endif
+#if ENABLE_WM_OFF
+    enable_wm = EB_FALSE;
+#endif
     frm_hdr->allow_warped_motion = enable_wm
         && !(frm_hdr->frame_type == KEY_FRAME || frm_hdr->frame_type == INTRA_ONLY_FRAME)
         && !frm_hdr->error_resilient_mode;
