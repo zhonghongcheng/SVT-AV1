@@ -1008,8 +1008,8 @@ static bool ref_mv_idx_early_breakout(
     const int8_t                 ref_idx1,
     const int8_t                 ref_mv_idx,
     PredictionMode               pred_mode) {
-    //int  is_comp_pred = inter_direction == 2 ? 1 : 0;
-    if (inter_direction == 0) {
+
+    if (inter_direction == UNI_PRED_LIST_0) {
         if (picture_control_set_ptr->parent_pcs_ptr->reduce_inter_modes && ref_mv_idx > 0) {
             MvReferenceFrame ref_frame_type = svt_get_ref_frame_type(list_idx0, ref_idx0);
             if (ref_frame_type == LAST2_FRAME ||
@@ -1021,7 +1021,7 @@ static bool ref_mv_idx_early_breakout(
                 }
             }
         }
-    }else if (inter_direction == 1) {
+    }else if (inter_direction == UNI_PRED_LIST_1) {
         if (picture_control_set_ptr->parent_pcs_ptr->reduce_inter_modes && ref_mv_idx > 0) {
             MvReferenceFrame ref_frame_type = svt_get_ref_frame_type(list_idx1, ref_idx1);
             if (ref_frame_type == ALTREF2_FRAME ) {
