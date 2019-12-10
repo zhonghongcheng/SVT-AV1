@@ -901,6 +901,8 @@ EbErrorType signal_derivation_multi_processes_oq(
         picture_control_set_ptr->pic_depth_mode = (picture_control_set_ptr->slice_type == I_SLICE) ? PIC_ALL_DEPTH_MODE : PIC_MULTI_PASS_PD_MODE_2;
 #elif M1_PIC_DEPTH_MODE
         picture_control_set_ptr->pic_depth_mode = (picture_control_set_ptr->slice_type == I_SLICE) ? PIC_ALL_DEPTH_MODE : PIC_MULTI_PASS_PD_MODE_2;
+#elif M1_PIC_DEPTH_MODE_NON_REF
+        picture_control_set_ptr->pic_depth_mode = (picture_control_set_ptr->slice_type == I_SLICE) ? PIC_ALL_DEPTH_MODE : (picture_control_set_ptr->is_used_as_reference_flag) ? PIC_MULTI_PASS_PD_MODE_1 : PIC_MULTI_PASS_PD_MODE_2;
 #endif
         if (picture_control_set_ptr->pic_depth_mode < PIC_SQ_DEPTH_MODE)
             assert(sequence_control_set_ptr->nsq_present == 1 && "use nsq_present 1");

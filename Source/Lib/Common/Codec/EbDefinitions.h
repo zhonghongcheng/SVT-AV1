@@ -86,6 +86,8 @@ extern "C" {
 #define ENABLE_INTERINTRA_COMPOUND_OFF          0
 
 #define ENABLE_WM_OFF                           0
+#define M1_INTER_INTER_WEDGE_VARIANCE_TH        0
+#define M1_PIC_DEPTH_MODE_NON_REF               0
 #endif
 
 // M0 TO M1
@@ -99,7 +101,7 @@ extern "C" {
 #define M1_MD_STAGE_2_COUNT_TH_S                  1
 #define M1_HALF_QUARTER_PEL_MODE                  1
 #define M1_GLOBAL_MV_INJECTION                    1
-#define M1_INTER_INTER_WEDGE_VARIANCE_TH          1
+//#define M1_INTER_INTER_WEDGE_VARIANCE_TH          1
 
 #define M1_MD_EXIT_TH                             1
 #define M1_PIC_OBMC_MODE                          1  // SC ONLY
