@@ -34,7 +34,8 @@ extern "C" {
 #endif
 #define HBD2_COMP                    1 // comp inter-inter HBD2
 #define HBD2_PME                     1 // pme HBD1
-
+#define HBD2_OBMC                    1 // OBMC semi losseless for HBD1 & 2
+#define PIC_SWITCH                   0
 
 #define ENABLE_M1    0 // To get M1  using enc-mode 0
 #define ENABLE_M2    0 // To get M2  using enc-mode 0

@@ -4905,28 +4905,84 @@ void precompute_obmc_data(
     ModeDecisionContext          *context_ptr)
 {
 
+#if HBD2_OBMC
+    uint8_t * tmp_obmc_bufs_8b[2];
+#endif
     uint8_t * tmp_obmc_bufs[2];
 
     tmp_obmc_bufs[0] = context_ptr->obmc_buff_0;
     tmp_obmc_bufs[1] = context_ptr->obmc_buff_1;
 
+#if HBD2_OBMC
 
+    DECLARE_ALIGNED(16, uint8_t, junk_2b[2 * MAX_MB_PLANE * MAX_SB_SQUARE]);
+    DECLARE_ALIGNED(16, uint8_t, buf0_8b[2 * MAX_MB_PLANE * MAX_SB_SQUARE]);
+    DECLARE_ALIGNED(16, uint8_t, buf1_8b[2 * MAX_MB_PLANE * MAX_SB_SQUARE]);
+    
+    uint8_t *dst_buf1_8b[MAX_MB_PLANE], *dst_buf2_8b[MAX_MB_PLANE],*dst_junk_2b[MAX_MB_PLANE];
+
+    tmp_obmc_bufs_8b[0] = buf0_8b;
+    tmp_obmc_bufs_8b[1] = buf1_8b;
+
+    dst_buf1_8b[0] = tmp_obmc_bufs_8b[0];
+    dst_buf1_8b[1] = tmp_obmc_bufs_8b[0] + MAX_SB_SQUARE;
+    dst_buf1_8b[2] = tmp_obmc_bufs_8b[0] + MAX_SB_SQUARE * 2;
+    dst_buf2_8b[0] = tmp_obmc_bufs_8b[1];
+    dst_buf2_8b[1] = tmp_obmc_bufs_8b[1] + MAX_SB_SQUARE;
+    dst_buf2_8b[2] = tmp_obmc_bufs_8b[1] + MAX_SB_SQUARE * 2;
+
+    dst_junk_2b[0] = junk_2b;
+#endif
     uint8_t *dst_buf1[MAX_MB_PLANE], *dst_buf2[MAX_MB_PLANE];
+
     int dst_stride1[MAX_MB_PLANE] = { MAX_SB_SIZE, MAX_SB_SIZE, MAX_SB_SIZE };
     int dst_stride2[MAX_MB_PLANE] = { MAX_SB_SIZE, MAX_SB_SIZE, MAX_SB_SIZE };
 
     {
+#if HBD2_OBMC
+        if (context_ptr->hbd_mode_decision) {
+            dst_buf1[0] = (uint8_t *)((uint16_t *)tmp_obmc_bufs[0]);
+            dst_buf1[1] = (uint8_t *)((uint16_t *)tmp_obmc_bufs[0] + MAX_SB_SQUARE);
+            dst_buf1[2] = (uint8_t *)((uint16_t *)tmp_obmc_bufs[0] + MAX_SB_SQUARE * 2);
+            dst_buf2[0] = (uint8_t *)((uint16_t *)tmp_obmc_bufs[1]);
+            dst_buf2[1] = (uint8_t *)((uint16_t *)tmp_obmc_bufs[1] + MAX_SB_SQUARE);
+            dst_buf2[2] = (uint8_t *)((uint16_t *)tmp_obmc_bufs[1] + MAX_SB_SQUARE * 2);
+        }
+        else {
         dst_buf1[0] = tmp_obmc_bufs[0];
         dst_buf1[1] = tmp_obmc_bufs[0] + MAX_SB_SQUARE;
         dst_buf1[2] = tmp_obmc_bufs[0] + MAX_SB_SQUARE * 2;
         dst_buf2[0] = tmp_obmc_bufs[1];
         dst_buf2[1] = tmp_obmc_bufs[1] + MAX_SB_SQUARE;
         dst_buf2[2] = tmp_obmc_bufs[1] + MAX_SB_SQUARE * 2;
+
+        }
+#else
+        dst_buf1[0] = tmp_obmc_bufs[0];
+        dst_buf1[1] = tmp_obmc_bufs[0] + MAX_SB_SQUARE;
+        dst_buf1[2] = tmp_obmc_bufs[0] + MAX_SB_SQUARE * 2;
+        dst_buf2[0] = tmp_obmc_bufs[1];
+        dst_buf2[1] = tmp_obmc_bufs[1] + MAX_SB_SQUARE;
+        dst_buf2[2] = tmp_obmc_bufs[1] + MAX_SB_SQUARE * 2;
+#endif
     }
 
     int mi_row = context_ptr->cu_origin_y >> 2;
     int mi_col = context_ptr->cu_origin_x >> 2;
+#if HBD2_OBMC
+    if (context_ptr->hbd_mode_decision) {
+        build_prediction_by_above_preds_hbd(
+            1,
+            context_ptr->blk_geom->bsize, picture_control_set_ptr, context_ptr->cu_ptr->av1xd, mi_row, mi_col, (uint16_t **)dst_buf1,
+            dst_stride1);
 
+        build_prediction_by_left_preds_hbd(
+            1,
+            context_ptr->blk_geom->bsize, picture_control_set_ptr, context_ptr->cu_ptr->av1xd, mi_row, mi_col, (uint16_t **)dst_buf2,
+            dst_stride2);
+    }
+    else {
+#endif 
     build_prediction_by_above_preds(
         1,
         context_ptr->blk_geom->bsize, picture_control_set_ptr, context_ptr->cu_ptr->av1xd, mi_row, mi_col, dst_buf1,
@@ -4937,7 +4993,68 @@ void precompute_obmc_data(
         context_ptr->blk_geom->bsize, picture_control_set_ptr, context_ptr->cu_ptr->av1xd, mi_row, mi_col, dst_buf2,
         dst_stride2);
 
+#if HBD2_OBMC
+    }
+#endif
 
+
+
+
+
+#if 0//HBD2_OBMC
+        build_prediction_by_above_preds(
+        1,
+        context_ptr->blk_geom->bsize, picture_control_set_ptr, context_ptr->cu_ptr->av1xd, mi_row, mi_col, dst_buf1_8b,
+        dst_stride1);
+
+    build_prediction_by_left_preds(
+        1,
+        context_ptr->blk_geom->bsize, picture_control_set_ptr, context_ptr->cu_ptr->av1xd, mi_row, mi_col, dst_buf2_8b,
+        dst_stride2);
+#endif
+
+
+
+
+#if HBD2_OBMC
+    if (context_ptr->hbd_mode_decision) {
+        un_pack2d(
+            (uint16_t*)dst_buf1[0],
+            dst_stride1[0],
+            dst_buf1_8b[0],
+            dst_stride1[0],
+            dst_junk_2b[0],
+            dst_stride1[0],
+            context_ptr->blk_geom->bwidth,
+            context_ptr->blk_geom->bheight);
+        un_pack2d(
+            (uint16_t*)dst_buf2[0],
+            dst_stride2[0],
+            dst_buf2_8b[0],
+            dst_stride2[0],
+            dst_junk_2b[0],
+            dst_stride2[0],
+            context_ptr->blk_geom->bwidth,
+            context_ptr->blk_geom->bheight);
+    }
+#endif
+
+
+#if HBD2_OBMC
+
+    calc_target_weighted_pred(
+        picture_control_set_ptr,
+        context_ptr,
+        picture_control_set_ptr->parent_pcs_ptr->av1_cm, 
+        context_ptr->cu_ptr->av1xd, 
+        mi_row, 
+        mi_col, 
+        context_ptr->hbd_mode_decision ? dst_buf1_8b[0] : dst_buf1[0],
+        dst_stride1[0] , 
+        context_ptr->hbd_mode_decision ? dst_buf2_8b[0] : dst_buf2[0],
+        dst_stride2[0]);
+#else
+    
     calc_target_weighted_pred(
         picture_control_set_ptr,
         context_ptr,
@@ -4945,6 +5062,7 @@ void precompute_obmc_data(
         dst_stride1[0] , dst_buf2[0]  ,
         dst_stride2[0] );
 
+#endif
 }
 #endif
 EbErrorType av1_inter_prediction(
@@ -5741,7 +5859,9 @@ EbErrorType av1_inter_prediction_hbd(
     EbBool                          perform_chroma,
     uint8_t                         bit_depth)
 {
+#if !HBD2_OBMC
     (void)use_precomputed_obmc;
+#endif
     (void) md_context;
 
     EbErrorType  return_error = EB_ErrorNone;
@@ -6426,7 +6546,20 @@ EbErrorType av1_inter_prediction_hbd(
 
         int mi_row = pu_origin_y >> 2;
         int mi_col = pu_origin_x >> 2;
-
+#if HBD2_OBMC
+        //use_precomputed_obmc=0;
+        if (use_precomputed_obmc)
+        {
+            dst_buf1[0] = (uint16_t*)md_context->obmc_buff_0;
+            dst_buf1[1] = (uint16_t*) md_context->obmc_buff_0 + MAX_SB_SQUARE;
+            dst_buf1[2] = (uint16_t*)md_context->obmc_buff_0 + MAX_SB_SQUARE*2;
+            dst_buf2[0] = (uint16_t*)md_context->obmc_buff_1;
+            dst_buf2[1] = (uint16_t*)md_context->obmc_buff_1 + MAX_SB_SQUARE;
+            dst_buf2[2] = (uint16_t*)md_context->obmc_buff_1 + MAX_SB_SQUARE*2;
+        }
+        else
+        {
+#endif
         build_prediction_by_above_preds_hbd(
             perform_chroma,
             blk_geom->bsize, picture_control_set_ptr, cu_ptr->av1xd, mi_row, mi_col, dst_buf1,
@@ -6436,7 +6569,9 @@ EbErrorType av1_inter_prediction_hbd(
             perform_chroma,
             blk_geom->bsize, picture_control_set_ptr, cu_ptr->av1xd, mi_row, mi_col, dst_buf2,
             dst_stride2);
-
+#if HBD2_OBMC
+        }
+#endif
         uint16_t * final_dst_ptr_y  = (uint16_t*) prediction_ptr->buffer_y + prediction_ptr->origin_x + dst_origin_x + (prediction_ptr->origin_y + dst_origin_y) * prediction_ptr->stride_y;
         uint16_t  final_dst_stride_y = prediction_ptr->stride_y;
 

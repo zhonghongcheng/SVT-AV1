@@ -2766,7 +2766,10 @@ void* enc_dec_kernel(void *input_ptr)
             segmentRowIndex = segment_index / segments_ptr->segment_band_count;
             segmentBandIndex = segment_index - segmentRowIndex * segments_ptr->segment_band_count;
             segmentBandSize = (segments_ptr->lcu_band_count * (segmentBandIndex + 1) + segments_ptr->segment_band_count - 1) / segments_ptr->segment_band_count;
-
+#if PIC_SWITCH
+            if (!picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
+                context_ptr->md_context->hbd_mode_decision = 0;
+#endif
             // Reset Coding Loop State
             reset_mode_decision(
 #if EIGHT_PEL_PREDICTIVE_ME
