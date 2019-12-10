@@ -85,7 +85,7 @@ extern "C" {
 #define ENABLE_FILTER_INTRA_OFF                 0
 #define ENABLE_INTERINTRA_COMPOUND_OFF          0
 
-#define ENABLE_WM_OFF                           1
+#define ENABLE_WM_OFF                           0
 #endif
 
 // M0 TO M1
