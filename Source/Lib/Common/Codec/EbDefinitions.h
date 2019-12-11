@@ -37,6 +37,10 @@ extern "C" {
 
 #define HBD_CLEAN_UP                 1
 
+#define HBD2_COMP                    1 // comp inter-inter HBD2
+#define HBD2_PME                     1 // pme HBD2
+#define HBD2_OBMC                    1 // OBMC semi losseless for HBD1 & 2
+
 #define IFS_8BIT_MD                  1
 
 #define COMP_HBD                     1
