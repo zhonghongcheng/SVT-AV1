@@ -1412,6 +1412,12 @@ EbErrorType signal_derivation_multi_processes_oq(
         // GM_TRAN_ONLY                               Translation only using ME MV.
         picture_control_set_ptr->gm_level = GM_FULL;
 #endif
+#if TX_SIZE_EARLY_EXIT
+        //Exit tx size search when no coef is acheived.
+        // 0: OFF
+        // 1: ON
+        picture_control_set_ptr->tx_size_early_exit = 1;
+#endif
     return return_error;
 }
 
