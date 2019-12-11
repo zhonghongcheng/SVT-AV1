@@ -38,6 +38,9 @@
 #include "partition_model_weights.h"
 #include "ml.h"
 #endif
+#if SIMPLE_MOTION_SEARCH_SPLIT
+#include "limits.h"
+#endif
 EbErrorType generate_md_stage_0_cand(
     SuperBlock          *sb_ptr,
     ModeDecisionContext *context_ptr,
@@ -8733,19 +8736,14 @@ void simple_motion_cost_and_var(
     uint32_t sb_origin_x,
     uint32_t sb_origin_y,
     uint32_t blk_idx_mds,
-    PC_TREE *pc_tree,
     unsigned int *best_sse,
     unsigned int *best_var,
     int *best_ref,
     uint8_t hbd_mode_decision) {
-    const Av1Common *cm = picture_control_set_ptr->parent_pcs_ptr->av1_cm;//&cpi->common;
-    // Otherwise do loop through the reference frames and find the one with the
-    // minimum SSE
+
     uint32_t me_sb_addr;
     uint32_t geom_offset_x = 0;
     uint32_t geom_offset_y = 0;
-    float mv_col;
-    float mv_row;
     uint8_t ref = 0;
     unsigned int curr_sse = 0;
     unsigned int curr_var = 0;
@@ -8785,8 +8783,6 @@ void simple_motion_cost_and_var(
             const uint8_t list1_ref_index = me_block_results_ptr->ref_idx_l1;
             if (inter_direction == 0 && list0_ref_index == 0) {
                 ModeDecisionCandidateBuffer *candidate_buffer = &(context_ptr->candidate_buffer_ptr_array[0][0]);
-                candidate_buffer->candidate_ptr = &(context_ptr->fast_candidate_array[0]);
-                ModeDecisionCandidate *candidate_ptr = candidate_buffer->candidate_ptr;
                 EbPictureBufferDesc   *prediction_ptr = candidate_buffer->prediction_ptr;
                 const InterpFilters interp_filters = av1_make_interp_filters(EIGHTTAP_REGULAR, EIGHTTAP_REGULAR);
                 CodingUnit cu_ptr;
@@ -8852,8 +8848,6 @@ void simple_motion_cost_and_var(
                 const uint32_t input_origin_index = (cu_origin_y + input_picture_ptr->origin_y) * input_picture_ptr->stride_y + (cu_origin_x + input_picture_ptr->origin_x);
                 const uint32_t cu_origin_index = blk_geom->origin_x + blk_geom->origin_y * SB_STRIDE_Y;
                 curr_var = fn_ptr->vf((input_picture_ptr->buffer_y + input_origin_index), input_picture_ptr->stride_y, (prediction_ptr->buffer_y + cu_origin_index), prediction_ptr->stride_y, &curr_sse);
-                mv_col = (float)(mv_unit.mv->x >> 3);
-                mv_row = (float)(mv_unit.mv->y >> 3);
                 break;
             }
         }
@@ -8874,7 +8868,6 @@ static int simple_motion_get_best_cost_and_var(
     ModeDecisionContext *context_ptr,
     uint32_t            sb_index,
     uint32_t             blk_idx_mds,
-    PC_TREE             *pc_tree,
     unsigned int        *best_sse,
     unsigned int        *best_var,
     uint8_t              hbd_mode_decision) {
@@ -8890,7 +8883,7 @@ static int simple_motion_get_best_cost_and_var(
       context_ptr->sb_origin_x,
       context_ptr->sb_origin_y,
       blk_idx_mds,
-      pc_tree,best_sse, best_var,
+      best_sse, best_var,
       &best_ref,
       hbd_mode_decision);
   return best_ref;
@@ -8919,9 +8912,6 @@ static AOM_INLINE void simple_motion_search_prune_part_features(
     float *features,
     int features_to_get,
     uint8_t hbd_mode_decision) {
-    const int w_mi = mi_size_wide[bsize];
-    const int h_mi = mi_size_high[bsize];
-    assert(mi_size_wide[bsize] == mi_size_high[bsize]);
     uint8_t bitdepth = hbd_mode_decision ? EB_10BIT : EB_8BIT;
     SequenceControlSet* sequence_control_set_ptr = ((SequenceControlSet*)(picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr));
     uint32_t sb_size = sequence_control_set_ptr->seq_header.sb_size;
@@ -8935,7 +8925,6 @@ static AOM_INLINE void simple_motion_search_prune_part_features(
             context_ptr,
             sb_index,
             block_index,
-            pc_tree,
             &pc_tree->sms_none_feat[0],
             &pc_tree->sms_none_feat[1],
             hbd_mode_decision);
@@ -8956,7 +8945,6 @@ static AOM_INLINE void simple_motion_search_prune_part_features(
                     context_ptr,
                     sb_index,
                     child_blkidx_mds_1,
-                    sub_tree,
                     &sub_tree->sms_none_feat[0],
                     &sub_tree->sms_none_feat[1],
                     hbd_mode_decision);
@@ -8974,7 +8962,6 @@ static AOM_INLINE void simple_motion_search_prune_part_features(
                     context_ptr,
                     sb_index,
                     child_blkidx_mds_2,
-                    sub_tree,
                     &sub_tree->sms_none_feat[0],
                     &sub_tree->sms_none_feat[1],
                     hbd_mode_decision);
@@ -8992,7 +8979,6 @@ static AOM_INLINE void simple_motion_search_prune_part_features(
                     context_ptr,
                     sb_index,
                     child_blkidx_mds_3,
-                    sub_tree,
                     &sub_tree->sms_none_feat[0],
                     &sub_tree->sms_none_feat[1],
                     hbd_mode_decision);
@@ -9010,7 +8996,6 @@ static AOM_INLINE void simple_motion_search_prune_part_features(
                     context_ptr,
                     sb_index,
                     child_blkidx_mds_4,
-                    sub_tree,
                     &sub_tree->sms_none_feat[0],
                     &sub_tree->sms_none_feat[1],
                     hbd_mode_decision);
@@ -9022,7 +9007,6 @@ static AOM_INLINE void simple_motion_search_prune_part_features(
     if (!pc_tree->sms_rect_valid && features_to_get & FEATURE_SMS_RECT_FLAG) {
         // Horz subblock
         if (context_ptr->blk_geom->sq_size > 4) {
-            int r_idx = 0;
             uint32_t rec_blkidx_mds_1 = context_ptr->blk_geom->blkidx_mds + 1;
             simple_motion_get_best_cost_and_var(
                 sequence_control_set_ptr,
@@ -9031,11 +9015,9 @@ static AOM_INLINE void simple_motion_search_prune_part_features(
                 context_ptr,
                 sb_index,
                 rec_blkidx_mds_1,
-                pc_tree,
                 &pc_tree->sms_rect_feat[0],
                 &pc_tree->sms_rect_feat[1],
                 hbd_mode_decision);
-            r_idx = 1;
             uint32_t rec_blkidx_mds_2 = context_ptr->blk_geom->blkidx_mds + 2;
             simple_motion_get_best_cost_and_var(
                 sequence_control_set_ptr,
@@ -9044,12 +9026,10 @@ static AOM_INLINE void simple_motion_search_prune_part_features(
                 context_ptr,
                 sb_index,
                 rec_blkidx_mds_2,
-                pc_tree,
                 &pc_tree->sms_rect_feat[2],
                 &pc_tree->sms_rect_feat[3],
                 hbd_mode_decision);
             // Vert subblock
-            r_idx = 0;
             uint32_t rec_blkidx_mds_3 = context_ptr->blk_geom->blkidx_mds + 3;
             simple_motion_get_best_cost_and_var(
                 sequence_control_set_ptr,
@@ -9058,7 +9038,6 @@ static AOM_INLINE void simple_motion_search_prune_part_features(
                 context_ptr,
                 sb_index,
                 rec_blkidx_mds_3,
-                pc_tree,
                 &pc_tree->sms_rect_feat[4],
                 &pc_tree->sms_rect_feat[5],
                 hbd_mode_decision);
@@ -9070,7 +9049,6 @@ static AOM_INLINE void simple_motion_search_prune_part_features(
                 context_ptr,
                 sb_index,
                 rec_blkidx_mds_4,
-                pc_tree,
                 &pc_tree->sms_rect_feat[6],
                 &pc_tree->sms_rect_feat[7],
                 hbd_mode_decision);
