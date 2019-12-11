@@ -8682,7 +8682,497 @@ static EB_AV1_INTER_PREDICTION_FUNC_PTR   av1_inter_prediction_function_table[2]
     av1_inter_prediction,
     av1_inter_prediction_hbd
 };
+#if SIMPLE_MOTION_SEARCH_SPLIT
+static INLINE void init_simple_motion_search_mvs(uint32_t max_block_cnt, PC_TREE *pc_tree) {
+    uint32_t blk_idx = 0;
+    do {
+        const BlockGeom * blk_geom = get_blk_geom_mds(blk_idx);
+        av1_zero(pc_tree->sms_none_feat);
+        av1_zero(pc_tree->sms_rect_feat);
+        av1_zero(pc_tree->sms_none_valid);
+        av1_zero(pc_tree->sms_rect_valid);
+        if (blk_geom->bsize >= BLOCK_8X8) {
+            av1_zero(pc_tree->split[0]->sms_none_feat);
+            av1_zero(pc_tree->split[0]->sms_rect_feat);
+            av1_zero(pc_tree->split[0]->sms_none_valid);
+            av1_zero(pc_tree->split[0]->sms_rect_valid);
+            av1_zero(pc_tree->split[1]->sms_none_feat);
+            av1_zero(pc_tree->split[1]->sms_rect_feat);
+            av1_zero(pc_tree->split[1]->sms_none_valid);
+            av1_zero(pc_tree->split[1]->sms_rect_valid);
+            av1_zero(pc_tree->split[2]->sms_none_feat);
+            av1_zero(pc_tree->split[2]->sms_rect_feat);
+            av1_zero(pc_tree->split[2]->sms_none_valid);
+            av1_zero(pc_tree->split[2]->sms_rect_valid);
+            av1_zero(pc_tree->split[3]->sms_none_feat);
+            av1_zero(pc_tree->split[3]->sms_rect_feat);
+            av1_zero(pc_tree->split[3]->sms_none_valid);
+            av1_zero(pc_tree->split[3]->sms_rect_valid);
+        }
+        ++blk_idx;
+    } while (blk_idx < max_block_cnt);
+}
+static INLINE int convert_bsize_to_idx(BlockSize bsize) {
+  switch (bsize) {
+    case BLOCK_128X128: return 0;
+    case BLOCK_64X64: return 1;
+    case BLOCK_32X32: return 2;
+    case BLOCK_16X16: return 3;
+    case BLOCK_8X8: return 4;
+    default: assert(0 && "Invalid bsize"); return -1;
+  }
+}
+int8_t av1_ref_frame_type(const MvReferenceFrame *const rf);
+//Perform simple motion compensation using the best motion from ME
+void simple_motion_cost_and_var(
+    SequenceControlSet  *sequence_control_set_ptr,
+    PictureControlSet   *picture_control_set_ptr,
+    EbPictureBufferDesc *input_picture_ptr,
+    ModeDecisionContext *context_ptr,
+    uint32_t sb_index,
+    uint32_t sb_origin_x,
+    uint32_t sb_origin_y,
+    uint32_t blk_idx_mds,
+    PC_TREE *pc_tree,
+    unsigned int *best_sse,
+    unsigned int *best_var,
+    int *best_ref,
+    uint8_t hbd_mode_decision) {
+    const Av1Common *cm = picture_control_set_ptr->parent_pcs_ptr->av1_cm;//&cpi->common;
+    // Otherwise do loop through the reference frames and find the one with the
+    // minimum SSE
+    uint32_t me_sb_addr;
+    uint32_t geom_offset_x = 0;
+    uint32_t geom_offset_y = 0;
+    float mv_col;
+    float mv_row;
+    uint8_t ref = 0;
+    unsigned int curr_sse = 0;
+    unsigned int curr_var = 0;
+    const BlockGeom *blk_geom = get_blk_geom_mds(blk_idx_mds);
+    const uint32_t cu_origin_x = sb_origin_x + blk_geom->origin_x;
+    const uint32_t cu_origin_y = sb_origin_y + blk_geom->origin_y;
+    if (cu_origin_x > sequence_control_set_ptr->max_input_luma_width || cu_origin_y > sequence_control_set_ptr->max_input_luma_height) {
+        // If the whole block is outside of the image, set sse to 0.
+        *best_sse = 0;
+        *best_var = 0;
+    }
+    else {
+        if (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128) {
+            uint32_t me_sb_size = sequence_control_set_ptr->sb_sz;
+            uint32_t me_pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / me_sb_size;
+            uint32_t me_sb_x = (cu_origin_x / me_sb_size);
+            uint32_t me_sb_y = (cu_origin_y / me_sb_size);
+            me_sb_addr = me_sb_x + me_sb_y * me_pic_width_in_sb;
+            geom_offset_x = (me_sb_x & 0x1) * me_sb_size;
+            geom_offset_y = (me_sb_y & 0x1) * me_sb_size;
+        }
+        else
+            me_sb_addr = sb_index;
+        uint32_t me_block_offset = (blk_geom->bwidth == 4 || blk_geom->bheight == 4 || blk_geom->bwidth == 128 || blk_geom->bheight == 128) ? 0 :
+            get_me_info_index(
+                picture_control_set_ptr->parent_pcs_ptr->max_number_of_pus_per_sb,
+                blk_geom,
+                geom_offset_x,
+                geom_offset_y);
+        const MeLcuResults *me_results = picture_control_set_ptr->parent_pcs_ptr->me_results[me_sb_addr];
+        uint8_t total_me_cnt = me_results->total_me_candidate_index[me_block_offset];
+        const MeCandidate *me_block_results = me_results->me_candidate[me_block_offset];
+        for (uint8_t me_candidate_index = 0; me_candidate_index < total_me_cnt; ++me_candidate_index) {
+            const MeCandidate *me_block_results_ptr = &me_block_results[me_candidate_index];
+            const uint8_t inter_direction = me_block_results_ptr->direction;
+            const uint8_t list0_ref_index = me_block_results_ptr->ref_idx_l0;
+            const uint8_t list1_ref_index = me_block_results_ptr->ref_idx_l1;
+            if (inter_direction == 0 && list0_ref_index == 0) {
+                ModeDecisionCandidateBuffer *candidate_buffer = &(context_ptr->candidate_buffer_ptr_array[0][0]);
+                candidate_buffer->candidate_ptr = &(context_ptr->fast_candidate_array[0]);
+                ModeDecisionCandidate *candidate_ptr = candidate_buffer->candidate_ptr;
+                EbPictureBufferDesc   *prediction_ptr = candidate_buffer->prediction_ptr;
+                const InterpFilters interp_filters = av1_make_interp_filters(EIGHTTAP_REGULAR, EIGHTTAP_REGULAR);
+                CodingUnit cu_ptr;
+                MacroBlockD av1xd;
+                cu_ptr.av1xd = &av1xd;
+                uint32_t mirow = cu_origin_y >> MI_SIZE_LOG2;
+                uint32_t micol = cu_origin_x >> MI_SIZE_LOG2;
+                cu_ptr.mds_idx = blk_idx_mds;
+                const int32_t bw = mi_size_wide[blk_geom->bwidth];
+                const int32_t bh = mi_size_high[blk_geom->bheight];
+                cu_ptr.av1xd->mb_to_top_edge = -(int32_t)((mirow * MI_SIZE) * 8);
+                cu_ptr.av1xd->mb_to_bottom_edge = ((picture_control_set_ptr->parent_pcs_ptr->av1_cm->mi_rows - bw - mirow) * MI_SIZE) * 8;
+                cu_ptr.av1xd->mb_to_left_edge = -(int32_t)((micol * MI_SIZE) * 8);
+                cu_ptr.av1xd->mb_to_right_edge = ((picture_control_set_ptr->parent_pcs_ptr->av1_cm->mi_cols - bh - micol) * MI_SIZE) * 8;
+                MvUnit   mv_unit;
+                mv_unit.pred_direction = UNI_PRED_LIST_0;
+                mv_unit.mv->x = me_results->me_mv_array[me_block_offset][list0_ref_index].x_mv << 1;
+                mv_unit.mv->y = me_results->me_mv_array[me_block_offset][list0_ref_index].y_mv << 1;
+                MvReferenceFrame rf[2];
+                rf[0] = svt_get_ref_frame_type(me_block_results_ptr->ref0_list, list0_ref_index);
+                rf[1] = svt_get_ref_frame_type(me_block_results_ptr->ref1_list, list1_ref_index);
+                ref = rf[0];
+                if (ref > 7)
+                    printf("Error in av1_simple_motion_search(): Invalid reference type\n");
+                // NM To be done:Test backward and bipred prediction
+                av1_inter_prediction_function_table[hbd_mode_decision](
+                    picture_control_set_ptr,
+                    interp_filters,
+                    &cu_ptr,
+                    ref,//ref_frame_type,
+                    &mv_unit,
+                    0,//use_intrabc,
+#if OBMC_FLAG
+                    SIMPLE_TRANSLATION,
+                    0,
+                    0,
+#endif
+                    1,//compound_idx not used
+                    NULL,// interinter_comp not used
+#if II_COMP_FLAG
+                    NULL,
+                    NULL,
+                    NULL,
+                    NULL,
+                    0,
+                    0,
+                    0,
+                    0,
+#endif
+                    cu_origin_x,
+                    cu_origin_y,
+                    blk_geom->bwidth,
+                    blk_geom->bheight,
+                    !hbd_mode_decision ? ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[0][0]->object_ptr)->reference_picture : ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[0][0]->object_ptr)->reference_picture16bit, // use last = [List 0][Ref Index 0]
+                    NULL,//ref_pic_list1,
+                    prediction_ptr,
+                    blk_geom->origin_x,
+                    blk_geom->origin_y,
+                    0,//perform_chroma,
+                    hbd_mode_decision ? EB_10BIT : EB_8BIT);
 
+                const aom_variance_fn_ptr_t *fn_ptr = &mefn_ptr[blk_geom->bsize];
+                const uint32_t input_origin_index = (cu_origin_y + input_picture_ptr->origin_y) * input_picture_ptr->stride_y + (cu_origin_x + input_picture_ptr->origin_x);
+                const uint32_t cu_origin_index = blk_geom->origin_x + blk_geom->origin_y * SB_STRIDE_Y;
+                curr_var = fn_ptr->vf((input_picture_ptr->buffer_y + input_origin_index), input_picture_ptr->stride_y, (prediction_ptr->buffer_y + cu_origin_index), prediction_ptr->stride_y, &curr_sse);
+                mv_col = (float)(mv_unit.mv->x >> 3);
+                mv_row = (float)(mv_unit.mv->y >> 3);
+                break;
+            }
+        }
+
+        if (curr_sse < *best_sse) {
+            *best_sse = curr_sse;
+            *best_var = curr_var;
+            *best_ref = ref;
+        }
+    }
+}
+// Stores the best sse and var in best_sse,
+// best_var, respectively. 
+static int simple_motion_get_best_cost_and_var(
+    SequenceControlSet  *sequence_control_set_ptr,
+    PictureControlSet   *picture_control_set_ptr,
+    EbPictureBufferDesc *input_picture_ptr,
+    ModeDecisionContext *context_ptr,
+    uint32_t            sb_index,
+    uint32_t             blk_idx_mds,
+    PC_TREE             *pc_tree, 
+    unsigned int        *best_sse,
+    unsigned int        *best_var,
+    uint8_t              hbd_mode_decision) {
+
+  int best_ref = -1;
+  *best_sse = INT_MAX;
+  simple_motion_cost_and_var(
+      sequence_control_set_ptr,
+      picture_control_set_ptr,
+      input_picture_ptr,
+      context_ptr,
+      sb_index,
+      context_ptr->sb_origin_x,
+      context_ptr->sb_origin_y,
+      blk_idx_mds,
+      pc_tree,best_sse, best_var,
+      &best_ref,
+      hbd_mode_decision);
+  return best_ref;
+}
+
+// Collects features using simple_motion_search and store them in features. The
+// features are also cached in PC_TREE. By default, the features collected are
+// the sse and var from the subblocks flagged by features_to_get. Furthermore,
+// if features is not NULL, then 7 more features are appended to the end of
+// features:
+//  - log(1.0 + dc_q ** 2)
+//  - whether an above macroblock exists
+//  - width of above macroblock
+//  - height of above macroblock
+//  - whether a left marcoblock exists
+//  - width of left macroblock
+//  - height of left macroblock
+static AOM_INLINE void simple_motion_search_prune_part_features(
+    PictureControlSet  *picture_control_set_ptr,
+    EbPictureBufferDesc *input_picture_ptr,
+    ModeDecisionContext *context_ptr,
+    uint32_t sb_index,
+    PC_TREE *pc_tree,
+    BlockSize bsize,
+    uint32_t block_index,
+    float *features,
+    int features_to_get,
+    uint8_t hbd_mode_decision) {
+    const int w_mi = mi_size_wide[bsize];
+    const int h_mi = mi_size_high[bsize];
+    assert(mi_size_wide[bsize] == mi_size_high[bsize]);
+    uint8_t bitdepth = hbd_mode_decision ? EB_10BIT : EB_8BIT;
+    SequenceControlSet* sequence_control_set_ptr = ((SequenceControlSet*)(picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr));
+    uint32_t sb_size = sequence_control_set_ptr->seq_header.sb_size;
+    const BlockGeom  *blk_geom = get_blk_geom_mds(block_index);
+    // Doing whole block first to update the mv
+    if (!pc_tree->sms_none_valid && features_to_get & FEATURE_SMS_NONE_FLAG) {
+        simple_motion_get_best_cost_and_var(
+            sequence_control_set_ptr,
+            picture_control_set_ptr,
+            input_picture_ptr,
+            context_ptr,
+            sb_index,
+            block_index,
+            pc_tree,
+            &pc_tree->sms_none_feat[0],
+            &pc_tree->sms_none_feat[1],
+            hbd_mode_decision);
+        pc_tree->sms_none_valid = 1;
+    }
+    // Split subblocks
+    if (features_to_get & FEATURE_SMS_SPLIT_FLAG) {
+        if (blk_geom->sq_size > 4) {
+            //Set first child to be considered
+            int r_idx = 0;
+            PC_TREE *sub_tree = pc_tree->split[r_idx];
+            uint32_t child_blkidx_mds_1 = blk_geom->blkidx_mds + d1_depth_offset[sb_size == BLOCK_128X128][blk_geom->depth];
+            if (!sub_tree->sms_none_valid) {
+                simple_motion_get_best_cost_and_var(
+                    sequence_control_set_ptr,
+                    picture_control_set_ptr,
+                    input_picture_ptr,
+                    context_ptr,
+                    sb_index,
+                    child_blkidx_mds_1,
+                    sub_tree,
+                    &sub_tree->sms_none_feat[0],
+                    &sub_tree->sms_none_feat[1],
+                    hbd_mode_decision);
+                sub_tree->sms_none_valid = 1;
+            }
+            //Set second child to be considered
+            r_idx = 1;
+            sub_tree = pc_tree->split[r_idx];
+            uint32_t child_blkidx_mds_2 = child_blkidx_mds_1 + ns_depth_offset[sb_size == BLOCK_128X128][blk_geom->depth + 1];
+            if (!sub_tree->sms_none_valid) {
+                simple_motion_get_best_cost_and_var(
+                    sequence_control_set_ptr,
+                    picture_control_set_ptr,
+                    input_picture_ptr,
+                    context_ptr,
+                    sb_index,
+                    child_blkidx_mds_2,
+                    sub_tree,
+                    &sub_tree->sms_none_feat[0],
+                    &sub_tree->sms_none_feat[1],
+                    hbd_mode_decision);
+                sub_tree->sms_none_valid = 1;
+            }
+            //Set third child to be considered
+            r_idx = 2;
+            sub_tree = pc_tree->split[r_idx];
+            uint32_t child_blkidx_mds_3 = child_blkidx_mds_2 + ns_depth_offset[sb_size == BLOCK_128X128][blk_geom->depth + 1];
+            if (!sub_tree->sms_none_valid) {
+                simple_motion_get_best_cost_and_var(
+                    sequence_control_set_ptr,
+                    picture_control_set_ptr,
+                    input_picture_ptr,
+                    context_ptr,
+                    sb_index,
+                    child_blkidx_mds_3,
+                    sub_tree,
+                    &sub_tree->sms_none_feat[0],
+                    &sub_tree->sms_none_feat[1],
+                    hbd_mode_decision);
+                sub_tree->sms_none_valid = 1;
+            }
+            //Set third child to be considered
+            r_idx = 3;
+            sub_tree = pc_tree->split[r_idx];
+            uint32_t child_blkidx_mds_4 = child_blkidx_mds_3 + ns_depth_offset[sb_size == BLOCK_128X128][blk_geom->depth + 1];
+            if (!sub_tree->sms_none_valid) {
+                simple_motion_get_best_cost_and_var(
+                    sequence_control_set_ptr,
+                    picture_control_set_ptr,
+                    input_picture_ptr,
+                    context_ptr,
+                    sb_index,
+                    child_blkidx_mds_4,
+                    sub_tree,
+                    &sub_tree->sms_none_feat[0],
+                    &sub_tree->sms_none_feat[1],
+                    hbd_mode_decision);
+                sub_tree->sms_none_valid = 1;
+            }
+        }
+    }
+    // Rectangular subblocks
+    if (!pc_tree->sms_rect_valid && features_to_get & FEATURE_SMS_RECT_FLAG) {
+        // Horz subblock
+        if (context_ptr->blk_geom->sq_size > 4) {
+            int r_idx = 0;
+            uint32_t rec_blkidx_mds_1 = context_ptr->blk_geom->blkidx_mds + 1;
+            simple_motion_get_best_cost_and_var(
+                sequence_control_set_ptr,
+                picture_control_set_ptr,
+                input_picture_ptr,
+                context_ptr,
+                sb_index,
+                rec_blkidx_mds_1,
+                pc_tree,
+                &pc_tree->sms_rect_feat[0],
+                &pc_tree->sms_rect_feat[1],
+                hbd_mode_decision);
+            r_idx = 1;
+            uint32_t rec_blkidx_mds_2 = context_ptr->blk_geom->blkidx_mds + 2;
+            simple_motion_get_best_cost_and_var(
+                sequence_control_set_ptr,
+                picture_control_set_ptr,
+                input_picture_ptr,
+                context_ptr,
+                sb_index,
+                rec_blkidx_mds_2,
+                pc_tree,
+                &pc_tree->sms_rect_feat[2],
+                &pc_tree->sms_rect_feat[3],
+                hbd_mode_decision);
+            // Vert subblock
+            r_idx = 0;
+            uint32_t rec_blkidx_mds_3 = context_ptr->blk_geom->blkidx_mds + 3;
+            simple_motion_get_best_cost_and_var(
+                sequence_control_set_ptr,
+                picture_control_set_ptr,
+                input_picture_ptr,
+                context_ptr,
+                sb_index,
+                rec_blkidx_mds_3,
+                pc_tree,
+                &pc_tree->sms_rect_feat[4],
+                &pc_tree->sms_rect_feat[5],
+                hbd_mode_decision);
+            uint32_t rec_blkidx_mds_4 = context_ptr->blk_geom->blkidx_mds + 4;
+            simple_motion_get_best_cost_and_var(
+                sequence_control_set_ptr,
+                picture_control_set_ptr,
+                input_picture_ptr,
+                context_ptr,
+                sb_index,
+                rec_blkidx_mds_4,
+                pc_tree,
+                &pc_tree->sms_rect_feat[6],
+                &pc_tree->sms_rect_feat[7],
+                hbd_mode_decision);
+            pc_tree->sms_rect_valid = 1;
+        }
+    }
+    if (!features) return;
+    aom_clear_system_state();
+    int f_idx = 0;
+    if (features_to_get & FEATURE_SMS_NONE_FLAG) {
+        for (int sub_idx = 0; sub_idx < 2; sub_idx++) {
+            features[f_idx++] = logf(1.0f + pc_tree->sms_none_feat[sub_idx]);
+        }
+    }
+    if (features_to_get & FEATURE_SMS_SPLIT_FLAG) {
+        for (int sub_idx = 0; sub_idx < 4; sub_idx++) {
+            PC_TREE *sub_tree = pc_tree->split[sub_idx];
+            features[f_idx++] = logf(1.0f + sub_tree->sms_none_feat[0]);
+            features[f_idx++] = logf(1.0f + sub_tree->sms_none_feat[1]);
+        }
+    }
+    if (features_to_get & FEATURE_SMS_RECT_FLAG) {
+        for (int sub_idx = 0; sub_idx < 8; sub_idx++) {
+            features[f_idx++] = logf(1.0f + pc_tree->sms_rect_feat[sub_idx]);
+        }
+    }
+    // Q_INDEX
+    uint32_t qIndex = picture_control_set_ptr->parent_pcs_ptr->frm_hdr.quantization_params.base_q_idx;
+    const int dc_q = eb_av1_dc_quant_QTX(qIndex, 0, bitdepth) >> (bitdepth - 8);
+    features[f_idx++] = logf(1.0f + (float)(dc_q * dc_q) / 256.0f);
+    // Neighbor stuff
+    const MacroBlockD *xd = context_ptr->cu_ptr->av1xd;
+    const int has_above = !!xd->above_mbmi;
+    const int has_left = !!xd->left_mbmi;
+    const BlockSize above_bsize = has_above ? xd->above_mbmi->block_mi.sb_type : bsize;
+    const BlockSize left_bsize = has_left ? xd->left_mbmi->block_mi.sb_type : bsize;
+    features[f_idx++] = (float)has_above;
+    features[f_idx++] = (float)mi_size_wide_log2[above_bsize];
+    features[f_idx++] = (float)mi_size_high_log2[above_bsize];
+    features[f_idx++] = (float)has_left;
+    features[f_idx++] = (float)mi_size_wide_log2[left_bsize];
+    features[f_idx++] = (float)mi_size_high_log2[left_bsize];
+}
+void av1_simple_motion_search_based_split(SequenceControlSet  *sequence_control_set_ptr,
+    PictureControlSet   *picture_control_set_ptr,
+    EbPictureBufferDesc *input_picture_ptr,
+    ModeDecisionContext *context_ptr,
+    uint32_t sb_index,
+    PC_TREE *pc_tree,
+    BlockSize bsize,
+    uint32_t block_index,
+    uint8_t hbd_mode_decision,
+    int *partition_none_allowed,
+    int *partition_horz_allowed,
+    int *partition_vert_allowed,
+    int *do_rectangular_split,
+    int *do_square_split) {
+    aom_clear_system_state();
+    //const AV1_COMMON *const cm = &cpi->common;
+    const int bsize_idx = convert_bsize_to_idx(bsize);
+    const int is_720p_or_larger = AOMMIN(sequence_control_set_ptr->seq_header.max_frame_width, sequence_control_set_ptr->seq_header.max_frame_height) >= 720;
+    const int is_480p_or_larger = AOMMIN(sequence_control_set_ptr->seq_header.max_frame_width, sequence_control_set_ptr->seq_header.max_frame_height) >= 480;
+    // res_idx is 0 for res < 480p, 1 for 480p, 2 for 720p+
+    const int res_idx = is_480p_or_larger + is_720p_or_larger;
+    assert(bsize_idx >= 0 && bsize_idx <= 4 &&
+        "Invalid bsize in simple_motion_search_based_split");
+    const float *ml_mean = av1_simple_motion_search_split_mean[bsize_idx];
+    const float *ml_std = av1_simple_motion_search_split_std[bsize_idx];
+    const NN_CONFIG *nn_config = av1_simple_motion_search_split_nn_config[bsize_idx];
+    const int agg = picture_control_set_ptr->parent_pcs_ptr->simple_motion_search_prune_agg;
+    const float split_only_weight = picture_control_set_ptr->parent_pcs_ptr->split_only_weight;
+    const float split_only_thresh = av1_simple_motion_search_split_thresh[agg][res_idx][bsize_idx] * split_only_weight;
+    const float no_split_thresh = av1_simple_motion_search_no_split_thresh[agg][res_idx][bsize_idx];
+    float features[FEATURE_SIZE_SMS_SPLIT] = { 0.0f };
+    simple_motion_search_prune_part_features(
+        picture_control_set_ptr,
+        input_picture_ptr,
+        context_ptr,
+        sb_index,
+        pc_tree,
+        bsize,
+        block_index,
+        features,
+        FEATURE_SMS_SPLIT_MODEL_FLAG, //int features_to_get,
+        hbd_mode_decision);
+    for (int idx = 0; idx < FEATURE_SIZE_SMS_SPLIT; idx++) {
+        features[idx] = (features[idx] - ml_mean[idx]) / ml_std[idx];
+    }
+    float score = 0.0f;
+    av1_nn_predict(features, nn_config, 1, &score);
+    aom_clear_system_state();
+    if (score > split_only_thresh) {
+        *partition_none_allowed = 0;
+        *partition_horz_allowed = 0;
+        *partition_vert_allowed = 0;
+        *do_rectangular_split = 0;
+    }
+    if (picture_control_set_ptr->parent_pcs_ptr->simple_motion_search_split >= 2 && score < no_split_thresh) {
+        *do_square_split = 0;
+    }
+}
+#endif
 void av1_get_max_min_partition_features(
     SequenceControlSet  *sequence_control_set_ptr,
     PictureControlSet   *picture_control_set_ptr,
@@ -9073,7 +9563,17 @@ EB_EXTERN EbErrorType mode_decision_sb(
     uint64_t h_cost;
     uint64_t v_cost;
 #endif
-
+#if SIMPLE_MOTION_SEARCH_SPLIT
+    int partition_none_allowed = 1;
+    int partition_horz_allowed = 1;
+    int partition_vert_allowed = 1;
+    int do_rectangular_split = 1;
+    int do_square_split = 1;
+    const int mib_size_log2 = sequence_control_set_ptr->seq_header.sb_size_log2;
+    PC_TREE* const pc_root = &context_ptr->pc_root[mib_size_log2 - MIN_MIB_SIZE_LOG2];
+    if (picture_control_set_ptr->parent_pcs_ptr->simple_motion_search_split)
+        init_simple_motion_search_mvs(sequence_control_set_ptr->max_block_cnt,pc_root);
+#endif
     uint32_t blk_idx_mds = 0;
     uint32_t  d1_blocks_accumlated = 0;
     int skip_next_nsq = 0;
@@ -9268,8 +9768,15 @@ EB_EXTERN EbErrorType mode_decision_sb(
 
 #if AUTO_MAX_PARTITION
             EbBool auto_max_partition_block_skip = (context_ptr->blk_geom->bwidth > block_size_wide[max_bsize] || context_ptr->blk_geom->bheight > block_size_high[max_bsize]) && (mdcResultTbPtr->leaf_data_array[cuIdx].split_flag == EB_TRUE);
-
+#if SIMPLE_MOTION_SEARCH_SPLIT
+            uint8_t allow_block = context_ptr->blk_geom->shape == PART_H ? partition_horz_allowed:
+                context_ptr->blk_geom->shape == PART_V ? partition_vert_allowed:
+                context_ptr->blk_geom->shape == PART_HA || context_ptr->blk_geom->shape == PART_HA || context_ptr->blk_geom->shape == PART_VA  || context_ptr->blk_geom->shape == PART_VA  ? do_rectangular_split:
+                do_square_split;  
+            if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[cu_ptr->mds_idx] && !skip_next_nsq && !skip_next_sq && !auto_max_partition_block_skip && allow_block) {
+#else
             if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[cu_ptr->mds_idx] && !skip_next_nsq && !skip_next_sq && !auto_max_partition_block_skip) {
+#endif
 #else
             if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[cu_ptr->mds_idx] && !skip_next_nsq && !skip_next_sq) {
 #endif
@@ -9285,7 +9792,11 @@ EB_EXTERN EbErrorType mode_decision_sb(
 
             }
 #if AUTO_MAX_PARTITION
+#if SIMPLE_MOTION_SEARCH_SPLIT
+            else if (auto_max_partition_block_skip || !allow_block) {
+#else
             else if (auto_max_partition_block_skip) {
+#endif
                 if (context_ptr->blk_geom->shape != PART_N)
                     context_ptr->md_local_cu_unit[context_ptr->cu_ptr->mds_idx].cost = (MAX_MODE_COST >> 4);
                 else
@@ -9409,6 +9920,31 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #if ADD_SUPPORT_TO_SKIP_PART_N
             d1_block_itr = 0;
             d1_first_block = 1;
+#endif
+#if SIMPLE_MOTION_SEARCH_SPLIT
+            do_square_split = 1;
+            partition_none_allowed = 1;
+            partition_horz_allowed = 1;
+            partition_vert_allowed = 1;
+            do_rectangular_split = 1;
+            if (picture_control_set_ptr->parent_pcs_ptr->simple_motion_search_split) {
+                const BlockGeom  *sq_blk_geom = get_blk_geom_mds(blk_geom->sqi_mds);
+                if (sq_blk_geom->bwidth > 4 && sq_blk_geom->bheight > 4)
+                    av1_simple_motion_search_based_split(sequence_control_set_ptr,
+                        picture_control_set_ptr,
+                        input_picture_ptr,
+                        context_ptr,
+                        lcuAddr,
+                        pc_root,
+                        sq_blk_geom->bsize,
+                        sq_blk_geom->sqi_mds,
+                        context_ptr->hbd_mode_decision,
+                        &partition_none_allowed,
+                        &partition_horz_allowed,
+                        &partition_vert_allowed,
+                        &do_rectangular_split,
+                        &do_square_split);
+            }
 #endif
             context_ptr->coeff_based_skip_atb = picture_control_set_ptr->parent_pcs_ptr->coeff_based_skip_atb &&
                 context_ptr->md_local_cu_unit[lastCuIndex_mds].avail_blk_flag &&

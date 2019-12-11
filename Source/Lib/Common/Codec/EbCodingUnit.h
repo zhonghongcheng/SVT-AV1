@@ -583,7 +583,23 @@ extern "C" {
 #endif
         TileInfo tile_info;
     } SuperBlock;
+#if SIMPLE_MOTION_SEARCH_SPLIT
+typedef struct PC_TREE {
+  struct PC_TREE *split[4];
+  // Simple motion search_features
+  unsigned int sms_none_feat[2];
+  unsigned int sms_rect_feat[8];
+  int sms_none_valid;
+  int sms_rect_valid;
+} PC_TREE;
 
+#define FEATURE_SIZE_SMS_SPLIT 17
+#define FEATURE_SMS_NONE_FLAG 1
+#define FEATURE_SMS_SPLIT_FLAG (1 << 1)
+#define FEATURE_SMS_RECT_FLAG (1 << 2)
+#define FEATURE_SMS_SPLIT_MODEL_FLAG \
+  (FEATURE_SMS_NONE_FLAG | FEATURE_SMS_SPLIT_FLAG)
+#endif
     extern EbErrorType largest_coding_unit_ctor(
         SuperBlock                  *larget_coding_unit_ptr,
         uint8_t                        sb_sz,

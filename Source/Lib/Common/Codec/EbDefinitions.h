@@ -57,7 +57,7 @@ extern "C" {
 #define AUTO_MAX_PARTITION           1 // Shortcut to skip search depths depending on motion estimation info and statistics
 
 #define LESS_RECTANGULAR_CHECK_LEVEL 1 // Shortcut to skip a/b shapes depending on SQ/H/V shape costs
-
+#define SIMPLE_MOTION_SEARCH_SPLIT   1 // Skip nsq based on the simple motion rd_cost and var
 #define INTER_INTRA_CLASS_PRUNING    1
 
 #define FIX_ALTREF                   1 // Address ALTREF mismatch between rtime-m0-test and master: fixed actual_future_pics derivation, shut padding of the central frame, fixed end past frame index prior to window shrinking

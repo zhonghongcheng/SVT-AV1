@@ -14339,6 +14339,13 @@ extern "C" {
 #if GM_OPT
         uint8_t                                gm_level;
 #endif
+#if SIMPLE_MOTION_SEARCH_SPLIT
+        // The aggresiveness of pruning with simple_motion_search.
+        // Currently 0 is the lowest, and 2 the highest.
+        int simple_motion_search_prune_agg;
+        int simple_motion_search_split;
+        float split_only_weight;
+#endif
     } PictureParentControlSet;
 
     typedef struct PictureControlSetInitData

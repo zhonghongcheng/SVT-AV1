@@ -86,7 +86,15 @@ static void mode_decision_context_dctor(EbPtr p)
             EB_FREE_ARRAY(obj->md_cu_arr_nsq[0].neigh_top_recon[0]);
         }
     }
-
+#if SIMPLE_MOTION_SEARCH_SPLIT
+    for (uint64_t i = 0; i < BLOCK_MAX_COUNT_SB_128; i++) {
+        EB_FREE_ARRAY(obj->pc_root[i].split[0]);
+        EB_FREE_ARRAY(obj->pc_root[i].split[1]);
+        EB_FREE_ARRAY(obj->pc_root[i].split[2]);
+        EB_FREE_ARRAY(obj->pc_root[i].split[3]);
+    }
+    EB_FREE_ARRAY(obj->pc_root);
+#endif
     EB_FREE_ARRAY(obj->md_local_cu_unit);
     EB_FREE_ARRAY(obj->md_cu_arr_nsq);
     EB_FREE_ARRAY(obj->md_ep_pipe_sb);
@@ -144,7 +152,15 @@ EbErrorType mode_decision_context_ctor(
     EB_MALLOC_ARRAY(context_ptr->md_local_cu_unit, BLOCK_MAX_COUNT_SB_128);
     EB_MALLOC_ARRAY(context_ptr->md_cu_arr_nsq, BLOCK_MAX_COUNT_SB_128);
     EB_MALLOC_ARRAY(context_ptr->md_ep_pipe_sb, BLOCK_MAX_COUNT_SB_128);
-
+#if SIMPLE_MOTION_SEARCH_SPLIT
+    EB_MALLOC_ARRAY(context_ptr->pc_root, BLOCK_MAX_COUNT_SB_128);
+    for (uint64_t i = 0; i < BLOCK_MAX_COUNT_SB_128; i++) {
+        EB_MALLOC_ARRAY(context_ptr->pc_root[i].split[0], 1);
+        EB_MALLOC_ARRAY(context_ptr->pc_root[i].split[1], 1);
+        EB_MALLOC_ARRAY(context_ptr->pc_root[i].split[2], 1);
+        EB_MALLOC_ARRAY(context_ptr->pc_root[i].split[3], 1);
+    }
+#endif
     // Fast Candidate Array
     EB_MALLOC_ARRAY(context_ptr->fast_candidate_array, MODE_DECISION_CANDIDATE_MAX_COUNT);
 
