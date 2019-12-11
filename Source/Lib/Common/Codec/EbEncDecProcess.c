@@ -2090,12 +2090,15 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
 
 
 #if AUTO_MAX_PARTITION
+#if MULTI_PASS_PD
     // signal for enabling shortcut to skip search depths
     if (context_ptr->pd_pass == PD_PASS_0)
        context_ptr->enable_auto_max_partition = 0;
     else if (context_ptr->pd_pass == PD_PASS_1)
         context_ptr->enable_auto_max_partition = 0;
-    else if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->static_config.encoder_bit_depth > EB_8BIT)
+    else 
+#endif
+        if (MR_MODE || picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->static_config.encoder_bit_depth > EB_8BIT)
         context_ptr->enable_auto_max_partition = 0;
     else
         context_ptr->enable_auto_max_partition = sequence_control_set_ptr->static_config.enable_auto_max_partition;

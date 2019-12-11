@@ -33,18 +33,18 @@
 extern "C" {
 #endif
 
-#define MULTI_PASS_PD                1 // Multi-Pass Partitioning Depth (Multi-Pass PD) performs multiple PD stages for the same SB towards 1 final Partitioning Structure. As we go from PDn to PDn + 1, the prediction accuracy of the MD feature(s) increases while the number of block(s) decreases
+#define MULTI_PASS_PD                0 //1 // Multi-Pass Partitioning Depth (Multi-Pass PD) performs multiple PD stages for the same SB towards 1 final Partitioning Structure. As we go from PDn to PDn + 1, the prediction accuracy of the MD feature(s) increases while the number of block(s) decreases
 
 #define HBD_CLEAN_UP                 1
 
 #define IFS_8BIT_MD                  1
 
-#define COMP_HBD                     1
-#define INTERINTRA_HBD               1
-#define ATB_HBD                      1
+#define COMP_HBD                     0 //1
+#define INTERINTRA_HBD               0 //1
+#define ATB_HBD                      0 //1
 #define ATB_FIX                      1
 
-#define M0_OPT                       1
+#define M0_OPT                       0 //1
 /* Note: shutting the macro PAL_SUP will not give SS as pcs->palette_mode = 0
    rate estimation is changed for I frame + enabled sc for P (rate estimation
    is a result changed for P frames)

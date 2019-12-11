@@ -1806,8 +1806,8 @@ void setup_rtcd_internal(CPU_FLAGS flags)
 
     SET_AVX2_AVX512(eb_av1_convolve_2d_sr,
                     eb_av1_convolve_2d_sr_c,
-                    eb_av1_convolve_2d_sr_avx2,
-                    eb_av1_convolve_2d_sr_avx512);
+                    eb_av1_convolve_2d_sr_c, //eb_av1_convolve_2d_sr_avx2,
+                    eb_av1_convolve_2d_sr_c);// eb_av1_convolve_2d_sr_avx512);
     SET_AVX2_AVX512(eb_av1_convolve_2d_copy_sr,
                     eb_av1_convolve_2d_copy_sr_c,
                     eb_av1_convolve_2d_copy_sr_avx2,
