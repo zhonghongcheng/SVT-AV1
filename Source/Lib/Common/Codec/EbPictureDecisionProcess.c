@@ -1419,7 +1419,7 @@ EbErrorType signal_derivation_multi_processes_oq(
         // PARTITION_SPLIT only. If set to 2, the model also attempts to prune
         // PARTITION_SPLIT.
         picture_control_set_ptr->simple_motion_search_split = picture_control_set_ptr->slice_type == I_SLICE ? 0 : 0;
-        // Added weight for the used threshold to be tuned for different encoder modes 
+        // Added weight for the used threshold to be tuned for different encoder modes
         picture_control_set_ptr->split_only_weight = 2.0;
         // The aggresiveness of pruning with simple_motion_search.
         // Currently 0 is the lowest, and 2 the highest.

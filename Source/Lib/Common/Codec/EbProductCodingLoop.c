@@ -8866,7 +8866,7 @@ void simple_motion_cost_and_var(
     }
 }
 // Stores the best sse and var in best_sse,
-// best_var, respectively. 
+// best_var, respectively.
 static int simple_motion_get_best_cost_and_var(
     SequenceControlSet  *sequence_control_set_ptr,
     PictureControlSet   *picture_control_set_ptr,
@@ -8874,7 +8874,7 @@ static int simple_motion_get_best_cost_and_var(
     ModeDecisionContext *context_ptr,
     uint32_t            sb_index,
     uint32_t             blk_idx_mds,
-    PC_TREE             *pc_tree, 
+    PC_TREE             *pc_tree,
     unsigned int        *best_sse,
     unsigned int        *best_var,
     uint8_t              hbd_mode_decision) {
@@ -9427,7 +9427,21 @@ BlockSize av1_predict_max_partition(
     return (BlockSize)((result + 2) * 3);
 }
 #endif
-
+#if SIMPLE_MOTION_SEARCH_SPLIT
+uint8_t gest_allowed_block_flag(PART shape,
+    uint8_t partition_horz_allowed,
+    uint8_t partition_vert_allowed,
+    uint8_t do_rectangular_split,
+    uint8_t do_square_split) {
+    uint8_t allow_block = shape == PART_H ? partition_horz_allowed :
+        shape == PART_V ? partition_vert_allowed :
+        shape == PART_HA || shape == PART_HA ||
+        shape == PART_VA || shape == PART_VA ?
+        do_rectangular_split :
+        do_square_split;
+    return allow_block;
+}
+#endif
 EB_EXTERN EbErrorType mode_decision_sb(
     SequenceControlSet                *sequence_control_set_ptr,
     PictureControlSet                 *picture_control_set_ptr,
@@ -9769,10 +9783,11 @@ EB_EXTERN EbErrorType mode_decision_sb(
 #if AUTO_MAX_PARTITION
             EbBool auto_max_partition_block_skip = (context_ptr->blk_geom->bwidth > block_size_wide[max_bsize] || context_ptr->blk_geom->bheight > block_size_high[max_bsize]) && (mdcResultTbPtr->leaf_data_array[cuIdx].split_flag == EB_TRUE);
 #if SIMPLE_MOTION_SEARCH_SPLIT
-            uint8_t allow_block = context_ptr->blk_geom->shape == PART_H ? partition_horz_allowed:
-                context_ptr->blk_geom->shape == PART_V ? partition_vert_allowed:
-                context_ptr->blk_geom->shape == PART_HA || context_ptr->blk_geom->shape == PART_HA || context_ptr->blk_geom->shape == PART_VA  || context_ptr->blk_geom->shape == PART_VA  ? do_rectangular_split:
-                do_square_split;  
+            uint8_t allow_block = gest_allowed_block_flag(context_ptr->blk_geom->shape,
+                partition_horz_allowed,
+                partition_vert_allowed,
+                do_rectangular_split,
+                do_square_split);
             if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[cu_ptr->mds_idx] && !skip_next_nsq && !skip_next_sq && !auto_max_partition_block_skip && allow_block) {
 #else
             if (picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->sb_geom[lcuAddr].block_is_allowed[cu_ptr->mds_idx] && !skip_next_nsq && !skip_next_sq && !auto_max_partition_block_skip) {
