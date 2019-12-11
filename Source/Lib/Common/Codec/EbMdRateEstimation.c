@@ -509,7 +509,6 @@ void av1_estimate_coefficients_rate(
     }
 }
 #if RATE_ESTIMATION_UPDATE
-#if RATE_ESTIMATION_UPDATE
 static INLINE int av1_get_skip_mode_context(const MacroBlockD *xd) {
     const MbModeInfo *const above_mi = xd->above_mbmi;
     const MbModeInfo *const left_mi = xd->left_mbmi;
@@ -595,27 +594,6 @@ static INLINE AomCdfProb *av1_get_pred_cdf_comp_bwdref_p1(
     const int pred_context = eb_av1_get_pred_context_comp_bwdref_p1(xd);
     return xd->tile_ctx->comp_bwdref_cdf[pred_context][1];
 }
-// For the bit to signal whether the single reference is ALTREF_FRAME or
-// non-ALTREF backward reference frame, knowing that it shall be either of
-// these 2 choices.
-int32_t eb_av1_get_pred_context_single_ref_p2(const MacroBlockD *xd);
-
-// For the bit to signal whether the single reference is LAST3/GOLDEN or
-// LAST2/LAST, knowing that it shall be either of these 2 choices.
-int32_t eb_av1_get_pred_context_single_ref_p3(const MacroBlockD *xd);
-
-// For the bit to signal whether the single reference is LAST2_FRAME or
-// LAST_FRAME, knowing that it shall be either of these 2 choices.
-int32_t eb_av1_get_pred_context_single_ref_p4(const MacroBlockD *xd);
-
-// For the bit to signal whether the single reference is GOLDEN_FRAME or
-// LAST3_FRAME, knowing that it shall be either of these 2 choices.
-int32_t eb_av1_get_pred_context_single_ref_p5(const MacroBlockD *xd);
-
-// For the bit to signal whether the single reference is ALTREF2_FRAME or
-// BWDREF_FRAME, knowing that it shall be either of these 2 choices.
-int32_t eb_av1_get_pred_context_single_ref_p6(const MacroBlockD *xd);
-
 static INLINE AomCdfProb *av1_get_pred_cdf_single_ref_p1(
     const MacroBlockD *xd) {
     return xd->tile_ctx
@@ -686,20 +664,14 @@ int32_t have_newmv_in_inter_mode(PredictionMode mode);
 
 // Returns a context number for the given MB prediction signal
 static InterpFilter get_ref_filter_type(const BlockModeInfo *ref_mbmi,
-    const MacroBlockD *xd, int dir,
+    int dir,
     MvReferenceFrame ref_frame) {
-    (void)xd;
 
     return ((ref_mbmi->ref_frame[0] == ref_frame ||
         ref_mbmi->ref_frame[1] == ref_frame)
         ? av1_extract_interp_filter(ref_mbmi->interp_filters, dir & 0x01)
         : SWITCHABLE_FILTERS);
 }
-#endif
-
-
-
-
 extern int av1_allow_intrabc(const Av1Common *const cm);
 
 int av1_filter_intra_allowed(
@@ -730,7 +702,6 @@ typedef uint32_t InterpFilters;
 static INLINE InterpFilter av1_extract_interp_filter(InterpFilters filters,
     int32_t x_filter);
 
-extern INLINE int has_uni_comp_refs(const MbModeInfo *mbmi);
 /*******************************************************************************
 * The mode info data structure has a one element border above and to the
 * left of the entries corresponding to real macroblocks.
@@ -800,11 +771,11 @@ int av1_get_pred_context_switchable_interp(const MacroBlockD *xd, int dir) {
     int above_type = SWITCHABLE_FILTERS;
 
     if (xd->left_available)
-        left_type = get_ref_filter_type(&xd->mi[-1]->mbmi.block_mi, xd, dir, ref_frame);
+        left_type = get_ref_filter_type(&xd->mi[-1]->mbmi.block_mi, dir, ref_frame);
 
     if (xd->up_available)
         above_type =
-        get_ref_filter_type(&xd->mi[-xd->mi_stride]->mbmi.block_mi, xd, dir, ref_frame);
+        get_ref_filter_type(&xd->mi[-xd->mi_stride]->mbmi.block_mi, dir, ref_frame);
 
     if (left_type == above_type) {
         filter_type_ctx += left_type;
