@@ -8694,7 +8694,7 @@ BlockSize av1_predict_max_partition(
     float scores[MAX_NUM_CLASSES_MAX_MIN_PART_PRED] = { 0.0f },
         probs[MAX_NUM_CLASSES_MAX_MIN_PART_PRED] = { 0.0f };
 
-    const NN_CONFIG *nn_config = &av1_max_part_pred_nn_config;
+    const NN_CONFIG *nn_config = &automax_partition;
 
     assert(picture_control_set_ptr->sf.auto_max_partition_based_on_simple_motion != NOT_IN_USE);
 
