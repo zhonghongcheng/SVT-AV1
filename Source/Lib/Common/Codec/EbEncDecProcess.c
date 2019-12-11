@@ -2111,7 +2111,7 @@ void move_cu_data(
     CodingUnit *src_cu,
     CodingUnit *dst_cu);
 #endif
-
+#if !RATE_ESTIMATION_UPDATE
 void av1_estimate_syntax_rate___partial(
     MdRateEstimationContext        *md_rate_estimation_array,
     FRAME_CONTEXT                  *fc);
@@ -2690,21 +2690,23 @@ void* enc_dec_kernel(void *input_ptr)
                             picture_control_set_ptr->ec_ctx_array[sb_index] = picture_control_set_ptr->ec_ctx_array[sb_index - 1];
 #else
 #if RATE_ESTIMATION_UPDATE
-                        int wt_left = AVG_CDF_WEIGHT_LEFT;
-                        int wt_tr = AVG_CDF_WEIGHT_TOP_RIGHT;
-                        if (sb_origin_x == 0 && sb_origin_y == 0)
+                        // Use the latest available CDF for the current SB
+                        // Use the weighted average of left (3x) and top (1x) if available.
+                        int8_t up_available     = ((int32_t)(sb_origin_y >> MI_SIZE_LOG2) > sb_ptr->tile_info.mi_row_start);
+                        int8_t left_available   = ((int32_t)(sb_origin_x >> MI_SIZE_LOG2) > sb_ptr->tile_info.mi_col_start);
+                        if (!left_available && !up_available)
                             picture_control_set_ptr->ec_ctx_array[sb_index] = *picture_control_set_ptr->coeff_est_entropy_coder_ptr->fc;
-                        else if (sb_origin_x == 0)
+                        else if (!left_available)
                             picture_control_set_ptr->ec_ctx_array[sb_index] = picture_control_set_ptr->ec_ctx_array[sb_index - picture_width_in_sb];
-                        else if (sb_origin_y == 0)
+                        else if (!up_available)
                             picture_control_set_ptr->ec_ctx_array[sb_index] = picture_control_set_ptr->ec_ctx_array[sb_index - 1];
                         else {
                             picture_control_set_ptr->ec_ctx_array[sb_index] = picture_control_set_ptr->ec_ctx_array[sb_index - 1];
                             avg_cdf_symbols(
                                 &picture_control_set_ptr->ec_ctx_array[sb_index],
                                 &picture_control_set_ptr->ec_ctx_array[sb_index - picture_width_in_sb],
-                                wt_left,
-                                wt_tr);
+                                AVG_CDF_WEIGHT_LEFT,
+                                AVG_CDF_WEIGHT_TOP);
                         }
 #else
                         if (sb_origin_x == 0)
@@ -2714,6 +2716,7 @@ void* enc_dec_kernel(void *input_ptr)
 #endif
 #endif
 #if RATE_ESTIMATION_UPDATE
+                        // Initial Rate Estimatimation of the syntax elements
                         av1_estimate_syntax_rate(
                             &picture_control_set_ptr->rate_est_array[sb_index],
                             picture_control_set_ptr->slice_type == I_SLICE,
@@ -2740,7 +2743,6 @@ void* enc_dec_kernel(void *input_ptr)
                             context_ptr->md_context->fast_candidate_ptr_array[candidateIndex]->md_rate_estimation_ptr = &picture_control_set_ptr->rate_est_array[sb_index];
 #if RATE_ESTIMATION_UPDATE
                         context_ptr->md_context->md_rate_estimation_ptr = &picture_control_set_ptr->rate_est_array[sb_index];
-
 #endif
                     }
                     // Configure the LCU

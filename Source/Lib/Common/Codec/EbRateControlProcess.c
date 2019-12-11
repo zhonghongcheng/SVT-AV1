@@ -3065,7 +3065,6 @@ uint32_t qp_scaling_calc(
     uint32_t            temporal_layer_index,
     uint32_t            base_qp)
 {
-    // AMIR to fix
     uint32_t    scaled_qp = 0;
     int         base_qindex;
 

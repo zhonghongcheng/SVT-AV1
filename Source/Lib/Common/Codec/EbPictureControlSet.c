@@ -842,6 +842,7 @@ EbErrorType picture_control_set_ctor(
                 NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK,
             },
 #if RATE_ESTIMATION_UPDATE
+            // Encode pass paritition neighbor array
             {
                 &object_ptr->ep_partition_context_neighbor_array,
                 MAX_PICTURE_WIDTH_SIZE,

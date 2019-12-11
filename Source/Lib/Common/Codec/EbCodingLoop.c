@@ -2334,13 +2334,9 @@ EB_EXTERN void av1_encode_pass(
 #endif
 
     uint8_t allow_update_cdf = picture_control_set_ptr->update_cdf;
-
     uint32_t final_cu_itr = 0;
-
     // CU Loop
-
     uint32_t    blk_it = 0;
-
     while (blk_it < sequence_control_set_ptr->max_block_cnt) {
         CodingUnit  *cu_ptr = context_ptr->cu_ptr = &context_ptr->md_context->md_cu_arr_nsq[blk_it];
         PartitionType part = cu_ptr->part;
@@ -2351,11 +2347,12 @@ EB_EXTERN void av1_encode_pass(
 #if RATE_ESTIMATION_UPDATE
         if (picture_control_set_ptr->update_cdf) {
             cu_ptr->av1xd->tile_ctx = &picture_control_set_ptr->ec_ctx_array[tbAddr];
+            // Update the partition stats
             update_part_stats(
                 picture_control_set_ptr,
                 cu_ptr,
-                context_ptr->cu_origin_y >> MI_SIZE_LOG2,
-                context_ptr->cu_origin_x >> MI_SIZE_LOG2);
+                (sb_origin_y + blk_geom->origin_y) >> MI_SIZE_LOG2,
+                (sb_origin_x + blk_geom->origin_x)>> MI_SIZE_LOG2);
         }
 #endif
         if (part != PARTITION_SPLIT && sequence_control_set_ptr->sb_geom[tbAddr].block_is_allowed[blk_it]) {
@@ -3831,6 +3828,7 @@ EB_EXTERN void av1_encode_pass(
                         blk_geom->bheight,
                         NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
 
+                    // Update the CDFs based on the current SB
                     cu_ptr->av1xd->tile_ctx = &picture_control_set_ptr->ec_ctx_array[tbAddr];
                     update_stats(
                         picture_control_set_ptr,

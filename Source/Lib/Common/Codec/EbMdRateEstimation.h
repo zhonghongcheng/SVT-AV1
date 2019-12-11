@@ -326,7 +326,7 @@ extern "C" {
     * based on the frame CDF
     ***************************************************************************/
 extern void av1_estimate_mv_rate(
-        struct PictureControlSet     *picture_control_set_ptr,
+        struct PictureControlSet *picture_control_set_ptr,
         MdRateEstimationContext  *md_rate_estimation_array,
 #if RATE_ESTIMATION_UPDATE
         FRAME_CONTEXT            *fc);
@@ -334,8 +334,8 @@ extern void av1_estimate_mv_rate(
         NmvContext                *nmv_ctx);
 #endif
 #if RATE_ESTIMATION_UPDATE
-#define AVG_CDF_WEIGHT_LEFT 3
-#define AVG_CDF_WEIGHT_TOP_RIGHT 1
+#define AVG_CDF_WEIGHT_LEFT      3
+#define AVG_CDF_WEIGHT_TOP       1
 
 static AOM_INLINE void avg_cdf_symbol(AomCdfProb *cdf_ptr_left,
     AomCdfProb *cdf_ptr_tr, int num_cdfs,
@@ -513,17 +513,22 @@ static AOM_INLINE void avg_cdf_symbols(FRAME_CONTEXT *ctx_left,
     AVERAGE_CDF(ctx_left->cfl_alpha_cdf, ctx_tr->cfl_alpha_cdf,
         CFL_ALPHABET_SIZE);
 }
+/*******************************************************************************
+ * Updates all the syntax stats/CDF for the current block
+ ******************************************************************************/
 void update_stats(
-    struct PictureControlSet  *picture_control_set_ptr,
-    struct CodingUnit         *cu_ptr,
-    int                 mi_row,
-    int                 mi_col);
-//
+    struct PictureControlSet   *picture_control_set_ptr,
+    struct CodingUnit          *cu_ptr,
+    int                         mi_row,
+    int                         mi_col);
+/*******************************************************************************
+ * Updates the partition stats/CDF for the current block
+ ******************************************************************************/
 void update_part_stats(
-    struct PictureControlSet  *picture_control_set_ptr,
-    struct CodingUnit         *cu_ptr,
-    int                 mi_row,
-    int                 mi_col);
+    struct PictureControlSet   *picture_control_set_ptr,
+    struct CodingUnit          *cu_ptr,
+    int                         mi_row,
+    int                         mi_col);
 #endif
 #ifdef __cplusplus
 }

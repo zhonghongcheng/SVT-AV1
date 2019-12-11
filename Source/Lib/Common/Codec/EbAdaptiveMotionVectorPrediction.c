@@ -1488,7 +1488,7 @@ void update_av1_mi_map(
             {
                 miPtr[miX + miY * mi_stride].mbmi.block_mi.mode = cu_ptr->pred_mode;
                 miPtr[miX + miY * mi_stride].mbmi.block_mi.uv_mode = cu_ptr->prediction_unit_array->intra_chroma_mode;
-                if (cu_ptr->prediction_mode_flag == INTRA_MODE && cu_ptr->pred_mode == INTRA_MODE_4x4) { // AMIR to clean up
+                if (cu_ptr->prediction_mode_flag == INTRA_MODE && cu_ptr->pred_mode == INTRA_MODE_4x4) {
                     miPtr[miX + miY * mi_stride].mbmi.tx_size = 0;
                     miPtr[miX + miY * mi_stride].mbmi.block_mi.sb_type = BLOCK_4X4;
                     miPtr[miX + miY * mi_stride].mbmi.tx_depth = cu_ptr->tx_depth;
@@ -1539,7 +1539,7 @@ void update_av1_mi_map(
 #endif
             //needed for CDEF
             miPtr[miX + miY * mi_stride].mbmi.block_mi.skip = cu_ptr->block_has_coeff ? EB_FALSE : EB_TRUE;
-#if RATE_ESTIMATION_UPDATE // AMIR the other function
+#if RATE_ESTIMATION_UPDATE
             miPtr[miX + miY * mi_stride].mbmi.block_mi.skip_mode = (int8_t)cu_ptr->skip_flag;
             miPtr[miX + miY * mi_stride].mbmi.block_mi.segment_id = cu_ptr->segment_id;
             miPtr[miX + miY * mi_stride].mbmi.block_mi.seg_id_predicted = cu_ptr->seg_id_predicted;
@@ -1633,7 +1633,7 @@ void update_mi_map(
 #if PAL_SUP
             memcpy(&miPtr[miX + miY * mi_stride].mbmi.palette_mode_info, &cu_ptr->palette_info.pmi, sizeof(PaletteModeInfo));
 #endif
-#if RATE_ESTIMATION_UPDATE // AMIR the other function
+#if RATE_ESTIMATION_UPDATE
             miPtr[miX + miY * mi_stride].mbmi.block_mi.skip_mode = (int8_t)cu_ptr->skip_flag;
             miPtr[miX + miY * mi_stride].mbmi.block_mi.segment_id = cu_ptr->segment_id;
             miPtr[miX + miY * mi_stride].mbmi.block_mi.seg_id_predicted = cu_ptr->seg_id_predicted;

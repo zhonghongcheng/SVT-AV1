@@ -6755,7 +6755,7 @@ EB_EXTERN EbErrorType write_sb(
 
         cu_ptr = &tb_ptr->final_cu_arr[final_cu_index];
 
-        blk_geom = get_blk_geom_mds(cu_index); // AMIR to be replaced with /*cu_ptr->mds_idx*/
+        blk_geom = get_blk_geom_mds(cu_index);
 
         bsize = blk_geom->bsize;
         assert(bsize < BlockSizeS_ALL);
