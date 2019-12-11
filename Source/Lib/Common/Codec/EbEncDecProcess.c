@@ -2115,7 +2115,7 @@ void move_cu_data(
 void av1_estimate_syntax_rate___partial(
     MdRateEstimationContext        *md_rate_estimation_array,
     FRAME_CONTEXT                  *fc);
-
+#endif
 #if MULTI_PASS_PD
 void copy_neighbour_arrays(
     PictureControlSet   *picture_control_set_ptr,
