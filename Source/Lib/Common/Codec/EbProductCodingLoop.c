@@ -5235,7 +5235,7 @@ void tx_partitioning_path(
             best_cost_search = cost;
             best_tx_depth = context_ptr->tx_depth;
 #if TX_SIZE_EARLY_EXIT
-            is_best_has_coeff = block_has_coeff;        
+            is_best_has_coeff = block_has_coeff;
 #endif
             y_full_distortion[DIST_CALC_RESIDUAL] = tx_y_full_distortion[DIST_CALC_RESIDUAL];
             y_full_distortion[DIST_CALC_PREDICTION] = tx_y_full_distortion[DIST_CALC_PREDICTION];
