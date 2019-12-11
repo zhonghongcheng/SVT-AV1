@@ -43,7 +43,6 @@ int32_t eb_av1_loop_restoration_corners_in_sb(Av1Common *cm, int32_t plane,
     int32_t mi_row, int32_t mi_col, BlockSize bsize,
     int32_t *rcol0, int32_t *rcol1, int32_t *rrow0,
     int32_t *rrow1, int32_t *tile_tl_idx);
-#if !RATE_ESTIMATION_UPDATE
 static INLINE int has_second_ref(const MbModeInfo *mbmi) {
     return mbmi->block_mi.ref_frame[1] > INTRA_FRAME;
 }
@@ -52,7 +51,6 @@ static INLINE int has_uni_comp_refs(const MbModeInfo *mbmi) {
     return has_second_ref(mbmi) && (!((mbmi->block_mi.ref_frame[0] >= BWDREF_FRAME) ^
         (mbmi->block_mi.ref_frame[1] >= BWDREF_FRAME)));
 }
-#endif
 int32_t is_inter_block(const BlockModeInfo *mbmi);
 #if(CHAR_BIT!=8)
 #undef CHAR_BIT
@@ -2341,7 +2339,6 @@ int32_t eb_av1_get_reference_mode_context(
     return ctx;
 }
 int av1_get_intra_inter_context(const MacroBlockD *xd);
-#if !RATE_ESTIMATION_UPDATE
 int av1_get_reference_mode_context_new(const MacroBlockD *xd);
 
 static INLINE AomCdfProb *av1_get_reference_mode_cdf(const MacroBlockD *xd) {
@@ -2410,7 +2407,7 @@ static INLINE AomCdfProb *av1_get_pred_cdf_comp_bwdref_p1(
     const int pred_context = eb_av1_get_pred_context_comp_bwdref_p1(xd);
     return xd->tile_ctx->comp_bwdref_cdf[pred_context][1];
 }
-#endif
+
 int av1_get_comp_reference_type_context_new(const MacroBlockD *xd) {
     int pred_context;
     const MbModeInfo *const above_mbmi = xd->above_mbmi;
@@ -2927,7 +2924,6 @@ int32_t eb_av1_get_pred_context_comp_bwdref_p1(const MacroBlockD *xd) {
     return get_pred_context_brf_or_arf2(xd);
 }
 
-#if !RATE_ESTIMATION_UPDATE
 // == Context functions for single ref ==
 //
 // For the bit to signal whether the single reference is a forward reference
@@ -2978,7 +2974,7 @@ static INLINE AomCdfProb *av1_get_pred_cdf_single_ref_p6(
     return xd->tile_ctx
         ->single_ref_cdf[eb_av1_get_pred_context_single_ref_p6(xd)][5];
 }
-#endif
+
 // For the bit to signal whether the single reference is ALTREF_FRAME or
 // non-ALTREF backward reference frame, knowing that it shall be either of
 // these 2 choices.
@@ -6029,7 +6025,6 @@ void write_inter_segment_id(PictureControlSet *picture_control_set_ptr,
 }
 
 #if II_COMP_FLAG
-#if !RATE_ESTIMATION_UPDATE
 static INLINE int is_interintra_allowed_bsize(const BlockSize bsize) {
     return (bsize >= BLOCK_8X8) && (bsize <= BLOCK_32X32);
 }
@@ -6046,7 +6041,6 @@ static INLINE int is_interintra_allowed(const MbModeInfo *mbmi) {
          is_interintra_allowed_mode(mbmi->block_mi.mode) &&
          is_interintra_allowed_ref(mbmi->block_mi.ref_frame);
 }
-#endif
 int is_interintra_wedge_used(BlockSize sb_type);
 #endif
 

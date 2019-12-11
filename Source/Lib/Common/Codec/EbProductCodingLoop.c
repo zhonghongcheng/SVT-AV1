@@ -48,11 +48,9 @@ EbErrorType generate_md_stage_0_cand(
 int16_t eb_av1_dc_quant_QTX(int32_t qindex, int32_t delta, AomBitDepth bit_depth);
 
 #if II_COMP_FLAG
-#if !RATE_ESTIMATION_UPDATE
 static INLINE int is_interintra_allowed_bsize(const BlockSize bsize) {
     return (bsize >= BLOCK_8X8) && (bsize <= BLOCK_32X32);
 }
-#endif
 void precompute_intra_pred_for_inter_intra(
     PictureControlSet            *picture_control_set_ptr,
     ModeDecisionContext          *context_ptr);

@@ -859,7 +859,6 @@ static INLINE int32_t have_newmv_in_inter_mode(PredictionMode mode) {
 
 extern void av1_set_ref_frame(MvReferenceFrame *rf,
     int8_t ref_frame_type);
-#if !RATE_ESTIMATION_UPDATE
 static INLINE int has_second_ref(const MbModeInfo *mbmi) {
     return mbmi->block_mi.ref_frame[1] > INTRA_FRAME;
 }
@@ -868,7 +867,6 @@ static INLINE int has_uni_comp_refs(const MbModeInfo *mbmi) {
     return has_second_ref(mbmi) && (!((mbmi->block_mi.ref_frame[0] >= BWDREF_FRAME) ^
         (mbmi->block_mi.ref_frame[1] >= BWDREF_FRAME)));
 }
-#endif
 // This function encodes the reference frame
 uint64_t EstimateRefFramesNumBits(
     PictureControlSet                    *picture_control_set_ptr,
