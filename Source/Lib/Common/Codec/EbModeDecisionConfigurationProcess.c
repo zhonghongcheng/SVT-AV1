@@ -2701,6 +2701,7 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
 
 #endif
 #endif
+     picture_control_set_ptr->hbd_mode_decision = sequence_control_set_ptr->static_config.enable_hbd_mode_decision;
 #if PIC_SWITCH_NREF
             if (!picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
                 picture_control_set_ptr->hbd_mode_decision = 0;
