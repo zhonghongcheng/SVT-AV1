@@ -1413,7 +1413,7 @@ EbErrorType signal_derivation_multi_processes_oq(
         picture_control_set_ptr->gm_level = GM_FULL;
 #endif
 #if TX_SIZE_EARLY_EXIT
-        //Exit tx size search when no coef is acheived.
+        //Exit TX size search when all coefficients are zero
         // 0: OFF
         // 1: ON
         picture_control_set_ptr->tx_size_early_exit = 1;
