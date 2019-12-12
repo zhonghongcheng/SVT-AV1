@@ -5143,11 +5143,12 @@ void tx_partitioning_path(
     // Transform Depth Loop
     for (context_ptr->tx_depth = 0; context_ptr->tx_depth <= end_tx_depth; context_ptr->tx_depth++) {
 #if TX_SIZE_EARLY_EXIT
-        if(picture_control_set_ptr->parent_pcs_ptr->tx_size_early_exit)
-        if (best_tx_depth != 1 && context_ptr->tx_depth == 2)
-            continue;
-        if (!is_best_has_coeff)
-            continue;
+        if (picture_control_set_ptr->parent_pcs_ptr->tx_size_early_exit) {
+            if (best_tx_depth != 1 && context_ptr->tx_depth == 2)
+                continue;
+            if (!is_best_has_coeff)
+                continue;
+        }
 #endif
         ModeDecisionCandidateBuffer *tx_candidate_buffer = (context_ptr->tx_depth == 0) ? candidate_buffer : context_ptr->scratch_candidate_buffer;
 
