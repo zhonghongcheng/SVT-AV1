@@ -730,7 +730,7 @@ void* resource_coordination_kernel(void *input_ptr)
 #endif
 #endif
 
-#if M1_ENABLE_INTERINTRA_COMPOUND
+#if M2_ENABLE_INTERINTRA_COMPOUND
         sequence_control_set_ptr->seq_header.enable_interintra_compound =  0;
 #endif
 #if FILTER_INTRA_FLAG

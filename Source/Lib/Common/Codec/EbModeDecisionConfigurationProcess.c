@@ -2612,7 +2612,7 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
 #endif
         (sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER) ? 1 : 0;
 
-#if M1_ALLOW_HIGH_PRECISION_MV
+#if M2_ALLOW_HIGH_PRECISION_MV
     frm_hdr->allow_high_precision_mv = 0;
 #endif
 #endif
@@ -2641,6 +2641,12 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
         enable_wm = EB_FALSE;
     else
         enable_wm = (picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0 || picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? EB_TRUE : EB_FALSE;
+#endif
+#if M2_ENABLE_WM
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        enable_wm = EB_FALSE;
+    else
+        enable_wm = (picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0) ? EB_TRUE : EB_FALSE;
 #endif
 #if !FIX_WM_SETTINGS
     enable_wm = picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index > 0 ? EB_FALSE : enable_wm;

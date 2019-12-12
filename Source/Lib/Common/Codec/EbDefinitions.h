@@ -62,15 +62,20 @@ extern "C" {
 #define M1_PIC_DEPTH_MODE                         1
 #define M1_FULL_PEL_REF_WINDOW                    1
 #endif
+
 //M2 TO M1
 #if  ENABLE_M2 || ENABLE_M3
-#define M1_MD_STAGE_2_COUNT                       1
-#define M1_PRUNE_REF_FRAME_FOR_REC_PARTITIONS     1
-#define M1_ENABLE_INTERINTRA_COMPOUND             1
-#define M1_ALLOW_HIGH_PRECISION_MV                1
-#define M1_EDGE_BASED_SKIP_ANGLE_INTRA            1
-#define M1_CDEF_FILTER_MODE                       1
+// These 6 settings have been adopted in M1, but not M2
+#define M2_MD_STAGE_2_COUNT                       1
+#define M2_PRUNE_REF_FRAME_FOR_REC_PARTITIONS     1
+#define M2_ENABLE_INTERINTRA_COMPOUND             1
+#define M2_ALLOW_HIGH_PRECISION_MV                1
+#define M2_EDGE_BASED_SKIP_ANGLE_INTRA            1
+#define M2_CDEF_FILTER_MODE                       1
 
+#define M2_ENABLE_WM                              1
+#define M2_MD_STAGE_2_COUNT_TH_S                  1
+#define M2_NSQ_SEARCH_LEVEL                       1
 #define M2_NX4_4XN_PARENT_MV_INJECTION            1
 #define M2_PIC_DEPTH_MODE                         1
 #define M2_INTRA_PRED_MODE                        1

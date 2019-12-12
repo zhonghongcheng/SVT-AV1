@@ -1047,6 +1047,26 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
             picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_OFF;
 #endif
+#if M2_NSQ_SEARCH_LEVEL
+        if (picture_control_set_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_0 ||
+            picture_control_set_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_1 ||
+            picture_control_set_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_2 ||
+            picture_control_set_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_3) {
+
+            picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL6;
+        }
+        else if (sc_content_detected)
+            if (picture_control_set_ptr->is_used_as_reference_flag)
+                picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL5;
+            else
+                picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL2;
+        else
+            if (picture_control_set_ptr->is_used_as_reference_flag)
+                picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL3;
+            else
+                picture_control_set_ptr->nsq_search_level = NSQ_SEARCH_LEVEL1;
+
+#endif
 
     if (picture_control_set_ptr->nsq_search_level > NSQ_SEARCH_OFF)
         assert(sequence_control_set_ptr->nsq_present == 1 && "use nsq_present 1");
@@ -1252,7 +1272,7 @@ EbErrorType signal_derivation_multi_processes_oq(
     else
         picture_control_set_ptr->cdef_filter_mode = 0;
 
-#if M1_CDEF_FILTER_MODE
+#if M2_CDEF_FILTER_MODE
     if (sequence_control_set_ptr->seq_header.enable_cdef && frm_hdr->allow_intrabc == 0) {
         if (sc_content_detected)
                 picture_control_set_ptr->cdef_filter_mode = 4;
