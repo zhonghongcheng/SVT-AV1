@@ -512,6 +512,9 @@ extern "C" {
 #if PAL_SUP
        PaletteInfo                          palette_info;
 #endif
+#if RANK_NSQ
+       uint8_t                       pd1_block_rank;
+#endif
     } CodingUnit;
 
         typedef struct OisCandidate

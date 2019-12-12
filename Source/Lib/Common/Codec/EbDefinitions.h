@@ -224,6 +224,12 @@ enum {
 #else
 #define NSQ_TAB_SIZE                                    6
 #endif
+#define RANK_NSQ                               1
+#if RANK_NSQ
+#define SKIP_BLOCK_TH                          4
+#define ADJUST_RANK_TH                         20
+#define ADJUST_RANK_STEP                       6
+#endif
 #endif
 
 #define AUTO_MODE                                 -1

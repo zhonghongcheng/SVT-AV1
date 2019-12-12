@@ -1059,6 +1059,10 @@ void init_sq_nsq_block(
             context_ptr->md_cu_arr_nsq[blk_idx].split_flag = EB_TRUE;
             context_ptr->md_cu_arr_nsq[blk_idx].part = PARTITION_SPLIT;
             context_ptr->md_local_cu_unit[blk_idx].tested_cu_flag = EB_FALSE;
+#if RANK_NSQ
+            if(context_ptr->pd_pass <= PD_PASS_1)
+                context_ptr->md_cu_arr_nsq[blk_idx].pd1_block_rank = 0;
+#endif
         }
         ++blk_idx;
     } while (blk_idx < sequence_control_set_ptr->max_block_cnt);
@@ -6746,6 +6750,10 @@ EbBool allowed_ns_cu(
 #if COMBINE_MDC_NSQ_TABLE
     uint8_t                            mdc_depth_level,
 #endif
+#if RANK_NSQ
+    uint8_t                             pd1_block_rank,
+    uint8_t                             pic_type,
+#endif
     EbBool                             is_nsq_table_used,
     uint8_t                            nsq_max_shapes_md,
     ModeDecisionContext              *context_ptr,
@@ -6788,6 +6796,15 @@ EbBool allowed_ns_cu(
             }
         }
     }
+#if RANK_NSQ
+    if (pic_type != I_SLICE) {
+        if (context_ptr->blk_geom->shape != PART_N && context_ptr->pd_pass == PD_PASS_2) {
+            ret = 0;
+            if (pd1_block_rank < SKIP_BLOCK_TH)
+                ret = 1;
+        }
+    }
+#endif
 #endif
     return ret;
 }
@@ -8027,6 +8044,10 @@ void md_encode_block(
         picture_control_set_ptr->parent_pcs_ptr->mdc_depth_level,
 #endif
 #endif
+#if RANK_NSQ
+       cu_ptr->pd1_block_rank,
+       picture_control_set_ptr->slice_type,
+#endif
         is_nsq_table_used, picture_control_set_ptr->parent_pcs_ptr->nsq_max_shapes_md, context_ptr, is_complete_sb))
     {
 
@@ -9086,6 +9107,12 @@ EB_EXTERN EbErrorType mode_decision_sb(
         MAX_CU_COST, MAX_CU_COST,MAX_CU_COST,MAX_CU_COST,MAX_CU_COST };
     PART nsq_shape_table[NUMBER_OF_SHAPES] = { PART_N, PART_H, PART_V, PART_HA, PART_HB,
         PART_VA, PART_VB, PART_H4, PART_V4, PART_S };
+#if RANK_NSQ
+    uint32_t start_idx = 0;
+    uint32_t end_idx = 0;
+    int8_t nsq_cost_valid[NUMBER_OF_SHAPES] = { 0 };
+    uint64_t rd_cost[NUMBER_OF_SHAPES] = { 0 };
+#endif
 #endif
     do {
         skip_sub_blocks = 0;
@@ -9282,6 +9309,9 @@ EB_EXTERN EbErrorType mode_decision_sb(
                     &skip_sub_blocks,
                     lcuAddr,
                     bestcandidate_buffers);
+#if RANK_NSQ
+                nsq_cost_valid[context_ptr->blk_geom->shape] = 1;
+#endif
 
             }
 #if AUTO_MAX_PARTITION
@@ -9353,7 +9383,10 @@ EB_EXTERN EbErrorType mode_decision_sb(
         if (context_ptr->sq_weight != (uint32_t)~0 && blk_geom->bsize > BLOCK_8X8)
             update_skip_next_nsq_for_a_b_shapes(context_ptr, &sq_cost, &h_cost, &v_cost, &skip_next_nsq);
 #endif
-
+#if RANK_NSQ
+        if(skip_next_nsq || skip_next_sq)
+            nsq_cost_valid[context_ptr->blk_geom->shape] = 0;
+#endif
         if (blk_geom->shape != PART_N) {
             if (blk_geom->nsi + 1 < blk_geom->totns)
                 md_update_all_neighbour_arrays(
@@ -9394,6 +9427,53 @@ EB_EXTERN EbErrorType mode_decision_sb(
                     }
                 }
                 depth_cost[sequence_control_set_ptr->static_config.super_block_size == 128 ? context_ptr->blk_geom->depth : context_ptr->blk_geom->depth + 1] += nsq_cost[nsq_shape_table[0]];
+#if RANK_NSQ
+                if (context_ptr->pd_pass == PD_PASS_1) {
+                    end_idx = blk_idx_mds + 1;
+                    start_idx = end_idx - d1_blocks_accumlated;
+                    uint64_t worst_valid_nsq_cost = 0;
+                    // Determine the worst cost for the processed NSQ
+                    for (uint8_t nsq_idx = 0; nsq_idx < NUMBER_OF_SHAPES; nsq_idx++) 
+                        if (nsq_cost_valid[nsq_idx]) 
+                            if (nsq_cost[nsq_idx] > worst_valid_nsq_cost) 
+                                worst_valid_nsq_cost = nsq_cost[nsq_idx];
+                    // Update NSQ cost for not valid NSQ
+                    for (uint8_t nsq_idx = 0; nsq_idx < NUMBER_OF_SHAPES; nsq_idx++) {
+                        if (nsq_cost_valid[nsq_idx] == 0)
+                            rd_cost[nsq_idx] = worst_valid_nsq_cost;
+                        else
+                            rd_cost[nsq_idx] = nsq_cost[nsq_idx];
+                    }
+                    for (uint32_t block_idx = start_idx; block_idx < end_idx; block_idx++) {
+                        const BlockGeom * nsq_blk_geom = get_blk_geom_mds(block_idx);
+                        uint8_t block_rank = 0;
+                        for (uint8_t nsq_idx = 0; nsq_idx < NUMBER_OF_SHAPES; nsq_idx++)
+                            if (nsq_blk_geom->shape == nsq_shape_table[nsq_idx])
+                                block_rank = nsq_idx;
+                        context_ptr->md_cu_arr_nsq[block_idx].pd1_block_rank = block_rank;
+                        if(nsq_blk_geom->shape == PART_N)
+                           context_ptr->md_cu_arr_nsq[block_idx].pd1_block_rank = 0;
+                        int64_t dist = (int64_t)rd_cost[nsq_blk_geom->shape] - (int64_t)rd_cost[nsq_shape_table[0]];
+                        uint64_t abs_dist = ABS(dist);
+                        uint64_t MAX_DIST = MAX_MODE_COST; 
+                        uint64_t dist_percentage = rd_cost[nsq_shape_table[0]] != 0 ? ((abs_dist * 100) / rd_cost[nsq_shape_table[0]]) : 0;   
+                        if (dist_percentage < ADJUST_RANK_TH) {
+                            int8_t adjusted_rank = (int8_t)context_ptr->md_cu_arr_nsq[block_idx].pd1_block_rank - (int8_t)ADJUST_RANK_STEP;
+                            context_ptr->md_cu_arr_nsq[block_idx].pd1_block_rank = MAX(0, adjusted_rank);
+                        }
+                        //else {
+                        //    printf("%d\n", dist_percentage);
+                        //}
+                    }
+                    //Reset nsq table
+                    for (int sh = 0; sh < NUMBER_OF_SHAPES; sh++) {
+                        nsq_shape_table[sh] = (PART)sh;
+                        nsq_cost_valid[sh] = 0;
+                        nsq_cost[sh] = MAX_CU_COST;
+                    }
+                    start_idx = end_idx;
+                }
+#endif
             }
 #endif
             uint32_t  lastCuIndex_mds = d2_inter_depth_block_decision(
