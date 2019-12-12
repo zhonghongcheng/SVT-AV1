@@ -14343,7 +14343,9 @@ extern "C" {
         // The aggresiveness of pruning with simple_motion_search.
         // Currently 0 is the lowest, and 2 the highest.
         int simple_motion_search_prune_agg;
+        // Signal to control the enabling and disabling of the feature
         int simple_motion_search_split;
+        // Weight used to tune the feature for a better speed/qaulity trade-offs
         float split_only_weight;
 #endif
     } PictureParentControlSet;

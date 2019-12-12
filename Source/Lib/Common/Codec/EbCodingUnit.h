@@ -585,12 +585,17 @@ extern "C" {
     } SuperBlock;
 #if SIMPLE_MOTION_SEARCH_SPLIT
 typedef struct PC_TREE {
-  struct PC_TREE *split[4];
-  // Simple motion search_features
-  unsigned int sms_none_feat[2];
-  unsigned int sms_rect_feat[8];
-  int sms_none_valid;
-  int sms_rect_valid;
+    // Pc tree structure for the 4 children blocks
+    struct PC_TREE *split[4];
+    // Simple motion search_features
+    // sse and var for square partitions
+    unsigned int sms_none_feat[2];
+    // Sse and var for rectangular partitions
+    unsigned int sms_rect_feat[8];
+    // Validity signal for square partitions
+    int sms_none_valid;
+    // Validity signal for rectangular partitions
+    int sms_rect_valid;
 } PC_TREE;
 
 #define FEATURE_SIZE_SMS_SPLIT 17
