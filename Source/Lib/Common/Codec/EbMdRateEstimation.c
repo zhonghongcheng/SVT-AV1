@@ -960,7 +960,6 @@ static AOM_INLINE void sum_intra_stats(
     const int           mi_row,
     const int           mi_col) {
 
-    const AV1_COMMON *const cm = picture_control_set_ptr->parent_pcs_ptr->av1_cm;
     MacroBlockD *xd = cu_ptr->av1xd;
     const MbModeInfo *const mbmi = &xd->mi[0]->mbmi;
     FRAME_CONTEXT *fc = xd->tile_ctx;
@@ -1273,13 +1272,6 @@ void update_stats(
                 IntMv ref_mv;
                 for (int ref = 0; ref < 1 + has_second_ref(mbmi); ++ref) {
                     ref_mv = cu_ptr->predmv[ref];
-                    MV mv;
-                    mv.row = cu_ptr->prediction_unit_array[0].mv[ref].y;
-                    mv.col = cu_ptr->prediction_unit_array[0].mv[ref].x;
-                    if (cu_ptr->prediction_unit_array[0].inter_pred_direction_index == UNI_PRED_LIST_1){
-                        mv.row = cu_ptr->prediction_unit_array[0].mv[1].y;
-                        mv.col = cu_ptr->prediction_unit_array[0].mv[1].x;
-                    }
                     av1_update_mv_stats(&mbmi->block_mi.mv[ref].as_mv, &ref_mv.as_mv, &fc->nmvc,
                         allow_hp);
                 }
