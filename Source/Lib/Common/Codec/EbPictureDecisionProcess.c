@@ -1588,6 +1588,10 @@ EbErrorType signal_derivation_multi_processes_oq(
         else
             picture_control_set_ptr->coeff_based_skip_atb = 1;
 
+#if M1_COEFF_BASED_SKIP_ATB
+        picture_control_set_ptr->coeff_based_skip_atb = 1;
+#endif
+
         // Set Wedge mode      Settings
         // 0                 FULL: Full search
         // 1                 Fast: If two predictors are very similar, skip wedge compound mode search

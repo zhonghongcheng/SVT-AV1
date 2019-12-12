@@ -2640,7 +2640,7 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         enable_wm = EB_FALSE;
     else
-        enable_wm = (picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0) ? EB_TRUE : EB_FALSE;
+        enable_wm = (picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0 || picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ? EB_TRUE : EB_FALSE;
 #endif
 #if !FIX_WM_SETTINGS
     enable_wm = picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index > 0 ? EB_FALSE : enable_wm;

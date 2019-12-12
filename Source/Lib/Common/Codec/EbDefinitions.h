@@ -43,6 +43,9 @@ extern "C" {
 
 // M0 TO M1
 #if ENABLE_M1 || ENABLE_M2 || ENABLE_M3
+#define M1_CHROMA_LEVEL                           1
+#define M1_ENABLE_WM                              1
+#define M1_COEFF_BASED_SKIP_ATB                   1
 #define M1_ENABLE_HME_FLAG                        1
 #define M1_ME_HME_SEARCH_AREA                     1
 #define M1_NEW_NEAREST_NEAR_COMB_INJECTION        1
@@ -63,7 +66,6 @@ extern "C" {
 #if  ENABLE_M2 || ENABLE_M3
 #define M1_MD_STAGE_2_COUNT                       1
 #define M1_PRUNE_REF_FRAME_FOR_REC_PARTITIONS     1
-#define M1_ENABLE_WM                              1
 #define M1_ENABLE_INTERINTRA_COMPOUND             1
 #define M1_ALLOW_HIGH_PRECISION_MV                1
 #define M1_EDGE_BASED_SKIP_ANGLE_INTRA            1
