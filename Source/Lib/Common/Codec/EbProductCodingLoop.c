@@ -9456,8 +9456,9 @@ EB_EXTERN EbErrorType mode_decision_sb(
                         int64_t dist = (int64_t)rd_cost[nsq_blk_geom->shape] - (int64_t)rd_cost[nsq_shape_table[0]];
                         uint64_t abs_dist = ABS(dist);
                         uint64_t MAX_DIST = MAX_MODE_COST; 
-                        uint64_t dist_percentage = rd_cost[nsq_shape_table[0]] != 0 ? ((abs_dist * 100) / rd_cost[nsq_shape_table[0]]) : 0;   
-                        if (dist_percentage < ADJUST_RANK_TH) {
+                        uint64_t dist_percentage = rd_cost[nsq_shape_table[0]] != 0 ? ((abs_dist * 100) / rd_cost[nsq_shape_table[0]]) : 0; 
+                        uint8_t has_coeff = context_ptr->md_cu_arr_nsq[block_idx].block_has_coeff;
+                        if (dist_percentage < ADJUST_RANK_TH || has_coeff == 0) {
                             int8_t adjusted_rank = (int8_t)context_ptr->md_cu_arr_nsq[block_idx].pd1_block_rank - (int8_t)ADJUST_RANK_STEP;
                             context_ptr->md_cu_arr_nsq[block_idx].pd1_block_rank = MAX(0, adjusted_rank);
                         }
