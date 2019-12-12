@@ -1032,6 +1032,20 @@ static bool ref_mv_idx_early_breakout(
                 }
             }
         }
+    }else if (inter_direction == BI_PRED) {
+        if ((picture_control_set_ptr->parent_pcs_ptr->reduce_inter_modes > 1) && ref_mv_idx > 0) {
+            MvReferenceFrame rf[2];
+            rf[0] = svt_get_ref_frame_type(list_idx0, ref_idx0);
+            rf[1] = svt_get_ref_frame_type(list_idx1, ref_idx1);
+            MvReferenceFrame ref_frame_type = av1_ref_frame_type(rf);
+            if (rf[0] == LAST2_FRAME || rf[0] == LAST3_FRAME || rf[1] == ALTREF2_FRAME ) {
+                const int has_nearmv = have_nearmv_in_inter_mode(pred_mode) ? 1 : 0;
+                int32_t weight = context_ptr->md_local_cu_unit[context_ptr->blk_geom->blkidx_mds].ed_ref_mv_stack[ref_frame_type][ref_mv_idx + has_nearmv].weight;
+                if (weight < REF_CAT_LEVEL) {
+                    return true;
+                }
+            }
+        }
     }
     return false;
 }
