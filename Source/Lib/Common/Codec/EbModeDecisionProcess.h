@@ -368,6 +368,9 @@ extern "C" {
     // Signal to control initial and final pass PD setting(s)
     PD_PASS pd_pass;
 #endif
+#if ENHANCED_M0_SETTINGS
+    EbBool coeff_based_nsq_cand_reduction;
+#endif
     } ModeDecisionContext;
 
     typedef void(*EbAv1LambdaAssignFunc)(

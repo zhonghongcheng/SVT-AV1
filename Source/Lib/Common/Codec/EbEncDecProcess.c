@@ -1267,9 +1267,13 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
                 CHROMA_MODE_3;
     else
 #if PRESETS_TUNE
-
+#if ENHANCED_M0_SETTINGS
+        if (picture_control_set_ptr->enc_mode == ENC_M0)
+            context_ptr->chroma_level = CHROMA_MODE_0;
+#else
         if (MR_MODE)
             context_ptr->chroma_level = CHROMA_MODE_0;
+#endif
         else
             if (picture_control_set_ptr->enc_mode <= ENC_M5 && picture_control_set_ptr->temporal_layer_index == 0)
 
@@ -2201,8 +2205,17 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->sq_weight = sequence_control_set_ptr->static_config.sq_weight;
 
 #endif
+#if ENHANCED_M0_SETTINGS
+    // Set coeff_based_nsq_cand_reduction
+    if (context_ptr->pd_pass == PD_PASS_0)
+        context_ptr->coeff_based_nsq_cand_reduction = EB_FALSE;
+    else if (context_ptr->pd_pass == PD_PASS_1)
+        context_ptr->coeff_based_nsq_cand_reduction = EB_FALSE;
 
+    else
+        context_ptr->coeff_based_nsq_cand_reduction = EB_TRUE;
 
+#endif
     return return_error;
 }
 #if! PAL_SUP
