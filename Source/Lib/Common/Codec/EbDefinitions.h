@@ -44,7 +44,6 @@ extern "C" {
 #define M1_PREDICTIVE_ME_LEVEL                    1
 #define M1_MD_STAGE_1_COUNT_TH_S                  1
 #define M1_MD_STAGE_1_COUNT_TH_C                  1
-#define M1_MD_STAGE_2_COUNT_TH_S                  1
 #define M1_HALF_QUARTER_PEL_MODE                  1
 #define M1_GLOBAL_MV_INJECTION                    1
 #define M1_INTER_INTER_WEDGE_VARIANCE_TH          1

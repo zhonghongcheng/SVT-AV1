@@ -2157,19 +2157,6 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(
         context_ptr->md_stage_2_cand_prune_th = (uint64_t)~0;
     else 
         context_ptr->md_stage_2_cand_prune_th = sequence_control_set_ptr->input_resolution <= INPUT_SIZE_1080i_RANGE ? 5 : 3;
-
-#elif M1_MD_STAGE_2_COUNT_TH_S
-   // TH_S (for single candidate removal per class)
-    // Remove candidate if deviation to the best is higher than TH_S
-
-    if (context_ptr->pd_pass == PD_PASS_0)
-        context_ptr->md_stage_2_cand_prune_th = (uint64_t)~0;
-    else if (context_ptr->pd_pass == PD_PASS_1)
-        context_ptr->md_stage_2_cand_prune_th = sequence_control_set_ptr->input_resolution <= INPUT_SIZE_1080i_RANGE ? 5 : 3;
-    else if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
-        context_ptr->md_stage_2_cand_prune_th = (uint64_t)~0;
-    else 
-        context_ptr->md_stage_2_cand_prune_th = sequence_control_set_ptr->input_resolution <= INPUT_SIZE_1080i_RANGE ? 15 : 12;
 #endif
     // TH_C (for class removal)
     // Remove class if deviation to the best is higher than TH_C
