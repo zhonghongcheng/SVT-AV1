@@ -698,7 +698,6 @@ extern void av1_set_ref_frame(
     MvReferenceFrame *rf,
     int8_t ref_frame_type);
 
-typedef uint32_t InterpFilters;
 static INLINE InterpFilter av1_extract_interp_filter(InterpFilters filters,
     int32_t x_filter);
 
