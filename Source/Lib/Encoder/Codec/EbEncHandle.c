@@ -3702,9 +3702,10 @@ static EbErrorType allocate_frame_buffer(
         inputBuffer->p_buffer = (uint8_t*)buf;
         if (is16bit && config->compressed_ten_bit_format == 1) {
             //pack 4 2bit pixels into 1Byte
-            EB_MALLOC_ALIGNED_ARRAY(buf->buffer_bit_inc_y, (input_picture_buffer_desc_init_data.max_width / 4)*(input_picture_buffer_desc_init_data.max_height));
-            EB_MALLOC_ALIGNED_ARRAY(buf->buffer_bit_inc_cb, (input_picture_buffer_desc_init_data.max_width / 8)*(input_picture_buffer_desc_init_data.max_height / 2));
-            EB_MALLOC_ALIGNED_ARRAY(buf->buffer_bit_inc_cr, (input_picture_buffer_desc_init_data.max_width / 8)*(input_picture_buffer_desc_init_data.max_height / 2));
+            EB_MALLOC_ALIGNED_ARRAY(buf->buffer_bit_inc_y, (input_picture_buffer_desc_init_data.max_width / 4)*(input_picture_buffer_desc_init_data.max_height)
+                                    + (input_picture_buffer_desc_init_data.max_width / 8)*(input_picture_buffer_desc_init_data.max_height / 2) *2);
+            buf->buffer_bit_inc_cb = buf->buffer_bit_inc_y + (input_picture_buffer_desc_init_data.max_width / 4)*(input_picture_buffer_desc_init_data.max_height);
+            buf->buffer_bit_inc_cr = buf->buffer_bit_inc_cb + (input_picture_buffer_desc_init_data.max_width / 8)*(input_picture_buffer_desc_init_data.max_height / 2);
         }
     }
 
@@ -3739,10 +3740,13 @@ void EbInputBufferHeaderDestoryer(    EbPtr p)
 {
     EbBufferHeaderType *obj = (EbBufferHeaderType*)p;
     EbPictureBufferDesc* buf = (EbPictureBufferDesc*)obj->p_buffer;
-    EB_FREE_ALIGNED_ARRAY(buf->buffer_bit_inc_y);
-    EB_FREE_ALIGNED_ARRAY(buf->buffer_bit_inc_cb);
-    EB_FREE_ALIGNED_ARRAY(buf->buffer_bit_inc_cr);
-
+    if (buf->buffer_enable_mask & PICTURE_BUFFER_DESC_FULL_MASK) {
+        EB_FREE_ALIGNED_ARRAY(buf->buffer_bit_inc_y);
+    } else {
+        EB_FREE_ALIGNED_ARRAY(buf->buffer_bit_inc_y);
+        EB_FREE_ALIGNED_ARRAY(buf->buffer_bit_inc_cb);
+        EB_FREE_ALIGNED_ARRAY(buf->buffer_bit_inc_cr);
+    }
     EB_DELETE(buf);
     EB_FREE(obj);
 }

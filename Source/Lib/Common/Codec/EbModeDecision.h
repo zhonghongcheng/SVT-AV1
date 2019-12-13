@@ -239,6 +239,8 @@ extern "C" {
         // Candidate Ptr
         ModeDecisionCandidate                *candidate_ptr;
 
+        // for memory free only
+        EbByte                               eb_buffer_ptr;
         // Video Buffers
         EbPictureBufferDesc                  *prediction_ptr;
         EbPictureBufferDesc                  *prediction_ptr_temp;
