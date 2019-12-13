@@ -3828,7 +3828,7 @@ EB_EXTERN void av1_encode_pass(
                         blk_geom->bheight,
                         NEIGHBOR_ARRAY_UNIT_TOP_AND_LEFT_ONLY_MASK);
 
-                    // Update the CDFs based on the current SB
+                    // Update the CDFs based on the current block
                     cu_ptr->av1xd->tile_ctx = &picture_control_set_ptr->ec_ctx_array[tbAddr];
                     update_stats(
                         picture_control_set_ptr,

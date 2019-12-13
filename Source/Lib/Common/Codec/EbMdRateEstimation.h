@@ -386,11 +386,10 @@ static AOM_INLINE void avg_nmv(NmvContext *nmv_left, NmvContext *nmv_tr,
     }
 }
 
-// In case of row-based multi-threading of encoder, since we always
-// keep a top - right sync, we can average the top - right SB's CDFs and
+// Since we always to and left SBs are completed, we can average the top SB's CDFs and
 // the left SB's CDFs and use the same for current SB's encoding to
 // improve the performance. This function facilitates the averaging
-// of CDF and used only when row-mt is enabled in encoder.
+// of CDF.
 static AOM_INLINE void avg_cdf_symbols(FRAME_CONTEXT *ctx_left,
     FRAME_CONTEXT *ctx_tr, int wt_left,
     int wt_tr) {
