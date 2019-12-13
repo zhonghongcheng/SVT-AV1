@@ -976,9 +976,11 @@ int32_t  sum_residual8bit_avx2_intrin(
 
         sum = _mm_hadd_epi16(sum, zer);
         sum = _mm_hadd_epi16(sum, zer);
-        sum = _mm_hadd_epi16(sum, zer);
+        // the sum is on 16bit, for negative values, we need to extend the sign to
+        // the next 16bit, so that the next extraction to int32_t is fine.
+        sum = _mm_cvtepi16_epi32(sum);
+        sum = _mm_hadd_epi32(sum, zer);
 
-        sum = _mm_cvtepi16_epi32(sum); //the sum is on 16bit, for negative values, we need to extend the sign to the next 16bit, so that the next extraction to int32_t is fine.
         sumBlock = _mm_cvtsi128_si32(sum);
 
         return sumBlock;
@@ -1073,6 +1075,81 @@ int32_t  sum_residual8bit_avx2_intrin(
         return sumBlock;
     }
 
+    else if (size == 64) {//AVX2
+        // no more than 11 bit valid residual data is fine, when valid residual data is over 11bit,  the following code need to be rewritten.
+        int16_t* inPtrTemp = in_ptr;
+        __m256i sum4, sum5, sum6, sum7;
+
+        const __m256i ones = _mm256_set1_epi16(1);
+        const __m256i zeros = _mm256_setzero_si256();
+
+        sum0 = _mm256_add_epi16(_mm256_loadu_si256((__m256i*)(inPtrTemp)), _mm256_loadu_si256((__m256i*)(inPtrTemp + 16)));
+        sum1 = _mm256_add_epi16(_mm256_loadu_si256((__m256i*)(inPtrTemp + 32)), _mm256_loadu_si256((__m256i*)(inPtrTemp + 48)));
+        sum2 = _mm256_add_epi16(_mm256_loadu_si256((__m256i*)(inPtrTemp + stride_in)), _mm256_loadu_si256((__m256i*)(inPtrTemp + stride_in + 16)));
+        sum3 = _mm256_add_epi16(_mm256_loadu_si256((__m256i*)(inPtrTemp + stride_in + 32)), _mm256_loadu_si256((__m256i*)(inPtrTemp + stride_in + 48)));
+
+        inPtrTemp += 2 * stride_in;
+
+        sum4 = _mm256_add_epi16(_mm256_loadu_si256((__m256i*)(inPtrTemp)), _mm256_loadu_si256((__m256i*)(inPtrTemp + 16)));
+        sum5 = _mm256_add_epi16(_mm256_loadu_si256((__m256i*)(inPtrTemp + 32)),  _mm256_loadu_si256((__m256i*)(inPtrTemp  + 48)));
+        sum6 = _mm256_add_epi16(_mm256_loadu_si256((__m256i*)(inPtrTemp + stride_in)), _mm256_loadu_si256((__m256i*)(inPtrTemp + stride_in + 16)));
+        sum7 = _mm256_add_epi16(_mm256_loadu_si256((__m256i*)(inPtrTemp + stride_in + 32)), _mm256_loadu_si256((__m256i*)(inPtrTemp + stride_in + 48)));
+
+        inPtrTemp += 2 * stride_in;
+
+        for (row_index = 4; row_index < 64; row_index += 4) {  // Parse every four rows
+            sum0 = _mm256_add_epi16(sum0, _mm256_loadu_si256((__m256i*)(inPtrTemp)));
+            sum1 = _mm256_add_epi16(sum1, _mm256_loadu_si256((__m256i*)(inPtrTemp + 16)));
+            sum2 = _mm256_add_epi16(sum2, _mm256_loadu_si256((__m256i*)(inPtrTemp + 32)));
+            sum3 = _mm256_add_epi16(sum3, _mm256_loadu_si256((__m256i*)(inPtrTemp + 48)));
+
+            sum0 = _mm256_add_epi16(sum0, _mm256_loadu_si256((__m256i*)(inPtrTemp + stride_in)));
+            sum1 = _mm256_add_epi16(sum1, _mm256_loadu_si256((__m256i*)(inPtrTemp + stride_in + 16)));
+            sum2 = _mm256_add_epi16(sum2, _mm256_loadu_si256((__m256i*)(inPtrTemp + stride_in + 32)));
+            sum3 = _mm256_add_epi16(sum3, _mm256_loadu_si256((__m256i*)(inPtrTemp + stride_in + 48)));
+
+            inPtrTemp += 2 * stride_in;
+
+            sum4 = _mm256_add_epi16(sum4, _mm256_loadu_si256((__m256i*)(inPtrTemp)));
+            sum5 = _mm256_add_epi16(sum5, _mm256_loadu_si256((__m256i*)(inPtrTemp + 16)));
+            sum6 = _mm256_add_epi16(sum6, _mm256_loadu_si256((__m256i*)(inPtrTemp + 32)));
+            sum7 = _mm256_add_epi16(sum7, _mm256_loadu_si256((__m256i*)(inPtrTemp + 48)));
+
+            sum4 = _mm256_add_epi16(sum4, _mm256_loadu_si256((__m256i*)(inPtrTemp + stride_in)));
+            sum5 = _mm256_add_epi16(sum5, _mm256_loadu_si256((__m256i*)(inPtrTemp + stride_in + 16)));
+            sum6 = _mm256_add_epi16(sum6, _mm256_loadu_si256((__m256i*)(inPtrTemp + stride_in + 32)));
+            sum7 = _mm256_add_epi16(sum7, _mm256_loadu_si256((__m256i*)(inPtrTemp + stride_in + 48)));
+
+            inPtrTemp += 2 * stride_in;
+        }
+
+        sum0 = _mm256_madd_epi16(sum0, ones);
+        sum1 = _mm256_madd_epi16(sum1, ones);
+        sum2 = _mm256_madd_epi16(sum2, ones);
+        sum3 = _mm256_madd_epi16(sum3, ones);
+
+        sum4 = _mm256_madd_epi16(sum4, ones);
+        sum5 = _mm256_madd_epi16(sum5, ones);
+        sum6 = _mm256_madd_epi16(sum6, ones);
+        sum7 = _mm256_madd_epi16(sum7, ones);
+
+        sum0 = _mm256_add_epi32(sum0, sum1);
+        sum2 = _mm256_add_epi32(sum2, sum3);
+        sum4 = _mm256_add_epi32(sum4, sum5);
+        sum6 = _mm256_add_epi32(sum6, sum7);
+
+        sum0 = _mm256_add_epi32(sum0, sum2);
+        sum4 = _mm256_add_epi32(sum4, sum6);
+        sum0 = _mm256_hadd_epi32(sum0, zeros);
+        sum4 = _mm256_hadd_epi32(sum4, zeros);
+
+        sum0 = _mm256_add_epi32(sum0, sum4);
+        sum0 = _mm256_hadd_epi32(sum0, zeros);
+
+        sumBlock = _mm_cvtsi128_si32(_mm_add_epi32(_mm256_castsi256_si128(sum0), _mm256_extracti128_si256(sum0, 1)));
+
+        return sumBlock;
+    }
     else {
         printf("\n add the rest \n");
         return 0;
@@ -2347,4 +2424,117 @@ uint64_t spatial_full_distortion_kernel_avx2(
     }
 
     return Hadd32_AVX2_INTRIN(sum);
+}
+
+/************************************************
+ * Support for params *input and *recon up to 15bit values
+ * This assumption allow to use faster _mm256_madd_epi16() instruction
+ ************************************************/
+uint64_t full_distortion_kernel16_bits_avx2(
+    uint8_t* input,
+    uint32_t   input_offset,
+    uint32_t   input_stride,
+    uint8_t* recon,
+    uint32_t   recon_offset,
+    uint32_t   recon_stride,
+    uint32_t   area_width,
+    uint32_t   area_height)
+{
+    const uint32_t leftover = area_width & 15;
+    uint32_t w,h;
+    __m256i sum32 = _mm256_setzero_si256();
+    __m256i sum64 = _mm256_setzero_si256();
+    __m256i in, re;
+    uint16_t* input_16bit = (uint16_t*)input;
+    uint16_t* recon_16bit = (uint16_t*)recon;
+    input_16bit += input_offset;
+    recon_16bit += recon_offset;
+
+    if (leftover) {
+        const uint16_t* inp = input_16bit + area_width - leftover;
+        const uint16_t* rec = recon_16bit + area_width - leftover;
+        h = area_height;
+
+        if (leftover == 4) {
+            do {
+                FullDistortionKernel4_AVX2_INTRIN(inp, rec, &sum32);
+                inp += input_stride;
+                rec += recon_stride;
+                Sum32To64(&sum32, &sum64);
+            } while (--h);
+        }
+        else if (leftover == 8) {
+            do {
+                in = _mm256_set_m128i(_mm_loadu_si128((__m128i*)inp),
+                                      _mm_loadu_si128((__m128i*)(inp + input_stride)));
+                re = _mm256_set_m128i(_mm_loadu_si128((__m128i*)rec),
+                                      _mm_loadu_si128((__m128i*)(rec + recon_stride)));
+                FullDistortionKernel16_AVX2_INTRIN(in, re, &sum32);
+                inp += 2 * input_stride;
+                rec += 2 * recon_stride;
+                Sum32To64(&sum32, &sum64);
+            } while (h-=2);
+        }
+        else { //leftover == 12
+            do {
+                in = _mm256_set_m128i(_mm_loadu_si128((__m128i*)inp),
+                                      _mm_loadl_epi64((__m128i*)(inp + 8)));
+                re = _mm256_set_m128i(_mm_loadu_si128((__m128i*)rec),
+                                      _mm_loadl_epi64((__m128i*)(rec + 8)));
+                FullDistortionKernel16_AVX2_INTRIN(in, re, &sum32);
+                inp += input_stride;
+                rec += recon_stride;
+                Sum32To64(&sum32, &sum64);
+            } while (--h);
+        }
+    }
+
+    area_width -= leftover;
+
+    if (area_width) {
+        const uint16_t* inp = input_16bit;
+        const uint16_t* rec = recon_16bit;
+
+        if (area_width == 16) {
+            for (h = 0; h < area_height; h+=2) {
+                FullDistortionKernel16_AVX2_INTRIN(
+                    _mm256_loadu_si256((__m256i*)inp),
+                    _mm256_loadu_si256((__m256i*)rec), &sum32);
+                FullDistortionKernel16_AVX2_INTRIN(
+                    _mm256_loadu_si256((__m256i*)(inp + input_stride)),
+                    _mm256_loadu_si256((__m256i*)(rec + recon_stride)), &sum32);
+                inp += 2 * input_stride;
+                rec += 2 * recon_stride;
+                Sum32To64(&sum32, &sum64);
+            }
+        }
+        else if (area_width == 32) {
+            for (h = 0; h < area_height; h++) {
+                FullDistortionKernel16_AVX2_INTRIN(
+                    _mm256_loadu_si256((__m256i*)inp),
+                    _mm256_loadu_si256((__m256i*)rec), &sum32);
+                FullDistortionKernel16_AVX2_INTRIN(
+                    _mm256_loadu_si256((__m256i*)(inp + 16)),
+                    _mm256_loadu_si256((__m256i*)(rec + 16)), &sum32);
+                inp += input_stride;
+                rec += recon_stride;
+                Sum32To64(&sum32, &sum64);
+            }
+        }
+        else{
+            for (h = 0; h < area_height; h++) {
+                for (w = 0; w < area_width; w += 16) {
+                    FullDistortionKernel16_AVX2_INTRIN(
+                        _mm256_loadu_si256((__m256i*)(inp+w)),
+                        _mm256_loadu_si256((__m256i*)(rec+w)), &sum32);
+                    Sum32To64(&sum32, &sum64);
+                }
+                inp += input_stride;
+                rec += recon_stride;
+            }
+        }
+    }
+
+    __m128i s = _mm_add_epi64(_mm256_castsi256_si128(sum64), _mm256_extracti128_si256(sum64, 1));
+    return _mm_extract_epi64(s, 0) + _mm_extract_epi64(s, 1);
 }

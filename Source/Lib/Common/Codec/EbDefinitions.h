@@ -32,11 +32,19 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define MULTI_PASS_PD                1 // Multi-Pass Partitioning Depth (Multi-Pass PD) performs multiple PD stages for the same SB towards 1 final Partitioning Structure. As we go from PDn to PDn + 1, the prediction accuracy of the MD feature(s) increases while the number of block(s) decreases
+
 #define HBD_CLEAN_UP                 1
 
 #define IFS_8BIT_MD                  1
 
+#define COMP_HBD                     1
+#define INTERINTRA_HBD               1
+#define ATB_HBD                      1
+#define ATB_FIX                      1
 
+#define M0_OPT                       1
 /* Note: shutting the macro PAL_SUP will not give SS as pcs->palette_mode = 0
    rate estimation is changed for I frame + enabled sc for P (rate estimation
    is a result changed for P frames)
@@ -45,6 +53,8 @@ extern "C" {
 #if PAL_SUP
 #define PAL_CLASS   1
 #endif
+
+#define AUTO_MAX_PARTITION           1 // Shortcut to skip search depths depending on motion estimation info and statistics
 
 #define LESS_RECTANGULAR_CHECK_LEVEL 1 // Shortcut to skip a/b shapes depending on SQ/H/V shape costs
 
@@ -62,7 +72,6 @@ extern "C" {
 #define FIX_COMPOUND                 1 // Address COMPOUND mismatch between rtime-m0-test and master: used block size @ the derivation of compound count
 
 #define OBMC_FLAG            1 // OBMC motion mode flag
-#define OBMC_CONVOLVE        1 // to track convolve kernels changes
 
 #define INJECT_NEW_NEAR_NEAR_NEW   1   // Inject NEW_NEAR / NEAR_NEW inter prediction
 #define FILTER_INTRA_FLAG    1 // Filter intra prediction
@@ -79,6 +88,7 @@ extern "C" {
 #define PRED_CHANGE_MOD              1 // Reorder the references for MRP
 #define SPEED_OPT                    1 // Speed optimization(s)
 #define GLOBAL_WARPED_MOTION         1 // Global warped motion detection and insertion
+#define GM_OPT                       1 // Perform global motion estimation on a down-sampled version of the input picture
 
 #ifndef NON_AVX512_SUPPORT
 #define NON_AVX512_SUPPORT
@@ -87,8 +97,11 @@ extern "C" {
 #define MR_MODE                           0
 
 #define WARP_UPDATE                       1 // Modified Warp settings: ON for MR mode. ON for ref frames in M0
+#define UPDATE_CDEF                       1 // Update bit cost estimation for CDEF filter
 #define EIGTH_PEL_MV                      1
 #define EIGHT_PEL_PREDICTIVE_ME           1
+#define EIGHT_PEL_FIX                     1 // Improve the 8th pel performance by shutting it based on the qindex and bug fixes
+#define HIGH_PRECISION_MV_QTHRESH         150
 #define COMP_INTERINTRA                   1 // InterIntra mode support
 
 #define ENHANCE_ATB                       1
@@ -101,7 +114,7 @@ extern "C" {
 #define TWO_PASS_USE_2NDP_ME_IN_1STP      1 // Add a config parameter to the first pass to use the ME settings of the second pass
 
 #define REMOVE_MD_STAGE_1                 1 // Simplified MD Staging; removed md_stage_1
-#define NON_KF_INTRA_TF_FIX               1 // Fix temporal filtering for non-key Intra frames
+#define NON_KF_INTRA_TF_FIX               0 // Fix temporal filtering for non-key Intra frames
 
 #define TWO_PASS_IMPROVEMENT              1 // Tune 2 pass for better Luma by adjusting the reference area and the actions
 //FOR DEBUGGING - Do not remove
@@ -131,6 +144,13 @@ typedef enum ME_QP_MODE {
     EX_QP_MODE = 0,       // Exhaustive  1/4-pel serach mode.
     REFINMENT_QP_MODE = 1 // Refinement 1/4-pel serach mode.
 } ME_QP_MODE;
+#if GM_OPT
+typedef enum GM_LEVEL {
+    GM_FULL         = 0,       // Exhaustive search mode.
+    GM_DOWN         = 1,       // Downsampled search mode, with a downsampling factor of 2 in each dimension
+    GM_TRAN_ONLY    = 2        // Translation only using ME MV.
+} GM_LEVEL;
+#endif
 struct Buf2D
 {
     uint8_t *buf;
@@ -179,7 +199,11 @@ enum {
 #define PAD_VALUE                                (128+32)
 
 /* Use open-loop data to predict the NSQ partitions. */
+#if MULTI_PASS_PD
+#define PREDICT_NSQ_SHAPE                               0 // to set to 0
+#else
 #define PREDICT_NSQ_SHAPE                               1
+#endif
 #if PREDICT_NSQ_SHAPE
 #define NUMBER_OF_DEPTH                                 6
 #define NUMBER_OF_SHAPES                                10
@@ -193,8 +217,16 @@ enum {
 #define MAX_MDC_LEVEL                                   8
 #define MDC_ADAPTIVE_LEVEL                              1
 #else
+#if MULTI_PASS_PD
+#define NSQ_TAB_SIZE                                    8
+#define NUMBER_OF_DEPTH                                 6
+#define NUMBER_OF_SHAPES                                10
+#else
 #define NSQ_TAB_SIZE                                    6
 #endif
+#endif
+
+#define AUTO_MODE                                 -1
 
 //  Delta QP support
 #define ADD_DELTA_QP_SUPPORT                      1  // Add delta QP support
@@ -523,6 +555,11 @@ static INLINE uint16_t clip_pixel_highbd(int32_t val, int32_t bd) {
 static INLINE unsigned int negative_to_zero(int value) {
     return value & ~(value >> (sizeof(value) * 8 - 1));
 }
+
+static INLINE int av1_num_planes(EbColorConfig   *color_info) {
+    return color_info->mono_chrome ? 1 : MAX_MB_PLANE;
+}
+
 //*********************************************************************************************************************//
 // enums.h
 /*!\brief Decorator indicating that given struct/union/enum is packed */
@@ -533,6 +570,15 @@ static INLINE unsigned int negative_to_zero(int value) {
 #define ATTRIBUTE_PACKED
 #endif
 #endif /* ATTRIBUTE_PACKED */
+
+#if MULTI_PASS_PD
+typedef enum PD_PASS {
+    PD_PASS_0,
+    PD_PASS_1,
+    PD_PASS_2,
+    PD_PASS_TOTAL,
+} PD_PASS;
+#endif
 
 typedef enum CAND_CLASS {
     CAND_CLASS_0,
@@ -622,11 +668,17 @@ typedef enum TxSearchLevel
 
 typedef enum InterpolationSearchLevel
 {
+#if MULTI_PASS_PD
+    IT_SEARCH_OFF,
+    IT_SEARCH_FAST_LOOP_UV_BLIND,
+    IT_SEARCH_FAST_LOOP,
+#else
     IT_SEARCH_OFF,
     IT_SEARCH_INTER_DEPTH,
     IT_SEARCH_FULL_LOOP,
     IT_SEARCH_FAST_LOOP_UV_BLIND,
     IT_SEARCH_FAST_LOOP,
+#endif
 } InterpolationSearchLevel;
 
 typedef enum NsqSearchLevel
@@ -1149,7 +1201,7 @@ typedef enum ATTRIBUTE_PACKED
     INTERINTRA_MODES
 } InterIntraMode;
 
-typedef enum
+typedef enum ATTRIBUTE_PACKED
 {
     COMPOUND_AVERAGE,
     COMPOUND_DISTWTD,
@@ -2337,15 +2389,6 @@ static const uint8_t QP_OFFSET_WEIGHT[3][4] = { // [Slice Type][QP Offset Weight
     { 9, 8, 7, 6 },
     { 10, 9, 8, 7 }
 };
-/** Assembly Types
-*/
-typedef enum EbAsm
-{
-    ASM_NON_AVX2,
-    ASM_AVX2,
-    ASM_TYPE_TOTAL,
-    ASM_TYPE_INVALID = ~0
-} EbAsm;
 
 #if PAL_SUP
 #define  MAX_PAL_CAND   14
@@ -2978,16 +3021,35 @@ typedef enum EbCu8x8Mode
     CU_8x8_MODE_1 = 1   // Perform OIS and only Full_Search for CU_8x8
 } EbCu8x8Mode;
 
+
+#if MULTI_PASS_PD
+// Multi-Pass Partitioning Depth(Multi - Pass PD) performs multiple PD stages for the same SB towards 1 final Partitioning Structure
+// As we go from PDn to PDn + 1, the prediction accuracy of the MD feature(s) increases while the number of block(s) decreases
+typedef enum EbPictureDepthMode
+{
+    PIC_MULTI_PASS_PD_MODE_0    = 0, // Multi-Pass PD Mode 0: PD0 | PD0_REFINEMENT
+    PIC_MULTI_PASS_PD_MODE_1    = 1, // Multi-Pass PD Mode 1: PD0 | PD0_REFINEMENT | PD1 | PD1_REFINEMENT using SQ vs. NSQ only
+    PIC_MULTI_PASS_PD_MODE_2    = 2, // Multi-Pass PD Mode 2: PD0 | PD0_REFINEMENT | PD1 | PD1_REFINEMENT using SQ vs. NSQ and SQ coeff info
+    PIC_MULTI_PASS_PD_MODE_3    = 3, // Multi-Pass PD Mode 3: PD0 | PD0_REFINEMENT | PD1 | PD1_REFINEMENT using SQ vs. NSQ and both SQ and NSQ coeff info
+    PIC_ALL_DEPTH_MODE          = 4, // ALL sq and nsq:  SB size -> 4x4
+    PIC_ALL_C_DEPTH_MODE        = 5, // ALL sq and nsq with control :  SB size -> 4x4
+    PIC_SQ_DEPTH_MODE           = 6, // ALL sq:  SB size -> 4x4
+    PIC_SQ_NON4_DEPTH_MODE      = 7, // SQ:  SB size -> 8x8
+    PIC_OPEN_LOOP_DEPTH_MODE    = 8, // Early Inter Depth Decision:  SB size -> 8x8
+    PIC_SB_SWITCH_DEPTH_MODE    = 9  // Adaptive Depth Partitioning
+
+} EbPictureDepthMode;
+#else
 typedef enum EbPictureDepthMode
 {
     PIC_ALL_DEPTH_MODE          = 0, // ALL sq and nsq:  SB size -> 4x4
     PIC_ALL_C_DEPTH_MODE        = 1, // ALL sq and nsq with control :  SB size -> 4x4
     PIC_SQ_DEPTH_MODE           = 2, // ALL sq:  SB size -> 4x4
     PIC_SQ_NON4_DEPTH_MODE      = 3, // SQ:  SB size -> 8x8
-    PIC_OPEN_LOOP_DEPTH_MODE = 4, // Early Inter Depth Decision:  SB size -> 8x8
-    PIC_SB_SWITCH_DEPTH_MODE = 5  // Adaptive Depth Partitioning
+    PIC_OPEN_LOOP_DEPTH_MODE    = 4, // Early Inter Depth Decision:  SB size -> 8x8
+    PIC_SB_SWITCH_DEPTH_MODE    = 5  // Adaptive Depth Partitioning
 } EbPictureDepthMode;
-
+#endif
 #define EB_SB_DEPTH_MODE              uint8_t
 #define SB_SQ_BLOCKS_DEPTH_MODE             1
 #define SB_SQ_NON4_BLOCKS_DEPTH_MODE        2
@@ -3618,10 +3680,17 @@ static const uint16_t search_area_width[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPP
         { 192,  192,  192,  192,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
         { 192,  192,  192,  192,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
     } , {
+#if M0_OPT
+        {480 ,  480,  480,  144,  144,   88,   48,   48,   48,   48,   48,    48,   48 },
+        {480 ,  480,  480,  144,  144,   88,   48,   48,   48,   48,   48,    48,   48 },
+        {640 ,  640,  640,  288,  288,  168,  128,  128,   64,   80,   80,    80,   80 },
+        {640 ,  640,  640,  288,  288,  168,  128,  128,   64,   80,   80,    80,   80 }
+#else
         {480 ,  480,  480,  144,  144,   88,   48,   48,   48,   48,   48,    48,   48 },
         {480 ,  480,  480,  144,  144,   88,   48,   48,   48,   48,   48,    48,   48 },
         {960 ,  640,  640,  288,  288,  168,  128,  128,   64,   80,   80,    80,   80 },
         {960 ,  640,  640,  288,  288,  168,  128,  128,   64,   80,   80,    80,   80 }
+#endif
     }
 };
 static const uint16_t search_area_height[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
@@ -3631,10 +3700,17 @@ static const uint16_t search_area_height[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUP
         { 192,  192,  192,  192,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
         { 192,  192,  192,  192,   32,   32,   32,   32,   16,    9,    9,     9,    9 }
     } , {
+#if M0_OPT
+        {480 ,  480,  480,  144,  144,   88,   48,   48,   48,   48,   48,    48,   48 },
+        {480 ,  480,  480,  144,  144,   88,   48,   48,   48,   48,   48,    48,   48 },
+        {640 ,  640,  640,  288,  288,  168,   80,   80,   48,   80,   80,    80,   80 },
+        {640 ,  640,  640,  288,  288,  168,   80,   80,   48,   80,   80,    80,   80 }
+#else
         {480 ,  480,  480,  144,  144,   88,   48,   48,   48,   48,   48,    48,   48 },
         {480 ,  480,  480,  144,  144,   88,   48,   48,   48,   48,   48,    48,   48 },
         {960 ,  640,  640,  288,  288,  168,   80,   80,   48,   80,   80,    80,   80 },
         {960 ,  640,  640,  288,  288,  168,   80,   80,   48,   80,   80,    80,   80 }
+#endif
     }
 
     //     M0    M1    M2    M3    M4    M5    M6    M7    M8    M9    M10    M11    M12

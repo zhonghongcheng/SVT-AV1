@@ -16,9 +16,7 @@
 
 #include <stdlib.h>
 
-//#include "EbDefinitions.h"
 #include "EbUtility.h"
-//#include "EbSequenceControlSet.h"
 #include "EbPictureControlSet.h"
 #include "EbModeDecisionConfigurationProcess.h"
 #include "EbRateControlResults.h"
@@ -368,14 +366,30 @@ void SetGlobalMotionField(
     //Update MV
 #if GLOBAL_WARPED_MOTION
     PictureParentControlSet *parent_pcs_ptr = picture_control_set_ptr->parent_pcs_ptr;
-
+#if GM_OPT
+    if (parent_pcs_ptr->gm_level <= GM_DOWN) {
+#endif
     if (parent_pcs_ptr->is_global_motion[get_list_idx(LAST_FRAME)][get_ref_frame_idx(LAST_FRAME)])
         parent_pcs_ptr->global_motion[LAST_FRAME]
             = parent_pcs_ptr->global_motion_estimation[get_list_idx(LAST_FRAME)][get_ref_frame_idx(LAST_FRAME)];
     if (parent_pcs_ptr->is_global_motion[get_list_idx(BWDREF_FRAME)][get_ref_frame_idx(BWDREF_FRAME)])
         parent_pcs_ptr->global_motion[BWDREF_FRAME]
             = parent_pcs_ptr->global_motion_estimation[get_list_idx(BWDREF_FRAME)][get_ref_frame_idx(BWDREF_FRAME)];
-#else
+#if GM_OPT
+    // Upscale the translation parameters by 2, because the search is done on a down-sampled
+    // version of the source picture (with a down-sampling factor of 2 in each dimension).
+    if (parent_pcs_ptr->gm_level == GM_DOWN) {
+        parent_pcs_ptr->global_motion[LAST_FRAME].wmmat[0] *= 2;
+        parent_pcs_ptr->global_motion[LAST_FRAME].wmmat[1] *= 2;
+        parent_pcs_ptr->global_motion[BWDREF_FRAME].wmmat[0] *= 2;
+        parent_pcs_ptr->global_motion[BWDREF_FRAME].wmmat[1] *= 2;
+    }
+#endif
+#endif
+#if GM_OPT && GLOBAL_WARPED_MOTION || !GLOBAL_WARPED_MOTION
+#if GM_OPT && GLOBAL_WARPED_MOTION
+    }else {
+#endif
     if (picture_control_set_ptr->parent_pcs_ptr->is_pan && picture_control_set_ptr->parent_pcs_ptr->is_tilt) {
         picture_control_set_ptr->parent_pcs_ptr->global_motion[LAST_FRAME].wmtype = TRANSLATION;
         picture_control_set_ptr->parent_pcs_ptr->global_motion[LAST_FRAME].wmmat[1] = ((picture_control_set_ptr->parent_pcs_ptr->panMvx + picture_control_set_ptr->parent_pcs_ptr->tiltMvx) / 2) << 1 << GM_TRANS_ONLY_PREC_DIFF;
@@ -400,7 +414,9 @@ void SetGlobalMotionField(
     picture_control_set_ptr->parent_pcs_ptr->global_motion[BWDREF_FRAME].wmmat[0] = 0 - picture_control_set_ptr->parent_pcs_ptr->global_motion[LAST_FRAME].wmmat[0];
     picture_control_set_ptr->parent_pcs_ptr->global_motion[BWDREF_FRAME].wmmat[1] = (int32_t)clamp(picture_control_set_ptr->parent_pcs_ptr->global_motion[BWDREF_FRAME].wmmat[1], GM_TRANS_MIN*GM_TRANS_DECODE_FACTOR, GM_TRANS_MAX*GM_TRANS_DECODE_FACTOR);
     picture_control_set_ptr->parent_pcs_ptr->global_motion[BWDREF_FRAME].wmmat[0] = (int32_t)clamp(picture_control_set_ptr->parent_pcs_ptr->global_motion[BWDREF_FRAME].wmmat[0], GM_TRANS_MIN*GM_TRANS_DECODE_FACTOR, GM_TRANS_MAX*GM_TRANS_DECODE_FACTOR);
-
+#if GM_OPT && GLOBAL_WARPED_MOTION
+    }
+#endif
     //convert_to_trans_prec(
     //    picture_control_set_ptr->parent_pcs_ptr->allow_high_precision_mv,
     //    picture_control_set_ptr->parent_pcs_ptr->global_motion[LAST_FRAME].wmmat[0]) *GM_TRANS_ONLY_DECODE_FACTOR;
@@ -424,20 +440,30 @@ void eb_av1_set_quantizer(
     picture_control_set_ptr->max_qmlevel = 9;
 
     frm_hdr->quantization_params.base_q_idx = AOMMAX(frm_hdr->delta_q_params.delta_q_present, q);
-    frm_hdr->quantization_params.delta_q_y_dc = 0;
-    frm_hdr->quantization_params.delta_q_u_dc = 0;
-    frm_hdr->quantization_params.delta_q_u_ac = 0;
-    frm_hdr->quantization_params.delta_q_v_dc = 0;
-    frm_hdr->quantization_params.delta_q_v_ac = 0;
-    frm_hdr->quantization_params.qm_y = aom_get_qmlevel(frm_hdr->quantization_params.base_q_idx, picture_control_set_ptr->min_qmlevel, picture_control_set_ptr->max_qmlevel);
-    frm_hdr->quantization_params.qm_u = aom_get_qmlevel(frm_hdr->quantization_params.base_q_idx + frm_hdr->quantization_params.delta_q_u_ac,
-        picture_control_set_ptr->min_qmlevel, picture_control_set_ptr->max_qmlevel);
+    frm_hdr->quantization_params.delta_q_dc[AOM_PLANE_Y] = 0;
+    frm_hdr->quantization_params.delta_q_ac[AOM_PLANE_Y] = 0;
+    frm_hdr->quantization_params.delta_q_ac[AOM_PLANE_U] = 0;
+    frm_hdr->quantization_params.delta_q_dc[AOM_PLANE_U] = 0;
+    frm_hdr->quantization_params.delta_q_ac[AOM_PLANE_V] = 0;
+    frm_hdr->quantization_params.delta_q_dc[AOM_PLANE_V] = 0;
+    frm_hdr->quantization_params.qm[AOM_PLANE_Y] = aom_get_qmlevel(frm_hdr->
+        quantization_params.base_q_idx, picture_control_set_ptr->min_qmlevel,
+        picture_control_set_ptr->max_qmlevel);
+    frm_hdr->quantization_params.qm[AOM_PLANE_U] = aom_get_qmlevel(frm_hdr->
+        quantization_params.base_q_idx +
+        frm_hdr->quantization_params.delta_q_ac[AOM_PLANE_U],
+        picture_control_set_ptr->min_qmlevel,
+        picture_control_set_ptr->max_qmlevel);
 
     if (!picture_control_set_ptr->separate_uv_delta_q)
-        frm_hdr->quantization_params.qm_v = frm_hdr->quantization_params.qm_u;
+        frm_hdr->quantization_params.qm[AOM_PLANE_V] =
+                                frm_hdr->quantization_params.qm[AOM_PLANE_U];
     else
-        frm_hdr->quantization_params.qm_v = aom_get_qmlevel(frm_hdr->quantization_params.base_q_idx + frm_hdr->quantization_params.delta_q_v_ac,
-            picture_control_set_ptr->min_qmlevel, picture_control_set_ptr->max_qmlevel);
+        frm_hdr->quantization_params.qm[AOM_PLANE_V] = aom_get_qmlevel(frm_hdr->
+            quantization_params.base_q_idx +
+            frm_hdr->quantization_params.delta_q_ac[AOM_PLANE_V],
+            picture_control_set_ptr->min_qmlevel,
+            picture_control_set_ptr->max_qmlevel);
 }
 
 void eb_av1_build_quantizer(
@@ -689,11 +715,13 @@ static void mode_decision_configuration_context_dctor(EbPtr p)
     EB_FREE_ARRAY(obj->mdc_ref_mv_stack);
     EB_FREE_ARRAY(obj->mdc_cu_ptr->av1xd);
     EB_FREE_ARRAY(obj->mdc_cu_ptr);
+#if ADD_MDC_FULL_COST
     EB_DELETE(obj->candidate_buffer);
     EB_FREE_ARRAY(obj->fast_candidate_array);
     EB_FREE_ARRAY(obj->fast_candidate_ptr_array);
     EB_DELETE(obj->trans_quant_buffers_ptr);
     EB_FREE(obj->transform_inner_array_ptr);
+#endif
 }
 /******************************************************
  * Mode Decision Configuration Context Constructor
@@ -766,7 +794,7 @@ void PerformEarlyLcuPartitionning(
     ModeDecisionConfigurationContext     *context_ptr,
     SequenceControlSet                   *sequence_control_set_ptr,
     PictureControlSet                    *picture_control_set_ptr) {
-    LargestCodingUnit            *sb_ptr;
+    SuperBlock                           *sb_ptr;
     uint32_t                         sb_index;
     picture_control_set_ptr->parent_pcs_ptr->average_qp = (uint8_t)picture_control_set_ptr->parent_pcs_ptr->picture_qp;
 
@@ -786,7 +814,7 @@ void PerformEarlyLcuPartitionningLcu(
     SequenceControlSet                   *sequence_control_set_ptr,
     PictureControlSet                    *picture_control_set_ptr,
     uint32_t                                    sb_index) {
-    LargestCodingUnit            *sb_ptr;
+    SuperBlock                           *sb_ptr;
 
     // SB Loop : Partitionnig Decision
     sb_ptr = picture_control_set_ptr->sb_ptr_array[sb_index];
@@ -1207,7 +1235,7 @@ uint64_t  mdc_tab[9][2][3] = {
 // Update MDC refinement
 uint8_t update_mdc_level(
     PictureControlSet  *picture_control_set_ptr,
-    LargestCodingUnit  *sb_ptr,
+    SuperBlock         *sb_ptr,
     uint32_t sb_size,
     const BlockGeom * blk_geom,
     uint8_t mdc_depth_level) {
@@ -1361,7 +1389,7 @@ void init_considered_block(
     uint32_t  blk_index = 0;
 
 #if MDC_ADAPTIVE_LEVEL
-    LargestCodingUnit  *sb_ptr = picture_control_set_ptr->sb_ptr_array[sb_index];
+    SuperBlock  *sb_ptr = picture_control_set_ptr->sb_ptr_array[sb_index];
 #else
     uint32_t  parent_depth_idx_mds, sparent_depth_idx_mds, ssparent_depth_idx_mds, child_block_idx_1, child_block_idx_2, child_block_idx_3, child_block_idx_4;
 #endif
@@ -2005,7 +2033,7 @@ void open_loop_partitioning_pass(
         blk_index++;
     }
     if (picture_control_set_ptr->slice_type != I_SLICE) {
-        LargestCodingUnit            *sb_ptr;
+        SuperBlock            *sb_ptr;
         // SB Loop : Partitionnig Decision
         sb_ptr = picture_control_set_ptr->sb_ptr_array[sb_index];
         sb_ptr->qp = (uint8_t)picture_control_set_ptr->parent_pcs_ptr->picture_qp;
@@ -2263,7 +2291,7 @@ void derive_search_method(
 void set_sb_budget(
     SequenceControlSet               *sequence_control_set_ptr,
     PictureControlSet                *picture_control_set_ptr,
-    LargestCodingUnit                *sb_ptr,
+    SuperBlock                       *sb_ptr,
     ModeDecisionConfigurationContext *context_ptr)
 {
     const uint32_t sb_index = sb_ptr->index;
@@ -2339,7 +2367,7 @@ void  derive_optimal_budget_per_sb(
         context_ptr->predicted_cost = 0;
 
         for (sb_index = 0; sb_index < picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr->sb_tot_cnt; sb_index++) {
-            LargestCodingUnit* sb_ptr = picture_control_set_ptr->sb_ptr_array[sb_index];
+            SuperBlock* sb_ptr = picture_control_set_ptr->sb_ptr_array[sb_index];
 
             set_sb_budget(
                 sequence_control_set_ptr,
@@ -2584,7 +2612,62 @@ EbErrorType signal_derivation_mode_decision_config_kernel_oq(
         picture_control_set_ptr->pic_filter_intra_mode = picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0 && picture_control_set_ptr->temporal_layer_index == 0 ? 1 : 0;
     else
         picture_control_set_ptr->pic_filter_intra_mode = 0;
+#endif
+#if EIGHT_PEL_FIX
+    FrameHeader *frm_hdr = &picture_control_set_ptr->parent_pcs_ptr->frm_hdr;
+    frm_hdr->allow_high_precision_mv =
+        picture_control_set_ptr->enc_mode == ENC_M0 && frm_hdr->quantization_params.base_q_idx < HIGH_PRECISION_MV_QTHRESH &&
+        (sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER) ? 1 : 0;
+#endif
+#if MULTI_PASS_PD
+    EbBool enable_wm;
+    if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        enable_wm = EB_FALSE;
+    else
+#if WARP_UPDATE
+        enable_wm = (MR_MODE ||
+        (picture_control_set_ptr->parent_pcs_ptr->enc_mode == ENC_M0 && picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag) ||
+            (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M5 && picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index == 0)) ? EB_TRUE : EB_FALSE;
+#else
+        enable_wm = (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M5) || MR_MODE ? EB_TRUE : EB_FALSE;
+#endif
+#if !FIX_WM_SETTINGS
+    enable_wm = picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index > 0 ? EB_FALSE : enable_wm;
+#endif
+    frm_hdr->allow_warped_motion = enable_wm
+        && !(frm_hdr->frame_type == KEY_FRAME || frm_hdr->frame_type == INTRA_ONLY_FRAME)
+        && !frm_hdr->error_resilient_mode;
+    frm_hdr->is_motion_mode_switchable = frm_hdr->allow_warped_motion;
+#if OBMC_FLAG
+    // OBMC Level                                   Settings
+    // 0                                            OFF
+    // 1                                            OBMC @(MVP, PME and ME) + 16 NICs
+    // 2                                            OBMC @(MVP, PME and ME) + Opt NICs
+    // 3                                            OBMC @(MVP, PME ) + Opt NICs
+    // 4                                            OBMC @(MVP, PME ) + Opt2 NICs
+    if (sequence_control_set_ptr->static_config.enable_obmc) {
+        if (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M0)
+            picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode =
+#if M0_OPT
+            picture_control_set_ptr->slice_type != I_SLICE ? 2 : 0;
+#else
+            picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0 && picture_control_set_ptr->slice_type != I_SLICE ? 2 : 0;
+#endif
+        else
+            picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = 0;
 
+#if MR_MODE
+        picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode =
+            picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0 && picture_control_set_ptr->slice_type != I_SLICE ? 1 : 0;
+#endif
+    }
+    else
+        picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = 0;
+
+    frm_hdr->is_motion_mode_switchable =
+        frm_hdr->is_motion_mode_switchable || picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode;
+
+#endif
 #endif
     return return_error;
 }
@@ -2987,11 +3070,11 @@ void* mode_decision_configuration_kernel(void *input_ptr)
             frm_hdr->quantization_params.base_q_idx);
         eb_av1_build_quantizer(
             (AomBitDepth)sequence_control_set_ptr->static_config.encoder_bit_depth,
-            frm_hdr->quantization_params.delta_q_y_dc,
-            frm_hdr->quantization_params.delta_q_u_dc,
-            frm_hdr->quantization_params.delta_q_u_ac,
-            frm_hdr->quantization_params.delta_q_v_dc,
-            frm_hdr->quantization_params.delta_q_v_ac,
+            frm_hdr->quantization_params.delta_q_dc[AOM_PLANE_Y],
+            frm_hdr->quantization_params.delta_q_dc[AOM_PLANE_U],
+            frm_hdr->quantization_params.delta_q_ac[AOM_PLANE_U],
+            frm_hdr->quantization_params.delta_q_dc[AOM_PLANE_V],
+            frm_hdr->quantization_params.delta_q_ac[AOM_PLANE_V],
             quants,
             dequants);
 
@@ -2999,11 +3082,11 @@ void* mode_decision_configuration_kernel(void *input_ptr)
         Dequants *const dequantsMd = &picture_control_set_ptr->parent_pcs_ptr->deqMd;
         eb_av1_build_quantizer(
             picture_control_set_ptr->hbd_mode_decision ? AOM_BITS_10 : AOM_BITS_8,
-            frm_hdr->quantization_params.delta_q_y_dc,
-            frm_hdr->quantization_params.delta_q_u_dc,
-            frm_hdr->quantization_params.delta_q_u_ac,
-            frm_hdr->quantization_params.delta_q_v_dc,
-            frm_hdr->quantization_params.delta_q_v_ac,
+            frm_hdr->quantization_params.delta_q_dc[AOM_PLANE_Y],
+            frm_hdr->quantization_params.delta_q_dc[AOM_PLANE_U],
+            frm_hdr->quantization_params.delta_q_ac[AOM_PLANE_U],
+            frm_hdr->quantization_params.delta_q_dc[AOM_PLANE_V],
+            frm_hdr->quantization_params.delta_q_ac[AOM_PLANE_V],
             quantsMd,
             dequantsMd);
 
@@ -3101,8 +3184,15 @@ void* mode_decision_configuration_kernel(void *input_ptr)
                 }
             }
         }
-
+#if MULTI_PASS_PD
+        else  if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_ALL_DEPTH_MODE       ||
+                  picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_0 ||
+                  picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_1 ||
+                  picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_2 ||
+                  picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_MULTI_PASS_PD_MODE_3 ){
+#else
         else  if (picture_control_set_ptr->parent_pcs_ptr->pic_depth_mode == PIC_ALL_DEPTH_MODE) {
+#endif
             forward_all_blocks_to_md(
                 sequence_control_set_ptr,
                 picture_control_set_ptr);
@@ -3148,7 +3238,7 @@ void* mode_decision_configuration_kernel(void *input_ptr)
                 for (uint32_t y_lcu_index = 0; y_lcu_index < picture_height_in_sb; ++y_lcu_index) {
                     for (uint32_t x_lcu_index = 0; x_lcu_index < picture_width_in_sb; ++x_lcu_index) {
                         uint32_t sb_index = (uint16_t)(y_lcu_index * picture_width_in_sb + x_lcu_index);
-                        LargestCodingUnit  *sb_ptr = picture_control_set_ptr->sb_ptr_array[sb_index];
+                        SuperBlock  *sb_ptr = picture_control_set_ptr->sb_ptr_array[sb_index];
 #if MDC_ADAPTIVE_LEVEL
                         uint32_t is_complete_sb = sequence_control_set_ptr->sb_geom[sb_index].is_complete_sb;
 #endif

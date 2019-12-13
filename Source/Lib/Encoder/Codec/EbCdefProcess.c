@@ -21,20 +21,12 @@
 #include "EbEncDecResults.h"
 #include "EbThreads.h"
 #include "EbReferenceObject.h"
-
 #include "EbCdef.h"
 #include "EbEncDecProcess.h"
-
-
-#include "EbDefinitions.h"
-
-//#include "EbSystemResourceManager.h"
 #include "EbPictureBufferDesc.h"
 #include "EbSequenceControlSet.h"
 #include "EbUtility.h"
-#include "EbPsnr.h"
 #include "EbPictureControlSet.h"
-//#include "EbObject.h"
 
 static int32_t priconv[REDUCED_PRI_STRENGTHS] = { 0, 1, 2, 3, 5, 7, 10, 13 };
 
@@ -50,10 +42,11 @@ int32_t eb_sb_compute_cdef_list(PictureControlSet   *picture_control_set_ptr, co
     cdef_list *dlist, BlockSize bs);
 void finish_cdef_search(
     EncDecContext                *context_ptr,
+#if !UPDATE_CDEF
     SequenceControlSet           *sequence_control_set_ptr,
-    PictureControlSet            *picture_control_set_ptr
-    ,int32_t                         selected_strength_cnt[64]
-   );
+#endif
+    PictureControlSet            *picture_control_set_ptr,
+    int32_t                      selected_strength_cnt[64]);
 void av1_cdef_frame16bit(
     EncDecContext                *context_ptr,
     SequenceControlSet           *sequence_control_set_ptr,
@@ -483,7 +476,9 @@ void* cdef_kernel(void *input_ptr)
         if (sequence_control_set_ptr->seq_header.enable_cdef && picture_control_set_ptr->parent_pcs_ptr->cdef_filter_mode) {
                 finish_cdef_search(
                     0,
+#if !UPDATE_CDEF
                     sequence_control_set_ptr,
+#endif
                     picture_control_set_ptr,
                     selected_strength_cnt);
 

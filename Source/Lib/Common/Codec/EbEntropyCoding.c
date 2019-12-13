@@ -1565,6 +1565,7 @@ static INLINE int is_inter_mode(PredictionMode mode)
 }
 
 #if OBMC_FLAG
+#if !MULTI_PASS_PD
 MotionMode obmc_motion_mode_allowed(
     const PictureControlSet         *picture_control_set_ptr,
     const CodingUnit                *cu_ptr,
@@ -1602,6 +1603,7 @@ MotionMode obmc_motion_mode_allowed(
     else
         return SIMPLE_TRANSLATION;
 }
+#endif
 #endif
 
 MotionMode motion_mode_allowed(
@@ -3321,26 +3323,28 @@ static void encode_quantization(const PictureParentControlSet *const pcs_ptr,
 
     const FrameHeader *frm_hdr = &pcs_ptr->frm_hdr;
     eb_aom_wb_write_literal(wb, frm_hdr->quantization_params.base_q_idx, QINDEX_BITS);
-    write_delta_q(wb, frm_hdr->quantization_params.delta_q_y_dc);
+    write_delta_q(wb, frm_hdr->quantization_params.delta_q_dc[AOM_PLANE_Y]);
     if (num_planes > 1) {
-        int32_t diff_uv_delta = (frm_hdr->quantization_params.delta_q_u_dc != frm_hdr->quantization_params.delta_q_v_dc) ||
-            (frm_hdr->quantization_params.delta_q_u_ac != frm_hdr->quantization_params.delta_q_v_ac);
+        int32_t diff_uv_delta = (frm_hdr->quantization_params.delta_q_dc[AOM_PLANE_U] !=
+            frm_hdr->quantization_params.delta_q_dc[AOM_PLANE_V]) ||
+            (frm_hdr->quantization_params.delta_q_ac[AOM_PLANE_U] !=
+                frm_hdr->quantization_params.delta_q_ac[AOM_PLANE_V]);
         if (pcs_ptr->separate_uv_delta_q) eb_aom_wb_write_bit(wb, diff_uv_delta);
-        write_delta_q(wb, frm_hdr->quantization_params.delta_q_u_dc);
-        write_delta_q(wb, frm_hdr->quantization_params.delta_q_u_ac);
+        write_delta_q(wb, frm_hdr->quantization_params.delta_q_dc[AOM_PLANE_U]);
+        write_delta_q(wb, frm_hdr->quantization_params.delta_q_ac[AOM_PLANE_U]);
         if (diff_uv_delta) {
-            write_delta_q(wb, frm_hdr->quantization_params.delta_q_v_dc);
-            write_delta_q(wb, frm_hdr->quantization_params.delta_q_v_ac);
+            write_delta_q(wb, frm_hdr->quantization_params.delta_q_dc[AOM_PLANE_V]);
+            write_delta_q(wb, frm_hdr->quantization_params.delta_q_ac[AOM_PLANE_V]);
         }
     }
     eb_aom_wb_write_bit(wb, frm_hdr->quantization_params.using_qmatrix);
     if (frm_hdr->quantization_params.using_qmatrix) {
-        eb_aom_wb_write_literal(wb, frm_hdr->quantization_params.qm_y, QM_LEVEL_BITS);
-        eb_aom_wb_write_literal(wb, frm_hdr->quantization_params.qm_u, QM_LEVEL_BITS);
+        eb_aom_wb_write_literal(wb, frm_hdr->quantization_params.qm[AOM_PLANE_Y], QM_LEVEL_BITS);
+        eb_aom_wb_write_literal(wb, frm_hdr->quantization_params.qm[AOM_PLANE_U], QM_LEVEL_BITS);
         if (!pcs_ptr->separate_uv_delta_q)
-            assert(frm_hdr->quantization_params.qm_u == frm_hdr->quantization_params.qm_v);
+            assert(frm_hdr->quantization_params.qm[AOM_PLANE_U] == frm_hdr->quantization_params.qm[AOM_PLANE_V]);
         else
-            eb_aom_wb_write_literal(wb, frm_hdr->quantization_params.qm_v, QM_LEVEL_BITS);
+            eb_aom_wb_write_literal(wb, frm_hdr->quantization_params.qm[AOM_PLANE_V], QM_LEVEL_BITS);
     }
 }
 
@@ -5691,7 +5695,7 @@ static EbErrorType av1_code_tx_size(
     return return_error;
 }
 
-static INLINE void set_mi_row_col(
+void set_mi_row_col(
     PictureControlSet       *picture_control_set_ptr,
     MacroBlockD             *xd,
     TileInfo *              tile,
@@ -5708,10 +5712,6 @@ static INLINE void set_mi_row_col(
     xd->mb_to_right_edge = ((mi_cols - bw - mi_col) * MI_SIZE) * 8;
 
     xd->mi_stride = mi_stride;
-
-    // NM: To be updated when tile is supported.
-    tile->mi_row_start = 0;
-    tile->mi_col_start = 0;
 
     // Are edges available for intra prediction?
     xd->up_available = (mi_row > tile->mi_row_start);
@@ -6052,7 +6052,7 @@ EbErrorType write_modes_b(
     PictureControlSet     *picture_control_set_ptr,
     EntropyCodingContext  *context_ptr,
     EntropyCoder          *entropy_coder_ptr,
-    LargestCodingUnit     *tb_ptr,
+    SuperBlock            *tb_ptr,
     CodingUnit            *cu_ptr,
     EbPictureBufferDesc   *coeff_ptr)
 {
@@ -6088,6 +6088,10 @@ assert(bsize < BlockSizeS_ALL);
     cu_ptr->av1xd->mi = picture_control_set_ptr->parent_pcs_ptr->av1_cm->pcs_ptr->mi_grid_base + offset;
     ModeInfo *mi_ptr = *cu_ptr->av1xd->mi;
 
+    cu_ptr->av1xd->tile.mi_col_start = tb_ptr->tile_info.mi_col_start;
+    cu_ptr->av1xd->tile.mi_col_end = tb_ptr->tile_info.mi_col_end;
+    cu_ptr->av1xd->tile.mi_row_start = tb_ptr->tile_info.mi_row_start;
+    cu_ptr->av1xd->tile.mi_row_end = tb_ptr->tile_info.mi_row_end;
     cu_ptr->av1xd->up_available = (mi_row > tb_ptr->tile_info.mi_row_start);
     cu_ptr->av1xd->left_available = (mi_col > tb_ptr->tile_info.mi_col_start);
     if (cu_ptr->av1xd->up_available)
@@ -6716,7 +6720,7 @@ assert(bsize < BlockSizeS_ALL);
 **********************************************/
 EB_EXTERN EbErrorType write_sb(
     EntropyCodingContext  *context_ptr,
-    LargestCodingUnit     *tb_ptr,
+    SuperBlock            *tb_ptr,
     PictureControlSet     *picture_control_set_ptr,
     EntropyCoder          *entropy_coder_ptr,
     EbPictureBufferDesc   *coeff_ptr)

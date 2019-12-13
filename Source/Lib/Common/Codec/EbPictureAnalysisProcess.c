@@ -418,6 +418,59 @@ uint64_t ComputeVariance16x16(
     return (meanOf16x16SquaredValuesBlocks - (meanOf16x16Blocks * meanOf16x16Blocks));
 }
 
+
+/*******************************************
+ * compute_mean
+ *   returns the mean of a block
+ *******************************************/
+uint64_t compute_mean_c(
+    uint8_t* input_samples,     /**< input parameter, input samples Ptr */
+    uint32_t input_stride,      /**< input parameter, input stride */
+    uint32_t input_area_width,  /**< input parameter, input area width */
+    uint32_t input_area_height) /**< input parameter, input area height */
+{
+    uint32_t hi, vi;
+    uint64_t block_mean = 0;
+
+    for (vi = 0; vi < input_area_height; vi++) {
+        for (hi = 0; hi < input_area_width; hi++) {
+            block_mean += input_samples[hi];
+        }
+        input_samples += input_stride;
+    }
+
+    block_mean = (block_mean << (VARIANCE_PRECISION >> 1)) /
+        (input_area_width * input_area_height);
+
+    return block_mean;
+}
+
+/*******************************************
+ * compute_mean_squared_values_c
+ *   returns the Mean of Squared Values
+ *******************************************/
+uint64_t compute_mean_squared_values_c(
+    uint8_t* input_samples,     /**< input parameter, input samples Ptr */
+    uint32_t input_stride,      /**< input parameter, input stride */
+    uint32_t input_area_width,  /**< input parameter, input area width */
+    uint32_t input_area_height) /**< input parameter, input area height */
+{
+    uint32_t hi, vi;
+    uint64_t block_mean = 0;
+
+    for (vi = 0; vi < input_area_height; vi++) {
+        for (hi = 0; hi < input_area_width; hi++) {
+            block_mean += input_samples[hi] * input_samples[hi];
+        }
+        input_samples += input_stride;
+    }
+
+    block_mean = (block_mean << VARIANCE_PRECISION) /
+        (input_area_width * input_area_height);
+
+    return block_mean;
+}
+
 uint64_t compute_sub_mean_c(
     uint8_t* input_samples,     /**< input parameter, input samples Ptr */
     uint32_t input_stride,      /**< input parameter, input stride */
@@ -2461,22 +2514,20 @@ EbErrorType DenoiseInputPicture(
         for (lcuCodingOrder = 0; lcuCodingOrder < sb_total_count; ++lcuCodingOrder) {
             sb_origin_x = (lcuCodingOrder % picture_width_in_sb) * sequence_control_set_ptr->sb_sz;
             sb_origin_y = (lcuCodingOrder / picture_width_in_sb) * sequence_control_set_ptr->sb_sz;
-
-            if (sb_origin_x == 0)
+            uint32_t start_idx = (sb_origin_x + BLOCK_SIZE_64 > input_picture_ptr->width) ? sb_origin_x : 0;
+            if (((input_picture_ptr->width -start_idx) & 15) == 0)
                 noise_extract_luma_strong(
                     input_picture_ptr,
                     denoised_picture_ptr,
                     sb_origin_y,
                     sb_origin_x);
 
-            if (sb_origin_x + BLOCK_SIZE_64 > input_picture_ptr->width)
-            {
+            else
                 noise_extract_luma_strong_c(
                     input_picture_ptr,
                     denoised_picture_ptr,
                     sb_origin_y,
                     sb_origin_x);
-            }
         }
 
         //copy Luma
@@ -2490,22 +2541,20 @@ EbErrorType DenoiseInputPicture(
         for (lcuCodingOrder = 0; lcuCodingOrder < sb_total_count; ++lcuCodingOrder) {
             sb_origin_x = (lcuCodingOrder % picture_width_in_sb) * sequence_control_set_ptr->sb_sz;
             sb_origin_y = (lcuCodingOrder / picture_width_in_sb) * sequence_control_set_ptr->sb_sz;
-
-            if (sb_origin_x == 0)
+            uint32_t start_idx = ((sb_origin_x >> subsampling_x) + BLOCK_SIZE_64 > input_picture_ptr->width) ? (sb_origin_x >> subsampling_x) : 0;
+            if ((((input_picture_ptr->width >> subsampling_x) - start_idx) & 7) == 0)
                 noise_extract_chroma_strong(
                     input_picture_ptr,
                     denoised_picture_ptr,
                     sb_origin_y >> subsampling_y,
                     sb_origin_x >> subsampling_x);
 
-            if (sb_origin_x + BLOCK_SIZE_64 > input_picture_ptr->width)
-            {
+            else
                 noise_extract_chroma_strong_c(
                     input_picture_ptr,
                     denoised_picture_ptr,
                     sb_origin_y >> subsampling_y,
                     sb_origin_x >> subsampling_x);
-            }
         }
 
         //copy chroma
@@ -2535,22 +2584,20 @@ EbErrorType DenoiseInputPicture(
         for (lcuCodingOrder = 0; lcuCodingOrder < sb_total_count; ++lcuCodingOrder) {
             sb_origin_x = (lcuCodingOrder % picture_width_in_sb) * sequence_control_set_ptr->sb_sz;
             sb_origin_y = (lcuCodingOrder / picture_width_in_sb) * sequence_control_set_ptr->sb_sz;
-
-            if (sb_origin_x == 0)
+            uint32_t start_idx = ((sb_origin_x >> subsampling_x) + BLOCK_SIZE_64 > input_picture_ptr->width) ? (sb_origin_x >> subsampling_x) : 0;
+            if ((((input_picture_ptr->width >> subsampling_x) - start_idx) & 7) == 0)
                 noise_extract_chroma_weak(
                     input_picture_ptr,
                     denoised_picture_ptr,
                     sb_origin_y >> subsampling_y,
                     sb_origin_x >> subsampling_x);
 
-            if (sb_origin_x + BLOCK_SIZE_64 > input_picture_ptr->width)
-            {
+            else
                 noise_extract_chroma_weak_c(
                     input_picture_ptr,
                     denoised_picture_ptr,
                     sb_origin_y >> subsampling_y,
                     sb_origin_x >> subsampling_x);
-            }
         }
 
         for (verticalIdx = 0; verticalIdx < input_picture_ptr->height >> subsampling_y; ++verticalIdx) {
@@ -2617,10 +2664,10 @@ EbErrorType DetectInputPictureNoise(
         sb_origin_y = (lcuCodingOrder / picture_width_in_sb) * sequence_control_set_ptr->sb_sz;
         inputLumaOriginIndex = (noise_picture_ptr->origin_y + sb_origin_y) * noise_picture_ptr->stride_y +
             noise_picture_ptr->origin_x + sb_origin_x;
-
+        uint32_t start_idx = (sb_origin_x + BLOCK_SIZE_64 > input_picture_ptr->width) ? sb_origin_x : 0;
         uint32_t  noiseOriginIndex = noise_picture_ptr->origin_x + sb_origin_x + noise_picture_ptr->origin_y * noise_picture_ptr->stride_y;
 
-        if (sb_origin_x == 0)
+        if (((input_picture_ptr->width - start_idx) & 15) == 0)
             noise_extract_luma_weak(
                 input_picture_ptr,
                 denoised_picture_ptr,
@@ -2628,15 +2675,13 @@ EbErrorType DetectInputPictureNoise(
                 sb_origin_y,
                 sb_origin_x);
 
-        if (sb_origin_x + BLOCK_SIZE_64 > input_picture_ptr->width)
-        {
+        else
             noise_extract_luma_weak_c(
                 input_picture_ptr,
                 denoised_picture_ptr,
                 noise_picture_ptr,
                 sb_origin_y,
                 sb_origin_x);
-        }
 
         //do it only for complete 64x64 blocks
         if (sb_origin_x + 64 <= input_picture_ptr->width && sb_origin_y + 64 <= input_picture_ptr->height)
@@ -2814,8 +2859,8 @@ EbErrorType SubSampleFilterNoise(
         for (lcuCodingOrder = 0; lcuCodingOrder < sb_total_count; ++lcuCodingOrder) {
             sb_origin_x = (lcuCodingOrder % picture_width_in_sb) * sequence_control_set_ptr->sb_sz;
             sb_origin_y = (lcuCodingOrder / picture_width_in_sb) * sequence_control_set_ptr->sb_sz;
-
-            if (sb_origin_x == 0)
+            uint32_t start_idx = (sb_origin_x + BLOCK_SIZE_64 > input_picture_ptr->width) ? sb_origin_x : 0;
+            if (((input_picture_ptr->width - start_idx) & 15) == 0)
                 noise_extract_luma_weak(
                     input_picture_ptr,
                     denoised_picture_ptr,
@@ -2823,15 +2868,13 @@ EbErrorType SubSampleFilterNoise(
                     sb_origin_y,
                     sb_origin_x);
 
-            if (sb_origin_x + BLOCK_SIZE_64 > input_picture_ptr->width)
-            {
+            else
                 noise_extract_luma_weak_c(
                     input_picture_ptr,
                     denoised_picture_ptr,
                     noise_picture_ptr,
                     sb_origin_y,
                     sb_origin_x);
-            }
         }
 
         //copy luma
@@ -2845,22 +2888,20 @@ EbErrorType SubSampleFilterNoise(
         for (lcuCodingOrder = 0; lcuCodingOrder < sb_total_count; ++lcuCodingOrder) {
             sb_origin_x = (lcuCodingOrder % picture_width_in_sb) * sequence_control_set_ptr->sb_sz;
             sb_origin_y = (lcuCodingOrder / picture_width_in_sb) * sequence_control_set_ptr->sb_sz;
-
-            if (sb_origin_x == 0)
+            uint32_t start_idx = ((sb_origin_x >> subsampling_x) + BLOCK_SIZE_64 > input_picture_ptr->width) ? (sb_origin_x >> subsampling_x) : 0;
+            if ((((input_picture_ptr->width >> subsampling_x) - start_idx) & 7) == 0)
                 noise_extract_chroma_weak(
                     input_picture_ptr,
                     denoised_picture_ptr,
                     sb_origin_y >> subsampling_y,
                     sb_origin_x >> subsampling_x);
 
-            if (sb_origin_x + BLOCK_SIZE_64 > input_picture_ptr->width)
-            {
+            else
                 noise_extract_chroma_weak_c(
                     input_picture_ptr,
                     denoised_picture_ptr,
                     sb_origin_y >> subsampling_y,
                     sb_origin_x >> subsampling_x);
-            }
         }
 
         //copy chroma
@@ -2990,8 +3031,8 @@ EbErrorType QuarterSampleDetectNoise(
         for (horz64x64Index = 0; horz64x64Index < (quarter_decimated_picture_ptr->width / 64); horz64x64Index++) {
             block64x64X = horz64x64Index * 64;
             block64x64Y = vert64x64Index * 64;
-
-            if (block64x64X == 0)
+            uint32_t start_idx = (block64x64X + BLOCK_SIZE_64 > quarter_decimated_picture_ptr->width) ? block64x64X : 0;
+            if (((quarter_decimated_picture_ptr->width - start_idx) & 15) == 0)
                 noise_extract_luma_weak(
                     quarter_decimated_picture_ptr,
                     denoised_picture_ptr,
@@ -2999,15 +3040,13 @@ EbErrorType QuarterSampleDetectNoise(
                     block64x64Y,
                     block64x64X);
 
-            if (block64x64Y + BLOCK_SIZE_64 > quarter_decimated_picture_ptr->width)
-            {
+            else
                 noise_extract_luma_weak_c(
                     quarter_decimated_picture_ptr,
                     denoised_picture_ptr,
                     noise_picture_ptr,
                     block64x64Y,
                     block64x64X);
-            }
 
             // Loop over 32x32 blocks (i.e, 64x64 blocks in full resolution)
             for (vert32x32Index = 0; vert32x32Index < 2; vert32x32Index++) {
@@ -3111,8 +3150,8 @@ EbErrorType SubSampleDetectNoise(
         for (horz64x64Index = 0; horz64x64Index < (sixteenth_decimated_picture_ptr->width / 64); horz64x64Index++) {
             block64x64X = horz64x64Index * 64;
             block64x64Y = vert64x64Index * 64;
-
-            if (block64x64X == 0)
+            uint32_t start_idx = (block64x64X + BLOCK_SIZE_64 > sixteenth_decimated_picture_ptr->width) ? block64x64X : 0;
+            if (((sixteenth_decimated_picture_ptr->width - start_idx) & 15) == 0)
                 noise_extract_luma_weak(
                     sixteenth_decimated_picture_ptr,
                     denoised_picture_ptr,
@@ -3120,15 +3159,13 @@ EbErrorType SubSampleDetectNoise(
                     block64x64Y,
                     block64x64X);
 
-            if (block64x64Y + BLOCK_SIZE_64 > sixteenth_decimated_picture_ptr->width)
-            {
+            else
                 noise_extract_luma_weak_c(
                     sixteenth_decimated_picture_ptr,
                     denoised_picture_ptr,
                     noise_picture_ptr,
                     block64x64Y,
                     block64x64X);
-            }
 
             // Loop over 16x16 blocks (i.e, 64x64 blocks in full resolution)
             for (vert16x16Index = 0; vert16x16Index < 4; vert16x16Index++) {

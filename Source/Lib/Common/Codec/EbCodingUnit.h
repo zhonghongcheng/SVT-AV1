@@ -6,8 +6,6 @@
 #ifndef EbCodingUnit_h
 #define EbCodingUnit_h
 
-//#include "EbSyntaxElements.h"
-//#include "EbObject.h"
 #include "EbMotionEstimationLcuResults.h"
 #include "EbPictureBufferDesc.h"
 #include "EbPredictionUnit.h"
@@ -214,21 +212,13 @@ extern "C" {
         /*!< Equal to 1 specifies that the segment_id is taken from the segmentation map. */
         int8_t seg_id_predicted;
 
-        /*!< For Lossy mode   : Specifies number of Luma TUs in a block
-             For Lossless mode: Specifies number of Luma TUs for a block of size other than
+        /*!< For Lossy mode   : Specifies number of TUs in a block for each plane
+             For Lossless mode: Specifies number of TUs for a block of size other than
                                 128x128, 128x64, 64x128 and 64x64 - computed based on blocksize */
-        uint8_t         num_luma_tus;
+        uint8_t         num_tus[MAX_MB_PLANE - 1];
 
-        /*!< Offset of first Luma transform info from strat of SB pointer */
-        uint16_t        first_luma_tu_offset;
-
-        /*!< For Lossy mode   : Specifies number of Chroma TUs in a block
-             For Lossless mode: Specifies number of Chroma TUs for a block of size other than
-                                128x128, 128x64, 64x128 and 64x64 - computed based on blocksize */
-        uint8_t         num_chroma_tus;
-
-        /*!< Offset of first Chroma transform info from strat of SB pointer */
-        uint16_t        first_chroma_tu_offset;
+        /*!< Offset of first transform info from strat of SB pointer for each plane */
+        uint16_t        first_tu_offset[MAX_MB_PLANE - 1];
 
         // Only for INTRA blocks
         UvPredictionMode   uv_mode;
@@ -276,7 +266,7 @@ extern "C" {
         int8_t angle_delta[PLANE_TYPES];
 
         // Number of base colors for Y (0) and UV (1)
-        uint8_t palette_size[2];
+        uint8_t palette_size[MAX_MB_PLANE-1];
 
 #if MODE_INFO_DBG
         int32_t mi_row;
@@ -459,7 +449,6 @@ extern "C" {
         unsigned                    prediction_mode_flag    : 2;
         unsigned                    block_has_coeff         : 1;
         unsigned                    split_flag_context      : 2;
-
 #if !ADD_DELTA_QP_SUPPORT
         unsigned                    qp                      : 6;
         signed                      delta_qp                : 8; // can be signed 8bits
@@ -555,7 +544,7 @@ extern "C" {
         uint8_t  isolated_high_intensity_sb; // to be cleanedup
     } EdgeLcuResults;
 
-    typedef struct LargestCodingUnit
+    typedef struct SuperBlock
     {
         EbDctor                       dctor;
         struct PictureControlSet     *picture_control_set_ptr;
@@ -585,13 +574,15 @@ extern "C" {
         EbPictureBufferDesc          *quantized_coeff;
 #if MDC_ADAPTIVE_LEVEL
         uint8_t                       depth_ranking[NUMBER_OF_DEPTH];
+#endif
+#if MDC_ADAPTIVE_LEVEL || MULTI_PASS_PD
         uint64_t                      depth_cost[NUMBER_OF_DEPTH];
 #endif
         TileInfo tile_info;
-    } LargestCodingUnit;
+    } SuperBlock;
 
     extern EbErrorType largest_coding_unit_ctor(
-        LargestCodingUnit             *larget_coding_unit_ptr,
+        SuperBlock                  *larget_coding_unit_ptr,
         uint8_t                        sb_sz,
         uint16_t                       sb_origin_x,
         uint16_t                       sb_origin_y,

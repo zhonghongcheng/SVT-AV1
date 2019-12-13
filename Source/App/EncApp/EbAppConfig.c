@@ -68,6 +68,7 @@
 #define LOCAL_WARPED_ENABLE_TOKEN       "-local-warp"
 #define GLOBAL_MOTION_ENABLE_TOKEN      "-global-motion"
 #define OBMC_TOKEN                      "-obmc"
+#define RDOQ_TOKEN                      "-rdoq"
 #define FILTER_INTRA_TOKEN              "-filter-intra"
 #define USE_DEFAULT_ME_HME_TOKEN        "-use-default-me-hme"
 #define HME_ENABLE_TOKEN                "-hme"
@@ -111,6 +112,7 @@
 #define TILE_COL_TOKEN                   "-tile-columns"
 
 #define SQ_WEIGHT_TOKEN                 "-sqw"
+#define ENABLE_AMP_TOKEN                "-enable-amp"
 
 #define SCENE_CHANGE_DETECTION_TOKEN    "-scd"
 #define INJECTOR_TOKEN                  "-inj"  // no Eval
@@ -248,6 +250,8 @@ static void SetDisableDlfFlag                   (const char *value, EbConfig *cf
 static void SetEnableLocalWarpedMotionFlag      (const char *value, EbConfig *cfg) {cfg->enable_warped_motion = (EbBool)strtoul(value, NULL, 0);};
 static void SetEnableGlobalMotionFlag           (const char *value, EbConfig *cfg) {cfg->enable_global_motion = (EbBool)strtoul(value, NULL, 0);};
 static void SetEnableObmcFlag                   (const char *value, EbConfig *cfg) {cfg->enable_obmc = (EbBool)strtoul(value, NULL, 0);};
+static void SetEnableRdoqFlag                   (const char *value, EbConfig *cfg) {cfg->enable_rdoq = (int8_t)strtol(value, NULL, 0);};
+
 static void SetEnableFilterIntraFlag            (const char *value, EbConfig *cfg) {cfg->enable_filter_intra = (EbBool)strtoul(value, NULL, 0);};
 static void SetEnableHmeFlag                    (const char *value, EbConfig *cfg) {cfg->enable_hme_flag = (EbBool)strtoul(value, NULL, 0);};
 static void SetEnableHmeLevel0Flag              (const char *value, EbConfig *cfg) {cfg->enable_hme_level0_flag = (EbBool)strtoul(value, NULL, 0);};
@@ -257,7 +261,7 @@ static void SetTileCol                          (const char *value, EbConfig *cf
 static void SetSceneChangeDetection             (const char *value, EbConfig *cfg) {cfg->scene_change_detection = strtoul(value, NULL, 0);};
 static void SetLookAheadDistance                (const char *value, EbConfig *cfg) {cfg->look_ahead_distance = strtoul(value, NULL, 0);};
 static void SetRateControlMode                  (const char *value, EbConfig *cfg) {cfg->rate_control_mode = strtoul(value, NULL, 0);};
-static void SetTargetBitRate                    (const char *value, EbConfig *cfg) {cfg->target_bit_rate = strtoul(value, NULL, 0);};
+static void SetTargetBitRate                    (const char *value, EbConfig *cfg) {cfg->target_bit_rate = 1000*strtoul(value, NULL, 0);};
 static void SetMaxQpAllowed                     (const char *value, EbConfig *cfg) {cfg->max_qp_allowed = strtoul(value, NULL, 0);};
 static void SetMinQpAllowed                     (const char *value, EbConfig *cfg) {cfg->min_qp_allowed = strtoul(value, NULL, 0);};
 static void SetAdaptiveQuantization             (const char *value, EbConfig *cfg) {cfg->enable_adaptive_quantization = (EbBool)strtol(value,  NULL, 0);};
@@ -309,7 +313,36 @@ static void SetInjectorFrameRate                (const char *value, EbConfig *cf
         cfg->injector_frame_rate = cfg->injector_frame_rate << 16;
 }
 static void SetLatencyMode                      (const char *value, EbConfig *cfg)  {cfg->latency_mode               = (uint8_t)strtol(value, NULL, 0);};
-static void SetAsmType                          (const char *value, EbConfig *cfg)  {cfg->asm_type                   = (uint32_t)strtoul(value, NULL, 0);};
+static void SetAsmType                          (const char *value, EbConfig *cfg)  {
+    const struct {
+        char *name;
+        CPU_FLAGS flags;
+    } param_maps[] ={
+        {"c",       0},                             {"0",  0},
+        {"mmx",     (CPU_FLAGS_MMX << 1) - 1},      {"1",  (CPU_FLAGS_MMX << 1) - 1},
+        {"sse",     (CPU_FLAGS_SSE << 1) - 1},      {"2",  (CPU_FLAGS_SSE << 1) - 1},
+        {"sse2",    (CPU_FLAGS_SSE2 << 1) - 1},     {"3",  (CPU_FLAGS_SSE2 << 1) - 1},
+        {"sse3",    (CPU_FLAGS_SSE3 << 1) - 1},     {"4",  (CPU_FLAGS_SSE3 << 1) - 1},
+        {"ssse3",   (CPU_FLAGS_SSSE3 << 1) - 1},    {"5",  (CPU_FLAGS_SSSE3 << 1) - 1},
+        {"sse4_1",  (CPU_FLAGS_SSE4_1 << 1) - 1},   {"6",  (CPU_FLAGS_SSE4_1 << 1) - 1},
+        {"sse4_2",  (CPU_FLAGS_SSE4_2 << 1) - 1},   {"7",  (CPU_FLAGS_SSE4_2 << 1) - 1},
+        {"avx",     (CPU_FLAGS_AVX << 1) - 1},      {"8",  (CPU_FLAGS_AVX << 1) - 1},
+        {"avx2",    (CPU_FLAGS_AVX2 << 1) - 1},     {"9",  (CPU_FLAGS_AVX2 << 1) - 1},
+        {"avx512",  (CPU_FLAGS_AVX512VL << 1) - 1}, {"10", (CPU_FLAGS_AVX512VL << 1) - 1},
+        {"max",     CPU_FLAGS_ALL},                 {"11", CPU_FLAGS_ALL},
+    };
+    const uint32_t para_map_size = sizeof(param_maps) / sizeof(param_maps[0]);
+    uint32_t i;
+
+    for (i = 0; i < para_map_size; ++i) {
+        if (EB_STRCMP(value, param_maps[i].name) == 0) {
+            cfg->cpu_flags_limit = param_maps[i].flags;
+            return;
+        }
+    }
+
+    cfg->cpu_flags_limit = CPU_FLAGS_INVALID;
+};
 static void SetLogicalProcessors                (const char *value, EbConfig *cfg)  {cfg->logical_processors         = (uint32_t)strtoul(value, NULL, 0);};
 static void SetTargetSocket                     (const char *value, EbConfig *cfg)  {cfg->target_socket              = (int32_t)strtol(value, NULL, 0);};
 static void SetUnrestrictedMotionVector         (const char *value, EbConfig *cfg)  {cfg->unrestricted_motion_vector = (EbBool)strtol(value, NULL, 0);};
@@ -339,6 +372,8 @@ static void SetMDS2_PRUNE_S_TH(const char *value, EbConfig *cfg) {
     if (cfg->md_stage_2_cand_prune_th == 0)
         cfg->md_stage_2_cand_prune_th = (uint64_t)~0;
 }
+
+static void set_enable_auto_max_partition           (const char *value, EbConfig *cfg) { cfg->enable_auto_max_partition = (uint8_t)strtol(value, NULL, 0); };
 
 enum cfg_type{
     SINGLE_INPUT,   // Configuration parameters that have only 1 value input
@@ -417,6 +452,8 @@ config_entry_t config_entry[] = {
     { SINGLE_INPUT, GLOBAL_MOTION_ENABLE_TOKEN, "GlobalMotion", SetEnableGlobalMotionFlag },
     // OBMC
     { SINGLE_INPUT, OBMC_TOKEN, "Obmc", SetEnableObmcFlag },
+    // RDOQ
+    { SINGLE_INPUT, RDOQ_TOKEN, "RDOQ", SetEnableRdoqFlag },
     // Filter Intra
     { SINGLE_INPUT, FILTER_INTRA_TOKEN, "FilterIntra", SetEnableFilterIntraFlag },
     // ME Tools
@@ -460,7 +497,7 @@ config_entry_t config_entry[] = {
     { SINGLE_INPUT, LATENCY_MODE, "LatencyMode", SetLatencyMode },
     { SINGLE_INPUT, FILM_GRAIN_TOKEN, "FilmGrain", SetCfgFilmGrain },
     // Asm Type
-    { SINGLE_INPUT, ASM_TYPE_TOKEN, "AsmType", SetAsmType },
+    { SINGLE_INPUT, ASM_TYPE_TOKEN, "Asm", SetAsmType },
     // HME
     { ARRAY_INPUT,HME_LEVEL0_WIDTH, "HmeLevel0SearchAreaInWidth", SetHmeLevel0SearchAreaInWidthArray },
     { ARRAY_INPUT,HME_LEVEL0_HEIGHT, "HmeLevel0SearchAreaInHeight", SetHmeLevel0SearchAreaInHeightArray },
@@ -476,6 +513,7 @@ config_entry_t config_entry[] = {
     // --- end: ALTREF_FILTERING_SUPPORT
 
     { SINGLE_INPUT, SQ_WEIGHT_TOKEN, "SquareWeight", SetSquareWeight },
+    { SINGLE_INPUT, ENABLE_AMP_TOKEN, "AutomaxPartition", set_enable_auto_max_partition },
 
     { SINGLE_INPUT, MDS1_PRUNE_C_TH, "MDStage1PruneClassThreshold", SetMDS1_PRUNE_C_TH },
     { SINGLE_INPUT, MDS1_PRUNE_S_TH, "MDStage1PruneCandThreshold", SetMDS1_PRUNE_S_TH },
@@ -516,6 +554,7 @@ void eb_config_ctor(EbConfig *config_ptr)
     config_ptr->pred_structure                        = 2;
     config_ptr->enable_global_motion                 = EB_TRUE;
     config_ptr->enable_obmc                          = EB_TRUE;
+    config_ptr->enable_rdoq                          = -1;
     config_ptr->enable_filter_intra                  = EB_TRUE;
     config_ptr->in_loop_me_flag                      = EB_TRUE;
     config_ptr->use_default_me_hme                   = EB_TRUE;
@@ -546,7 +585,7 @@ void eb_config_ctor(EbConfig *config_ptr)
     config_ptr->injector_frame_rate                    = 60 << 16;
 
     // ASM Type
-    config_ptr->asm_type                              = 1;
+    config_ptr->cpu_flags_limit                         = CPU_FLAGS_ALL;
 
     config_ptr->target_socket                         = -1;
 
@@ -559,6 +598,7 @@ void eb_config_ctor(EbConfig *config_ptr)
     // --- end: ALTREF_FILTERING_SUPPORT
 
     config_ptr->sq_weight                            = 100;
+    config_ptr->enable_auto_max_partition             = 1;
 
     config_ptr->md_stage_1_cand_prune_th                = 75;
     config_ptr->md_stage_1_class_prune_th                = 100;
@@ -907,6 +947,7 @@ static EbErrorType VerifySettings(EbConfig *config, uint32_t channelNumber)
         fprintf(config->error_log_file, "Error instance %u: Invalid OBMC flag [0 - 1], your input: %d\n", channelNumber + 1, config->target_socket);
         return_error = EB_ErrorBadParameter;
     }
+
     // Filter Intra prediction
     if (config->enable_filter_intra != 0 && config->enable_filter_intra != 1) {
         fprintf(config->error_log_file, "Error instance %u: Invalid Filter Intra flag [0 - 1], your input: %d\n", channelNumber + 1, config->target_socket);

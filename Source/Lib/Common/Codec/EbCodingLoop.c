@@ -29,7 +29,6 @@
 #include "EbIntraPrediction.h"
 #include "aom_dsp_rtcd.h"
 
-
 void av1_set_ref_frame(MvReferenceFrame *rf,
     int8_t ref_frame_type);
 
@@ -57,7 +56,7 @@ static EB_AV1_INTER_PREDICTION_FUNC_PTR   av1_inter_prediction_function_table[2]
 typedef void(*EB_AV1_ENCODE_LOOP_FUNC_PTR)(
     PictureControlSet    *picture_control_set_ptr,
     EncDecContext       *context_ptr,
-    LargestCodingUnit   *sb_ptr,
+    SuperBlock          *sb_ptr,
     uint32_t                 origin_x,
     uint32_t                 origin_y,
     uint32_t                 cb_qp,
@@ -410,7 +409,7 @@ void GeneratePuIntraLumaNeighborModes(
 void encode_pass_tx_search(
     PictureControlSet            *picture_control_set_ptr,
     EncDecContext                *context_ptr,
-    LargestCodingUnit            *sb_ptr,
+    SuperBlock                   *sb_ptr,
     uint32_t                       cb_qp,
     EbPictureBufferDesc          *coeffSamplesTB,
     EbPictureBufferDesc          *residual16bit,
@@ -444,7 +443,7 @@ void encode_pass_tx_search(
 static void Av1EncodeLoop(
     PictureControlSet    *picture_control_set_ptr,
     EncDecContext       *context_ptr,
-    LargestCodingUnit   *sb_ptr,
+    SuperBlock          *sb_ptr,
     uint32_t                 origin_x,   //pic based tx org x
     uint32_t                 origin_y,   //pic based tx org y
     uint32_t                 cb_qp,
@@ -504,7 +503,11 @@ static void Av1EncodeLoop(
             residual16bit->stride_y,
             context_ptr->blk_geom->tx_width[cu_ptr->tx_depth][context_ptr->txb_itr],
             context_ptr->blk_geom->tx_height[cu_ptr->tx_depth][context_ptr->txb_itr]);
+#if MULTI_PASS_PD
+        uint8_t  tx_search_skip_flag = context_ptr->md_context->tx_search_level == TX_SEARCH_ENC_DEC ? get_skip_tx_search_flag(
+#else
         uint8_t  tx_search_skip_flag = (picture_control_set_ptr->parent_pcs_ptr->tx_search_level == TX_SEARCH_ENC_DEC && (picture_control_set_ptr->parent_pcs_ptr->atb_mode == 0 || cu_ptr->prediction_mode_flag == INTER_MODE)) ? get_skip_tx_search_flag(
+#endif
             context_ptr->blk_geom->sq_size,
             MAX_MODE_COST,
             0,
@@ -820,7 +823,7 @@ static void Av1EncodeLoop(
 void encode_pass_tx_search_hbd(
     PictureControlSet            *picture_control_set_ptr,
     EncDecContext                *context_ptr,
-    LargestCodingUnit            *sb_ptr,
+    SuperBlock                   *sb_ptr,
     uint32_t                       cb_qp,
     EbPictureBufferDesc          *coeffSamplesTB,
     EbPictureBufferDesc          *residual16bit,
@@ -854,7 +857,7 @@ void encode_pass_tx_search_hbd(
 static void Av1EncodeLoop16bit(
     PictureControlSet    *picture_control_set_ptr,
     EncDecContext       *context_ptr,
-    LargestCodingUnit   *sb_ptr,
+    SuperBlock          *sb_ptr,
     uint32_t                 origin_x,
     uint32_t                 origin_y,
     uint32_t                 cb_qp,
@@ -911,7 +914,11 @@ static void Av1EncodeLoop16bit(
                 residual16bit->stride_y,
                 context_ptr->blk_geom->tx_width[cu_ptr->tx_depth][context_ptr->txb_itr],
                 context_ptr->blk_geom->tx_height[cu_ptr->tx_depth][context_ptr->txb_itr]);
+#if MULTI_PASS_PD
+            uint8_t  tx_search_skip_flag = context_ptr->md_context->tx_search_level == TX_SEARCH_ENC_DEC ? get_skip_tx_search_flag(
+#else
             uint8_t  tx_search_skip_flag = (picture_control_set_ptr->parent_pcs_ptr->tx_search_level == TX_SEARCH_ENC_DEC && (picture_control_set_ptr->parent_pcs_ptr->atb_mode == 0 || cu_ptr->prediction_mode_flag == INTER_MODE)) ? get_skip_tx_search_flag(
+#endif
                 context_ptr->blk_geom->sq_size,
                 MAX_MODE_COST,
                 0,
@@ -1470,7 +1477,7 @@ void move_cu_data(
 
 void perform_intra_coding_loop(
     PictureControlSet  *picture_control_set_ptr,
-    LargestCodingUnit  *sb_ptr,
+    SuperBlock         *sb_ptr,
     uint32_t            tbAddr,
     CodingUnit         *cu_ptr,
     PredictionUnit     *pu_ptr,
@@ -2122,7 +2129,7 @@ void av1_copy_frame_mvs(PictureControlSet *picture_control_set_ptr, const Av1Com
 EB_EXTERN void av1_encode_pass(
     SequenceControlSet      *sequence_control_set_ptr,
     PictureControlSet       *picture_control_set_ptr,
-    LargestCodingUnit       *sb_ptr,
+    SuperBlock              *sb_ptr,
     uint32_t                 tbAddr,
     uint32_t                 sb_origin_x,
     uint32_t                 sb_origin_y,
@@ -3688,6 +3695,8 @@ EB_EXTERN void av1_encode_pass(
                                     //List0-Y
                                     uint16_t origin_x = MAX(0, (int16_t)context_ptr->cu_origin_x + (context_ptr->mv_unit.mv[REF_LIST_0].x >> 3));
                                     uint16_t origin_y = MAX(0, (int16_t)context_ptr->cu_origin_y + (context_ptr->mv_unit.mv[REF_LIST_0].y >> 3));
+                                    origin_x = MIN(origin_x, sequence_control_set_ptr->seq_header.max_frame_width - blk_geom->bwidth);
+                                    origin_y = MIN(origin_y, sequence_control_set_ptr->seq_header.max_frame_height - blk_geom->bheight);
                                     uint16_t sb_origin_x = origin_x / context_ptr->sb_sz * context_ptr->sb_sz;
                                     uint16_t sb_origin_y = origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
                                     uint32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
@@ -3735,6 +3744,8 @@ EB_EXTERN void av1_encode_pass(
                                 //List1-Y
                                 uint16_t origin_x = MAX(0, (int16_t)context_ptr->cu_origin_x + (context_ptr->mv_unit.mv[REF_LIST_1].x >> 3));
                                 uint16_t origin_y = MAX(0, (int16_t)context_ptr->cu_origin_y + (context_ptr->mv_unit.mv[REF_LIST_1].y >> 3));
+                                origin_x = MIN(origin_x, sequence_control_set_ptr->seq_header.max_frame_width - blk_geom->bwidth);
+                                origin_y = MIN(origin_y, sequence_control_set_ptr->seq_header.max_frame_height - blk_geom->bheight);
                                 uint16_t sb_origin_x = origin_x / context_ptr->sb_sz * context_ptr->sb_sz;
                                 uint16_t sb_origin_y = origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
                                 uint32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
@@ -3858,7 +3869,7 @@ EB_EXTERN void av1_encode_pass(
 EB_EXTERN void no_enc_dec_pass(
     SequenceControlSet    *sequence_control_set_ptr,
     PictureControlSet     *picture_control_set_ptr,
-    LargestCodingUnit     *sb_ptr,
+    SuperBlock            *sb_ptr,
     uint32_t                   tbAddr,
     uint32_t                   sb_origin_x,
     uint32_t                   sb_origin_y,

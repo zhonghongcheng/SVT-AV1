@@ -57,7 +57,14 @@ extern "C" {
 
 // BDP OFF
 #define MD_NEIGHBOR_ARRAY_INDEX                0
+#if MULTI_PASS_PD
+#define MULTI_STAGE_PD_NEIGHBOR_ARRAY_INDEX    4
+#endif
+#if MULTI_PASS_PD
+#define NEIGHBOR_ARRAY_TOTAL_COUNT             5
+#else
 #define NEIGHBOR_ARRAY_TOTAL_COUNT             4
+#endif
 #define AOM_QM_BITS                            5
 
 
@@ -232,7 +239,7 @@ extern "C" {
         uint8_t           ol_best_nsq_shape8;
 #endif
 #endif
-#if ADD_MDC_REFINEMENT_LOOP
+#if ADD_MDC_REFINEMENT_LOOP || MULTI_PASS_PD
         uint8_t           consider_block;
         uint8_t           refined_split_flag;
 #endif
@@ -267,7 +274,7 @@ extern "C" {
      * Picture Control Set
      **************************************/
     struct CodedTreeblock_s;
-    struct LargestCodingUnit;
+    struct SuperBlock;
 #define MAX_MESH_STEP 4
 
     typedef struct MeshPattern
@@ -275,6 +282,15 @@ extern "C" {
         int range;
         int interval;
     } MeshPattern;
+
+#if AUTO_MAX_PARTITION
+    enum {
+        NOT_IN_USE,
+        DIRECT_PRED,
+        RELAXED_PRED,
+        ADAPT_PRED
+    } UENUM1BYTE(MAX_PART_PRED_MODE);
+#endif
 
     typedef struct SpeedFeatures
     {
@@ -294,6 +310,13 @@ extern "C" {
 
         // Pattern to be used for any exhaustive mesh searches.
         MeshPattern mesh_patterns[MAX_MESH_STEP];
+
+#if AUTO_MAX_PARTITION
+        // Sets min and max square partition levels for this superblock based on
+        // motion vector and prediction error distribution produced from 16x16
+        // simple motion search
+        MAX_PART_PRED_MODE auto_max_partition_based_on_simple_motion;
+#endif
     } SpeedFeatures;
 
     typedef struct PictureControlSet
@@ -376,7 +399,7 @@ extern "C" {
         // SB Array
         uint8_t                               sb_max_depth;
         uint16_t                              sb_total_count;
-        LargestCodingUnit                 **sb_ptr_array;
+        SuperBlock                            **sb_ptr_array;
         // DLF
         uint8_t                              *qp_array;
         uint16_t                              qp_array_stride;
@@ -846,10 +869,12 @@ extern "C" {
         int32_t                               cdef_frame_strength;
         int32_t                               cdf_ref_frame_strenght;
         int32_t                               use_ref_frame_cdef_strength;
+#if !MULTI_PASS_PD
         uint8_t                               tx_search_level;
         uint64_t                              tx_weight;
         uint8_t                               tx_search_reduced_set;
         uint8_t                               interpolation_search_level;
+#endif
         uint8_t                               nsq_search_level;
 #if PAL_SUP
         uint8_t                               palette_mode;
@@ -885,7 +910,9 @@ extern "C" {
                                                             // I Slice has the value of the next ALT_REF picture
         uint64_t                              filtered_sse_uv;
         FrameHeader                           frm_hdr;
+#if !MULTI_PASS_PD
         MD_COMP_TYPE                          compound_types_to_try;
+#endif
         uint8_t                               compound_mode;
         uint8_t                               prune_unipred_at_me;
         uint8_t                               coeff_based_skip_atb;
@@ -907,6 +934,9 @@ extern "C" {
 #endif
 #if MDC_ADAPTIVE_LEVEL
         uint8_t                                enable_adaptive_ol_partitioning;
+#endif
+#if GM_OPT
+        uint8_t                                gm_level;
 #endif
     } PictureParentControlSet;
 

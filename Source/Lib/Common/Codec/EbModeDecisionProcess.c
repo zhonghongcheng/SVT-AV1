@@ -230,6 +230,7 @@ EbErrorType mode_decision_context_ctor(
         const BlockGeom * blk_geom = get_blk_geom_mds(codedLeafIndex);
         UNUSED(blk_geom);
         context_ptr->md_cu_arr_nsq[codedLeafIndex].av1xd = context_ptr->md_cu_arr_nsq[0].av1xd + codedLeafIndex;
+        context_ptr->md_cu_arr_nsq[codedLeafIndex].segment_id = 0;
 #if !HBD_CLEAN_UP
         if (context_ptr->hbd_mode_decision) {
 #endif
@@ -534,6 +535,9 @@ void reset_mode_decision(
 #if !FIX_SETTINGS_RESET
     }
 #endif
+#if EIGHT_PEL_FIX
+    (void)sequence_control_set_ptr;
+#else
 #if EIGHT_PEL_PREDICTIVE_ME
     picture_control_set_ptr->parent_pcs_ptr->frm_hdr.allow_high_precision_mv = picture_control_set_ptr->enc_mode == ENC_M0 &&
         (sequence_control_set_ptr->input_resolution == INPUT_SIZE_576p_RANGE_OR_LOWER) ? 1 : 0;
@@ -543,6 +547,8 @@ void reset_mode_decision(
         (picture_control_set_ptr->parent_pcs_ptr->is_pan || picture_control_set_ptr->parent_pcs_ptr->is_tilt) ? 1 : 0;
 #endif
 #endif
+#endif
+#if !MULTI_PASS_PD
     EbBool enable_wm;
     if (picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
         enable_wm = EB_FALSE;
@@ -571,7 +577,11 @@ void reset_mode_decision(
     if (sequence_control_set_ptr->static_config.enable_obmc) {
         if (picture_control_set_ptr->parent_pcs_ptr->enc_mode <= ENC_M0)
             picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode =
+#if M0_OPT
+            picture_control_set_ptr->slice_type != I_SLICE ? 2 : 0;
+#else
             picture_control_set_ptr->parent_pcs_ptr->sc_content_detected == 0 && picture_control_set_ptr->slice_type != I_SLICE ? 2 : 0;
+#endif
         else
             picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode = 0;
 
@@ -586,6 +596,7 @@ void reset_mode_decision(
     frm_hdr->is_motion_mode_switchable =
         frm_hdr->is_motion_mode_switchable || picture_control_set_ptr->parent_pcs_ptr->pic_obmc_mode;
 
+#endif
 #endif
 #if FIX_SETTINGS_RESET
     }

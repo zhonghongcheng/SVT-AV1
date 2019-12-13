@@ -192,6 +192,7 @@ EbErrorType CopyConfigurationParameters(
     callback_data->eb_enc_parameters.enable_warped_motion = (EbBool)config->enable_warped_motion;
     callback_data->eb_enc_parameters.enable_global_motion = (EbBool)config->enable_global_motion;
     callback_data->eb_enc_parameters.enable_obmc = (EbBool)config->enable_obmc;
+    callback_data->eb_enc_parameters.enable_rdoq = config->enable_rdoq;
     callback_data->eb_enc_parameters.enable_filter_intra = (EbBool)config->enable_filter_intra;
     callback_data->eb_enc_parameters.use_default_me_hme = (EbBool)config->use_default_me_hme;
     callback_data->eb_enc_parameters.enable_hme_flag = (EbBool)config->enable_hme_flag;
@@ -221,7 +222,7 @@ EbErrorType CopyConfigurationParameters(
     callback_data->eb_enc_parameters.level = config->level;
     callback_data->eb_enc_parameters.injector_frame_rate = config->injector_frame_rate;
     callback_data->eb_enc_parameters.speed_control_flag = config->speed_control_flag;
-    callback_data->eb_enc_parameters.asm_type = config->asm_type;
+    callback_data->eb_enc_parameters.use_cpu_flags = config->cpu_flags_limit;
     callback_data->eb_enc_parameters.logical_processors = config->logical_processors;
     callback_data->eb_enc_parameters.target_socket = config->target_socket;
     callback_data->eb_enc_parameters.unrestricted_motion_vector = config->unrestricted_motion_vector;
@@ -246,6 +247,7 @@ EbErrorType CopyConfigurationParameters(
     }
 
     callback_data->eb_enc_parameters.sq_weight = config->sq_weight;
+    callback_data->eb_enc_parameters.enable_auto_max_partition = config->enable_auto_max_partition;
 
     callback_data->eb_enc_parameters.md_stage_1_cand_prune_th = config->md_stage_1_cand_prune_th;
     callback_data->eb_enc_parameters.md_stage_1_class_prune_th = config->md_stage_1_class_prune_th;

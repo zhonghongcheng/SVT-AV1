@@ -5,10 +5,7 @@
 
 #include <stdlib.h>
 
-//#include "EbDefinitions.h"
 #include "EbEncodeContext.h"
-//#include "EbPictureManagerQueue.h"
-//#include "EbCabacContextModel.h"
 #include "EbSvtAv1ErrorCodes.h"
 #include "EbThreads.h"
 

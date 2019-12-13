@@ -13,44 +13,23 @@
 #include <stdint.h>
 #include <immintrin.h>
 
-//#include "EbDefinitions.h"
-//#include "EbSvtAv1Enc.h"
 #include "EbThreads.h"
 #include "EbUtility.h"
 #include "EbString.h"
 #include "EbEncHandle.h"
-//#include "EbSystemResourceManager.h"
 #include "EbPictureControlSet.h"
 #include "EbPictureOperators.h"
-//#include "EbSequenceControlSet.h"
-//#include "EbPictureBufferDesc.h"
 #include "EbReferenceObject.h"
-//#include "EbPictureDecisionProcess.h"
-//#include "EbMotionEstimationProcess.h"
-//#include "EbInitialRateControlProcess.h"
-//#include "EbSourceBasedOperationsProcess.h"
-//#include "EbPictureManagerProcess.h"
-//#include "EbRateControlProcess.h"
-//#include "EbModeDecisionConfigurationProcess.h"
-//#include "EbEncDecProcess.h"
-//#include "EbEntropyCodingProcess.h"
-//#include "EbPacketizationProcess.h"
-//#include "EbResourceCoordinationResults.h"
 #include "EbPictureAnalysisResults.h"
 #include "EbPictureDecisionResults.h"
 #include "EbMotionEstimationResults.h"
 #include "EbInitialRateControlResults.h"
 #include "EbPictureDemuxResults.h"
 #include "EbRateControlTasks.h"
-//#include "EbRateControlResults.h"
 #include "EbEncDecTasks.h"
 #include "EbEncDecResults.h"
 #include "EbEntropyCodingResults.h"
 #include "EbPredictionStructure.h"
-//#include "EbDlfProcess.h"
-//#include "EbCdefProcess.h"
-//#include "EbRestProcess.h"
-//#include "EbObject.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -109,24 +88,34 @@ typedef struct logicalProcessorGroup {
 #define INITIAL_PROCESSOR_GROUP 16
 processorGroup                  *lp_group = NULL;
 #endif
-static int32_t CanUseIntelCore4thGenFeatures()
-{
-    static int32_t the_4th_gen_features_available = -1;
-    /* test is performed once */
-    if (the_4th_gen_features_available < 0)
-        the_4th_gen_features_available = Check4thGenIntelCoreFeatures();
-    return the_4th_gen_features_available;
-}
-EbAsm GetCpuAsmType()
-{
-    EbAsm asm_type = ASM_NON_AVX2;
 
-    if (CanUseIntelCore4thGenFeatures() == 1)
-        asm_type = ASM_AVX2;
-    else
-        // Need to change to support lower CPU Technologies
-        asm_type = ASM_NON_AVX2;
-    return asm_type;
+static const char *get_asm_level_name_str(CPU_FLAGS cpu_flags) {
+
+    const struct {
+        char *name;
+        CPU_FLAGS flags;
+    } param_maps[] = {
+        {"c",       0},
+        {"mmx",     CPU_FLAGS_MMX},
+        {"sse",     CPU_FLAGS_SSE},
+        {"sse2",    CPU_FLAGS_SSE2},
+        {"sse3",    CPU_FLAGS_SSE3},
+        {"ssse3",   CPU_FLAGS_SSSE3},
+        {"sse4_1",  CPU_FLAGS_SSE4_1},
+        {"sse4_2",  CPU_FLAGS_SSE4_2},
+        {"avx",     CPU_FLAGS_AVX},
+        {"avx2",    CPU_FLAGS_AVX2},
+        {"avx512",  CPU_FLAGS_AVX512F}
+    };
+    const uint32_t para_map_size = sizeof(param_maps) / sizeof(param_maps[0]);
+    int32_t i;
+
+    for (i = para_map_size -1; i >= 0; --i) {
+        if (param_maps[i].flags & cpu_flags) {
+            return param_maps[i].name;
+        }
+    }
+    return "c";
 }
 
 //Get Number of logical processors
@@ -509,6 +498,15 @@ EbErrorType load_default_buffer_configuration_settings(
     sequence_control_set_ptr->total_process_init_count += 6; // single processes count
     printf("Number of logical cores available: %u\nNumber of PPCS %u\n", core_count, sequence_control_set_ptr->picture_control_set_pool_init_count);
 
+    /******************************************************************
+    * Platform detection, limit cpu flags to hardware available CPU
+    ******************************************************************/
+    const CPU_FLAGS cpu_flags = get_cpu_flags();
+    const CPU_FLAGS cpu_flags_to_use = get_cpu_flags_to_use();
+    sequence_control_set_ptr->static_config.use_cpu_flags &= cpu_flags_to_use;
+    printf("[asm level on system : up to %s]\n", get_asm_level_name_str(cpu_flags));
+    printf("[asm level selected : up to %s]\n", get_asm_level_name_str(sequence_control_set_ptr->static_config.use_cpu_flags));
+
     return return_error;
 }
  // Rate Control
@@ -830,14 +828,7 @@ EB_API EbErrorType eb_init_encoder(EbComponentType *svt_enc_component)
     EbColorFormat color_format = enc_handle_ptr->sequence_control_set_instance_array[0]->sequence_control_set_ptr->static_config.encoder_color_format;
     SequenceControlSet* control_set_ptr;
 
-    /************************************
-    * Plateform detection
-    ************************************/
-    if (enc_handle_ptr->sequence_control_set_instance_array[0]->sequence_control_set_ptr->static_config.asm_type == 1)
-        enc_handle_ptr->sequence_control_set_instance_array[0]->encode_context_ptr->asm_type = GetCpuAsmType();
-    else
-        enc_handle_ptr->sequence_control_set_instance_array[0]->encode_context_ptr->asm_type = enc_handle_ptr->sequence_control_set_instance_array[0]->sequence_control_set_ptr->static_config.asm_type;
-    setup_rtcd_internal(enc_handle_ptr->sequence_control_set_instance_array[0]->encode_context_ptr->asm_type);
+    setup_rtcd_internal(enc_handle_ptr->sequence_control_set_instance_array[0]->sequence_control_set_ptr->static_config.use_cpu_flags);
     asmSetConvolveAsmTable();
 
     init_intra_dc_predictors_c_internal();
@@ -1899,7 +1890,7 @@ void SetDefaultConfigurationParameters(
 static uint32_t compute_default_look_ahead(
     EbSvtAv1EncConfiguration*   config){
     int32_t lad = 0;
-    if (config->rate_control_mode == 0)
+    if (config->rate_control_mode == 0 || config->intra_period_length < 0)
         lad = (2 << config->hierarchical_levels)+1;
     else
         lad = config->intra_period_length;
@@ -2016,8 +2007,11 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
         sequence_control_set_ptr->over_boundary_block_mode = 1;
     else
         sequence_control_set_ptr->over_boundary_block_mode = 0;
-
+#if M0_OPT
+    sequence_control_set_ptr->mfmv_enabled = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode == ENC_M0 && sequence_control_set_ptr->static_config.screen_content_mode != 1) ? 1 : 0;
+#else
     sequence_control_set_ptr->mfmv_enabled = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;
+#endif
 
     // Set hbd_mode_decision OFF for high encode modes or bitdepth < 10
     if (sequence_control_set_ptr->static_config.enc_mode > ENC_M0 || sequence_control_set_ptr->static_config.encoder_bit_depth < 10)
@@ -2105,6 +2099,9 @@ void CopyApiFromApp(
 
     // OBMC
     sequence_control_set_ptr->static_config.enable_obmc = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enable_obmc;
+
+    // RDOQ
+    sequence_control_set_ptr->static_config.enable_rdoq = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enable_rdoq;
 
     // Filter intra prediction
     sequence_control_set_ptr->static_config.enable_filter_intra = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->enable_filter_intra;
@@ -2205,7 +2202,7 @@ void CopyApiFromApp(
     sequence_control_set_ptr->static_config.speed_control_flag = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->speed_control_flag;
 
     // Buffers - Hardcoded(Cleanup)
-    sequence_control_set_ptr->static_config.asm_type = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->asm_type;
+    sequence_control_set_ptr->static_config.use_cpu_flags = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->use_cpu_flags;
 
     sequence_control_set_ptr->static_config.channel_id = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->channel_id;
     sequence_control_set_ptr->static_config.active_channel_count = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->active_channel_count;
@@ -2231,6 +2228,7 @@ void CopyApiFromApp(
     sequence_control_set_ptr->static_config.enable_overlays = pComponentParameterStructure->enable_overlays;
 
     sequence_control_set_ptr->static_config.sq_weight = pComponentParameterStructure->sq_weight;
+    sequence_control_set_ptr->static_config.enable_auto_max_partition = pComponentParameterStructure->enable_auto_max_partition;
 
     sequence_control_set_ptr->static_config.md_stage_1_cand_prune_th = pComponentParameterStructure->md_stage_1_cand_prune_th;
     sequence_control_set_ptr->static_config.md_stage_1_class_prune_th = pComponentParameterStructure->md_stage_1_class_prune_th;
@@ -2464,15 +2462,12 @@ static EbErrorType VerifySettings(
         SVT_LOG("Error Instance %u: The constrained intra must be [0 - 1] \n", channelNumber + 1);
         return_error = EB_ErrorBadParameter;
     }
-    if (config->rate_control_mode > 3) {
-        SVT_LOG("Error Instance %u: The rate control mode must be [0 - 3] \n", channelNumber + 1);
+    if (config->rate_control_mode > 2) {
+
+        SVT_LOG("Error Instance %u: The rate control mode must be [0 - 2] \n", channelNumber + 1);
         return_error = EB_ErrorBadParameter;
     }
-    if (config->rate_control_mode == 1) {
-        SVT_LOG("Error Instance %u: The rate control mode 1 is currently not supported \n", channelNumber + 1);
-        return_error = EB_ErrorBadParameter;
-    }
-    if ((config->rate_control_mode == 3|| config->rate_control_mode == 2) && config->look_ahead_distance != (uint32_t)config->intra_period_length) {
+    if ((config->rate_control_mode == 3|| config->rate_control_mode == 2) && config->look_ahead_distance != (uint32_t)config->intra_period_length && config->intra_period_length >= 0) {
         SVT_LOG("Error Instance %u: The rate control mode 2/3 LAD must be equal to intra_period \n", channelNumber + 1);
         return_error = EB_ErrorBadParameter;
     }
@@ -2564,9 +2559,9 @@ static EbErrorType VerifySettings(
         return_error = EB_ErrorBadParameter;
     }
 
-    if (((int32_t)(config->asm_type) < -1) || ((int32_t)(config->asm_type) != 1)) {
-       // SVT_LOG("Error Instance %u: Invalid asm type value [0: C Only, 1: Auto] .\n", channelNumber + 1);
-        SVT_LOG("Error Instance %u: Asm 0 is not supported in this build .\n", channelNumber + 1);
+    if (config->use_cpu_flags & CPU_FLAGS_INVALID) {
+        SVT_LOG("Error Instance %u: param '-asm' have invalid value.\n"
+            "Value should be [0 - 11, c, mmx, sse, sse2, sse3, ssse3, sse4_1, sse4_2, avx, avx2, avx512, max]\n", channelNumber + 1);
         return_error = EB_ErrorBadParameter;
     }
 
@@ -2585,11 +2580,19 @@ static EbErrorType VerifySettings(
         SVT_LOG("Error instance %u: invalid altref-nframes, should be in the range [0 - %d] \n", channelNumber + 1, ALTREF_MAX_NFRAMES);
         return_error = EB_ErrorBadParameter;
     }
+
     // palette
     if (config->enable_palette < (int32_t)(-1) || config->enable_palette >6) {
         SVT_LOG( "Error instance %u: Invalid Palette Mode [0 .. 6], your input: %i\n", channelNumber + 1, config->enable_palette);
         return_error = EB_ErrorBadParameter;
     }
+
+    // RDOQ
+    if (config->enable_rdoq != (int8_t)0 && config->enable_rdoq != (int8_t)1 && config->enable_rdoq != (int8_t)-1) {
+        SVT_LOG( "Error instance %u: Invalid RDOQ parameter [-1, 0, 1], your input: %i\n", channelNumber + 1, config->enable_rdoq);
+        return_error = EB_ErrorBadParameter;
+    }
+
     // mdc refinement
     if (config->olpd_refinement < (int32_t)(-1) || config->olpd_refinement > 1) {
         SVT_LOG("Error instance %u: Invalid OLPD Refinement Mode [0 .. 1], your input: %i\n", channelNumber + 1, config->olpd_refinement);
@@ -2650,6 +2653,7 @@ EbErrorType eb_svt_enc_init_parameter(
     config_ptr->enable_warped_motion = EB_TRUE;
     config_ptr->enable_global_motion = EB_TRUE;
     config_ptr->enable_obmc = EB_TRUE;
+    config_ptr->enable_rdoq = AUTO_MODE;
     config_ptr->enable_filter_intra = EB_TRUE;
     config_ptr->in_loop_me_flag = EB_TRUE;
     config_ptr->ext_block_flag = EB_FALSE;
@@ -2704,8 +2708,8 @@ EbErrorType eb_svt_enc_init_parameter(
     config_ptr->speed_control_flag = 0;
     config_ptr->film_grain_denoise_strength = 0;
 
-    // ASM Type
-    config_ptr->asm_type = 1;
+    // CPU Flags
+    config_ptr->use_cpu_flags = CPU_FLAGS_ALL;
 
     // Channel info
     config_ptr->logical_processors = 0;
@@ -2729,7 +2733,7 @@ EbErrorType eb_svt_enc_init_parameter(
     config_ptr->md_stage_2_cand_prune_th = 15;
     config_ptr->md_stage_2_class_prune_th = 25;
 
-    return return_error;
+    config_ptr->enable_auto_max_partition = 1;    return return_error;
 }
 //#define DEBUG_BUFFERS
 static void print_lib_params(
@@ -2771,11 +2775,9 @@ static void print_lib_params(
         SVT_LOG("\nSVT [config]: FrameRate / Gop Size\t\t\t\t\t\t: %d / %d ", config->frame_rate > 1000 ? config->frame_rate >> 16 : config->frame_rate, config->intra_period_length + 1);
     SVT_LOG("\nSVT [config]: HierarchicalLevels / BaseLayerSwitchMode / PredStructure\t\t: %d / %d / %d ", config->hierarchical_levels, config->base_layer_switch_mode, config->pred_structure);
     if (config->rate_control_mode == 1)
-        SVT_LOG("\nSVT [config]: RCMode / TargetBitrate / LookaheadDistance / SceneChange\t\t: ABR / %d / %d / %d ", config->target_bit_rate, config->look_ahead_distance, config->scene_change_detection);
+        SVT_LOG("\nSVT [config]: RCMode / TargetBitrate (kbps)/ LookaheadDistance / SceneChange\t\t: VBR / %d / %d / %d ", (int)config->target_bit_rate/1000, config->look_ahead_distance, config->scene_change_detection);
     else if (config->rate_control_mode == 2)
-        SVT_LOG("\nSVT [config]: RCMode / TargetBitrate / LookaheadDistance / SceneChange\t\t: VBR / %d / %d / %d ", config->target_bit_rate, config->look_ahead_distance, config->scene_change_detection);
-    else if (config->rate_control_mode == 3)
-        SVT_LOG("\nSVT [config]: RCMode / TargetBitrate / LookaheadDistance / SceneChange\t\t: Constraint VBR / %d / %d / %d ", config->target_bit_rate, config->look_ahead_distance, config->scene_change_detection);
+        SVT_LOG("\nSVT [config]: RCMode / TargetBitrate (kbps)/ LookaheadDistance / SceneChange\t\t: Constraint VBR / %d / %d / %d ", (int)config->target_bit_rate/1000, config->look_ahead_distance, config->scene_change_detection);
     else
         SVT_LOG("\nSVT [config]: BRC Mode / QP  / LookaheadDistance / SceneChange\t\t\t: CQP / %d / %d / %d ", scs->qp, config->look_ahead_distance, config->scene_change_detection);
 #ifdef DEBUG_BUFFERS

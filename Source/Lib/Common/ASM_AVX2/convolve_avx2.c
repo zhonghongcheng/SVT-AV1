@@ -18,67 +18,6 @@
 #include "EbMemory_AVX2.h"
 #include "synonyms.h"
 
-static INLINE __m128i sr_x_round_sse2(const __m128i src) {
-    const __m128i round = _mm_set1_epi16(34);
-    const __m128i dst = _mm_add_epi16(src, round);
-    return _mm_srai_epi16(dst, 6);
-}
-
-static INLINE __m256i sr_x_round_avx2(const __m256i src) {
-    const __m256i round = _mm256_set1_epi16(34);
-    const __m256i dst = _mm256_add_epi16(src, round);
-    return _mm256_srai_epi16(dst, 6);
-}
-
-static INLINE __m128i sr_y_round_sse2(const __m128i src) {
-    const __m128i round = _mm_set1_epi16(32);
-    const __m128i dst = _mm_add_epi16(src, round);
-    return _mm_srai_epi16(dst, FILTER_BITS - 1);
-}
-
-static INLINE void sr_x_round_store_8x2_avx2(const __m256i res,
-    uint8_t *const dst,
-    const int32_t dst_stride) {
-    const __m256i r = sr_x_round_avx2(res);
-    pack_store_8x2_avx2(r, dst, dst_stride);
-}
-
-static INLINE void sr_x_round_store_16x2_avx2(const __m256i res[2],
-    uint8_t *const dst,
-    const int32_t dst_stride) {
-    __m256i r[2];
-
-    r[0] = sr_x_round_avx2(res[0]);
-    r[1] = sr_x_round_avx2(res[1]);
-    pack_store_16x2_avx2(r[0], r[1], dst, dst_stride);
-}
-
-static INLINE void sr_x_round_store_32_avx2(const __m256i res[2],
-    uint8_t *const dst) {
-    __m256i r[2];
-
-    r[0] = sr_x_round_avx2(res[0]);
-    r[1] = sr_x_round_avx2(res[1]);
-    convolve_store_32_avx2(r[0], r[1], dst);
-}
-
-static INLINE void sr_y_round_store_8x2_avx2(const __m256i res,
-    uint8_t *const dst,
-    const int32_t dst_stride) {
-    const __m256i r = sr_y_round_avx2(res);
-    pack_store_8x2_avx2(r, dst, dst_stride);
-}
-
-static INLINE void sr_y_round_store_16x2_avx2(const __m256i res[2],
-    uint8_t *const dst,
-    const int32_t dst_stride) {
-    __m256i r[2];
-
-    r[0] = sr_y_round_avx2(res[0]);
-    r[1] = sr_y_round_avx2(res[1]);
-    pack_store_16x2_avx2(r[0], r[1], dst, dst_stride);
-}
-
 static INLINE void sr_y_round_store_32_avx2(const __m256i res[2],
     uint8_t *const dst) {
     __m256i r[2];
@@ -88,7 +27,7 @@ static INLINE void sr_y_round_store_32_avx2(const __m256i res[2],
     convolve_store_32_avx2(r[0], r[1], dst);
 }
 
-static INLINE void sr_y_round_store_32x2_avx2(const __m256i res[2],
+static INLINE void sr_y_round_store_32x2_avx2(const __m256i res[4],
     uint8_t *const dst,
     const int32_t dst_stride) {
     sr_y_round_store_32_avx2(res, dst);
@@ -101,14 +40,6 @@ static INLINE void sr_y_2tap_32_avx2(const uint8_t *const src,
     __m256i r[2];
     y_convolve_2tap_32_avx2(src, coeffs, s0, s1, r);
     sr_y_round_store_32_avx2(r, dst);
-}
-
-static INLINE void sr_y_2tap_32_avg_avx2(const uint8_t *const src,
-    const __m256i s0, __m256i *const s1,
-    uint8_t *const dst) {
-    *s1 = _mm256_loadu_si256((__m256i *)src);
-    const __m256i d = _mm256_avg_epu8(s0, *s1);
-    _mm256_storeu_si256((__m256i *)dst, d);
 }
 
 void eb_av1_convolve_y_sr_avx2(const uint8_t *src, int32_t src_stride,
@@ -1205,31 +1136,22 @@ static INLINE void sr_x_2tap_32_avx2(const uint8_t *const src,
     sr_x_round_store_32_avx2(r, dst);
 }
 
-static INLINE void sr_x_2tap_32_avg_avx2(const uint8_t *const src,
-    uint8_t *const dst) {
-    const __m256i s0 = _mm256_loadu_si256((__m256i *)src);
-    const __m256i s1 = _mm256_loadu_si256((__m256i *)(src + 1));
-    const __m256i d = _mm256_avg_epu8(s0, s1);
-    _mm256_storeu_si256((__m256i *)dst, d);
-}
-
 static INLINE void sr_x_6tap_32_avx2(const uint8_t *const src,
     const __m256i coeffs[3],
-    const __m256i *const filt,
+    const __m256i filt[3],
     uint8_t *const dst) {
     __m256i r[2];
 
-    x_convolve_6tap_16x2_avx2(src, 16, coeffs, filt, r);
+    x_convolve_6tap_32_avx2(src, coeffs, filt, r);
     sr_x_round_store_32_avx2(r, dst);
 }
 
 SIMD_INLINE void sr_x_8tap_32_avx2(const uint8_t *const src,
     const __m256i coeffs[4],
-    const __m256i *const filt,
-    uint8_t *const dst) {
+    const __m256i filt[4], uint8_t *const dst) {
     __m256i r[2];
 
-    x_convolve_8tap_16x2_avx2(src, 16, coeffs, filt, r);
+    x_convolve_8tap_32_avx2(src, coeffs, filt, r);
     sr_x_round_store_32_avx2(r, dst);
 }
 
@@ -1486,9 +1408,9 @@ void eb_av1_convolve_x_sr_avx2(const uint8_t *src, int32_t src_stride,
     else {
         __m256i filt_256[4];
 
-        filt_256[0] = _mm256_load_si256((__m256i const *)filt1_global_avx2);
-        filt_256[1] = _mm256_load_si256((__m256i const *)filt2_global_avx2);
-        filt_256[2] = _mm256_load_si256((__m256i const *)filt3_global_avx2);
+        filt_256[0] = _mm256_load_si256((__m256i const *)filt1_global_avx);
+        filt_256[1] = _mm256_load_si256((__m256i const *)filt2_global_avx);
+        filt_256[2] = _mm256_load_si256((__m256i const *)filt3_global_avx);
 
         if (is_convolve_6tap(filter_params_x->filter_ptr)) {
             // horz_filt as 6 tap
@@ -1555,7 +1477,7 @@ void eb_av1_convolve_x_sr_avx2(const uint8_t *src, int32_t src_stride,
             // horz_filt as 8 tap
             const uint8_t *src_ptr = src - 3;
 
-            filt_256[3] = _mm256_load_si256((__m256i const *)filt4_global_avx2);
+            filt_256[3] = _mm256_load_si256((__m256i const *)filt4_global_avx);
 
             prepare_half_coeffs_8tap_avx2(
                 filter_params_x, subpel_x_q4, coeffs_256);
@@ -1619,11 +1541,6 @@ void eb_av1_convolve_x_sr_avx2(const uint8_t *src, int32_t src_stride,
 
 // Loads and stores to do away with the tedium of casting the address
 // to the right type.
-static INLINE __m128i xx_loadl_32(const void *a) {
-    int val;
-    memcpy(&val, a, sizeof(val));
-    return _mm_cvtsi32_si128(val);
-}
 static INLINE __m128i xx_load_128(const void *a) {
     return _mm_load_si128((const __m128i *)a);
 }
@@ -1635,6 +1552,116 @@ static INLINE __m256i calc_mask_avx2(const __m256i mask_base, const __m256i s0,
         _mm256_add_epi16(mask_base, _mm256_srli_epi16(diff, 4)));
     // clamp(diff, 0, 64) can be skiped for diff is always in the range ( 38, 54)
 }
+#if COMP_HBD
+
+void av1_build_compound_diffwtd_mask_highbd_avx2(
+    uint8_t *mask, DIFFWTD_MASK_TYPE mask_type, const uint8_t *src0,
+    int src0_stride, const uint8_t *src1, int src1_stride, int h, int w,
+    int bd) {
+
+    if (w < 16) {
+      av1_build_compound_diffwtd_mask_highbd_ssse3(
+          mask, mask_type, src0, src0_stride, src1, src1_stride, h, w, bd);
+    } else {
+      assert(mask_type == DIFFWTD_38 || mask_type == DIFFWTD_38_INV);
+      assert(bd >= 8);
+      assert((w % 16) == 0);
+      const __m256i y0 = _mm256_setzero_si256();
+      const __m256i yAOM_BLEND_A64_MAX_ALPHA =
+          _mm256_set1_epi16(AOM_BLEND_A64_MAX_ALPHA);
+      const int mask_base = 38;
+      const __m256i ymask_base = _mm256_set1_epi16(mask_base);
+      const uint16_t *ssrc0 = (uint16_t*)(src0);
+      const uint16_t *ssrc1 = (uint16_t*)(src1);
+      if (bd == 8) {
+        if (mask_type == DIFFWTD_38_INV) {
+          for (int i = 0; i < h; ++i) {
+            for (int j = 0; j < w; j += 16) {
+              __m256i s0 = _mm256_loadu_si256((const __m256i *)&ssrc0[j]);
+              __m256i s1 = _mm256_loadu_si256((const __m256i *)&ssrc1[j]);
+              __m256i diff = _mm256_srai_epi16(
+                  _mm256_abs_epi16(_mm256_sub_epi16(s0, s1)), DIFF_FACTOR_LOG2);
+              __m256i m = _mm256_min_epi16(
+                  _mm256_max_epi16(y0, _mm256_add_epi16(diff, ymask_base)),
+                  yAOM_BLEND_A64_MAX_ALPHA);
+              m = _mm256_sub_epi16(yAOM_BLEND_A64_MAX_ALPHA, m);
+              m = _mm256_packus_epi16(m, m);
+              m = _mm256_permute4x64_epi64(m, _MM_SHUFFLE(0, 0, 2, 0));
+              __m128i m0 = _mm256_castsi256_si128(m);
+              _mm_storeu_si128((__m128i *)&mask[j], m0);
+            }
+            ssrc0 += src0_stride;
+            ssrc1 += src1_stride;
+            mask += w;
+          }
+        } else {
+          for (int i = 0; i < h; ++i) {
+            for (int j = 0; j < w; j += 16) {
+              __m256i s0 = _mm256_loadu_si256((const __m256i *)&ssrc0[j]);
+              __m256i s1 = _mm256_loadu_si256((const __m256i *)&ssrc1[j]);
+              __m256i diff = _mm256_srai_epi16(
+                  _mm256_abs_epi16(_mm256_sub_epi16(s0, s1)), DIFF_FACTOR_LOG2);
+              __m256i m = _mm256_min_epi16(
+                  _mm256_max_epi16(y0, _mm256_add_epi16(diff, ymask_base)),
+                  yAOM_BLEND_A64_MAX_ALPHA);
+              m = _mm256_packus_epi16(m, m);
+              m = _mm256_permute4x64_epi64(m, _MM_SHUFFLE(0, 0, 2, 0));
+              __m128i m0 = _mm256_castsi256_si128(m);
+              _mm_storeu_si128((__m128i *)&mask[j], m0);
+            }
+            ssrc0 += src0_stride;
+            ssrc1 += src1_stride;
+            mask += w;
+          }
+        }
+      } else {
+        const __m128i xshift = xx_set1_64_from_32i(bd - 8 + DIFF_FACTOR_LOG2);
+        if (mask_type == DIFFWTD_38_INV) {
+          for (int i = 0; i < h; ++i) {
+            for (int j = 0; j < w; j += 16) {
+              __m256i s0 = _mm256_loadu_si256((const __m256i *)&ssrc0[j]);
+              __m256i s1 = _mm256_loadu_si256((const __m256i *)&ssrc1[j]);
+              __m256i diff = _mm256_sra_epi16(
+                  _mm256_abs_epi16(_mm256_sub_epi16(s0, s1)), xshift);
+              __m256i m = _mm256_min_epi16(
+                  _mm256_max_epi16(y0, _mm256_add_epi16(diff, ymask_base)),
+                  yAOM_BLEND_A64_MAX_ALPHA);
+              m = _mm256_sub_epi16(yAOM_BLEND_A64_MAX_ALPHA, m);
+              m = _mm256_packus_epi16(m, m);
+              m = _mm256_permute4x64_epi64(m, _MM_SHUFFLE(0, 0, 2, 0));
+              __m128i m0 = _mm256_castsi256_si128(m);
+              _mm_storeu_si128((__m128i *)&mask[j], m0);
+            }
+            ssrc0 += src0_stride;
+            ssrc1 += src1_stride;
+            mask += w;
+          }
+        } else {
+          for (int i = 0; i < h; ++i) {
+            for (int j = 0; j < w; j += 16) {
+              __m256i s0 = _mm256_loadu_si256((const __m256i *)&ssrc0[j]);
+              __m256i s1 = _mm256_loadu_si256((const __m256i *)&ssrc1[j]);
+              __m256i diff = _mm256_sra_epi16(
+                  _mm256_abs_epi16(_mm256_sub_epi16(s0, s1)), xshift);
+              __m256i m = _mm256_min_epi16(
+                  _mm256_max_epi16(y0, _mm256_add_epi16(diff, ymask_base)),
+                  yAOM_BLEND_A64_MAX_ALPHA);
+              m = _mm256_packus_epi16(m, m);
+              m = _mm256_permute4x64_epi64(m, _MM_SHUFFLE(0, 0, 2, 0));
+              __m128i m0 = _mm256_castsi256_si128(m);
+              _mm_storeu_si128((__m128i *)&mask[j], m0);
+            }
+            ssrc0 += src0_stride;
+            ssrc1 += src1_stride;
+            mask += w;
+          }
+        }
+      }
+    }
+}
+
+
+#endif
 void av1_build_compound_diffwtd_mask_avx2(uint8_t *mask,
     DIFFWTD_MASK_TYPE mask_type,
     const uint8_t *src0, int src0_stride,

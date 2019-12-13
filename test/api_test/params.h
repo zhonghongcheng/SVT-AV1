@@ -507,6 +507,20 @@ static const vector<EbBool> invalid_enable_warped_motion = {
     // none
 };
 
+/* Global motion
+ *
+ * Default is 1. */
+static const vector<EbBool> default_enable_global_motion = {
+    EB_TRUE,
+};
+static const vector<EbBool> valid_enable_global_motion = {
+    EB_FALSE,
+    EB_TRUE,
+};
+static const vector<EbBool> invalid_enable_global_motion = {
+    // none
+};
+
 /* Flag to enable the use of default ME HME parameters.
  *
  * Default is 1. */
@@ -591,6 +605,21 @@ static const vector<uint32_t> invalid_search_area_height = {
 };
 
 // MD Parameters
+/* Palette Mode
+ *-1:Auto Mode(ON at level6 when SC is detected)
+ * 0:OFF
+ * 1:Slow    NIC=7/4/4
+ * 2:        NIC=7/2/2
+ * 3:        NIC=7/2/2 + No K means for non ref
+ * 4:        NIC=4/2/1
+ * 5:        NIC=4/2/1 + No K means for Inter frame
+ * 6:Fastest NIC=4/2/1 + No K means for non base + step for non base for
+ * most dominant
+ * Default is -1. */
+static const vector<int32_t> default_enable_palette = {-1};
+static const vector<int32_t> valid_enable_palette = {-1, 0, 1, 2, 3, 4, 5, 6};
+static const vector<int32_t> invalid_enable_palette = {-2, 7};
+
 /* Enable the use of Constrained Intra, which yields sending two picture
  * parameter sets in the elementary streams .
  *
@@ -800,15 +829,29 @@ static const vector<uint32_t> invalid_level = {
  * 1 = up to AVX512, auto-select highest assembly instruction set supported.
  *
  * Default is 1. */
-static const vector<uint32_t> default_asm_type = {
-    1,
+static const vector<CPU_FLAGS> default_use_cpu_flags = {
+    CPU_FLAGS_ALL,
 };
-static const vector<uint32_t> valid_asm_type = {
-    0,
-    1,
+static const vector<CPU_FLAGS> valid_use_cpu_flags = {
+    CPU_FLAGS_MMX,
+    CPU_FLAGS_SSE,
+    CPU_FLAGS_SSE2,
+    CPU_FLAGS_SSE3,
+    CPU_FLAGS_SSSE3,
+    CPU_FLAGS_SSE4_1,
+    CPU_FLAGS_SSE4_2,
+    CPU_FLAGS_AVX,
+    CPU_FLAGS_AVX2,
+    CPU_FLAGS_AVX512F,
+    CPU_FLAGS_AVX512CD,
+    CPU_FLAGS_AVX512DQ,
+    CPU_FLAGS_AVX512ER,
+    CPU_FLAGS_AVX512PF,
+    CPU_FLAGS_AVX512BW,
+    CPU_FLAGS_AVX512VL,
 };
-static const vector<uint32_t> invalid_asm_type = {
-    2,
+static const vector<CPU_FLAGS> invalid_use_cpu_flags = {
+    CPU_FLAGS_INVALID
 };
 
 // Application Specific parameters

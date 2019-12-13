@@ -297,6 +297,10 @@ PARAM_TEST(EncParamFilmGrainDenoiseStrTest);
 DEFINE_PARAM_TEST_CLASS(EncParamEnableWarpedMotionTest, enable_warped_motion);
 PARAM_TEST(EncParamEnableWarpedMotionTest);
 
+/** Test case for enable_global_motion*/
+DEFINE_PARAM_TEST_CLASS(EncParamEnableGlobalMotionTest, enable_global_motion);
+PARAM_TEST(EncParamEnableGlobalMotionTest);
+
 /** Test case for use_default_me_hme*/
 DEFINE_PARAM_TEST_CLASS(EncParamUseDefaultMeHmeTest, use_default_me_hme);
 PARAM_TEST(EncParamUseDefaultMeHmeTest);
@@ -320,6 +324,10 @@ PARAM_TEST(EncParamSearchAreaWidthTest);
 /** Test case for search_area_height*/
 DEFINE_PARAM_TEST_CLASS(EncParamSearchAreaHeightTest, search_area_height);
 PARAM_TEST(EncParamSearchAreaHeightTest);
+
+/** Test case for enable_palette*/
+DEFINE_PARAM_TEST_CLASS(EncParamEnablePaletteTest, enable_palette);
+PARAM_TEST(EncParamEnablePaletteTest);
 
 /** Test case for constrained_intra*/
 DEFINE_PARAM_TEST_CLASS(EncParamConstrainedIntraTest, constrained_intra);
@@ -366,9 +374,9 @@ PARAM_TEST(EncParamTierTest);
 DEFINE_PARAM_TEST_CLASS(EncParamLevelTest, level);
 PARAM_TEST(EncParamLevelTest);
 
-/** Test case for asm_type*/
-DEFINE_PARAM_TEST_CLASS(EncParamAsmTypeTest, asm_type);
-PARAM_TEST(EncParamAsmTypeTest);
+/** Test case for use_cpu_flags*/
+DEFINE_PARAM_TEST_CLASS(EncParamOplLevelTest, use_cpu_flags);
+PARAM_TEST(EncParamOplLevelTest);
 
 /** Test case for channel_id*/
 DEFINE_PARAM_TEST_CLASS(EncParamChIdTest, channel_id);

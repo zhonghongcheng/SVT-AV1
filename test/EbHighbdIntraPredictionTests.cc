@@ -18,8 +18,8 @@ static void init_data(uint16_t **input, uint16_t **above, uint16_t **left, ptrdi
     TEST_ALLIGN_MALLOC(uint16_t*, *input, sizeof(uint16_t) * MAX_SB_SIZE * input_stride);
     memset(*input, 0, MAX_SB_SIZE * input_stride);
     eb_buf_random_u16(*input, (uint32_t)(MAX_SB_SIZE * input_stride));
-    *above = *input + rand() % (MAX_SB_SIZE * input_stride / 2);
-    *left = *input + rand() % (MAX_SB_SIZE * input_stride / 4);
+    *above = *input + ((rand() % (MAX_SB_SIZE * input_stride / 2)) >> 4 << 4); //align to 16
+    *left = *input + ((rand() % (MAX_SB_SIZE * input_stride / 4)) >> 4 << 4); //align to 16
 }
 
 static void uninit_data(uint16_t *input) {
@@ -572,5 +572,324 @@ TEST(HighbdIntraPredictionTest, aom_v_predictor_kernels)
             }
         }
     }
+}
+
+TEST(HighbdIntraPredictionTest, aom_highbd_smooth_predictor_kernels)
+{
+    uint16_t *input = NULL, *above = NULL, *left = NULL;
+    uint16_t* dc_coeff = NULL, *dc_coeff_opt = NULL;
+    ptrdiff_t stride = 0;
+
+    int no_of_pred_funcs = sizeof(aom_smooth_predictor_funcptr_array_opt) / sizeof(aom_highbd_smooth_predictor_func);
+    int no_of_bitdepths = sizeof(bitdepth) / sizeof(int);
+
+    for (int loop = 0; loop < no_of_pred_funcs; loop++) {         //Function Pairs
+        for (int i = 0; i < 1; i++) {             //Number of Test Runs
+            for (int x = 0; x < no_of_bitdepths; x++) {//Bit Depth
+                switch (loop) {
+                case 0://32x8
+                    for (int j = 0; j < 2; j++) {
+                        init_coeff(&dc_coeff, &dc_coeff_opt, &stride);
+                        ASSERT(eb_buf_compare_u16(dc_coeff, dc_coeff_opt, MAX_SB_SIZE * stride) == 1);
+                        init_data(&input, &above, &left, stride);
+                        aom_smooth_predictor_funcptr_array_base[loop](dc_coeff, stride, above, left, bitdepth[x]);
+                        aom_smooth_predictor_funcptr_array_opt[loop](dc_coeff_opt, stride, above, left, bitdepth[x]);
+                        dc_compare_u16(dc_coeff, dc_coeff_opt, stride, 8, 32);
+                        uninit_data(input);
+                        uninit_coeff(dc_coeff, dc_coeff_opt);
+                    }
+                    break;
+                case 1://32x16
+                    for (int j = 0; j < 2; j++) {
+                        init_coeff(&dc_coeff, &dc_coeff_opt, &stride);
+                        ASSERT(eb_buf_compare_u16(dc_coeff, dc_coeff_opt, MAX_SB_SIZE * stride) == 1);
+                        init_data(&input, &above, &left, stride);
+                        aom_smooth_predictor_funcptr_array_base[loop](dc_coeff, stride, above, left, bitdepth[x]);
+                        aom_smooth_predictor_funcptr_array_opt[loop](dc_coeff_opt, stride, above, left, bitdepth[x]);
+                        dc_compare_u16(dc_coeff, dc_coeff_opt, stride, 16, 32);
+                        uninit_data(input);
+                        uninit_coeff(dc_coeff, dc_coeff_opt);
+                    }
+                    break;
+                case 2://32x32
+                    for (int j = 0; j < 2; j++) {
+                        init_coeff(&dc_coeff, &dc_coeff_opt, &stride);
+                        ASSERT(eb_buf_compare_u16(dc_coeff, dc_coeff_opt, MAX_SB_SIZE * stride) == 1);
+                        init_data(&input, &above, &left, stride);
+                        aom_smooth_predictor_funcptr_array_base[loop](dc_coeff, stride, above, left, bitdepth[x]);
+                        aom_smooth_predictor_funcptr_array_opt[loop](dc_coeff_opt, stride, above, left, bitdepth[x]);
+                        dc_compare_u16(dc_coeff, dc_coeff_opt, stride, 32, 32);
+                        uninit_data(input);
+                        uninit_coeff(dc_coeff, dc_coeff_opt);
+                    }
+                    break;
+                case 3://32x64
+                    for (int j = 0; j < 2; j++) {
+                        init_coeff(&dc_coeff, &dc_coeff_opt, &stride);
+                        ASSERT(eb_buf_compare_u16(dc_coeff, dc_coeff_opt, MAX_SB_SIZE * stride) == 1);
+                        init_data(&input, &above, &left, stride);
+                        aom_smooth_predictor_funcptr_array_base[loop](dc_coeff, stride, above, left, bitdepth[x]);
+                        aom_smooth_predictor_funcptr_array_opt[loop](dc_coeff_opt, stride, above, left, bitdepth[x]);
+                        dc_compare_u16(dc_coeff, dc_coeff_opt, stride, 64, 32);
+                        uninit_data(input);
+                        uninit_coeff(dc_coeff, dc_coeff_opt);
+                    }
+                    break;
+                case 4://64x16
+                    for (int j = 0; j < 2; j++) {
+                        init_coeff(&dc_coeff, &dc_coeff_opt, &stride);
+                        ASSERT(eb_buf_compare_u16(dc_coeff, dc_coeff_opt, MAX_SB_SIZE * stride) == 1);
+                        init_data(&input, &above, &left, stride);
+                        aom_smooth_predictor_funcptr_array_base[loop](dc_coeff, stride, above, left, bitdepth[x]);
+                        aom_smooth_predictor_funcptr_array_opt[loop](dc_coeff_opt, stride, above, left, bitdepth[x]);
+                        dc_compare_u16(dc_coeff, dc_coeff_opt, stride, 16, 64);
+                        uninit_data(input);
+                        uninit_coeff(dc_coeff, dc_coeff_opt);
+                    }
+                    break;
+                case 5://64x32
+                    for (int j = 0; j < 2; j++) {
+                        init_coeff(&dc_coeff, &dc_coeff_opt, &stride);
+                        ASSERT(eb_buf_compare_u16(dc_coeff, dc_coeff_opt, MAX_SB_SIZE * stride) == 1);
+                        init_data(&input, &above, &left, stride);
+                        aom_smooth_predictor_funcptr_array_base[loop](dc_coeff, stride, above, left, bitdepth[x]);
+                        aom_smooth_predictor_funcptr_array_opt[loop](dc_coeff_opt, stride, above, left, bitdepth[x]);
+                        dc_compare_u16(dc_coeff, dc_coeff_opt, stride, 32, 64);
+                        uninit_data(input);
+                        uninit_coeff(dc_coeff, dc_coeff_opt);
+                    }
+                    break;
+                case 6://64x64
+                    for (int j = 0; j < 2; j++) {
+                        init_coeff(&dc_coeff, &dc_coeff_opt, &stride);
+                        ASSERT(eb_buf_compare_u16(dc_coeff, dc_coeff_opt, MAX_SB_SIZE * stride) == 1);
+                        init_data(&input, &above, &left, stride);
+                        aom_smooth_predictor_funcptr_array_base[loop](dc_coeff, stride, above, left, bitdepth[x]);
+                        aom_smooth_predictor_funcptr_array_opt[loop](dc_coeff_opt, stride, above, left, bitdepth[x]);
+                        dc_compare_u16(dc_coeff, dc_coeff_opt, stride, 64, 64);
+                        uninit_data(input);
+                        uninit_coeff(dc_coeff, dc_coeff_opt);
+                    }
+                    break;
+                default:
+                    ASSERT(0);
+                }
+            }
+        }
+    }
+
+}
+
+
+TEST(HighbdIntraPredictionTest, aom_highbd_smooth_v_predictor_kernels)
+{
+    uint16_t *input = NULL, *above = NULL, *left = NULL;
+    uint16_t* dc_coeff = NULL, *dc_coeff_opt = NULL;
+    ptrdiff_t stride = 0;
+
+    int no_of_pred_funcs = sizeof(aom_highbd_smooth_v_predictor_funcptr_array_opt) / sizeof(aom_highbd_smooth_v_predictor_func);
+    int no_of_bitdepths = sizeof(bitdepth) / sizeof(int);
+
+    for (int loop = 0; loop < no_of_pred_funcs; loop++) {         //Function Pairs
+        for (int i = 0; i < 1; i++) {             //Number of Test Runs
+            for (int x = 0; x < no_of_bitdepths; x++) {//Bit Depth
+                switch (loop) {
+                case 0://32x8
+                    for (int j = 0; j < 2; j++) {
+                        init_coeff(&dc_coeff, &dc_coeff_opt, &stride);
+                        ASSERT(eb_buf_compare_u16(dc_coeff, dc_coeff_opt, MAX_SB_SIZE * stride) == 1);
+                        init_data(&input, &above, &left, stride);
+                        aom_highbd_smooth_v_predictor_funcptr_array_base[loop](dc_coeff, stride, above, left, bitdepth[x]);
+                        aom_highbd_smooth_v_predictor_funcptr_array_opt[loop](dc_coeff_opt, stride, above, left, bitdepth[x]);
+                        dc_compare_u16(dc_coeff, dc_coeff_opt, stride, 8, 32);
+                        uninit_data(input);
+                        uninit_coeff(dc_coeff, dc_coeff_opt);
+                    }
+                    break;
+                case 1://32x16
+                    for (int j = 0; j < 2; j++) {
+                        init_coeff(&dc_coeff, &dc_coeff_opt, &stride);
+                        ASSERT(eb_buf_compare_u16(dc_coeff, dc_coeff_opt, MAX_SB_SIZE * stride) == 1);
+                        init_data(&input, &above, &left, stride);
+                        aom_highbd_smooth_v_predictor_funcptr_array_base[loop](dc_coeff, stride, above, left, bitdepth[x]);
+                        aom_highbd_smooth_v_predictor_funcptr_array_opt[loop](dc_coeff_opt, stride, above, left, bitdepth[x]);
+                        dc_compare_u16(dc_coeff, dc_coeff_opt, stride, 16, 32);
+                        uninit_data(input);
+                        uninit_coeff(dc_coeff, dc_coeff_opt);
+                    }
+                    break;
+                case 2://32x32
+                    for (int j = 0; j < 2; j++) {
+                        init_coeff(&dc_coeff, &dc_coeff_opt, &stride);
+                        ASSERT(eb_buf_compare_u16(dc_coeff, dc_coeff_opt, MAX_SB_SIZE * stride) == 1);
+                        init_data(&input, &above, &left, stride);
+                        aom_highbd_smooth_v_predictor_funcptr_array_base[loop](dc_coeff, stride, above, left, bitdepth[x]);
+                        aom_highbd_smooth_v_predictor_funcptr_array_opt[loop](dc_coeff_opt, stride, above, left, bitdepth[x]);
+                        dc_compare_u16(dc_coeff, dc_coeff_opt, stride, 32, 32);
+                        uninit_data(input);
+                        uninit_coeff(dc_coeff, dc_coeff_opt);
+                    }
+                    break;
+                case 3://32x64
+                    for (int j = 0; j < 2; j++) {
+                        init_coeff(&dc_coeff, &dc_coeff_opt, &stride);
+                        ASSERT(eb_buf_compare_u16(dc_coeff, dc_coeff_opt, MAX_SB_SIZE * stride) == 1);
+                        init_data(&input, &above, &left, stride);
+                        aom_highbd_smooth_v_predictor_funcptr_array_base[loop](dc_coeff, stride, above, left, bitdepth[x]);
+                        aom_highbd_smooth_v_predictor_funcptr_array_opt[loop](dc_coeff_opt, stride, above, left, bitdepth[x]);
+                        dc_compare_u16(dc_coeff, dc_coeff_opt, stride, 64, 32);
+                        uninit_data(input);
+                        uninit_coeff(dc_coeff, dc_coeff_opt);
+                    }
+                    break;
+                case 4://64x16
+                    for (int j = 0; j < 2; j++) {
+                        init_coeff(&dc_coeff, &dc_coeff_opt, &stride);
+                        ASSERT(eb_buf_compare_u16(dc_coeff, dc_coeff_opt, MAX_SB_SIZE * stride) == 1);
+                        init_data(&input, &above, &left, stride);
+                        aom_highbd_smooth_v_predictor_funcptr_array_base[loop](dc_coeff, stride, above, left, bitdepth[x]);
+                        aom_highbd_smooth_v_predictor_funcptr_array_opt[loop](dc_coeff_opt, stride, above, left, bitdepth[x]);
+                        dc_compare_u16(dc_coeff, dc_coeff_opt, stride, 16, 64);
+                        uninit_data(input);
+                        uninit_coeff(dc_coeff, dc_coeff_opt);
+                    }
+                    break;
+                case 5://64x32
+                    for (int j = 0; j < 2; j++) {
+                        init_coeff(&dc_coeff, &dc_coeff_opt, &stride);
+                        ASSERT(eb_buf_compare_u16(dc_coeff, dc_coeff_opt, MAX_SB_SIZE * stride) == 1);
+                        init_data(&input, &above, &left, stride);
+                        aom_highbd_smooth_v_predictor_funcptr_array_base[loop](dc_coeff, stride, above, left, bitdepth[x]);
+                        aom_highbd_smooth_v_predictor_funcptr_array_opt[loop](dc_coeff_opt, stride, above, left, bitdepth[x]);
+                        dc_compare_u16(dc_coeff, dc_coeff_opt, stride, 32, 64);
+                        uninit_data(input);
+                        uninit_coeff(dc_coeff, dc_coeff_opt);
+                    }
+                    break;
+                case 6://64x64
+                    for (int j = 0; j < 2; j++) {
+                        init_coeff(&dc_coeff, &dc_coeff_opt, &stride);
+                        ASSERT(eb_buf_compare_u16(dc_coeff, dc_coeff_opt, MAX_SB_SIZE * stride) == 1);
+                        init_data(&input, &above, &left, stride);
+                        aom_highbd_smooth_v_predictor_funcptr_array_base[loop](dc_coeff, stride, above, left, bitdepth[x]);
+                        aom_highbd_smooth_v_predictor_funcptr_array_opt[loop](dc_coeff_opt, stride, above, left, bitdepth[x]);
+                        dc_compare_u16(dc_coeff, dc_coeff_opt, stride, 64, 64);
+                        uninit_data(input);
+                        uninit_coeff(dc_coeff, dc_coeff_opt);
+                    }
+                    break;
+                default:
+                    ASSERT(0);
+                }
+            }
+        }
+    }
+
+}
+
+TEST(HighbdIntraPredictionTest, aom_highbd_smooth_h_predictor_kernels)
+{
+    uint16_t *input = NULL, *above = NULL, *left = NULL;
+    uint16_t* dc_coeff = NULL, *dc_coeff_opt = NULL;
+    ptrdiff_t stride = 0;
+
+    int no_of_pred_funcs = sizeof(aom_highbd_smooth_h_predictor_funcptr_array_opt) / sizeof(aom_highbd_smooth_h_predictor_func);
+    int no_of_bitdepths = sizeof(bitdepth) / sizeof(int);
+
+    for (int loop = 0; loop < no_of_pred_funcs; loop++) {         //Function Pairs
+        for (int i = 0; i < 1; i++) {             //Number of Test Runs
+            for (int x = 0; x < no_of_bitdepths; x++) {//Bit Depth
+                switch (loop) {
+                case 0://32x8
+                    for (int j = 0; j < 2; j++) {
+                        init_coeff(&dc_coeff, &dc_coeff_opt, &stride);
+                        ASSERT(eb_buf_compare_u16(dc_coeff, dc_coeff_opt, MAX_SB_SIZE * stride) == 1);
+                        init_data(&input, &above, &left, stride);
+                        aom_highbd_smooth_h_predictor_funcptr_array_base[loop](dc_coeff, stride, above, left, bitdepth[x]);
+                        aom_highbd_smooth_h_predictor_funcptr_array_opt[loop](dc_coeff_opt, stride, above, left, bitdepth[x]);
+                        dc_compare_u16(dc_coeff, dc_coeff_opt, stride, 8, 32);
+                        uninit_data(input);
+                        uninit_coeff(dc_coeff, dc_coeff_opt);
+                    }
+                    break;
+                case 1://32x16
+                    for (int j = 0; j < 2; j++) {
+                        init_coeff(&dc_coeff, &dc_coeff_opt, &stride);
+                        ASSERT(eb_buf_compare_u16(dc_coeff, dc_coeff_opt, MAX_SB_SIZE * stride) == 1);
+                        init_data(&input, &above, &left, stride);
+                        aom_highbd_smooth_h_predictor_funcptr_array_base[loop](dc_coeff, stride, above, left, bitdepth[x]);
+                        aom_highbd_smooth_h_predictor_funcptr_array_opt[loop](dc_coeff_opt, stride, above, left, bitdepth[x]);
+                        dc_compare_u16(dc_coeff, dc_coeff_opt, stride, 16, 32);
+                        uninit_data(input);
+                        uninit_coeff(dc_coeff, dc_coeff_opt);
+                    }
+                    break;
+                case 2://32x32
+                    for (int j = 0; j < 2; j++) {
+                        init_coeff(&dc_coeff, &dc_coeff_opt, &stride);
+                        ASSERT(eb_buf_compare_u16(dc_coeff, dc_coeff_opt, MAX_SB_SIZE * stride) == 1);
+                        init_data(&input, &above, &left, stride);
+                        aom_highbd_smooth_h_predictor_funcptr_array_base[loop](dc_coeff, stride, above, left, bitdepth[x]);
+                        aom_highbd_smooth_h_predictor_funcptr_array_opt[loop](dc_coeff_opt, stride, above, left, bitdepth[x]);
+                        dc_compare_u16(dc_coeff, dc_coeff_opt, stride, 32, 32);
+                        uninit_data(input);
+                        uninit_coeff(dc_coeff, dc_coeff_opt);
+                    }
+                    break;
+                case 3://32x64
+                    for (int j = 0; j < 2; j++) {
+                        init_coeff(&dc_coeff, &dc_coeff_opt, &stride);
+                        ASSERT(eb_buf_compare_u16(dc_coeff, dc_coeff_opt, MAX_SB_SIZE * stride) == 1);
+                        init_data(&input, &above, &left, stride);
+                        aom_highbd_smooth_h_predictor_funcptr_array_base[loop](dc_coeff, stride, above, left, bitdepth[x]);
+                        aom_highbd_smooth_h_predictor_funcptr_array_opt[loop](dc_coeff_opt, stride, above, left, bitdepth[x]);
+                        dc_compare_u16(dc_coeff, dc_coeff_opt, stride, 64, 32);
+                        uninit_data(input);
+                        uninit_coeff(dc_coeff, dc_coeff_opt);
+                    }
+                    break;
+                case 4://64x16
+                    for (int j = 0; j < 2; j++) {
+                        init_coeff(&dc_coeff, &dc_coeff_opt, &stride);
+                        ASSERT(eb_buf_compare_u16(dc_coeff, dc_coeff_opt, MAX_SB_SIZE * stride) == 1);
+                        init_data(&input, &above, &left, stride);
+                        aom_highbd_smooth_h_predictor_funcptr_array_base[loop](dc_coeff, stride, above, left, bitdepth[x]);
+                        aom_highbd_smooth_h_predictor_funcptr_array_opt[loop](dc_coeff_opt, stride, above, left, bitdepth[x]);
+                        dc_compare_u16(dc_coeff, dc_coeff_opt, stride, 16, 64);
+                        uninit_data(input);
+                        uninit_coeff(dc_coeff, dc_coeff_opt);
+                    }
+                    break;
+                case 5://64x32
+                    for (int j = 0; j < 2; j++) {
+                        init_coeff(&dc_coeff, &dc_coeff_opt, &stride);
+                        ASSERT(eb_buf_compare_u16(dc_coeff, dc_coeff_opt, MAX_SB_SIZE * stride) == 1);
+                        init_data(&input, &above, &left, stride);
+                        aom_highbd_smooth_h_predictor_funcptr_array_base[loop](dc_coeff, stride, above, left, bitdepth[x]);
+                        aom_highbd_smooth_h_predictor_funcptr_array_opt[loop](dc_coeff_opt, stride, above, left, bitdepth[x]);
+                        dc_compare_u16(dc_coeff, dc_coeff_opt, stride, 32, 64);
+                        uninit_data(input);
+                        uninit_coeff(dc_coeff, dc_coeff_opt);
+                    }
+                    break;
+                case 6://64x64
+                    for (int j = 0; j < 2; j++) {
+                        init_coeff(&dc_coeff, &dc_coeff_opt, &stride);
+                        ASSERT(eb_buf_compare_u16(dc_coeff, dc_coeff_opt, MAX_SB_SIZE * stride) == 1);
+                        init_data(&input, &above, &left, stride);
+                        aom_highbd_smooth_h_predictor_funcptr_array_base[loop](dc_coeff, stride, above, left, bitdepth[x]);
+                        aom_highbd_smooth_h_predictor_funcptr_array_opt[loop](dc_coeff_opt, stride, above, left, bitdepth[x]);
+                        dc_compare_u16(dc_coeff, dc_coeff_opt, stride, 64, 64);
+                        uninit_data(input);
+                        uninit_coeff(dc_coeff, dc_coeff_opt);
+                    }
+                    break;
+                default:
+                    ASSERT(0);
+                }
+            }
+        }
+    }
+
 }
 #endif

@@ -29,6 +29,18 @@ void global_motion_estimation(PictureParentControlSet *picture_control_set_ptr,
                               MeContext *context_ptr,
                               EbPictureBufferDesc *input_picture_ptr)
 {
+#if GM_OPT
+    // Get downsampled pictures with a downsampling factor of 2 in each dimension
+    EbPaReferenceObject *pa_reference_object;
+    EbPictureBufferDesc *quarter_ref_pic_ptr;
+    EbPictureBufferDesc *quarter_picture_ptr;
+    EbPictureBufferDesc *ref_picture_ptr;
+    SequenceControlSet *sequence_control_set_ptr = (SequenceControlSet *)picture_control_set_ptr->sequence_control_set_wrapper_ptr->object_ptr;
+    pa_reference_object = (EbPaReferenceObject*)picture_control_set_ptr->pa_reference_picture_wrapper_ptr->object_ptr;
+    quarter_picture_ptr = (sequence_control_set_ptr->down_sampling_method_me_search == ME_FILTERED_DOWNSAMPLED) ?
+        (EbPictureBufferDesc*)pa_reference_object->quarter_filtered_picture_ptr :
+        (EbPictureBufferDesc*)pa_reference_object->quarter_decimated_picture_ptr;
+#endif
     uint32_t numOfListToSearch = (picture_control_set_ptr->slice_type == P_SLICE)
         ? (uint32_t)REF_LIST_0 : (uint32_t)REF_LIST_1;
 
@@ -59,8 +71,22 @@ void global_motion_estimation(PictureParentControlSet *picture_control_set_ptr,
                 referenceObject = (EbPaReferenceObject *)picture_control_set_ptr
                         ->ref_pa_pic_ptr_array[listIndex][ref_pic_index]->object_ptr;
 
-
+#if GM_OPT
+            // Set the source and the reference picture to be used by the global motion search
+            // based on the input search mode
+            if (picture_control_set_ptr->gm_level == GM_DOWN) {
+                quarter_ref_pic_ptr = (sequence_control_set_ptr->down_sampling_method_me_search == ME_FILTERED_DOWNSAMPLED) ?
+                    (EbPictureBufferDesc*)referenceObject->quarter_filtered_picture_ptr :
+                    (EbPictureBufferDesc*)referenceObject->quarter_decimated_picture_ptr;
+                ref_picture_ptr = quarter_ref_pic_ptr;
+                input_picture_ptr = quarter_picture_ptr;
+            }
+            else {
+                ref_picture_ptr = (EbPictureBufferDesc*)referenceObject->input_padded_picture_ptr;
+            }
+#else
             EbPictureBufferDesc *ref_picture_ptr = (EbPictureBufferDesc*)referenceObject->input_padded_picture_ptr;
+#endif
 
             compute_global_motion(input_picture_ptr, ref_picture_ptr,
                 &picture_control_set_ptr->global_motion_estimation[listIndex][ref_pic_index],
@@ -75,23 +101,6 @@ static INLINE int convert_to_trans_prec(int allow_hp, int coor) {
         return ROUND_POWER_OF_TWO_SIGNED(coor, WARPEDMODEL_PREC_BITS - 3);
     else
         return ROUND_POWER_OF_TWO_SIGNED(coor, WARPEDMODEL_PREC_BITS - 2) * 2;
-}
-
-
-static unsigned char *av1_downconvert_frame(EbPictureBufferDesc *input_pic) {
-    int i, j;
-    uint16_t *orig_buf = (uint16_t *)input_pic->buffer_y;
-    uint8_t *buf_8bit = malloc(input_pic->stride_y * input_pic->height);
-    if (buf_8bit == NULL)
-        return NULL;
-
-    for (i = 0; i < input_pic->height; ++i) {
-        for (j = 0; j < input_pic->width; ++j) {
-            buf_8bit[i * input_pic->stride_y + j] =
-                orig_buf[i * input_pic->stride_y + j] >> (input_pic->bit_depth - 8);
-        }
-    }
-    return buf_8bit;
 }
 
 
@@ -113,17 +122,10 @@ void compute_global_motion(EbPictureBufferDesc *input_pic, EbPictureBufferDesc *
         0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0
     };
     // clang-format on
+
     int frm_corners[2 * MAX_CORNERS];
-    unsigned char *frm_buffer = input_pic->bit_depth > EB_8BIT ?
-                av1_downconvert_frame(input_pic)
-                : input_pic->buffer_y + input_pic->origin_x + input_pic->origin_y * input_pic->stride_y;
-    if (frm_buffer == NULL)
-        return;
-    unsigned char *ref_buffer = ref_pic->bit_depth > EB_8BIT ?
-                av1_downconvert_frame(ref_pic)
-                : ref_pic->buffer_y + ref_pic->origin_x + ref_pic->origin_y * ref_pic->stride_y;
-    if (ref_buffer == NULL)
-        return;
+    unsigned char *frm_buffer = input_pic->buffer_y + input_pic->origin_x + input_pic->origin_y * input_pic->stride_y;
+    unsigned char *ref_buffer = ref_pic->buffer_y + ref_pic->origin_x + ref_pic->origin_y * ref_pic->stride_y;
 
     EbWarpedMotionParams global_motion = default_warp_params;
 
@@ -218,11 +220,6 @@ void compute_global_motion(EbPictureBufferDesc *input_pic, EbPictureBufferDesc *
     }
 
     *bestWarpedMotion = global_motion;
-
-    if (input_pic->bit_depth > EB_8BIT)
-        free(frm_buffer);
-    if (ref_pic->bit_depth > EB_8BIT)
-        free(ref_buffer);
 
     for (int m = 0; m < RANSAC_NUM_MOTIONS; m++) {
         free(params_by_motion[m].inliers);

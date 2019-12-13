@@ -198,7 +198,11 @@ EbErrorType signal_derivation_me_kernel_oq(
     }
     else if (enc_mode == ENC_M0) {
         context_ptr->me_context_ptr->half_pel_mode =
+#if M0_OPT
+            picture_control_set_ptr->sc_content_detected ? REFINMENT_HP_MODE : EX_HP_MODE;
+#else
             EX_HP_MODE;
+#endif
         context_ptr->me_context_ptr->quarter_pel_mode =
             REFINMENT_QP_MODE;
     }
@@ -243,8 +247,7 @@ EbErrorType signal_derivation_me_kernel_oq(
 
     if (sequence_control_set_ptr->static_config.enable_global_motion == EB_TRUE)
     {
-        if (enc_mode == ENC_M0
-            && sequence_control_set_ptr->encoder_bit_depth == EB_8BIT)
+        if (enc_mode == ENC_M0)
             context_ptr->me_context_ptr->compute_global_motion = EB_TRUE;
         else
             context_ptr->me_context_ptr->compute_global_motion = EB_FALSE;
@@ -445,7 +448,11 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
 
     if (picture_control_set_ptr->sc_content_detected)
         if (enc_mode <= ENC_M1)
+#if M0_OPT
+            context_ptr->me_context_ptr->fractional_search_method = (enc_mode == ENC_M0) ? FULL_SAD_SEARCH : SSD_SEARCH;
+#else
             context_ptr->me_context_ptr->fractional_search_method = SSD_SEARCH;
+#endif
         else
             context_ptr->me_context_ptr->fractional_search_method = SUB_SAD_SEARCH;
     else
@@ -483,7 +490,11 @@ EbErrorType tf_signal_derivation_me_kernel_oq(
     }
     else if (enc_mode == ENC_M0) {
         context_ptr->me_context_ptr->half_pel_mode =
+#if M0_OPT
+            picture_control_set_ptr->sc_content_detected ? REFINMENT_HP_MODE : EX_HP_MODE;
+#else
             EX_HP_MODE;
+#endif
         context_ptr->me_context_ptr->quarter_pel_mode =
             REFINMENT_QP_MODE;
     }
@@ -859,11 +870,17 @@ void* motion_estimation_kernel(void *input_ptr)
             // Global motion estimation
             // Compute only for the first fragment.
             // TODO: create an other kernel ?
+#if GM_OPT
+        if (picture_control_set_ptr->gm_level == GM_FULL || picture_control_set_ptr->gm_level == GM_DOWN) {
+#endif
             if (context_ptr->me_context_ptr->compute_global_motion
                 && inputResultsPtr->segment_index == 0)
                 global_motion_estimation(picture_control_set_ptr,
                                          context_ptr->me_context_ptr,
                                          input_picture_ptr);
+#if GM_OPT
+        }
+#endif
 #endif
 
             // Segments

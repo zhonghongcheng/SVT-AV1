@@ -182,7 +182,7 @@ extern "C" {
         uint32_t  area_width,
         uint32_t  area_height);
 
-    uint64_t full_distortion_kernel16_bits(
+    uint64_t full_distortion_kernel16_bits_c(
         uint8_t  *input,
         uint32_t  input_offset,
         uint32_t  input_stride,
@@ -192,7 +192,7 @@ extern "C" {
         uint32_t  area_width,
         uint32_t  area_height);
 
-    void residual_kernel16bit(
+    void residual_kernel16bit_c(
         uint16_t *input,
         uint32_t  input_stride,
         uint16_t *pred,

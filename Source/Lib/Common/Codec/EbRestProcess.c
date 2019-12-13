@@ -15,10 +15,9 @@
 */
 
 #include <stdlib.h>
-//#include "EbDefinitions.h"
+
 #include "EbRestProcess.h"
 #include "EbEncDecResults.h"
-
 #include "EbThreads.h"
 #include "EbPictureDemuxResults.h"
 #include "EbReferenceObject.h"

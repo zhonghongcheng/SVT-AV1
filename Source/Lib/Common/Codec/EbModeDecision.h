@@ -82,7 +82,6 @@ extern "C" {
         uint64_t                               chroma_distortion_inter_depth;
         uint32_t                               luma_fast_distortion;
         uint32_t                               full_distortion;
-
         EbPtr                                 prediction_context_ptr;
         PictureControlSet                   *picture_control_set_ptr;
         EbPredDirection                        prediction_direction[MAX_NUM_OF_PU_PER_CU]; // 2 bits // Hsan: does not seem to be used why not removed ?
@@ -169,12 +168,16 @@ extern "C" {
         const BlockGeom                        *blk_geom,
         uint32_t                                miRow,
         uint32_t                                miCol,
+#if MULTI_PASS_PD
+        uint8_t                                 enable_inter_intra,
+        EbBool                                  full_cost_shut_fast_rate_flag,
+#endif
         uint8_t                                 md_pass,
         uint32_t                                left_neighbor_mode,
         uint32_t                                top_neighbor_mode);
 
     typedef EbErrorType(*EB_FULL_COST_FUNC)(
-        LargestCodingUnit                    *sb_ptr,
+        SuperBlock                          *sb_ptr,
         CodingUnit                           *cu_ptr,
         uint32_t                                cu_size,
         uint32_t                                cu_size_log2,

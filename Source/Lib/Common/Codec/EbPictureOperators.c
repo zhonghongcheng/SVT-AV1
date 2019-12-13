@@ -135,7 +135,7 @@ EbErrorType picture_copy(
 * Residual Kernel 16bit
 Computes the residual data
 *******************************************/
-void residual_kernel16bit(
+void residual_kernel16bit_c(
     uint16_t   *input,
     uint32_t   input_stride,
     uint16_t   *pred,
@@ -359,7 +359,7 @@ void full_distortion_kernel32_bits_c(
     distortion_result[DIST_CALC_PREDICTION] = predictionDistortion;
 }
 
-uint64_t full_distortion_kernel16_bits(
+uint64_t full_distortion_kernel16_bits_c(
     uint8_t  *input,
     uint32_t  input_offset,
     uint32_t  input_stride,

@@ -93,7 +93,7 @@ void update_rc_rate_tables(
     uint32_t  intra_sad_interval_index;
     uint32_t  sad_interval_index;
 
-    LargestCodingUnit   *sb_ptr;
+    SuperBlock   *sb_ptr;
     SbParams *sb_params_ptr;
 
     uint32_t  sb_index;
@@ -314,14 +314,15 @@ void* packetization_kernel(void *input_ptr)
         rateControlTasksPtr = (RateControlTasks*)rateControlTasksWrapperPtr->object_ptr;
         rateControlTasksPtr->picture_control_set_wrapper_ptr = picture_control_set_ptr->picture_parent_control_set_wrapper_ptr;
         rateControlTasksPtr->task_type = RC_PACKETIZATION_FEEDBACK_RESULT;
-        if (picture_control_set_ptr->parent_pcs_ptr->frame_end_cdf_update_mode &&
-            picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag == EB_TRUE &&
+
+        if (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag == EB_TRUE &&
             picture_control_set_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr) {
 
-            eb_av1_reset_cdf_symbol_counters(picture_control_set_ptr->entropy_coder_ptr->fc);
-            ((EbReferenceObject*)picture_control_set_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr->object_ptr)->frame_context
-                = (*picture_control_set_ptr->entropy_coder_ptr->fc);
-
+            if (picture_control_set_ptr->parent_pcs_ptr->frame_end_cdf_update_mode) {
+                eb_av1_reset_cdf_symbol_counters(picture_control_set_ptr->entropy_coder_ptr->fc);
+                ((EbReferenceObject*)picture_control_set_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr->object_ptr)->frame_context
+                    = (*picture_control_set_ptr->entropy_coder_ptr->fc);
+            }
             // Get Empty Results Object
             eb_get_empty_object(
                 context_ptr->picture_manager_input_fifo_ptr,
@@ -430,8 +431,7 @@ void* packetization_kernel(void *input_ptr)
 
         // Post Rate Control Taks
         eb_post_full_object(rateControlTasksWrapperPtr);
-        if (picture_control_set_ptr->parent_pcs_ptr->frame_end_cdf_update_mode &&
-            picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag == EB_TRUE &&
+        if (picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag == EB_TRUE &&
             picture_control_set_ptr->parent_pcs_ptr->reference_picture_wrapper_ptr)
             // Post the Full Results Object
             eb_post_full_object(picture_manager_results_wrapper_ptr);

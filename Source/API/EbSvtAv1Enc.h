@@ -235,6 +235,11 @@ typedef struct EbSvtAv1EncConfiguration
     * Default is 1. */
     EbBool                   enable_obmc;
 
+    /* RDOQ
+    *
+    * Default is -1. */
+    int8_t                   enable_rdoq;
+
     /* Filter intra prediction
     *
     * Default is 1. */
@@ -316,7 +321,7 @@ typedef struct EbSvtAv1EncConfiguration
     uint32_t                 look_ahead_distance;
 
     /* Target bitrate in bits/second, only apllicable when rate control mode is
-     * set to 1.
+     * set to 2 or 3.
      *
      * Default is 7000000. */
     uint32_t                 target_bit_rate;
@@ -368,13 +373,10 @@ typedef struct EbSvtAv1EncConfiguration
      * Default is 0. */
     uint32_t                 level;
 
-    /* Assembly instruction set used by encoder.
-    *
-    * 0 = non-AVX2, C only.
-    * 1 = up to AVX512, auto-select highest assembly instruction set supported.
-    *
-    * Default is 1. */
-    uint32_t                 asm_type;
+    /* CPU FLAGS to limit assembly instruction set used by encoder.
+    * Default is CPU_FLAGS_ALL. */
+    CPU_FLAGS            use_cpu_flags;
+
     // Application Specific parameters
 
     /* ID assigned to each channel when multiple instances are running within the
@@ -481,6 +483,9 @@ typedef struct EbSvtAv1EncConfiguration
     uint64_t                 md_stage_1_cand_prune_th;
     uint64_t                 md_stage_2_class_prune_th;
     uint64_t                 md_stage_2_cand_prune_th;
+
+    // signal for automax_partition; on by default
+    uint8_t                     enable_auto_max_partition;
 
 } EbSvtAv1EncConfiguration;
 

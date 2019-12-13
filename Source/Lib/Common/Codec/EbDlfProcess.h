@@ -6,13 +6,10 @@
 #ifndef EbDlfProcess_h
 #define EbDlfProcess_h
 
-
 #include "EbSystemResourceManager.h"
 #include "EbObject.h"
 #include "EbPictureBufferDesc.h"
 #include "EbSvtAv1Formats.h"
-
-
 
 /**************************************
  * Dlf Context
